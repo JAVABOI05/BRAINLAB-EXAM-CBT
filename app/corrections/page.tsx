@@ -41,10 +41,12 @@ export default function CorrectionsPage() {
 
   useEffect(() => {
     const savedCandidate = localStorage.getItem("candidate");
-    const savedResults = localStorage.getItem("exam_result");
+    const savedResults =
+      localStorage.getItem("exam_result") ||
+      localStorage.getItem("examResult");
 
     if (!savedResults) {
-      router.push("/");
+      router.push("/result");
       return;
     }
 
@@ -53,11 +55,17 @@ export default function CorrectionsPage() {
         setCandidate(JSON.parse(savedCandidate) as Candidate);
       }
 
-      const parsedResults = JSON.parse(savedResults) as ResultItem[];
-      setResults(parsedResults);
+      const parsedResults = JSON.parse(savedResults);
+
+      if (!Array.isArray(parsedResults)) {
+        router.push("/result");
+        return;
+      }
+
+      setResults(parsedResults as ResultItem[]);
       setLoading(false);
     } catch {
-      router.push("/");
+      router.push("/result");
     }
   }, [router]);
 
@@ -73,7 +81,9 @@ export default function CorrectionsPage() {
   }, [results]);
 
   const subjects = useMemo(() => {
-    const uniqueSubjects = Array.from(new Set(results.map((item) => item.subject)));
+    const uniqueSubjects = Array.from(
+      new Set(results.map((item) => item.subject))
+    );
     return ["All", ...uniqueSubjects];
   }, [results]);
 
@@ -158,9 +168,9 @@ export default function CorrectionsPage() {
               <span className="corrections-badge">BrainLab CBT</span>
               <h1 className="corrections-title">Corrections & Review</h1>
               <p className="corrections-subtitle">
-                Review every answer with a clean, colorful palette. Navigate by
-                subject, jump to any question instantly, and see clearly which
-                responses were correct, wrong, or unanswered.
+                Review every answer clearly. Switch by subject, jump to any
+                question, and see which responses were correct, wrong, or
+                unanswered.
               </p>
             </div>
 

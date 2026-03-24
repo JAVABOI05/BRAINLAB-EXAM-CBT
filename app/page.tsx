@@ -78,7 +78,7 @@ export default function Page() {
   };
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff_45%,#f8fbff_100%)] px-4 py-8">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff245%,#f8fbff_80%)] px-6 py-12">
       {/* PREMIUM FLOATING SIGNATURE */}
       <div className="pointer-events-none fixed right-4 top-4 z-50">
         <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 blur-md" />

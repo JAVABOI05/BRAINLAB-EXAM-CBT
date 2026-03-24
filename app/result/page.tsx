@@ -281,6 +281,13 @@ export default function ResultPage() {
             >
               {lookupLoading ? "Checking..." : "Check Result"}
             </button>
+
+            <button
+              onClick={() => router.push("/")}
+              className="mt-3 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
+            >
+              Back Home
+            </button>
           </div>
 
           {lookupError && (

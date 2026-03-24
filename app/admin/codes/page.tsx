@@ -14,9 +14,11 @@ type AdminUser = {
 type AccessCodeRow = {
   id: string;
   code: string;
+  subject: string | null;
   is_used: boolean;
   used_by: string | null;
-  exported: boolean;
+  is_exported: boolean;
+  exported_at: string | null;
   created_at: string;
 };
 
@@ -28,9 +30,15 @@ export default function AdminCodesPage() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [generating, setGenerating] = useState(false);
+
   const [count, setCount] = useState(10);
   const [exportCount, setExportCount] = useState(20);
+
   const [message, setMessage] = useState("");
+  const [masterCode, setMasterCode] = useState("");
+  const [newMasterCode, setNewMasterCode] = useState("");
+
+  const [lastExportedCodes, setLastExportedCodes] = useState<string[]>([]);
 
   useEffect(() => {
     const savedAdmin = localStorage.getItem("admin_user");
@@ -42,12 +50,31 @@ export default function AdminCodesPage() {
 
     try {
       setAdminUser(JSON.parse(savedAdmin) as AdminUser);
-      loadCodes();
+      void loadMasterCode();
+      void loadCodes();
     } catch {
       localStorage.removeItem("admin_user");
       router.push("/admin/login");
     }
   }, [router]);
+
+  async function loadMasterCode() {
+    const { data, error } = await supabase
+      .from("exam_config")
+      .select("config_value")
+      .eq("config_key", "master_access_code")
+      .single();
+
+    if (!error && data?.config_value) {
+      const value =
+        typeof data.config_value === "string"
+          ? data.config_value
+          : String(data.config_value);
+
+      setMasterCode(value);
+      setNewMasterCode(value);
+    }
+  }
 
   async function loadCodes() {
     setLoading(true);
@@ -55,9 +82,11 @@ export default function AdminCodesPage() {
 
     const { data, error } = await supabase
       .from("access_codes")
-      .select("*")
+      .select(
+        "id, code, subject, is_used, used_by, is_exported, exported_at, created_at"
+      )
       .order("created_at", { ascending: false })
-      .range(0, 999);
+      .range(0, 4999);
 
     if (error) {
       setMessage(error.message);
@@ -79,17 +108,22 @@ export default function AdminCodesPage() {
       setGenerating(true);
       setMessage("");
 
-      const { error } = await supabase.rpc("generate_access_codes", {
+      const { data, error } = await supabase.rpc("generate_access_codes", {
         code_count: count,
       });
 
       if (error) {
-        setMessage(error.message);
-        setGenerating(false);
+        setMessage(`Generate failed: ${error.message}`);
         return;
       }
 
-      setMessage(`${count} access code(s) generated successfully.`);
+      const generatedRows = (data || []) as { code: string }[];
+      setMessage(
+        generatedRows.length > 0
+          ? `${generatedRows.length} access code(s) generated successfully.`
+          : `${count} access code(s) generated successfully.`
+      );
+
       await loadCodes();
     } catch (error) {
       setMessage(
@@ -100,7 +134,42 @@ export default function AdminCodesPage() {
     }
   }
 
+  async function handleSetMasterCode() {
+    const cleanCode = newMasterCode.trim().toUpperCase();
+
+    if (!cleanCode) {
+      setMessage("Enter a valid master access code.");
+      return;
+    }
+
+    try {
+      setWorking(true);
+      setMessage("");
+
+      const { error } = await supabase.rpc("set_master_access_code", {
+        new_code: cleanCode,
+      });
+
+      if (error) {
+        setMessage(`Failed to set master code: ${error.message}`);
+        return;
+      }
+
+      setMasterCode(cleanCode);
+      setNewMasterCode(cleanCode);
+      await loadCodes();
+      setMessage("Master access code updated successfully.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
   async function resetCode(codeRow: AccessCodeRow) {
+    if (codeRow.code === masterCode) {
+      setMessage("Master code cannot be reset here.");
+      return;
+    }
+
     try {
       setWorking(true);
       setMessage("");
@@ -115,7 +184,6 @@ export default function AdminCodesPage() {
 
       if (error) {
         setMessage(`Reset failed: ${error.message}`);
-        setWorking(false);
         return;
       }
 
@@ -134,15 +202,8 @@ export default function AdminCodesPage() {
   }
 
   async function resetAllUsed() {
-    const used = codes.filter((c) => c.is_used);
-
-    if (used.length === 0) {
-      setMessage("No used codes found.");
-      return;
-    }
-
     const confirmed = window.confirm(
-      `Reset ${used.length} used code(s) back to unused?`
+      "Reset all used normal codes back to unused? The master code will not be touched."
     );
     if (!confirmed) return;
 
@@ -150,61 +211,17 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const ids = used.map((c) => c.id);
-
-      for (let i = 0; i < ids.length; i += 500) {
-        const batch = ids.slice(i, i + 500);
-
-        const { error } = await supabase
-          .from("access_codes")
-          .update({
-            is_used: false,
-            used_by: null,
-          })
-          .in("id", batch);
-
-        if (error) {
-          setMessage(`Bulk reset failed: ${error.message}`);
-          setWorking(false);
-          return;
-        }
-      }
-
-      await loadCodes();
-      setMessage(`${used.length} used code(s) reset successfully.`);
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function clearAllCodes() {
-    if (codes.length === 0) {
-      setMessage("There are no codes to clear.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Delete ALL ${codes.length} code(s)? This cannot be undone.`
-    );
-    if (!confirmed) return;
-
-    try {
-      setWorking(true);
-      setMessage("");
-
-      const { error } = await supabase
-        .from("access_codes")
-        .delete()
-        .neq("code", "");
+      const { data, error } = await supabase.rpc(
+        "reset_used_access_codes_preserve_master"
+      );
 
       if (error) {
-        setMessage(`Clear failed: ${error.message}`);
-        setWorking(false);
+        setMessage(`Bulk reset failed: ${error.message}`);
         return;
       }
 
-      setCodes([]);
-      setMessage("All access codes cleared successfully.");
+      await loadCodes();
+      setMessage(`${data ?? 0} used code(s) reset successfully.`);
     } finally {
       setWorking(false);
     }
@@ -220,32 +237,29 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const { data, error } = await supabase
-        .from("access_codes")
-        .select("id, code, created_at")
-        .eq("is_used", false)
-        .eq("exported", false)
-        .order("created_at", { ascending: true })
-        .limit(exportCount);
+      const { data, error } = await supabase.rpc("export_fresh_access_codes", {
+        code_count: exportCount,
+      });
 
       if (error) {
         setMessage(`Export failed: ${error.message}`);
-        setWorking(false);
+        setLastExportedCodes([]);
         return;
       }
 
-      const rows = data || [];
+      const rows = (data || []) as { code: string }[];
 
       if (rows.length === 0) {
         setMessage("No fresh unused codes available to export.");
-        setWorking(false);
+        setLastExportedCodes([]);
         return;
       }
 
-      const ids = rows.map((row) => row.id);
+      const codesOnly = rows.map((row) => row.code);
+      setLastExportedCodes(codesOnly);
 
-      const csvHeaders = ["code", "created_at"];
-      const csvRows = rows.map((row) => [row.code, row.created_at]);
+      const csvHeaders = ["code"];
+      const csvRows = rows.map((row) => [row.code]);
 
       const csvContent = [csvHeaders, ...csvRows]
         .map((row) =>
@@ -267,41 +281,37 @@ export default function AdminCodesPage() {
 
       URL.revokeObjectURL(url);
 
-      for (let i = 0; i < ids.length; i += 500) {
-        const batch = ids.slice(i, i + 500);
-
-        const { error: updateError } = await supabase
-          .from("access_codes")
-          .update({ exported: true })
-          .in("id", batch);
-
-        if (updateError) {
-          setMessage(
-            `Codes exported, but marking as exported failed: ${updateError.message}`
-          );
-          setWorking(false);
-          await loadCodes();
-          return;
-        }
-      }
-
       await loadCodes();
-      setMessage(`${rows.length} fresh code(s) exported and marked successfully.`);
+      setMessage(`${rows.length} fresh code(s) exported successfully.`);
     } finally {
       setWorking(false);
     }
   }
 
-  async function makeAllExportedFreshAgain() {
-    const exportedCodes = codes.filter((c) => c.exported);
+  async function copyExportedCodes() {
+    if (!lastExportedCodes.length) {
+      setMessage("No exported codes available to copy yet.");
+      return;
+    }
 
-    if (exportedCodes.length === 0) {
-      setMessage("There are no exported codes to reset.");
+    try {
+      await navigator.clipboard.writeText(lastExportedCodes.join("\n"));
+      setMessage("Exported codes copied successfully.");
+    } catch {
+      setMessage("Failed to copy exported codes.");
+    }
+  }
+
+  async function clearAllCodes() {
+    const normalCodes = codes.filter((c) => c.code !== masterCode);
+
+    if (normalCodes.length === 0) {
+      setMessage("There are no normal codes to clear.");
       return;
     }
 
     const confirmed = window.confirm(
-      `Reset ${exportedCodes.length} exported code(s) so they can be exported again?`
+      `Delete ALL ${normalCodes.length} normal code(s)? The master code will be preserved.`
     );
     if (!confirmed) return;
 
@@ -309,25 +319,24 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const ids = exportedCodes.map((c) => c.id);
+      const ids = normalCodes.map((c) => c.id);
 
       for (let i = 0; i < ids.length; i += 500) {
         const batch = ids.slice(i, i + 500);
 
         const { error } = await supabase
           .from("access_codes")
-          .update({ exported: false })
+          .delete()
           .in("id", batch);
 
         if (error) {
-          setMessage(`Reset exported failed: ${error.message}`);
-          setWorking(false);
+          setMessage(`Clear failed: ${error.message}`);
           return;
         }
       }
 
       await loadCodes();
-      setMessage(`${exportedCodes.length} exported code(s) reset successfully.`);
+      setMessage("All normal access codes cleared successfully.");
     } finally {
       setWorking(false);
     }
@@ -349,12 +358,12 @@ export default function AdminCodesPage() {
   );
 
   const freshCount = useMemo(
-    () => codes.filter((c) => !c.is_used && !c.exported).length,
+    () => codes.filter((c) => !c.is_used && !c.is_exported).length,
     [codes]
   );
 
   const exportedCount = useMemo(
-    () => codes.filter((c) => c.exported).length,
+    () => codes.filter((c) => c.is_exported).length,
     [codes]
   );
 
@@ -367,8 +376,8 @@ export default function AdminCodesPage() {
               <div className="admin-badge">Brainlab Access Code Manager</div>
               <h1 className="admin-title">Generate and manage access codes</h1>
               <p className="admin-subtitle">
-                Create new BLT codes, reset used codes, clear the bank, and export
-                only fresh unused codes without duplicates.
+                Create new BLT codes, manage the permanent master code, reset used
+                codes safely, and export only fresh unused codes without duplicates.
               </p>
 
               {adminUser && (
@@ -428,10 +437,51 @@ export default function AdminCodesPage() {
         </section>
 
         <section className="admin-section admin-card">
+          <h2 className="admin-card-title">Master Access Code</h2>
+          <p className="admin-card-text">
+            This code remains permanent, cannot be cleared with normal codes, and is
+            excluded from fresh code exports.
+          </p>
+
+          <div className="admin-settings-grid">
+            <div className="admin-setting-box">
+              <label className="admin-label">Current Master Code</label>
+              <input
+                type="text"
+                value={masterCode}
+                readOnly
+                className="admin-input"
+              />
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">Set New Master Code</label>
+              <input
+                type="text"
+                value={newMasterCode}
+                onChange={(e) => setNewMasterCode(e.target.value.toUpperCase())}
+                className="admin-input"
+                placeholder="Enter master code"
+              />
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+            <button
+              onClick={handleSetMasterCode}
+              disabled={working}
+              className="admin-btn-primary"
+            >
+              {working ? "Working..." : "Save Master Code"}
+            </button>
+          </div>
+        </section>
+
+        <section className="admin-section admin-card">
           <h2 className="admin-card-title">Code Operations</h2>
           <p className="admin-card-text">
-            Export only fresh codes and automatically mark them as exported so
-            the same batch is not downloaded twice.
+            Export only fresh codes and automatically mark them as exported so the
+            same batch is not downloaded twice.
           </p>
 
           <div className="admin-settings-grid">
@@ -482,14 +532,6 @@ export default function AdminCodesPage() {
             </button>
 
             <button
-              onClick={makeAllExportedFreshAgain}
-              disabled={working}
-              className="admin-btn-light"
-            >
-              {working ? "Working..." : "Reset Exported Status"}
-            </button>
-
-            <button
               onClick={resetAllUsed}
               disabled={working}
               className="admin-btn-light"
@@ -502,7 +544,7 @@ export default function AdminCodesPage() {
               disabled={working}
               className="admin-btn-light"
             >
-              {working ? "Working..." : "Clear All Codes"}
+              {working ? "Working..." : "Clear All Normal Codes"}
             </button>
 
             <button onClick={loadCodes} className="admin-btn-light">
@@ -513,11 +555,36 @@ export default function AdminCodesPage() {
           {message && <div className="admin-message">{message}</div>}
         </section>
 
+        {lastExportedCodes.length > 0 && (
+          <section className="admin-section admin-card">
+            <h2 className="admin-card-title">Last Exported Batch</h2>
+            <p className="admin-card-text">
+              You can copy all exported codes directly from here.
+            </p>
+
+            <div className="mt-4 flex flex-col gap-4">
+              <textarea
+                readOnly
+                value={lastExportedCodes.join("\n")}
+                className="admin-input"
+                style={{ minHeight: "220px", fontFamily: "monospace" }}
+              />
+
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <button
+                  onClick={copyExportedCodes}
+                  className="admin-btn-primary"
+                >
+                  Copy All Exported Codes
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="admin-section admin-card">
           <h2 className="admin-card-title">Recent Codes</h2>
-          <p className="admin-card-text">
-            Showing the latest 1000 access codes.
-          </p>
+          <p className="admin-card-text">Showing the latest 5000 access codes.</p>
 
           {loading ? (
             <p className="mt-6 text-slate-600">Loading codes...</p>
@@ -537,38 +604,48 @@ export default function AdminCodesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {codes.map((code) => (
-                    <tr key={code.id}>
-                      <td style={{ fontFamily: "monospace", fontWeight: 700 }}>
-                        {code.code}
-                      </td>
-                      <td>
-                        {code.is_used ? (
-                          <span className="admin-status-used">Used</span>
-                        ) : (
-                          <span className="admin-status-unused">Unused</span>
-                        )}
-                      </td>
-                      <td>{code.used_by || "-"}</td>
-                      <td>
-                        {code.exported ? (
-                          <span className="admin-status-used">Exported</span>
-                        ) : (
-                          <span className="admin-status-unused">Fresh</span>
-                        )}
-                      </td>
-                      <td>{new Date(code.created_at).toLocaleString()}</td>
-                      <td>
-                        <button
-                          onClick={() => resetCode(code)}
-                          className="admin-btn-light"
-                          style={{ padding: "10px 14px" }}
-                        >
-                          Reset
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {codes.map((code) => {
+                    const isMaster = code.code === masterCode;
+
+                    return (
+                      <tr key={code.id}>
+                        <td style={{ fontFamily: "monospace", fontWeight: 700 }}>
+                          {code.code}
+                          {isMaster ? (
+                            <span style={{ marginLeft: 8, color: "#b45309" }}>
+                              (MASTER)
+                            </span>
+                          ) : null}
+                        </td>
+                        <td>
+                          {code.is_used ? (
+                            <span className="admin-status-used">Used</span>
+                          ) : (
+                            <span className="admin-status-unused">Unused</span>
+                          )}
+                        </td>
+                        <td>{code.used_by || "-"}</td>
+                        <td>
+                          {code.is_exported ? (
+                            <span className="admin-status-used">Exported</span>
+                          ) : (
+                            <span className="admin-status-unused">Fresh</span>
+                          )}
+                        </td>
+                        <td>{new Date(code.created_at).toLocaleString()}</td>
+                        <td>
+                          <button
+                            onClick={() => resetCode(code)}
+                            className="admin-btn-light"
+                            style={{ padding: "10px 14px" }}
+                            disabled={isMaster}
+                          >
+                            Reset
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
