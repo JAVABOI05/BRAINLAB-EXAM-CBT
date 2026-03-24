@@ -30,6 +30,16 @@ type Candidate = {
   code: string;
 };
 
+type SavedResultRow = {
+  id: number;
+  name: string;
+  phone: string;
+  subject: string;
+  score: number;
+  total: number;
+  created_at?: string;
+};
+
 export default function ResultPage() {
   const router = useRouter();
 
@@ -39,6 +49,12 @@ export default function ResultPage() {
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+
+  const [lookupMode, setLookupMode] = useState(false);
+  const [lookupPhone, setLookupPhone] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+  const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
 
   const hasSavedRef = useRef(false);
 
@@ -56,7 +72,7 @@ export default function ResultPage() {
       const savedResults = localStorage.getItem("exam_result");
 
       if (!savedCandidate || !savedResults) {
-        router.push("/");
+        setLookupMode(true);
         return;
       }
 
@@ -66,13 +82,14 @@ export default function ResultPage() {
 
         setCandidate(parsedCandidate);
         setResults(parsedResults);
+        setLookupMode(false);
       } catch {
-        router.push("/");
+        setLookupMode(true);
       }
     }
 
     loadPage();
-  }, [router]);
+  }, []);
 
   const subjectScores = useMemo(() => {
     const scores: Record<string, number> = {
@@ -119,7 +136,8 @@ export default function ResultPage() {
         resultsEnabled !== true ||
         !candidate ||
         results.length === 0 ||
-        hasSavedRef.current
+        hasSavedRef.current ||
+        lookupMode
       ) {
         return;
       }
@@ -170,13 +188,49 @@ export default function ResultPage() {
     }
 
     saveResultAndAnswers();
-  }, [candidate, results, totalScore, resultsEnabled]);
+  }, [candidate, results, totalScore, resultsEnabled, lookupMode]);
+
+  const handleLookup = async () => {
+    const value = lookupPhone.trim();
+
+    if (!value) {
+      setLookupError("Please enter your phone number.");
+      setLookupResult(null);
+      return;
+    }
+
+    setLookupLoading(true);
+    setLookupError("");
+    setLookupResult(null);
+
+    const { data, error } = await supabase
+      .from("results")
+      .select("id, name, phone, subject, score, total, created_at")
+      .eq("phone", value)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    setLookupLoading(false);
+
+    if (error) {
+      setLookupError(error.message);
+      return;
+    }
+
+    if (!data) {
+      setLookupError("No result found for this phone number.");
+      return;
+    }
+
+    setLookupResult(data);
+  };
 
   if (resultsEnabled === null) {
     return (
       <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
         <div className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-md">
-          <p className="text-lg text-gray-700">Loading result settings...</p>
+          <p className="text-lg text-gray-700">Loading result settings.</p>
         </div>
       </main>
     );
@@ -204,11 +258,69 @@ export default function ResultPage() {
     );
   }
 
+  if (lookupMode) {
+    return (
+      <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
+        <div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-md">
+          <h1 className="text-center text-3xl font-bold text-gray-800">
+            Check Your Result
+          </h1>
+
+          <div className="mt-6">
+            <input
+              value={lookupPhone}
+              onChange={(e) => setLookupPhone(e.target.value)}
+              placeholder="Enter Phone Number"
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <button
+              onClick={handleLookup}
+              disabled={lookupLoading}
+              className="mt-4 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-3 font-semibold text-white shadow-md transition hover:scale-[1.01] disabled:opacity-50"
+            >
+              {lookupLoading ? "Checking..." : "Check Result"}
+            </button>
+          </div>
+
+          {lookupError && (
+            <div className="mt-6 rounded-2xl bg-red-50 p-4 text-red-700">
+              {lookupError}
+            </div>
+          )}
+
+          {lookupResult && (
+            <div className="mt-8 rounded-2xl bg-gray-50 p-6">
+              <h2 className="text-2xl font-bold text-gray-800">
+                BRAINLAB CBT RESULT
+              </h2>
+
+              <div className="mt-4 space-y-2 text-lg text-gray-700">
+                <p>
+                  <span className="font-semibold">Name:</span> {lookupResult.name}
+                </p>
+                <p>
+                  <span className="font-semibold">Phone Number:</span> {lookupResult.phone}
+                </p>
+                <p>
+                  <span className="font-semibold">Subject:</span> {lookupResult.subject}
+                </p>
+                <p className="pt-2 text-2xl font-bold text-blue-700">
+                  Total Score: {lookupResult.score} / {lookupResult.total}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   if (!candidate) {
     return (
       <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
         <div className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-md">
-          <p className="text-lg text-gray-700">Loading result...</p>
+          <p className="text-lg text-gray-700">Loading result.</p>
         </div>
       </main>
     );
@@ -223,7 +335,7 @@ export default function ResultPage() {
 
         <div className="mt-4">
           {saveStatus === "saving" && (
-            <p className="text-sm text-blue-700">Saving result and answers...</p>
+            <p className="text-sm text-blue-700">Saving result and answers.</p>
           )}
           {saveStatus === "saved" && (
             <p className="text-sm text-green-700">
@@ -248,8 +360,7 @@ export default function ResultPage() {
             <span className="font-semibold">English:</span> {subjectScores.English}
           </p>
           <p>
-            <span className="font-semibold">Chemistry:</span>{" "}
-            {subjectScores.Chemistry}
+            <span className="font-semibold">Chemistry:</span> {subjectScores.Chemistry}
           </p>
           <p>
             <span className="font-semibold">Physics:</span> {subjectScores.Physics}
