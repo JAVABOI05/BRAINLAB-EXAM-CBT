@@ -78,22 +78,50 @@ export default function Page() {
   };
 
   return (
-    <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
-      <div className="mx-auto mb-6 flex max-w-6xl items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gray-800 md:text-5xl">
-          BRAINLAB CBT Exam Centre
-        </h1>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff_45%,#f8fbff_100%)] px-4 py-8">
+      {/* PREMIUM FLOATING SIGNATURE */}
+      <div className="pointer-events-none fixed right-4 top-4 z-50">
+        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 blur-md" />
+        <div className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/10 px-6 py-3 shadow-2xl backdrop-blur-xl">
+          <div className="absolute inset-0 animate-[shine_4s_linear_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          <div className="relative">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-300">
+              Designed by
+            </p>
+            <p className="mt-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-lg font-extrabold tracking-[0.2em] text-transparent md:text-xl">
+              MEDIC PHOENIX
+            </p>
+          </div>
+        </div>
+      </div>
 
-        <button
-          onClick={() => router.push("/admin/login")}
-          className="shrink-0 rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-2 font-semibold text-white shadow-md transition hover:scale-[1.02]"
-        >
-          Admin Login
-        </button>
+      <div className="mx-auto mb-8 max-w-6xl rounded-[32px] border border-white/70 bg-white/80 p-6 shadow-2xl shadow-blue-100/60 backdrop-blur md:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="mb-3 inline-flex rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-1 text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700">
+              BrainLab CBT Portal
+            </p>
+
+            <h1 className="text-3xl font-bold text-gray-800 md:text-5xl">
+              BRAINLAB CBT Exam Centre
+            </h1>
+
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 md:text-base">
+      
+            </p>
+          </div>
+
+          <button
+            onClick={() => router.push("/admin/login")}
+            className="shrink-0 rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-2 font-semibold text-white shadow-md transition hover:scale-[1.02]"
+          >
+            Admin Login
+          </button>
+        </div>
       </div>
 
       <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
-        <div className="rounded-3xl bg-white p-6 shadow-md">
+        <div className="rounded-3xl border border-white/60 bg-white p-6 shadow-lg shadow-blue-100/40">
           <h3 className="text-2xl font-bold text-gray-800">
             Access Code Support
           </h3>
@@ -121,7 +149,7 @@ export default function Page() {
           </p>
         </div>
 
-        <div className="rounded-3xl bg-white p-6 shadow-md">
+        <div className="rounded-3xl border border-white/60 bg-white p-6 shadow-lg shadow-blue-100/40">
           <h3 className="mb-4 text-center text-2xl font-bold text-gray-800">
             Candidate Login
           </h3>
@@ -130,20 +158,20 @@ export default function Page() {
             placeholder="Full Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:ring-2 focus:ring-blue-500"
           />
 
           <input
             placeholder="Phone Number"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:ring-2 focus:ring-blue-500"
           />
 
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:ring-2 focus:ring-blue-500"
           >
             <option>Mathematics</option>
             <option>Biology</option>
@@ -167,7 +195,7 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="rounded-3xl bg-gradient-to-br from-blue-600 to-blue-800 p-6 text-white shadow-md">
+        <div className="rounded-3xl bg-gradient-to-br from-blue-600 to-blue-800 p-6 text-white shadow-lg shadow-blue-200/50">
           <h3 className="text-2xl font-bold">Join Our WhatsApp Channel</h3>
 
           <p className="mt-2 text-sm leading-6 text-blue-100">
@@ -186,7 +214,7 @@ export default function Page() {
       </div>
 
       <div className="mx-auto mt-8 grid max-w-6xl gap-6 md:grid-cols-2">
-        <div className="rounded-3xl bg-white p-6 shadow-md">
+        <div className="rounded-3xl border border-white/60 bg-white p-6 shadow-lg shadow-blue-100/40">
           <h3 className="text-2xl font-bold text-gray-800">
             Check Your Result
           </h3>
@@ -195,7 +223,7 @@ export default function Page() {
             placeholder="Enter Phone Number or Access code"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:ring-2 focus:ring-blue-500"
           />
 
           <button
@@ -206,7 +234,7 @@ export default function Page() {
           </button>
         </div>
 
-        <div className="rounded-3xl bg-white shadow-md">
+        <div className="rounded-3xl border border-white/60 bg-white shadow-lg shadow-blue-100/40">
           <button
             type="button"
             onClick={() => setShowLeaderboard(!showLeaderboard)}
@@ -234,7 +262,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="mx-auto mt-8 max-w-6xl rounded-3xl bg-white p-6 shadow-md">
+      <div className="mx-auto mt-8 max-w-6xl rounded-3xl border border-white/60 bg-white p-6 shadow-lg shadow-blue-100/40">
         <h3 className="text-2xl font-bold text-gray-800">
           Join Our 2 Weeks Final Revision Classes
         </h3>

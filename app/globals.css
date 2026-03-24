@@ -300,3 +300,11 @@ body {
 .calc-equal-btn:hover {
   background: #ea580c;
 }
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
