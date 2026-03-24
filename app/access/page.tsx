@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
+type ValidateAccessResponse = {
+  ok?: boolean;
+  type?: "master" | "normal";
+  message?: string;
+};
+
 export default function AccessPage() {
   const router = useRouter();
 
@@ -18,11 +24,7 @@ export default function AccessPage() {
   useEffect(() => {
     async function loadSettings() {
       const [{ data: mockData }, { data: accessData }] = await Promise.all([
-        supabase
-          .from("settings")
-          .select("value")
-          .eq("key", "mock_enabled")
-          .single(),
+        supabase.from("settings").select("value").eq("key", "mock_enabled").single(),
         supabase
           .from("exam_config")
           .select("config_value")
@@ -30,8 +32,7 @@ export default function AccessPage() {
           .single(),
       ]);
 
-      const mockOn =
-        mockData?.value === true || mockData?.value === "true";
+      const mockOn = mockData?.value === true || mockData?.value === "true";
 
       const accessRequired =
         accessData?.config_value === true || accessData?.config_value === "true";
@@ -47,7 +48,7 @@ export default function AccessPage() {
       setPageLoading(false);
     }
 
-    loadSettings();
+    void loadSettings();
   }, [router]);
 
   const handleValidateCode = async () => {
@@ -70,36 +71,24 @@ export default function AccessPage() {
     setErrorText("");
 
     const normalizedCode = code.trim().toUpperCase();
+    const trimmedPhone = phone.trim();
 
-    const { data, error } = await supabase
-      .from("access_codes")
-      .select("*")
-      .eq("code", normalizedCode)
-      .single();
+    const { data, error } = await supabase.rpc("validate_and_use_access_code", {
+      input_code: normalizedCode,
+      input_phone: trimmedPhone,
+      input_subject: "",
+    });
 
-    if (error || !data) {
-      setErrorText("Invalid access code.");
+    if (error) {
+      setErrorText(error.message || "Could not validate access code.");
       setLoading(false);
       return;
     }
 
-    if (data.is_used) {
-      setErrorText("This access code has already been used.");
-      setLoading(false);
-      return;
-    }
+    const result = (data || {}) as ValidateAccessResponse;
 
-    const { error: updateError } = await supabase
-      .from("access_codes")
-      .update({
-        is_used: true,
-        used_by: phone.trim(),
-      })
-      .eq("id", data.id)
-      .eq("is_used", false);
-
-    if (updateError) {
-      setErrorText("Could not activate this code. Please try again.");
+    if (!result.ok) {
+      setErrorText(result.message || "Invalid access code.");
       setLoading(false);
       return;
     }
@@ -116,7 +105,8 @@ export default function AccessPage() {
           JSON.stringify({
             ...parsed,
             code: normalizedCode,
-            phone: phone.trim(),
+            phone: trimmedPhone,
+            access_type: result.type || "normal",
           })
         );
       } catch {
@@ -124,12 +114,24 @@ export default function AccessPage() {
           "candidate",
           JSON.stringify({
             name: "",
-            phone: phone.trim(),
+            phone: trimmedPhone,
             subject: "",
             code: normalizedCode,
+            access_type: result.type || "normal",
           })
         );
       }
+    } else {
+      localStorage.setItem(
+        "candidate",
+        JSON.stringify({
+          name: "",
+          phone: trimmedPhone,
+          subject: "",
+          code: normalizedCode,
+          access_type: result.type || "normal",
+        })
+      );
     }
 
     setLoading(false);
@@ -180,7 +182,7 @@ export default function AccessPage() {
         </h1>
 
         <p className="mt-3 text-center text-sm text-gray-600">
-          Enter your phone number and valid BLT access code to continue.
+          Enter your phone number and valid access code to continue.
         </p>
 
         <div className="mt-6 space-y-4">
@@ -193,8 +195,8 @@ export default function AccessPage() {
 
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="BLT-XXXX-XXXX"
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="BLT-XXXX-XXXX or master code"
             className="w-full rounded-xl border border-gray-300 px-4 py-3 uppercase outline-none focus:ring-2 focus:ring-blue-500"
           />
 
