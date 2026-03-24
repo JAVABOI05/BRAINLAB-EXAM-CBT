@@ -71,7 +71,7 @@ export default function AdminResultsPage() {
     try {
       const parsed = JSON.parse(savedAdmin) as AdminUser;
       setAdminUser(parsed);
-      loadResults();
+      void loadResults();
     } catch {
       localStorage.removeItem("admin_user");
       router.push("/admin/login");
@@ -128,7 +128,10 @@ export default function AdminResultsPage() {
 
       const resultToDelete = results.find((r) => r.id === resultId);
 
-      const { error } = await supabase.from("results").delete().eq("id", resultId);
+      const { error } = await supabase
+        .from("results")
+        .delete()
+        .eq("id", resultId);
 
       if (error) {
         setMessage(`Delete failed: ${error.message}`);
@@ -220,7 +223,10 @@ export default function AdminResultsPage() {
       setClearingResults(true);
       setMessage("");
 
-      const { error } = await supabase.from("results").delete().neq("id", "");
+      const { error } = await supabase
+        .from("results")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
 
       if (error) {
         setMessage(`Could not clear results: ${error.message}`);
@@ -251,7 +257,7 @@ export default function AdminResultsPage() {
       const { error } = await supabase
         .from("exam_sessions")
         .delete()
-        .neq("id", "");
+        .neq("id", "00000000-0000-0000-0000-000000000000");
 
       if (error) {
         setMessage(`Could not clear sessions: ${error.message}`);
@@ -658,7 +664,9 @@ export default function AdminResultsPage() {
               {loadingAnswerSheet ? (
                 <p className="mt-6 text-slate-600">Loading answer sheet...</p>
               ) : answerSheet.length === 0 ? (
-                <p className="mt-6 text-slate-600">No answers found for this result.</p>
+                <p className="mt-6 text-slate-600">
+                  No answers found for this result.
+                </p>
               ) : (
                 <>
                   <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -718,7 +726,9 @@ export default function AdminResultsPage() {
                             <div className="rounded-2xl bg-slate-50 p-3 md:col-span-2">
                               <p className="text-sm text-slate-500">Status</p>
                               <p className="font-semibold text-slate-800">
-                                {item.is_correct ? "Correct" : "Wrong / Not marked correct"}
+                                {item.is_correct
+                                  ? "Correct"
+                                  : "Wrong / Not marked correct"}
                               </p>
                             </div>
 
