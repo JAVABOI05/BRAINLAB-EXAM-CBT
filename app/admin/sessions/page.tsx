@@ -66,8 +66,9 @@ export default function AdminSessionsPage() {
     }
 
     try {
-      setAdminUser(JSON.parse(savedAdmin) as AdminUser);
-      loadSessions();
+      const parsedAdmin = JSON.parse(savedAdmin) as AdminUser;
+      queueMicrotask(() => setAdminUser(parsedAdmin));
+      queueMicrotask(() => loadSessions());
     } catch {
       localStorage.removeItem("admin_user");
       router.push("/admin/login");
