@@ -8,6 +8,9 @@ This roadmap is a working plan, not authorization to deploy or change production
 - [ ] Confirm the complete security patch and migration files are available in the review branch.
 - [ ] Inspect current Git status and confirm no secrets or local environment files are tracked.
 - [ ] Confirm staging project/configuration is used for all integration tests.
+- [ ] Complete the object-by-object production policy/function review in `docs/ADMIN-AND-CANDIDATE-ROUTE-AUDIT.md`.
+- [ ] Reconcile the staging candidate-RPC contract with production before any release.
+- [ ] Verify every admin mutation is denied to anonymous and non-admin users in staging; do not rely on localStorage or UI guards.
 - [ ] Document deployment target and rollback procedure.
 - [ ] Do not merge the current remote hardening branch while its status file says it is incomplete.
 
