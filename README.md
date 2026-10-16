@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BrainLab Academy
 
-## Getting Started
+BrainLab Academy is evolving from an existing CBT application toward a connected learning ecosystem. The first release focuses on a clear public website and reliable access to the current CBT experience. AI learning, study groups, advanced personalization and courses must remain clearly marked as planned until implemented and tested.
 
-First, run the development server:
+## Current technology
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js App Router
+- React and TypeScript
+- Tailwind CSS
+- Supabase client integration
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Verify the current source and deployment configuration before making architectural assumptions.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Install Node.js 22 or a compatible supported version.
+2. Install dependencies with `npm ci`.
+3. Copy `.env.example` to `.env.local`.
+4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the correct development/staging project values. Never put a service-role key in client code or a `NEXT_PUBLIC_` variable.
+5. Set `NEXT_PUBLIC_SITE_URL` to the approved canonical URL when it is known.
+6. Run `npm run dev`; use `npm run build` before proposing a release.
 
-## Learn More
+Do not copy production secrets into issue reports, commits or chat. Use staging for verification.
 
-To learn more about Next.js, take a look at the following resources:
+## Product documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Product blueprint](docs/PRODUCT-BLUEPRINT.md)
+- [Implementation roadmap and release gates](docs/IMPLEMENTATION-ROADMAP.md)
+- [Known route inventory](docs/ROUTE-INVENTORY.md)
+- [Phase 0 hardening status](PHASE0-UPGRADE-STATUS.md)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Current upgrade branch
 
-## Deploy on Vercel
+The public-site work is being prepared on `feature/brainlab-academy-upgrade`. It includes an updated public landing page, About page, shared public header/footer, a preserved CBT portal entry at `/login`, and a build workflow.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**This branch is not approved for production.** The remote Phase 0 status notes that security hardening is incomplete and legacy direct-table calls remain. Reconcile the branch with the founder's newer local security changes before merging. Do not run production migrations, deploy, or change production data without explicit approval.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Product integrity
+
+- Keep the existing CBT engine and student records.
+- Keep answer keys and protected learner data server-side.
+- Verify permissions on the server.
+- Do not advertise AI, community, courses, registration or credentials as live unless they actually are.
+- Do not fabricate testimonials, usage numbers, partnerships or accreditation.
+- Keep the active exam distraction-free and the admin area separate from public marketing chrome.
