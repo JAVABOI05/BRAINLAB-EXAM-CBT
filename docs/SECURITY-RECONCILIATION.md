@@ -80,3 +80,12 @@ The current review branch CI must pass on the latest head after these changes. T
 A frontend source review confirms that `/result` gates the page using the live `get_public_settings().show_results` value and only renders a locally cached `exam_summary` when that summary says `show_results: true`. `/corrections` also checks the live setting, then reads review items from localStorage key `exam_result`. The inspected staging `_result_payload` only includes scores/review items when results are enabled, while the current `lookup_result(p_phone, p_code)` response is summary-only.
 
 Therefore the important scenario “candidate submits while results are hidden, then an admin enables results later” is **not proven to work**: the later lookup path does not currently provide the detailed review payload needed by corrections, and the local cache may contain no review items from the original submission. This must be resolved and tested before release, likely by a narrowly scoped, throttled server RPC that retrieves a candidate's released result/review using the required identity/access-code proof. Do not add a frontend call to a function that has not been deployed and verified in staging; do not apply a migration without explicit approval.
+
+
+## Private operator console entry gate — 2026-10-16
+
+- The public site does not expose a console link in the Academy navigation or footer, and the sign-in UI now uses neutral “Private Platform Access” / “Secure Console Sign-In” wording.
+- Added `proxy.ts` with a fail-closed gate driven by server-only `BRAINLAB_PRIVATE_ENTRY_PATH` and `BRAINLAB_PRIVATE_ENTRY_TOKEN` variables. The configured random single-segment path rewrites internally to the existing sign-in page and sets an HttpOnly, SameSite=Lax cookie scoped to `/admin`. Direct `/admin/**` requests without that gate cookie return 404. Responses are marked noindex and no-store.
+- No secret path or token is committed. The environment values must be generated and configured separately in the hosting environment; until both are valid, the console is intentionally unavailable. See [Private Console Access](./PRIVATE-CONSOLE-ACCESS.md).
+- This is only defense-in-depth against casual discovery. It does not replace Supabase Auth, server-side admin authorization, or RLS. Route-by-route mutation checks and staging non-admin tests remain release blockers.
+- No database, Auth settings, DNS, production deployment, or merge action was performed.
