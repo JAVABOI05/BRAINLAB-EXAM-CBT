@@ -19,7 +19,7 @@ export default function CoursesPage() {
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
           <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-amber-900">Future direction</span>
           <h1 className="mt-5 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl">Learning that can take you beyond the exam.</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">BrainLab Academy's longer-term direction includes learning resources, structured courses and practical projects that help learners apply what they know. This page outlines the direction; it does not advertise a live course catalogue or claim that certificates are currently offered.</p>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">The longer-term direction for BrainLab Academy includes learning resources, structured courses and practical projects that help learners apply what they know. This page outlines the direction; it does not advertise a live course catalogue or claim that certificates are currently offered.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/login" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] px-6 py-3 font-bold text-white hover:bg-[#0a2f72]">Explore CBT practice</Link><Link href="/learning/revision" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 font-bold text-slate-800 hover:border-slate-500">Plan your revision</Link></div>
         </div>
       </section>
