@@ -16,12 +16,16 @@ export default function BrandFooter() {
         <div>
           <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-white">Explore</h2>
           <ul className="mt-4 space-y-3 text-sm text-slate-300">
+            <li><Link className="hover:text-white" href="/explore">Explore all pages</Link></li>
+            <li><Link className="hover:text-white" href="/cbt">CBT and exam practice</Link></li>
             <li><Link className="hover:text-white" href="/login">CBT Practice</Link></li>
             <li><Link className="hover:text-white" href="/#learning-paths">Learning pathways</Link></li>
             <li><Link className="hover:text-white" href="/ai-learning">AI learning companion</Link></li>
             <li><Link className="hover:text-white" href="/courses">Courses and resources</Link></li>
             <li><Link className="hover:text-white" href="/community">Learning community</Link></li>
             <li><Link className="hover:text-white" href="/#future-learning">Future learning roadmap</Link></li>
+            <li><Link className="hover:text-white" href="/resources">Learning resources</Link></li>
+            <li><Link className="hover:text-white" href="/schools">For schools</Link></li>
             <li><Link className="hover:text-white" href="/about">About BrainLab</Link></li>
           </ul>
         </div>
@@ -30,6 +34,10 @@ export default function BrandFooter() {
           <ul className="mt-4 space-y-3 text-sm text-slate-300">
             <li><Link className="hover:text-white" href="/login">Open CBT portal</Link></li>
             <li><Link className="hover:text-white" href="/support">Help and FAQs</Link></li>
+            <li><Link className="hover:text-white" href="/contact">Contact</Link></li>
+            <li><Link className="hover:text-white" href="/faq">Full FAQ centre</Link></li>
+            <li><Link className="hover:text-white" href="/privacy">Privacy notice</Link></li>
+            <li><Link className="hover:text-white" href="/terms">Terms of use</Link></li>
             <li><a className="hover:text-white" href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m" target="_blank" rel="noreferrer">WhatsApp updates channel</a></li>
           </ul>
           <p className="mt-4 text-xs leading-5 text-slate-400">Official contact and policy pages will be added when verified and ready.</p>
