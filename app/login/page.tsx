@@ -50,14 +50,12 @@ export default function Page() {
       })
     );
 
-    const { data, error } = await supabase
-      .from("exam_config")
-      .select("config_value")
-      .eq("config_key", "access_code_required")
-      .single();
-
+    const { data, error } = await supabase.rpc("get_public_settings");
+    const settings = data as { access_code_required?: unknown } | null;
+    const settingValue = settings?.access_code_required;
+    // Fail closed: require an access code if settings cannot be read.
     const accessCodeRequired =
-      !error && data ? Boolean(data.config_value) : true;
+      !error && (settingValue === true || settingValue === "true");
 
     setStarting(false);
 
