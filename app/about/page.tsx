@@ -30,7 +30,7 @@ export default function AboutPage() {
       <section className="mx-auto grid max-w-7xl gap-5 px-5 py-14 sm:px-8 md:grid-cols-2 lg:py-20">
         <article className="rounded-3xl bg-[#012153] p-7 text-white sm:p-9">
           <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-200">Our vision</p>
-          <h2 className="mt-4 text-2xl font-extrabold leading-snug sm:text-3xl">To become Africa's most trusted and empowering intelligent learning ecosystem, helping every learner access knowledge, develop their potential and build the skills needed for the future.</h2>
+          <h2 className="mt-4 text-2xl font-extrabold leading-snug sm:text-3xl">To become Africa&apos;s most trusted and empowering intelligent learning ecosystem, helping every learner access knowledge, develop their potential and build the skills needed for the future.</h2>
         </article>
         <article className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9">
           <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-800">Our mission</p>
