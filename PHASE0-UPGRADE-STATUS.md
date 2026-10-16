@@ -33,3 +33,14 @@
 - CI uses placeholder public Supabase values only; do not use these values for real user sessions.
 - Do not merge until the local security hardening is reconciled and staging regression tests pass.
 - Obtain explicit founder approval before production deployment.
+
+## Learner revision planner — first implementation (2026-10-16)
+
+- Added `/learning/revision`, an authenticated, browser-local revision planner.
+- Learners can set a goal, choose a plan length and daily study time, add topics by subject, check off completed topics, remove tasks, and clear the plan.
+- Linked the planner from the account dashboard.
+- The first version stores plan data in the current browser/device only. It does not sync to the learner account, import exam results, infer weak topics, or make AI recommendations. These are explicit limitations, not claims of completed personalization.
+- No database schema, exam lifecycle, scoring, answer-key, or production data changes were made for this feature.
+- The latest Vercel preview status was still pending when checked; no successful preview or local/staging test is claimed.
+- Next implementation stages: run latest CI/build, perform staging regression for CBT/auth, then plan account-linked progress using verified server data before introducing AI or community features.
+
