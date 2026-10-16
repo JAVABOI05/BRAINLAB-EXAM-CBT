@@ -27,6 +27,14 @@ export default function LearnerDashboardPage() {
   }, [router]);
 
   async function signOut() {
+    try {
+      await fetch("/api/auth/operator-gate", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      // Complete account sign-out even if gate-cookie cleanup fails.
+    }
     await supabase.auth.signOut();
     router.replace("/account");
   }
