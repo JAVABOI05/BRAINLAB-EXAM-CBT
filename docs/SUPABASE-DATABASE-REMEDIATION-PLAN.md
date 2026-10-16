@@ -266,3 +266,25 @@ A second compatibility finding: the current application wrapper `app/lib/examApi
 ### Immediate containment decision
 
 No automated policy changes have been applied because the application currently expects server-side exam RPCs that are present in staging but were not found in the production catalog query. Removing broad direct-table access before verifying the live production app and RPCs could break candidate exam operations. Conversely, leaving the current permissions unchanged maintains serious exposure risk. Treat this as an urgent human-reviewed containment/release gate: confirm which Supabase project the live deployment uses, preserve current definitions/grants, prepare a staging-tested migration that moves the live app to validated RPC-only access, and schedule a coordinated production rollout. Do not ship new app code to production until project alignment and CBT regression are confirmed.
+
+
+### Additional critical finding: unauthenticated privileged RPCs in production
+
+The production catalog confirms that `anon` has `EXECUTE` on several `SECURITY DEFINER` functions. Two functions are especially urgent:
+
+- `public.clear_all_results()`: definition directly deletes all rows from `public.results` and returns the number deleted. It contains no admin guard. `anon` can execute it according to `has_function_privilege`.
+- `public.set_master_access_code(new_code text)`: definition writes the master code to `exam_config` and inserts/updates it in `access_codes`; it contains no admin guard. `anon` can execute it according to `has_function_privilege`.
+
+The legacy `public.validate_and_use_access_code(input_code, input_phone, input_subject)` is also a `SECURITY DEFINER` function executable by `anon` in production and performs access-code validation/consumption; review its intended public use and race/attempt controls. The trigger function `protect_master_code_from_being_used()` being executable is not equivalent to it being an RPC risk, because trigger functions are normally invoked by triggers; confirm direct execute grants and dependencies during cleanup.
+
+These findings represent **potential direct data-loss and exam-control compromise**, not proof that the functions have been called. Do not invoke these functions as a test.
+
+**Why no immediate revoke was applied:** the current production schema is a legacy shape and the repository's current admin UI uses direct table operations plus these older RPCs, while the staging schema/app branch uses a newer Auth/profile and exam-RPC model. A one-line revoke could disable live admin controls; merely granting the functions to `authenticated` would still be unsafe unless their bodies verify admin authorization. This needs a coordinated, tested containment change—not an isolated permission tweak.
+
+### Recommended containment patch design (not executed)
+
+1. Prepare a versioned, reviewed migration that first changes `clear_all_results()` and `set_master_access_code()` to require a verified server-side admin identity (or makes them callable only through a trusted server-side admin route) and revokes direct `PUBLIC`/`anon` execution. Do not grant either function to all authenticated users.
+2. If the live legacy admin frontend cannot authenticate using the new database-side admin model, disable those RPCs from public callers and move the corresponding UI operations to a properly authenticated admin path before re-enabling them. Never use localStorage as the authorization check.
+3. Restrict direct table grants/policies for sensitive tables only after each current frontend operation is moved to a safe RPC/server-side path or given an equivalent narrow admin-only RLS policy.
+4. Coordinate with the live deployment. The current repository's expected RPCs are not all present in production, so deploying this branch to production without schema reconciliation is not safe.
+5. Test in staging with both anonymous and authenticated non-admin roles. Confirm the destructive RPCs fail for both, succeed only for a legitimate admin, and the candidate exam flow remains intact.
