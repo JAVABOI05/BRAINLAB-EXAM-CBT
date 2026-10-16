@@ -69,6 +69,12 @@ export default function AccessPage() {
       return;
     }
 
+    if (result.type === "none") {
+      setErrorText("Invalid access code or phone number. Please check your details and try again.");
+      setLoading(false);
+      return;
+    }
+
     localStorage.setItem("access_code", normalizedCode);
 
     const savedCandidate = localStorage.getItem("candidate");
