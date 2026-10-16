@@ -21,13 +21,6 @@ const missions: { id: MissionType; title: string; verb: string; description: str
   { id: "teach", title: "Teach it back", verb: "Prove it in your own words", description: "Explain the idea without copying a definition. If a step is hard to explain, that is a useful next clue.", mark: "◎" },
 ];
 
-const mapNodes = [
-  { id: "foundation", label: "Foundation", sub: "What must I know first?", kind: "base" },
-  { id: "concept", label: "Core concept", sub: "What is the main idea?", kind: "focus" },
-  { id: "method", label: "Method", sub: "How do I use it?", kind: "next" },
-  { id: "transfer", label: "Apply & explain", sub: "Can I use it independently?", kind: "next" },
-];
-
 export default function LearningLabPage() {
   const [intent, setIntent] = useState<LearningIntent>("understand");
   const [mission, setMission] = useState<MissionType>("decode");
