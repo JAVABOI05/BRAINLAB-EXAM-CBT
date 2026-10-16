@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../lib/supabase";
-
-type ValidateAccessResponse = {
-  ok?: boolean;
-  type?: "master" | "normal";
-  message?: string;
-};
+import { checkAccessCode, getPublicSettings, isError } from "../lib/examApi";
 
 export default function AccessPage() {
   const router = useRouter();
@@ -23,24 +17,18 @@ export default function AccessPage() {
 
   useEffect(() => {
     async function loadSettings() {
-      const [{ data: mockData }, { data: accessData }] = await Promise.all([
-        supabase.from("settings").select("value").eq("key", "mock_enabled").single(),
-        supabase
-          .from("exam_config")
-          .select("config_value")
-          .eq("config_key", "access_code_required")
-          .single(),
-      ]);
+      const settings = await getPublicSettings();
 
-      const mockOn = mockData?.value === true || mockData?.value === "true";
+      if (!settings) {
+        setErrorText("Could not load exam settings. Please refresh the page.");
+        setPageLoading(false);
+        return;
+      }
 
-      const accessRequired =
-        accessData?.config_value === true || accessData?.config_value === "true";
+      setMockEnabled(settings.mock_enabled);
+      setAccessCodeRequired(settings.access_code_required);
 
-      setMockEnabled(mockOn);
-      setAccessCodeRequired(accessRequired);
-
-      if (!accessRequired) {
+      if (!settings.access_code_required) {
         router.push("/instructions");
         return;
       }
@@ -73,21 +61,9 @@ export default function AccessPage() {
     const normalizedCode = code.trim().toUpperCase();
     const trimmedPhone = phone.trim();
 
-    const { data, error } = await supabase.rpc("validate_and_use_access_code", {
-      input_code: normalizedCode,
-      input_phone: trimmedPhone,
-      input_subject: "",
-    });
+    const result = await checkAccessCode(normalizedCode, trimmedPhone);
 
-    if (error) {
-      setErrorText(error.message || "Could not validate access code.");
-      setLoading(false);
-      return;
-    }
-
-    const result = (data || {}) as ValidateAccessResponse;
-
-    if (!result.ok) {
+    if (isError(result)) {
       setErrorText(result.message || "Invalid access code.");
       setLoading(false);
       return;
@@ -106,7 +82,7 @@ export default function AccessPage() {
             ...parsed,
             code: normalizedCode,
             phone: trimmedPhone,
-            access_type: result.type || "normal",
+            access_type: result.type === "master" ? "master" : "normal",
           })
         );
       } catch {
