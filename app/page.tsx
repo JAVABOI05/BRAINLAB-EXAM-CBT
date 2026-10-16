@@ -135,7 +135,7 @@ export default function HomePage() {
           <div className="max-w-2xl">
             <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-800">The BrainLab difference</p>
             <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">A stronger learning loop—not just a score.</h2>
-            <p className="mt-4 leading-7 text-slate-600">Assessment can help a learner decide what to do next. BrainLab's long-term direction is to connect each step into a useful, supportive experience.</p>
+            <p className="mt-4 leading-7 text-slate-600">Assessment can help a learner decide what to do next. BrainLab&apos;s long-term direction is to connect each step into a useful, supportive experience.</p>
           </div>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {pillars.map((pillar) => (
@@ -153,7 +153,7 @@ export default function HomePage() {
         <div>
           <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-800">Assessment and exam preparation</p>
           <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Prepare with purpose. Improve with every attempt.</h2>
-          <p className="mt-5 leading-8 text-slate-600">Use the existing BrainLab CBT portal to enter supported practice sessions. Follow the instructions and access requirements shown for your exam. Results and corrections are available according to the platform's current settings.</p>
+          <p className="mt-5 leading-8 text-slate-600">Use the existing BrainLab CBT portal to enter supported practice sessions. Follow the instructions and access requirements shown for your exam. Results and corrections are available according to the platform&apos;s current settings.</p>
           <ul className="mt-6 space-y-3 text-sm leading-6 text-slate-700">
             <li className="flex gap-3"><span className="mt-0.5 font-black text-emerald-700">✓</span><span>Access the current CBT candidate flow.</span></li>
             <li className="flex gap-3"><span className="mt-0.5 font-black text-emerald-700">✓</span><span>Choose from the subjects presented by the existing portal.</span></li>
@@ -188,7 +188,7 @@ export default function HomePage() {
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-200">The future ecosystem</p>
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">More ways to learn, when they are ready.</h2>
-              <p className="mt-5 leading-8 text-slate-300">BrainLab's ambition extends beyond examinations. Each capability will be designed, tested and introduced in stages—without presenting a roadmap as an existing product.</p>
+              <p className="mt-5 leading-8 text-slate-300">BrainLab&apos;s ambition extends beyond examinations. Each capability will be designed, tested and introduced in stages—without presenting a roadmap as an existing product.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
