@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getPublicSettings, isError, lookupResult } from "../lib/examApi";
+import { getPublicSettings, isError, lookupResult as fetchLookup } from "../lib/examApi";
 
 type Candidate = {
   name: string;
@@ -69,7 +69,7 @@ export default function ResultPage() {
     if (!phone) { setLookupError("Please enter your phone number."); setLookupResult(null); return; }
     if (codeRequired && !code) { setLookupError("Please enter the access code you used for the exam."); setLookupResult(null); return; }
     setLookupLoading(true); setLookupError(""); setLookupResult(null);
-    const res = await lookupResult(phone, codeRequired ? code : "");
+    const res = await fetchLookup(phone, codeRequired ? code : "");
     setLookupLoading(false);
     if (isError(res)) { setLookupError(res.message); return; }
     setLookupResult(res);
