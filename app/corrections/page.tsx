@@ -4,6 +4,7 @@ import "./corrections.css";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getPublicSettings } from "../lib/examApi";
 
 type ResultItem = {
   id: string | number;
@@ -40,33 +41,43 @@ export default function CorrectionsPage() {
   const [activeSubject, setActiveSubject] = useState("All");
 
   useEffect(() => {
-    const savedCandidate = localStorage.getItem("candidate");
-    const savedResults =
-      localStorage.getItem("exam_result") ||
-      localStorage.getItem("examResult");
-
-    if (!savedResults) {
-      router.push("/result");
-      return;
-    }
-
-    try {
-      if (savedCandidate) {
-        setCandidate(JSON.parse(savedCandidate) as Candidate);
-      }
-
-      const parsedResults = JSON.parse(savedResults);
-
-      if (!Array.isArray(parsedResults)) {
-        router.push("/result");
+    async function loadReleasedCorrections() {
+      // Never trust cached review data as proof that results are currently released.
+      const settings = await getPublicSettings();
+      if (!settings?.show_results) {
+        router.replace("/result");
         return;
       }
 
-      setResults(parsedResults as ResultItem[]);
-      setLoading(false);
-    } catch {
-      router.push("/result");
+      const savedCandidate = localStorage.getItem("candidate");
+      const savedResults =
+        localStorage.getItem("exam_result") ||
+        localStorage.getItem("examResult");
+
+      if (!savedResults) {
+        router.replace("/result");
+        return;
+      }
+
+      try {
+        if (savedCandidate) {
+          setCandidate(JSON.parse(savedCandidate) as Candidate);
+        }
+
+        const parsedResults = JSON.parse(savedResults);
+        if (!Array.isArray(parsedResults)) {
+          router.replace("/result");
+          return;
+        }
+
+        setResults(parsedResults as ResultItem[]);
+        setLoading(false);
+      } catch {
+        router.replace("/result");
+      }
     }
+
+    void loadReleasedCorrections();
   }, [router]);
 
   const summary = useMemo(() => {
