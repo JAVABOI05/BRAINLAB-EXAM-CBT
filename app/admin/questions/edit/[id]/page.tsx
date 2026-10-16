@@ -33,16 +33,6 @@ export default function EditQuestionPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const savedAdmin = localStorage.getItem("admin_user");
-    if (!savedAdmin) {
-      router.push("/admin/login");
-      return;
-    }
-
-    loadQuestion();
-  }, [router]);
-
   async function loadQuestion() {
     setLoading(true);
 
@@ -61,6 +51,18 @@ export default function EditQuestionPage() {
     setQuestion(data as QuestionRow);
     setLoading(false);
   }
+
+  useEffect(() => {
+    const savedAdmin = localStorage.getItem("admin_user");
+    if (!savedAdmin) {
+      router.push("/admin/login");
+      return;
+    }
+
+    loadQuestion();
+  }, [router]);
+
+
 
   async function handleSave() {
     if (!question) return;
