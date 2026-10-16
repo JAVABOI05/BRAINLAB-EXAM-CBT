@@ -49,17 +49,23 @@ export default function CorrectionsPage() {
         return;
       }
 
+      const savedSummary = localStorage.getItem("exam_summary");
       const savedCandidate = localStorage.getItem("candidate");
       const savedResults =
         localStorage.getItem("exam_result") ||
         localStorage.getItem("examResult");
 
-      if (!savedResults) {
+      if (!savedResults || !savedSummary) {
         router.replace("/result");
         return;
       }
 
       try {
+        const parsedSummary = JSON.parse(savedSummary) as { result_id?: unknown; show_results?: unknown };
+        if (typeof parsedSummary.result_id !== "string" || parsedSummary.show_results !== true) {
+          router.replace("/result");
+          return;
+        }
         if (savedCandidate) {
           setCandidate(JSON.parse(savedCandidate) as Candidate);
         }
