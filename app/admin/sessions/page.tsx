@@ -38,23 +38,6 @@ export default function AdminSessionsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [autoOnly, setAutoOnly] = useState(false);
 
-  useEffect(() => {
-    const savedAdmin = localStorage.getItem("admin_user");
-
-    if (!savedAdmin) {
-      router.push("/admin/login");
-      return;
-    }
-
-    try {
-      setAdminUser(JSON.parse(savedAdmin) as AdminUser);
-      loadSessions();
-    } catch {
-      localStorage.removeItem("admin_user");
-      router.push("/admin/login");
-    }
-  }, [router]);
-
   async function loadSessions() {
     setLoading(true);
     setMessage("");
@@ -73,6 +56,25 @@ export default function AdminSessionsPage() {
     setSessions((data || []) as SessionRow[]);
     setLoading(false);
   }
+
+  useEffect(() => {
+    const savedAdmin = localStorage.getItem("admin_user");
+
+    if (!savedAdmin) {
+      router.push("/admin/login");
+      return;
+    }
+
+    try {
+      setAdminUser(JSON.parse(savedAdmin) as AdminUser);
+      loadSessions();
+    } catch {
+      localStorage.removeItem("admin_user");
+      router.push("/admin/login");
+    }
+  }, [router]);
+
+
 
   function handleLogout() {
     localStorage.removeItem("admin_user");
