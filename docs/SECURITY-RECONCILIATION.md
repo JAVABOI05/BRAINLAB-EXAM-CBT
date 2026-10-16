@@ -47,3 +47,19 @@ These are staging observations only. They do not prove that production has the s
 ## Operational boundary
 
 No production database, schema, DNS, merge, or deployment action is authorized. This branch remains a review build.
+
+
+## Additional staging advisor review (read-only)
+
+The Supabase security advisor reported the following items in staging on 2026-10-16:
+
+- **RLS enabled with no policy (INFO):** `access_attempts`, `admin_profiles`, `admin_users`, and `phase0_backup`. Direct client access is therefore blocked by default. This appears intentional for sensitive/internal tables, but should be confirmed against the intended access model rather than adding broad policies just to silence the notice.
+- **Mutable search path (WARN):** 14 functions were reported, including small internal helpers (`_err`, `_clean_answers`, `_seconds_left`) and legacy functions. Several legacy functions were not executable by `anon` or `authenticated` in the privilege check. Review the complete function list before preparing a migration; do not change grants blindly.
+- **Publicly executable SECURITY DEFINER functions (WARN):** the exam RPCs, access-code validation, public settings, leaderboard, and result lookup are callable by anonymous users. This is expected for parts of the candidate flow, but each public function must remain narrowly scoped, rate-limited where appropriate, and safe for untrusted input. Admin mutation functions inspected use `_require_admin()`, which checks `is_admin()`; this still needs a dedicated non-admin regression test.
+- **Leaked-password protection (WARN):** Supabase Auth leaked-password protection is disabled in staging. This is a dashboard/auth configuration item, not changed by this repository branch.
+
+No advisor remediation or database changes were applied. Production has not been inspected or changed as part of this check.
+
+## Latest code quality check
+
+GitHub Actions run [38908932276](https://github.com/brainlabtutorials-gif/BRAINLAB-EXAM-CBT/actions/runs/38908932276) passed ESLint, TypeScript, and the production build for commit `bf45d28bc047a63bc70b396136a3700b085ad6c5`. Later documentation-only changes will trigger CI again; the current branch head must still be checked before release.
