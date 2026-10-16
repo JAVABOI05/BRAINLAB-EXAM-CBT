@@ -139,3 +139,13 @@ A read-only `pg_get_functiondef` inspection was completed for the three publicly
 All three function definitions set `search_path` to `public, pg_temp`, which is preferable to an uncontrolled search path but does not resolve the over-broad public API surface. No function was invoked, no access-code rows were read, and no production policy, grant, function, or data was changed.
 
 **Priority:** plan and verify the `access_codes` table grants/policies and these function grants together. Do not simply revoke every candidate-facing function until the replacement `check_access_code`/`start_exam` flow is confirmed and regression-tested in staging.
+
+## Staging candidate RPC body spot-check — 2026-10-16
+
+Read-only function-definition inspection of staging `check_access_code`, `start_exam`, and `lookup_result` found:
+
+- `check_access_code` checks the exam-enabled setting, access-code-required setting, input presence, and a phone-based throttling helper; it checks the master code and otherwise looks up the candidate code. It logs failed attempts. It is SECURITY DEFINER and publicly executable, so helper behavior and function-level rate-limit robustness are part of the security boundary.
+- `start_exam` validates name/phone and restricts elective to Biology or Mathematics; checks the exam-enabled setting; checks access code and throttling; locks a normal code row; resumes a matching active attempt before creating a new one; builds the paper server-side; and consumes a normal code when starting. The `EXCEPTION WHEN OTHERS` handler currently returns `sqlerrm` in the `paper_unavailable` response. **Recommendation:** change this to a generic public error and retain detailed diagnostics only in server-side logs, so database/internal error details are not exposed to candidates. This should be prepared and tested as a staging migration, not patched directly in production.
+- `lookup_result` checks the result-release setting, requires phone and access code, applies the phone throttle, and matches both against the session before returning a result summary. It logs failed lookups. Confirm the throttle cannot be bypassed by rotating phone values and that the release toggle is enforced after submission.
+
+This is a targeted source-definition review, not proof that all helper functions or flows are secure. The staging DB was not modified, and no candidate attempts were created or submitted during the inspection.
