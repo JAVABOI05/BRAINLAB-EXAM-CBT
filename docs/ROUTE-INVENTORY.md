@@ -18,7 +18,7 @@
 ## Known administrative routes
 
 - `/admin` — now redirects to `/admin/dashboard` so the legacy root settings UI is not rendered.
-- `/admin/login`
+- Private operator entry: a configured one-segment path supplied by server-only environment variables; no literal path is committed to the repository. Direct `/admin/login` access returns 404 unless the browser first passes through the private entry gate.
 - `/admin/dashboard`
 - `/admin/codes`
 - `/admin/config`
