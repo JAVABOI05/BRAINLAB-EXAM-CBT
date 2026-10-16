@@ -93,7 +93,7 @@ export default function AccessPage() {
             phone: trimmedPhone,
             subject: "",
             code: normalizedCode,
-            access_type: result.type || "normal",
+            access_type: result.type === "master" ? "master" : "normal",
           })
         );
       }
@@ -105,7 +105,7 @@ export default function AccessPage() {
           phone: trimmedPhone,
           subject: "",
           code: normalizedCode,
-          access_type: result.type || "normal",
+          access_type: result.type === "master" ? "master" : "normal",
         })
       );
     }
