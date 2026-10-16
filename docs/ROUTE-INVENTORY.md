@@ -6,14 +6,14 @@
 
 | Route | Observed purpose | Review notes |
 |---|---|---|
-| `/` | Legacy CBT portal/home | Existing candidate entry, support links, result lookup and leaderboard. Planned to become the public Academy landing page only after preserving the current CBT entry flow at `/login`. |
+| `/` | Legacy CBT portal/home | Existing candidate entry, support links, result lookup and leaderboard. Replaced by the public Academy landing page on this branch. |
 | `/access` | Access-code entry | Review direct table calls and server-side validation before release. |
 | `/exam` | Timed examination | Critical path; do not redesign logic as part of a visual-only change. |
 | `/result` | Result display/lookup | Must respect result-release settings and candidate ownership. |
 | `/corrections` | Answer corrections | Must not reveal answer keys/explanations before release is permitted. |
 | `/instructions` | Exam instructions | Confirm exact route and behavior in the complete route tree before release. |
-| `/login` | Planned preserved CBT portal route | Must be created/verified when the public homepage takes over `/`. |
-| `/about` | Planned public About page | Static approved brand content; no learner data. |
+| `/login` | Preserved CBT candidate entry route | Created on this branch from the former homepage; uses the public-settings RPC, but the complete exam flow still needs security reconciliation and staging regression. |
+| `/about` | Implemented public About page | Contains the proposed vision, mission and values; subject to founder approval. |
 
 ## Known administrative routes
 
