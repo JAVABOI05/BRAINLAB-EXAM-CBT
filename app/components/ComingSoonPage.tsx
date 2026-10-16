@@ -10,6 +10,7 @@ type ComingSoonPageProps = {
   description: string;
   category?: string;
   requiresAuth?: boolean;
+  requiresAdmin?: boolean;
   nextSteps?: { label: string; href: string }[];
 };
 
@@ -18,13 +19,14 @@ export default function ComingSoonPage({
   description,
   category = "Academy roadmap",
   requiresAuth = false,
+  requiresAdmin = false,
   nextSteps = [],
 }: ComingSoonPageProps) {
   const router = useRouter();
-  const [checking, setChecking] = useState(requiresAuth);
+  const [checking, setChecking] = useState(requiresAuth || requiresAdmin);
 
   useEffect(() => {
-    if (!requiresAuth) return;
+    if (!requiresAuth && !requiresAdmin) return;
     let active = true;
     async function verifySession() {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -33,11 +35,19 @@ export default function ComingSoonPage({
         router.replace("/account");
         return;
       }
+      if (requiresAdmin) {
+        const { data: isAdmin, error: permissionError } = await supabase.rpc("is_admin");
+        if (!active) return;
+        if (permissionError || isAdmin !== true) {
+          router.replace("/account");
+          return;
+        }
+      }
       setChecking(false);
     }
     void verifySession();
     return () => { active = false; };
-  }, [requiresAuth, router]);
+  }, [requiresAuth, requiresAdmin, router]);
 
   if (checking) {
     return <main id="main" className="mx-auto min-h-[60vh] max-w-5xl px-5 py-16"><p className="text-slate-600">Checking your BrainLab account…</p></main>;
@@ -48,6 +58,7 @@ export default function ComingSoonPage({
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
           <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-amber-900">Coming soon</span>
+          {requiresAdmin && <p className="mt-3 text-xs font-semibold text-slate-500">Admin workspace placeholder — no administrative data is shown here.</p>}
           <p className="mt-6 text-sm font-extrabold uppercase tracking-[0.14em] text-blue-800">{category}</p>
           <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl">{title}</h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">{description}</p>
