@@ -85,3 +85,12 @@
 
 - Added admin workspace placeholders at `/admin/users`, `/admin/content`, `/admin/moderation`, `/admin/analytics` and `/admin/security`. They display no administrative records and are marked Coming Soon. The client-side `is_admin()` check is a UX gate only; real admin data/actions remain blocked until server-side authorization and RLS are verified.
 - Latest Vercel status responses link to a build-rate-limit/upgrade page. This does not establish whether the application code builds successfully; CI/build verification remains unresolved and should be retried when the deployment quota permits.
+
+
+## Supabase database remediation plan (2026-10-16)
+
+- Added [`docs/SUPABASE-DATABASE-REMEDIATION-PLAN.md`](docs/SUPABASE-DATABASE-REMEDIATION-PLAN.md) with a prioritized P0–P5 plan, read-only SQL inventory queries, staging regression matrix, and proposed phased data model for account-linked revision planning and later Academy capabilities.
+- The repository root currently has no `supabase/` migration directory in the inspected branch. This is a reason to inventory the actual migration history and schema before creating executable migrations—not a reason to assume the database has no existing structure.
+- The plan distinguishes staging advisor findings from production facts and explicitly avoids blanket RLS changes, blanket RPC grant/revoke changes, speculative index drops, and automatic phone-based account matching.
+- No SQL was executed; no database tables, indexes, policies, functions, Auth settings or data were changed.
+- CI status for the documentation commit `88664d614974734a3562842e0e397d9c27fccac5` was pending at the last check. No successful build is claimed; recheck CI/Vercel before release.
