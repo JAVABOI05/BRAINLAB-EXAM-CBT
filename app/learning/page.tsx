@@ -141,7 +141,7 @@ export default function LearningLabPage() {
           <div>
             <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-800">Connected to your current tools</p>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">Start with what is available today.</h2>
-            <p className="mt-4 leading-7 text-slate-600">The broader Learning Lab will need verified topic data and reliable links between practice and learning evidence. Until those integrations are built and tested, use the current tools without assuming your activity automatically syncs between them.</p>
+            <p className="mt-4 leading-7 text-slate-600">The first staging audit found that the current Mathematics question rows are placeholders (for example, “Synthetic Mathematics objective question 1” with generic options), and their category is “synthetic.” They are not suitable for diagnosing understanding or generating a mastery map. Until a reviewed question set is mapped to real concepts, this page will not assign mastery levels or claim to identify a learner’s weaknesses. You can still use the mission planner and existing CBT entry point, but activity is not automatically synced between tools.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/login" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-2.5 font-bold text-white">CBT practice ↗</Link>
               <Link href="/learning/revision" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 font-bold text-slate-800">Revision planner ↗</Link>
