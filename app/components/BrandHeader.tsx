@@ -8,6 +8,8 @@ const links = [
   { href: "/#learning-paths", label: "Explore Learning" },
   { href: "/login", label: "CBT Practice" },
   { href: "/ai-learning", label: "AI Learning" },
+  { href: "/courses", label: "Courses" },
+  { href: "/community", label: "Community" },
   { href: "/about", label: "About" },
 ];
 
