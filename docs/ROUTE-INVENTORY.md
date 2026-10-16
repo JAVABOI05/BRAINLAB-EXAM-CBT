@@ -22,6 +22,7 @@
 | `/ai-learning` | AI learning companion overview | Explains intended future AI learning capability and safeguards; informational only, no AI tutor backend is implemented. |
 | `/courses` | Courses and resources overview | Describes future learning pathways; no live catalogue, course delivery or certificate claims. |
 | `/community` | Learning community overview | Describes planned moderated study groups; no live chat, member directory or messaging backend. |
+| `/support` | Help and FAQ page | Gives guidance for current CBT/account flows and clearly labels future features; uses existing WhatsApp support details. |
 
 ## Known administrative routes
 
