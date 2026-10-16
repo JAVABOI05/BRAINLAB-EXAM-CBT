@@ -206,3 +206,52 @@ These queries are an initial inventory, not a complete security audit. In partic
 6. Obtain explicit approval before any production migration or deployment.
 
 **Current action:** this document only. No database connection was used to run SQL, and no table, index, policy, function, Auth setting or data was changed.
+
+
+## Production read-only audit update — 2026-10-16
+
+A direct read-only inspection was subsequently performed against the connected production project `BrainLabCBT` (`bupkyppvtkrmzmluzjmf`) as well as staging. This expands the scope of evidence: the production findings below are confirmed from current catalog metadata and advisor output, not inferred from staging. No database changes were made.
+
+### Production findings requiring urgent remediation planning
+
+The production `public` schema currently has RLS enabled on the inspected tables, but several policies grant broad access. The policy catalog included public/anonymous `USING (true)` or `WITH CHECK (true)` policies for:
+- `results`: public read and write policies, including an all-operations policy.
+- `answers`: public read and insert policies.
+- `questions`: public read and insert policies.
+- `exam_sessions`: public read, insert and update policies.
+- `access_codes`: public read/update policies and an anonymous all-operations policy.
+- `admin_users`: public read policy.
+- `audit_logs` and `question_upload_logs`: public read/insert policies.
+- `exam_config`: public update policy.
+- `settings`: an anonymous all-operations policy is present in the advisor/catalog findings, alongside public read access.
+
+Treat these as **critical exposure candidates** because the tables contain or may contain exam answer keys, learner results, session/token/access-code data and internal admin/audit information. Catalog metadata establishes that the policies exist; the exact effective exposure also depends on table grants, API exposure settings, view grants and function paths. The correct next step is to verify effective privileges and all application call sites, then replace direct table access with the minimum safe candidate/admin interface. Do not claim that data has been accessed by an attacker based on policy metadata alone.
+
+Production advisor output also reports five public views flagged as security-definer views:
+- `access_code_summary_view`
+- `exam_config_view`
+- `exam_session_summary_view`
+- `subject_performance_view`
+- `leaderboard_view`
+
+The view definitions inspected show aggregate views over access codes, exam sessions and results; the leaderboard definition includes candidate name and phone. Before making any view invoker-secure or revoking access, verify which views the frontend/admin currently consumes, their grants and whether public leaderboard behavior is intended. A leaderboard should never expose phone numbers publicly. Prefer a purpose-built, privacy-minimizing view and deliberate grants/policies.
+
+The production function catalog also reports mutable search paths on functions, and at least two `SECURITY DEFINER` functions use `search_path=public`. Each function requires definition and grant review; do not make a global change or assume that every definer function can be changed to invoker without altering its behavior.
+
+### Recommended production response sequence
+
+1. **Preserve evidence and capture definitions/grants** for all policies, views, functions and table privileges before editing.
+2. Trace every direct Supabase client query in the repository and identify which operations currently depend on public table access.
+3. Create a staging-first security patch that restricts direct table access, retains only the intended public settings/questions needed by the current candidate UX, and routes stateful exam actions through validated RPCs/server-side code.
+4. Add regression tests for exam start/resume/save/submit, result lookup/release, corrections, access-code lifecycle, admin CRUD and unauthenticated/non-admin rejection.
+5. Apply and verify the patch in staging. Compare advisor output and inspect effective grants afterward.
+6. Only after staging passes, schedule production change with a backup/rollback plan and explicit production-change approval.
+
+Do **not** simply remove all `public` or `anon` policies in one transaction. That could interrupt the live exam workflow while still failing to secure functions/views properly. Avoid selecting or printing any password values, access codes, candidate answers or personal result rows during further audit.
+
+### Current status
+
+- Read-only catalog and advisor inspection completed for production and staging.
+- No production or staging table, row, policy, grant, view, function, Auth setting or data changed.
+- Production security findings are higher priority than adding new Academy tables.
+- The staging migration list and production migration list both returned empty through the Supabase migration-list tool. This does not mean the database has no schema; it means the connected migration-history API did not report tracked migrations. The current schema may have been created/changed outside that tracked history. Establish an authoritative schema baseline before creating migrations.
