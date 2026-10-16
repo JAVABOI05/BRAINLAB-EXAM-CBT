@@ -64,3 +64,12 @@ No advisor remediation or database changes were applied. Production has not been
 ## Latest code quality check
 
 GitHub Actions run [38908932276](https://github.com/brainlabtutorials-gif/BRAINLAB-EXAM-CBT/actions/runs/38908932276) passed ESLint, TypeScript, and the production build for commit `bf45d28bc047a63bc70b396136a3700b085ad6c5`. Later documentation-only changes will trigger CI again; the current branch head must still be checked before release.
+
+
+## Follow-up route audit — 2026-10-16
+
+A source review of the current admin route files found that the legacy `/admin` page duplicated settings reads and writes without checking the Supabase Auth session in its UI. It has now been reduced to a redirect to `/admin/dashboard`, avoiding a second admin settings surface. This is defense-in-depth and UX cleanup, not the security boundary; database RLS and admin-gated RPCs must continue to deny unauthorized reads and writes.
+
+The other inspected admin pages use a localStorage `admin_user` hint for UI routing. That value is forgeable and must never be treated as authorization. The staging review observed admin-gated policies on the relevant tables and `_require_admin()` checks in inspected admin mutation RPCs, but a dedicated non-admin regression test and route-by-route review of every direct table mutation remain release blockers. Several routes still issue direct client table mutations, so their RLS policy coverage must be explicitly confirmed against the staging schema before release. The code audit alone does not establish that every route or database operation is secure.
+
+The current review branch CI must pass on the latest head after these changes. The preview deployment status is separate from GitHub Actions and is not approval to deploy or merge.
