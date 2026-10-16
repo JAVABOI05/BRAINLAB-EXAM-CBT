@@ -313,3 +313,17 @@ Critical remaining exposure: permissive policies and effective grants on legacy 
 4. Pin safe `search_path` values on reviewed functions and convert views to invoker security where supported and compatible.
 5. Run candidate and admin regression tests in staging, then verify advisors and grants again.
 6. Reconcile the production schema with tracked migrations before any larger schema deployment. The migration listing was empty, which is not proof that the database is empty.
+
+### Follow-up hardening applied — legacy access-code RPC
+
+The `validate_and_use_access_code(text,text,text)` function was updated in both production and staging after checking its legacy table schema. It now:
+
+- Rejects missing or overlong access-code, phone, and subject inputs.
+- Uses a fixed `search_path` including `pg_temp` last.
+- Locks the matching access-code row while validating it, checks the configured subject when the code has one, and conditionally consumes only an unused code.
+- Returns generic validation failures and never returns the configured master secret.
+- Preserves the legacy master-code acceptance behavior so this change does not intentionally remove the existing master-code flow.
+
+Catalog verification confirms the updated function is installed in both projects. Production advisors now report only this one anonymous SECURITY DEFINER RPC, because it is intentionally part of the legacy candidate flow. **This is partial containment, not a complete security fix:** the master-code bypass still exists by design for compatibility and should be replaced with a short-lived server-side authorization/session mechanism before launch. Do not expose or place the master code in browser code.
+
+The production security advisor still reports the five SECURITY DEFINER views, 12 functions with mutable search paths, and the legacy public table-policy/grant exposure described above. Those remain open remediation work; no data was deleted and no exam records were modified.
