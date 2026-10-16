@@ -25,7 +25,7 @@ export default function InstructionsPage() {
 
     try {
       const parsed = JSON.parse(saved) as Candidate;
-      setCandidate(parsed);
+      queueMicrotask(() => setCandidate(parsed));
     } catch {
       router.push("/");
     }
