@@ -14,11 +14,11 @@ function notFound() {
 }
 
 /**
- * Adds a private-entry gate in front of the existing admin UI.
+ * Adds a private-entry gate in front of the operator area.
  *
- * This is intentionally only defense in depth. Supabase Auth, server-side
- * checks, and database RLS must still authorize every protected operation.
- * Both environment values are server-only and must never use NEXT_PUBLIC_.
+ * The private entry opens the shared account portal. A verified operator
+ * session is separately required before the API issues the operator gate
+ * cookie. Database RLS remains the final authorization boundary.
  */
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -32,7 +32,7 @@ export function proxy(request: NextRequest) {
   // in a fresh browser. It is never hard-coded into the public source.
   if (privateEntryConfigured && pathname === `/${entryPath}`) {
     const destination = request.nextUrl.clone();
-    destination.pathname = "/admin/login";
+    destination.pathname = "/account";
     destination.search = "";
     const response = NextResponse.rewrite(destination);
     response.cookies.set(ENTRY_COOKIE, entryToken, {
