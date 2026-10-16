@@ -61,3 +61,10 @@
 - Added both pages to public header/footer navigation and updated the route inventory.
 - These are informational roadmap pages only. No course delivery, chat, messaging, member directory, new database tables, or community backend was introduced.
 - Latest Vercel preview must be checked and route rendering/build verified before calling these changes tested. Do not merge or deploy without explicit approval.
+
+## Public support page (2026-10-16)
+
+- Added `/support` with FAQs for the existing CBT entry, access codes, result availability, shared learner accounts and future capabilities.
+- Reused the existing WhatsApp support number already present in the CBT portal; no new contact address or social account was invented.
+- Added support links to the public header and footer and documented the route.
+- The page does not change exam result access, authentication, database policies or any production configuration.
