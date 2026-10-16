@@ -1,23 +1,28 @@
-# Phase 0 hardening upgrade — work in progress
+# BrainLab Academy upgrade — work in progress
 
 **Do not merge or deploy this branch yet.**
 
-This branch currently contains only the initial frontend scaffolding:
-- Supabase client reads public URL/key from environment variables.
-- Admin login uses Supabase Auth and checks the `is_admin` / `is_super_admin` RPCs.
-- Typed client wrappers for the Phase 0 exam RPCs.
-- `.env.example` documenting the required public environment variables.
+## Changes prepared on `feature/brainlab-academy-upgrade`
 
-## Remaining before this can be tested
-1. Port the rest of `frontend/phase0-frontend.patch` into the repository. The current exam, result, access, candidate login, and admin pages still contain legacy direct-table calls.
-2. Add and review the Phase 0 SQL migration files against the live production schema and staging schema. Do not execute Stage B/cleanup on production until the complete frontend is deployed and verified.
-3. Confirm the staging Auth admin identity, MFA, environment variables, and Vercel preview configuration.
-4. Run TypeScript, ESLint, production build, and the full manual exam/admin test checklist against staging.
-5. Confirm rollback steps and then request explicit production deployment approval.
+- Added a responsive Academy landing page with a prominent link to the existing CBT candidate portal.
+- Preserved the legacy candidate entry page at `/login` and removed its floating Medic Phoenix attribution.
+- Added an About page containing the proposed vision, mission and values.
+- Added shared public header/footer. The public chrome is suppressed on active exam and admin routes.
+- Added brand SVG assets, metadata and a GitHub Actions build workflow.
+- Added product blueprint, route inventory and phased implementation roadmap.
 
-## Database observations to reconcile
-The production project currently has legacy open policies and a legacy `trigger_insert_result` trigger. The production data audit also found 43 results without a session link and 7,580 answer rows with NULL question snapshot text. These must be handled carefully; do not delete or rewrite these records blindly.
+## Known release blockers
 
-Staging already has candidate-facing RPC functions and locked-down direct table privileges, but security-advisor findings remain. Review each finding in context rather than revoking all function access, because some anonymous RPC access is required for candidates.
+1. This branch started from the remote `phase0-hardening` branch, which is behind the founder's newer local security/brand changes.
+2. The original Phase 0 status indicates legacy direct-table calls remain in exam, result, access, candidate-login and admin workflows.
+3. The new public-site changes have not yet been tested in a real local/staging environment. GitHub Actions build status must be checked after the workflow runs.
+4. Footer/header behavior needs manual verification on `/`, `/about`, `/login`, `/access`, `/instructions`, `/result`, `/corrections`, `/exam` and admin routes.
+5. The approved production domain and canonical URL are not yet configured in this branch.
+6. Review and reconcile the staging migrations and security findings before release.
 
-No database schema or production data has been changed by this branch work.
+## Safety boundaries
+
+- No production database, schema, DNS, domain purchase or deployment action was performed.
+- CI uses placeholder public Supabase values only; do not use these values for real user sessions.
+- Do not merge until the local security hardening is reconciled and staging regression tests pass.
+- Obtain explicit founder approval before production deployment.
