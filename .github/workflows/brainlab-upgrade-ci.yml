@@ -1,6 +1,7 @@
 name: BrainLab upgrade CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - feature/brainlab-academy-upgrade
