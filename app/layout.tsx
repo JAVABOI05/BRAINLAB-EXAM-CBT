@@ -18,12 +18,14 @@ export const metadata: Metadata = {
     description:
       "Learn smarter, practise with purpose and grow beyond the exam.",
     type: "website",
+    images: ["/opengraph-image"],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "BrainLab Academy",
     description:
       "Learn smarter, practise with purpose and grow beyond the exam.",
+    images: ["/opengraph-image"],
   },
 };
 
