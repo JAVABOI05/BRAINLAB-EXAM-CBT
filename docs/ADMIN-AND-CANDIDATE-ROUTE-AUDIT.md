@@ -127,3 +127,15 @@ The legacy production functions `use_access_code(input_code text, candidate_phon
 ### Required next verification
 
 Before proposing any migration, inspect the full definitions of the three production legacy access-code functions and all callers. Prepare a staged, reversible migration that aligns grants and policies with intended callers, then verify both allowed candidate operations and denied unauthenticated/admin-only operations using staging test accounts. Do not copy staging schema blindly to production or apply this remediation without explicit approval.
+
+## Legacy production access-code function body review — 2026-10-16
+
+A read-only `pg_get_functiondef` inspection was completed for the three publicly executable legacy functions:
+
+- `use_access_code(input_code text, candidate_phone text)` directly updates `access_codes` to mark a matching unused code as consumed and sets `used_by` to the caller-supplied phone. The function is not SECURITY DEFINER, but the current production table ACL and unrestricted public UPDATE policy make the operation a serious candidate for unauthorized code consumption or `used_by` tampering. Validate effective role behavior with a controlled staging test before changing policy/grants.
+- `validate_access_code(input_code text)` returns the matching row's `id`, `code`, and `is_used`. It is not SECURITY DEFINER. The function body itself does not filter the returned fields; whether rows are visible is affected by the caller's RLS policy, so confirm effective behavior as anon rather than assuming the function is safe or exploitable from its definition alone.
+- `validate_and_use_access_code(input_code text, input_phone text, input_subject text)` is SECURITY DEFINER. It validates input lengths, checks the master code, locks a normal code row, checks use/subject, and marks normal codes consumed. It does not return the master code, but its public execution and privileged table access mean its full threat model—including master-code attempts, throttling, auditing, and concurrent use—must be tested.
+
+All three function definitions set `search_path` to `public, pg_temp`, which is preferable to an uncontrolled search path but does not resolve the over-broad public API surface. No function was invoked, no access-code rows were read, and no production policy, grant, function, or data was changed.
+
+**Priority:** plan and verify the `access_codes` table grants/policies and these function grants together. Do not simply revoke every candidate-facing function until the replacement `check_access_code`/`start_exam` flow is confirmed and regression-tested in staging.
