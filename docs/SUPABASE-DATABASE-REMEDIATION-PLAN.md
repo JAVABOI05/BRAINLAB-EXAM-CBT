@@ -342,3 +342,24 @@ A production migration named `restrict_legacy_security_definer_views` has now re
 **Compatibility note:** any frontend or admin screen that directly reads these views will now need a properly authorized replacement. This was a deliberate narrow containment measure because the configuration view could expose the master code and the leaderboard view exposed phone numbers. The live CBT flow has not been end-to-end tested after this permission change, so do not claim that all user journeys are verified.
 
 The fresh production security advisor no longer reports these five views as externally accessible SECURITY DEFINER view findings. Remaining advisor findings include 12 functions with mutable search paths and the legacy candidate-facing SECURITY DEFINER function `validate_and_use_access_code(text,text,text)`. Broad direct-table grants and permissive policies on sensitive legacy tables also remain urgent work. They require live-app/project alignment and regression testing before a coordinated restriction; this migration does not resolve those table-level exposures.
+
+
+### Follow-up containment: restrict legacy admin RPCs — 2026-10-16
+
+A further production function review found several legacy administrative RPCs were executable by `anon` and `authenticated`, even though they are not SECURITY DEFINER functions. Because production also has broad direct table privileges, these RPCs could still generate/export access codes or modify exam configuration when called by client roles.
+
+The production migration `restrict_legacy_admin_rpc_execution` revoked client execution on:
+- `export_fresh_access_codes(integer)`
+- `generate_access_codes(integer)`
+- `generate_blt_codes(integer)`
+- `get_unexported_codes(integer)`
+- `mark_codes_exported(uuid[])`
+- `reset_exam_config()`
+- `reset_used_access_codes_preserve_master()`
+- `update_exam_config(text,jsonb)`
+
+Verification confirmed `anon` and `authenticated` can no longer execute these functions, while `service_role` retains execution. Previously restricted `clear_all_results()`, `set_master_access_code(text)` and the trigger helper remain restricted. The candidate-facing `validate_and_use_access_code(text,text,text)` remains executable for legacy candidate compatibility and is still a security risk that requires a replacement design.
+
+**Compatibility warning:** legacy admin screens that call these RPCs directly may stop working until a trusted server-side admin path is wired up. This was preferred over leaving unauthenticated access-code generation/export and exam-config mutation callable from the public API. The live admin workflow has not been end-to-end tested after this permission change. The direct-table grants and policies remain a separate high-priority exposure and must be addressed in a coordinated, tested rollout.
+
+The fresh security advisor still reports 12 mutable-search-path functions. Their definitions are invoker functions or trigger helpers, not all privileged definer functions; review schema grants and function dependencies before pinning each path. No exam/result/access-code rows were deleted or modified by this migration.
