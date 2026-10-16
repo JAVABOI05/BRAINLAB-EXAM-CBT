@@ -111,6 +111,34 @@ export default function RevisionPlannerPage() {
     setTasks((current) => current.filter((task) => task.id !== id));
   }
 
+  function exportPlan() {
+    const lines = [
+      "BrainLab Academy — Revision Plan",
+      "",
+      `Goal: ${goal.trim() || "Your revision goal"}`,
+      `Plan length: ${days} ${days === 1 ? "day" : "days"}`,
+      `Daily study time: ${dailyMinutes} minutes`,
+      `Progress: ${completed} of ${tasks.length} topics complete`,
+      "",
+      "Topics:",
+      ...(tasks.length
+        ? tasks.map((task, index) =>
+            `${index + 1}. [${task.done ? "x" : " "}] ${task.topic} — ${task.subject} — ${task.minutes} minutes`)
+        : ["No topics added yet."]),
+      "",
+      "Saved locally by BrainLab Academy's revision planner.",
+    ];
+    const blob = new Blob([lines.join("\\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "brainlab-revision-plan.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function clearPlan() {
     if (!window.confirm("Clear this revision plan from this device?")) return;
     setTasks([]);
@@ -204,7 +232,10 @@ export default function RevisionPlannerPage() {
         )}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5">
           <p role="status" className="text-sm text-slate-500">{savedMessage}</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={exportPlan} className="min-h-10 rounded-xl border border-blue-200 px-4 py-2 text-sm font-bold text-blue-900 hover:bg-blue-50">Export plan (.txt)</button>
           <button type="button" onClick={clearPlan} disabled={tasks.length === 0 && goal === "Prepare confidently for my next exam" && days === 7 && dailyMinutes === 30} className="min-h-10 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Clear plan</button>
+          </div>
         </div>
       </section>
 
