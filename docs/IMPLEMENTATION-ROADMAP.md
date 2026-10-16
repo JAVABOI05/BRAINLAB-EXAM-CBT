@@ -59,3 +59,9 @@ Test only with a staging/test candidate:
 4. Public-site and CBT regression tests pass in staging.
 5. Backup, rollback and deployment plan reviewed.
 6. Explicit founder approval before production deployment.
+
+## Additional repository reproducibility gate — 2026-10-16
+
+A root-directory inventory of `feature/brainlab-academy-upgrade` shows there is currently no tracked `supabase/` directory or migration SQL in this branch, even though the candidate frontend depends on database functions present in staging. The live staging database therefore cannot be reproduced from this branch alone using committed migrations.
+
+Before a production rollout, create a reviewed, version-controlled migration set from the verified staging schema/functions/policies, with secrets and candidate data excluded. Review it for safe ordering, least-privilege grants, `SECURITY DEFINER` search paths, helper dependencies, and rollback/forward-fix strategy. Validate it against a disposable or refreshed staging database and run the CBT regression suite before considering production. Do not dump staging data or blindly copy the entire live schema, and do not apply migrations to production as part of this review.
