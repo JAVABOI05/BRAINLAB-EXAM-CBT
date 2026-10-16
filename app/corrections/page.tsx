@@ -51,9 +51,7 @@ export default function CorrectionsPage() {
 
       const savedSummary = localStorage.getItem("exam_summary");
       const savedCandidate = localStorage.getItem("candidate");
-      const savedResults =
-        localStorage.getItem("exam_result") ||
-        localStorage.getItem("examResult");
+      const savedResults = localStorage.getItem("exam_result");
 
       if (!savedResults || !savedSummary) {
         router.replace("/result");
