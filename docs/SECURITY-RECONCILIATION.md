@@ -10,6 +10,7 @@ This is a code and staging-schema review record, not a penetration-test report o
 - Scoring and result creation are now expected to be performed by the database RPC, not computed or inserted by the browser.
 - `/result` no longer inserts rows directly into `results` or `answers`, and no longer performs a phone-only direct table lookup. Lookup uses `lookup_result(p_phone, p_code)`.
 - `/corrections` checks the current public result-release setting, requires a result summary from the server submission response, and no longer accepts the legacy `examResult` cache key.
+- Admin login now stores a verified admin UI hint only after Supabase Auth and the `is_admin()` check succeed; logout clears that hint and signs out of Supabase Auth. The UI hint is not an authorization boundary—database RLS remains the enforcement layer.
 - CI now runs ESLint, TypeScript, and the production build.
 
 ## Read-only staging verification
@@ -53,7 +54,7 @@ No production database, schema, DNS, merge, or deployment action is authorized. 
 
 The Supabase security advisor reported the following items in staging on 2026-10-16:
 
-- **RLS enabled with no policy (INFO):** `access_attempts`, `admin_profiles`, `admin_users`, and `phase0_backup`. Direct client access is therefore blocked by default. This appears intentional for sensitive/internal tables, but should be confirmed against the intended access model rather than adding broad policies just to silence the notice.
+- **RLS enabled with no policy (INFO):** `access_attempts`, `admin_profiles`, `admin_users`, and `phase0_backup`. Direct client access is therefore blocked by default. This appears intentional for sensitive/internal tables, but should be confirmed against the intended access model rather than adding broad policies just to silence the notice. The legacy `admin_users` table includes a `password` column; its contents were not read. Confirm whether any legacy credentials remain and plan retirement only through an approved migration.
 - **Mutable search path (WARN):** 14 functions were reported, including small internal helpers (`_err`, `_clean_answers`, `_seconds_left`) and legacy functions. Several legacy functions were not executable by `anon` or `authenticated` in the privilege check. Review the complete function list before preparing a migration; do not change grants blindly.
 - **Publicly executable SECURITY DEFINER functions (WARN):** the exam RPCs, access-code validation, public settings, leaderboard, and result lookup are callable by anonymous users. This is expected for parts of the candidate flow, but each public function must remain narrowly scoped, rate-limited where appropriate, and safe for untrusted input. Admin mutation functions inspected use `_require_admin()`, which checks `is_admin()`; this still needs a dedicated non-admin regression test.
 - **Leaked-password protection (WARN):** Supabase Auth leaked-password protection is disabled in staging. This is a dashboard/auth configuration item, not changed by this repository branch.
