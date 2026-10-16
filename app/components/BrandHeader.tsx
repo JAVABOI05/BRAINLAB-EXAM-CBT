@@ -29,8 +29,8 @@ export default function BrandHeader() {
               {link.label}
             </Link>
           ))}
-          <Link href="/login" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#0a2f72] md:ml-2 md:mt-0">
-            Start Learning
+          <Link href="/account" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#0a2f72] md:ml-2 md:mt-0">
+            Sign in / Create account
           </Link>
         </nav>
       </div>
