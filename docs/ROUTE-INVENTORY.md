@@ -12,7 +12,12 @@
 | `/result` | Result display/lookup | Uses `lookup_result(p_phone, p_code)`; must respect result-release settings and candidate ownership. |
 | `/corrections` | Answer corrections | Checks live result-release setting and requires a server-provided result summary. |
 | `/instructions` | Exam instructions | Confirm exact route and behavior in the complete route tree before release. |
-| `/login` | CBT candidate entry | Preserved route for the existing candidate flow. |
+| `/login` | CBT candidate entry | Preserved legacy route for the existing candidate flow. It is not yet linked to account-based attempt history. |
+| `/account` | Shared sign-in/sign-up portal | Email/password, Google OAuth initiation, password reset; OAuth and email callback behavior still needs staging verification. |
+| `/auth/callback` | Auth callback | Exchanges PKCE code and routes based on database-backed operator status. |
+| `/auth/reset-password` | Password recovery | Updates password after recovery session verification. |
+| `/dashboard` | Learner account landing page | Basic authenticated landing page; account-to-CBT history linking is not implemented. |
+| `/api/auth/operator-gate` | Operator gate endpoint | Verifies Supabase Auth user and `is_admin()` before setting the private HttpOnly cookie. |
 | `/about` | Public About page | Contains proposed vision, mission and values; subject to founder approval. |
 
 ## Known administrative routes
