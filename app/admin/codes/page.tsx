@@ -1,5 +1,6 @@
 "use client";
 
+import { adminSignOut } from "../../lib/adminAuth";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -343,7 +344,7 @@ export default function AdminCodesPage() {
   }
 
   function handleLogout() {
-    localStorage.removeItem("admin_user");
+    void adminSignOut();
     router.push("/admin/login");
   }
 

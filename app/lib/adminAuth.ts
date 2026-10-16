@@ -45,8 +45,8 @@ export async function adminSignIn(
 }
 
 export async function adminSignOut(): Promise<void> {
-  await supabase.auth.signOut();
   if (typeof window !== "undefined") {
     window.localStorage.removeItem("admin_user");
   }
+  await supabase.auth.signOut();
 }
