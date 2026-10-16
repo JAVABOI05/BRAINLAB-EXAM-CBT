@@ -54,10 +54,16 @@ export default function LearnerDashboardPage() {
             <p className="mt-2 text-sm leading-6 text-slate-600">Continue to the existing exam portal and follow its access-code instructions.</p>
             <Link href="/login" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-4 py-2 text-sm font-bold text-white">Open CBT portal</Link>
           </article>
-          <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <article className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+            <div className="text-2xl" aria-hidden="true">✓</div>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">Revision planner</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Set a study goal, add topics and track your revision checklist. Your plan is saved in this browser on this device.</p>
+            <Link href="/learning/revision" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-4 py-2 text-sm font-bold text-white">Build a revision plan</Link>
+          </article>
+          <article className="rounded-2xl border border-slate-200 p-5">
             <div className="text-2xl" aria-hidden="true">↗</div>
-            <h2 className="mt-3 text-lg font-bold text-slate-950">What comes next</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Account-linked exam history, personalized revision and community tools will be connected in later implementation stages.</p>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">The wider Academy</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">AI learning support, account-linked progress and moderated community tools remain planned upgrades.</p>
             <Link href="/about" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800">Explore BrainLab</Link>
           </article>
         </div>
