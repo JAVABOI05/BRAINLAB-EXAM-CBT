@@ -68,3 +68,5 @@
 - Reused the existing WhatsApp support number already present in the CBT portal; no new contact address or social account was invented.
 - Added support links to the public header and footer and documented the route.
 - The page does not change exam result access, authentication, database policies or any production configuration.
+
+- Expanded the header's desktop navigation breakpoint so the additional page links collapse into the mobile menu on tablet-sized screens rather than crowding the header.
