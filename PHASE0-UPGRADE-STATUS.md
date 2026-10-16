@@ -70,3 +70,15 @@
 - The page does not change exam result access, authentication, database policies or any production configuration.
 
 - Expanded the header's desktop navigation breakpoint so the additional page links collapse into the mobile menu on tablet-sized screens rather than crowding the header.
+
+## Full Academy page skeleton (2026-10-16)
+
+- Added reusable `ComingSoonPage` component for clearly marked, non-functional future areas.
+- Added `/explore`, a directory that separates current tools from planned and policy-review pages.
+- Added Coming Soon route structure for CBT overview, resources, schools, contact, expanded FAQs, privacy notice and terms of use; legal pages are explicitly not complete legal documents.
+- Added learner-only placeholders for progress, achievements, courses, study groups, community discussions, messages, notifications, profile, settings, Skills Passport and Learning DNA. These check for a signed-in Supabase user before showing the placeholder, but do not contain or expose learner data.
+- Added public placeholders for Challenge Arena and Knowledge Base.
+- Updated public header/footer and learner dashboard so visitors can discover the structure and learners can see planned personal areas.
+- Updated route inventory. New admin URLs were deliberately not added because admin route-level authorization must be verified first; do not use obscurity as a security boundary.
+- No new database tables, RPCs, live AI provider, chat service, course delivery, production data or schema changes were introduced.
+- Vercel and CI checks must complete and the routes must be tested before the branch can be considered build-verified. This work is still unmerged and must not be deployed without explicit approval.
