@@ -19,11 +19,23 @@ export default function AccountPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  async function clearOperatorGate() {
+    try {
+      await fetch("/api/auth/operator-gate", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      // Permission checks remain fail-closed even if cleanup cannot complete.
+    }
+  }
+
   async function continueWithSession(session: Session) {
     setError("");
     const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
 
     if (permissionError) {
+      await clearOperatorGate();
       setError("We could not verify your account permissions. Please try again.");
       return;
     }
@@ -42,6 +54,7 @@ export default function AccountPage() {
       return;
     }
 
+    await clearOperatorGate();
     router.replace("/dashboard");
   }
 
