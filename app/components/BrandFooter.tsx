@@ -29,6 +29,7 @@ export default function BrandFooter() {
           <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-white">Help and updates</h2>
           <ul className="mt-4 space-y-3 text-sm text-slate-300">
             <li><Link className="hover:text-white" href="/login">Open CBT portal</Link></li>
+            <li><Link className="hover:text-white" href="/support">Help and FAQs</Link></li>
             <li><a className="hover:text-white" href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m" target="_blank" rel="noreferrer">WhatsApp updates channel</a></li>
           </ul>
           <p className="mt-4 text-xs leading-5 text-slate-400">Official contact and policy pages will be added when verified and ready.</p>
