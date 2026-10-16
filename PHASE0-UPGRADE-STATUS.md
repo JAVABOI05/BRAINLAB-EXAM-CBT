@@ -38,9 +38,10 @@
 
 - Added `/learning/revision`, an authenticated, browser-local revision planner.
 - Learners can set a goal, choose a plan length and daily study time, add topics by subject, check off completed topics, remove tasks, and clear the plan.
+- Added a plain-text export so learners can keep or print a copy of their plan; export is generated in the browser and does not upload plan data.
 - Linked the planner from the account dashboard.
 - The first version stores plan data in the current browser/device only. It does not sync to the learner account, import exam results, infer weak topics, or make AI recommendations. These are explicit limitations, not claims of completed personalization.
 - No database schema, exam lifecycle, scoring, answer-key, or production data changes were made for this feature.
-- The latest Vercel preview status was still pending when checked; no successful preview or local/staging test is claimed.
+- The revision-plan export change has been committed, but the latest Vercel preview/build must be checked again; no successful preview or local/staging test is claimed.
 - Next implementation stages: run latest CI/build, perform staging regression for CBT/auth, then plan account-linked progress using verified server data before introducing AI or community features.
 
