@@ -28,7 +28,9 @@ npm run build
 npm run dev
 ```
 
-Review the public landing page, About page, candidate portal at `/login`, access and instructions routes, result/corrections pages, active exam, and private console only after configuring its server-only entry values. Use a test candidate and staging data only.
+Review the public landing page, About page, shared account portal at `/account`, authentication callback at `/auth/callback`, password recovery at `/auth/reset-password`, learner dashboard at `/dashboard`, candidate CBT portal at `/login`, access and instructions routes, result/corrections pages, and active exam. Test the private operator console only after configuring its server-only entry values. Use a test candidate and staging data only.
+
+For account-flow testing, configure the Supabase Auth Site URL and allowed redirect URLs for the local or preview origin, including `/auth/callback` and `/auth/reset-password`. Enable the Google provider in Supabase Auth and configure its provider-side redirect URI as instructed by Supabase. Do not change production Auth settings for this review. The learner account is not yet linked to existing CBT attempt history; the dashboard states this limitation rather than implying that the linkage exists.
 
 ## Before any merge or deployment
 
