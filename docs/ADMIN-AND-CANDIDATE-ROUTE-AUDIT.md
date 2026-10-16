@@ -103,3 +103,27 @@ The catalog query returned public/anon/authenticated EXECUTE grants for these fu
 Some previously flagged configuration-management functions now showed explicit grants only to postgres/service_role in this catalog query. Therefore, treat current ACL output—not older notes—as the source of truth for each object and repeat the inventory immediately before any remediation.
 
 **Disposition:** production remains a no-go for the upgrade branch. This was a read-only catalog inspection only; no SQL writes, schema changes, Auth configuration changes, merges, or deployments were performed.
+
+## Staging-versus-production RPC contract matrix — 2026-10-16
+
+A second read-only comparison queried function signatures, return types, SECURITY DEFINER flags, and ACLs in both Supabase projects.
+
+| Candidate API | Staging | Production |
+|---|---|---|
+| `get_public_settings()` | Present; JSONB | Not found |
+| `check_access_code(p_code text, p_phone text)` | Present; JSONB | Not found |
+| `start_exam(p_code text, p_name text, p_phone text, p_elective text)` | Present; JSONB | Not found |
+| `resume_exam(p_session uuid, p_token uuid)` | Present; JSONB | Not found |
+| `save_progress(p_session uuid, p_token uuid, p_answers jsonb)` | Present; JSONB | Not found |
+| `record_tab_switch(p_session uuid, p_token uuid)` | Present; JSONB | Not found |
+| `submit_exam(p_session uuid, p_token uuid, p_answers jsonb, p_auto boolean, p_flagged jsonb)` | Present; JSONB | Not found |
+| `lookup_result(p_phone text, p_code text)` | Present; JSONB | Not found |
+| `get_leaderboard(p_limit integer)` | Present; JSONB | Not found |
+
+The staging signatures align with the typed wrappers in `app/lib/examApi.ts`. All listed staging candidate RPCs are SECURITY DEFINER and have anon/authenticated EXECUTE grants. This is expected for the public candidate flow only if the function bodies strictly validate untrusted inputs, scope each attempt to its session token, avoid exposing answer keys before release, and enforce rate limits and result-release rules. The read-only signature query did not prove every body meets those requirements; staging end-to-end tests remain required.
+
+The legacy production functions `use_access_code(input_code text, candidate_phone text)`, `validate_access_code(input_code text)`, and `validate_and_use_access_code(input_code text, input_phone text, input_subject text)` still have PUBLIC/anon/authenticated EXECUTE grants in production. In staging, the first two were limited to postgres/service_role; `validate_and_use_access_code` had no PUBLIC/anon/authenticated grant. Production still lacks the candidate API names expected by this branch, so switching the app to production would both break the new flow and leave the old exposed API surface in place.
+
+### Required next verification
+
+Before proposing any migration, inspect the full definitions of the three production legacy access-code functions and all callers. Prepare a staged, reversible migration that aligns grants and policies with intended callers, then verify both allowed candidate operations and denied unauthenticated/admin-only operations using staging test accounts. Do not copy staging schema blindly to production or apply this remediation without explicit approval.
