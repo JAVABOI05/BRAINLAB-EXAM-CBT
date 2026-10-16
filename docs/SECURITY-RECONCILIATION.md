@@ -73,3 +73,10 @@ A source review of the current admin route files found that the legacy `/admin` 
 The other inspected admin pages use a localStorage `admin_user` hint for UI routing. That value is forgeable and must never be treated as authorization. The staging review observed admin-gated policies on the relevant tables and `_require_admin()` checks in inspected admin mutation RPCs, but a dedicated non-admin regression test and route-by-route review of every direct table mutation remain release blockers. Several routes still issue direct client table mutations, so their RLS policy coverage must be explicitly confirmed against the staging schema before release. The code audit alone does not establish that every route or database operation is secure.
 
 The current review branch CI must pass on the latest head after these changes. The preview deployment status is separate from GitHub Actions and is not approval to deploy or merge.
+
+
+## Result-release toggle behavior — source-level blocker
+
+A frontend source review confirms that `/result` gates the page using the live `get_public_settings().show_results` value and only renders a locally cached `exam_summary` when that summary says `show_results: true`. `/corrections` also checks the live setting, then reads review items from localStorage key `exam_result`. The inspected staging `_result_payload` only includes scores/review items when results are enabled, while the current `lookup_result(p_phone, p_code)` response is summary-only.
+
+Therefore the important scenario “candidate submits while results are hidden, then an admin enables results later” is **not proven to work**: the later lookup path does not currently provide the detailed review payload needed by corrections, and the local cache may contain no review items from the original submission. This must be resolved and tested before release, likely by a narrowly scoped, throttled server RPC that retrieves a candidate's released result/review using the required identity/access-code proof. Do not add a frontend call to a function that has not been deployed and verified in staging; do not apply a migration without explicit approval.
