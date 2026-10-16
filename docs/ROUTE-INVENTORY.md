@@ -20,6 +20,8 @@
 | `/api/auth/operator-gate` | Operator gate endpoint | Verifies Supabase Auth user and `is_admin()` before setting the private HttpOnly cookie. |
 | `/about` | Public About page | Contains proposed vision, mission and values; subject to founder approval. |
 | `/ai-learning` | AI learning companion overview | Explains intended future AI learning capability and safeguards; informational only, no AI tutor backend is implemented. |
+| `/courses` | Courses and resources overview | Describes future learning pathways; no live catalogue, course delivery or certificate claims. |
+| `/community` | Learning community overview | Describes planned moderated study groups; no live chat, member directory or messaging backend. |
 
 ## Known administrative routes
 
