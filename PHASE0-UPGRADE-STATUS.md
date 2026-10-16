@@ -94,3 +94,16 @@
 - The plan distinguishes staging advisor findings from production facts and explicitly avoids blanket RLS changes, blanket RPC grant/revoke changes, speculative index drops, and automatic phone-based account matching.
 - No SQL was executed; no database tables, indexes, policies, functions, Auth settings or data were changed.
 - CI status for the documentation commit `88664d614974734a3562842e0e397d9c27fccac5` was pending at the last check. No successful build is claimed; recheck CI/Vercel before release.
+
+
+## Direct Supabase production review — critical findings (2026-10-16)
+
+A read-only inspection was performed through the connected Supabase integration for both `BrainLabCBT` production and `BrainLabCBT-Staging`. No SQL changes were applied.
+
+- Production's effective grants and RLS policies allow anonymous reads of sensitive tables including results, answers, questions, exam sessions, access codes, admin-user records, audit logs and upload logs; anonymous updates are allowed on exam configuration/settings, with other broad public policies present.
+- Production's `clear_all_results()` is a `SECURITY DEFINER` function that deletes all results, has no admin guard in its inspected definition, and is executable by `anon`.
+- Production's `set_master_access_code(new_code)` is a `SECURITY DEFINER` function that changes the master access code, has no admin guard in its inspected definition, and is executable by `anon`.
+- The current app branch expects newer candidate-facing RPCs present in staging, but the corresponding function catalog entries were not found in production. Production's schema is a legacy shape and is not yet reconciled with this branch.
+- The remediation plan records the findings and proposed containment sequence in `docs/SUPABASE-DATABASE-REMEDIATION-PLAN.md`.
+
+**Urgent:** treat this as a potential data-exposure, result-deletion and exam-control compromise. Catalog inspection does not prove exploitation. Do not invoke destructive functions as a test. No policies/functions/grants were changed because immediate revocation without reconciling the legacy live admin UI could break live operations; the correct patch needs admin authorization inside the database/server and staging regression first. Do not deploy the newer app branch to production until the Supabase project/schema mismatch is resolved.
