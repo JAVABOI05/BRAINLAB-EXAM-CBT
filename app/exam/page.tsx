@@ -2,32 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../lib/supabase";
+import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
 import FloatingCalculator from "../components/FloatingCalculator";
 
-type QuestionRow = {
-  id: number;
-  source_question_id: string | null;
-  subject: string;
-  section: string;
-  category: string | null;
-  passage_id: string | null;
-  passage_title: string | null;
-  passage_text: string | null;
-  question: string;
-  option_a: string | null;
-  option_b: string | null;
-  option_c: string | null;
-  option_d: string | null;
-  correct_answer: string;
-  explanation: string | null;
-  marks: number;
-  difficulty: string | null;
-  is_active: boolean;
-};
+type QuestionRow = PaperQuestion;
 
 type ElectiveSubject = "Biology" | "Mathematics";
-type AnswersMap = Record<string, "A" | "B" | "C" | "D">;
+type AnswersMap = Record<string, Option>;
 type FlaggedMap = Record<string, boolean>;
 
 type Candidate = {
@@ -53,19 +34,6 @@ const EXAM_CONFIG = {
   elective: 40,
 };
 
-function shuffleArray<T>(array: T[]): T[] {
-  const copy = [...array];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-function pickRandom<T>(array: T[], count: number): T[] {
-  return shuffleArray(array).slice(0, count);
-}
-
 function getOptionValue(value: string | null | undefined): string {
   return value?.trim() || "";
 }
@@ -78,123 +46,6 @@ function formatTime(totalSeconds: number) {
   return [hours, minutes, seconds]
     .map((unit) => unit.toString().padStart(2, "0"))
     .join(":");
-}
-
-async function fetchQuestionsBySubjectSection(
-  subject: string,
-  section: string,
-  count: number
-): Promise<QuestionRow[]> {
-  const { data, error } = await supabase
-    .from("questions")
-    .select("*")
-    .eq("subject", subject)
-    .eq("section", section)
-    .eq("is_active", true);
-
-  if (error) {
-    throw new Error(`${subject} ${section} fetch failed: ${error.message}`);
-  }
-
-  const rows = (data || []) as QuestionRow[];
-
-  if (rows.length < count) {
-    throw new Error(
-      `Not enough ${subject} ${section} questions. Needed ${count}, found ${rows.length}.`
-    );
-  }
-
-  return pickRandom(rows, count);
-}
-
-async function fetchEnglishComprehension(
-  passageCount: number,
-  questionsPerPassage: number
-): Promise<QuestionRow[]> {
-  const { data, error } = await supabase
-    .from("questions")
-    .select("*")
-    .eq("subject", "English")
-    .eq("section", "comprehension")
-    .eq("is_active", true)
-    .not("passage_id", "is", null);
-
-  if (error) {
-    throw new Error(`English comprehension fetch failed: ${error.message}`);
-  }
-
-  const rows = (data || []) as QuestionRow[];
-
-  const grouped = rows.reduce<Record<string, QuestionRow[]>>((acc, row) => {
-    if (!row.passage_id) return acc;
-    if (!acc[row.passage_id]) acc[row.passage_id] = [];
-    acc[row.passage_id].push(row);
-    return acc;
-  }, {});
-
-  const validPassages = Object.values(grouped).filter(
-    (group) => group.length >= questionsPerPassage
-  );
-
-  if (validPassages.length < passageCount) {
-    throw new Error(
-      `Not enough comprehension passages. Needed ${passageCount}, found ${validPassages.length}.`
-    );
-  }
-
-  const selectedPassages = pickRandom(validPassages, passageCount);
-
-  return selectedPassages.flatMap((group) =>
-    pickRandom(group, questionsPerPassage)
-  );
-}
-
-async function buildExamPaper(
-  electiveSubject: ElectiveSubject
-): Promise<QuestionRow[]> {
-  const [
-    englishObjective,
-    englishLiterature,
-    englishComprehension,
-    chemistry,
-    physics,
-    electiveQuestions,
-  ] = await Promise.all([
-    fetchQuestionsBySubjectSection(
-      "English",
-      "objective",
-      EXAM_CONFIG.englishObjective
-    ),
-    fetchQuestionsBySubjectSection(
-      "English",
-      "literature",
-      EXAM_CONFIG.englishLiterature
-    ),
-    fetchEnglishComprehension(
-      EXAM_CONFIG.comprehensionPassages,
-      EXAM_CONFIG.comprehensionQuestionsPerPassage
-    ),
-    fetchQuestionsBySubjectSection(
-      "Chemistry",
-      "objective",
-      EXAM_CONFIG.chemistry
-    ),
-    fetchQuestionsBySubjectSection("Physics", "objective", EXAM_CONFIG.physics),
-    fetchQuestionsBySubjectSection(
-      electiveSubject,
-      "objective",
-      EXAM_CONFIG.elective
-    ),
-  ]);
-
-  return [
-    ...englishObjective,
-    ...englishLiterature,
-    ...englishComprehension,
-    ...chemistry,
-    ...physics,
-    ...electiveQuestions,
-  ];
 }
 
 export default function ExamPage() {
@@ -218,129 +69,61 @@ export default function ExamPage() {
   const [calculatorEnabled, setCalculatorEnabled] = useState(true);
   const [mockEnabled, setMockEnabled] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const submitLockRef = useRef(false);
   const tabSwitchCountRef = useRef(0);
 
   useEffect(() => {
     async function loadPageData() {
-      const accessCode = localStorage.getItem("access_code");
-      if (!accessCode) {
-        router.push("/access");
-        return;
-      }
-
       const savedCandidate = localStorage.getItem("candidate");
-      const savedQuestions = localStorage.getItem("examQuestions");
-      const savedElective = localStorage.getItem("selectedElective");
-      const savedAnswers = localStorage.getItem("exam_answers");
-      const savedFlags = localStorage.getItem("exam_flagged");
-      const savedCurrentIndex = localStorage.getItem("exam_current_index");
-      const savedTimeLeft = localStorage.getItem("exam_time_left");
+      if (!savedCandidate) { router.push("/"); return; }
+      let parsedCandidate: Candidate;
+      try { parsedCandidate = JSON.parse(savedCandidate) as Candidate; }
+      catch { router.push("/"); return; }
+      setCandidate(parsedCandidate);
+      if (parsedCandidate.subject === "Biology" || parsedCandidate.subject === "Mathematics") setElectiveSubject(parsedCandidate.subject);
+      const settings = await getPublicSettings();
+      if (!settings) { setError("Could not load exam settings. Check your connection and refresh the page."); return; }
+      const duration = settings.exam_duration > 0 ? settings.exam_duration : DEFAULT_EXAM_DURATION;
+      setExamDuration(duration); setTimeLeft(duration);
+      setCalculatorEnabled(settings.calculator_enabled); setMockEnabled(settings.mock_enabled);
+      if (!settings.mock_enabled) { router.push("/access"); return; }
+      if (settings.access_code_required && !localStorage.getItem("access_code")) { router.push("/access"); return; }
       const savedSessionId = localStorage.getItem("exam_session_id");
-      const savedTabSwitchCount = localStorage.getItem("exam_tab_switch_count");
-
-      if (!savedCandidate) {
-        router.push("/");
+      const savedToken = localStorage.getItem("exam_token");
+      if (!savedSessionId || !savedToken) return;
+      const resumed = await resumeExam(savedSessionId, savedToken);
+      if (isError(resumed)) {
+        if (resumed.error === "network" || resumed.error === "rpc_error") setError(resumed.message);
+        else clearAttemptStorage();
         return;
       }
-
-      try {
-        const parsedCandidate = JSON.parse(savedCandidate) as Candidate;
-        setCandidate(parsedCandidate);
-
-        if (
-          parsedCandidate.subject === "Biology" ||
-          parsedCandidate.subject === "Mathematics"
-        ) {
-          setElectiveSubject(parsedCandidate.subject);
-        }
-
-        const [
-          { data: durationSetting },
-          { data: calculatorSetting },
-          { data: mockSetting },
-        ] = await Promise.all([
-          supabase
-            .from("settings")
-            .select("value")
-            .eq("key", "exam_duration")
-            .single(),
-          supabase
-            .from("settings")
-            .select("value")
-            .eq("key", "calculator_enabled")
-            .single(),
-          supabase
-            .from("settings")
-            .select("value")
-            .eq("key", "mock_enabled")
-            .single(),
-        ]);
-
-        const durationValue = Number(durationSetting?.value);
-        const finalDuration =
-          Number.isFinite(durationValue) && durationValue > 0
-            ? durationValue
-            : DEFAULT_EXAM_DURATION;
-
-        const calcOn =
-          calculatorSetting?.value === true ||
-          calculatorSetting?.value === "true";
-
-        const mockOn =
-          mockSetting?.value === true || mockSetting?.value === "true";
-
-        setExamDuration(finalDuration);
-        setCalculatorEnabled(calcOn);
-        setMockEnabled(mockOn);
-
-        if (!mockOn) {
-          router.push("/access");
-          return;
-        }
-
-        if (savedQuestions) {
-          setQuestions(JSON.parse(savedQuestions));
-          setStarted(true);
-        }
-
-        if (savedElective) {
-          setElectiveSubject(savedElective as ElectiveSubject);
-        }
-
-        if (savedAnswers) {
-          setAnswers(JSON.parse(savedAnswers));
-        }
-
-        if (savedFlags) {
-          setFlagged(JSON.parse(savedFlags));
-        }
-
-        if (savedCurrentIndex) {
-          setCurrentIndex(Number(savedCurrentIndex));
-        }
-
-        if (savedTimeLeft) {
-          setTimeLeft(Number(savedTimeLeft));
-        } else {
-          setTimeLeft(finalDuration);
-        }
-
-        if (savedSessionId) {
-          setSessionId(savedSessionId);
-        }
-
-        if (savedTabSwitchCount) {
-          tabSwitchCountRef.current = Number(savedTabSwitchCount) || 0;
-        }
-      } catch {
-        router.push("/");
-      }
+      if (resumed.finished) { storeFinished(resumed); router.push("/result"); return; }
+      const attempt: AttemptPayload = resumed;
+      setQuestions(attempt.questions); setAnswers(attempt.answers); setCurrentIndex(0); setFlagged({});
+      setSessionId(attempt.session_id); setSessionToken(attempt.token);
+      setElectiveSubject(attempt.elective as ElectiveSubject);
+      setExamDuration(attempt.duration_seconds); setTimeLeft(attempt.time_left_seconds);
+      tabSwitchCountRef.current = attempt.tab_switch_count;
+      localStorage.setItem("exam_session_id", attempt.session_id); localStorage.setItem("exam_token", attempt.token);
+      setStarted(true);
     }
-
-    loadPageData();
+    void loadPageData();
   }, [router]);
+
+  function clearAttemptStorage() {
+    ["examQuestions", "exam_answers", "exam_flagged", "exam_current_index", "exam_time_left", "exam_session_id", "exam_token", "exam_tab_switch_count"].forEach((key) => localStorage.removeItem(key));
+  }
+
+  function storeFinished(res: FinishedPayload) {
+    localStorage.setItem("exam_result", JSON.stringify(res.items));
+    localStorage.setItem("exam_summary", JSON.stringify({
+      result_id: res.result_id, score: res.score, total: res.total,
+      subject_scores: res.subject_scores, show_results: res.show_results, status: res.status,
+    }));
+    clearAttemptStorage();
+  }
 
   useEffect(() => {
     if (!started || questions.length === 0) return;
@@ -391,6 +174,16 @@ export default function ExamPage() {
   }, [started, questions.length, timeLeft]);
 
   useEffect(() => {
+    if (!started || !sessionId || !sessionToken) return;
+    const timeout = setTimeout(async () => {
+      const saved = await saveProgress(sessionId, sessionToken, answers);
+      if (isError(saved)) { if (saved.error === "time_up") void handleSubmit(true); return; }
+      setTimeLeft((prev) => Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev);
+    }, 4000);
+    return () => clearTimeout(timeout);
+  }, [answers, started, sessionId, sessionToken]);
+
+  useEffect(() => {
     if (!started) return;
 
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -404,14 +197,12 @@ export default function ExamPage() {
           String(tabSwitchCountRef.current)
         );
 
-        if (sessionId) {
-          await supabase
-            .from("exam_sessions")
-            .update({
-              tab_switch_count: tabSwitchCountRef.current,
-              time_left_seconds: timeLeft,
-            })
-            .eq("id", sessionId);
+        if (sessionId && sessionToken) {
+          const recorded = await recordTabSwitch(sessionId, sessionToken);
+          if (!isError(recorded)) {
+            tabSwitchCountRef.current = recorded.tab_switch_count;
+            setTimeLeft(recorded.time_left_seconds);
+          }
         }
 
         timeoutId = setTimeout(() => {
@@ -432,7 +223,7 @@ export default function ExamPage() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [started, sessionId, timeLeft]);
+  }, [started, sessionId, sessionToken]);
 
   useEffect(() => {
     if (!started) return;
@@ -496,110 +287,23 @@ export default function ExamPage() {
       .filter((q) => q.subject === currentSubject);
   }, [questions, currentSubject]);
 
-  async function createExamSession(finalElective: ElectiveSubject, duration: number) {
-    if (!candidate) return null;
-
-    const { data, error } = await supabase
-      .from("exam_sessions")
-      .insert([
-        {
-          candidate_name: candidate.name,
-          phone: candidate.phone,
-          subject: finalElective,
-          access_code: candidate.code || localStorage.getItem("access_code") || "",
-          status: "started",
-          auto_submitted: false,
-          tab_switch_count: 0,
-          time_left_seconds: duration,
-        },
-      ])
-      .select("id")
-      .single();
-
-    if (error || !data) {
-      console.error("Exam session creation failed:", error?.message);
-      return null;
-    }
-
-    return data.id as string;
-  }
-
-  async function updateExamSessionOnSubmit(autoSubmitted: boolean) {
-    if (!sessionId) return;
-
-    const { error } = await supabase
-      .from("exam_sessions")
-      .update({
-        submitted_at: new Date().toISOString(),
-        status: "submitted",
-        auto_submitted: autoSubmitted,
-        tab_switch_count: tabSwitchCountRef.current,
-        time_left_seconds: timeLeft,
-      })
-      .eq("id", sessionId);
-
-    if (error) {
-      console.error("Exam session submit update failed:", error.message);
-    }
-  }
-
   const handleStartExam = async () => {
-    const finalElective =
-      electiveSubject ||
-      (candidate?.subject === "Biology" || candidate?.subject === "Mathematics"
-        ? candidate.subject
-        : "");
-
-    if (!finalElective) {
-      setError("Please select Biology or Mathematics before starting the exam.");
-      return;
-    }
-
-    if (!mockEnabled) {
-      setError("This exam is currently unavailable.");
-      return;
-    }
-
+    const finalElective = electiveSubject || (candidate?.subject === "Biology" || candidate?.subject === "Mathematics" ? candidate.subject : "");
+    if (!finalElective) { setError("Please select Biology or Mathematics before starting the exam."); return; }
+    if (!mockEnabled) { setError("This exam is currently unavailable."); return; }
     try {
-      setLoading(true);
-      setError("");
-
-      const paper = await buildExamPaper(finalElective as ElectiveSubject);
-      const newSessionId = await createExamSession(
-        finalElective as ElectiveSubject,
-        examDuration
-      );
-
-      setQuestions(paper);
-      setCurrentIndex(0);
-      setAnswers({});
-      setFlagged({});
+      setLoading(true); setError("");
+      const code = candidate?.code || localStorage.getItem("access_code") || "";
+      const res = await startExam(code, candidate?.name || "", candidate?.phone || "", finalElective);
+      if (isError(res)) { setError(res.message); return; }
+      clearAttemptStorage(); localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");
+      setQuestions(res.questions); setCurrentIndex(0); setAnswers(res.answers); setFlagged({});
+      setSessionId(res.session_id); setSessionToken(res.token); setExamDuration(res.duration_seconds); setTimeLeft(res.time_left_seconds);
+      setElectiveSubject(res.elective as ElectiveSubject); tabSwitchCountRef.current = res.tab_switch_count;
+      localStorage.setItem("exam_session_id", res.session_id); localStorage.setItem("exam_token", res.token); localStorage.setItem("selectedElective", res.elective);
       setStarted(true);
-      setTimeLeft(examDuration);
-      tabSwitchCountRef.current = 0;
-
-      localStorage.setItem("examQuestions", JSON.stringify(paper));
-      localStorage.setItem("selectedElective", finalElective);
-      localStorage.removeItem("exam_result");
-      localStorage.removeItem("latest_result_id");
-      localStorage.removeItem("exam_flagged");
-      localStorage.setItem("exam_tab_switch_count", "0");
-
-      if (newSessionId) {
-        setSessionId(newSessionId);
-        localStorage.setItem("exam_session_id", newSessionId);
-      } else {
-        setSessionId(null);
-        localStorage.removeItem("exam_session_id");
-      }
-    } catch (err) {
-      console.error(err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load exam questions."
-      );
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to start the exam."); }
+    finally { setLoading(false); }
   };
 
   const handleSelectAnswer = (value: "A" | "B" | "C" | "D") => {
@@ -645,52 +349,16 @@ export default function ExamPage() {
 
   const handleSubmit = async (autoSubmitted = false) => {
     if (questions.length === 0 || submitLockRef.current) return;
-
-    if (!autoSubmitted) {
-      const confirmed = window.confirm("Are you sure you want to submit?");
-      if (!confirmed) return;
+    if (!autoSubmitted && !window.confirm("Are you sure you want to submit?")) return;
+    if (!sessionId || !sessionToken) { setError("No active server exam session was found. Please refresh and try again."); return; }
+    submitLockRef.current = true; setLoading(true); setError("");
+    const res = await submitExam(sessionId, sessionToken, answers, autoSubmitted, flagged);
+    if (isError(res)) {
+      submitLockRef.current = false; setLoading(false);
+      setError(res.message || "Your exam could not be submitted. Please try again."); return;
     }
-
-    submitLockRef.current = true;
-
-    const resultItems = questions.map((question) => {
-      const selected = answers[String(question.id)] || null;
-
-      return {
-        id: String(question.id),
-        subject: question.subject,
-        type: question.section,
-        text: question.question,
-        options: {
-          A: getOptionValue(question.option_a),
-          B: getOptionValue(question.option_b),
-          C: getOptionValue(question.option_c),
-          D: getOptionValue(question.option_d),
-        },
-        correctAnswer: question.correct_answer as "A" | "B" | "C" | "D",
-        explanation: question.explanation || "",
-        userAnswer: selected,
-        isCorrect: selected === question.correct_answer,
-        flagged: Boolean(flagged[String(question.id)]),
-        marks: Number(question.marks || 0),
-      };
-    });
-
-    await updateExamSessionOnSubmit(autoSubmitted);
-
-    localStorage.setItem("exam_result", JSON.stringify(resultItems));
-    localStorage.removeItem("examQuestions");
-    localStorage.removeItem("exam_answers");
-    localStorage.removeItem("exam_flagged");
-    localStorage.removeItem("exam_current_index");
-    localStorage.removeItem("exam_time_left");
-    localStorage.removeItem("exam_session_id");
-    localStorage.removeItem("exam_tab_switch_count");
-
-    if (autoSubmitted) {
-      alert("Your exam has been submitted automatically.");
-    }
-
+    storeFinished(res);
+    if (autoSubmitted) alert("Your exam has been submitted automatically.");
     router.push("/result");
   };
 
