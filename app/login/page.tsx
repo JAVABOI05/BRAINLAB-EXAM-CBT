@@ -96,12 +96,6 @@ export default function Page() {
             </p>
           </div>
 
-          <button
-            onClick={() => router.push("/admin/login")}
-            className="shrink-0 rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-2 font-semibold text-white shadow-md transition hover:scale-[1.02]"
-          >
-            Admin Login
-          </button>
         </div>
       </div>
 
