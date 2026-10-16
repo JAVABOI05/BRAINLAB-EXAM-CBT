@@ -53,3 +53,11 @@
 - Updated the route inventory.
 - No authentication, exam, database, schema or production configuration was changed for this page.
 - The commits are on the review branch only. CI and Vercel preview must be checked; no successful build or staging test is claimed.
+
+## Courses and community overview pages (2026-10-16)
+
+- Added `/courses` to describe the future direction for learning resources, courses, projects and a possible Skills Passport. It does not claim that a live course catalogue or accredited certificates exist.
+- Added `/community` to describe planned study circles and discussions, with moderation, privacy and reporting safeguards called out before launch.
+- Added both pages to public header/footer navigation and updated the route inventory.
+- These are informational roadmap pages only. No course delivery, chat, messaging, member directory, new database tables, or community backend was introduced.
+- Latest Vercel preview must be checked and route rendering/build verified before calling these changes tested. Do not merge or deploy without explicit approval.
