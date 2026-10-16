@@ -38,9 +38,15 @@ export async function adminSignIn(
     await supabase.auth.signOut();
     return { ok: false, message: "This account is not an administrator." };
   }
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("admin_user", JSON.stringify(admin));
+  }
   return { ok: true };
 }
 
 export async function adminSignOut(): Promise<void> {
   await supabase.auth.signOut();
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("admin_user");
+  }
 }
