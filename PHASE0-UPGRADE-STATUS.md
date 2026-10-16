@@ -45,3 +45,11 @@
 - The revision-plan export change has been committed, but the latest Vercel preview/build must be checked again; no successful preview or local/staging test is claimed.
 - Next implementation stages: run latest CI/build, perform staging regression for CBT/auth, then plan account-linked progress using verified server data before introducing AI or community features.
 
+## AI learning information page (2026-10-16)
+
+- Added `/ai-learning` as a public explanation of the planned AI learning companion.
+- Added navigation and footer links so visitors can find the page.
+- Clearly labels AI tutoring as planned and describes intended use, limitations and safeguards; this is not a working AI tutor and does not call an AI provider.
+- Updated the route inventory.
+- No authentication, exam, database, schema or production configuration was changed for this page.
+- The commits are on the review branch only. CI and Vercel preview must be checked; no successful build or staging test is claimed.
