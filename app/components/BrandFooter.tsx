@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function BrandFooter() {
@@ -7,9 +8,8 @@ export default function BrandFooter() {
     <footer className="bg-[#00112b] text-slate-200">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <Link href="/" className="inline-flex items-center gap-3 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300" aria-label="BrainLab Academy home">
-            <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-lg font-black text-[#012153]">B</span>
-            <span><span className="block text-lg font-extrabold text-white">BrainLab</span><span className="block text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">Academy</span></span>
+          <Link href="/" className="inline-flex rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300" aria-label="BrainLab Academy home">
+            <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={110} height={61} className="h-12 w-auto" />
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-7 text-slate-300">Learn smarter, practise with purpose and keep progressing. A learning ecosystem being built in stages.</p>
         </div>
