@@ -19,6 +19,37 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+      - name: Check tracked environment files and public secret variable names
+        shell: bash
+        run: |
+          set -euo pipefail
+          tracked_env_files="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-public-anon-key
+          NEXT_PUBLIC_SITE_URL: https://example.com
+ || true)"
+          if [[ -n "$tracked_env_files" ]]; then
+            echo "Unexpected tracked environment file(s):"
+            printf '%s\n' "$tracked_env_files"
+            exit 1
+          fi
+          if git grep -n -I -E 'NEXT_PUBLIC_[A-Z0-9_]*(SERVICE_ROLE|SECRET|PRIVATE_KEY)' -- app; then
+            echo "A private credential appears to use a NEXT_PUBLIC_ variable name."
+            exit 1
+          fi
+          echo "Environment-file and public-secret-name checks passed."
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
