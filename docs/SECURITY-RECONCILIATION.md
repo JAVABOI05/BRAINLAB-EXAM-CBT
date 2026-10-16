@@ -101,3 +101,39 @@ This is a fresh read-only catalog/grant/policy check. The production migration h
 - The new candidate-facing RPCs used by the review-branch frontend are still absent from the production function catalog; they were found in staging. Do not point the upgrade branch at production or merge/deploy it until the schema/API contract and admin workflows are reconciled.
 
 **Action boundary:** no SQL or schema changes were made during this follow-up inspection. Because the remaining policies affect live CBT operations, do not apply blanket revokes or replace policies without a reviewed, staged containment plan and a tested admin fallback. Treat the residual exposure as urgent; these catalog findings indicate risk, not proof of exploitation.
+
+
+## Follow-up staging RPC and admin-access audit — 2026-10-16
+
+Read-only inspection of staging project `BrainLabCBT-Staging` (`eusgwsuoloomphebrepe`); no rows, settings, grants, schema, or Auth configuration were changed.
+
+### Admin access recovery signal
+
+- Staging has one `admin_profiles` row linked to an existing Supabase Auth user, and the profile email matches that Auth user. Identifiers and emails were intentionally not returned.
+- `admin_profiles` and legacy `admin_users` have RLS enabled, no direct policies, and no table ACL for `authenticated`; that is fail-closed for direct browser table access.
+- Core admin tables (`access_codes`, `answers`, `exam_config`, `exam_sessions`, `questions`, `results`, `settings`) have RLS enabled and an `admin_all` policy limited to `authenticated` with `is_admin()` in both `USING` and `WITH CHECK`.
+- This establishes that a staged admin profile is mapped, not that its owner can currently sign in. A real sign-in and a negative test with an ordinary account still require an interactive test session; no credentials were read or changed.
+
+### Candidate RPC contract
+
+The seven RPC signatures used by `app/lib/examApi.ts` match staging: `get_public_settings()`, `check_access_code(p_code text, p_phone text)`, `start_exam(p_code text, p_name text, p_phone text, p_elective text)`, `resume_exam(p_session uuid, p_token uuid)`, `save_progress(p_session uuid, p_token uuid, p_answers jsonb)`, `record_tab_switch(p_session uuid, p_token uuid)`, `submit_exam(p_session uuid, p_token uuid, p_answers jsonb, p_auto boolean, p_flagged jsonb)`, and `lookup_result(p_phone text, p_code text)`. The server-side paper payload omits `correct_answer` and `explanation`; the grading function reads the answer key on the database side.
+
+### Confirmed result-release gap
+
+- The staging `_result_payload` includes scores and correction items only when `show_results` is true. That payload is returned from submission/resume.
+- `lookup_result(p_phone, p_code)` currently returns only a summary (name, subject, score, total, timestamp), not detailed correction items.
+- Consequently, a candidate who submits while results are hidden cannot be relied on to receive the detailed review later simply by enabling results and using the lookup path. The frontend's corrections page relies on cached review items, so this scenario remains a release blocker. Resolve through a reviewed, staged API/migration change and test hidden-at-submit → release-later behavior before release.
+
+### Legacy access-code endpoint still callable
+
+- Staging still grants `anon` and `authenticated` EXECUTE on `validate_and_use_access_code(text,text,text)`, a `SECURITY DEFINER` legacy function. Its inspected body consumes access codes and has a master-code success path, but does not use the newer attempt-throttling helper or check the exam-enabled setting.
+- The new frontend uses `check_access_code` and `start_exam`, not this legacy endpoint. Do not revoke it blindly until every deployed client/caller is inventoried; include it in the staged legacy API containment plan and verify production separately.
+- The staging security advisor also reports 14 functions with mutable search paths and 12 publicly executable `SECURITY DEFINER` functions. Public candidate RPCs may be intentional, but each must be reviewed for input validation, throttling, data minimization, and authorization. The advisor's search-path list includes legacy functions; current candidate RPCs inspected here set `search_path = public, pg_temp`.
+
+### Migration-history reconciliation
+
+The migration-history table visible to this read-only query returned one row (`20261016175526_harden_legacy_access_code_validation`), although the schema contains the newer RPC set. Treat the visible migration history as incomplete until reconciled against the checked-in migration files and actual schema. Do not infer that the migration files and database are fully synchronized from function existence alone.
+
+### Next test gate
+
+Still required in staging with designated test identities only: valid/invalid access-code tests; start/resume after reload; autosave; timeout; duplicate submission; results hidden then released; wrong phone/code; cross-candidate lookup denial; valid-admin and ordinary-user route/RPC checks; and every admin mutation tested as a non-admin. This read-only catalog pass does not substitute for those functional tests.
