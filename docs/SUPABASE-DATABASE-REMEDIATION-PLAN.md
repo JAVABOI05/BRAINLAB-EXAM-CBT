@@ -363,3 +363,13 @@ Verification confirmed `anon` and `authenticated` can no longer execute these fu
 **Compatibility warning:** legacy admin screens that call these RPCs directly may stop working until a trusted server-side admin path is wired up. This was preferred over leaving unauthenticated access-code generation/export and exam-config mutation callable from the public API. The live admin workflow has not been end-to-end tested after this permission change. The direct-table grants and policies remain a separate high-priority exposure and must be addressed in a coordinated, tested rollout.
 
 The fresh security advisor still reports 12 mutable-search-path functions. Their definitions are invoker functions or trigger helpers, not all privileged definer functions; review schema grants and function dependencies before pinning each path. No exam/result/access-code rows were deleted or modified by this migration.
+
+
+### Follow-up containment: pin legacy function search paths — 2026-10-16
+
+The production `public` schema does not grant `CREATE` on the schema to `anon` or `authenticated`. Based on that check and review of the 12 functions flagged by the advisor, migration `pin_legacy_function_search_paths` set a fixed function-level `search_path = public, pg_temp` on:
+`set_question_marks()`, `update_exam_config(text,jsonb)`, `reset_exam_config()`, `generate_blt_codes(integer)`, `reset_used_access_codes_preserve_master()`, `generate_access_codes(integer)`, `export_fresh_access_codes(integer)`, `get_unexported_codes(integer)`, `mark_codes_exported(uuid[])`, `validate_access_code(text)`, `use_access_code(text,text)`, and `insert_result_after_submit()`.
+
+Catalog verification confirmed all 12 functions now have the fixed setting. A fresh production security-advisor run no longer reports mutable-search-path warnings or the five exposed SECURITY DEFINER views. The remaining security-advisor findings are the anonymous/authenticated execution warning for `validate_and_use_access_code(text,text,text)`, which remains intentionally callable for the legacy candidate access-code flow. This is not a clean security bill of health: direct table grants and permissive RLS policies on sensitive legacy tables remain unresolved, and the legacy master-code acceptance path still needs a safer replacement.
+
+No data rows were changed by this migration. The candidate and admin flows have not been end-to-end tested after these containment changes.
