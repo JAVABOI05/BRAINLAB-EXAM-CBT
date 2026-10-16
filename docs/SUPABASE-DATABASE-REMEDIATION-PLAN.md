@@ -288,3 +288,28 @@ These findings represent **potential direct data-loss and exam-control compromis
 3. Restrict direct table grants/policies for sensitive tables only after each current frontend operation is moved to a safe RPC/server-side path or given an equivalent narrow admin-only RLS policy.
 4. Coordinate with the live deployment. The current repository's expected RPCs are not all present in production, so deploying this branch to production without schema reconciliation is not safe.
 5. Test in staging with both anonymous and authenticated non-admin roles. Confirm the destructive RPCs fail for both, succeed only for a legitimate admin, and the candidate exam flow remains intact.
+
+## Emergency production containment applied — 2026-10-16
+
+The user explicitly authorized necessary Supabase security changes. Two narrow, reversible production permission changes were applied to project `bupkyppvtkrmzmluzjmf` using a tracked Supabase migration:
+
+- Revoked `EXECUTE` on `public.clear_all_results()` from `PUBLIC`, `anon`, and `authenticated`. Verification confirmed those roles can no longer execute it; `service_role` retains execution for controlled server-side operations.
+- Revoked `EXECUTE` on `public.set_master_access_code(text)` from `PUBLIC`, `anon`, and `authenticated`. Verification confirmed those roles can no longer execute it; `service_role` retains execution.
+- Revoked client-role `EXECUTE` on `public.protect_master_code_from_being_used()`, a trigger-only helper that should not be exposed as a client RPC. This does not remove the trigger or change its function body.
+
+No destructive RPC was invoked. No exam records, questions, results, access codes, user records, or schema tables were deleted or changed by these containment steps.
+
+### Verification and remaining urgent risks
+
+A fresh catalog check verified the first two functions are no longer executable by `anon` or `authenticated`; service-role execution remains. The production security advisor still reports five SECURITY DEFINER views and mutable function search paths. It also reports `validate_and_use_access_code(text,text,text)` as callable by unauthenticated and authenticated clients. This RPC is part of a legacy candidate access flow and must be hardened without accidentally locking candidates out; its current body accepts the configured master code and does not use the supplied subject parameter. Do not revoke it blindly before a compatible candidate validation path is tested.
+
+Critical remaining exposure: permissive policies and effective grants on legacy production tables (including results, answers, questions, exam sessions, access codes, admin users, logs, exam configuration and settings), plus a leaderboard view that includes candidate phone information. Broadly removing those policies/grants could interrupt the legacy live CBT because the production schema does not match the current branch's RPC contract. Before those changes, identify the actual live deployment's Supabase URL/project and direct-table usage, then apply a coordinated least-privilege patch and test the full candidate/admin journey. Do not claim the whole database is secured yet.
+
+### Required next sequence
+
+1. Identify which Supabase project the live Vercel deployment currently uses; compare deployment environment variable names/host only, never reveal secret values.
+2. Build a staging-compatible replacement for the legacy access-code RPC, with atomic one-time code consumption, input validation, subject/session checks where supported, and no public direct access to master-code configuration.
+3. Remove or replace public access to sensitive table policies/grants and sanitize the leaderboard view so phone numbers are never publicly exposed, after compatibility testing.
+4. Pin safe `search_path` values on reviewed functions and convert views to invoker security where supported and compatible.
+5. Run candidate and admin regression tests in staging, then verify advisors and grants again.
+6. Reconcile the production schema with tracked migrations before any larger schema deployment. The migration listing was empty, which is not proof that the database is empty.
