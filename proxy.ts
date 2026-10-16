@@ -28,20 +28,14 @@ export function proxy(request: NextRequest) {
   const entryTokenIsValid = entryToken.length >= 32;
   const privateEntryConfigured = entryPathIsValid && entryTokenIsValid;
 
-  // The configured one-segment path is the only way to open the sign-in UI
-  // in a fresh browser. It is never hard-coded into the public source.
+  // The configured path opens the shared account portal only. It does NOT
+  // grant access to /admin; only the server-verified operator-gate endpoint
+  // may issue the HttpOnly cookie used by the protected route matcher.
   if (privateEntryConfigured && pathname === `/${entryPath}`) {
     const destination = request.nextUrl.clone();
     destination.pathname = "/account";
     destination.search = "";
     const response = NextResponse.rewrite(destination);
-    response.cookies.set(ENTRY_COOKIE, entryToken, {
-      httpOnly: true,
-      secure: request.nextUrl.protocol === "https:",
-      sameSite: "lax",
-      path: "/admin",
-      maxAge: 60 * 60 * 8,
-    });
     response.headers.set("X-Robots-Tag", NO_INDEX);
     response.headers.set("Cache-Control", "no-store");
     return response;
