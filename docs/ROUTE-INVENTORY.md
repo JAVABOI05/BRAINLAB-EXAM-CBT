@@ -59,3 +59,33 @@ The route inventory is a working review document, not proof of security. Client-
 - Reconcile this branch with the founder's local `feature/brand-ui-upgrade` changes without overwriting either working tree.
 - Record rollback and deployment steps before any release.
 - The founder must explicitly approve any merge or production deployment.
+
+## Academy structure and Coming Soon routes (2026-10-16)
+
+The following routes are structural placeholders. A visible Coming Soon label is not evidence that the underlying service is implemented.
+
+| Route | Planned purpose | Current status |
+|---|---|---|
+| `/explore` | Directory of current and planned Academy areas | Page directory; lists route status |
+| `/cbt` | Public CBT/exam-practice overview | Coming soon; existing live entry remains `/login` |
+| `/resources` | Learning resource library | Coming soon; no resource catalogue |
+| `/schools` | Schools and institutions | Coming soon; no institutional offer or partnership claims |
+| `/contact` | Central contact directory | Coming soon; current help is `/support` |
+| `/faq` | Expanded FAQ centre | Coming soon; current FAQs are on `/support` |
+| `/privacy`, `/terms` | Official policies | Placeholders only; not complete legal documents |
+| `/learning/progress` | Account-linked progress | Coming soon; client checks session, but no progress data is shown |
+| `/learning/achievements` | Milestones and achievements | Coming soon; no awards issued |
+| `/learning/courses` | Learner course list | Coming soon; no course delivery |
+| `/study-groups` | Study circles | Coming soon; no groups or messaging backend |
+| `/community/discussions` | Moderated discussions | Coming soon; no posts or moderation backend |
+| `/messages` | Private messaging | Coming soon; no messages stored |
+| `/notifications` | Notification centre | Coming soon; no notification service |
+| `/profile`, `/settings` | Learner profile and preferences | Coming soon; no profile data edited |
+| `/skills-passport` | Learner portfolio | Concept placeholder; no credentials issued |
+| `/learning-dna` | Explainable learning insights | Concept placeholder; no profiling performed |
+| `/challenge-arena` | Optional practice challenges | Coming soon; no challenge engine |
+| `/knowledge-base` | Searchable topic reference | Coming soon; no knowledge index |
+
+The reusable Coming Soon component requires a valid Supabase user for learner-only placeholders and redirects unauthenticated visitors to `/account`. These are UX route gates only; any future personal data or mutations must additionally use server-side authorization and database policies. No new database tables, RPCs or production data changes were introduced for the placeholder routes.
+
+Future admin capabilities (student management, content/resource management, moderation, analytics and security/system settings) are intentionally not scaffolded as new `/admin/**` routes until the existing admin guard and authorization behavior has been verified. Do not add admin pages by relying on URL obscurity.
