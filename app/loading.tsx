@@ -6,7 +6,7 @@ export default function Loading() {
         <p className="mt-5 text-lg font-extrabold text-slate-950">Preparing your learning space</p>
         <p className="mt-2 text-sm leading-6 text-slate-600">Please wait while BrainLab loads the next page.</p>
         <div className="mt-5 h-1.5 w-44 overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full w-1/2 animate-pulse rounded-full bg-blue-700" />
+          <div className="h-full w-1/2 animate-pulse rounded-full bg-blue-700 motion-reduce:animate-none" />
         </div>
       </div>
     </main>
