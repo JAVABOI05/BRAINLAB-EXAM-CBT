@@ -19,6 +19,7 @@
 | `/dashboard` | Learner account landing page | Basic authenticated landing page; account-to-CBT history linking is not implemented. |
 | `/api/auth/operator-gate` | Operator gate endpoint | Verifies Supabase Auth user and `is_admin()` before setting the private HttpOnly cookie. |
 | `/about` | Public About page | Contains proposed vision, mission and values; subject to founder approval. |
+| `/ai-learning` | AI learning companion overview | Explains intended future AI learning capability and safeguards; informational only, no AI tutor backend is implemented. |
 
 ## Known administrative routes
 
