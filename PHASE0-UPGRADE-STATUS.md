@@ -82,3 +82,6 @@
 - Updated route inventory. New admin URLs were deliberately not added because admin route-level authorization must be verified first; do not use obscurity as a security boundary.
 - No new database tables, RPCs, live AI provider, chat service, course delivery, production data or schema changes were introduced.
 - Vercel and CI checks must complete and the routes must be tested before the branch can be considered build-verified. This work is still unmerged and must not be deployed without explicit approval.
+
+- Added admin workspace placeholders at `/admin/users`, `/admin/content`, `/admin/moderation`, `/admin/analytics` and `/admin/security`. They display no administrative records and are marked Coming Soon. The client-side `is_admin()` check is a UX gate only; real admin data/actions remain blocked until server-side authorization and RLS are verified.
+- Latest Vercel status responses link to a build-rate-limit/upgrade page. This does not establish whether the application code builds successfully; CI/build verification remains unresolved and should be retried when the deployment quota permits.
