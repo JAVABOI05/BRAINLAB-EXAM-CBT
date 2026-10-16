@@ -149,3 +149,20 @@ Read-only function-definition inspection of staging `check_access_code`, `start_
 - `lookup_result` checks the result-release setting, requires phone and access code, applies the phone throttle, and matches both against the session before returning a result summary. It logs failed lookups. Confirm the throttle cannot be bypassed by rotating phone values and that the release toggle is enforced after submission.
 
 This is a targeted source-definition review, not proof that all helper functions or flows are secure. The staging DB was not modified, and no candidate attempts were created or submitted during the inspection.
+
+
+## Active admin UI source review — 2026-10-16
+
+A further source-level review of the active admin pages identified the following concrete browser-side data and mutation paths. These are release blockers when combined with the production grants/policies documented above:
+
+- `/admin/codes` reads the `master_access_code` value from `exam_config` into client state, loads up to 5,000 access-code rows including their code and `used_by` values, and directly calls code-generation/export/reset RPCs and table mutations. The master code must not be treated as safe to return to the browser; the current UI also uses the fetched value to decide which row cannot be reset/deleted.
+- `/admin/config` reads the full `exam_config` table and directly updates configuration rows from the browser. Even if the UI is hidden, database policies must deny these writes to anonymous and ordinary authenticated users.
+- `/admin/questions/manage` reads `correct_answer` and writes question activation state directly from the browser. Question-bank management must be admin-authorized at the database/server boundary; public exam delivery must use a candidate-safe payload that omits answer keys before release.
+- `/admin/results` loads candidate result data and exposes result/session/answer operations and audit-log writes from the browser. Result deletion, session resets, and access-code resets must be explicitly authorized and audited server-side; candidate identity and audit details submitted by the browser are not trustworthy by themselves.
+- The inspected pages use `localStorage.admin_user` to decide whether to show their UI. This is not an authorization credential and can be edited by the browser user. The private-entry cookie/proxy is defense-in-depth only: the database must reject every unauthorized read and mutation independently.
+
+### Safe implementation decision
+
+Do not patch these pages by simply hiding controls or adding more client-side role checks. The required safe fix is a coordinated server/database authorization change: define the exact allowed admin operations, move high-impact mutations and sensitive reads to narrowly scoped server handlers or reviewed database RPCs, verify the authenticated user's admin role server-side, and enforce least-privilege grants/RLS. Then test both allowed admin actions and denied anonymous/non-admin attempts in staging. Existing legacy admin operations must be preserved or deliberately retired with owner approval; do not remove them ad hoc.
+
+No admin page code or database policy was changed as part of this source review.
