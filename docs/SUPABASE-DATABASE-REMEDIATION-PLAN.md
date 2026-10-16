@@ -373,3 +373,14 @@ The production `public` schema does not grant `CREATE` on the schema to `anon` o
 Catalog verification confirmed all 12 functions now have the fixed setting. A fresh production security-advisor run no longer reports mutable-search-path warnings or the five exposed SECURITY DEFINER views. The remaining security-advisor findings are the anonymous/authenticated execution warning for `validate_and_use_access_code(text,text,text)`, which remains intentionally callable for the legacy candidate access-code flow. This is not a clean security bill of health: direct table grants and permissive RLS policies on sensitive legacy tables remain unresolved, and the legacy master-code acceptance path still needs a safer replacement.
 
 No data rows were changed by this migration. The candidate and admin flows have not been end-to-end tested after these containment changes.
+
+
+### Follow-up containment: revoke destructive client table privileges — 2026-10-16
+
+A production grant check found `anon` had broad table-level privileges on ten legacy tables, including `DELETE`, `TRUNCATE`, `TRIGGER` and `REFERENCES`. Unlike row-level policies, table-level `TRUNCATE` privileges are not restricted by row policies. This was an urgent destructive-operation risk.
+
+Migration `revoke_legacy_client_destructive_table_privileges` revoked `DELETE`, `TRUNCATE`, `TRIGGER` and `REFERENCES` from `PUBLIC`, `anon` and `authenticated` on `results`, `answers`, `questions`, `exam_sessions`, `access_codes`, `admin_users`, `audit_logs`, `question_upload_logs`, `exam_config` and `settings`. Verification returned no remaining grants for those privilege types to either client role on those tables.
+
+This reduces direct destructive access, but it is not a full least-privilege configuration. Client roles still have some combination of SELECT/INSERT/UPDATE privileges and permissive policies on sensitive tables. Existing admin UI operations that rely on direct client-side deletes may now fail; they must be replaced with verified admin-only server-side operations rather than restoring broad client privileges. Candidate exam behavior also needs regression testing. No data rows were deleted or modified by this grant change.
+
+The production security advisor still reports the legacy candidate-facing `validate_and_use_access_code(text,text,text)` as a SECURITY DEFINER RPC callable by `anon` and `authenticated`. Keep this open as a compatibility-sensitive risk while replacing the master-code bypass with a safer session-based flow.
