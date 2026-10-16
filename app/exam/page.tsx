@@ -24,15 +24,6 @@ type QuestionWithIndex = QuestionRow & {
 
 const DEFAULT_EXAM_DURATION = 2 * 60 * 60;
 
-const EXAM_CONFIG = {
-  englishObjective: 43,
-  englishLiterature: 7,
-  comprehensionPassages: 2,
-  comprehensionQuestionsPerPassage: 5,
-  chemistry: 40,
-  physics: 40,
-  elective: 40,
-};
 
 function getOptionValue(value: string | null | undefined): string {
   return value?.trim() || "";
