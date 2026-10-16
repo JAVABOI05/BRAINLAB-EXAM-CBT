@@ -55,7 +55,9 @@ export default function Page() {
     const settingValue = settings?.access_code_required;
     // Fail closed: require an access code if settings cannot be read.
     const accessCodeRequired =
-      !error && (settingValue === true || settingValue === "true");
+      error || !settings
+        ? true
+        : settingValue === true || settingValue === "true";
 
     setStarting(false);
 
