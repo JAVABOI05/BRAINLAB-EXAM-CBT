@@ -1,23 +1,23 @@
 # BrainLab CBT — Route Inventory
 
-**Source:** Current remote `phase0-hardening` repository tree. This is an initial inventory, not a guarantee that every route is complete or production-safe.
+**Source:** Review branch `feature/brainlab-academy-upgrade`. This is an initial inventory, not a guarantee that every route is complete or production-safe.
 
 ## Known public/candidate routes
 
 | Route | Observed purpose | Review notes |
 |---|---|---|
-| `/` | Legacy CBT portal/home | Existing candidate entry, support links, result lookup and leaderboard. Replaced by the public Academy landing page on this branch. |
+| `/` | Public Academy landing page | Replaces the legacy CBT homepage on this branch. Future capabilities must remain labelled planned until implemented. |
 | `/access` | Access-code entry | Review direct table calls and server-side validation before release. |
-| `/exam` | Timed examination | Critical path; do not redesign logic as part of a visual-only change. |
-| `/result` | Result display/lookup | Must respect result-release settings and candidate ownership. |
-| `/corrections` | Answer corrections | Must not reveal answer keys/explanations before release is permitted. |
+| `/exam` | Timed examination | Critical path; exam lifecycle now uses typed server RPC wrappers; full staging regression remains required. |
+| `/result` | Result display/lookup | Uses `lookup_result(p_phone, p_code)`; must respect result-release settings and candidate ownership. |
+| `/corrections` | Answer corrections | Checks live result-release setting and requires a server-provided result summary. |
 | `/instructions` | Exam instructions | Confirm exact route and behavior in the complete route tree before release. |
-| `/login` | Preserved CBT candidate entry route | Created on this branch from the former homepage; uses the public-settings RPC, but the complete exam flow still needs security reconciliation and staging regression. |
-| `/about` | Implemented public About page | Contains the proposed vision, mission and values; subject to founder approval. |
+| `/login` | CBT candidate entry | Preserved route for the existing candidate flow. |
+| `/about` | Public About page | Contains proposed vision, mission and values; subject to founder approval. |
 
 ## Known administrative routes
 
-- `/admin`
+- `/admin` — now redirects to `/admin/dashboard` so the legacy root settings UI is not rendered.
 - `/admin/login`
 - `/admin/dashboard`
 - `/admin/codes`
@@ -40,4 +40,13 @@ The route list above is based on paths observed in the remote tree and may not b
 
 ## Important reconciliation note
 
-The remote `phase0-hardening` status file explicitly says the branch is not ready to merge/deploy and that legacy direct-table calls remain. The route inventory must be reconciled with the local security patch and actual staging behavior before release.
+The route inventory is a working review document, not proof of security. Client-side redirects and localStorage checks are UX controls only. Database RLS and server-side authorization must enforce every protected read and mutation. The exam route has been moved to server RPCs, but the remaining admin routes and all mutation functions still need a route-by-route authorization audit and non-admin regression tests.
+
+## Current release blockers
+
+- Complete functional staging CBT regression tests, including result-release changes during an already-submitted attempt.
+- Audit all `/admin/**` UI paths and database mutations for server-enforced authorization.
+- Review staging Supabase security-advisor findings without applying unapproved grants or migrations.
+- Reconcile this branch with the founder's local `feature/brand-ui-upgrade` changes without overwriting either working tree.
+- Record rollback and deployment steps before any release.
+- The founder must explicitly approve any merge or production deployment.
