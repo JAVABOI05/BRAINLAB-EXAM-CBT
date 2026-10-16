@@ -11,6 +11,13 @@
 - Added brand SVG assets, metadata and a GitHub Actions build workflow.
 - Added product blueprint, route inventory and phased implementation roadmap.
 
+## Security reconciliation update (2026-10-16)
+
+- The `/test` diagnostic route now checks only the public-settings RPC; it no longer reads question rows or displays answer keys.
+- `/corrections` now checks the live result-release setting before rendering cached review data.
+- These are partial risk reductions only. The exam and result pages still require full server-authoritative flow reconciliation, and admin authorization/database policies still need audit.
+- See `docs/SECURITY-RECONCILIATION.md` for exact blockers and staging release gates.
+
 ## Known release blockers
 
 1. This branch started from the remote `phase0-hardening` branch, which is behind the founder's newer local security/brand changes.
