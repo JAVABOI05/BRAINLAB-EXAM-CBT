@@ -1,0 +1,208 @@
+# BrainLab Academy — Supabase database remediation plan
+
+**Status: design and read-only audit guidance only. No SQL in this document has been run. No migration is approved.**
+
+This plan is based on the read-only inspection of the staging project `BrainLabCBT-Staging` (`eusgwsuoloomphebrepe`) on 2026-10-16 and the repository's current security reconciliation notes. Staging findings must not be assumed to describe production. Before any schema change, inspect the target environment and the migration history independently.
+
+## Goals and non-negotiable boundaries
+
+- Preserve the current CBT lifecycle: access-code validation, candidate identity, exam start/resume, timing, answer saving, submission, scoring, result release and corrections.
+- Keep answer keys, explanations, attempt tokens, private candidate records and admin data out of public reads.
+- Do not add broad RLS policies merely to silence advisor notices.
+- Do not revoke anonymous access to candidate-facing RPCs indiscriminately; review each function's intended caller and behavior first.
+- Do not drop indexes just because an advisor calls them duplicate or unused.
+- Do not copy, migrate or expose the legacy `admin_users.password` field. Establish whether legacy credentials exist and whether the field is obsolete without reading password values.
+- Do not apply migrations to production as part of this work. Production changes require a reviewed migration, backup/rollback plan, staging proof and explicit approval.
+
+## Prioritized remediation queue
+
+### P0 — establish the actual schema and deployment baseline
+
+Before writing executable migrations, capture and review:
+
+1. Current migration files and their order/checksums from the repository and target Supabase project.
+2. Tables, columns, types, defaults, generated columns, constraints and foreign keys.
+3. RLS enablement, every policy and policy command/role/expression.
+4. Function definitions, owners, `SECURITY DEFINER`, configured `search_path`, execute grants and call chains.
+5. Grants for `anon`, `authenticated` and service roles; triggers; extensions; views; storage policies if used.
+6. Existing foreign keys and indexes, including exact indexed columns, predicates, uniqueness and constraint ownership.
+7. CBT regression behavior in staging with dedicated test candidates.
+
+**Gate:** no new tables or migrations until the above inventory is checked against the actual target. The repository branch currently does not provide a confirmed, complete Supabase migration history in the paths inspected so far.
+
+### P1 — secure existing CBT tables and RPCs
+
+Staging has RLS enabled on the inspected public tables. Advisor notices report RLS-enabled tables without policies: `access_attempts`, `admin_profiles`, `admin_users` and `phase0_backup`. That may be appropriate for internal tables; confirm intended access before changing anything. No policy should permit ordinary candidates to read other candidates' records or internal admin/backup data.
+
+Review the following sensitive data groups:
+- `questions`: correct answers and explanations must not be returned before allowed review.
+- `answers`: selected/correct answers and correctness data are private result material.
+- `results`: lookup must require the intended proof (currently phone plus access code in the inspected RPC) and must respect result-release settings.
+- `exam_sessions`: access tokens, access codes, draft answers and timing/deadline data require narrow access.
+- `access_codes` and `access_attempts`: brute-force protection, throttling, single-use rules and auditability.
+- `admin_profiles` / `admin_users`: admin role must be established server-side; a localStorage flag or hidden route is not authorization.
+- `audit_logs`: append/read access must be limited to trusted server-side operations and authorized reviewers.
+
+Staging inspection found candidate-facing RPC signatures expected by the current frontend: `get_public_settings()`, `start_exam(p_code, p_name, p_phone, p_elective)`, `resume_exam(p_session, p_token)`, `save_progress(p_session, p_token, p_answers)`, `record_tab_switch(p_session, p_token)`, `submit_exam(p_session, p_token, p_answers, p_auto, p_flagged)` and `lookup_result(p_phone, p_code)`. Verify actual definitions and grants before touching them.
+
+For each `SECURITY DEFINER` function:
+- State the exact intended caller: public candidate, authenticated learner, or admin only.
+- Validate every input and bound array/JSON sizes.
+- Validate session/token ownership and current attempt state inside the database transaction.
+- Make duplicate submissions idempotent and reject stale/expired attempts according to the existing contract.
+- Use a safe, fixed `search_path` (for example `SET search_path = ''`) and schema-qualify referenced objects where appropriate.
+- Grant `EXECUTE` only to the intended roles; do not break the candidate flow while reducing exposure.
+- Test anonymous, learner, different-learner and non-admin calls explicitly.
+
+The staging advisor reported 14 functions with mutable search paths and public execution of several `SECURITY DEFINER` functions. Review each definition individually; do not generate a blanket grant/revoke migration.
+
+### P2 — verify relational integrity and query indexes
+
+Use the read-only inventory queries below first. For any proposed foreign key, find and resolve orphaned rows in a reviewed staging copy before adding it. Do not assume legacy rows can be deleted or automatically linked to accounts.
+
+The staging performance advisor reported duplicate-index notices (including possible overlap on access-code, admin-email, answer-result, exam-session phone, question filter, result phone and settings key columns) and 23 unused-index notices. Staging may have low traffic, so an unused-index notice is not proof an index is unnecessary.
+
+For each candidate index:
+1. Compare the exact indexed expressions, column order, predicate, uniqueness, included columns and constraint dependency.
+2. Check query patterns and query plans in a representative environment.
+3. Consider write overhead and the cost of rebuilding the index.
+4. Remove only a proven redundant non-constraint index in a separate reviewed migration, with a rollback plan.
+
+Likely query patterns to evaluate (not assumed index prescriptions):
+- candidate result lookup by phone and access code;
+- session resume by session identifier and attempt token;
+- active question selection by subject/section/status;
+- answers grouped by result/session;
+- access-code validation and unused-code administration;
+- settings lookup by key.
+
+### P3 — learner account linkage without breaking legacy CBT
+
+The future Academy should link a candidate's existing exam history to an account only where identity can be established safely. Do not automatically match records by phone alone: phone numbers can be shared, changed or mistyped.
+
+Preferred approach after schema review:
+- Introduce a learner profile linked to `auth.users.id` only if the existing account model does not already provide this.
+- If needed, add a nullable account UUID reference to eligible historical exam/result records in a separately reviewed migration; preserve rows that cannot be confidently linked.
+- Keep exam submission and scoring server-authoritative.
+- Expose a learner's own results through a narrowly scoped server-side query/RPC and verify ownership for every record.
+- Backfill only with an auditable, reviewed matching rule and a dry-run report. Never expose bulk candidate data to the browser.
+
+Do not create duplicate `profiles` or account-link tables until existing auth/profile tables and triggers are inventoried.
+
+### P4 — new Academy data model, only when feature implementation is approved
+
+Build the smallest useful schema per feature rather than creating all future tables at once.
+
+**Revision planning (first account-synced feature):**
+- `study_plans`: UUID primary key, owner user UUID, title/goal, optional target date, status, created/updated timestamps.
+- `study_plan_items`: UUID primary key, plan foreign key, topic/subject label or a verified topic FK, sort order, due date, completion timestamp, created/updated timestamps.
+- Constraints: owner required; non-negative sort order; valid status; plan deletion cascades to its own items only; dates/timestamps consistent.
+- RLS: owner can select/insert/update/delete their own plan and items. An item policy must verify ownership through its parent plan. No public read policy.
+- Index: child foreign key on plan ID; owner plus updated timestamp on plans if supported by real query patterns.
+- Avoid foreign keys to unverified `subjects`/`topics` tables until those canonical tables exist.
+
+The current revision planner is browser-local and does not need a database migration. Only implement this schema when account synchronization is being implemented and tested.
+
+**Progress and content (later):** canonical `subjects`/`topics`, then courses/modules/lessons and learner progress, only when there is real content to store and a defined content publishing model. Separate public published content from draft/admin content.
+
+**Community (later):** groups, memberships, discussions/replies, reports and moderation actions require membership checks, rate limits, reporting/moderation workflow, deletion/retention rules and clear privacy boundaries before launch. Private messages are a separate sensitive feature and should not be added as an incidental extension.
+
+**AI features (later):** record only what is needed for safety, cost controls and user experience. Define retention, deletion, provider handling, consent, per-user quotas and sensitive-data redaction before storing prompts or responses. Never send answer keys or protected live exam content to an AI feature.
+
+### P5 — Auth configuration and operations
+
+The staging Auth advisor reported leaked-password protection disabled. Treat this as an Auth dashboard/configuration task: test signup, password change/reset and existing-user behavior in staging, then enable after review. Do not assume it is fixed by a database migration.
+
+Add monitoring/runbooks for failed RPCs, access-code guessing, repeated result lookups and abnormal submission patterns without logging raw passwords, tokens or full sensitive answer payloads. Define log retention and who can read audit data.
+
+## Read-only SQL inventory queries
+
+Run these only in the intended Supabase SQL editor or another read-only connection. They inspect metadata and do not alter data. Review results for sensitive schema details before sharing them.
+
+```sql
+-- 1. Tables and RLS status in application schemas
+select n.nspname as schema_name, c.relname as table_name,
+       c.relrowsecurity as rls_enabled,
+       c.relforcerowsecurity as rls_forced
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where c.relkind in ('r','p')
+  and n.nspname in ('public')
+order by 1, 2;
+
+-- 2. Columns and types (metadata only)
+select table_schema, table_name, ordinal_position, column_name,
+       data_type, is_nullable, column_default
+from information_schema.columns
+where table_schema = 'public'
+order by table_name, ordinal_position;
+
+-- 3. RLS policies
+select schemaname, tablename, policyname, permissive,
+       roles, cmd, qual, with_check
+from pg_policies
+where schemaname = 'public'
+order by tablename, policyname;
+
+-- 4. Foreign keys and their delete/update actions
+select conrelid::regclass as table_name, conname,
+       pg_get_constraintdef(oid) as definition
+from pg_constraint
+where contype = 'f'
+  and connamespace = 'public'::regnamespace
+order by 1, 2;
+
+-- 5. Index definitions; compare before considering changes
+select schemaname, tablename, indexname, indexdef
+from pg_indexes
+where schemaname = 'public'
+order by tablename, indexname;
+
+-- 6. Function security metadata (definition review should be access-controlled)
+select n.nspname as schema_name, p.proname as function_name,
+       pg_get_function_identity_arguments(p.oid) as arguments,
+       p.prosecdef as security_definer,
+       p.proconfig as function_settings
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+order by p.proname, arguments;
+
+-- 7. Explicit function execute grants from ACLs
+select n.nspname as schema_name, p.proname as function_name,
+       pg_get_function_identity_arguments(p.oid) as arguments,
+       coalesce(grantee.rolname, 'PUBLIC') as grantee,
+       privilege_type
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) acl
+left join pg_roles grantee on grantee.oid = acl.grantee
+where n.nspname = 'public'
+  and acl.privilege_type = 'EXECUTE'
+order by p.proname, arguments, grantee;
+```
+
+These queries are an initial inventory, not a complete security audit. In particular, review triggers, views, storage policies, extensions, grants on schemas/tables/sequences, Auth settings and all called helper functions too. The index catalog does not prove an index is unused; use advisor output and representative query plans.
+
+## Required staging test matrix before schema changes are accepted
+
+- Anonymous user cannot directly read protected questions, answer keys, other candidates' sessions, answers, results or admin records.
+- Valid candidate can start, resume after reload, save progress and submit once.
+- Invalid/reused access code and expired/foreign session token are rejected.
+- Duplicate submissions do not create duplicate results or alter an already-finalized attempt.
+- Results and corrections remain hidden when release is off and become available only through the intended proof when release is on.
+- Candidate A cannot read Candidate B's result, plan or progress.
+- Authenticated non-admin cannot invoke admin RPCs or mutate admin-only tables.
+- Admin actions are authorized in the database/server, not merely by a client redirect or localStorage flag.
+- Migration rollback is rehearsed in staging; exam data counts and key constraints are compared before/after.
+
+## Approval sequence
+
+1. Complete read-only schema/policy/function/index inventory for the intended environment.
+2. Confirm whether the change already exists in migrations or code.
+3. Write one small, reversible migration for one approved feature/fix.
+4. Review SQL, RLS, grants, data effects and rollback.
+5. Apply to staging only; run advisors and the complete affected CBT regression matrix.
+6. Obtain explicit approval before any production migration or deployment.
+
+**Current action:** this document only. No database connection was used to run SQL, and no table, index, policy, function, Auth setting or data was changed.
