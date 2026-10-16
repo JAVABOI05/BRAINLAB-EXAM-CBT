@@ -47,6 +47,14 @@ export async function adminSignIn(
 export async function adminSignOut(): Promise<void> {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem("admin_user");
+    try {
+      await fetch("/api/auth/operator-gate", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      // Always complete Supabase sign-out even if gate-cookie cleanup fails.
+    }
   }
   await supabase.auth.signOut();
 }
