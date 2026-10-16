@@ -33,7 +33,7 @@ Keep the output private. Use separate values for preview and production environm
 - Visiting the configured entry path rewrites internally to the shared `/account` page. The browser URL stays on the private entry path, and **no operator cookie is issued at this stage**.
 - After a successful sign-in, the `/api/auth/operator-gate` endpoint independently verifies the access token with Supabase Auth and calls `is_admin()`. Only an approved operator receives the HttpOnly route-gate cookie.
 - Direct requests to `/admin/**` without the gate cookie return 404. Responses include `X-Robots-Tag: noindex, nofollow, noarchive` and `Cache-Control: no-store`.
-- The sign-in screen uses neutral “Private Platform Access” wording and is not linked from public navigation, the landing page, footer or sitemap.
+- There is no separate operator-labelled login form. The private entry opens the shared account portal, which is also linked publicly for ordinary sign-in; no public page advertises an administrator login.
 - If the entry path is lost, an authorized deployment owner must set a new random path/token pair in the hosting environment. Do not add a recovery link to the public site.
 
 ## Security limitations
