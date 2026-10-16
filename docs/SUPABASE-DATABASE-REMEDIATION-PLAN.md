@@ -255,3 +255,14 @@ Do **not** simply remove all `public` or `anon` policies in one transaction. Tha
 - No production or staging table, row, policy, grant, view, function, Auth setting or data changed.
 - Production security findings are higher priority than adding new Academy tables.
 - The staging migration list and production migration list both returned empty through the Supabase migration-list tool. This does not mean the database has no schema; it means the connected migration-history API did not report tracked migrations. The current schema may have been created/changed outside that tracked history. Establish an authoritative schema baseline before creating migrations.
+
+
+### Follow-up verification: effective grants and production RPC mismatch
+
+A read-only privilege check confirmed that the production database grants the `anon` role table/view privileges including SELECT on `results`, `answers`, `questions`, `exam_sessions`, `access_codes`, `admin_users`, `audit_logs`, `question_upload_logs` and the three inspected views; INSERT on `results`; and UPDATE on `exam_config` and `settings`. The broad policies described above are therefore paired with effective SQL privileges, not merely inactive policy definitions. This confirms a critical exposure risk in production configuration. It does not prove that anyone has exploited it or establish what records currently contain.
+
+A second compatibility finding: the current application wrapper `app/lib/examApi.ts` calls `get_public_settings`, `check_access_code`, `start_exam`, `resume_exam`, `save_progress`, `record_tab_switch`, `submit_exam`, `lookup_result` and `get_leaderboard`. The read-only production function catalog query returned only `use_access_code` and `validate_access_code` among those specific names; staging returned the expected candidate-facing RPCs. This indicates production schema/function state does not match the app branch's expected exam API. Before deploying this app branch against production, reconcile the target Supabase project and deployment configuration. Do not assume Vercel is currently connected to the same project merely from the repository.
+
+### Immediate containment decision
+
+No automated policy changes have been applied because the application currently expects server-side exam RPCs that are present in staging but were not found in the production catalog query. Removing broad direct-table access before verifying the live production app and RPCs could break candidate exam operations. Conversely, leaving the current permissions unchanged maintains serious exposure risk. Treat this as an urgent human-reviewed containment/release gate: confirm which Supabase project the live deployment uses, preserve current definitions/grants, prepare a staging-tested migration that moves the live app to validated RPC-only access, and schedule a coordinated production rollout. Do not ship new app code to production until project alignment and CBT regression are confirmed.
