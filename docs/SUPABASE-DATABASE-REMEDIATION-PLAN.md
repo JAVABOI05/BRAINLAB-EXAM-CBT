@@ -327,3 +327,18 @@ The `validate_and_use_access_code(text,text,text)` function was updated in both 
 Catalog verification confirms the updated function is installed in both projects. Production advisors now report only this one anonymous SECURITY DEFINER RPC, because it is intentionally part of the legacy candidate flow. **This is partial containment, not a complete security fix:** the master-code bypass still exists by design for compatibility and should be replaced with a short-lived server-side authorization/session mechanism before launch. Do not expose or place the master code in browser code.
 
 The production security advisor still reports the five SECURITY DEFINER views, 12 functions with mutable search paths, and the legacy public table-policy/grant exposure described above. Those remain open remediation work; no data was deleted and no exam records were modified.
+
+
+### Follow-up containment: restrict legacy SECURITY DEFINER views — 2026-10-16
+
+After the user authorized necessary Supabase security changes, the production project `bupkyppvtkrmzmluzjmf` was re-inspected. The five legacy views below were confirmed to grant client-role access while running with the view owner's privileges:
+
+- `exam_config_view` selected every `config_key` and `config_value`, potentially exposing sensitive exam configuration such as the master access code.
+- `leaderboard_view` selected candidate `phone` along with result fields.
+- `access_code_summary_view`, `exam_session_summary_view` and `subject_performance_view` exposed aggregate operational information.
+
+A production migration named `restrict_legacy_security_definer_views` has now revoked all privileges on these five views from `PUBLIC`, `anon` and `authenticated`. Post-change catalog verification confirmed that neither `anon` nor `authenticated` can SELECT from any of the five views. Service-role and database-owner access was not revoked. No rows or exam data were changed.
+
+**Compatibility note:** any frontend or admin screen that directly reads these views will now need a properly authorized replacement. This was a deliberate narrow containment measure because the configuration view could expose the master code and the leaderboard view exposed phone numbers. The live CBT flow has not been end-to-end tested after this permission change, so do not claim that all user journeys are verified.
+
+The fresh production security advisor no longer reports these five views as externally accessible SECURITY DEFINER view findings. Remaining advisor findings include 12 functions with mutable search paths and the legacy candidate-facing SECURITY DEFINER function `validate_and_use_access_code(text,text,text)`. Broad direct-table grants and permissive policies on sensitive legacy tables also remain urgent work. They require live-app/project alignment and regression testing before a coordinated restriction; this migration does not resolve those table-level exposures.
