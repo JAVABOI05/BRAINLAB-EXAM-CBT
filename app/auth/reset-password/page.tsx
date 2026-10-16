@@ -46,12 +46,18 @@ export default function ResetPasswordPage() {
       return;
     }
     setBusy(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (updateError) setError("We could not update your password. Request a fresh recovery link and try again.");
-    else {
-      setMessage("Your password has been updated. You can now sign in.");
-      window.setTimeout(() => router.replace("/account"), 900);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        setError("We could not update your password. Request a fresh recovery link and try again.");
+      } else {
+        setMessage("Your password has been updated. You can now sign in.");
+        window.setTimeout(() => router.replace("/account"), 900);
+      }
+    } catch {
+      setError("We could not update your password. Please try again.");
+    } finally {
+      setBusy(false);
     }
   }
 
