@@ -59,7 +59,7 @@ export default function EditQuestionPage() {
       return;
     }
 
-    loadQuestion();
+    queueMicrotask(() => loadQuestion());
   }, [router]);
 
 
