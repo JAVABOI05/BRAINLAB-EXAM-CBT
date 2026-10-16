@@ -107,3 +107,11 @@ A read-only inspection was performed through the connected Supabase integration 
 - The remediation plan records the findings and proposed containment sequence in `docs/SUPABASE-DATABASE-REMEDIATION-PLAN.md`.
 
 **Urgent:** treat this as a potential data-exposure, result-deletion and exam-control compromise. Catalog inspection does not prove exploitation. Do not invoke destructive functions as a test. No policies/functions/grants were changed because immediate revocation without reconciling the legacy live admin UI could break live operations; the correct patch needs admin authorization inside the database/server and staging regression first. Do not deploy the newer app branch to production until the Supabase project/schema mismatch is resolved.
+
+
+## Latest verification update — 2026-10-16
+
+- GitHub Actions on commit `f280c939f8d05243c1e2bbbd0805f7d17b18ce23` is being checked after a defensive invalid-access-code response guard was added; a prior commit `068a89a9f267bcd6bc70cb0ed9a3ea5408535062` passed ESLint, TypeScript and Next.js build.
+- The production migration history now reports three applied migrations (`20261016175421`, `20261016175446`, `20261016175534`) for partial containment of privileged RPCs. This supersedes the earlier statement that no production migration had been applied. The latest read-only checks confirm some destructive function grants were removed, but broad public/anonymous table policies and other callable legacy functions remain. See `docs/SECURITY-RECONCILIATION.md` for the current findings.
+- No additional production SQL was executed during this update. Do not treat the three recorded migrations as complete remediation; the production schema is still incompatible with the review-branch candidate RPC contract.
+- The review pull request remains a draft. No merge or Vercel deployment was performed.
