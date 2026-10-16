@@ -89,3 +89,15 @@ Therefore the important scenario “candidate submits while results are hidden, 
 - No secret path or token is committed. The environment values must be generated and configured separately in the hosting environment; until both are valid, the console is intentionally unavailable. See [Private Console Access](./PRIVATE-CONSOLE-ACCESS.md).
 - This is only defense-in-depth against casual discovery. It does not replace Supabase Auth, server-side admin authorization, or RLS. Route-by-route mutation checks and staging non-admin tests remain release blockers.
 - No database, Auth settings, DNS, production deployment, or merge action was performed.
+
+
+## Follow-up production privilege verification — 2026-10-16
+
+This is a fresh read-only catalog/grant/policy check. The production migration history currently lists these applied versions: `20261016175421_revoke_unauthenticated_privileged_exam_rpcs`, `20261016175446_restrict_master_code_trigger_function_rpc`, and `20261016175534_harden_legacy_access_code_validation`. This observed migration history supersedes earlier status wording that said no production migration had been applied; it does not establish who applied them or prove that all exposure is contained.
+
+- Effective privilege checks now show `anon` and `authenticated` cannot execute `clear_all_results()`, `set_master_access_code(text)`, or `protect_master_code_from_being_used()`.
+- This is **partial containment only**. The legacy `reset_exam_config()` and `update_exam_config(text,jsonb)` functions remain executable by `anon` and `authenticated`; several legacy access-code management functions are also executable by those roles, including `validate_and_use_access_code(text,text,text)` which is `SECURITY DEFINER`.
+- Effective grants and RLS policy inspection still shows broad anonymous/public access on sensitive legacy objects, including `access_codes`, `admin_users`, `answers`, `audit_logs`, `exam_config`, `exam_sessions`, `questions`, `results`, `settings`, and summary views. Examples include public read policies with `USING (true)`, public update policies with `USING (true)` / `WITH CHECK (true)`, and an `ALL` policy on results. The database role has table privileges; RLS policies remain the effective row filter and several policies are permissive.
+- The new candidate-facing RPCs used by the review-branch frontend are still absent from the production function catalog; they were found in staging. Do not point the upgrade branch at production or merge/deploy it until the schema/API contract and admin workflows are reconciled.
+
+**Action boundary:** no SQL or schema changes were made during this follow-up inspection. Because the remaining policies affect live CBT operations, do not apply blanket revokes or replace policies without a reviewed, staged containment plan and a tested admin fallback. Treat the residual exposure as urgent; these catalog findings indicate risk, not proof of exploitation.
