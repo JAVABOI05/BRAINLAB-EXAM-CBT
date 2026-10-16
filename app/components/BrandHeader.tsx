@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 const links = [
-  { href: "/#learning-paths", label: "Explore Learning" },
+  { href: "/explore", label: "Explore" },
   { href: "/login", label: "CBT Practice" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/courses", label: "Courses" },
