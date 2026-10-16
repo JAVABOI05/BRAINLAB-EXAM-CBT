@@ -18,7 +18,7 @@ Set-Location BRAINLAB-ACADEMY-UPGRADE
 Copy-Item .env.example .env.local
 ```
 
-Edit `.env.local` locally with **staging-only** values. Do not paste those values into chat or commit the file. The placeholder values in CI are for building only and cannot be used for real sessions.
+Edit `.env.local` locally with **staging-only** values. Do not paste those values into chat or commit the file. The placeholder values in CI are for building only and cannot be used for real sessions. The private operator console is fail-closed unless `BRAINLAB_PRIVATE_ENTRY_PATH` and `BRAINLAB_PRIVATE_ENTRY_TOKEN` are configured; follow [Private Console Access](./PRIVATE-CONSOLE-ACCESS.md) if you need to test it.
 
 Then run:
 
@@ -28,7 +28,7 @@ npm run build
 npm run dev
 ```
 
-Review the public landing page, About page, candidate portal at `/login`, access and instructions routes, result/corrections pages, active exam, and admin routes. Use a test candidate and staging data only.
+Review the public landing page, About page, candidate portal at `/login`, access and instructions routes, result/corrections pages, active exam, and private console only after configuring its server-only entry values. Use a test candidate and staging data only.
 
 ## Before any merge or deployment
 
