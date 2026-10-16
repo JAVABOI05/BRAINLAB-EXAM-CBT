@@ -67,6 +67,29 @@ export default function LearnerDashboardPage() {
             <Link href="/about" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800">Explore BrainLab</Link>
           </article>
         </div>
+        <section className="mt-8 border-t border-slate-200 pt-7">
+          <h2 className="text-xl font-extrabold text-slate-950">Your future learning spaces</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">These areas are being prepared in stages. Links open a Coming Soon page so you can see the plan without mistaking it for a live feature.</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              ["My progress", "/learning/progress"],
+              ["My courses", "/learning/courses"],
+              ["Achievements", "/learning/achievements"],
+              ["Study groups", "/study-groups"],
+              ["Community discussions", "/community/discussions"],
+              ["Messages", "/messages"],
+              ["Notifications", "/notifications"],
+              ["Learner profile", "/profile"],
+              ["Account settings", "/settings"],
+              ["Skills Passport", "/skills-passport"],
+              ["Learning DNA", "/learning-dna"],
+            ].map(([label, href]) => (
+              <Link key={href} href={href} className="flex min-h-12 items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 hover:border-blue-300 hover:bg-blue-50">
+                <span>{label}</span><span className="ml-3 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-900">Coming soon</span>
+              </Link>
+            ))}
+          </div>
+        </section>
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-5">
           <Link href="/" className="text-sm font-semibold text-blue-800 underline underline-offset-4">Back to homepage</Link>
           <button type="button" onClick={() => void signOut()} className="min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Sign out</button>
