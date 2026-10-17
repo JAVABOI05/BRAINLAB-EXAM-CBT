@@ -29,6 +29,7 @@ type Attempt = {
   startedAt: string;
   deadlineAt: string | null;
   questions: TestQuestion[];
+  answers: Record<string, string>;
 };
 type ReviewItem = {
   questionId: string;
@@ -236,20 +237,28 @@ export default function TopicTestPage() {
       setAttempt(started);
       setCurrentIndex(0);
       const storageKey = `brainlab-learning-test:${started.attemptId}`;
-      let restored: Record<string, string> = {};
+      let localRestored: Record<string, string> = {};
       try {
         const raw = localStorage.getItem(storageKey);
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
-          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) restored = parsed as Record<string, string>;
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) localRestored = parsed as Record<string, string>;
         }
-      } catch { restored = {}; }
+      } catch { localRestored = {}; }
       const allowed = new Map(started.questions.map((question) => [question.id, new Set(question.options.map((option) => option.id))]));
-      const safeRestored = Object.fromEntries(Object.entries(restored).filter(([questionId, answer]) => allowed.has(questionId) && allowed.get(questionId)?.has(answer)));
+      const validAnswers = (source: Record<string, string>) => Object.fromEntries(
+        Object.entries(source).filter(([questionId, answer]) => allowed.has(questionId) && allowed.get(questionId)?.has(answer))
+      );
+      // Server-saved selections recover attempts on another device. Local recovery
+      // data wins for this device because it may contain a newer unsynced selection.
+      const serverRestored = validAnswers(started.answers ?? {});
+      const safeLocalRestored = validAnswers(localRestored);
+      const safeRestored = { ...serverRestored, ...safeLocalRestored };
       setAnswers(safeRestored);
+      try { localStorage.setItem(storageKey, JSON.stringify(safeRestored)); } catch { /* server saves remain authoritative */ }
       if (Object.keys(safeRestored).length) {
         const savedResults = await Promise.all(Object.entries(safeRestored).map(([questionId, answer]) => saveAnswer(started.attemptId, questionId, answer)));
-        if (savedResults.some((saved) => !saved)) setNotice("Your saved answers were restored on this device, but some could not sync yet. Check your connection before submitting.");
+        if (savedResults.some((saved) => !saved)) setNotice("Some restored answers could not sync yet. Check your connection before submitting.");
       }
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : "We could not start this assessment.");
@@ -350,7 +359,7 @@ export default function TopicTestPage() {
               </article>
             ))}
           </div>
-          <div className="mt-8 flex flex-wrap gap-3"><Link href={`/learn/${subjectSlug}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Return to topics</Link><Link href="/learning" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-800">Open Learning Lab</Link></div>
+          <div className="mt-8 flex flex-wrap gap-3"><Link href={`/learn/${subjectSlug}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Return to topics</Link><Link href="/ai-learning" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-800">Open AI Learning</Link></div>
         </section>
       )}
     </main>
