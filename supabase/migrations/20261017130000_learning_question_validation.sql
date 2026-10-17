@@ -81,7 +81,7 @@ revoke all on function public.learning_question_options_valid(
 ) from public, anon;
 grant execute on function public.learning_question_options_valid(
   jsonb, public.topic_question_type, text
-) to authenticated;
+) to authenticated, service_role;
 
 alter table public.learning_test_questions
   add constraint learning_test_questions_options_valid
