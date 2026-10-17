@@ -125,15 +125,20 @@ export default function TopicTestPage() {
   const saveAnswer = useCallback(async (attemptId: string, questionId: string, selectedAnswer: string) => {
     const token = tokenRef.current;
     if (!token) return false;
-    const promise = fetch(`/api/learning/attempts/${attemptId}/answers`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ questionId, selectedAnswer }),
-      cache: "no-store",
-    }).then(async (response) => response.ok).catch(() => false);
+    const previous = pendingSaves.current.get(questionId) ?? Promise.resolve(true);
+    const promise = previous.then(async (previousSaved) => {
+      if (!previousSaved) return false;
+      const response = await fetch(`/api/learning/attempts/${attemptId}/answers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ questionId, selectedAnswer }),
+        cache: "no-store",
+      });
+      return response.ok;
+    }).catch(() => false);
     pendingSaves.current.set(questionId, promise);
     const saved = await promise;
-    pendingSaves.current.delete(questionId);
+    if (pendingSaves.current.get(questionId) === promise) pendingSaves.current.delete(questionId);
     return saved;
   }, []);
 
@@ -262,7 +267,7 @@ export default function TopicTestPage() {
     <main id="main" className="mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
       <Link href={`/learn/${subjectSlug}`} className="inline-flex min-h-10 items-center gap-2 text-sm font-bold text-blue-800 underline underline-offset-4">← Back to {subjectName || "subject"}</Link>
       {loading && <p className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600" role="status">Loading topic test…</p>}
-      {!loading && error && !attempt && <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950" role="alert"><h1 className="text-xl font-extrabold">Topic test unavailable</h1><p className="mt-2">{error}</p><Link href={`/learn/${subjectSlug}`} className="mt-4 inline-block font-bold underline underline-offset-4">Return to topics</Link></div>}
+      {!loading && error && !attempt && <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950" role="alert"><h1 className="text-xl font-extrabold">Topic test unavailable</h1><p className="mt-2">{error}</p><div className="mt-4 flex flex-wrap gap-4"><Link href="/account" className="font-bold underline underline-offset-4">Sign in or create an account</Link><Link href={`/learn/${subjectSlug}`} className="font-bold underline underline-offset-4">Return to topics</Link></div></div>}
 
       {!loading && test && !attempt && !result && !error && (
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
