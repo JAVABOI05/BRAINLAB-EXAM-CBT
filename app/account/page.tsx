@@ -23,7 +23,17 @@ export default function AccountPage() {
     let active = true;
     async function redirectIfAlreadySignedIn() {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (active && !sessionError && session) router.replace("/dashboard");
+      if (!active || sessionError || !session) return;
+
+      // Never treat a persisted browser session as proof that email verification
+      // is complete. This is a client-side guard; Supabase settings and server
+      // authorization must also enforce the policy.
+      if (session.user.email && !session.user.email_confirmed_at) {
+        await supabase.auth.signOut();
+        setError("Please verify your email before entering BrainLab. Check your inbox for the verification link, then sign in again.");
+        return;
+      }
+      router.replace("/dashboard");
     }
     void redirectIfAlreadySignedIn().catch(() => {
       // Keep the form available if session restoration temporarily fails.
@@ -44,6 +54,20 @@ export default function AccountPage() {
 
   async function continueWithSession(session: Session) {
     setError("");
+    setMessage("");
+
+    // Defense in depth for projects where email confirmation is enabled.
+    // The Supabase project must still have Confirm email enabled; otherwise
+    // Supabase may mark new accounts confirmed without sending a verification email.
+    if (session.user.email && !session.user.email_confirmed_at) {
+      await clearOperatorGate();
+      await supabase.auth.signOut();
+      setMessage("Your account needs email verification before you can continue. Check your inbox for the verification link, then sign in again.");
+      setMode("signin");
+      setPassword("");
+      return;
+    }
+
     const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
 
     if (permissionError) {
