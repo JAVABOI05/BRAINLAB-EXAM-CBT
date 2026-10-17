@@ -152,8 +152,8 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.GROQ_API_KEY;
-  const model = process.env.GROQ_MODEL;
-  if (!apiKey || !model) return jsonError("AI Tutor is not configured yet. Please try again later.", 503);
+  const model = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  if (!apiKey) return jsonError("AI Tutor is not configured yet. Please try again later.", 503);
 
   let body: JsonRecord;
   try {
