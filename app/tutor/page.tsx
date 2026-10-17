@@ -38,10 +38,10 @@ export default function TutorHomePage() {
       const canManageAll = !adminRole.error && ["super_admin", "platform_admin"].includes(String(adminRole.data ?? ""));
       const rows = memberships ?? [];
       const ids = rows.map((item) => item.subject_id);
-      const { data: subjectRows, error: subjectError } = ids.length
-        ? await supabase.from("learning_subjects").select("id,name,slug,description").in("id", ids).order("name")
-        : canManageAll
-          ? await supabase.from("learning_subjects").select("id,name,slug,description").order("name")
+      const { data: subjectRows, error: subjectError } = canManageAll
+        ? await supabase.from("learning_subjects").select("id,name,slug,description").order("name")
+        : ids.length
+          ? await supabase.from("learning_subjects").select("id,name,slug,description").in("id", ids).order("name")
           : { data: [], error: null };
       if (!active) return;
       if (subjectError) {
