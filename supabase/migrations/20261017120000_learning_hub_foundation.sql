@@ -272,6 +272,18 @@ create trigger learning_lesson_progress_updated_at
 before update on public.learning_lesson_progress
 for each row execute function public.set_learning_updated_at();
 
+-- Only platform-level administrators bypass subject assignment. Teachers and specialist
+-- administrators must receive an explicit subject membership; the broad permission
+-- helper also grants content capabilities to scoped roles and is not suitable here.
+create or replace function public.learning_can_manage_all()
+returns boolean
+language sql
+stable
+set search_path = public, pg_temp
+as $function$
+  select coalesce(public.get_admin_role() in ('super_admin', 'platform_admin'), false);
+$function$;
+
 -- RLS is enabled on every exposed table.
 alter table public.learning_subjects enable row level security;
 alter table public.learning_topics enable row level security;
@@ -295,20 +307,20 @@ using (
     select 1 from public.learning_subject_memberships m
     where m.subject_id = id and m.user_id = (select auth.uid())
   )
-  or (select public.admin_has_permission('learning.content.manage'))
+  or (select public.learning_can_manage_all())
 );
 
 create policy learning_subjects_insert_admin
 on public.learning_subjects for insert to authenticated
 with check (
   created_by = (select auth.uid())
-  and (select public.admin_has_permission('learning.content.manage'))
+  and (select public.learning_can_manage_all())
 );
 
 create policy learning_subjects_update_scoped
 on public.learning_subjects for update to authenticated
 using (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_subject_memberships m
     where m.subject_id = id and m.user_id = (select auth.uid())
@@ -316,7 +328,7 @@ using (
   )
 )
 with check (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_subject_memberships m
     where m.subject_id = id and m.user_id = (select auth.uid())
@@ -326,19 +338,19 @@ with check (
 
 create policy learning_subjects_delete_admin
 on public.learning_subjects for delete to authenticated
-using ((select public.admin_has_permission('learning.content.manage')));
+using ((select public.learning_can_manage_all()));
 
 create policy learning_memberships_read_scoped
 on public.learning_subject_memberships for select to authenticated
 using (
   user_id = (select auth.uid())
-  or (select public.admin_has_permission('learning.content.manage'))
+  or (select public.learning_can_manage_all())
 );
 
 create policy learning_memberships_manage_admin
 on public.learning_subject_memberships for all to authenticated
-using ((select public.admin_has_permission('learning.content.manage')))
-with check ((select public.admin_has_permission('learning.content.manage')));
+using ((select public.learning_can_manage_all()))
+with check ((select public.learning_can_manage_all()));
 
 create policy learning_topics_read_published_or_assigned
 on public.learning_topics for select to anon, authenticated
@@ -354,13 +366,13 @@ using (
     select 1 from public.learning_subject_memberships m
     where m.subject_id = subject_id and m.user_id = (select auth.uid())
   )
-  or (select public.admin_has_permission('learning.content.manage'))
+  or (select public.learning_can_manage_all())
 );
 
 create policy learning_topics_manage_scoped
 on public.learning_topics for all to authenticated
 using (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_subject_memberships m
     where m.subject_id = subject_id and m.user_id = (select auth.uid())
@@ -368,7 +380,7 @@ using (
   )
 )
 with check (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_subject_memberships m
     where m.subject_id = subject_id and m.user_id = (select auth.uid())
@@ -392,13 +404,13 @@ using (
     join public.learning_subject_memberships m on m.subject_id = t.subject_id
     where t.id = topic_id and m.user_id = (select auth.uid())
   )
-  or (select public.admin_has_permission('learning.content.manage'))
+  or (select public.learning_can_manage_all())
 );
 
 create policy learning_lessons_manage_scoped
 on public.learning_lessons for all to authenticated
 using (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_topics t
     join public.learning_subject_memberships m on m.subject_id = t.subject_id
@@ -407,7 +419,7 @@ using (
   )
 )
 with check (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_topics t
     join public.learning_subject_memberships m on m.subject_id = t.subject_id
@@ -431,13 +443,13 @@ using (
     join public.learning_subject_memberships m on m.subject_id = t.subject_id
     where l.id = lesson_id and m.user_id = (select auth.uid())
   )
-  or (select public.admin_has_permission('learning.content.manage'))
+  or (select public.learning_can_manage_all())
 );
 
 create policy learning_blocks_manage_scoped
 on public.learning_lesson_blocks for all to authenticated
 using (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_lessons l
     join public.learning_topics t on t.id = l.topic_id
@@ -447,7 +459,7 @@ using (
   )
 )
 with check (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_lessons l
     join public.learning_topics t on t.id = l.topic_id
@@ -472,13 +484,13 @@ using (
     join public.learning_subject_memberships m on m.subject_id = t.subject_id
     where t.id = topic_id and m.user_id = (select auth.uid())
   )
-  or (select public.admin_has_permission('learning.content.manage'))
+  or (select public.learning_can_manage_all())
 );
 
 create policy learning_topic_tests_manage_scoped
 on public.learning_topic_tests for all to authenticated
 using (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_topics t
     join public.learning_subject_memberships m on m.subject_id = t.subject_id
@@ -487,7 +499,7 @@ using (
   )
 )
 with check (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_topics t
     join public.learning_subject_memberships m on m.subject_id = t.subject_id
@@ -501,7 +513,7 @@ with check (
 create policy learning_test_questions_read_authorized
 on public.learning_test_questions for select to authenticated
 using (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_topic_tests tt
     join public.learning_topics t on t.id = tt.topic_id
@@ -513,7 +525,7 @@ using (
 create policy learning_test_questions_manage_scoped
 on public.learning_test_questions for all to authenticated
 using (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_topic_tests tt
     join public.learning_topics t on t.id = tt.topic_id
@@ -523,7 +535,7 @@ using (
   )
 )
 with check (
-  (select public.admin_has_permission('learning.content.manage'))
+  (select public.learning_can_manage_all())
   or exists (
     select 1 from public.learning_topic_tests tt
     join public.learning_topics t on t.id = tt.topic_id
