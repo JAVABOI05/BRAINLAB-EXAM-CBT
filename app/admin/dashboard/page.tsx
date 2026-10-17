@@ -2,7 +2,7 @@
 
 import { adminSignOut, getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission, ADMIN_ROLE_DETAILS, type AdminPermission } from "../../lib/adminRoles";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import "../admin.css";
@@ -48,46 +48,7 @@ export default function AdminDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    async function initializeDashboard() {
-      const admin = await getAdminSession();
-      if (!active) return;
-      if (!admin) {
-        router.replace("/account");
-        return;
-      }
-
-      setAdminUser(admin);
-      const permissionKeys: AdminPermission[] = [
-        "cbt.config.read",
-        "cbt.config.manage",
-        "cbt.questions.manage",
-        "cbt.results.read",
-        "cbt.codes.manage",
-        "cbt.sessions.read",
-        "audit.logs.read",
-      ];
-      const entries = await Promise.all(
-        permissionKeys.map(async (permission) => [
-          permission,
-          await adminHasPermission(permission),
-        ] as const)
-      );
-      if (!active) return;
-      const access = Object.fromEntries(entries) as Partial<Record<AdminPermission, boolean>>;
-      setPermissions(access);
-      await loadAdminData(access);
-    }
-
-    void initializeDashboard().catch(() => {
-      if (active) router.replace("/account");
-    });
-    return () => { active = false; };
-  }, [router]);
-
-  async function loadAdminData(access = permissions) {
+  const loadAdminData = useCallback(async (access: Partial<Record<AdminPermission, boolean>> = {}) => {
     setLoading(true);
     setMessage("");
 
@@ -146,7 +107,46 @@ export default function AdminDashboardPage() {
       { title: "Access Codes", value: codeCount },
     ]);
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function initializeDashboard() {
+      const admin = await getAdminSession();
+      if (!active) return;
+      if (!admin) {
+        router.replace("/account");
+        return;
+      }
+
+      setAdminUser(admin);
+      const permissionKeys: AdminPermission[] = [
+        "cbt.config.read",
+        "cbt.config.manage",
+        "cbt.questions.manage",
+        "cbt.results.read",
+        "cbt.codes.manage",
+        "cbt.sessions.read",
+        "audit.logs.read",
+      ];
+      const entries = await Promise.all(
+        permissionKeys.map(async (permission) => [
+          permission,
+          await adminHasPermission(permission),
+        ] as const)
+      );
+      if (!active) return;
+      const access = Object.fromEntries(entries) as Partial<Record<AdminPermission, boolean>>;
+      setPermissions(access);
+      await loadAdminData(access);
+    }
+
+    void initializeDashboard().catch(() => {
+      if (active) router.replace("/account");
+    });
+    return () => { active = false; };
+  }, [router, loadAdminData]);
 
   async function saveSetting(key: keyof SettingsMap, value: number | boolean) {
     const { error } = await supabase
@@ -395,7 +395,7 @@ export default function AdminDashboardPage() {
               {saving ? "Saving..." : "Save Settings"}
             </button>
 
-            <button onClick={loadAdminData} className="admin-btn-light">
+            <button onClick={() => loadAdminData(permissions)} className="admin-btn-light">
               Refresh Dashboard
             </button>
           </div>
