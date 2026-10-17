@@ -68,18 +68,19 @@ export default function LearnPage() {
       }
       let completedIds = new Set<string>();
       if (studentId && (lessonRows ?? []).length) {
-        const { data: progressRows } = await supabase
+        const { data: progressRows, error: progressError } = await supabase
           .from("learning_lesson_progress")
           .select("lesson_id")
           .eq("student_id", studentId)
           .eq("status", "completed");
+        if (progressError) {
+          setError("Your lesson progress is temporarily unavailable.");
+          setLoading(false);
+          return;
+        }
         completedIds = new Set((progressRows ?? []).map((item) => item.lesson_id));
       }
       if (!active) return;
-      const topicsBySubject = new Map<string, string[]>();
-      for (const topic of topicRows ?? []) {
-        topicsBySubject.set(topic.subject_id, [...(topicsBySubject.get(topic.subject_id) ?? []), topic.id]);
-      }
       const lessonsBySubject = new Map<string, string[]>();
       for (const lesson of lessonRows ?? []) {
         const parentTopic = (topicRows ?? []).find((topic) => topic.id === lesson.topic_id);
