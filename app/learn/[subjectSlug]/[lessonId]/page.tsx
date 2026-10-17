@@ -157,6 +157,9 @@ export default function LessonViewerPage() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [progressStatus, setProgressStatus] = useState<"signed_out" | "in_progress" | "completed">("signed_out");
+  const [progressSaving, setProgressSaving] = useState(false);
+  const [progressMessage, setProgressMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -215,6 +218,32 @@ export default function LessonViewerPage() {
       setTopic(topicData as Topic);
       setLesson(lessonData as Lesson);
       setBlocks((blockData ?? []) as Block[]);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const studentId = sessionData.session?.user.id;
+      if (studentId) {
+        const { data: progressRow, error: progressError } = await supabase
+          .from("learning_lesson_progress")
+          .select("status")
+          .eq("student_id", studentId)
+          .eq("lesson_id", lessonId)
+          .maybeSingle();
+        if (!active) return;
+        if (!progressError && progressRow?.status === "completed") {
+          setProgressStatus("completed");
+        } else {
+          setProgressStatus("in_progress");
+          const { error: saveProgressError } = await supabase.from("learning_lesson_progress").upsert({
+            student_id: studentId,
+            lesson_id: lessonId,
+            status: "in_progress",
+            last_block_id: (blockData ?? []).length ? blockData![0].id : null,
+          }, { onConflict: "student_id,lesson_id" });
+          if (saveProgressError) setProgressMessage("Your lesson is open, but progress could not sync yet.");
+        }
+      } else {
+        setProgressStatus("signed_out");
+      }
+      if (!active) return;
       setLoading(false);
     }
     void loadLesson();
@@ -222,6 +251,32 @@ export default function LessonViewerPage() {
   }, [lessonId, subjectSlug]);
 
   const durationLabel = useMemo(() => lesson ? `${lesson.estimated_duration_mins} min` : "", [lesson]);
+
+  async function markLessonComplete() {
+    if (!lesson || progressStatus === "signed_out" || progressSaving) return;
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const studentId = sessionData.session?.user.id;
+    if (sessionError || !studentId) {
+      setProgressMessage("Sign in to save lesson progress.");
+      setProgressStatus("signed_out");
+      return;
+    }
+    setProgressSaving(true);
+    setProgressMessage("");
+    const { error: saveError } = await supabase.from("learning_lesson_progress").upsert({
+      student_id: studentId,
+      lesson_id: lesson.id,
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      last_block_id: blocks.length ? blocks[blocks.length - 1].id : null,
+    }, { onConflict: "student_id,lesson_id" });
+    if (saveError) setProgressMessage("We could not save completion yet. Check your connection and try again.");
+    else {
+      setProgressStatus("completed");
+      setProgressMessage("Lesson marked complete. Your subject progress has been updated.");
+    }
+    setProgressSaving(false);
+  }
 
   return (
     <main id="main" className="mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
@@ -244,9 +299,15 @@ export default function LessonViewerPage() {
             </div>
           </header>
           {blocks.length === 0 ? <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7"><h2 className="text-lg font-extrabold text-slate-950">Lesson content is being prepared</h2><p className="mt-2 leading-7 text-slate-600">This lesson has been published without any content blocks. Please return later or choose another lesson.</p></div> : <div className="mt-8 space-y-6">{blocks.map((block, index) => <div key={block.id} className="space-y-2"><p className="px-1 text-xs font-extrabold uppercase tracking-wider text-slate-400">Part {index + 1}</p><BlockRenderer block={block} /></div>)}</div>}
-          <footer className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
-            <p className="text-sm text-slate-500">Take your time. Use checkpoints to test understanding, not just recall.</p>
-            <Link href={`/learn/${subject.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Back to topics</Link>
+          <footer className="mt-10 border-t border-slate-200 pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="max-w-xl text-sm leading-6 text-slate-500">Take your time. Use checkpoints to test understanding, not just recall.</p>
+              <div className="flex flex-wrap gap-3">
+                {progressStatus === "signed_out" ? <Link href="/account" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800">Sign in to track progress</Link> : <button type="button" disabled={progressSaving || blocks.length === 0 || progressStatus === "completed"} onClick={() => void markLessonComplete()} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{progressStatus === "completed" ? "Lesson completed ✓" : progressSaving ? "Saving progress…" : "Mark lesson complete"}</button>}
+                <Link href={`/learn/${subject.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Back to topics</Link>
+              </div>
+            </div>
+            {progressMessage && <p role="status" className="mt-3 text-sm text-slate-600">{progressMessage}</p>}
           </footer>
         </>
       )}
