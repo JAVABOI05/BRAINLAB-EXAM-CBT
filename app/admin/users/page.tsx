@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
     return () => { active = false; };
   }, [loadProfiles, router]);
 
-  async function assignRole(event: React.FormEvent<HTMLFormElement>) {
+  async function assignRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setMessage("");
