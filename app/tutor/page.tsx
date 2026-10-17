@@ -34,8 +34,8 @@ export default function TutorHomePage() {
         setLoading(false);
         return;
       }
-      const permission = await supabase.rpc("admin_has_permission", { permission_key: "learning.content.manage" });
-      const canManageAll = !permission.error && permission.data === true;
+      const adminRole = await supabase.rpc("get_admin_role");
+      const canManageAll = !adminRole.error && ["super_admin", "platform_admin"].includes(String(adminRole.data ?? ""));
       const rows = memberships ?? [];
       const ids = rows.map((item) => item.subject_id);
       const { data: subjectRows, error: subjectError } = ids.length
