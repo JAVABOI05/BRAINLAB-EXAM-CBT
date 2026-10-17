@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 
@@ -35,7 +37,7 @@ export function safeMediaUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+    return url.protocol === "https:" ? url.toString() : null;
   } catch {
     return null;
   }
