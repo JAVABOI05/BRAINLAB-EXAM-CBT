@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { streamAiTutor, type AiChatMessage, type AiQuestionContext } from "../lib/aiTutor";
 
 type LearningIntent = "understand" | "practise" | "mistake" | "exam";
 type MissionType = "decode" | "solve" | "spot" | "apply" | "teach";
@@ -29,8 +30,53 @@ export default function LearningLabPage() {
   const [tutorOpen, setTutorOpen] = useState(false);
   const [tutorDraft, setTutorDraft] = useState("");
   const [tutorNotice, setTutorNotice] = useState("");
+  const [tutorMessages, setTutorMessages] = useState<AiChatMessage[]>([]);
+  const [tutorBusy, setTutorBusy] = useState(false);
   const selectedIntent = useMemo(() => intents.find((item) => item.id === intent) ?? intents[0], [intent]);
   const selectedMission = useMemo(() => missions.find((item) => item.id === mission) ?? missions[0], [mission]);
+
+  const tutorQuestion: AiQuestionContext = {
+    subject: topic.trim().slice(0, 100) || "General learning",
+    type: "Learning Lab mission",
+    text: "Learning goal: " + selectedIntent.title + ". Mission: " + selectedMission.title + ". Topic: " + (topic.trim() || "the topic the learner chooses") + ". Help the learner learn through this mission, ask one useful clarifying question if needed, and do not pretend to know their exam results.",
+    options: { A: "", B: "", C: "", D: "" },
+    correctAnswer: "A",
+    userAnswer: null,
+  };
+
+  async function sendTutorMessage(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const text = tutorDraft.trim();
+    if (!text || tutorBusy) return;
+    const nextMessages: AiChatMessage[] = [...tutorMessages, { role: "user", content: text }];
+    setTutorMessages(nextMessages);
+    setTutorDraft("");
+    setTutorNotice("");
+    setTutorBusy(true);
+    try {
+      let answer = "";
+      await streamAiTutor({ mode: "chat", question: tutorQuestion, messages: nextMessages }, (chunk) => {
+        answer += chunk;
+        setTutorMessages((current) => {
+          const copy = [...current];
+          const last = copy[copy.length - 1];
+          if (last && last.role === "assistant") copy[copy.length - 1] = { role: "assistant", content: last.content + chunk };
+          else copy.push({ role: "assistant", content: chunk });
+          return copy;
+        });
+      });
+      if (!answer.trim()) setTutorNotice("The tutor returned an empty response. Please try asking in a different way.");
+    } catch (error) {
+      setTutorNotice(error instanceof Error ? error.message : "The AI Tutor could not respond. Please try again.");
+    } finally {
+      setTutorBusy(false);
+    }
+  }
+
+  function startSuggestedPrompt(text: string) {
+    setTutorDraft(text);
+    setTutorNotice("");
+  }
 
   function buildPlan(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,9 +94,9 @@ export default function LearningLabPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="#mission-builder" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-300 px-6 py-3 font-extrabold text-[#061a3a] transition hover:bg-cyan-200">Build a learning mission <span aria-hidden="true" className="ml-2">↓</span></a>
               <Link href="/login" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-bold text-white transition hover:bg-white/10">Practise with CBT <span aria-hidden="true" className="ml-2">↗</span></Link>
-              <button type="button" onClick={() => setTutorOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-cyan-200/40 bg-cyan-300/10 px-6 py-3 font-bold text-cyan-100 transition hover:bg-cyan-300/20">AI Tutor preview <span aria-hidden="true" className="ml-2">✳</span></button>
+              <button type="button" onClick={() => setTutorOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-cyan-200/40 bg-cyan-300/10 px-6 py-3 font-bold text-cyan-100 transition hover:bg-cyan-300/20">Open AI Tutor <span aria-hidden="true" className="ml-2">✳</span></button>
             </div>
-            <p className="mt-5 text-xs leading-5 text-blue-200/80">First-version experience concept. This page does not yet read exam results, build a personal mastery profile or provide an AI tutor.</p>
+            <p className="mt-5 text-xs leading-5 text-blue-200/80">First-version experience concept. The AI Tutor is connected to the secure server gateway. It uses the topic and mission you provide; it does not claim access to private exam history.</p>
           </div>
 
           <div className="relative">
@@ -191,7 +237,7 @@ export default function LearningLabPage() {
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-cyan-200">BrainLab learning companion</p>
                   <h2 id="tutor-preview-title" className="mt-2 text-2xl font-black">AI Tutor</h2>
-                  <p className="mt-1 text-sm text-blue-100">Interface preview · Not connected</p>
+                  <p className="mt-1 text-sm text-blue-100">Live tutoring · Sign-in required</p>
                 </div>
                 <button type="button" onClick={() => setTutorOpen(false)} aria-label="Close AI Tutor preview" className="min-h-10 min-w-10 rounded-xl border border-white/25 text-xl hover:bg-white/10">×</button>
               </div>
@@ -200,9 +246,10 @@ export default function LearningLabPage() {
             <div className="flex-1 overflow-y-auto p-5">
               <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
                 <p className="font-extrabold text-slate-950">Understand the why, not just the answer.</p>
-                <p className="mt-2 text-sm leading-6 text-slate-700">The planned tutor will help explain concepts step by step, work through examples and create extra practice. The AI provider has not been connected, so this preview cannot answer questions yet.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">Ask about your selected topic or mission. The tutor streams an explanation from the configured AI provider. It does not have automatic access to your private results.</p>
               </div>
-              <p className="mt-6 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Example prompts for later</p>
+              {tutorMessages.length > 0 && <div className="mt-5 space-y-3" aria-live="polite">{tutorMessages.map((message, index) => <div key={message.role + "-" + index} className={"rounded-2xl p-3 text-sm leading-6 whitespace-pre-wrap " + (message.role === "user" ? "ml-6 bg-[#061a3a] text-white" : "mr-3 border border-slate-200 bg-slate-50 text-slate-800")}><p className="mb-1 text-[10px] font-extrabold uppercase tracking-wider opacity-70">{message.role === "user" ? "You" : "BrainLab AI Tutor"}</p>{message.content}</div>)}</div>}
+              <p className="mt-6 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Try a tutoring prompt</p>
               <div className="mt-3 space-y-2">
                 {[
                   "Explain this concept in simpler steps",
@@ -210,17 +257,17 @@ export default function LearningLabPage() {
                   "Help me practise a topic",
                   "Help me understand a mistake",
                 ].map((example) => (
-                  <button key={example} type="button" onClick={() => { setTutorDraft(example); setTutorNotice(""); }} className="block w-full rounded-xl border border-slate-200 p-3 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">{example} <span aria-hidden="true">→</span></button>
+                  <button key={example} type="button" onClick={() => startSuggestedPrompt(example)} className="block w-full rounded-xl border border-slate-200 p-3 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">{example} <span aria-hidden="true">→</span></button>
                 ))}
               </div>
               {tutorNotice && <p role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">{tutorNotice}</p>}
             </div>
 
-            <form onSubmit={(event) => { event.preventDefault(); if (tutorDraft.trim()) setTutorNotice("The AI Tutor is not connected yet. Your message has not been sent or saved."); }} className="border-t border-slate-200 p-4">
+            <form onSubmit={sendTutorMessage} className="border-t border-slate-200 p-4">
               <label htmlFor="tutor-preview-draft" className="text-sm font-extrabold text-slate-800">Your question</label>
-              <textarea id="tutor-preview-draft" value={tutorDraft} onChange={(event) => { setTutorDraft(event.target.value); setTutorNotice(""); }} rows={3} maxLength={2000} placeholder="Draft a question for the future tutor…" className="mt-2 w-full resize-y rounded-xl border border-slate-300 p-3 text-sm text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100" />
-              <button type="submit" disabled={!tutorDraft.trim()} className="mt-3 min-h-11 w-full rounded-xl bg-[#061a3a] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#123566] disabled:cursor-not-allowed disabled:opacity-50">Check connection status</button>
-              <p className="mt-2 text-xs leading-5 text-slate-500">Nothing is sent to an AI provider or saved by this prototype.</p>
+              <textarea id="tutor-preview-draft" value={tutorDraft} onChange={(event) => { setTutorDraft(event.target.value); setTutorNotice(""); }} rows={3} maxLength={2000} placeholder="Ask about a concept, example or mistake…" className="mt-2 w-full resize-y rounded-xl border border-slate-300 p-3 text-sm text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100" />
+              <button type="submit" disabled={!tutorDraft.trim() || tutorBusy} className="mt-3 min-h-11 w-full rounded-xl bg-[#061a3a] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#123566] disabled:cursor-not-allowed disabled:opacity-50">{tutorBusy ? "Thinking…" : "Ask AI Tutor →"}</button>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Your message is sent to the configured AI provider through BrainLab’s server. Avoid entering personal or sensitive information.</p>
             </form>
           </section>
         </div>
