@@ -158,6 +158,27 @@ create table public.learning_test_attempts (
   )
 );
 
+-- Immutable per-attempt question snapshots preserve grading consistency if a tutor
+-- edits or removes the source question after the attempt begins. This table has RLS
+-- enabled and intentionally has no student SELECT policy or direct table grants.
+create table public.learning_test_attempt_questions (
+  id uuid primary key default gen_random_uuid(),
+  attempt_id uuid not null references public.learning_test_attempts(id) on delete cascade,
+  question_id uuid not null references public.learning_test_questions(id) on delete restrict,
+  question_version integer not null check (question_version > 0),
+  question_type public.topic_question_type not null,
+  prompt_snapshot text not null,
+  image_url_snapshot text,
+  options_snapshot jsonb not null check (jsonb_typeof(options_snapshot) = 'array'),
+  correct_answer_snapshot text not null,
+  explanation_snapshot text,
+  created_at timestamptz not null default now(),
+  unique (attempt_id, question_id)
+);
+
+create index learning_attempt_questions_attempt_idx
+  on public.learning_test_attempt_questions(attempt_id);
+
 create table public.learning_test_answers (
   id uuid primary key default gen_random_uuid(),
   attempt_id uuid not null references public.learning_test_attempts(id) on delete cascade,
@@ -257,6 +278,7 @@ alter table public.learning_topic_tests enable row level security;
 alter table public.learning_test_questions enable row level security;
 alter table public.learning_test_attempts enable row level security;
 alter table public.learning_test_answers enable row level security;
+alter table public.learning_test_attempt_questions enable row level security;
 alter table public.learning_lesson_progress enable row level security;
 
 -- Publicly visible learning content is published-only. Tutors/reviewers are scoped
