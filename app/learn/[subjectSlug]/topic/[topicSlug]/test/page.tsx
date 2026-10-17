@@ -158,7 +158,7 @@ export default function TopicTestPage() {
       saveResults = [...saveResults, ...retryResults];
     }
     setSaving(false);
-    if (!auto && saveResults.some((saved) => !saved)) {
+    if (!auto && (saveResults.some((saved) => !saved) && Object.keys(answers).length === 0 || (!auto && Object.keys(answers).length > 0 && saveResults.slice(-Object.keys(answers).length).some((saved) => !saved)))) {
       submittingRef.current = false;
       setSubmitting(false);
       setError("Some answers could not be saved. Check your connection and try submitting again.");
