@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/brainlab-academy-upgrade
+      - feature/learning-hub-foundation
   pull_request:
     branches:
       - main
