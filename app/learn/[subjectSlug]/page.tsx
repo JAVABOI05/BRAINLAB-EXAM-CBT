@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabase";
 
 type Subject = { id: string; name: string; slug: string; description: string | null };
 type Lesson = { id: string; title: string; summary: string | null; estimated_duration_mins: number; order_index: number };
-type Topic = { id: string; title: string; slug: string; description: string | null; order_index: number; lessons: Lesson[]; test: { id: string; title: string } | null };
+type Topic = { id: string; title: string; slug: string; description: string | null; order_index: number; lessons: Lesson[]; completedCount: number; test: { id: string; title: string } | null };
 
 export default function SubjectLearningPage() {
   const params = useParams<{ subjectSlug: string }>();
@@ -16,6 +16,7 @@ export default function SubjectLearningPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hasStudentSession, setHasStudentSession] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -76,12 +77,35 @@ export default function SubjectLearningPage() {
         return;
       }
 
+      const { data: sessionData } = await supabase.auth.getSession();
+      const studentId = sessionData.session?.user.id ?? null;
+      setHasStudentSession(Boolean(studentId));
+      const allLessons = lessonResults.flatMap((item) => item.lessons ?? []) as Lesson[];
+      let completedIds = new Set<string>();
+      if (studentId && allLessons.length) {
+        const { data: progressRows, error: progressError } = await supabase
+          .from("learning_lesson_progress")
+          .select("lesson_id")
+          .eq("student_id", studentId)
+          .eq("status", "completed");
+        if (progressError) {
+          setError("Your learning progress is temporarily unavailable.");
+          setLoading(false);
+          return;
+        }
+        completedIds = new Set((progressRows ?? []).map((item) => item.lesson_id));
+      }
+      if (!active) return;
       setSubject(subjectData as Subject);
-      setTopics(topicRows.map((topic) => ({
-        ...topic,
-        lessons: (lessonResults.find((item) => item.topicId === topic.id)?.lessons ?? []) as Lesson[],
-        test: testsByTopic.get(topic.id) ?? null,
-      })) as Topic[]);
+      setTopics(topicRows.map((topic) => {
+        const lessons = (lessonResults.find((item) => item.topicId === topic.id)?.lessons ?? []) as Lesson[];
+        return {
+          ...topic,
+          lessons,
+          completedCount: lessons.filter((lesson) => completedIds.has(lesson.id)).length,
+          test: testsByTopic.get(topic.id) ?? null,
+        };
+      }) as Topic[]);
       setLoading(false);
     }
     void loadSubject();
@@ -118,7 +142,7 @@ export default function SubjectLearningPage() {
                     <div className="min-w-0 flex-1">
                       <h3 className="text-lg font-extrabold text-slate-950">{topic.title}</h3>
                       {topic.description && <p className="mt-1 text-sm leading-6 text-slate-600">{topic.description}</p>}
-                      <p className="mt-2 text-xs font-semibold text-slate-500">{topic.lessons.length} published {topic.lessons.length === 1 ? "lesson" : "lessons"}</p>
+                      <p className="mt-2 text-xs font-semibold text-slate-500">{topic.lessons.length} published {topic.lessons.length === 1 ? "lesson" : "lessons"}</p><div className="mt-3 max-w-xs"><div className="flex justify-between gap-3 text-xs font-semibold text-slate-500"><span>{hasStudentSession ? "Progress" : "Sign in to track progress"}</span>{hasStudentSession && <span>{topic.completedCount}/{topic.lessons.length} complete</span>}</div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-emerald-600" style={{ width: `${hasStudentSession && topic.lessons.length ? (topic.completedCount / topic.lessons.length) * 100 : 0}%` }} /></div></div>
                     </div>
                   </div>
                   {topic.lessons.length > 0 ? (
