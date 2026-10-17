@@ -1,3 +1,5 @@
+import { supabase } from "./supabase";
+
 export const ADMIN_ROLES = [
   "super_admin",
   "platform_admin",
@@ -113,7 +115,6 @@ export const ADMIN_PERMISSION_KEYS = [
 export type AdminPermission = (typeof ADMIN_PERMISSION_KEYS)[number];
 
 export async function adminHasPermission(permission: AdminPermission): Promise<boolean> {
-  const { supabase } = await import("./supabase");
   const { data, error } = await supabase.rpc("admin_has_permission", {
     permission_key: permission,
   });
