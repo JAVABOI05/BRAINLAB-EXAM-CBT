@@ -50,7 +50,10 @@ set search_path = public, pg_temp
 as $function$
   select coalesce((
     select case
-      when ap.role in ('super_admin', 'platform_admin') then true
+      when ap.role = 'super_admin' then true
+      when ap.role = 'platform_admin' then permission_key not in (
+        'admin.roles.manage', 'security.settings.manage', 'secrets.manage'
+      )
       when ap.role = 'cbt_admin' then permission_key = any (array[
         'cbt.questions.manage', 'cbt.answers.read', 'cbt.results.read',
         'cbt.sessions.read', 'cbt.sessions.manage', 'cbt.codes.manage',
