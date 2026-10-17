@@ -19,6 +19,7 @@ export default function BrandFooter() {
             <li><Link className="hover:text-white" href="/explore">Explore all pages</Link></li>
             <li><Link className="hover:text-white" href="/cbt">CBT and exam practice</Link></li>
             <li><Link className="hover:text-white" href="/login">CBT Practice</Link></li>
+            <li><Link className="hover:text-white" href="/learn">Learning Hub</Link></li>
             <li><Link className="hover:text-white" href="/#learning-paths">Learning pathways</Link></li>
             <li><Link className="hover:text-white" href="/ai-learning">AI learning companion</Link></li>
             <li><Link className="hover:text-white" href="/courses">Courses and resources</Link></li>
