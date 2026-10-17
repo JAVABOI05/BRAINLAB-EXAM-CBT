@@ -95,11 +95,9 @@ async function askGemini(message: string) {
   const endpoint = new URL(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
   );
-  endpoint.searchParams.set("key", apiKey);
-
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
       systemInstruction: {
         parts: [
@@ -148,12 +146,13 @@ export async function POST(request: NextRequest) {
   const { data: authData, error: authError } = await authClient.auth.getUser(accessToken);
   if (authError || !authData.user) return jsonError("Please sign in to use the AI Tutor.", 401);
 
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (contentLength > MAX_BODY_BYTES) return jsonError("Your question is too long.", 413);
-
   let body: unknown;
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
+      return jsonError("Your question is too long.", 413);
+    }
+    body = JSON.parse(rawBody);
   } catch {
     return jsonError("Please send a valid question.", 400);
   }
