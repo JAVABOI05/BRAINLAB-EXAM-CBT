@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase";
 
@@ -13,6 +13,7 @@ function slugify(value: string) {
 }
 
 export default function TutorTopicsPage() {
+  const router = useRouter();
   const params = useParams<{ subjectId: string }>();
   const subjectId = params.subjectId;
   const [subject, setSubject] = useState<{ id: string; name: string; slug: string; is_published: boolean } | null>(null);
@@ -148,7 +149,7 @@ export default function TutorTopicsPage() {
       created_by: userId,
     }).select("id").single();
     if (insertError || !data) setError("The lesson draft could not be created. Check your permission and try again.");
-    else window.location.href = `/tutor/lessons/${data.id}/builder`;
+    else router.push(`/tutor/lessons/${data.id}/builder`);
     setSaving(false);
   }
 
