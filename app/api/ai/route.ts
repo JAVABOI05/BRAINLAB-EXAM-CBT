@@ -153,9 +153,14 @@ export async function POST(request: NextRequest) {
     for (const [key, value] of requestWindows) if (value.resetAt <= now) requestWindows.delete(key);
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
-  const model = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
-  if (!apiKey) return jsonError("AI Tutor is not configured yet. Please try again later.", 503);
+  // Prefer Gemini when configured; retain Groq as a fallback for existing deployments.
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
+  const provider = geminiKey ? "gemini" : groqKey ? "groq" : null;
+  const model = provider === "gemini"
+    ? process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash"
+    : process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  if (!provider) return jsonError("AI Tutor is not configured yet. Please try again later.", 503);
 
   let body: JsonRecord;
   try {
@@ -175,25 +180,39 @@ export async function POST(request: NextRequest) {
     return jsonError(error instanceof Error ? error.message : "Invalid tutor request.", 400);
   }
 
-  const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const upstream = await fetch(
+    provider === "gemini"
+      ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`
+      : "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        ...(provider === "gemini" ? { "x-goog-api-key": geminiKey! } : { Authorization: `Bearer ${groqKey!}` }),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(provider === "gemini"
+        ? {
+            systemInstruction: { parts: [{ text: prompt.system }] },
+            contents: prompt.messages.map((message) => ({
+              role: message.role === "assistant" ? "model" : "user",
+              parts: [{ text: message.content }],
+            })),
+            generationConfig: { temperature: 0.3, maxOutputTokens: 900 },
+          }
+        : {
+            model,
+            stream: true,
+            temperature: 0.3,
+            max_tokens: 900,
+            messages: [
+              { role: "system", content: prompt.system },
+              ...prompt.messages,
+            ],
+          }),
+      signal: request.signal,
+      cache: "no-store",
     },
-    body: JSON.stringify({
-      model,
-      stream: true,
-      temperature: 0.3,
-      max_tokens: 900,
-      messages: [
-        { role: "system", content: prompt.system },
-        ...prompt.messages,
-      ],
-    }),
-    signal: request.signal,
-    cache: "no-store",
-  }).catch(() => null);
+  ).catch(() => null);
 
   if (!upstream?.ok || !upstream.body) {
     return jsonError("The AI Tutor could not connect right now. Please try again shortly.", 502);
@@ -218,11 +237,23 @@ export async function POST(request: NextRequest) {
             if (!data || data === "[DONE]") continue;
             try {
               const event: unknown = JSON.parse(data);
-              if (!isRecord(event) || !Array.isArray(event.choices)) continue;
-              const choice = event.choices[0];
-              if (!isRecord(choice) || !isRecord(choice.delta)) continue;
-              const content = choice.delta.content;
-              if (typeof content === "string" && content) controller.enqueue(encoder.encode(content));
+              if (!isRecord(event)) continue;
+              let content = "";
+              if (provider === "gemini") {
+                const candidates = event.candidates;
+                const candidate = Array.isArray(candidates) ? candidates[0] : null;
+                const candidateContent = isRecord(candidate) ? candidate.content : null;
+                const parts = isRecord(candidateContent) ? candidateContent.parts : null;
+                if (Array.isArray(parts)) {
+                  content = parts.map((part) => isRecord(part) && typeof part.text === "string" ? part.text : "").join("");
+                }
+              } else {
+                const choices = event.choices;
+                const choice = Array.isArray(choices) ? choices[0] : null;
+                const delta = isRecord(choice) ? choice.delta : null;
+                if (isRecord(delta) && typeof delta.content === "string") content = delta.content;
+              }
+              if (content) controller.enqueue(encoder.encode(content));
             } catch {
               // Ignore malformed upstream event frames.
             }
