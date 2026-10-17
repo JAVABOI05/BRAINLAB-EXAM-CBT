@@ -126,7 +126,7 @@ export default function AdminUsersPage() {
 
       <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
         <h2 className="text-xl font-extrabold text-slate-950">Assign or change a role</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Copy the user's UUID from Supabase Authentication. The database verifies that the account exists before applying a role.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Copy the user&apos;s UUID from Supabase Authentication. The database verifies that the account exists before applying a role.</p>
         <form onSubmit={assignRole} className="mt-5 grid gap-4 md:grid-cols-[1.2fr_1fr_auto] md:items-end">
           <div>
             <label htmlFor="admin-user-id" className="mb-2 block text-sm font-semibold text-slate-700">Supabase Auth user UUID</label>
@@ -146,7 +146,7 @@ export default function AdminUsersPage() {
 
       <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
         <h2 className="text-xl font-extrabold text-slate-950">Current administrator accounts</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Only the database-authorized Super Admin can retrieve this list. Removing a role does not delete the person's learner account.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Only the database-authorized Super Admin can retrieve this list. Removing a role does not delete the person&apos;s learner account.</p>
         {profiles.length === 0 ? (
           <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No administrator list is available. Confirm that the reviewed role-hierarchy migration has been applied to this environment.</p>
         ) : (
