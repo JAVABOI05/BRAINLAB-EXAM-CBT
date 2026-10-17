@@ -618,4 +618,19 @@ to authenticated;
 grant select, insert, update on public.learning_lesson_progress
 to authenticated;
 
+-- Trusted Next.js server routes use this role only after verifying the user's
+-- Supabase Auth token and validating attempt ownership. RLS remains enabled.
+grant all on public.learning_subjects,
+  public.learning_topics,
+  public.learning_lessons,
+  public.learning_lesson_blocks,
+  public.learning_subject_memberships,
+  public.learning_topic_tests,
+  public.learning_test_questions,
+  public.learning_test_attempts,
+  public.learning_test_attempt_questions,
+  public.learning_test_answers,
+  public.learning_lesson_progress
+to service_role;
+
 commit;
