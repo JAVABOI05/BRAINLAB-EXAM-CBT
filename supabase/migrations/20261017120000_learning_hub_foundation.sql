@@ -153,6 +153,7 @@ create table public.learning_test_attempts (
     check (jsonb_typeof(question_order) = 'array'),
   score integer,
   total_questions integer,
+  pass_percentage_snapshot integer not null check (pass_percentage_snapshot between 0 and 100),
   percentage numeric(5,2),
   passed boolean,
   started_at timestamptz not null default now(),
