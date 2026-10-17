@@ -52,24 +52,9 @@ export default function AccountPage() {
         return;
       }
 
-      const { data: isSuperAdmin, error: roleError } =
-        await supabase.rpc("is_super_admin");
-
-      if (roleError) {
-        await clearOperatorGate();
-        setError("We could not verify your account permissions. Please try again.");
-        return;
-      }
-
-      window.localStorage.setItem(
-        "admin_user",
-        JSON.stringify({
-          id: session.user.id,
-          email: session.user.email ?? "",
-          role: isSuperAdmin === true ? "super_admin" : "admin",
-        })
-      );
-
+      // The dashboard re-checks the current role from Supabase before loading data.
+      // Do not persist an admin role in browser storage as an authorization signal.
+      window.localStorage.removeItem("admin_user");
       router.replace("/admin/dashboard");
       return;
     }
