@@ -74,9 +74,9 @@ export default function TutorTopicsPage() {
       const { data: membership, error: membershipError } = await supabase
         .from("learning_subject_memberships").select("membership_role")
         .eq("subject_id", subjectId).eq("user_id", user.id).maybeSingle();
-      const permission = await supabase.rpc("admin_has_permission", { permission_key: "learning.content.manage" });
+      const adminRole = await supabase.rpc("get_admin_role");
       if (!active) return;
-      const admin = !permission.error && permission.data === true;
+      const admin = !adminRole.error && ["super_admin", "platform_admin"].includes(String(adminRole.data ?? ""));
       if (membershipError || (!membership && !admin)) {
         setError("Your account has not been assigned to this subject.");
         setLoading(false);
