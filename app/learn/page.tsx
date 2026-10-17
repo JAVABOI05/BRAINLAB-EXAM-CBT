@@ -10,12 +10,15 @@ type Subject = {
   slug: string;
   description: string | null;
   icon_url: string | null;
+  lessonCount: number;
+  completedCount: number;
 };
 
 export default function LearnPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hasStudentSession, setHasStudentSession] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -26,8 +29,70 @@ export default function LearnPage() {
         .eq("is_published", true)
         .order("order_index", { ascending: true });
       if (!active) return;
-      if (queryError) setError("We could not load the Learning Hub yet. Please try again shortly.");
-      else setSubjects((data ?? []) as Subject[]);
+      if (queryError) {
+        setError("We could not load the Learning Hub yet. Please try again shortly.");
+        setLoading(false);
+        return;
+      }
+      const subjectRows = data ?? [];
+      if (!subjectRows.length) {
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const studentId = sessionData.session?.user.id ?? null;
+      if (!active) return;
+      setHasStudentSession(Boolean(studentId));
+
+      const subjectIds = subjectRows.map((subject) => subject.id);
+      const { data: topicRows, error: topicError } = await supabase
+        .from("learning_topics")
+        .select("id,subject_id")
+        .in("subject_id", subjectIds)
+        .eq("is_published", true);
+      if (topicError) {
+        setError("We could not load subject progress information.");
+        setLoading(false);
+        return;
+      }
+      const topicIds = (topicRows ?? []).map((topic) => topic.id);
+      const { data: lessonRows, error: lessonError } = topicIds.length
+        ? await supabase.from("learning_lessons").select("id,topic_id").in("topic_id", topicIds).eq("is_published", true)
+        : { data: [], error: null };
+      if (lessonError) {
+        setError("We could not load subject progress information.");
+        setLoading(false);
+        return;
+      }
+      let completedIds = new Set<string>();
+      if (studentId && (lessonRows ?? []).length) {
+        const { data: progressRows } = await supabase
+          .from("learning_lesson_progress")
+          .select("lesson_id")
+          .eq("student_id", studentId)
+          .eq("status", "completed");
+        completedIds = new Set((progressRows ?? []).map((item) => item.lesson_id));
+      }
+      if (!active) return;
+      const topicsBySubject = new Map<string, string[]>();
+      for (const topic of topicRows ?? []) {
+        topicsBySubject.set(topic.subject_id, [...(topicsBySubject.get(topic.subject_id) ?? []), topic.id]);
+      }
+      const lessonsBySubject = new Map<string, string[]>();
+      for (const lesson of lessonRows ?? []) {
+        const parentTopic = (topicRows ?? []).find((topic) => topic.id === lesson.topic_id);
+        if (parentTopic) lessonsBySubject.set(parentTopic.subject_id, [...(lessonsBySubject.get(parentTopic.subject_id) ?? []), lesson.id]);
+      }
+      setSubjects(subjectRows.map((subject) => {
+        const lessonIds = lessonsBySubject.get(subject.id) ?? [];
+        return {
+          ...subject,
+          lessonCount: lessonIds.length,
+          completedCount: lessonIds.filter((id) => completedIds.has(id)).length,
+        };
+      }) as Subject[]);
       setLoading(false);
     }
     void loadSubjects();
@@ -68,6 +133,7 @@ export default function LearnPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-xl font-black text-blue-900" aria-hidden="true">{subject.name.slice(0, 1).toUpperCase()}</div>
                 <h3 className="mt-5 text-xl font-extrabold text-slate-950 group-hover:text-blue-800">{subject.name}</h3>
                 <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{subject.description || "Explore lessons and practise the key ideas in this subject."}</p>
+                <div className="mt-5 rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-3 text-xs font-bold text-slate-600"><span>{hasStudentSession ? "Lesson progress" : "Available lessons"}</span><span>{hasStudentSession ? `${subject.completedCount}/${subject.lessonCount} complete` : `${subject.lessonCount} lessons`}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-emerald-600" style={{ width: `${hasStudentSession && subject.lessonCount ? (subject.completedCount / subject.lessonCount) * 100 : 0}%` }} /></div>{!hasStudentSession && <span className="mt-2 block text-xs text-slate-500">Sign in to track your progress.</span>}</div>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-blue-800">Explore subject <span aria-hidden="true">→</span></span>
               </Link>
             ))}
