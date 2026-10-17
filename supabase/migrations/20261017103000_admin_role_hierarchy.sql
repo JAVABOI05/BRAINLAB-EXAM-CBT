@@ -77,7 +77,7 @@ as $function$
         'community.moderate', 'student.support'
       ]::text[])
       when ap.role = 'analytics_admin' then permission_key = any (array[
-        'analytics.read', 'analytics.ai.read', 'cbt.results.read',
+        'analytics.read', 'analytics.ai.read',
         'cbt.sessions.read', 'institution.reports.read', 'audit.logs.read'
       ]::text[])
       when ap.role = 'school_admin' then permission_key = any (array[
