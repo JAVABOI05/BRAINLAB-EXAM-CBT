@@ -250,15 +250,17 @@ export default function TopicTestPage() {
         Object.entries(source).filter(([questionId, answer]) => allowed.has(questionId) && allowed.get(questionId)?.has(answer))
       );
       // Server-saved selections recover attempts on another device. Local recovery
-      // data wins for this device because it may contain a newer unsynced selection.
+      // data takes precedence when it differs, since it may contain an unsynced choice.
       const serverRestored = validAnswers(started.answers ?? {});
       const safeLocalRestored = validAnswers(localRestored);
       const safeRestored = { ...serverRestored, ...safeLocalRestored };
+      const localAnswersToSync = Object.entries(safeLocalRestored)
+        .filter(([questionId, answer]) => serverRestored[questionId] !== answer);
       setAnswers(safeRestored);
       try { localStorage.setItem(storageKey, JSON.stringify(safeRestored)); } catch { /* server saves remain authoritative */ }
-      if (Object.keys(safeRestored).length) {
-        const savedResults = await Promise.all(Object.entries(safeRestored).map(([questionId, answer]) => saveAnswer(started.attemptId, questionId, answer)));
-        if (savedResults.some((saved) => !saved)) setNotice("Some restored answers could not sync yet. Check your connection before submitting.");
+      if (localAnswersToSync.length) {
+        const savedResults = await Promise.all(localAnswersToSync.map(([questionId, answer]) => saveAnswer(started.attemptId, questionId, answer)));
+        if (savedResults.some((saved) => !saved)) setNotice("Some local recovery answers could not sync yet. Check your connection before submitting.");
       }
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : "We could not start this assessment.");
