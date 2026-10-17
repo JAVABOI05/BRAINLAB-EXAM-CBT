@@ -215,6 +215,10 @@ create index learning_test_attempts_student_recent_idx
   on public.learning_test_attempts(student_id, started_at desc);
 create index learning_test_attempts_test_status_idx
   on public.learning_test_attempts(test_id, status);
+
+create unique index learning_one_active_attempt_per_student_test
+  on public.learning_test_attempts(student_id, test_id)
+  where status = 'in_progress';
 create index learning_test_answers_attempt_idx
   on public.learning_test_answers(attempt_id);
 create index learning_lesson_progress_student_status_idx
