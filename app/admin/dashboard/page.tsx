@@ -67,6 +67,7 @@ export default function AdminDashboardPage() {
         "cbt.results.read",
         "cbt.codes.manage",
         "cbt.sessions.read",
+        "audit.logs.read",
       ];
       const entries = await Promise.all(
         permissionKeys.map(async (permission) => [
