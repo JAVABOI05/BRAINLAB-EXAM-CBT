@@ -536,4 +536,31 @@ on public.learning_lesson_progress for update to authenticated
 using (student_id = (select auth.uid()))
 with check (student_id = (select auth.uid()));
 
+
+-- Explicit Data API privileges; RLS remains the row-level authorization boundary.
+grant select on public.learning_subjects,
+  public.learning_topics,
+  public.learning_lessons,
+  public.learning_lesson_blocks,
+  public.learning_topic_tests
+to anon, authenticated;
+
+grant insert, update, delete on public.learning_subjects,
+  public.learning_topics,
+  public.learning_lessons,
+  public.learning_lesson_blocks,
+  public.learning_subject_memberships,
+  public.learning_topic_tests,
+  public.learning_test_questions
+to authenticated;
+
+grant select on public.learning_subject_memberships,
+  public.learning_test_questions,
+  public.learning_test_attempts,
+  public.learning_test_answers
+to authenticated;
+
+grant select, insert, update on public.learning_lesson_progress
+to authenticated;
+
 commit;
