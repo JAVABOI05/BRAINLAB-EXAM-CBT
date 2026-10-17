@@ -87,3 +87,29 @@ Required server environment variable for attempt APIs: `SUPABASE_SERVICE_ROLE_KE
 - [ ] Reload restores the same active question set and local answer recovery copy.
 - [ ] Published content remains hidden if a draft save fails.
 - [ ] Existing CBT start, access-code, exam, result, and correction journeys remain unchanged.
+
+## Stabilization update: transactional assessment writes
+
+The follow-up migration `20261017140000_learning_assessment_atomicity.sql` introduces two database functions used only by the trusted server-side assessment routes:
+
+- `save_learning_attempt_answer` locks the owned attempt row, checks that the attempt is still active and within its deadline, validates that the question belongs to the attempt and the selected option is in the immutable option snapshot, then saves the answer in the same transaction.
+- `finalize_learning_attempt` locks the same attempt row, grades only server-saved answers against immutable answer-key snapshots, calculates the result, and writes the final attempt state atomically. Repeated submissions return the already saved result.
+
+Both functions are invoker-security functions, have a fixed search path, and have EXECUTE revoked from public, anon and authenticated roles. Only the server-side `service_role` can execute them. The route still verifies the Supabase bearer token with Auth and supplies the verified user ID; the SQL functions also enforce attempt ownership.
+
+This resolves the identified answer-save/submit race by serializing both writes on the same attempt row. It does **not** mean the assessment flow has been fully verified. The migration has not been applied to any database and must first be tested in isolated staging.
+
+### Additional stabilization checks
+
+- [ ] Run `npm ci`, `npm run lint`, `npx tsc --noEmit`, and `npm run build` on this exact branch.
+- [ ] Confirm the database enum contains the expected `in_progress`, `submitted`, `expired`, and `abandoned` statuses before applying the migration.
+- [ ] Apply the full Learning Hub migration sequence to a disposable/staging database with the correct prerequisite admin-role migration and reconciled migration history.
+- [ ] Test answer save racing with submission in both orderings: if save locks first, the answer is included in scoring; if submit locks first, the later save is rejected.
+- [ ] Test two simultaneous submit requests; both must return the same persisted score and status.
+- [ ] Test expired attempts, missing answers, malformed question IDs, invalid choices, foreign-user attempt IDs, and attempts with no snapshots.
+- [ ] Verify a student cannot call either SQL function directly or select answer-key snapshots.
+- [ ] Verify a late answer request cannot alter answers, score, or review after finalization.
+- [ ] Run the existing CBT start, access-code, timer, submission, results, and corrections regression checks.
+- [ ] Inspect Supabase security/performance advisors and query plans after staging validation.
+
+Do not apply the migration to production or merge this stabilization work until these checks are completed. A successful source build alone does not validate database locking, RLS, migration compatibility, or live assessment behaviour.
