@@ -164,7 +164,7 @@ export default function LessonBuilderPage() {
       lesson_id: lesson.id,
       block_type: newBlockType,
       content: defaultContent(newBlockType),
-      order_index: blocks.length,
+      order_index: Math.max(-1, ...blocks.map((block) => block.order_index)) + 1,
     }).select("id,lesson_id,block_type,content,order_index").single();
     if (insertError || !data) setError("The block could not be added. Check your assignment and try again.");
     else {
@@ -181,7 +181,7 @@ export default function LessonBuilderPage() {
     const { error: deleteError } = await supabase.from("learning_lesson_blocks").delete().eq("id", block.id);
     if (deleteError) setError("The block could not be deleted.");
     else {
-      setBlocks((old) => old.filter((item) => item.id !== block.id).map((item, index) => ({ ...item, order_index: index })));
+      setBlocks((old) => old.filter((item) => item.id !== block.id));
       setMessage("Block deleted. Save the lesson to normalize the block order.");
     }
     setSaving(false);
