@@ -210,8 +210,21 @@ export async function POST(
 
   if (questionRows.length === 0) return noStoreJson({ error: "This attempt has no available questions. Please contact your tutor." }, 409);
 
+  // Return only the student's own saved selections, never answer keys. This lets
+  // a resumed attempt render consistently across devices and after local storage
+  // has been cleared; local recovery data can still be merged by the client.
+  const { data: savedAnswers, error: savedAnswersError } = await service
+    .from("learning_test_answers")
+    .select("question_id,selected_answer")
+    .eq("attempt_id", attemptId);
+  if (savedAnswersError || !savedAnswers) {
+    return noStoreJson({ error: "We could not restore your saved answers." }, 500);
+  }
+  const answers = Object.fromEntries(savedAnswers.map((answer) => [answer.question_id, answer.selected_answer]));
+
   return noStoreJson({
     attemptId,
+    answers,
     test: {
       id: test.id,
       title: test.title,
