@@ -126,9 +126,8 @@ export default function TopicTestPage() {
     const token = tokenRef.current;
     if (!token) return false;
     const previous = pendingSaves.current.get(questionId) ?? Promise.resolve(true);
-    const promise = previous.then(async (previousSaved) => {
-      if (!previousSaved) return false;
-      const response = await fetch(`/api/learning/attempts/${attemptId}/answers`, {
+    const promise = previous.catch(() => false).then(async () => {
+      const response = await fetch(`/api/learning/attempts/${attemptId}/answers`,
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ questionId, selectedAnswer }),
