@@ -30,7 +30,7 @@ export default function TutorTopicsPage() {
   const [description, setDescription] = useState("");
   const [lessonTitles, setLessonTitles] = useState<Record<string, string>>({});
 
-  const refresh = useCallback(async (currentSubject: { id: string; name: string; slug: string; is_published: boolean }) => {
+  const refresh = useCallback(async () => {
     const { data: topicRows, error: topicError } = await supabase
       .from("learning_topics")
       .select("id,title,slug,description,order_index,is_published")
@@ -48,7 +48,6 @@ export default function TutorTopicsPage() {
       setLessons((lessonRows ?? []) as Lesson[]);
     } else setLessons([]);
     setTopics((topicRows ?? []) as Topic[]);
-    void currentSubject;
   }, [subjectId]);
 
   useEffect(() => {
@@ -86,7 +85,7 @@ export default function TutorTopicsPage() {
       setRole(currentRole);
       setCanManage(admin || currentRole === "tutor");
       setSubject(subjectData);
-      try { await refresh(subjectData); }
+      try { await refresh(); }
       catch { if (active) setError("We could not load topics and lessons."); }
       if (active) setLoading(false);
     }
@@ -116,7 +115,7 @@ export default function TutorTopicsPage() {
     if (insertError) setError(insertError.code === "23505" ? "A topic with this slug already exists in the subject." : "The topic could not be created. Check your permission and try again.");
     else {
       setTitle(""); setDescription(""); setMessage("Topic saved as a draft.");
-      try { await refresh(subject); } catch { setError("Topic created, but the list could not refresh."); }
+      try { await refresh(); } catch { setError("Topic created, but the list could not refresh."); }
     }
     setSaving(false);
   }
