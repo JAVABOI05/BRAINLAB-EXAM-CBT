@@ -51,9 +51,19 @@ as $function$
   select coalesce((
     select case
       when ap.role = 'super_admin' then true
-      when ap.role = 'platform_admin' then permission_key not in (
-        'admin.roles.manage', 'security.settings.manage', 'secrets.manage'
-      )
+      when ap.role = 'platform_admin' then permission_key = any (array[
+        'cbt.questions.manage', 'cbt.questions.delete', 'cbt.answers.read',
+        'cbt.answers.manage', 'cbt.results.read', 'cbt.results.create',
+        'cbt.results.manage', 'cbt.results.delete', 'cbt.sessions.read',
+        'cbt.sessions.create', 'cbt.sessions.manage', 'cbt.sessions.delete',
+        'cbt.codes.manage', 'cbt.codes.delete', 'cbt.config.read',
+        'cbt.config.manage', 'cbt.config.delete', 'ai.content.manage',
+        'learning.content.manage', 'ai.quality.review', 'analytics.ai.read',
+        'community.moderate', 'student.support', 'analytics.read',
+        'institution.reports.read', 'institution.manage',
+        'learning.content.review', 'finance.billing.manage',
+        'audit.logs.read', 'audit.logs.write'
+      ]::text[])
       when ap.role = 'cbt_admin' then permission_key = any (array[
         'cbt.questions.manage', 'cbt.answers.read', 'cbt.results.read',
         'cbt.sessions.read', 'cbt.sessions.manage', 'cbt.codes.manage',
@@ -146,6 +156,10 @@ begin
   select ap.role into previous_role
   from public.admin_profiles ap where ap.user_id = target_user_id;
 
+  if target_user_id = auth.uid() and new_role <> 'super_admin' then
+    raise exception 'Ask another Super Admin to change your own role' using errcode = '42501';
+  end if;
+
   if previous_role = 'super_admin' and new_role <> 'super_admin'
      and (select count(*) from public.admin_profiles ap where ap.role = 'super_admin') <= 1 then
     raise exception 'Cannot demote the last super administrator' using errcode = '23514';
@@ -189,6 +203,10 @@ begin
 
   if previous_role is null then
     return;
+  end if;
+
+  if target_user_id = auth.uid() then
+    raise exception 'Ask another Super Admin to remove your role' using errcode = '42501';
   end if;
 
   if previous_role = 'super_admin'
