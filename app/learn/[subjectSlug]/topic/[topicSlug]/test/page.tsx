@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../../../../lib/supabase";
 
@@ -61,6 +61,7 @@ function formatSeconds(value: number) {
 }
 
 export default function TopicTestPage() {
+  const router = useRouter();
   const params = useParams<{ subjectSlug: string; topicSlug: string }>();
   const subjectSlug = decodeURIComponent(params.subjectSlug);
   const topicSlug = decodeURIComponent(params.topicSlug);
@@ -127,7 +128,7 @@ export default function TopicTestPage() {
     if (!token) return false;
     const previous = pendingSaves.current.get(questionId) ?? Promise.resolve(true);
     const promise = previous.catch(() => false).then(async () => {
-      const response = await fetch(`/api/learning/attempts/${attemptId}/answers`,
+      const response = await fetch(`/api/learning/attempts/${attemptId}/answers`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ questionId, selectedAnswer }),
