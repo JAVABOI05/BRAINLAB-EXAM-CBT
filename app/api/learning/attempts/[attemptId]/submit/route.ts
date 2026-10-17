@@ -50,7 +50,7 @@ export async function POST(
   const { service, user } = auth;
   const { data: attempt, error: attemptError } = await service
     .from("learning_test_attempts")
-    .select("id,test_id,status,deadline_at,score,total_questions,percentage,passed,started_at,submitted_at")
+    .select("id,test_id,status,deadline_at,score,total_questions,pass_percentage_snapshot,percentage,passed,started_at,submitted_at")
     .eq("id", attemptId)
     .eq("student_id", user.id)
     .maybeSingle();
@@ -76,7 +76,6 @@ export async function POST(
     .eq("attempt_id", attemptId);
   if (answersError || !savedAnswers) return noStoreJson({ error: "Saved answers could not be loaded." }, 500);
 
-  const orderedSnapshots = (attempt as { question_order?: unknown }).question_order;
   // Question order is stored on the attempt. Keep results in the exact delivered order.
   const { data: attemptOrder } = await service
     .from("learning_test_attempts")
@@ -86,7 +85,6 @@ export async function POST(
   const order = Array.isArray(attemptOrder?.question_order)
     ? attemptOrder.question_order as { question_id: string }[]
     : [];
-  void orderedSnapshots;
   const snapshotById = new Map((snapshots as Snapshot[]).map((row) => [row.question_id, row]));
   const ordered = order.map((entry) => snapshotById.get(entry.question_id)).filter(Boolean) as Snapshot[];
   if (ordered.length !== snapshots.length) return noStoreJson({ error: "The question order is inconsistent. Please contact support." }, 500);
@@ -113,7 +111,8 @@ export async function POST(
     const score = gradedAnswers.filter((answer) => answer.is_correct).length;
     const totalQuestions = ordered.length;
     const percentage = Math.round((score / totalQuestions) * 10000) / 100;
-    const passed = percentage >= test.pass_percentage;
+    const passPercentage = Number(attempt.pass_percentage_snapshot);
+    const passed = percentage >= passPercentage;
     const finalizedAt = new Date().toISOString();
     const nextStatus = expired ? "expired" : "submitted";
 
@@ -150,7 +149,7 @@ export async function POST(
       totalQuestions,
       percentage,
       passed,
-      passPercentage: test.pass_percentage,
+      passPercentage,
       startedAt: attempt.started_at,
       submittedAt: finalizedAt,
       review: buildReview(ordered, finalAnswers as SavedAnswer[]),
@@ -166,6 +165,7 @@ export async function POST(
   const totalQuestions = Number(attempt.total_questions ?? ordered.length);
   const percentage = Number(attempt.percentage ?? (Math.round((score / Math.max(1, totalQuestions)) * 10000) / 100));
   const passed = Boolean(attempt.passed);
+  const passPercentage = Number(attempt.pass_percentage_snapshot ?? test.pass_percentage);
 
   return noStoreJson({
     attemptId,
@@ -175,7 +175,7 @@ export async function POST(
     totalQuestions,
     percentage,
     passed,
-    passPercentage: test.pass_percentage,
+    passPercentage,
     startedAt: attempt.started_at,
     submittedAt: attempt.submitted_at,
     review,
