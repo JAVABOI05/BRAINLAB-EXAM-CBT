@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase";
 
 type Topic = { id: string; title: string; slug: string; description: string | null; order_index: number; is_published: boolean };
@@ -30,9 +30,7 @@ export default function TutorTopicsPage() {
   const [description, setDescription] = useState("");
   const [lessonTitles, setLessonTitles] = useState<Record<string, string>>({});
 
-  async function refresh(subjectRecord?: { id: string; name: string; slug: string; is_published: boolean }) {
-    const currentSubject = subjectRecord ?? subject;
-    if (!currentSubject) return;
+  const refresh = useCallback(async (currentSubject: { id: string; name: string; slug: string; is_published: boolean }) => {
     const { data: topicRows, error: topicError } = await supabase
       .from("learning_topics")
       .select("id,title,slug,description,order_index,is_published")
@@ -50,7 +48,8 @@ export default function TutorTopicsPage() {
       setLessons((lessonRows ?? []) as Lesson[]);
     } else setLessons([]);
     setTopics((topicRows ?? []) as Topic[]);
-  }
+    void currentSubject;
+  }, [subjectId]);
 
   useEffect(() => {
     let active = true;
@@ -93,7 +92,7 @@ export default function TutorTopicsPage() {
     }
     void load();
     return () => { active = false; };
-  }, [subjectId]);
+  }, [subjectId, refresh]);
 
   async function createTopic(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,20 +116,20 @@ export default function TutorTopicsPage() {
     if (insertError) setError(insertError.code === "23505" ? "A topic with this slug already exists in the subject." : "The topic could not be created. Check your permission and try again.");
     else {
       setTitle(""); setDescription(""); setMessage("Topic saved as a draft.");
-      try { await refresh(); } catch { setError("Topic created, but the list could not refresh."); }
+      try { await refresh(subject); } catch { setError("Topic created, but the list could not refresh."); }
     }
     setSaving(false);
   }
 
   async function toggleTopic(topic: Topic) {
-    if (!canManage) return;
+    if (!canManage || !subject) return;
     setSaving(true); setError(""); setMessage("");
     const { error: updateError } = await supabase.from("learning_topics")
       .update({ is_published: !topic.is_published }).eq("id", topic.id);
     if (updateError) setError("The topic status could not be changed.");
     else {
       setMessage(topic.is_published ? "Topic returned to draft." : "Topic published. Publish at least one lesson before learners can study it.");
-      try { await refresh(); } catch { setError("Status changed, but the list could not refresh."); }
+      try { await refresh(subject); } catch { setError("Status changed, but the list could not refresh."); }
     }
     setSaving(false);
   }
