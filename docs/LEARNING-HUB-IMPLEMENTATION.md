@@ -84,7 +84,7 @@ Required server environment variable for attempt APIs: `SUPABASE_SERVICE_ROLE_KE
 - [ ] Tutors cannot author outside their assigned subject.
 - [ ] Student session cannot query the answer key or attempt snapshots.
 - [ ] Timed attempts grade only server-saved answers.
-- [ ] Reload restores the same active question set and local answer recovery copy.
+- [ ] Reload restores the same active question set and server-saved answers; local recovery data is merged only as a convenience for newer unsynced selections.
 - [ ] Published content remains hidden if a draft save fails.
 - [ ] Existing CBT start, access-code, exam, result, and correction journeys remain unchanged.
 
