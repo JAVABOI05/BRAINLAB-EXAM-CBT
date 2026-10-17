@@ -22,7 +22,7 @@
 | `cbt_admin` | CBT & Examination Administrator | Question bank, permitted exam configuration, access codes, sessions and results. |
 | `ai_learning_admin` | AI & Learning Administrator | AI learning content, Learning Lab materials and AI quality review. |
 | `community_moderator` | Community & Student Support Moderator | Community safety and scoped support. |
-| `analytics_admin` | Analytics & Institutional Reporting | Approved analytics, result reports and audit review. |
+| `analytics_admin` | Analytics & Institutional Reporting | Aggregate analytics and audit review; no direct raw learner-result access. |
 | `school_admin` | School Administrator | Institution management and approved cohort reports. |
 | `teacher` | Teacher / Instructor | Assigned learning activities and scoped learner support. |
 | `content_reviewer` | Content Reviewer | Review learning resources and AI content quality. |
