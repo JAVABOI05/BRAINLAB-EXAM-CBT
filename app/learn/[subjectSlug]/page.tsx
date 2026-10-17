@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabase";
 
 type Subject = { id: string; name: string; slug: string; description: string | null };
 type Lesson = { id: string; title: string; summary: string | null; estimated_duration_mins: number; order_index: number };
-type Topic = { id: string; title: string; slug: string; description: string | null; order_index: number; lessons: Lesson[] };
+type Topic = { id: string; title: string; slug: string; description: string | null; order_index: number; lessons: Lesson[]; test: { id: string; title: string } | null };
 
 export default function SubjectLearningPage() {
   const params = useParams<{ subjectSlug: string }>();
@@ -49,6 +49,17 @@ export default function SubjectLearningPage() {
       }
 
       const topicRows = topicData ?? [];
+      const topicIds = topicRows.map((topic) => topic.id);
+      const { data: testRows, error: testsError } = topicIds.length
+        ? await supabase.from("learning_topic_tests").select("id,topic_id,title").in("topic_id", topicIds).eq("is_published", true)
+        : { data: [], error: null };
+      if (!active) return;
+      if (testsError) {
+        setError("Published topic assessments could not be loaded.");
+        setLoading(false);
+        return;
+      }
+      const testsByTopic = new Map((testRows ?? []).map((item) => [item.topic_id, { id: item.id, title: item.title }]));
       const lessonResults = await Promise.all(topicRows.map(async (topic) => {
         const { data, error: lessonError } = await supabase
           .from("learning_lessons")
@@ -69,6 +80,7 @@ export default function SubjectLearningPage() {
       setTopics(topicRows.map((topic) => ({
         ...topic,
         lessons: (lessonResults.find((item) => item.topicId === topic.id)?.lessons ?? []) as Lesson[],
+        test: testsByTopic.get(topic.id) ?? null,
       })) as Topic[]);
       setLoading(false);
     }
@@ -126,6 +138,7 @@ export default function SubjectLearningPage() {
                       ))}
                     </ol>
                   ) : <p className="px-5 py-4 text-sm text-slate-500 sm:px-6">Lessons for this topic are being prepared.</p>}
+                  {topic.test && <div className="border-t border-slate-100 bg-blue-50/50 px-5 py-4 sm:px-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-extrabold text-slate-950">{topic.test.title}</p><p className="mt-1 text-xs text-slate-600">Check what you understand after studying this topic.</p></div><Link href={`/learn/${subject.slug}/topic/${topic.slug}/test`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-4 py-2.5 text-sm font-bold text-white">Take topic test →</Link></div></div>}
                 </article>
               ))}
             </div>
