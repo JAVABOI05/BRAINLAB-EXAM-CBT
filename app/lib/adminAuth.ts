@@ -1,6 +1,5 @@
-// Admin authentication via Supabase Auth. Being logged in is NOT enough: the account must also
-// be listed in public.admin_profiles (checked by the is_admin() database function). The database
-// enforces the same rule on every table through RLS, so this check is only for the UI.
+// Admin identity helper for UI routing. It is not an authorization boundary: every protected
+// database operation must still be enforced by RLS or a permission-checking database RPC.
 import { supabase } from "./supabase";
 import { ADMIN_ROLES, type AdminRole } from "./adminRoles";
 
