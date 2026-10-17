@@ -128,7 +128,7 @@ export default function TutorTopicsPage() {
     if (updateError) setError("The topic status could not be changed.");
     else {
       setMessage(topic.is_published ? "Topic returned to draft." : "Topic published. Publish at least one lesson before learners can study it.");
-      try { await refresh(subject); } catch { setError("Status changed, but the list could not refresh."); }
+      try { await refresh(); } catch { setError("Status changed, but the list could not refresh."); }
     }
     setSaving(false);
   }
