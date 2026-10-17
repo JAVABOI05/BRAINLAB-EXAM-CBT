@@ -580,8 +580,9 @@ grant insert, update, delete on public.learning_subjects,
   public.learning_test_questions
 to authenticated;
 
-grant select on public.learning_subject_memberships,
-  public.learning_test_questions,
+grant select on public.learning_subject_memberships to anon, authenticated;
+
+grant select on public.learning_test_questions,
   public.learning_test_attempts,
   public.learning_test_answers
 to authenticated;
