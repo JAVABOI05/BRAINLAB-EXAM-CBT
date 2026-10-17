@@ -143,9 +143,23 @@ export default function LessonBuilderPage() {
     setBlocks((old) => old.map((block) => block.id === blockId ? { ...block, content: { ...block.content, [key]: value } } : block));
   }
 
+  async function movePublishedLessonToDraft() {
+    if (!lesson || !lesson.is_published) return true;
+    const { error: updateError } = await supabase.from("learning_lessons")
+      .update({ is_published: false }).eq("id", lesson.id);
+    if (updateError) {
+      setError("This published lesson could not be moved to draft before editing.");
+      return false;
+    }
+    setLesson({ ...lesson, is_published: false });
+    setMessage("The lesson was moved to draft before changing its structure.");
+    return true;
+  }
+
   async function addBlock() {
     if (!canManage || !lesson) return;
     setSaving(true); setError(""); setMessage("");
+    if (!(await movePublishedLessonToDraft())) { setSaving(false); return; }
     const { data, error: insertError } = await supabase.from("learning_lesson_blocks").insert({
       lesson_id: lesson.id,
       block_type: newBlockType,
@@ -163,6 +177,7 @@ export default function LessonBuilderPage() {
   async function deleteBlock(block: Block) {
     if (!canManage || !window.confirm("Delete this lesson block? This cannot be undone.")) return;
     setSaving(true); setError(""); setMessage("");
+    if (!(await movePublishedLessonToDraft())) { setSaving(false); return; }
     const { error: deleteError } = await supabase.from("learning_lesson_blocks").delete().eq("id", block.id);
     if (deleteError) setError("The block could not be deleted.");
     else {
@@ -179,6 +194,7 @@ export default function LessonBuilderPage() {
     const moving = blocks[index];
     const other = blocks[target];
     setSaving(true); setError(""); setMessage("");
+    if (!(await movePublishedLessonToDraft())) { setSaving(false); return; }
     const temporary = Math.max(...blocks.map((block) => block.order_index), 0) + 1000;
     const first = await supabase.from("learning_lesson_blocks").update({ order_index: temporary }).eq("id", moving.id);
     const second = first.error ? first : await supabase.from("learning_lesson_blocks").update({ order_index: moving.order_index }).eq("id", other.id);
