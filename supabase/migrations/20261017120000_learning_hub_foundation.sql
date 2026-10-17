@@ -164,7 +164,7 @@ create table public.learning_test_attempts (
 create table public.learning_test_attempt_questions (
   id uuid primary key default gen_random_uuid(),
   attempt_id uuid not null references public.learning_test_attempts(id) on delete cascade,
-  question_id uuid not null references public.learning_test_questions(id) on delete restrict,
+  question_id uuid not null,
   question_version integer not null check (question_version > 0),
   question_type public.topic_question_type not null,
   prompt_snapshot text not null,
@@ -182,7 +182,7 @@ create index learning_attempt_questions_attempt_idx
 create table public.learning_test_answers (
   id uuid primary key default gen_random_uuid(),
   attempt_id uuid not null references public.learning_test_attempts(id) on delete cascade,
-  question_id uuid not null references public.learning_test_questions(id) on delete restrict,
+  question_id uuid not null,
   question_version integer not null check (question_version > 0),
   selected_answer text not null,
   is_correct boolean,
