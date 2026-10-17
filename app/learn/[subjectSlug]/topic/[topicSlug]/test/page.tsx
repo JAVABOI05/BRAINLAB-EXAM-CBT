@@ -148,9 +148,17 @@ export default function TopicTestPage() {
     setSaving(true);
     setError("");
     setNotice(auto ? "Time is up. Submitting your saved answers…" : "Submitting your answers…");
-    const pending = await Promise.all(Array.from(pendingSaves.current.values()));
+    let saveResults = await Promise.all(Array.from(pendingSaves.current.values()));
+    if (!auto) {
+      // Re-sync every locally selected answer immediately before manual submission.
+      // The server still grades only its persisted copy; it never trusts this payload.
+      const retryResults = await Promise.all(Object.entries(answers).map(([questionId, selectedAnswer]) =>
+        saveAnswer(attempt.attemptId, questionId, selectedAnswer)
+      ));
+      saveResults = [...saveResults, ...retryResults];
+    }
     setSaving(false);
-    if (pending.some((saved) => !saved)) {
+    if (!auto && saveResults.some((saved) => !saved)) {
       submittingRef.current = false;
       setSubmitting(false);
       setError("Some answers could not be saved. Check your connection and try submitting again.");
@@ -183,7 +191,7 @@ export default function TopicTestPage() {
       submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [attempt, result]);
+  }, [attempt, result, answers, saveAnswer]);
 
   useEffect(() => {
     if (!attempt?.deadlineAt || result) {
