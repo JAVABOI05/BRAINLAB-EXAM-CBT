@@ -129,6 +129,9 @@ export default function AdminDashboardPage() {
         "cbt.codes.manage",
         "cbt.sessions.read",
         "audit.logs.read",
+        "learning.content.manage",
+        "community.moderate",
+        "analytics.read",
       ];
       const entries = await Promise.all(
         permissionKeys.map(async (permission) => [
@@ -252,7 +255,7 @@ export default function AdminDashboardPage() {
         </section>
 
         <section className="admin-section admin-stats">
-          {stats.map((stat) => (
+          {stats.filter((stat) => stat.title === "Question Bank" ? permissions["cbt.questions.manage"] : stat.title === "Results" ? permissions["cbt.results.read"] : permissions["cbt.codes.manage"]).map((stat) => (
             <div key={stat.title} className="admin-stat-card">
               <p className="admin-stat-label">{stat.title}</p>
               <p className="admin-stat-value">{stat.value}</p>
@@ -267,7 +270,10 @@ export default function AdminDashboardPage() {
   {permissions["cbt.sessions.read"] && <button onClick={() => router.push("/admin/sessions")} className="admin-card text-left"><h2 className="admin-card-title">Exam Sessions</h2><p className="admin-card-text">Review authorized exam-session activity.</p></button>}
   {permissions["cbt.config.manage"] && <button onClick={() => router.push("/admin/config")} className="admin-card text-left"><h2 className="admin-card-title">Exam Configuration</h2><p className="admin-card-text">Manage approved exam settings.</p></button>}
   {adminUser?.role === "super_admin" && <button onClick={() => router.push("/admin/users")} className="admin-card text-left"><h2 className="admin-card-title">Admin Roles</h2><p className="admin-card-text">Assign and review administrator roles.</p></button>}
-  {permissions["audit.logs.read"] && <button onClick={() => router.push("/admin/security")} className="admin-card text-left"><h2 className="admin-card-title">Security & Audit</h2><p className="admin-card-text">Review the security workspace and audit access.</p></button>}
+  {adminUser?.role === "super_admin" && <button onClick={() => router.push("/admin/security")} className="admin-card text-left"><h2 className="admin-card-title">Security & Settings</h2><p className="admin-card-text">Access the restricted security workspace.</p></button>}
+  {permissions["learning.content.manage"] && <button onClick={() => router.push("/admin/content")} className="admin-card text-left"><h2 className="admin-card-title">AI & Learning Content</h2><p className="admin-card-text">Manage approved learning content when the tools are enabled.</p></button>}
+  {permissions["community.moderate"] && <button onClick={() => router.push("/admin/moderation")} className="admin-card text-left"><h2 className="admin-card-title">Community Moderation</h2><p className="admin-card-text">Review community safety and support workflows.</p></button>}
+  {permissions["analytics.read"] && <button onClick={() => router.push("/admin/analytics")} className="admin-card text-left"><h2 className="admin-card-title">Analytics</h2><p className="admin-card-text">Open permitted platform reporting.</p></button>}
 </section>
 
         {permissions["cbt.config.manage"] && (
