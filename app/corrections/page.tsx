@@ -5,6 +5,7 @@ import "./corrections.css";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings } from "../lib/examApi";
+import { streamAiTutor, type AiQuestionContext } from "../lib/aiTutor";
 
 type ResultItem = {
   id: string | number;
@@ -24,6 +25,66 @@ type ResultItem = {
   flagged?: boolean;
   marks?: number;
 };
+
+
+function CorrectionTutor({ item }: { item: ResultItem }) {
+  const [open, setOpen] = useState(false);
+  const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function ask(mode: "explain" | "why_wrong") {
+    if (busy) return;
+    setOpen(true);
+    setAnswer("");
+    setError("");
+    setBusy(true);
+    try {
+      const question: AiQuestionContext = {
+        subject: item.subject,
+        type: item.type,
+        text: item.text,
+        options: item.options,
+        correctAnswer: item.correctAnswer,
+        explanation: item.explanation,
+        userAnswer: item.userAnswer,
+      };
+      await streamAiTutor({ mode, question }, (chunk) => {
+        setAnswer((current) => current + chunk);
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The AI Tutor could not respond. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="font-bold text-slate-900">Learn with AI Tutor</h3>
+          <p className="mt-1 text-sm text-slate-600">Ask for reasoning on this released correction.</p>
+        </div>
+        <button type="button" onClick={() => setOpen((value) => !value)} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-bold text-blue-950">
+          {open ? "Hide tutor" : "Open tutor"}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-4">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={busy} onClick={() => void ask("explain")} className="rounded-lg bg-[#061a3a] px-3 py-2 text-sm font-bold text-white disabled:opacity-50">Explain step by step</button>
+            {item.userAnswer !== null && !item.isCorrect && <button type="button" disabled={busy} onClick={() => void ask("why_wrong")} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-bold text-blue-950 disabled:opacity-50">Understand my mistake</button>}
+          </div>
+          {busy && <p className="mt-3 text-sm text-slate-600" role="status">Tutor is thinking…</p>}
+          {error && <p className="mt-3 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800" role="alert">{error}</p>}
+          {answer && <div className="mt-3 whitespace-pre-wrap rounded-lg border border-blue-100 bg-white p-4 text-sm leading-7 text-slate-800" aria-live="polite">{answer}</div>}
+          <p className="mt-3 text-xs leading-5 text-slate-500">AI guidance may be wrong. Verify the reasoning against your course material.</p>
+        </div>
+      )}
+    </section>
+  );
+}
 
 type Candidate = {
   name: string;
@@ -407,6 +468,8 @@ export default function CorrectionsPage() {
                           <p className="explanation-text">{item.explanation}</p>
                         </div>
                       )}
+
+                      <CorrectionTutor item={item} />
                     </div>
                   </article>
                 );
