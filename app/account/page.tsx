@@ -47,9 +47,29 @@ export default function AccountPage() {
         body: JSON.stringify({ accessToken: session.access_token }),
       });
       if (!response.ok) {
+        await clearOperatorGate();
         setError("Your sign-in was successful, but secure access could not be prepared. Please contact the platform owner.");
         return;
       }
+
+      const { data: isSuperAdmin, error: roleError } =
+        await supabase.rpc("is_super_admin");
+
+      if (roleError) {
+        await clearOperatorGate();
+        setError("We could not verify your account permissions. Please try again.");
+        return;
+      }
+
+      window.localStorage.setItem(
+        "admin_user",
+        JSON.stringify({
+          id: session.user.id,
+          email: session.user.email ?? "",
+          role: isSuperAdmin === true ? "super_admin" : "admin",
+        })
+      );
+
       router.replace("/admin/dashboard");
       return;
     }
