@@ -29,6 +29,7 @@ export default function AccountPage() {
       // is complete. This is a client-side guard; Supabase settings and server
       // authorization must also enforce the policy.
       if (session.user.email && !session.user.email_confirmed_at) {
+        await clearOperatorGate();
         await supabase.auth.signOut();
         setError("Please verify your email before entering BrainLab. Check your inbox for the verification link, then sign in again.");
         return;
