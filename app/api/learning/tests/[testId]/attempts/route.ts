@@ -176,6 +176,7 @@ export async function POST(
         status: "in_progress",
         question_order: prepared.map((row) => ({ question_id: row.question_id, question_version: row.question_version })),
         total_questions: prepared.length,
+        pass_percentage_snapshot: test.pass_percentage,
         started_at: started.toISOString(),
         deadline_at: deadline?.toISOString() ?? null,
       })
