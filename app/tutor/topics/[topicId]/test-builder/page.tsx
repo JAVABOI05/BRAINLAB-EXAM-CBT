@@ -172,7 +172,7 @@ export default function TopicTestBuilderPage() {
       options,
       correct_answer: type === "true_false" ? "true" : "a",
       explanation: null,
-      order_index: questions.length,
+      order_index: Math.max(-1, ...questions.map((question) => question.order_index)) + 1,
       version: 1,
     }).select("id,test_id,question_type,prompt,image_url,options,correct_answer,explanation,order_index,version").single();
     if (insertError || !data) setError("The question could not be added.");
@@ -186,7 +186,7 @@ export default function TopicTestBuilderPage() {
     if (!(await ensureDraft())) { setSaving(false); return; }
     const { error: deleteError } = await supabase.from("learning_test_questions").delete().eq("id", question.id);
     if (deleteError) setError("The question could not be deleted.");
-    else { setQuestions((old) => old.filter((item) => item.id !== question.id).map((item, index) => ({ ...item, order_index: index }))); setMessage("Question removed. Save the assessment to normalize ordering."); }
+    else { setQuestions((old) => old.filter((item) => item.id !== question.id)); setMessage("Question removed. Save the assessment to normalize ordering."); }
     setSaving(false);
   }
 
