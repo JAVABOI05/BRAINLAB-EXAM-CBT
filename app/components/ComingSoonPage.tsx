@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import { adminHasPermission, type AdminPermission } from "../lib/adminRoles";
 
 type ComingSoonPageProps = {
   title: string;
@@ -11,6 +12,7 @@ type ComingSoonPageProps = {
   category?: string;
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
+  requiredPermission?: AdminPermission;
   nextSteps?: { label: string; href: string }[];
 };
 
@@ -20,6 +22,7 @@ export default function ComingSoonPage({
   category = "Academy roadmap",
   requiresAuth = false,
   requiresAdmin = false,
+  requiredPermission,
   nextSteps = [],
 }: ComingSoonPageProps) {
   const router = useRouter();
@@ -43,11 +46,19 @@ export default function ComingSoonPage({
           return;
         }
       }
+      if (requiredPermission) {
+        const permitted = await adminHasPermission(requiredPermission);
+        if (!active) return;
+        if (!permitted) {
+          router.replace("/admin/dashboard");
+          return;
+        }
+      }
       setChecking(false);
     }
     void verifySession();
     return () => { active = false; };
-  }, [requiresAuth, requiresAdmin, router]);
+  }, [requiresAuth, requiresAdmin, requiredPermission, router]);
 
   if (checking) {
     return <main id="main" className="mx-auto min-h-[60vh] max-w-5xl px-5 py-16"><p className="text-slate-600">Checking your BrainLab account…</p></main>;
