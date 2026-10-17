@@ -297,6 +297,9 @@ as $function$
   select coalesce(public.get_admin_role() in ('super_admin', 'platform_admin'), false);
 $function$;
 
+grant execute on function public.get_admin_role() to anon, authenticated;
+grant execute on function public.learning_can_manage_all() to anon, authenticated;
+
 -- RLS is enabled on every exposed table.
 alter table public.learning_subjects enable row level security;
 alter table public.learning_topics enable row level security;
