@@ -5,7 +5,7 @@ import "./corrections.css";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings } from "../lib/examApi";
-import { streamAiTutor, type AiQuestionContext } from "../lib/aiTutor";
+import { streamAiTutor, type AiCoachContext, type AiQuestionContext } from "../lib/aiTutor";
 
 type ResultItem = {
   id: string | number;
@@ -82,6 +82,59 @@ function CorrectionTutor({ item }: { item: ResultItem }) {
           <p className="mt-3 text-xs leading-5 text-slate-500">AI guidance may be wrong. Verify the reasoning against your course material.</p>
         </div>
       )}
+    </section>
+  );
+}
+
+
+function CorrectionStudyCoach({ results, summary, subjectStats }: {
+  results: ResultItem[];
+  summary: { total: number; correct: number; wrong: number; unanswered: number };
+  subjectStats: Record<string, { total: number; correct: number; wrong: number; unanswered: number }>;
+}) {
+  const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function generatePlan() {
+    if (busy || !results.length) return;
+    setBusy(true);
+    setAnswer("");
+    setError("");
+    const context: AiCoachContext = {
+      summary,
+      subjectStats,
+      missedQuestions: results.filter((item) => item.userAnswer !== null && !item.isCorrect).slice(0, 12).map((item) => ({
+        subject: item.subject,
+        text: item.text.slice(0, 700),
+        correctAnswer: item.correctAnswer,
+      })),
+    };
+    try {
+      await streamAiTutor({
+        mode: "coach",
+        context,
+        messages: [{ role: "user", content: "Review these released correction results. Give me a short, practical revision plan: identify patterns supported by the data, prioritise subjects using counts rather than unsupported mastery claims, explain the limits of this small sample, and suggest three specific next actions. Do not repeat personal details." }],
+      }, (chunk) => setAnswer((current) => current + chunk));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not generate revision guidance.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="my-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-2xl">
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-cyan-900">AI-powered review</p>
+          <h2 className="mt-2 text-xl font-black text-slate-950">Turn corrections into a revision plan</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700">The tutor can review the result counts and a limited sample of missed questions to suggest what to revisit next. This is guidance, not a definitive diagnosis of ability.</p>
+        </div>
+        <button type="button" disabled={busy || !results.length} onClick={() => void generatePlan()} className="min-h-11 rounded-xl bg-[#061a3a] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#123566] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Reviewing…" : "Build my revision plan →"}</button>
+      </div>
+      {error && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">{error}</p>}
+      {answer && <div className="mt-5 whitespace-pre-wrap rounded-xl border border-cyan-100 bg-white p-4 text-sm leading-7 text-slate-800" aria-live="polite">{answer}</div>}
     </section>
   );
 }
@@ -292,6 +345,8 @@ export default function CorrectionsPage() {
             <div className="stat-value">{summary.unanswered}</div>
           </div>
         </section>
+
+        <CorrectionStudyCoach results={results} summary={summary} subjectStats={subjectStats} />
 
         <div className="main-grid">
           <aside className="sidebar">
