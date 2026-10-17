@@ -151,8 +151,8 @@ export async function POST(request: NextRequest) {
     for (const [key, value] of requestWindows) if (value.resetAt <= now) requestWindows.delete(key);
   }
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  const model = process.env.AI_GATEWAY_MODEL;
+  const apiKey = process.env.GROQ_API_KEY;
+  const model = process.env.GROQ_MODEL;
   if (!apiKey || !model) return jsonError("AI Tutor is not configured yet. Please try again later.", 503);
 
   let body: JsonRecord;
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
     return jsonError(error instanceof Error ? error.message : "Invalid tutor request.", 400);
   }
 
-  const upstream = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+  const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
