@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabase";
 
 type BlockType = "text" | "image" | "voice_note" | "short_video" | "long_video" | "inline_mcq";
@@ -71,13 +71,13 @@ export default function LessonBuilderPage() {
   const [message, setMessage] = useState("");
   const [newBlockType, setNewBlockType] = useState<BlockType>("text");
 
-  async function loadBlocks() {
+  const loadBlocks = useCallback(async () => {
     const { data, error: blockError } = await supabase.from("learning_lesson_blocks")
       .select("id,lesson_id,block_type,content,order_index")
       .eq("lesson_id", lessonId).order("order_index", { ascending: true });
     if (blockError) throw blockError;
     setBlocks((data ?? []) as Block[]);
-  }
+  }, [lessonId]);
 
   useEffect(() => {
     let active = true;
@@ -137,7 +137,7 @@ export default function LessonBuilderPage() {
     }
     void load();
     return () => { active = false; };
-  }, [lessonId]);
+  }, [lessonId, loadBlocks]);
 
   function updateContent(blockId: string, key: string, value: unknown) {
     setBlocks((old) => old.map((block) => block.id === blockId ? { ...block, content: { ...block.content, [key]: value } } : block));
