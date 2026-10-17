@@ -79,14 +79,14 @@ create table public.learning_lesson_blocks (
   content jsonb not null check (
     jsonb_typeof(content) = 'object'
     and (
-      (block_type = 'text' and jsonb_typeof(coalesce(content -> 'markdown', content -> 'html')) = 'string')
-      or (block_type = 'image' and jsonb_typeof(content -> 'url') = 'string')
-      or (block_type = 'voice_note' and jsonb_typeof(content -> 'url') = 'string')
-      or (block_type = 'short_video' and jsonb_typeof(content -> 'url') = 'string')
-      or (block_type = 'long_video' and jsonb_typeof(content -> 'url') = 'string' and jsonb_typeof(content -> 'provider') = 'string')
-      or (block_type = 'inline_mcq' and jsonb_typeof(content -> 'question') = 'string'
-        and jsonb_typeof(content -> 'options') = 'array'
-        and jsonb_typeof(content -> 'correct_option_id') = 'string')
+      (block_type = 'text' and jsonb_typeof(coalesce(content -> 'markdown', content -> 'html')) is not distinct from 'string')
+      or (block_type = 'image' and jsonb_typeof(content -> 'url') is not distinct from 'string')
+      or (block_type = 'voice_note' and jsonb_typeof(content -> 'url') is not distinct from 'string')
+      or (block_type = 'short_video' and jsonb_typeof(content -> 'url') is not distinct from 'string')
+      or (block_type = 'long_video' and jsonb_typeof(content -> 'url') is not distinct from 'string' and jsonb_typeof(content -> 'provider') is not distinct from 'string')
+      or (block_type = 'inline_mcq' and jsonb_typeof(content -> 'question') is not distinct from 'string'
+        and jsonb_typeof(content -> 'options') is not distinct from 'array'
+        and jsonb_typeof(content -> 'correct_option_id') is not distinct from 'string')
     )
   ),
   order_index integer not null default 0,
