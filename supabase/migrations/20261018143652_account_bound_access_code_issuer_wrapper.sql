@@ -1,7 +1,8 @@
 -- Keep the original permission-checked issuer as the shared implementation.
 -- This wrapper resolves a registered email and binds the code to that account.
 begin;
-drop function if exists public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid);
+revoke all on function public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid) from public,anon,authenticated;
+drop function if exists public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid,text);
 create function public.create_learning_access_code(
   p_scope_type text,p_permanent boolean,p_expires_at timestamptz,p_max_redemptions integer,
   p_max_questions integer,p_membership_type text,p_resource_key text,
