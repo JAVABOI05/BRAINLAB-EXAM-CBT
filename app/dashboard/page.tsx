@@ -61,6 +61,12 @@ export default function LearnerDashboardPage() {
             <Link href="/self-practice" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-4 py-2 text-sm font-bold text-white">Start Self Practice</Link>
           </article>
           <article className="rounded-2xl border border-slate-200 p-5">
+            <div className="text-2xl" aria-hidden="true">◎</div>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">Quizzes & competitions</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Find published organisation quizzes and competition assessments available to your account.</p>
+            <Link href="/assessments" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800">Browse assessments</Link>
+          </article>
+          <article className="rounded-2xl border border-slate-200 p-5">
             <div className="text-2xl" aria-hidden="true">⌁</div>
             <h2 className="mt-3 text-lg font-bold text-slate-950">Membership and access</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">Redeem a BrainLab Tutorial or organisation code to attach the appropriate access entitlement to this account.</p>
