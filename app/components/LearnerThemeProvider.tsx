@@ -46,8 +46,8 @@ function subscribeSystemAppearance(onChange: () => void) {
 export function LearnerThemeProvider({ children }: { children: React.ReactNode }) {
   // useSyncExternalStore keeps the server and initial hydration snapshots aligned,
   // then reads the saved browser preference without a synchronous effect update.
-  const appearance = useSyncExternalStore(subscribeAppearance, getStoredAppearance, () => "system");
-  const system = useSyncExternalStore(subscribeSystemAppearance, getSystemAppearance, () => "light");
+  const appearance = useSyncExternalStore<AppearancePreference>(subscribeAppearance, getStoredAppearance, () => "system");
+  const system = useSyncExternalStore<ResolvedTheme>(subscribeSystemAppearance, getSystemAppearance, () => "light");
 
   const setAppearance = useCallback((next: AppearancePreference) => {
     try {
