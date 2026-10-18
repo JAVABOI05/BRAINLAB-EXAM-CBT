@@ -29,6 +29,15 @@ function getOptionValue(value: string | null | undefined): string {
   return value?.trim() || "";
 }
 
+function safeImageUrl(value: string | null | undefined): string | null {
+  try {
+    const url = new URL(value ?? "");
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function formatTime(totalSeconds: number) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -567,14 +576,23 @@ export default function ExamPage() {
               <p className="exam-question-text">
                 {currentIndex + 1}. {currentQuestion.question}
               </p>
+              {safeImageUrl(currentQuestion.question_image_url) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={safeImageUrl(currentQuestion.question_image_url)!}
+                  alt={currentQuestion.question_image_alt?.trim() || "Question illustration"}
+                  loading="lazy"
+                  className="mt-4 max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
+                />
+              )}
             </div>
 
             <div className="space-y-3">
               {[
-                { key: "A" as const, value: optionA },
-                { key: "B" as const, value: optionB },
-                { key: "C" as const, value: optionC },
-                { key: "D" as const, value: optionD },
+                { key: "A" as const, value: optionA, imageUrl: currentQuestion.option_a_image_url, imageAlt: currentQuestion.option_a_image_alt },
+                { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
+                { key: "C" as const, value: optionC, imageUrl: currentQuestion.option_c_image_url, imageAlt: currentQuestion.option_c_image_alt },
+                { key: "D" as const, value: optionD, imageUrl: currentQuestion.option_d_image_url, imageAlt: currentQuestion.option_d_image_alt },
               ].map((option) => (
                 <label
                   key={option.key}
@@ -593,6 +611,15 @@ export default function ExamPage() {
                     <div>
                       <span className="exam-option-letter">{option.key}.</span>
                       <span>{option.value}</span>
+                      {safeImageUrl(option.imageUrl) && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={safeImageUrl(option.imageUrl)!}
+                          alt={option.imageAlt?.trim() || `Option ${option.key} illustration`}
+                          loading="lazy"
+                          className="mt-2 max-h-64 w-auto max-w-full rounded-lg object-contain"
+                        />
+                      )}
                     </div>
                   </div>
                 </label>
