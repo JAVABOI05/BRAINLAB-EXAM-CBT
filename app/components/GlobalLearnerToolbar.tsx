@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useLearnerTheme, type AppearancePreference } from "./LearnerThemeProvider";
@@ -29,27 +29,44 @@ const nextAppearance: Record<AppearancePreference, AppearancePreference> = {
   system: "light",
 };
 
+const CANDIDATE_EVENT = "brainlab-candidate-change";
+
+function readCandidateName() {
+  if (typeof window === "undefined") return "";
+  try {
+    const saved = window.localStorage.getItem("candidate");
+    if (!saved) return "";
+    const candidate = JSON.parse(saved) as { name?: unknown };
+    return typeof candidate.name === "string" ? candidate.name.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+function subscribeCandidate(onChange: () => void) {
+  window.addEventListener(CANDIDATE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  window.addEventListener("focus", onChange);
+  return () => {
+    window.removeEventListener(CANDIDATE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("focus", onChange);
+  };
+}
+
+function subscribeGreeting(onChange: () => void) {
+  const timer = window.setInterval(onChange, 60_000);
+  return () => window.clearInterval(timer);
+}
+
 export default function GlobalLearnerToolbar() {
   const { appearance, resolvedTheme, setAppearance } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
-  const [candidateName, setCandidateName] = useState("");
-  const [greetingText, setGreetingText] = useState("Welcome");
-  const [mounted, setMounted] = useState(false);
+  const candidateName = useSyncExternalStore(subscribeCandidate, readCandidateName, () => "");
+  const greetingText = useSyncExternalStore(subscribeGreeting, greeting, () => "Welcome");
 
   useEffect(() => {
     let active = true;
-    setGreetingText(greeting());
-    setMounted(true);
-    try {
-      const saved = window.localStorage.getItem("candidate");
-      if (saved) {
-        const candidate = JSON.parse(saved) as { name?: unknown };
-        if (typeof candidate.name === "string" && candidate.name.trim()) setCandidateName(candidate.name.trim());
-      }
-    } catch {
-      // A malformed legacy CBT candidate record must not affect page access.
-    }
-
     void supabase.auth.getUser().then(({ data, error }) => {
       if (active) setUser(error ? null : data.user);
     }).catch(() => {
@@ -79,8 +96,8 @@ export default function GlobalLearnerToolbar() {
             <span className="global-learner-avatar global-learner-avatar-fallback" aria-hidden="true">{initials(name)}</span>
           ) : null}
           <div className="global-learner-welcome">
-            <span className="global-learner-greeting">{mounted && name ? greetingText : "Welcome"}{mounted && name ? "," : ""}</span>
-            {mounted && name ? <span className="global-learner-name">{name}</span> : <span className="global-learner-name">BrainLab Academy</span>}
+            <span className="global-learner-greeting">{name ? `${greetingText},` : "Welcome"}</span>
+            <span className="global-learner-name">{name || "BrainLab Academy"}</span>
           </div>
         </div>
         <div className="global-learner-actions">
