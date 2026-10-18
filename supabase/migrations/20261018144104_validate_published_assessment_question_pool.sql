@@ -18,8 +18,8 @@ begin
 end;
 $function$;
 revoke all on function public.validate_published_learning_assessment() from public,anon,authenticated;
-drop trigger if exists validate_published_assessment_question_pool on public.learning_assessments;
-create trigger validate_published_assessment_question_pool
+drop trigger if exists validate_published_learning_assessment on public.learning_assessments;
+create trigger validate_published_learning_assessment
 before insert or update of is_published,subjects,categories,question_count,question_source
 on public.learning_assessments for each row execute function public.validate_published_learning_assessment();
 commit;
