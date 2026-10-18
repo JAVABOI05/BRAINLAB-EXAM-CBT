@@ -33,6 +33,7 @@ export default function SelfPracticePage() {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [pendingSaves, setPendingSaves] = useState(0);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -100,16 +101,23 @@ export default function SelfPracticePage() {
     if (!attempt || result || secondsLeft === 0) return;
     const key = String(questionId);
     setAnswers((previous) => ({ ...previous, [key]: option }));
-    const { data, error: saveError } = await supabase.rpc("save_self_practice_progress", {
-      p_attempt_id: attempt.attempt_id,
-      p_attempt_token: attempt.attempt_token,
-      p_answers: { [key]: option },
-    });
-    if (saveError || !data?.ok) setError(saveError?.message || (data as ApiFailure | null)?.message || "Answer could not be saved. Retry before submitting.");
+    setPendingSaves((count) => count + 1);
+    try {
+      const { data, error: saveError } = await supabase.rpc("save_self_practice_progress", {
+        p_attempt_id: attempt.attempt_id,
+        p_attempt_token: attempt.attempt_token,
+        p_answers: { [key]: option },
+      });
+      if (saveError || !data?.ok) setError(saveError?.message || (data as ApiFailure | null)?.message || "Answer could not be saved. Retry before submitting.");
+    } catch {
+      setError("Answer could not be saved. Retry before submitting.");
+    } finally {
+      setPendingSaves((count) => Math.max(0, count - 1));
+    }
   }, [attempt, result, secondsLeft]);
 
   const submitPractice = useCallback(async () => {
-    if (!attempt || result || working) return;
+    if (!attempt || result || working || pendingSaves > 0) return;
     setWorking(true); setError(""); setMessage("");
     const { data, error: submitError } = await supabase.rpc("submit_self_practice", {
       p_attempt_id: attempt.attempt_id,
@@ -124,7 +132,7 @@ export default function SelfPracticePage() {
       setAttempt(null);
     }
     setWorking(false);
-  }, [attempt, result, working, answers]);
+  }, [attempt, result, working, pendingSaves, answers]);
 
   if (loading) return <main className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-4xl rounded-2xl bg-white p-6">Loading Self Practice…</div></main>;
 
@@ -148,12 +156,12 @@ export default function SelfPracticePage() {
       </form>}
 
       {attempt && <section className="space-y-5">
-        <div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur"><div><strong>{attempt.questions.length} questions</strong><p className="text-sm text-slate-500">{Object.keys(answers).length} answered · no repeated question IDs</p></div><div className="flex items-center gap-3">{secondsLeft !== null && <span className={secondsLeft < 60 ? "font-bold text-red-700" : "font-semibold"}>Time left: {formatTime(secondsLeft)}</span>}<button className="rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => void submitPractice()}>{working ? "Submitting…" : "Submit practice"}</button></div></div>
+        <div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur"><div><strong>{attempt.questions.length} questions</strong><p className="text-sm text-slate-500">{Object.keys(answers).length} answered{pendingSaves ? " · saving answers…" : " · no repeated question IDs"}</p></div><div className="flex items-center gap-3">{secondsLeft !== null && <span className={secondsLeft < 60 ? "font-bold text-red-700" : "font-semibold"}>Time left: {formatTime(secondsLeft)}</span>}<button className="rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={working || pendingSaves > 0} onClick={() => void submitPractice()}>{working ? "Submitting…" : "Submit practice"}</button></div></div>
         {attempt.questions.map((q,index) => <article key={q.id} className="rounded-2xl bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-semibold text-indigo-700">Question {index+1} of {attempt.questions.length}</span><span className="text-sm text-slate-500">{q.subject}{q.section ? ` · ${q.section}` : ""}</span></div>{q.passage_text && <div className="mt-4 rounded-lg bg-slate-50 p-4"><p className="font-semibold">{q.passage_title || "Reading passage"}</p><p className="mt-2 whitespace-pre-wrap text-slate-700">{q.passage_text}</p></div>}<h2 className="mt-4 whitespace-pre-wrap text-lg font-semibold text-slate-900">{q.question}</h2>{safeImageUrl(q.question_image_url) && <img src={safeImageUrl(q.question_image_url)!} alt={q.question_image_alt || "Question illustration"} className="mt-4 block max-h-96 max-w-full rounded-lg border object-contain" loading="lazy" />}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">{(["A","B","C","D"] as const).map((key) => { const text = q[`option_${key.toLowerCase()}` as "option_a"|"option_b"|"option_c"|"option_d"]; const image = q[`option_${key.toLowerCase()}_image_url` as "option_a_image_url"|"option_b_image_url"|"option_c_image_url"|"option_d_image_url"]; const alt = q[`option_${key.toLowerCase()}_image_alt` as "option_a_image_alt"|"option_b_image_alt"|"option_c_image_alt"|"option_d_image_alt"]; return <label key={key} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${answers[String(q.id)]===key ? "border-indigo-600 bg-indigo-50" : "border-slate-200"} ${secondsLeft===0 ? "opacity-70" : ""}`}><input type="radio" name={`question-${q.id}`} checked={answers[String(q.id)]===key} disabled={secondsLeft===0 || working} onChange={() => void chooseAnswer(q.id,key)} className="mt-1" /><span className="min-w-0"><strong>{key}.</strong> {text || ""}{safeImageUrl(image) && <img src={safeImageUrl(image)!} alt={alt || `Option ${key} illustration`} className="mt-2 block max-h-56 max-w-full object-contain" loading="lazy" />}</span></label>; })}</div>
         </article>)}
         {secondsLeft===0 && <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">Time is up. Your answer inputs are locked. Submit now to grade the answers saved so far.</div>}
-        <button className="rounded-xl bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50" disabled={working} onClick={() => void submitPractice()}>{working ? "Submitting…" : "Submit practice and view corrections"}</button>
+        <button className="rounded-xl bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50" disabled={working || pendingSaves > 0} onClick={() => void submitPractice()}>{working ? "Submitting…" : pendingSaves ? "Saving answers…" : "Submit practice and view corrections"}</button>
       </section>}
 
       {result && <section className="space-y-5"><div className="rounded-2xl bg-white p-6 shadow-sm sm:p-8"><p className="text-sm font-semibold uppercase tracking-wide text-indigo-700">Practice complete</p><h2 className="mt-2 text-3xl font-bold">{result.score} / {result.total}</h2><p className="mt-1 text-slate-600">{result.percentage}% · {result.items.filter((x) => x.isCorrect).length} of {result.items.length} questions correct</p><button className="mt-5 rounded-xl bg-indigo-700 px-5 py-3 font-semibold text-white" onClick={() => { setResult(null); setAttempt(null); setAnswers({}); setMessage(""); setError(""); }}>Start another practice</button></div>{result.items.map((item,index) => <article key={item.id} className="rounded-2xl bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-wrap justify-between gap-2"><span className="font-semibold">Question {index+1}</span><span className={item.isCorrect ? "font-semibold text-green-700" : "font-semibold text-red-700"}>{item.isCorrect ? "Correct" : "Review this answer"}</span></div><h3 className="mt-3 text-lg font-semibold">{item.text}</h3>{safeImageUrl(item.questionImageUrl) && <img src={safeImageUrl(item.questionImageUrl)!} alt={item.questionImageAlt || "Question illustration"} className="mt-3 block max-h-96 max-w-full rounded-lg object-contain" loading="lazy" />}<div className="mt-3 grid gap-2 sm:grid-cols-2">{(["A","B","C","D"] as const).map((key) => <div key={key} className={`rounded-lg border p-3 ${item.correctAnswer===key ? "border-green-400 bg-green-50" : item.userAnswer===key ? "border-red-300 bg-red-50" : "border-slate-200"}`}><strong>{key}.</strong> {item.options?.[key] || ""}{safeImageUrl(item.optionImages?.[key]) && <img src={safeImageUrl(item.optionImages?.[key])!} alt={item.optionImageAlts?.[key] || `Option ${key} illustration`} className="mt-2 block max-h-48 max-w-full object-contain" loading="lazy" />}</div>)}</div><p className="mt-3 text-sm text-slate-600">Your answer: <strong>{item.userAnswer || "Not answered"}</strong> · Correct answer: <strong>{item.correctAnswer}</strong></p>{item.explanation && <div className="mt-4 rounded-lg bg-blue-50 p-4"><strong>Explanation</strong><p className="mt-1 whitespace-pre-wrap">{item.explanation}</p>{safeImageUrl(item.explanationImageUrl) && <img src={safeImageUrl(item.explanationImageUrl)!} alt={item.explanationImageAlt || "Explanation illustration"} className="mt-3 block max-h-96 max-w-full object-contain" loading="lazy" />}</div>}</article>)}</section>}
