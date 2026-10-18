@@ -374,7 +374,7 @@ export default function CorrectionsPage() {
                               src={safeImageUrl(item.questionImageUrl)!}
                               alt={item.questionImageAlt?.trim() || "Question illustration"}
                               loading="lazy"
-                              className="mt-3 max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
+                              className="mt-3 block max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
                             />
                           )}
                         </div>
@@ -409,7 +409,7 @@ export default function CorrectionsPage() {
                                   src={safeImageUrl(item.optionImages?.[key])!}
                                   alt={item.optionImageAlts?.[key]?.trim() || `Option ${key} illustration`}
                                   loading="lazy"
-                                  className="mt-2 max-h-64 w-auto max-w-full rounded-lg object-contain"
+                                  className="mt-2 block max-h-64 w-auto max-w-full rounded-lg object-contain"
                                 />
                               )}
                             </div>
@@ -446,7 +446,7 @@ export default function CorrectionsPage() {
                               src={safeImageUrl(item.explanationImageUrl)!}
                               alt={item.explanationImageAlt?.trim() || "Explanation illustration"}
                               loading="lazy"
-                              className="mt-3 max-h-96 w-auto max-w-full rounded-lg object-contain"
+                              className="mt-3 block max-h-96 w-auto max-w-full rounded-lg object-contain"
                             />
                           )}
                         </div>
