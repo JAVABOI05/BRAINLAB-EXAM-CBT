@@ -111,6 +111,16 @@ Run with one designated admin account and one ordinary authenticated account. Al
 | A-11 | Revoke an entitlement for an organisation member | Entitlement is marked revoked, membership is suspended only when no other active organisation entitlement remains, and an audit record is written | Not run |
 | A-12 | Review assessment results as an authorised admin, then as an ordinary user | Admin receives attempt summaries for permitted assessments; ordinary user receives no privileged result list | Not run |
 
+## Automated transactional database smoke checks — 2026-10-18
+
+| ID | Test | Result |
+|---|---|---|
+| DB-01 | Start an organisation quiz; assert the initial/resume question payload omits answer keys; save and resume an answer; submit; verify released corrections; try to submit the same attempt through a Self Practice RPC | **Passed** in a transactional staging test |
+| DB-02 | Request 51 Self Practice questions as a free learner; then start a two-question attempt, assert no answer key in the initial payload, save/resume, submit, and retry submission | **Passed** in a transactional staging test |
+| DB-03 | Confirm the temporary test organisation, assessment, and attempt rows were rolled back | **Passed**; query confirmed zero temporary test rows remained |
+
+These checks exercised database RPCs using a designated staging admin identity with transaction rollback. They do not replace browser-based end-to-end tests, non-admin/RLS tests, concurrent-start tests, media upload tests, or the legacy CBT regression suite. No production test rows were created.
+
 ## Evidence to record
 
 For each test, record the ID, timestamp, staging project confirmation, test identity label (not personal data), pass/fail, sanitized error/result, and any relevant request ID. Never paste tokens, access codes, passwords, phone numbers, or candidate records into this document.
