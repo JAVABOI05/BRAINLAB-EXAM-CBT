@@ -90,50 +90,35 @@ export async function POST(
   if (ordered.length !== snapshots.length) return noStoreJson({ error: "The question order is inconsistent. Please contact support." }, 500);
 
   if (attempt.status === "in_progress") {
-    const expired = Boolean(attempt.deadline_at && new Date(attempt.deadline_at).getTime() <= Date.now());
-    const answerById = new Map((savedAnswers as SavedAnswer[]).map((answer) => [answer.question_id, answer]));
-    const gradedAnswers = ordered.map((question) => {
-      const answer = answerById.get(question.question_id);
-      return {
-        question_id: question.question_id,
-        is_correct: Boolean(answer && answer.selected_answer === question.correct_answer_snapshot),
-      };
+    // The database transaction locks the attempt row, grades the server-saved
+    // answers against immutable snapshots, and finalizes the result atomically.
+    // Answer-save requests acquire the same lock, so no late upsert can change
+    // the answer set after grading.
+    const { data: finalizedData, error: finalizeError } = await service.rpc("finalize_learning_attempt", {
+      p_attempt_id: attemptId,
+      p_student_id: user.id,
     });
 
-    for (const answer of gradedAnswers) {
-      const { error: gradeError } = await service.from("learning_test_answers")
-        .update({ is_correct: answer.is_correct })
-        .eq("attempt_id", attemptId)
-        .eq("question_id", answer.question_id);
-      if (gradeError) return noStoreJson({ error: "We could not finalize your answers. Please try submitting again." }, 500);
+    if (finalizeError) {
+      if (finalizeError.code === "P0002") return noStoreJson({ error: "This attempt could not be found." }, 404);
+      if (finalizeError.code === "55000") return noStoreJson({ error: "This assessment cannot be finalized in its current state." }, 409);
+      return noStoreJson({ error: "The result could not be finalized. Please try submitting again." }, 500);
     }
 
-    const score = gradedAnswers.filter((answer) => answer.is_correct).length;
-    const totalQuestions = ordered.length;
-    const percentage = Math.round((score / totalQuestions) * 10000) / 100;
-    const passPercentage = Number(attempt.pass_percentage_snapshot);
-    const passed = percentage >= passPercentage;
-    const finalizedAt = new Date().toISOString();
-    const nextStatus = expired ? "expired" : "submitted";
+    const finalized = finalizedData as {
+      status?: "submitted" | "expired";
+      score?: number;
+      total_questions?: number;
+      percentage?: number;
+      passed?: boolean;
+      pass_percentage?: number;
+      started_at?: string;
+      submitted_at?: string;
+    } | null;
 
-    const { data: finalized, error: finalizeError } = await service
-      .from("learning_test_attempts")
-      .update({
-        status: nextStatus,
-        score,
-        total_questions: totalQuestions,
-        percentage,
-        passed,
-        submitted_at: finalizedAt,
-      })
-      .eq("id", attemptId)
-      .eq("student_id", user.id)
-      .eq("status", "in_progress")
-      .select("id,status")
-      .maybeSingle();
-
-    if (finalizeError) return noStoreJson({ error: "The result could not be finalized. Please try again." }, 500);
-    if (!finalized) return noStoreJson({ error: "This attempt has already been submitted. Reload to view its result." }, 409);
+    if (!finalized || (finalized.status !== "submitted" && finalized.status !== "expired")) {
+      return noStoreJson({ error: "The assessment result could not be confirmed. Reload and try again." }, 500);
+    }
 
     const { data: finalAnswers, error: finalAnswersError } = await service
       .from("learning_test_answers")
@@ -143,15 +128,15 @@ export async function POST(
 
     return noStoreJson({
       attemptId,
-      status: nextStatus,
+      status: finalized.status,
       title: test.title,
-      score,
-      totalQuestions,
-      percentage,
-      passed,
-      passPercentage,
-      startedAt: attempt.started_at,
-      submittedAt: finalizedAt,
+      score: Number(finalized.score ?? 0),
+      totalQuestions: Number(finalized.total_questions ?? ordered.length),
+      percentage: Number(finalized.percentage ?? 0),
+      passed: Boolean(finalized.passed),
+      passPercentage: Number(finalized.pass_percentage ?? attempt.pass_percentage_snapshot),
+      startedAt: finalized.started_at ?? attempt.started_at,
+      submittedAt: finalized.submitted_at ?? new Date().toISOString(),
       review: buildReview(ordered, finalAnswers as SavedAnswer[]),
     });
   }

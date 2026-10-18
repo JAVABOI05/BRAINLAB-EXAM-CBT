@@ -1,6 +1,7 @@
 "use client";
 
-import { adminSignOut } from "../../lib/adminAuth";
+import { adminSignOut, getAdminSession } from "../../lib/adminAuth";
+import { adminHasPermission } from "../../lib/adminRoles";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -50,6 +51,7 @@ export default function AdminConfigPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [canManageConfig, setCanManageConfig] = useState(false);
   const [message, setMessage] = useState("");
 
   const [subjects, setSubjects] = useState<string[]>([
@@ -79,21 +81,21 @@ export default function AdminConfigPage() {
   const [electiveEnabled, setElectiveEnabled] = useState(true);
 
   useEffect(() => {
-    const savedAdmin = localStorage.getItem("admin_user");
-
-    if (!savedAdmin) {
-      router.push("/admin/login");
-      return;
+    let active = true;
+    async function init() {
+      const admin = await getAdminSession();
+      if (!active) return;
+      if (!admin) { router.replace("/account"); return; }
+      if (!(await adminHasPermission("cbt.config.read"))) {
+        if (active) { setMessage("You do not have permission to view examination settings."); setLoading(false); }
+        return;
+      }
+      setCanManageConfig(await adminHasPermission("cbt.config.manage"));
+      setAdminUser(admin);
+      await loadConfig();
     }
-
-    try {
-      const parsed = JSON.parse(savedAdmin) as AdminUser;
-      setAdminUser(parsed);
-      loadConfig();
-    } catch {
-      localStorage.removeItem("admin_user");
-      router.push("/admin/login");
-    }
+    void init().catch(() => { if (active) { setMessage("Could not verify administrator access."); setLoading(false); } });
+    return () => { active = false; };
   }, [router]);
 
   async function loadConfig() {
@@ -575,6 +577,7 @@ export default function AdminConfigPage() {
 
         <section className="admin-section admin-card">
           <h2 className="admin-card-title">Save Configuration</h2>
+          {!canManageConfig && <p className="admin-help">Your administrator role can view these settings but cannot change them.</p>}
           <p className="admin-card-text">
             Save your exam setup so the login and exam pages can use it.
           </p>
@@ -582,7 +585,7 @@ export default function AdminConfigPage() {
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !canManageConfig}
               className="admin-btn-primary"
             >
               {saving ? "Saving..." : "Save Configuration"}

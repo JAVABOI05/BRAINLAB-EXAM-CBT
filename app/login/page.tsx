@@ -79,6 +79,7 @@ export default function Page() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff245%,#f8fbff_80%)] px-6 py-12">
+      <div role="status" className="mx-auto mb-5 max-w-6xl rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950"><strong>Platform upgrade notice:</strong> BrainLab is undergoing a website and assessment-system overhaul. Some features may be temporarily unavailable, and a timed attempt could be interrupted. Please avoid starting a high-stakes exam during the maintenance window.</div>
 
       <div className="mx-auto mb-8 max-w-6xl rounded-[32px] border border-white/70 bg-white/80 p-6 shadow-2xl shadow-blue-100/60 backdrop-blur md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
