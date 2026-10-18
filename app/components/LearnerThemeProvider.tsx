@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
 
 export type AppearancePreference = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -59,6 +59,12 @@ export function LearnerThemeProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const resolvedTheme: ResolvedTheme = appearance === "system" ? system : appearance;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
+  }, [resolvedTheme]);
+
   const value = useMemo(() => ({ appearance, resolvedTheme, setAppearance }), [appearance, resolvedTheme, setAppearance]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
