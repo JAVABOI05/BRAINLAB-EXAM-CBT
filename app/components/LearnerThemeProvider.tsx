@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 
 export type AppearancePreference = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -11,37 +11,51 @@ type ThemeContextValue = {
 };
 
 const STORAGE_KEY = "brainlab-appearance";
+const APPEARANCE_EVENT = "brainlab-appearance-change";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function systemTheme(): ResolvedTheme {
+function getStoredAppearance(): AppearancePreference {
+  if (typeof window === "undefined") return "system";
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+  } catch {
+    return "system";
+  }
+}
+
+function subscribeAppearance(onChange: () => void) {
+  window.addEventListener(APPEARANCE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(APPEARANCE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function getSystemAppearance(): ResolvedTheme {
   return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export function LearnerThemeProvider({ children }: { children: React.ReactNode }) {
-  const [appearance, setAppearanceState] = useState<AppearancePreference>("system");
-  const [system, setSystem] = useState<ResolvedTheme>("light");
+function subscribeSystemAppearance(onChange: () => void) {
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === "light" || stored === "dark" || stored === "system") setAppearanceState(stored);
-    } catch {
-      // Appearance remains usable for this session when browser storage is unavailable.
-    }
-    setSystem(systemTheme());
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setSystem(media.matches ? "dark" : "light");
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+export function LearnerThemeProvider({ children }: { children: React.ReactNode }) {
+  // useSyncExternalStore keeps the server and initial hydration snapshots aligned,
+  // then reads the saved browser preference without a synchronous effect update.
+  const appearance = useSyncExternalStore(subscribeAppearance, getStoredAppearance, () => "system");
+  const system = useSyncExternalStore(subscribeSystemAppearance, getSystemAppearance, () => "light");
 
   const setAppearance = useCallback((next: AppearancePreference) => {
-    setAppearanceState(next);
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // The selected appearance still applies until the page is closed.
+      // The selected appearance still applies for this session if storage is blocked.
     }
+    window.dispatchEvent(new Event(APPEARANCE_EVENT));
   }, []);
 
   const resolvedTheme: ResolvedTheme = appearance === "system" ? system : appearance;
