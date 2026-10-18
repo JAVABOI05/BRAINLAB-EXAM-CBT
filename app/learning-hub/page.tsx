@@ -48,17 +48,21 @@ export default function LearningHubPage(){
 
   const currentTopics=topics.filter((t)=>t.subject_id===selectedSubject);
   const currentLessons=lessons.filter((l)=>l.topic_id===selectedTopic);
-  const loadLesson=useCallback(async(id:string)=>{
-    if(!id)return;
-    const [b,p]=await Promise.all([
-      supabase.from("learning_lesson_blocks").select("id,lesson_id,block_type,content,order_index").eq("lesson_id",id).order("order_index"),
-      userId?supabase.from("learning_lesson_progress").select("status,completed_at").eq("student_id",userId).eq("lesson_id",id).maybeSingle():Promise.resolve({data:null,error:null}),
-    ]);
-    if(b.error){setError("Could not load this lesson.");setBlocks([]);}else setBlocks((b.data??[]) as Block[]);
-    setProgress((p.data as Progress|null)??null);
-  },[userId]);
-
-  useEffect(()=>{void loadLesson(selectedLesson);},[selectedLesson,loadLesson]);
+  useEffect(()=>{
+    if(!selectedLesson)return;
+    let active=true;
+    async function loadSelectedLesson(){
+      const [b,p]=await Promise.all([
+        supabase.from("learning_lesson_blocks").select("id,lesson_id,block_type,content,order_index").eq("lesson_id",selectedLesson).order("order_index"),
+        userId?supabase.from("learning_lesson_progress").select("status,completed_at").eq("student_id",userId).eq("lesson_id",selectedLesson).maybeSingle():Promise.resolve({data:null,error:null}),
+      ]);
+      if(!active)return;
+      if(b.error){setError("Could not load this lesson.");setBlocks([]);}else setBlocks((b.data??[]) as Block[]);
+      setProgress((p.data as Progress|null)??null);
+    }
+    void loadSelectedLesson().catch(()=>{if(active){setError("Could not load this lesson.");setBlocks([]);setProgress(null);}});
+    return()=>{active=false;};
+  },[selectedLesson,userId]);
 
   async function markComplete(){
     if(!userId||!selectedLesson){setMessage("Sign in to save your learning progress.");return;}
