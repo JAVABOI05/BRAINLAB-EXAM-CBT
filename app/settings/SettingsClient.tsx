@@ -97,7 +97,7 @@ export default function LearnerSettingsClient() {
         <section aria-labelledby="appearance-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-start gap-4">
             <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-2xl text-blue-900">◐</span>
-            <div><h2 id="appearance-heading" className="text-xl font-extrabold">Appearance</h2><p className="mt-1 text-sm leading-6 text-slate-600">Your choice is saved in this browser and applies to the learner dashboard, profile and settings. System mode follows your device preference.</p></div>
+            <div><h2 id="appearance-heading" className="text-xl font-extrabold">Appearance</h2><p className="mt-1 text-sm leading-6 text-slate-600">Your choice is saved in this browser and applies across BrainLab pages, including the CBT exam interface. System mode follows your device preference.</p></div>
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             {appearanceChoices.map((choice) => {
