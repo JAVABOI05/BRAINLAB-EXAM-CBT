@@ -79,6 +79,20 @@ export default function EditQuestionPage() {
   async function handleSave() {
     if (!question) return;
 
+    const mediaUrls = [
+      question.question_image_url,
+      question.option_a_image_url,
+      question.option_b_image_url,
+      question.option_c_image_url,
+      question.option_d_image_url,
+      question.explanation_image_url,
+    ].filter((value): value is string => Boolean(value?.trim()));
+
+    if (mediaUrls.some((value) => !/^https:\/\//i.test(value.trim()))) {
+      setMessage("Image URLs must use HTTPS. Use a secure image URL from approved storage.");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
 
