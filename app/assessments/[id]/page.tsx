@@ -48,10 +48,10 @@ export default function OrganisedAssessmentPage(){
   },[router,assessmentId]);
 
   useEffect(()=>{
-    if(!attempt?.deadline_at||result){setSecondsLeft(null);return;}
+    if(!attempt?.deadline_at||result)return;
     const deadline=new Date(attempt.deadline_at).getTime();
     const tick=()=>setSecondsLeft(Math.max(0,Math.ceil((deadline-Date.now())/1000)));
-    tick();const timer=window.setInterval(tick,1000);return()=>window.clearInterval(timer);
+    const timer=window.setInterval(tick,1000);return()=>window.clearInterval(timer);
   },[attempt?.deadline_at,result]);
 
   async function start(event:{preventDefault:()=>void}){
@@ -61,7 +61,8 @@ export default function OrganisedAssessmentPage(){
     if(rpcError)setError(rpcError.message);
     else if(!data?.ok)setError((data as Failure).message||"Could not start this assessment.");
     else{
-      setAttempt({attempt_id:data.attempt_id,attempt_token:data.attempt_token,deadline_at:data.deadline_at??null,questions:(data.questions??[]) as PaperQuestion[]});
+      const nextAttempt={attempt_id:data.attempt_id,attempt_token:data.attempt_token,deadline_at:data.deadline_at??null,questions:(data.questions??[]) as PaperQuestion[]};
+      setAttempt(nextAttempt);setSecondsLeft(nextAttempt.deadline_at?Math.max(0,Math.ceil((new Date(nextAttempt.deadline_at).getTime()-Date.now())/1000)):null);
       setAnswers({});setMessage("Assessment started. Answers are saved to your account; the answer key stays server-side.");
     }
     setWorking(false);
