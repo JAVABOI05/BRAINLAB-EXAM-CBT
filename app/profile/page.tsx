@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { useLearnerTheme } from "../components/LearnerThemeProvider";
 
 function getDisplayName(user: User) {
   const metadata = user.user_metadata ?? {};
@@ -18,6 +19,7 @@ function initials(value: string) {
 
 export default function LearnerProfilePage() {
   const router = useRouter();
+  const { resolvedTheme } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -64,11 +66,11 @@ export default function LearnerProfilePage() {
 
   if (loading) return <main id="main" className="min-h-[70vh] bg-[#f5f7fb] px-5 py-16"><div className="mx-auto max-w-5xl animate-pulse"><div className="h-44 rounded-3xl bg-slate-200" /><div className="mt-5 h-64 rounded-3xl bg-slate-200" /></div></main>;
 
-  const display = name.trim() || user?.email?.split("@")[0] || "Learner";
+  const display = name.trim() || "Learner";
   const avatarUrl = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture;
 
   return (
-    <main id="main" className="min-h-[75vh] bg-[#f5f7fb] px-5 py-8 text-slate-900 sm:px-8 sm:py-12">
+    <main id="main" data-theme={resolvedTheme} className="learner-theme min-h-[75vh] bg-[#f5f7fb] px-5 py-8 text-slate-900 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-5xl">
         <div className="mb-7"><Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-blue-900"><span aria-hidden="true">←</span> Back to my learning</Link><p className="mt-6 text-xs font-extrabold uppercase tracking-[0.2em] text-blue-800">Your learner identity</p><h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Profile & account</h1><p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">Make your learner space feel like yours. Manage the name people see and check which account is signed in.</p></div>
 
