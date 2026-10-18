@@ -582,7 +582,7 @@ export default function ExamPage() {
                   src={safeImageUrl(currentQuestion.question_image_url)!}
                   alt={currentQuestion.question_image_alt?.trim() || "Question illustration"}
                   loading="lazy"
-                  className="mt-4 max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
+                  className="mt-4 block max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
                 />
               )}
             </div>
@@ -617,7 +617,7 @@ export default function ExamPage() {
                           src={safeImageUrl(option.imageUrl)!}
                           alt={option.imageAlt?.trim() || `Option ${option.key} illustration`}
                           loading="lazy"
-                          className="mt-2 max-h-64 w-auto max-w-full rounded-lg object-contain"
+                          className="mt-2 block max-h-64 w-auto max-w-full rounded-lg object-contain"
                         />
                       )}
                     </div>
