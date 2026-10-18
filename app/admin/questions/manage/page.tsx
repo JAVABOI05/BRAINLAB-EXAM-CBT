@@ -1,6 +1,7 @@
 "use client";
 
-import { adminSignOut } from "../../../lib/adminAuth";
+import { adminSignOut, getAdminSession } from "../../../lib/adminAuth";
+import { adminHasPermission } from "../../../lib/adminRoles";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
@@ -40,20 +41,20 @@ export default function AdminQuestionManagerPage() {
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
-    const savedAdmin = localStorage.getItem("admin_user");
-
-    if (!savedAdmin) {
-      router.push("/admin/login");
-      return;
+    let active = true;
+    async function init() {
+      const admin = await getAdminSession();
+      if (!active) return;
+      if (!admin) { router.replace("/account"); return; }
+      if (!(await adminHasPermission("cbt.questions.manage"))) {
+        if (active) { setMessage("You do not have permission to manage the question bank."); setLoading(false); }
+        return;
+      }
+      setAdminUser(admin);
+      await loadQuestions();
     }
-
-    try {
-      setAdminUser(JSON.parse(savedAdmin) as AdminUser);
-      loadQuestions();
-    } catch {
-      localStorage.removeItem("admin_user");
-      router.push("/admin/login");
-    }
+    void init().catch(() => { if (active) { setMessage("Could not verify administrator access."); setLoading(false); } });
+    return () => { active = false; };
   }, [router]);
 
   async function loadQuestions() {
