@@ -1,0 +1,5 @@
+-- Ensure the question-media bucket uses the agreed public delivery and upload limits.
+-- The preceding admin_question_media_storage_and_rpc_grants migration owns the RLS policies.
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values('question-media','question-media',true,10485760,array['image/jpeg','image/png','image/webp','image/gif'])
+on conflict(id) do update set public=excluded.public,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;

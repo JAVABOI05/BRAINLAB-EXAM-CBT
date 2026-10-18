@@ -54,6 +54,36 @@ export default function LearnerDashboardPage() {
             <p className="mt-2 text-sm leading-6 text-slate-600">Continue to the existing exam portal and follow its access-code instructions.</p>
             <Link href="/login" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-4 py-2 text-sm font-bold text-white">Open CBT portal</Link>
           </article>
+          <article className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5">
+            <div className="text-2xl" aria-hidden="true">✓</div>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">Self Practice</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Choose your subjects and question count, practise with unique random questions, and review explanations after submission.</p>
+            <Link href="/self-practice" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-4 py-2 text-sm font-bold text-white">Start Self Practice</Link>
+          </article>
+          <article className="rounded-2xl border border-slate-200 p-5">
+            <div className="text-2xl" aria-hidden="true">▤</div>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">Learning Hub</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Explore published subjects, follow structured topics, study lesson content, and save completed lessons to your account.</p>
+            <Link href="/learning-hub" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800">Explore lessons</Link>
+          </article>
+          <article className="rounded-2xl border border-slate-200 p-5">
+            <div className="text-2xl" aria-hidden="true">◎</div>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">Quizzes & competitions</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Find published organisation quizzes and competition assessments available to your account.</p>
+            <Link href="/assessments" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800">Browse assessments</Link>
+          </article>
+          <article className="rounded-2xl border border-slate-200 p-5">
+            <div className="text-2xl" aria-hidden="true">⌁</div>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">Redeem an access code</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Activate a code issued to your account for a membership, organisation, resource, or specific assessment.</p>
+            <Link href="/redeem-access" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800">Redeem code</Link>
+          </article>
+          <article className="rounded-2xl border border-slate-200 p-5">
+            <div className="text-2xl" aria-hidden="true">⌁</div>
+            <h2 className="mt-3 text-lg font-bold text-slate-950">Membership and access</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Redeem a BrainLab Tutorial or organisation code to attach the appropriate access entitlement to this account.</p>
+            <Link href="/account/access" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800">Redeem access code</Link>
+          </article>
           <article className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
             <div className="text-2xl" aria-hidden="true">✓</div>
             <h2 className="mt-3 text-lg font-bold text-slate-950">Revision planner</h2>

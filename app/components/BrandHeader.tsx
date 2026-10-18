@@ -10,7 +10,7 @@ import { supabase } from "../lib/supabase";
 const links = [
   { href: "/explore", label: "Explore" },
   { href: "/login", label: "CBT Practice" },
-  { href: "/learning", label: "Learning Lab" },
+  { href: "/learn", label: "Learning Hub" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/courses", label: "Courses" },
   { href: "/community", label: "Community" },
