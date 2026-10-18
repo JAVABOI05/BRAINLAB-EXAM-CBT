@@ -17,8 +17,14 @@ type ResultItem = {
     C: string;
     D: string;
   };
+  optionImages?: Partial<Record<"A" | "B" | "C" | "D", string | null>>;
+  optionImageAlts?: Partial<Record<"A" | "B" | "C" | "D", string>>;
+  questionImageUrl?: string | null;
+  questionImageAlt?: string;
   correctAnswer: "A" | "B" | "C" | "D";
   explanation: string;
+  explanationImageUrl?: string | null;
+  explanationImageAlt?: string;
   userAnswer: "A" | "B" | "C" | "D" | null;
   isCorrect: boolean;
   flagged?: boolean;
@@ -31,6 +37,15 @@ type Candidate = {
   subject: string;
   code: string;
 };
+
+function safeImageUrl(value: string | null | undefined): string | null {
+  try {
+    const url = new URL(value ?? "");
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function CorrectionsPage() {
   const router = useRouter();
@@ -353,6 +368,15 @@ export default function CorrectionsPage() {
                           </div>
 
                           <h2 className="question-text">{item.text}</h2>
+                          {safeImageUrl(item.questionImageUrl) && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={safeImageUrl(item.questionImageUrl)!}
+                              alt={item.questionImageAlt?.trim() || "Question illustration"}
+                              loading="lazy"
+                              className="mt-3 max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
+                            />
+                          )}
                         </div>
 
                         <div>
@@ -377,7 +401,18 @@ export default function CorrectionsPage() {
                             className={`option-box ${getOptionClass(key, item)}`}
                           >
                             <div className="option-key">{key}</div>
-                            <div className="option-text">{item.options[key]}</div>
+                            <div className="option-text">
+                              {item.options[key]}
+                              {safeImageUrl(item.optionImages?.[key]) && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={safeImageUrl(item.optionImages?.[key])!}
+                                  alt={item.optionImageAlts?.[key]?.trim() || `Option ${key} illustration`}
+                                  loading="lazy"
+                                  className="mt-2 max-h-64 w-auto max-w-full rounded-lg object-contain"
+                                />
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -405,6 +440,15 @@ export default function CorrectionsPage() {
                         <div className="explanation-box">
                           <h3 className="explanation-title">Explanation</h3>
                           <p className="explanation-text">{item.explanation}</p>
+                          {safeImageUrl(item.explanationImageUrl) && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={safeImageUrl(item.explanationImageUrl)!}
+                              alt={item.explanationImageAlt?.trim() || "Explanation illustration"}
+                              loading="lazy"
+                              className="mt-3 max-h-96 w-auto max-w-full rounded-lg object-contain"
+                            />
+                          )}
                         </div>
                       )}
                     </div>
