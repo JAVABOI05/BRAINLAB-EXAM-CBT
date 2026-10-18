@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
@@ -60,10 +61,15 @@ function subscribeGreeting(onChange: () => void) {
 }
 
 export default function GlobalLearnerToolbar() {
+  const pathname = usePathname();
   const { appearance, resolvedTheme, setAppearance } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
   const candidateName = useSyncExternalStore(subscribeCandidate, readCandidateName, () => "");
   const greetingText = useSyncExternalStore(subscribeGreeting, greeting, () => "Welcome");
+
+  useEffect(() => {
+    window.dispatchEvent(new Event(CANDIDATE_EVENT));
+  }, [pathname]);
 
   useEffect(() => {
     let active = true;
