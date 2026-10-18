@@ -59,9 +59,9 @@ export default function AcademyAccessAdminPage() {
       if (!active) return;
       if (!session) { router.replace("/account"); return; }
       setAdmin(session);
-      const [canCodes,canLearning] = await Promise.all([adminHasPermission("cbt.codes.manage"),adminHasPermission("learning.content.manage")]);
+      const [canCodes,canLearning,canInstitution] = await Promise.all([adminHasPermission("cbt.codes.manage"),adminHasPermission("learning.content.manage"),adminHasPermission("institution.manage")]);
       if (!active) return;
-      if (!canCodes && !canLearning && !["super_admin","platform_admin"].includes(session.role)) {
+      if (!canCodes && !canLearning && !canInstitution && !["super_admin","platform_admin"].includes(session.role)) {
         setError("You do not have permission to manage access codes or organisations.");
         setLoading(false); return;
       }
