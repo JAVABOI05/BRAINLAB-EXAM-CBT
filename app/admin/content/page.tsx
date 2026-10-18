@@ -104,7 +104,7 @@ export default function AdminContentPage() {
       <h1 className="admin-title">Learning Hub Manager</h1>
       <p className="admin-subtitle">Create subjects, organise topics, build lesson shells, and control what learners can see. New records start unpublished.</p>
       {admin && <div className="admin-user-chip">Signed in as <strong>{admin.email}</strong> · {admin.role.replaceAll("_", " ")}</div>}
-    </div><div className="admin-actions"><button className="admin-btn-light" onClick={() => router.push("/admin/dashboard")}>Dashboard</button><button className="admin-btn-light" onClick={() => router.push("/admin/users")}>Admin roles</button></div></div></section>
+    </div><div className="admin-actions"><button className="admin-btn-light" onClick={() => router.push("/admin/dashboard")}>Dashboard</button><button className="admin-btn-light" onClick={() => router.push("/admin/users")}>Admin roles</button><button className="admin-btn-light" onClick={() => router.push("/admin/lesson-blocks")}>Lesson blocks</button><button className="admin-btn-light" onClick={() => router.push("/admin/academy-assessments")}>Assessments</button></div></div></section>
     {error && <div className="admin-message" role="alert">{error}</div>}{message && <div className="admin-message" role="status">{message}</div>}
     <section className="admin-section admin-stats">{[["Subjects", subjects.length], ["Topics", topics.length], ["Lessons", lessons.length], ["Published lessons", lessons.filter((x) => x.is_published).length]].map(([label, value]) => <div className="admin-stat-card" key={String(label)}><p className="admin-stat-label">{label}</p><p className="admin-stat-value">{value}</p></div>)}</section>
     <section className="admin-section admin-grid-2">
