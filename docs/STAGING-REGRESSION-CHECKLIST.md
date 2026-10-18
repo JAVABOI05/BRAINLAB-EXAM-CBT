@@ -118,6 +118,7 @@ Run with one designated admin account and one ordinary authenticated account. Al
 | DB-01 | Start an organisation quiz; assert the initial/resume question payload omits answer keys; save and resume an answer; submit; verify released corrections; try to submit the same attempt through a Self Practice RPC | **Passed** in a transactional staging test |
 | DB-02 | Request 51 Self Practice questions as a free learner; then start a two-question attempt, assert no answer key in the initial payload, save/resume, submit, and retry submission | **Passed** in a transactional staging test |
 | DB-03 | Confirm the temporary test organisation, assessment, and attempt rows were rolled back | **Passed**; query confirmed zero temporary test rows remained |
+| DB-04 | Create a permanent membership code for a registered account, try to redeem it as another account, then redeem as the assigned account | **Passed** in a transactional staging test; wrong account rejected and assigned account accepted; test rows rolled back |
 
 These checks exercised database RPCs using a designated staging admin identity with transaction rollback. They do not replace browser-based end-to-end tests, non-admin/RLS tests, concurrent-start tests, media upload tests, or the legacy CBT regression suite. No production test rows were created.
 
