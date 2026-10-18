@@ -308,3 +308,64 @@ body {
     transform: translateX(200%);
   }
 }
+
+/* ===== LEARNER AREA APPEARANCE =====
+   Scoped to the authenticated dashboard, profile and settings so the existing
+   CBT exam interface keeps its established task-focused presentation. */
+.learner-theme {
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.learner-theme[data-theme="dark"] {
+  color: #e5e7eb !important;
+  background-color: #0b1220 !important;
+}
+.learner-theme[data-theme="dark"] .bg-white {
+  background-color: #111c2f !important;
+}
+.learner-theme[data-theme="dark"] [class~="bg-slate-50"],
+.learner-theme[data-theme="dark"] [class~="bg-slate-100"],
+.learner-theme[data-theme="dark"] [class~="bg-[#eaf2ff]"],
+.learner-theme[data-theme="dark"] [class~="bg-[#f0f5ff]"] {
+  background-color: #17243a !important;
+}
+.learner-theme[data-theme="dark"] [class~="text-slate-950"],
+.learner-theme[data-theme="dark"] [class~="text-slate-900"],
+.learner-theme[data-theme="dark"] [class~="text-slate-800"],
+.learner-theme[data-theme="dark"] [class~="text-slate-700"] {
+  color: #e5edf9 !important;
+}
+.learner-theme[data-theme="dark"] [class~="text-slate-600"],
+.learner-theme[data-theme="dark"] [class~="text-slate-500"],
+.learner-theme[data-theme="dark"] [class~="text-slate-400"] {
+  color: #a7b6cc !important;
+}
+.learner-theme[data-theme="dark"] [class~="border-slate-100"],
+.learner-theme[data-theme="dark"] [class~="border-slate-200"],
+.learner-theme[data-theme="dark"] [class~="border-slate-300"] {
+  border-color: #2b3a52 !important;
+}
+.learner-theme[data-theme="dark"] input,
+.learner-theme[data-theme="dark"] textarea,
+.learner-theme[data-theme="dark"] select {
+  color: #e5edf9;
+  background-color: #0f1a2b;
+  border-color: #3a4b64;
+}
+.learner-theme[data-theme="dark"] input::placeholder,
+.learner-theme[data-theme="dark"] textarea::placeholder {
+  color: #8799b2;
+}
+.learner-theme[data-theme="dark"] .bg-white [class~="bg-blue-50"],
+.learner-theme[data-theme="dark"] [class~="bg-blue-50"] {
+  background-color: #172d4c !important;
+}
+.learner-theme[data-theme="dark"] [class~="text-blue-900"],
+.learner-theme[data-theme="dark"] [class~="text-blue-950"],
+.learner-theme[data-theme="dark"] [class~="text-[#0b2450]"] {
+  color: #c7dcff !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .learner-theme {
+    transition: none;
+  }
+}
