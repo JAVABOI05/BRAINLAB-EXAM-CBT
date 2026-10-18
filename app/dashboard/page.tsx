@@ -5,12 +5,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { useLearnerTheme } from "../components/LearnerThemeProvider";
 
 function learnerName(user: User) {
   const metadata = user.user_metadata ?? {};
   const value = metadata.full_name ?? metadata.name;
   if (typeof value === "string" && value.trim()) return value.trim().split(/\s+/)[0];
-  return user.email?.split("@")[0] || "learner";
+  return "there";
+}
+
+function timeGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 const spaces = [
@@ -21,6 +29,7 @@ const spaces = [
 
 export default function LearnerDashboardPage() {
   const router = useRouter();
+  const { resolvedTheme } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,10 +60,11 @@ export default function LearnerDashboardPage() {
 
   if (!user) return null;
   const name = learnerName(user);
+  const greeting = timeGreeting();
   const avatar = user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
 
   return (
-    <main id="main" className="min-h-[75vh] bg-[#f5f7fb] text-slate-900">
+    <main id="main" data-theme={resolvedTheme} className="learner-theme min-h-[75vh] bg-[#f5f7fb] text-slate-900">
       <div className="mx-auto max-w-7xl px-5 pb-16 pt-8 sm:px-8 sm:pt-12 lg:px-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500"><span className="h-2 w-2 rounded-full bg-emerald-500" /> YOUR LEARNING SPACE</div>
@@ -71,7 +81,7 @@ export default function LearnerDashboardPage() {
           <div className="relative grid gap-9 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold text-cyan-200">A little progress, repeated, changes everything.</p>
-              <h1 className="mt-4 text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">Welcome back,<br /><span className="text-cyan-200">{name}.</span></h1>
+              <h1 className="mt-4 text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{greeting},<br /><span className="text-cyan-200">{name}.</span></h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-blue-100/85 sm:text-lg">Your next breakthrough starts with one good learning session. Choose a path, focus on what matters, and keep moving forward.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/learn" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-[#071c43] shadow-lg transition hover:-translate-y-0.5 hover:bg-cyan-50">Explore Learning Hub <span aria-hidden="true">↗</span></Link>
@@ -119,7 +129,7 @@ export default function LearnerDashboardPage() {
         </section>
 
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500">
-          <span>Signed in as <span className="font-semibold text-slate-700">{user.email}</span></span>
+          <span>Keep building your learning rhythm, one session at a time.</span>
           <div className="flex flex-wrap gap-4"><Link href="/profile" className="font-semibold text-slate-700 hover:text-blue-800">Profile</Link><Link href="/settings" className="font-semibold text-slate-700 hover:text-blue-800">Settings</Link><Link href="/support" className="font-semibold text-slate-700 hover:text-blue-800">Get help</Link></div>
         </footer>
       </div>
