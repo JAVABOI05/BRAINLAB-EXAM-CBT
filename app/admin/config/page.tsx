@@ -51,6 +51,7 @@ export default function AdminConfigPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [canManageConfig, setCanManageConfig] = useState(false);
   const [message, setMessage] = useState("");
 
   const [subjects, setSubjects] = useState<string[]>([
@@ -89,6 +90,7 @@ export default function AdminConfigPage() {
         if (active) { setMessage("You do not have permission to view examination settings."); setLoading(false); }
         return;
       }
+      setCanManageConfig(await adminHasPermission("cbt.config.manage"));
       setAdminUser(admin);
       await loadConfig();
     }
@@ -575,6 +577,7 @@ export default function AdminConfigPage() {
 
         <section className="admin-section admin-card">
           <h2 className="admin-card-title">Save Configuration</h2>
+          {!canManageConfig && <p className="admin-help">Your administrator role can view these settings but cannot change them.</p>}
           <p className="admin-card-text">
             Save your exam setup so the login and exam pages can use it.
           </p>
@@ -582,7 +585,7 @@ export default function AdminConfigPage() {
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !canManageConfig}
               className="admin-btn-primary"
             >
               {saving ? "Saving..." : "Save Configuration"}
