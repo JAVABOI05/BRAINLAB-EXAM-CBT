@@ -13,7 +13,7 @@ This is a code and staging-schema review record, not a penetration-test report o
 - Admin login now stores a verified admin UI hint only after Supabase Auth and the `is_admin()` check succeed; logout clears that hint and signs out of Supabase Auth. The UI hint is not an authorization boundary—database RLS remains the enforcement layer.
 - CI now runs ESLint, TypeScript, and the production build.
 
-## Read-only staging verification
+## Staging verification and migration application
 
 A read-only inspection of staging project `BrainLabCBT-Staging` (`eusgwsuoloomphebrepe`) confirmed that these RPCs exist with the argument names/types expected by the frontend wrappers:
 
@@ -27,7 +27,7 @@ A read-only inspection of staging project `BrainLabCBT-Staging` (`eusgwsuoloomph
 
 The inspected staging implementation builds question payloads without `correct_answer` or `explanation`. The result payload only includes review items and scores when the current `show_results` setting is true. Result lookup checks both phone and access code and calls a throttling helper. Internal helper functions used by the RPCs were not executable by `anon` or `authenticated` in the inspected privilege check. The inspected public tables had RLS enabled; table policies shown for questions, sessions, results, answers, settings, and access codes were admin-gated.
 
-These are staging observations only. They do not prove that production has the same schema, function definitions, grants, or policies. No schema, data, or settings were changed during this inspection.
+These initial observations were read-only and do not prove that production has the same schema, function definitions, grants, or policies. On 2026-10-18, four reviewed migrations were subsequently applied to the staging project only: `admin_role_hierarchy`, `learning_hub_foundation`, `learning_question_validation`, and `learning_assessment_atomicity`. The staging migration history now records versions `20261018135606`, `20261018135609`, `20261018135611`, and `20261018135614` respectively. The migration files on this review branch were renamed to match those applied versions; production was not changed.
 
 ## Remaining blockers
 
@@ -50,7 +50,7 @@ These are staging observations only. They do not prove that production has the s
 No production database, schema, DNS, merge, or deployment action is authorized. This branch remains a review build.
 
 
-## Additional staging advisor review (read-only)
+## Staging advisor review after migration application
 
 The Supabase security advisor reported the following items in staging on 2026-10-16:
 
@@ -59,7 +59,7 @@ The Supabase security advisor reported the following items in staging on 2026-10
 - **Publicly executable SECURITY DEFINER functions (WARN):** the exam RPCs, access-code validation, public settings, leaderboard, and result lookup are callable by anonymous users. This is expected for parts of the candidate flow, but each public function must remain narrowly scoped, rate-limited where appropriate, and safe for untrusted input. Admin mutation functions inspected use `_require_admin()`, which checks `is_admin()`; this still needs a dedicated non-admin regression test.
 - **Leaked-password protection (WARN):** Supabase Auth leaked-password protection is disabled in staging. This is a dashboard/auth configuration item, not changed by this repository branch.
 
-No advisor remediation or database changes were applied. Production has not been inspected or changed as part of this check.
+Advisor findings were reviewed but not blindly suppressed. The schema migrations listed above were applied to staging; no production database, schema, Auth settings, or deployment was changed. After migration, advisors still report legacy mutable-search-path functions and publicly executable SECURITY DEFINER functions, including candidate-facing RPCs that may be intentionally public and must be reviewed individually. They also report unindexed foreign keys on new Learning Hub tables; add those indexes in a tracked follow-up migration after reviewing query plans.
 
 ## Latest code quality check
 
@@ -132,7 +132,7 @@ The seven RPC signatures used by `app/lib/examApi.ts` match staging: `get_public
 
 ### Migration-history reconciliation
 
-The migration-history table visible to this read-only query returned one row (`20261016175526_harden_legacy_access_code_validation`), although the schema contains the newer RPC set. Treat the visible migration history as incomplete until reconciled against the checked-in migration files and actual schema. Do not infer that the migration files and database are fully synchronized from function existence alone.
+The staging migration history initially showed only `20261016175526_harden_legacy_access_code_validation` despite the legacy exam RPCs already existing. After the reviewed Learning Hub migration sequence was applied, staging records that legacy migration plus `20261018135606_admin_role_hierarchy`, `20261018135609_learning_hub_foundation`, `20261018135611_learning_question_validation`, and `20261018135614_learning_assessment_atomicity`. The corresponding filenames on this review branch now use those same versions. Production has a separate migration history and has not received these Learning Hub migrations. This reconciles the new staging migration sequence, but does not prove the older legacy schema was originally created from tracked migrations.
 
 ### Next test gate
 
