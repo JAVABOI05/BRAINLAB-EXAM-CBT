@@ -24,6 +24,9 @@
 | C-07 | Submit normally, then retry submission using the same session/token | No duplicate result is created; response is consistent with the already-finished attempt | Not run |
 | C-08 | Change answer values in browser storage or send malformed answer keys/values | Server validates the request and does not accept invalid question/option data | Not run |
 | C-09 | Trigger tab-switch recording several times | Server-maintained count/time is returned and remains consistent after reload | Not run |
+| C-10 | Add an HTTPS question image and alt text through the admin question editor, then start an attempt containing that question | Image renders on mobile/desktop, alt text is present, and the question payload contains no answer key or explanation | Not run |
+| C-11 | Add an image to an answer option and an explanation; submit with results hidden, then test again with results released | Option image may appear during the attempt; explanation image and review media are returned only when the result-release policy allows review | Not run |
+| C-12 | Try saving an image URL that does not use HTTPS | Database rejects the URL; no unsafe URL is rendered | Not run |
 
 ## Result release and candidate isolation
 
