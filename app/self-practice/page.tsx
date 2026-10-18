@@ -57,10 +57,9 @@ export default function SelfPracticePage() {
   }, [router]);
 
   useEffect(() => {
-    if (!attempt?.deadline_at || result) { setSecondsLeft(null); return; }
+    if (!attempt?.deadline_at || result) return;
     const deadline = new Date(attempt.deadline_at).getTime();
     const tick = () => setSecondsLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
-    tick();
     const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
   }, [attempt?.deadline_at, result]);
@@ -90,7 +89,7 @@ export default function SelfPracticePage() {
         questions: (data.questions ?? []) as PaperQuestion[],
         answers: {},
       };
-      setAttempt(next); setAnswers({}); setResult(null); setSecondsLeft(null);
+      setAttempt(next); setAnswers({}); setResult(null); setSecondsLeft(next.deadline_at ? Math.max(0,Math.ceil((new Date(next.deadline_at).getTime()-Date.now())/1000)) : null);
       setMessage(`Practice started with ${next.questions.length} unique questions. Your answer key remains protected until submission.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
