@@ -29,6 +29,7 @@ export default function AcademyAccessAdminPage() {
   const [organisationId, setOrganisationId] = useState("");
   const [assessmentId, setAssessmentId] = useState("");
   const [permanent, setPermanent] = useState(true);
+  const [assignedEmail, setAssignedEmail] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [maxRedemptions, setMaxRedemptions] = useState(1);
   const [maxQuestions, setMaxQuestions] = useState(50);
@@ -93,6 +94,7 @@ export default function AcademyAccessAdminPage() {
   async function createCode(event: { preventDefault: () => void }) {
     event.preventDefault();
     setSaving(true); setError(""); setMessage(""); setGeneratedCode("");
+    if (permanent && !assignedEmail.trim()) { setError("Permanent codes must be assigned to a registered account email."); setSaving(false); return; }
     if (!permanent && (!expiresAt || new Date(expiresAt).getTime() <= Date.now())) {
       setError("Choose a future expiry time for temporary codes."); setSaving(false); return;
     }
@@ -111,6 +113,7 @@ export default function AcademyAccessAdminPage() {
       p_resource_key: scope === "resource" ? resourceKey.trim() : null,
       p_organisation_id: scope === "organisation" ? organisationId : null,
       p_assessment_id: scope === "assessment" ? assessmentId : null,
+      p_assigned_email: permanent ? assignedEmail.trim() : null,
     });
     if (rpcError) setError(rpcError.message);
     else if (!data?.ok || !data?.code) setError("The database did not return a new code.");
@@ -158,6 +161,7 @@ export default function AcademyAccessAdminPage() {
         {scope === "assessment" && <><label className="admin-label">Assessment</label><select className="admin-input" value={assessmentId} onChange={(e) => setAssessmentId(e.target.value)} required><option value="">Choose assessment</option>{assessments.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}</select></>}
         {scope === "resource" && <><label className="admin-label">Resource key</label><input className="admin-input" value={resourceKey} onChange={(e) => setResourceKey(e.target.value)} required placeholder="e.g. biology-revision-pack-01" /></>}
         <label className="admin-toggle mt-3"><input type="checkbox" checked={permanent} onChange={(e) => setPermanent(e.target.checked)} /><span>Permanent account-bound code (single redemption, no expiry)</span></label>
+        {permanent && <><label className="admin-label">Registered account email this code belongs to</label><input className="admin-input" type="email" autoComplete="off" value={assignedEmail} onChange={(e) => setAssignedEmail(e.target.value)} required placeholder="student@example.com" /><p className="admin-help">The database binds this code to the matching Supabase account. Another account cannot redeem it.</p></>}
         {!permanent && <><label className="admin-label">Expiry date and time</label><input className="admin-input" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} required /><label className="admin-label">Maximum redemptions</label><input className="admin-input" type="number" min={1} max={100000} value={maxRedemptions} onChange={(e) => setMaxRedemptions(Number(e.target.value) || 1)} /></>}
         <label className="admin-label">Self-practice question limit</label><input className="admin-input" type="number" min={1} max={500} value={maxQuestions} onChange={(e) => setMaxQuestions(Number(e.target.value) || 50)} /><p className="admin-help">Free accounts default to 50 questions per attempt. Membership entitlements can raise this limit up to 500.</p>
         <button className="admin-btn-primary" disabled={saving}>Generate code</button>
