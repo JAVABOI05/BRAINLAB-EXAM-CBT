@@ -1,8 +1,18 @@
 # CBT Security Reconciliation — Review Branch
 
-**Status: SECURITY FLOW REWORKED; STAGING REGRESSION AND RELEASE REVIEW STILL REQUIRED. NOT APPROVED FOR MERGE OR DEPLOYMENT.**
+**Current status (2026-10-18): application build passed on the latest reviewed head in one CI workflow; the second workflow is still running. Staging contains the Learning Hub/assessment changes. End-to-end regression and production migration reconciliation remain release gates. Keep PR #10 in draft.**
 
 This is a code and staging-schema review record, not a penetration-test report or a production safety certification.
+
+## Current release state — 2026-10-18
+
+- Staging project BrainLabCBT-Staging has 26 recorded migrations, including the Learning Hub schema, self-practice engine, organisation/competition assessments, account-bound access codes, admin results/entitlement controls, question media, and RLS/grant hardening.
+- The review branch adds learner routes for Learning Hub, Self Practice, organised assessments, and access-code redemption; admin routes for content, assessment configuration, access-code/entitlement control, and assessment results; and Supabase Auth/permission guards for legacy admin pages.
+- One GitHub CI workflow passed ESLint, TypeScript, and the Next.js production build on the latest reviewed head. A second CI workflow is still running. Vercel preview creation is currently rate-limited; a prior preview build succeeded.
+- Production project bupkyppvtkrmzmluzjmf retains the existing CBT data. No Learning Hub schema migrations have been applied there. On 2026-10-18, the three legacy helper functions _clean_answers(jsonb,bigint[]), _seconds_left(timestamptz), and _err(text,text) had their search paths pinned without changing their bodies; the idempotent tracked migration is 20261018145107_pin_remaining_legacy_helper_search_paths.sql.
+- Production migration history contains legacy versions that are not all represented by tracked migration files in this repository. Reconcile that baseline before using Supabase CLI to deploy the new migration chain. Do not point production at the staging project.
+- Supabase Auth leaked-password protection remains disabled in both environments. The connected Supabase toolset cannot change this Auth dashboard setting; enable it in the dashboard if the project plan supports it.
+
 
 ## Changes now made on this branch
 
@@ -47,7 +57,7 @@ These initial observations were read-only and do not prove that production has t
 
 ## Operational boundary
 
-No production database, schema, DNS, merge, or deployment action is authorized. This branch remains a review build.
+No production feature-schema migration, DNS change, merge, or deployment has been performed. The narrowly scoped legacy helper search-path hardening described above was applied to production and is tracked in the repository. This branch remains a review build.
 
 
 ## Staging advisor review after migration application
