@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const gatePath = process.env.BRAINLAB_PRIVATE_ENTRY_PATH ?? "";
   const gateToken = process.env.BRAINLAB_PRIVATE_ENTRY_TOKEN ?? "";
   const gatePathIsValid = /^[A-Za-z0-9_-]{32,128}$/.test(gatePath);
