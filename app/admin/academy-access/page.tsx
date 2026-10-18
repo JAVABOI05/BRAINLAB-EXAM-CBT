@@ -10,6 +10,7 @@ import "../admin.css";
 type Organisation = { id: string; name: string; slug: string; status: string };
 type Assessment = { id: string; title: string; assessment_type: string; organisation_id: string | null };
 type AccessCode = { id: string; code_hint: string; scope_type: string; membership_type: string | null; resource_key: string | null; organisation_id: string | null; assessment_id: string | null; max_questions: number; permanent: boolean; expires_at: string | null; max_redemptions: number; redemption_count: number; revoked_at: string | null; created_at: string };
+type Entitlement = { id: string; user_id: string; entitlement_type: string; membership_type: string | null; resource_key: string | null; organisation_id: string | null; assessment_id: string | null; max_questions: number; status: string; permanent: boolean; expires_at: string | null; created_at: string };
 
 const slugify = (value: string) => value.toLowerCase().trim().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 
@@ -19,6 +20,8 @@ export default function AcademyAccessAdminPage() {
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [codes, setCodes] = useState<AccessCode[]>([]);
+  const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
+  const [entitlementNotice, setEntitlementNotice] = useState("");
   const [organisationName, setOrganisationName] = useState("");
   const [scope, setScope] = useState<"membership"|"assessment"|"resource"|"organisation">("membership");
   const [membershipType, setMembershipType] = useState("brainlab_tutorial");
@@ -37,10 +40,11 @@ export default function AcademyAccessAdminPage() {
 
   const load = useCallback(async () => {
     setError("");
-    const [o,a,c] = await Promise.all([
+    const [o,a,c,e] = await Promise.all([
       supabase.from("learning_organisations").select("id,name,slug,status").order("name"),
       supabase.from("learning_assessments").select("id,title,assessment_type,organisation_id").order("created_at",{ascending:false}),
       supabase.from("learning_access_codes").select("id,code_hint,scope_type,membership_type,resource_key,organisation_id,assessment_id,max_questions,permanent,expires_at,max_redemptions,redemption_count,revoked_at,created_at").order("created_at",{ascending:false}).limit(100),
+      supabase.rpc("list_learning_entitlements",{p_organisation_id:null}),
     ]);
     if (o.error || a.error || c.error) {
       setError("Could not load access administration. Your role may not have access to every section.");
@@ -48,6 +52,8 @@ export default function AcademyAccessAdminPage() {
     setOrganisations((o.data ?? []) as Organisation[]);
     setAssessments((a.data ?? []) as Assessment[]);
     setCodes((c.data ?? []) as AccessCode[]);
+    if (e.error || !e.data?.ok) { setEntitlements([]); setEntitlementNotice("Entitlement records are restricted to global administrators and organisation owners/admins."); }
+    else { setEntitlements((e.data.entitlements ?? []) as Entitlement[]); setEntitlementNotice(""); }
     setOrganisationId((v) => v || o.data?.[0]?.id || "");
     setAssessmentId((v) => v || a.data?.[0]?.id || "");
   }, []);
@@ -120,6 +126,16 @@ export default function AcademyAccessAdminPage() {
     setSaving(false);
   }
 
+  async function revokeEntitlement(entitlement: Entitlement) {
+    if (entitlement.status === "revoked" || !window.confirm("Revoke this entitlement? The user's access limit or organisation membership may change immediately.")) return;
+    setSaving(true); setError(""); setMessage("");
+    const { data, error: rpcError } = await supabase.rpc("revoke_learning_entitlement", { p_entitlement_id: entitlement.id });
+    if (rpcError) setError(rpcError.message);
+    else if (!data?.ok) setError(data?.message || "Could not revoke entitlement.");
+    else { setMessage("Entitlement revoked."); await load(); }
+    setSaving(false);
+  }
+
   async function toggleOrganisation(org: Organisation) {
     const next = org.status === "active" ? "suspended" : "active";
     if (!window.confirm(`${next === "suspended" ? "Suspend" : "Reactivate"} ${org.name}?`)) return;
@@ -149,6 +165,7 @@ export default function AcademyAccessAdminPage() {
     </section>
     {generatedCode && <section className="admin-section admin-card"><h2 className="admin-card-title">New code — copy it now</h2><p className="admin-card-text">The database stores a hash, not the plaintext code. Once you leave this screen, this full code cannot be retrieved.</p><div className="flex flex-wrap items-center gap-3"><code className="rounded bg-slate-100 px-4 py-3 text-lg break-all">{generatedCode}</code><button className="admin-btn-primary" onClick={() => { void navigator.clipboard?.writeText(generatedCode); setMessage("Code copied if clipboard access was available."); }}>Copy code</button></div></section>}
     <section className="admin-section admin-card"><h2 className="admin-card-title">Organisations</h2>{organisations.length===0 ? <p className="admin-help">No organisations available to this administrator.</p> : organisations.map((o) => <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 border-b py-3"><div><strong>{o.name}</strong><p className="admin-help">{o.slug} · {o.status}</p></div><button className="admin-btn-light" disabled={saving} onClick={() => void toggleOrganisation(o)}>{o.status === "active" ? "Suspend" : "Reactivate"}</button></div>)}</section>
+    <section className="admin-section admin-card"><h2 className="admin-card-title">Membership and access entitlements</h2><p className="admin-card-text">Entitlements are attached to accounts after code redemption. Revocation changes the entitlement; code revocation alone does not remove access already granted.</p>{entitlementNotice&&<p className="admin-help mt-3">{entitlementNotice}</p>}{entitlements.length===0?<p className="admin-help mt-3">No visible entitlement records.</p>:<div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="py-2 pr-3">Account ID</th><th className="py-2 pr-3">Type</th><th className="py-2 pr-3">Question limit</th><th className="py-2 pr-3">Expiry</th><th className="py-2 pr-3">Status</th><th className="py-2">Action</th></tr></thead><tbody>{entitlements.map((e)=><tr key={e.id} className="border-t"><td className="py-3 pr-3 font-mono text-xs">{e.user_id}</td><td className="py-3 pr-3">{(e.membership_type||e.entitlement_type).replaceAll("_"," ")}</td><td className="py-3 pr-3">{e.max_questions}</td><td className="py-3 pr-3">{e.permanent?"Permanent":e.expires_at?new Date(e.expires_at).toLocaleString():"—"}</td><td className="py-3 pr-3">{e.status}</td><td className="py-3"><button className="admin-btn-light" disabled={saving||e.status==="revoked"} onClick={()=>void revokeEntitlement(e)}>Revoke access</button></td></tr>)}</tbody></table></div>}</section>
     <section className="admin-section admin-card"><h2 className="admin-card-title">Issued codes</h2><p className="admin-card-text">Only the last four characters are listed. Revoking a code prevents future redemption; it does not automatically revoke entitlements already issued.</p>{codes.length===0 ? <p className="admin-help">No codes visible to this administrator.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="py-2 pr-3">Code</th><th className="py-2 pr-3">Scope</th><th className="py-2 pr-3">Question limit</th><th className="py-2 pr-3">Redemptions</th><th className="py-2 pr-3">Expiry</th><th className="py-2 pr-3">Status</th><th className="py-2">Action</th></tr></thead><tbody>{codes.map((c) => <tr key={c.id} className="border-t"><td className="py-3 pr-3">•••• {c.code_hint}</td><td className="py-3 pr-3">{c.scope_type.replaceAll("_"," ")}</td><td className="py-3 pr-3">{c.max_questions}</td><td className="py-3 pr-3">{c.redemption_count}/{c.max_redemptions}</td><td className="py-3 pr-3">{c.permanent ? "Permanent" : c.expires_at ? new Date(c.expires_at).toLocaleString() : "—"}</td><td className="py-3 pr-3">{c.revoked_at ? "Revoked" : !c.permanent && c.expires_at && new Date(c.expires_at) < new Date() ? "Expired" : "Active"}</td><td className="py-3"><button className="admin-btn-light" disabled={saving || !!c.revoked_at} onClick={() => void revokeCode(c)}>Revoke</button></td></tr>)}</tbody></table></div>}</section>
   </div></main>;
 }
