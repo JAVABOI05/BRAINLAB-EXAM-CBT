@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../../lib/supabase";
+import { getAdminSession } from "../../../../lib/adminAuth";
+import { adminHasPermission } from "../../../../lib/adminRoles";
 import "../../../admin.css";
 
 type QuestionRow = {
@@ -66,13 +68,19 @@ export default function EditQuestionPage() {
   }
 
   useEffect(() => {
-    const savedAdmin = localStorage.getItem("admin_user");
-    if (!savedAdmin) {
-      router.push("/admin/login");
-      return;
+    let active = true;
+    async function init() {
+      const admin = await getAdminSession();
+      if (!active) return;
+      if (!admin) { router.replace("/account"); return; }
+      if (!(await adminHasPermission("cbt.questions.manage"))) {
+        if (active) { setMessage("You do not have permission to edit questions."); setLoading(false); }
+        return;
+      }
+      await loadQuestion();
     }
-
-    queueMicrotask(() => loadQuestion());
+    void init().catch(() => { if (active) { setMessage("Could not verify administrator access."); setLoading(false); } });
+    return () => { active = false; };
   }, [router]);
 
 
