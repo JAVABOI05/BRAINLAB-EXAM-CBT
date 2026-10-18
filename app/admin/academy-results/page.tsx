@@ -29,8 +29,7 @@ export default function AcademyResultsAdminPage(){
  },[]);
 
  const loadResults=useCallback(async(id:string)=>{
-   if(!id){setAttempts([]);return;}
-   setWorking(true);setError("");setMessage("");
+   if(!id)return;
    const {data,error:rpcError}=await supabase.rpc("get_organisation_assessment_results",{p_assessment_id:id});
    if(rpcError){setError(rpcError.message);setAttempts([]);}
    else if(!data?.ok){setError(data?.message||"Could not load results.");setAttempts([]);}
