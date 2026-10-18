@@ -132,6 +132,7 @@ export default function AdminDashboardPage() {
         "learning.content.manage",
         "community.moderate",
         "analytics.read",
+        "institution.manage",
       ];
       const entries = await Promise.all(
         permissionKeys.map(async (permission) => [
