@@ -22,6 +22,9 @@ export default function LessonBlocksAdminPage() {
   const [lessonId, setLessonId] = useState("");
   const [blockType, setBlockType] = useState("text");
   const [contentText, setContentText] = useState('{"text":"Write lesson content here"}');
+  const [editingBlockId, setEditingBlockId] = useState("");
+  const [editingBlockType, setEditingBlockType] = useState("text");
+  const [editingContentText, setEditingContentText] = useState("{}");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -97,6 +100,44 @@ export default function LessonBlocksAdminPage() {
     setSaving(false);
   }
 
+  function beginEdit(block: Block) {
+    setEditingBlockId(block.id);
+    setEditingBlockType(block.block_type);
+    setEditingContentText(JSON.stringify(block.content, null, 2));
+    setError(""); setMessage("");
+  }
+
+  async function saveBlockEdit(block: Block) {
+    let parsed: Record<string, unknown>;
+    try {
+      const value: unknown = JSON.parse(editingContentText);
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Content must be a JSON object.");
+      parsed = value as Record<string, unknown>;
+    } catch (e) { setError(e instanceof Error ? e.message : "Enter valid JSON."); return; }
+    const mediaUrl = typeof parsed.url === "string" ? parsed.url : typeof parsed.src === "string" ? parsed.src : "";
+    if (["image","voice_note","short_video","long_video"].includes(editingBlockType) && !/^https:\/\//i.test(mediaUrl)) {
+      setError("Media blocks need an HTTPS url or src field in the JSON content."); return;
+    }
+    setSaving(true); setError(""); setMessage("");
+    const { error: updateError } = await supabase.from("learning_lesson_blocks")
+      .update({ block_type: editingBlockType, content: parsed }).eq("id", block.id);
+    if (updateError) setError(updateError.message);
+    else { setMessage("Lesson block updated."); setEditingBlockId(""); await loadBlocks(lessonId); }
+    setSaving(false);
+  }
+
+  async function moveBlock(block: Block, index: number, direction: -1 | 1) {
+    const targetIndex = index + direction;
+    const target = blocks[targetIndex];
+    if (!target || saving) return;
+    setSaving(true); setError(""); setMessage("");
+    const first = await supabase.from("learning_lesson_blocks").update({ order_index: target.order_index }).eq("id", block.id);
+    const second = first.error ? null : await supabase.from("learning_lesson_blocks").update({ order_index: block.order_index }).eq("id", target.id);
+    if (first.error || second?.error) setError(first.error?.message || second?.error?.message || "Could not reorder blocks.");
+    else { setMessage("Lesson content order updated."); await loadBlocks(lessonId); }
+    setSaving(false);
+  }
+
   async function removeBlock(block: Block) {
     if (!window.confirm("Delete this lesson block?")) return;
     setSaving(true); setError("");
@@ -116,7 +157,7 @@ export default function LessonBlocksAdminPage() {
       <label className="admin-label">Block content JSON</label><textarea className="admin-input font-mono text-sm" rows={9} value={contentText} onChange={(e) => setContentText(e.target.value)} required />
       <p className="admin-help">Text example: {"{ \"text\": \"Explanation...\" }"} · Media example: {"{ \"url\": \"https://...\", \"alt\": \"Diagram description\" }"}</p>
       <button className="admin-btn-primary" disabled={saving || !lessonId}>{saving ? "Saving…" : "Add lesson block"}</button></form>
-      <div className="admin-card"><h2 className="admin-card-title">Lesson content order</h2>{blocks.length === 0 ? <p className="admin-help">No blocks yet. Add content before publishing this lesson.</p> : blocks.map((b,index) => <article key={b.id} className="border-b py-4"><div className="flex items-center justify-between gap-2"><strong>{index + 1}. {b.block_type.replaceAll("_"," ")}</strong><button type="button" className="admin-btn-light" disabled={saving} onClick={() => void removeBlock(b)}>Delete</button></div><pre className="mt-2 overflow-auto rounded bg-slate-50 p-3 text-xs">{JSON.stringify(b.content,null,2)}</pre></article>)}</div>
+      <div className="admin-card"><h2 className="admin-card-title">Lesson content order</h2>{blocks.length === 0 ? <p className="admin-help">No blocks yet. Add content before publishing this lesson.</p> : blocks.map((b,index) => <article key={b.id} className="border-b py-4"><div className="flex flex-wrap items-center justify-between gap-2"><strong>{index + 1}. {b.block_type.replaceAll("_"," ")}</strong><div className="flex flex-wrap gap-2"><button type="button" className="admin-btn-light" disabled={saving||index===0} onClick={() => void moveBlock(b,index,-1)}>Move up</button><button type="button" className="admin-btn-light" disabled={saving||index===blocks.length-1} onClick={() => void moveBlock(b,index,1)}>Move down</button><button type="button" className="admin-btn-light" disabled={saving} onClick={() => beginEdit(b)}>Edit</button><button type="button" className="admin-btn-light" disabled={saving} onClick={() => void removeBlock(b)}>Delete</button></div></div>{editingBlockId===b.id ? <div className="mt-3 space-y-3"><label className="admin-label">Block type</label><select className="admin-input" value={editingBlockType} onChange={(e)=>setEditingBlockType(e.target.value)}>{["text","image","voice_note","short_video","long_video","inline_mcq"].map((x)=><option key={x} value={x}>{x.replaceAll("_"," ")}</option>)}</select><label className="admin-label">Block content JSON</label><textarea className="admin-input font-mono text-sm" rows={8} value={editingContentText} onChange={(e)=>setEditingContentText(e.target.value)}/><div className="flex gap-2"><button type="button" className="admin-btn-primary" disabled={saving} onClick={()=>void saveBlockEdit(b)}>{saving?"Saving…":"Save changes"}</button><button type="button" className="admin-btn-light" onClick={()=>setEditingBlockId("")}>Cancel</button></div></div> : <pre className="mt-2 overflow-auto rounded bg-slate-50 p-3 text-xs">{JSON.stringify(b.content,null,2)}</pre>}</article>)}</div>
     </section>
   </div></main>;
 }
