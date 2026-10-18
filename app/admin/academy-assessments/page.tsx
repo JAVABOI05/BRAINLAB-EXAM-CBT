@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
@@ -88,7 +89,7 @@ export default function AcademyAssessmentsAdminPage() {
 
   useEffect(() => { void loadQuestions(selectedTestId); }, [selectedTestId, loadQuestions]);
 
-  async function createTest(event: React.FormEvent<HTMLFormElement>) {
+  async function createTest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!topicId || !title.trim()) return;
     setSaving(true); setError(""); setMessage("");
@@ -110,7 +111,7 @@ export default function AcademyAssessmentsAdminPage() {
     finally { setSaving(false); }
   }
 
-  async function addQuestion(event: React.FormEvent<HTMLFormElement>) {
+  async function addQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedTestId || !prompt.trim() || !optionA.trim() || !optionB.trim() || !optionC.trim() || !optionD.trim()) return;
     if (imageUrl.trim() && !/^https:\/\//i.test(imageUrl.trim())) { setError("Question image URL must use HTTPS."); return; }
@@ -164,7 +165,7 @@ export default function AcademyAssessmentsAdminPage() {
         <label className="admin-label">Pass percentage</label><input className="admin-input" type="number" min={0} max={100} value={passPercentage} onChange={(e) => setPassPercentage(Number(e.target.value) || 0)} />
         <button className="admin-btn-primary" disabled={saving || !topicId || !title.trim()}>Create draft assessment</button>
       </form>
-      <div className="admin-card"><h2 className="admin-card-title">Existing assessments</h2>{tests.length === 0 ? <p className="admin-help">No Learning Hub assessments yet.</p> : <div className="space-y-3">{tests.map((test) => <div key={test.id} className="border-b py-3"><div className="flex flex-wrap justify-between gap-2"><button className="font-semibold text-left underline" onClick={() => setSelectedTestId(test.id)}>{test.title}</button><button className={test.is_published ? "admin-btn-light" : "admin-btn-primary"} disabled={saving} onClick={() => void togglePublished(test)}>{test.is_published ? "Unpublish" : "Publish"}</button></div><p className="admin-help">{topicLabel(test.topic_id)} · {test.question_limit} questions · {test.time_limit_mins ?? "Untimed"} min · Pass {test.pass_percentage}% · {questions.filter((q) => q.test_id === test.id).length} loaded for selected test</p></div>)}</div>}</div>
+      <div className="admin-card"><h2 className="admin-card-title">Existing assessments</h2>{tests.length === 0 ? <p className="admin-help">No Learning Hub assessments yet.</p> : <div className="space-y-3">{tests.map((test) => <div key={test.id} className="border-b py-3"><div className="flex flex-wrap justify-between gap-2"><button className="font-semibold text-left underline" onClick={() => setSelectedTestId(test.id)}>{test.title}</button><button className={test.is_published ? "admin-btn-light" : "admin-btn-primary"} disabled={saving} onClick={() => void togglePublished(test)}>{test.is_published ? "Unpublish" : "Publish"}</button></div><p className="admin-help">{topicLabel(test.topic_id)} · {test.question_limit} questions · {test.time_limit_mins ?? "Untimed"} min · Pass {test.pass_percentage}% · select to manage questions</p></div>)}</div>}</div>
     </section>
     <section className="admin-section admin-grid-2">
       <form className="admin-card" onSubmit={addQuestion}><h2 className="admin-card-title">Add MCQ question</h2><label className="admin-label">Target assessment</label><select className="admin-input" value={selectedTestId} onChange={(e) => setSelectedTestId(e.target.value)} required><option value="">Choose assessment</option>{tests.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</select>
