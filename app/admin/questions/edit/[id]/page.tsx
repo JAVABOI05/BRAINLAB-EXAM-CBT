@@ -12,12 +12,24 @@ type QuestionRow = {
   section: string;
   category: string | null;
   question: string;
+  question_image_url: string | null;
+  question_image_alt: string | null;
   option_a: string | null;
+  option_a_image_url: string | null;
+  option_a_image_alt: string | null;
   option_b: string | null;
+  option_b_image_url: string | null;
+  option_b_image_alt: string | null;
   option_c: string | null;
+  option_c_image_url: string | null;
+  option_c_image_alt: string | null;
   option_d: string | null;
+  option_d_image_url: string | null;
+  option_d_image_alt: string | null;
   correct_answer: string;
   explanation: string | null;
+  explanation_image_url: string | null;
+  explanation_image_alt: string | null;
   marks: number;
   difficulty: string | null;
   is_active: boolean;
@@ -78,12 +90,24 @@ export default function EditQuestionPage() {
         section: question.section,
         category: question.category,
         question: question.question,
+        question_image_url: question.question_image_url || null,
+        question_image_alt: question.question_image_alt || null,
         option_a: question.option_a,
+        option_a_image_url: question.option_a_image_url || null,
+        option_a_image_alt: question.option_a_image_alt || null,
         option_b: question.option_b,
+        option_b_image_url: question.option_b_image_url || null,
+        option_b_image_alt: question.option_b_image_alt || null,
         option_c: question.option_c,
+        option_c_image_url: question.option_c_image_url || null,
+        option_c_image_alt: question.option_c_image_alt || null,
         option_d: question.option_d,
+        option_d_image_url: question.option_d_image_url || null,
+        option_d_image_alt: question.option_d_image_alt || null,
         correct_answer: question.correct_answer,
         explanation: question.explanation,
+        explanation_image_url: question.explanation_image_url || null,
+        explanation_image_alt: question.explanation_image_alt || null,
         marks: question.marks,
         difficulty: question.difficulty,
         is_active: question.is_active,
@@ -271,6 +295,34 @@ export default function EditQuestionPage() {
             </div>
 
             <div className="admin-setting-box" style={{ gridColumn: "1 / -1" }}>
+              <h2 className="admin-card-title">Question and option images</h2>
+              <p className="text-sm text-gray-600">
+                Optional. Use HTTPS image URLs from approved storage. Add meaningful alt text for accessibility.
+              </p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">Question image URL</label>
+              <input className="admin-input" type="url" placeholder="https://..." value={question.question_image_url || ""} onChange={(e) => setQuestion({ ...question, question_image_url: e.target.value || null })} />
+              <label className="admin-label">Question image alt text</label>
+              <input className="admin-input" value={question.question_image_alt || ""} onChange={(e) => setQuestion({ ...question, question_image_alt: e.target.value || null })} />
+            </div>
+
+            {([
+              ["A", "option_a_image_url", "option_a_image_alt"],
+              ["B", "option_b_image_url", "option_b_image_alt"],
+              ["C", "option_c_image_url", "option_c_image_alt"],
+              ["D", "option_d_image_url", "option_d_image_alt"],
+            ] as const).map(([letter, urlKey, altKey]) => (
+              <div className="admin-setting-box" key={letter}>
+                <label className="admin-label">Option {letter} image URL</label>
+                <input className="admin-input" type="url" placeholder="https://..." value={question[urlKey] || ""} onChange={(e) => setQuestion({ ...question, [urlKey]: e.target.value || null })} />
+                <label className="admin-label">Option {letter} image alt text</label>
+                <input className="admin-input" value={question[altKey] || ""} onChange={(e) => setQuestion({ ...question, [altKey]: e.target.value || null })} />
+              </div>
+            ))}
+
+            <div className="admin-setting-box" style={{ gridColumn: "1 / -1" }}>
               <label className="admin-label">Explanation</label>
               <textarea
                 className="admin-input"
@@ -279,6 +331,10 @@ export default function EditQuestionPage() {
                   setQuestion({ ...question, explanation: e.target.value })
                 }
               />
+              <label className="admin-label">Explanation image URL</label>
+              <input className="admin-input" type="url" placeholder="https://..." value={question.explanation_image_url || ""} onChange={(e) => setQuestion({ ...question, explanation_image_url: e.target.value || null })} />
+              <label className="admin-label">Explanation image alt text</label>
+              <input className="admin-input" value={question.explanation_image_alt || ""} onChange={(e) => setQuestion({ ...question, explanation_image_alt: e.target.value || null })} />
             </div>
           </div>
 
