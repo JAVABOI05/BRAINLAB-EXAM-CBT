@@ -4,7 +4,7 @@ alter table public.learning_access_codes add column if not exists assigned_user_
 create index if not exists learning_access_codes_assigned_user_idx on public.learning_access_codes(assigned_user_id);
 
 revoke all on function public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid) from public,anon,authenticated;
-drop function if exists public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid);
+revoke all on function public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid) from public,anon,authenticated;
 
 create function public.create_learning_access_code(
   p_scope_type text,p_permanent boolean,p_expires_at timestamptz,p_max_redemptions integer,
