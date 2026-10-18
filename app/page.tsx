@@ -51,6 +51,7 @@ const pillars = [
 export default function HomePage() {
   return (
     <main id="main">
+      <div role="status" className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm leading-6 text-amber-950 sm:px-6"><strong>Platform upgrade notice:</strong> BrainLab is undergoing a major website and assessment-system overhaul. Some features may be temporarily unavailable, and exam progress can be interrupted. Avoid starting an important timed attempt during the maintenance window.</div>
       <section className="relative overflow-hidden border-b border-slate-200 bg-white">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_10%,rgba(47,111,237,0.14),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f5f7fb_100%)]" />
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[1.05fr_.95fr] lg:gap-16 lg:py-24">
