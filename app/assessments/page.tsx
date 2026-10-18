@@ -12,6 +12,7 @@ export default function AssessmentsPage() {
   const [assessments,setAssessments]=useState<Assessment[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
+  const [now,setNow]=useState<number|null>(null);
   useEffect(()=>{
     let active=true;
     async function load(){
@@ -28,8 +29,9 @@ export default function AssessmentsPage() {
     void load().catch(()=>{if(active){setError("Could not load assessments.");setLoading(false);}});
     return()=>{active=false;};
   },[router]);
+  useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),1000);return()=>window.clearInterval(timer);},[]);
   const status=(a:Assessment)=>{
-    const now=Date.now();
+    if(now===null)return "Checking";
     if(a.starts_at&&new Date(a.starts_at).getTime()>now)return "Scheduled";
     if(a.ends_at&&new Date(a.ends_at).getTime()<=now)return "Closed";
     return "Available";
