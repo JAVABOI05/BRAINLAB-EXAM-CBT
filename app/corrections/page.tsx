@@ -5,6 +5,7 @@ import "./corrections.css";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings } from "../lib/examApi";
+import { streamAiTutor, type AiCoachContext, type AiQuestionContext } from "../lib/aiTutor";
 
 type ResultItem = {
   id: string | number;
@@ -30,6 +31,123 @@ type ResultItem = {
   flagged?: boolean;
   marks?: number;
 };
+
+
+function CorrectionTutor({ item }: { item: ResultItem }) {
+  const [open, setOpen] = useState(false);
+  const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function ask(mode: "explain" | "why_wrong") {
+    if (busy) return;
+    setOpen(true);
+    setAnswer("");
+    setError("");
+    setBusy(true);
+    try {
+      const question: AiQuestionContext = {
+        subject: item.subject,
+        type: item.type,
+        text: item.text,
+        options: item.options,
+        correctAnswer: item.correctAnswer,
+        explanation: item.explanation,
+        userAnswer: item.userAnswer,
+      };
+      await streamAiTutor({ mode, question }, (chunk) => {
+        setAnswer((current) => current + chunk);
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The AI Tutor could not respond. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="font-bold text-slate-900">Learn with AI Tutor</h3>
+          <p className="mt-1 text-sm text-slate-600">Get a step-by-step explanation of this released correction.</p>
+        </div>
+        <button type="button" onClick={() => setOpen((value) => !value)} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-bold text-blue-950">
+          {open ? "Hide tutor" : "Open tutor"}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-4">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={busy} onClick={() => void ask("explain")} className="rounded-lg bg-[#061a3a] px-3 py-2 text-sm font-bold text-white disabled:opacity-50">Explain step by step</button>
+            {item.userAnswer !== null && !item.isCorrect && (
+              <button type="button" disabled={busy} onClick={() => void ask("why_wrong")} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-bold text-blue-950 disabled:opacity-50">Understand my mistake</button>
+            )}
+          </div>
+          {busy && <p className="mt-3 text-sm text-slate-600" role="status">Tutor is thinking…</p>}
+          {error && <p className="mt-3 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800" role="alert">{error}</p>}
+          {answer && <div className="mt-3 whitespace-pre-wrap rounded-lg border border-blue-100 bg-white p-4 text-sm leading-7 text-slate-800" aria-live="polite">{answer}</div>}
+          <p className="mt-3 text-xs leading-5 text-slate-500">AI guidance can be wrong. Verify the reasoning against your course material. Sign-in and a configured AI provider are required.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CorrectionStudyCoach({ results, summary, subjectStats }: {
+  results: ResultItem[];
+  summary: { total: number; correct: number; wrong: number; unanswered: number };
+  subjectStats: Record<string, { total: number; correct: number; wrong: number; unanswered: number }>;
+}) {
+  const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function generatePlan() {
+    if (busy || !results.length) return;
+    setBusy(true);
+    setAnswer("");
+    setError("");
+    const context: AiCoachContext = {
+      summary,
+      subjectStats,
+      missedQuestions: results
+        .filter((item) => item.userAnswer !== null && !item.isCorrect)
+        .slice(0, 12)
+        .map((item) => ({ subject: item.subject, text: item.text.slice(0, 700), correctAnswer: item.correctAnswer })),
+    };
+    try {
+      await streamAiTutor({
+        mode: "coach",
+        context,
+        messages: [{
+          role: "user",
+          content: "Use these correction counts to make a short practical revision plan. Prioritise using the available counts, explain that the sample is limited, and give three concrete next actions. Do not repeat personal details.",
+        }],
+      }, (chunk) => setAnswer((current) => current + chunk));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not generate revision guidance.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="my-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-2xl">
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-cyan-900">AI-powered review</p>
+          <h2 className="mt-2 text-xl font-black text-slate-950">Turn corrections into a revision plan</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700">Generate practical revision guidance from the current correction counts and a limited sample of missed questions.</p>
+        </div>
+        <button type="button" disabled={busy || !results.length} onClick={() => void generatePlan()} className="min-h-11 rounded-xl bg-[#061a3a] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#123566] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Reviewing…" : "Build my revision plan →"}</button>
+      </div>
+      {error && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">{error}</p>}
+      {answer && <div className="mt-5 whitespace-pre-wrap rounded-xl border border-cyan-100 bg-white p-4 text-sm leading-7 text-slate-800" aria-live="polite">{answer}</div>}
+      <p className="mt-3 text-xs leading-5 text-slate-500">Sign-in and a configured AI provider are required. AI guidance is not a definitive assessment of ability.</p>
+    </section>
+  );
+}
 
 type Candidate = {
   name: string;
@@ -291,6 +409,10 @@ export default function CorrectionsPage() {
           </div>
         </section>
 
+        {results.length > 0 && (
+          <CorrectionStudyCoach results={results} summary={summary} subjectStats={subjectStats} />
+        )}
+
         <div className="main-grid">
           <aside className="sidebar">
             <section className="side-card">
@@ -504,6 +626,8 @@ export default function CorrectionsPage() {
                           )}
                         </div>
                       )}
+
+                      <CorrectionTutor item={item} />
                     </div>
                   </article>
                 );
