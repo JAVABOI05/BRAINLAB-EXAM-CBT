@@ -32,10 +32,10 @@ export type AiTutorRequest =
   | { mode: "chat"; question: AiQuestionContext; messages: AiChatMessage[] }
   | { mode: "coach"; context: AiCoachContext; messages: AiChatMessage[] };
 
-export const MAX_CHAT_MESSAGES = 10;
-export const MAX_CHAT_MESSAGE_CHARS = 2_000;
+export const MAX_CHAT_MESSAGES = 6;
+export const MAX_CHAT_MESSAGE_CHARS = 300;
 
-/** Keep only the newest turns so every request stays small and affordable. */
+/** Keep only the newest turns so every request stays small, concise, and affordable. */
 export function trimChatHistory(messages: AiChatMessage[]): AiChatMessage[] {
   return messages
     .filter((message) => message.content.trim().length > 0)

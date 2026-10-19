@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { cleanAIResponse } from "../lib/cleanText";
 
 type OptionKey = "A" | "B" | "C" | "D";
 
@@ -53,9 +54,16 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
           chat?: ChatMessage[];
         };
         if (parsed.explanation) {
-          setExplanation(parsed.explanation);
+          setExplanation(cleanAIResponse(parsed.explanation));
           if (parsed.model) setModel(parsed.model);
-          if (Array.isArray(parsed.chat)) setChatMessages(parsed.chat);
+          if (Array.isArray(parsed.chat)) {
+            setChatMessages(
+              parsed.chat.map((msg) => ({
+                ...msg,
+                text: cleanAIResponse(msg.text),
+              }))
+            );
+          }
         }
       }
     } catch {
@@ -74,7 +82,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
 
     const promptText =
       customPrompt ||
-      `You are BrainLab Academy's AI Tutor. Provide a comprehensive, step-by-step pedagogical breakdown for this CBT exam question so the candidate understands why the correct answer is right and where mistakes happen.
+      `You are BrainLab Academy's AI Tutor. Provide a concise, step-by-step pedagogical breakdown under 180 words for this CBT exam question. Never output markdown hashtags (#) or asterisks (* or **). Write in clean plain text only using simple numbered steps (1., 2.).
 
 Subject: ${item.subject}
 Question #${questionNumber}: ${item.text}
@@ -89,11 +97,11 @@ Result: ${item.isCorrect ? "Correct" : item.userAnswer ? "Incorrect" : "Unanswer
 Official Correct Answer: ${correctSelected}
 ${item.explanation ? `Original Answer Key Note: ${item.explanation}` : ""}
 
-Please structure your response with clear, easy-to-read sections:
-1. 💡 Core Concept: State the fundamental principle or formula in simple terms.
-2. 📝 Step-by-Step Solution: Walk through the exact deduction or working that makes Option ${item.correctAnswer} correct.
-${!item.isCorrect && item.userAnswer ? `3. ⚠️ Common Misconception: Explain why Option ${item.userAnswer} was tempting and what mistake leads students to choose it.` : ""}
-3. 🎯 CBT Exam Strategy: Give one practical rule or mnemonic to quickly solve similar questions on future exams.`;
+Structure your response with clear plain-text numbered sections:
+1. Core Concept: State the fundamental principle or formula in simple terms.
+2. Step-by-Step Solution: Walk through the exact deduction that makes Option ${item.correctAnswer} correct.
+${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${item.userAnswer} was tempting.` : ""}
+4. CBT Strategy: Give one practical rule to solve similar questions.`;
 
     try {
       const headers: Record<string, string> = {
@@ -124,7 +132,7 @@ ${!item.isCorrect && item.userAnswer ? `3. ⚠️ Common Misconception: Explain 
         throw new Error(data.error || "Failed to generate AI explanation.");
       }
 
-      const text = data.response as string;
+      const text = cleanAIResponse(data.response as string);
       setExplanation(text);
       if (data.model) setModel(data.model);
 
@@ -163,12 +171,12 @@ ${!item.isCorrect && item.userAnswer ? `3. ⚠️ Common Misconception: Explain 
     const followUpPrompt = `You are BrainLab Academy's AI Tutor helping a student review Question #${questionNumber} (${item.subject}).
 Question: "${item.text}"
 Correct Answer: Option ${item.correctAnswer} (${item.options[item.correctAnswer]})
-Prior Explanation: "${explanation?.slice(0, 500)}..."
+Prior Explanation: "${explanation?.slice(0, 300)}..."
 
 The student asks a follow-up question:
 "${query}"
 
-Please provide a clear, supportive, and pedagogical answer directly addressing their question.`;
+Provide a concise, direct, and supportive answer under 120 words without markdown hashtags (#) or asterisks (* or **). Write in clean plain text only.`;
 
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -196,7 +204,7 @@ Please provide a clear, supportive, and pedagogical answer directly addressing t
           ...newChat,
           {
             role: "tutor",
-            text: data.response as string,
+            text: cleanAIResponse(data.response as string),
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           },
         ];
@@ -333,15 +341,20 @@ Please provide a clear, supportive, and pedagogical answer directly addressing t
                 )}
 
                 <form onSubmit={handleSendFollowUp} className="ai-followup-form">
-                  <input
-                    type="text"
-                    value={followUp}
-                    onChange={(e) => setFollowUp(e.target.value)}
-                    placeholder="e.g. Why is Option B wrong? What formula should I use?"
-                    maxLength={200}
-                    disabled={followUpLoading}
-                    className="ai-followup-input"
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={followUp}
+                      onChange={(e) => setFollowUp(e.target.value)}
+                      placeholder="e.g. Why is Option B wrong? What formula should I use?"
+                      maxLength={200}
+                      disabled={followUpLoading}
+                      className="ai-followup-input !pr-16"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 pointer-events-none">
+                      {followUp.length}/200
+                    </span>
+                  </div>
                   <button
                     type="submit"
                     disabled={followUpLoading || !followUp.trim()}

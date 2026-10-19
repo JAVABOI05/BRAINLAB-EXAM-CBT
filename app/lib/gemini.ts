@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
+import { cleanAIResponse, MAX_AI_OUTPUT_TOKENS } from "./cleanText";
 
 export const DEFAULT_TUTOR_SYSTEM_INSTRUCTION =
-  "You are BrainLab Academy's AI Tutor. Your role is to explain concepts clearly, break down problems step-by-step using first principles, and guide students through the reasoning process. Never provide direct answers to active or restricted exam questions. Maintain an encouraging, academic, structured, and pedagogical tone.";
+  "You are BrainLab Academy's AI Tutor. Provide clear, direct, and concise pedagogical explanations under 180 words. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean plain text only using simple numbered lists (1., 2.) or regular line breaks. Help students understand the core concept and avoid common mistakes without long essays.";
 
 export function getGeminiApiKey(): string | undefined {
   return (
@@ -26,6 +27,7 @@ export interface GenerateGeminiOptions {
   model?: string;
   systemInstruction?: string;
   temperature?: number;
+  maxOutputTokens?: number;
 }
 
 export async function generateGeminiContent(
@@ -42,12 +44,13 @@ export async function generateGeminiContent(
     contents: prompt,
     config: {
       systemInstruction,
-      temperature: options?.temperature ?? 0.7,
+      temperature: options?.temperature ?? 0.4,
+      maxOutputTokens: options?.maxOutputTokens ?? MAX_AI_OUTPUT_TOKENS,
     },
   });
 
   return {
-    text: response.text ?? "",
+    text: cleanAIResponse(response.text ?? ""),
     model,
   };
 }

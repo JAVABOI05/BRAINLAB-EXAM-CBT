@@ -102,6 +102,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (prompt.length > 3000) {
+      return NextResponse.json(
+        { error: "Input prompt is too long. Please limit your prompt to 3,000 characters." },
+        { status: 400 }
+      );
+    }
+
     const requestedModel =
       typeof body.model === "string" && body.model.trim()
         ? body.model.trim()
@@ -116,6 +123,7 @@ export async function POST(request: NextRequest) {
     const { text, model } = await generateGeminiContent(prompt, {
       model: requestedModel,
       systemInstruction: customSystemInstruction,
+      maxOutputTokens: 350,
     });
 
     // 5. Save prompt, response, and user attribution to Supabase
@@ -198,6 +206,13 @@ export async function GET(request: NextRequest) {
       message:
         "BrainLab AI Generation API is online. Send a POST request with { \"prompt\": \"your text\" } or GET with ?prompt=...",
     });
+  }
+
+  if (prompt.length > 500) {
+    return NextResponse.json(
+      { error: "Input prompt is too long. Please limit your prompt to 500 characters." },
+      { status: 400 }
+    );
   }
 
   try {

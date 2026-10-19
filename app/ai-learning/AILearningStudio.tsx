@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/app/lib/supabase";
+import { cleanAIResponse } from "@/app/lib/cleanText";
 
 type Intent = "understand" | "practise" | "mistake" | "exam";
 type Method = "decode" | "solve" | "spot" | "apply" | "teach";
@@ -45,12 +46,14 @@ export default function AILearningStudio() {
 
   async function handleAskAi(customPrompt?: string) {
     const queryTopic = topic.trim();
-    const promptToSend =
+    const basePrompt =
       customPrompt ||
       aiQuestion.trim() ||
       (queryTopic
-        ? `I am studying "${queryTopic}". My goal is to "${selectedIntent.title}" using the method "${selectedMethod.title}". Please give me a brief, step-by-step pedagogical explanation and 1 guided question to test my understanding.`
+        ? `I am studying "${queryTopic}". My goal is to "${selectedIntent.title}" using the method "${selectedMethod.title}". Please give me a brief, step-by-step explanation and 1 guided question to test my understanding.`
         : "Please give me a high-yield study strategy for computer-based testing (CBT) exams.");
+
+    const promptToSend = `${basePrompt}\n\nNote: Provide a concise, direct answer under 180 words without markdown hashtags (#) or asterisks (* or **). Write in clean plain text only.`;
 
     setAiLoading(true);
     setAiError(null);
@@ -85,7 +88,7 @@ export default function AILearningStudio() {
         throw new Error(data.error || "Failed to generate AI guidance.");
       }
 
-      setAiResponse(data.response);
+      setAiResponse(cleanAIResponse(data.response));
       setAiModel(data.model);
     } catch (err) {
       setAiError(err instanceof Error ? err.message : "An error occurred calling AI Tutor.");
@@ -189,20 +192,25 @@ export default function AILearningStudio() {
         </p>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            value={aiQuestion}
-            onChange={(e) => setAiQuestion(e.target.value)}
-            placeholder={topic.trim() ? `Ask a question about ${topic.trim()}...` : "e.g. Why does cross-multiplication work in fractions?"}
-            maxLength={300}
-            className="min-h-12 flex-1 rounded-xl border border-slate-300 px-4 text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !aiLoading) {
-                e.preventDefault();
-                handleAskAi();
-              }
-            }}
-          />
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={aiQuestion}
+              onChange={(e) => setAiQuestion(e.target.value)}
+              placeholder={topic.trim() ? `Ask a question about ${topic.trim()}...` : "e.g. Why does cross-multiplication work in fractions?"}
+              maxLength={250}
+              className="min-h-12 w-full rounded-xl border border-slate-300 pl-4 pr-16 text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !aiLoading) {
+                  e.preventDefault();
+                  handleAskAi();
+                }
+              }}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 pointer-events-none">
+              {aiQuestion.length}/250
+            </span>
+          </div>
           <button
             type="button"
             onClick={() => handleAskAi()}

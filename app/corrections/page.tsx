@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings } from "../lib/examApi";
 import { streamAiTutor, type AiCoachContext } from "../lib/aiTutor";
+import { cleanAIResponse } from "../lib/cleanText";
 import QuestionAITutor from "./QuestionAITutor";
 
 type ResultItem = {
@@ -121,7 +122,7 @@ function CorrectionStudyCoach({
             {
               role: "user",
               content:
-                "Using these exam correction results and sample of missed questions, provide a targeted 3-point revision plan. Focus on conceptual gaps and concrete test strategies. Keep the tone encouraging and actionable.",
+                "Using these exam correction results and sample of missed questions, provide a targeted 3-point revision plan. Focus on conceptual gaps and concrete test strategies. Keep the tone encouraging and actionable. Keep it concise (under 180 words). Never use markdown hashtags (#) or asterisks (* or **). Write in clean plain text only using numbers (1., 2., 3.).",
             },
           ],
         },
@@ -167,7 +168,7 @@ function CorrectionStudyCoach({
           className="mt-5 whitespace-pre-wrap rounded-xl border border-cyan-100 bg-white p-5 text-sm leading-7 text-slate-800 shadow-inner"
           aria-live="polite"
         >
-          {answer}
+          {cleanAIResponse(answer)}
         </div>
       )}
       <p className="mt-3 text-xs leading-5 text-slate-500">

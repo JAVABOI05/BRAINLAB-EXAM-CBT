@@ -47,8 +47,8 @@ function safeMessages(value: unknown): ChatItem[] {
         (m.role === "user" || m.role === "assistant") &&
         typeof m.content === "string"
     )
-    .slice(-10)
-    .map((m) => ({ role: m.role, content: m.content.slice(0, 2_000) }));
+    .slice(-6)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 300) }));
 }
 
 function buildPrompt(body: JsonRecord): {
@@ -56,7 +56,7 @@ function buildPrompt(body: JsonRecord): {
   messages: { role: "user" | "assistant"; content: string }[];
 } {
   const system =
-    "You are BrainLab Academy's AI Tutor. Provide accurate, encouraging, and step-by-step pedagogical explanations. Help learners understand fundamental principles, avoid common traps, and develop confident problem-solving strategies. Format responses clearly with concise sections.";
+    "You are BrainLab Academy's AI Tutor. Provide clear, direct, and concise pedagogical explanations under 180 words. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean plain text only using simple numbered lists (1., 2.) or regular line breaks. Help students understand the concept and avoid common mistakes without long essays.";
 
   if (body.mode === "explain" || body.mode === "why_wrong") {
     const question = safeQuestion(body.question);
@@ -193,13 +193,13 @@ export async function POST(request: NextRequest) {
                 role: message.role === "assistant" ? "model" : "user",
                 parts: [{ text: message.content }],
               })),
-              generationConfig: { temperature: 0.3, maxOutputTokens: 900 },
+              generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
             }
           : {
               model,
               stream: true,
               temperature: 0.3,
-              max_tokens: 900,
+              max_tokens: 350,
               messages: [{ role: "system", content: prompt.system }, ...prompt.messages],
             }
       ),
@@ -249,7 +249,13 @@ export async function POST(request: NextRequest) {
                 const delta = isRecord(choice) ? choice.delta : null;
                 if (isRecord(delta) && typeof delta.content === "string") content = delta.content;
               }
-              if (content) controller.enqueue(encoder.encode(content));
+              if (content) {
+                // Strip markdown hashes and asterisks from streamed chunks
+                const cleanedChunk = content
+                  .replace(/\s\*\s/g, " × ")
+                  .replace(/[#*`]/g, "");
+                if (cleanedChunk) controller.enqueue(encoder.encode(cleanedChunk));
+              }
             } catch {
               // Ignore malformed event frames
             }
