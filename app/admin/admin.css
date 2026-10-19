@@ -438,3 +438,64 @@ button.admin-card:hover {
     padding: 24px;
   }
 }
+
+/* ==========================================================================
+   Admin Dark Theme Overrides
+   ========================================================================== */
+
+html[data-theme="dark"] {
+  --admin-bg-1: #0a0f1d;
+  --admin-bg-2: #0f172a;
+  --admin-ink: #f1f5f9;
+  --admin-muted: #94a3b8;
+  --admin-line: rgba(255, 255, 255, 0.1);
+  --admin-glass: rgba(15, 23, 42, 0.85);
+  --admin-glass-strong: rgba(30, 41, 59, 0.9);
+  --admin-shadow: 0 16px 50px rgba(0, 0, 0, 0.4);
+  --admin-shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .admin-card-title,
+html[data-theme="dark"] .admin-stat-value,
+html[data-theme="dark"] .admin-table th,
+html[data-theme="dark"] .admin-label {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .admin-card-text,
+html[data-theme="dark"] .admin-stat-label,
+html[data-theme="dark"] .admin-help,
+html[data-theme="dark"] .admin-table td {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .admin-input,
+html[data-theme="dark"] .admin-select {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .admin-setting-box {
+  background: #17243a;
+  border-color: #2b3a52;
+}
+
+html[data-theme="dark"] .admin-btn-light {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .admin-btn-light:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .admin-table tr {
+  border-bottom-color: #1e293b;
+}
+
+html[data-theme="dark"] .admin-table tr:hover {
+  background: rgba(30, 41, 59, 0.5);
+}

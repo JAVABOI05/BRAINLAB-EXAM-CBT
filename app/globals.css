@@ -311,8 +311,10 @@ body {
 
 
 /* ===== APPLICATION-WIDE APPEARANCE ===== */
-html,body{min-height:100%}
-html[data-theme="dark"] body{color:#e5edf9;background-color:#0b1220}
+html[data-theme="dark"] body{color:#e5edf9;background-color:#0b1220!important}
+html[data-theme="dark"] .bg-\[\#f5f7fb\],html[data-theme="dark"] .bg-\[\#dfe8f7\],html[data-theme="dark"] .bg-\[\#eef4ff\],html[data-theme="dark"] .bg-\[\#f8fafc\]{background-color:#0b1220!important}
+html[data-theme="dark"] .bg-\[\#f0f5ff\],html[data-theme="dark"] .bg-\[\#eaf2ff\]{background-color:#17243a!important}
+html[data-theme="dark"] .border-blue-100,html[data-theme="dark"] .border-blue-200{border-color:#2b3a52!important}
 .global-learner-toolbar{position:relative;z-index:45;width:100%;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#334155;font-family:Arial,Helvetica,sans-serif}
 .global-learner-toolbar-inner{display:flex;min-height:48px;max-width:1440px;align-items:center;justify-content:space-between;gap:12px;margin:0 auto;padding:6px 16px}
 .global-learner-identity,.global-learner-actions{display:flex;min-width:0;align-items:center;gap:10px}

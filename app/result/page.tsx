@@ -109,8 +109,8 @@ export default function ResultPage() {
 
   if (lookupMode) {
     return (
-      <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
-        <div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-md">
+      <main className="learner-theme min-h-screen px-4 py-8">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-md">
           <h1 className="text-center text-3xl font-bold text-gray-800">
             Check Your Result
           </h1>
@@ -183,8 +183,8 @@ export default function ResultPage() {
 
   if (!candidate) {
     return (
-      <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
-        <div className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-md">
+      <main className="learner-theme min-h-screen px-4 py-8">
+        <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 shadow-md">
           <p className="text-lg text-gray-700">Loading result.</p>
         </div>
       </main>
@@ -192,8 +192,8 @@ export default function ResultPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
-      <div className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-md">
+    <main className="learner-theme min-h-screen px-4 py-8">
+      <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 shadow-md">
         <h1 className="text-center text-3xl font-bold text-gray-800 md:text-4xl">
           BRAINLAB CBT RESULT
         </h1>

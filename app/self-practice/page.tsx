@@ -134,9 +134,9 @@ export default function SelfPracticePage() {
     setWorking(false);
   }, [attempt, result, working, pendingSaves, answers]);
 
-  if (loading) return <main className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-4xl rounded-2xl bg-white p-6">Loading Self Practice…</div></main>;
+  if (loading) return <main className="learner-theme min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-4xl rounded-2xl bg-white p-6">Loading Self Practice…</div></main>;
 
-  return <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6">
+  return <main className="learner-theme min-h-screen bg-slate-50 px-4 py-8 sm:px-6">
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="rounded-2xl bg-white p-6 shadow-sm sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-wide text-indigo-700">BrainLab Academy · CBT</p>

@@ -5,6 +5,7 @@ import "./corrections.css";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings } from "../lib/examApi";
+import { streamAiTutor, type AiCoachContext } from "../lib/aiTutor";
 import QuestionAITutor from "./QuestionAITutor";
 
 type ResultItem = {
@@ -48,6 +49,134 @@ function safeImageUrl(value: string | null | undefined): string | null {
   }
 }
 
+function isSyntheticPreviewData(items: unknown[]): boolean {
+  if (items.length < 3) return false;
+
+  const records = items.filter(
+    (item): item is Record<string, unknown> =>
+      typeof item === "object" && item !== null
+  );
+  if (records.length !== items.length) return false;
+
+  const syntheticQuestions = records.filter((item) =>
+    /^synthetic\b/i.test(String(item.text ?? "").trim())
+  ).length;
+  const syntheticOptions = records.filter((item) => {
+    const options = item.options;
+    if (!options || typeof options !== "object") return false;
+    const values = options as Record<string, unknown>;
+    return (["A", "B", "C", "D"] as const).every((key) =>
+      /^option [A-D]\s*\d+$/i.test(String(values[key] ?? "").trim())
+    );
+  }).length;
+  const syntheticExplanations = records.filter((item) =>
+    /^synthetic explanation\b/i.test(String(item.explanation ?? "").trim())
+  ).length;
+
+  return (
+    syntheticQuestions / records.length >= 0.75 &&
+    syntheticOptions / records.length >= 0.75 &&
+    syntheticExplanations / records.length >= 0.5
+  );
+}
+
+function CorrectionStudyCoach({
+  results,
+  summary,
+  subjectStats,
+}: {
+  results: ResultItem[];
+  summary: { total: number; correct: number; wrong: number; unanswered: number };
+  subjectStats: Record<string, { total: number; correct: number; wrong: number; unanswered: number }>;
+}) {
+  const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function generatePlan() {
+    if (busy || !results.length) return;
+    setBusy(true);
+    setAnswer("");
+    setError("");
+
+    const context: AiCoachContext = {
+      summary,
+      subjectStats,
+      missedQuestions: results
+        .filter((item) => item.userAnswer !== null && !item.isCorrect)
+        .slice(0, 12)
+        .map((item) => ({
+          subject: item.subject,
+          text: item.text.slice(0, 700),
+          correctAnswer: item.correctAnswer,
+        })),
+    };
+
+    try {
+      await streamAiTutor(
+        {
+          mode: "coach",
+          context,
+          messages: [
+            {
+              role: "user",
+              content:
+                "Using these exam correction results and sample of missed questions, provide a targeted 3-point revision plan. Focus on conceptual gaps and concrete test strategies. Keep the tone encouraging and actionable.",
+            },
+          ],
+        },
+        (chunk) => setAnswer((current) => current + chunk)
+      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not generate revision guidance.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-cyan-200 bg-cyan-50/80 p-5 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-2xl">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-cyan-900">
+            BrainLab AI Tutor · Study Coach
+          </p>
+          <h2 className="mt-1.5 text-xl font-black text-slate-950">
+            Turn your corrections into a targeted revision plan
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            Generate pedagogical revision guidance from your actual score breakdown and missed questions.
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={busy || !results.length}
+          onClick={() => void generatePlan()}
+          className="min-h-11 rounded-xl bg-[#061a3a] px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-[#123566] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? "Building Plan…" : "✨ Build My Revision Plan →"}
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-white p-3.5 text-sm text-red-800">
+          {error}
+        </p>
+      )}
+      {answer && (
+        <div
+          className="mt-5 whitespace-pre-wrap rounded-xl border border-cyan-100 bg-white p-5 text-sm leading-7 text-slate-800 shadow-inner"
+          aria-live="polite"
+        >
+          {answer}
+        </div>
+      )}
+      <p className="mt-3 text-xs leading-5 text-slate-500">
+        AI guidance is powered by Google AI Studio. Always verify deductions with your course textbooks.
+      </p>
+    </section>
+  );
+}
+
 export default function CorrectionsPage() {
   const router = useRouter();
 
@@ -55,10 +184,10 @@ export default function CorrectionsPage() {
   const [results, setResults] = useState<ResultItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubject, setActiveSubject] = useState("All");
+  const [dataIssue, setDataIssue] = useState("");
 
   useEffect(() => {
     async function loadReleasedCorrections() {
-      // Never trust cached review data as proof that results are currently released.
       const settings = await getPublicSettings();
       if (!settings?.show_results) {
         router.replace("/result");
@@ -87,6 +216,15 @@ export default function CorrectionsPage() {
         const parsedResults = JSON.parse(savedResults);
         if (!Array.isArray(parsedResults)) {
           router.replace("/result");
+          return;
+        }
+
+        if (isSyntheticPreviewData(parsedResults)) {
+          setResults([]);
+          setDataIssue(
+            "This preview contains placeholder test questions rather than answers from your verified exam attempt. Placeholder data has been withheld. Please take a CBT exam to review genuine question corrections."
+          );
+          setLoading(false);
           return;
         }
 
@@ -247,6 +385,28 @@ export default function CorrectionsPage() {
             <div className="stat-value">{summary.unanswered}</div>
           </div>
         </section>
+
+        {dataIssue && (
+          <div role="alert" className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="text-xl">⚠️</span>
+              <div>
+                <h2 className="text-base font-bold">Preview Notice</h2>
+                <p className="mt-1 text-sm leading-6 text-amber-800">{dataIssue}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {results.length > 0 && (
+          <div className="mb-6">
+            <CorrectionStudyCoach
+              results={results}
+              summary={summary}
+              subjectStats={subjectStats}
+            />
+          </div>
+        )}
 
         <div className="main-grid">
           <aside className="sidebar">
