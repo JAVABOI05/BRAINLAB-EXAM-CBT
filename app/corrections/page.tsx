@@ -47,6 +47,39 @@ function safeImageUrl(value: string | null | undefined): string | null {
   }
 }
 
+function isSyntheticPreviewData(items: unknown[]): boolean {
+  if (items.length < 3) return false;
+
+  const records = items.filter(
+    (item): item is Record<string, unknown> =>
+      typeof item === "object" && item !== null
+  );
+  if (records.length !== items.length) return false;
+
+  const syntheticQuestions = records.filter((item) =>
+    /^synthetic\b/i.test(String(item.text ?? "").trim())
+  ).length;
+  const syntheticOptions = records.filter((item) => {
+    const options = item.options;
+    if (!options || typeof options !== "object") return false;
+    const values = options as Record<string, unknown>;
+    return (["A", "B", "C", "D"] as const).every((key) =>
+      /^option [A-D]\s*\d+$/i.test(String(values[key] ?? "").trim())
+    );
+  }).length;
+  const syntheticExplanations = records.filter((item) =>
+    /^synthetic explanation\b/i.test(String(item.explanation ?? "").trim())
+  ).length;
+
+  // Only flag a clear fixture pattern, never an isolated question that happens
+  // to contain the word "synthetic".
+  return (
+    syntheticQuestions / records.length >= 0.75 &&
+    syntheticOptions / records.length >= 0.75 &&
+    syntheticExplanations / records.length >= 0.5
+  );
+}
+
 export default function CorrectionsPage() {
   const router = useRouter();
 
@@ -54,6 +87,7 @@ export default function CorrectionsPage() {
   const [results, setResults] = useState<ResultItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubject, setActiveSubject] = useState("All");
+  const [dataIssue, setDataIssue] = useState("");
 
   useEffect(() => {
     async function loadReleasedCorrections() {
@@ -86,6 +120,16 @@ export default function CorrectionsPage() {
         const parsedResults = JSON.parse(savedResults);
         if (!Array.isArray(parsedResults)) {
           router.replace("/result");
+          return;
+        }
+
+        if (isSyntheticPreviewData(parsedResults)) {
+          // Preview fixtures must never be presented as a learner's real exam.
+          setResults([]);
+          setDataIssue(
+            "This preview is returning placeholder questions instead of the questions from your exam attempt. The placeholder data has been withheld. Start or submit a real CBT attempt to generate genuine corrections."
+          );
+          setLoading(false);
           return;
         }
 
@@ -339,8 +383,17 @@ export default function CorrectionsPage() {
             {filteredResults.length === 0 ? (
               <div className="empty-state">
                 <p className="empty-state-text">
-                  No questions found for this subject.
+                  {dataIssue || "No questions found for this subject."}
                 </p>
+                {dataIssue && (
+                  <button
+                    type="button"
+                    className="action-btn primary mt-4"
+                    onClick={() => router.push("/")}
+                  >
+                    Return to BrainLab Home
+                  </button>
+                )}
               </div>
             ) : (
               filteredResults.map((item, index) => {
