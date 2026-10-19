@@ -5,6 +5,7 @@ import "./corrections.css";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings } from "../lib/examApi";
+import QuestionAITutor from "./QuestionAITutor";
 
 type ResultItem = {
   id: string | number;
@@ -436,9 +437,12 @@ export default function CorrectionsPage() {
                         </div>
                       </div>
 
+                      {/* BrainLab AI Tutor breakdown */}
+                      <QuestionAITutor item={item} questionNumber={index + 1} />
+
                       {item.explanation && (
                         <div className="explanation-box">
-                          <h3 className="explanation-title">Explanation</h3>
+                          <h3 className="explanation-title">Original Answer Key Note</h3>
                           <p className="explanation-text">{item.explanation}</p>
                           {safeImageUrl(item.explanationImageUrl) && (
                             // eslint-disable-next-line @next/next/no-img-element
