@@ -117,42 +117,51 @@ export async function POST(request: NextRequest) {
   if (contentLength > MAX_BODY_BYTES) return jsonError("Your request is too large.", 413);
 
   const token = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "anonymous";
 
-  if (!token || !supabaseUrl || !anonKey) {
-    return jsonError("Sign in to use the AI Tutor.", 401);
-  }
+  let userKey = `ip:${clientIp}`;
+  let maxRequests = 10;
 
-  const supabase = createClient(supabaseUrl, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  });
-  const { data: authData, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !authData.user) {
-    return jsonError("Your session is invalid or expired. Please sign in again.", 401);
+  if (token) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (supabaseUrl && anonKey) {
+      try {
+        const supabase = createClient(supabaseUrl, anonKey, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        const { data: authData } = await supabase.auth.getUser(token);
+        if (authData?.user) {
+          userKey = `user:${authData.user.id}`;
+          maxRequests = 30;
+        }
+      } catch {
+        // Fall back to IP rate limiting if auth check encounters an error
+      }
+    }
   }
 
   const now = Date.now();
-  const userKey = authData.user.id;
   const windowData = requestWindows.get(userKey);
   if (!windowData || windowData.resetAt <= now) {
     requestWindows.set(userKey, { count: 1, resetAt: now + WINDOW_MS });
-  } else if (windowData.count >= MAX_REQUESTS_PER_WINDOW) {
+  } else if (windowData.count >= maxRequests) {
     return jsonError("You've sent several tutor requests. Please wait a minute and try again.", 429);
   } else {
     windowData.count += 1;
   }
 
-  // Check providers: Gemini first, Groq fallback
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINIAPIKEY;
+  // Check providers: Groq offers ultra-fast ~200ms latency, Gemini 3 offers ~1.3s latency
   const groqKey = process.env.GROQ_API_KEY || process.env.GROQAPIKEY;
-  const provider = geminiKey ? "gemini" : groqKey ? "groq" : null;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINIAPIKEY;
+  const provider = groqKey ? "groq" : geminiKey ? "gemini" : null;
   const model =
-    provider === "gemini"
-      ? process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash"
-      : process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+    provider === "groq"
+      ? process.env.GROQ_MODEL?.trim() || "qwen/qwen3.8-27b"
+      : process.env.GEMINI_MODEL?.trim() || "gemini-3-flash-preview";
 
   if (!provider) {
     return jsonError("AI Tutor is not configured yet. Please try again later.", 503);

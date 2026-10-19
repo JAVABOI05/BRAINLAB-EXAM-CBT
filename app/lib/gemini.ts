@@ -34,7 +34,7 @@ export async function generateGeminiContent(
   prompt: string,
   options?: GenerateGeminiOptions
 ): Promise<{ text: string; model: string }> {
-  const model = options?.model || process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  const model = options?.model || process.env.GEMINI_MODEL || "gemini-3-flash-preview";
   const systemInstruction =
     options?.systemInstruction || DEFAULT_TUTOR_SYSTEM_INSTRUCTION;
   const ai = getGeminiClient();

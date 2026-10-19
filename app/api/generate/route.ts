@@ -126,43 +126,27 @@ export async function POST(request: NextRequest) {
       maxOutputTokens: 350,
     });
 
-    // 5. Save prompt, response, and user attribution to Supabase
-    let dbData: unknown = null;
-    let savedToSupabase = false;
-    let supabaseError: string | undefined;
-
+    // 5. Save prompt, response, and user attribution to Supabase asynchronously without blocking client
     const authHeader = request.headers.get("authorization");
     const bearerToken = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
 
-    try {
-      const { data, error } = await saveAIGeneration(
-        {
-          user_id: user?.id ?? null,
-          prompt,
-          response: text,
-          model,
-          metadata:
-            typeof body.metadata === "object" && body.metadata !== null
-              ? (body.metadata as Record<string, unknown>)
-              : { clientIp },
-        },
-        bearerToken
-      );
+    void saveAIGeneration(
+      {
+        user_id: user?.id ?? null,
+        prompt,
+        response: text,
+        model,
+        metadata:
+          typeof body.metadata === "object" && body.metadata !== null
+            ? (body.metadata as Record<string, unknown>)
+            : { clientIp },
+      },
+      bearerToken
+    ).catch((saveErr) => {
+      console.warn("[app/api/generate] Background Supabase save warning:", saveErr);
+    });
 
-      if (error) {
-        supabaseError = error.message;
-        console.warn("[app/api/generate] Supabase save warning:", error.message);
-      } else {
-        dbData = data;
-        savedToSupabase = true;
-      }
-    } catch (saveErr) {
-      const msg = saveErr instanceof Error ? saveErr.message : String(saveErr);
-      supabaseError = msg;
-      console.warn("[app/api/generate] Supabase client error:", msg);
-    }
-
-    // 6. Return response
+    // 6. Return response immediately
     return NextResponse.json(
       {
         success: true,
@@ -170,9 +154,6 @@ export async function POST(request: NextRequest) {
         response: text,
         model,
         user_id: user?.id ?? null,
-        savedToSupabase,
-        data: dbData,
-        supabaseError,
       },
       {
         status: 200,

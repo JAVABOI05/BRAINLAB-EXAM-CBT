@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { cleanAIResponse } from "../lib/cleanText";
+import { streamAiTutor } from "../lib/aiTutor";
 
 type OptionKey = "A" | "B" | "C" | "D";
 
@@ -75,6 +76,50 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
     setLoading(true);
     setError(null);
 
+    // 1. Fast Streaming Mode
+    try {
+      let accumulated = "";
+      await streamAiTutor(
+        {
+          mode: "explain",
+          question: {
+            subject: item.subject,
+            text: item.text,
+            options: item.options,
+            correctAnswer: item.correctAnswer,
+            userAnswer: item.userAnswer,
+            explanation: item.explanation,
+          },
+        },
+        (chunk) => {
+          accumulated += chunk;
+          setExplanation(cleanAIResponse(accumulated));
+          setLoading(false);
+        }
+      );
+
+      const finalText = cleanAIResponse(accumulated);
+      if (finalText) {
+        setExplanation(finalText);
+        setModel("Gemini 3 Flash");
+        try {
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              explanation: finalText,
+              model: "Gemini 3 Flash",
+              chat: chatMessages,
+            })
+          );
+        } catch {
+          // Ignore cache quota errors
+        }
+        return;
+      }
+    } catch {
+      // Fallback to /api/generate if stream encounters interruption
+    }
+
     const userSelected = item.userAnswer
       ? `Option ${item.userAnswer}: "${item.options[item.userAnswer] || ""}"`
       : "Unanswered (No option chosen)";
@@ -108,8 +153,8 @@ ${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${ite
         "Content-Type": "application/json",
       };
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session?.access_token) {
+      const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+      if (sessionData?.session?.access_token) {
         headers["Authorization"] = `Bearer ${sessionData.session.access_token}`;
       }
 
@@ -168,7 +213,64 @@ ${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${ite
     setChatMessages(newChat);
     setFollowUp("");
 
-    const followUpPrompt = `You are BrainLab Academy's AI Tutor helping a student review Question #${questionNumber} (${item.subject}).
+    const tutorMsgIndex = newChat.length;
+    const initialTutorMsg: ChatMessage = {
+      role: "tutor",
+      text: "Thinking...",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    setChatMessages([...newChat, initialTutorMsg]);
+
+    try {
+      let accumulated = "";
+      await streamAiTutor(
+        {
+          mode: "chat",
+          question: {
+            subject: item.subject,
+            text: item.text,
+            options: item.options,
+            correctAnswer: item.correctAnswer,
+            userAnswer: item.userAnswer,
+            explanation: item.explanation,
+          },
+          messages: [
+            ...chatMessages.map((m) => ({
+              role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+              content: m.text,
+            })),
+            { role: "user", content: query },
+          ],
+        },
+        (chunk) => {
+          accumulated += chunk;
+          const cleaned = cleanAIResponse(accumulated);
+          setChatMessages((prev) => {
+            const next = [...prev];
+            if (next[tutorMsgIndex]) {
+              next[tutorMsgIndex] = { ...next[tutorMsgIndex], text: cleaned };
+            }
+            return next;
+          });
+        }
+      );
+
+      const finalCleaned = cleanAIResponse(accumulated);
+      if (finalCleaned) {
+        try {
+          const updatedChat = [
+            ...newChat,
+            { role: "tutor" as const, text: finalCleaned, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
+          ];
+          localStorage.setItem(cacheKey, JSON.stringify({ explanation, model, chat: updatedChat }));
+        } catch {
+          // ignore storage error
+        }
+        return;
+      }
+    } catch {
+      // Fallback to /api/generate
+      const followUpPrompt = `You are BrainLab Academy's AI Tutor helping a student review Question #${questionNumber} (${item.subject}).
 Question: "${item.text}"
 Correct Answer: Option ${item.correctAnswer} (${item.options[item.correctAnswer]})
 Prior Explanation: "${explanation?.slice(0, 300)}..."
@@ -178,52 +280,53 @@ The student asks a follow-up question:
 
 Provide a concise, direct, and supportive answer under 120 words without markdown hashtags (#) or asterisks (* or **). Write in clean plain text only.`;
 
-    try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session?.access_token) {
-        headers["Authorization"] = `Bearer ${sessionData.session.access_token}`;
-      }
-
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          prompt: followUpPrompt,
-          metadata: {
-            source: "corrections_follow_up",
-            question_id: String(item.id),
-            subject: item.subject,
-          },
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        const updatedChat: ChatMessage[] = [
-          ...newChat,
-          {
-            role: "tutor",
-            text: cleanAIResponse(data.response as string),
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          },
-        ];
-        setChatMessages(updatedChat);
-        try {
-          localStorage.setItem(
-            cacheKey,
-            JSON.stringify({
-              explanation,
-              model: model || data.model,
-              chat: updatedChat,
-            })
-          );
-        } catch {
-          // ignore storage error
+      try {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+        if (sessionData?.session?.access_token) {
+          headers["Authorization"] = `Bearer ${sessionData.session.access_token}`;
         }
+
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            prompt: followUpPrompt,
+            metadata: {
+              source: "corrections_follow_up",
+              question_id: String(item.id),
+              subject: item.subject,
+            },
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const updatedChat: ChatMessage[] = [
+            ...newChat,
+            {
+              role: "tutor",
+              text: cleanAIResponse(data.response as string),
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+          ];
+          setChatMessages(updatedChat);
+          try {
+            localStorage.setItem(
+              cacheKey,
+              JSON.stringify({
+                explanation,
+                model: model || data.model,
+                chat: updatedChat,
+              })
+            );
+          } catch {
+            // ignore storage error
+          }
+        }
+      } catch {
+        // Keep question active
       }
-    } catch {
-      // Keep question active
     } finally {
       setFollowUpLoading(false);
     }

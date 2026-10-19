@@ -55,21 +55,19 @@ export async function streamAiTutor(
   onDelta: (chunk: string) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+  const { data } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+  const session = data?.session;
 
-  if (sessionError || !session?.access_token) {
-    throw new Error("Please sign in to use the AI Tutor.");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (session?.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
   const response = await fetch("/api/ai", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers,
     body: JSON.stringify(request),
     signal,
     cache: "no-store",
