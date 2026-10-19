@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import ComingSoonPage from "../components/ComingSoonPage";
+import LearnerSettingsClient from "./SettingsClient";
 
-export const metadata: Metadata = { title: "Account and Learning Settings", description: "A future home for learner preferences, privacy choices and account settings. Existing sign-in and password recovery remain on the current account page; no settings are changed here." };
+export const metadata: Metadata = {
+  title: "Account Settings",
+  description: "Manage your BrainLab learner profile, appearance preference and account security.",
+};
 
 export default function Page() {
-  return <ComingSoonPage title={"Account and Learning Settings"} category={"Learner space"} description={"A future home for learner preferences, privacy choices and account settings. Existing sign-in and password recovery remain on the current account page; no settings are changed here."} requiresAuth={true} nextSteps={[{"label":"Account page","href":"/account"},{"label":"Privacy notice","href":"/privacy"}]} />;
+  return <LearnerSettingsClient />;
 }

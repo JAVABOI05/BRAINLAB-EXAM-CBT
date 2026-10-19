@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import SiteChrome from "./components/SiteChrome";
+import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
@@ -49,7 +50,7 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <SiteChrome>{children}</SiteChrome>
+        <LearnerThemeProvider><SiteChrome>{children}</SiteChrome></LearnerThemeProvider>
       </body>
     </html>
   );

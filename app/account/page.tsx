@@ -20,6 +20,9 @@ export default function AccountPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+      setMode("signup");
+    }
     let active = true;
     async function redirectIfAlreadySignedIn() {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -251,3 +254,5 @@ export default function AccountPage() {
     </main>
   );
 }
+
+

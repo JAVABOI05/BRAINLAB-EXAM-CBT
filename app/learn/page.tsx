@@ -114,7 +114,7 @@ export default function LearnPage() {
             <h2 id="subjects-heading" className="text-2xl font-extrabold text-slate-950">Explore subjects</h2>
             <p className="mt-1 text-sm text-slate-600">Only reviewed and published learning content appears here.</p>
           </div>
-          <Link href="/learning" className="text-sm font-bold text-blue-800 underline underline-offset-4">Open Learning Lab</Link>
+          <Link href="/ai-learning" className="text-sm font-bold text-blue-800 underline underline-offset-4">Explore AI Learning</Link>
         </div>
 
         {loading && <p className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600" role="status">Loading published subjects…</p>}
