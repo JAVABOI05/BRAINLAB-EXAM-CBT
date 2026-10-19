@@ -39,6 +39,7 @@ export default function RevisionPlannerPage() {
   const [tasks, setTasks] = useState<RevisionTask[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const accountStorageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
 
   useEffect(() => {
     let active = true;
@@ -86,7 +87,7 @@ export default function RevisionPlannerPage() {
       } else {
         // Preserve existing browser-only plans and migrate them into the account on save.
         try {
-          const raw = window.localStorage.getItem(STORAGE_KEY);
+          const raw = window.localStorage.getItem(accountStorageKey) || window.localStorage.getItem(STORAGE_KEY);
           if (raw) {
             const saved = JSON.parse(raw) as Partial<SavedPlan>;
             if (typeof saved.goal === "string") setGoal(saved.goal);
@@ -122,7 +123,7 @@ export default function RevisionPlannerPage() {
 
     const timeout = window.setTimeout(async () => {
       try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+        window.localStorage.setItem(accountStorageKey, JSON.stringify(plan));
       } catch {
         // Cloud persistence remains available even if browser storage is disabled.
       }
@@ -138,6 +139,10 @@ export default function RevisionPlannerPage() {
       }, { onConflict: "user_id" });
 
       if (!active) return;
+      if (!error) {
+        // Remove the legacy shared-device key only after the account save succeeds.
+        try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* Ignore unavailable browser storage. */ }
+      }
       setSavedMessage(error
         ? "Cloud save failed. Your device copy is preserved; please try again."
         : "Saved to your BrainLab account");
@@ -147,7 +152,7 @@ export default function RevisionPlannerPage() {
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [goal, days, dailyMinutes, tasks, hydrated, userId]);
+  }, [goal, days, dailyMinutes, tasks, hydrated, userId, accountStorageKey]);
 
   const completed = tasks.filter((task) => task.done).length;
   const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
