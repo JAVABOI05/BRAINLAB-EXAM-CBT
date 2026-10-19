@@ -1,17 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { getLeaderboard, isError, type LeaderboardRow } from "../lib/examApi";
 
-type LeaderboardEntry = {
-  id: string;
-  name: string;
-  phone: string;
-  subject: string;
-  score: number;
-  total: number;
-  created_at?: string;
-};
+type LeaderboardEntry = LeaderboardRow;
 
 export default function LeaderboardCard() {
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
@@ -24,41 +16,22 @@ export default function LeaderboardCard() {
       setLoading(true);
       setErrorText("");
 
-      const { data: settingRow, error: settingError } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "leaderboard_enabled")
-        .single();
+      const res = await getLeaderboard(10);
 
-      if (settingError) {
-        setErrorText(settingError.message);
+      if (isError(res)) {
+        setErrorText(res.message);
         setLoading(false);
         return;
       }
 
-      const isEnabled =
-        settingRow?.value === true || settingRow?.value === "true";
-      setEnabled(isEnabled);
+      setEnabled(res.enabled);
 
-      if (!isEnabled) {
+      if (!res.enabled) {
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("results")
-        .select("id, name, phone, subject, score, total, created_at")
-        .order("score", { ascending: false })
-        .order("created_at", { ascending: true })
-        .limit(10);
-
-      if (error) {
-        setErrorText(error.message);
-        setLoading(false);
-        return;
-      }
-
-      setLeaders((data || []) as LeaderboardEntry[]);
+      setLeaders(res.rows);
       setLoading(false);
     }
 

@@ -1,27 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../lib/supabase";
-
-type ResultItem = {
-  id: string | number;
-  subject: string;
-  type?: string;
-  text: string;
-  options: {
-    A: string;
-    B: string;
-    C: string;
-    D: string;
-  };
-  correctAnswer: "A" | "B" | "C" | "D";
-  explanation: string;
-  userAnswer: "A" | "B" | "C" | "D" | null;
-  isCorrect: boolean;
-  flagged?: boolean;
-  marks?: number;
-};
+import { getPublicSettings, isError, lookupResult as fetchLookup } from "../lib/examApi";
 
 type Candidate = {
   name: string;
@@ -30,10 +11,18 @@ type Candidate = {
   code: string;
 };
 
+// Written by the exam page from the SERVER's grading response. Nothing here is computed in the browser.
+type Summary = {
+  result_id: string;
+  score: number;
+  total: number;
+  subject_scores: Record<string, number>;
+  show_results: boolean;
+  status: string;
+};
+
 type SavedResultRow = {
-  id: number;
   name: string;
-  phone: string;
   subject: string;
   score: number;
   total: number;
@@ -44,157 +33,70 @@ export default function ResultPage() {
   const router = useRouter();
 
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [results, setResults] = useState<ResultItem[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const [resultsEnabled, setResultsEnabled] = useState<boolean | null>(null);
-  const [saveStatus, setSaveStatus] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
+  const [codeRequired, setCodeRequired] = useState(true);
 
   const [lookupMode, setLookupMode] = useState(false);
   const [lookupPhone, setLookupPhone] = useState("");
+  const [lookupCode, setLookupCode] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
 
-  const hasSavedRef = useRef(false);
-
   useEffect(() => {
     async function loadPage() {
-      const { data } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "show_results")
-        .single();
+      const settings = await getPublicSettings();
 
-      setResultsEnabled(data?.value === true || data?.value === "true");
+      setResultsEnabled(settings?.show_results === true);
+      setCodeRequired(settings ? settings.access_code_required : true);
 
       const savedCandidate = localStorage.getItem("candidate");
-      const savedResults = localStorage.getItem("exam_result");
+      const savedSummary = localStorage.getItem("exam_summary");
 
-      if (!savedCandidate || !savedResults) {
+      if (!savedCandidate || !savedSummary) {
         setLookupMode(true);
         return;
       }
 
       try {
-        const parsedCandidate = JSON.parse(savedCandidate) as Candidate;
-        const parsedResults = JSON.parse(savedResults) as ResultItem[];
-
-        setCandidate(parsedCandidate);
-        setResults(parsedResults);
+        setCandidate(JSON.parse(savedCandidate) as Candidate);
+        setSummary(JSON.parse(savedSummary) as Summary);
         setLookupMode(false);
       } catch {
         setLookupMode(true);
       }
     }
 
-    loadPage();
+    void loadPage();
   }, []);
 
-  const subjectScores = useMemo(() => {
-    const scores: Record<string, number> = {
-      English: 0,
-      Chemistry: 0,
-      Physics: 0,
-      Biology: 0,
-      Mathematics: 0,
-    };
+  const subjectScores = useMemo(
+    () => ({
+      English: summary?.subject_scores.English ?? 0,
+      Chemistry: summary?.subject_scores.Chemistry ?? 0,
+      Physics: summary?.subject_scores.Physics ?? 0,
+      Biology: summary?.subject_scores.Biology ?? 0,
+      Mathematics: summary?.subject_scores.Mathematics ?? 0,
+    }),
+    [summary]
+  );
 
-    results.forEach((item) => {
-      const markValue =
-        typeof item.marks === "number" && !Number.isNaN(item.marks)
-          ? item.marks
-          : 1;
-
-      if (item.isCorrect && scores[item.subject] !== undefined) {
-        scores[item.subject] += markValue;
-      }
-    });
-
-    return {
-      English: Math.round(scores.English),
-      Chemistry: Math.round(scores.Chemistry),
-      Physics: Math.round(scores.Physics),
-      Biology: Math.round(scores.Biology),
-      Mathematics: Math.round(scores.Mathematics),
-    };
-  }, [results]);
-
-  const totalScore = useMemo(() => {
-    return (
-      subjectScores.English +
-      subjectScores.Chemistry +
-      subjectScores.Physics +
-      subjectScores.Biology +
-      subjectScores.Mathematics
-    );
-  }, [subjectScores]);
-
-  useEffect(() => {
-    async function saveResultAndAnswers() {
-      if (
-        resultsEnabled !== true ||
-        !candidate ||
-        results.length === 0 ||
-        hasSavedRef.current ||
-        lookupMode
-      ) {
-        return;
-      }
-
-      hasSavedRef.current = true;
-      setSaveStatus("saving");
-
-      const { data: insertedResult, error: resultError } = await supabase
-        .from("results")
-        .insert([
-          {
-            name: candidate.name,
-            phone: candidate.phone,
-            subject: candidate.subject,
-            score: totalScore,
-            total: 400,
-          },
-        ])
-        .select("id")
-        .single();
-
-      if (resultError || !insertedResult) {
-        console.error("Supabase result save error:", resultError?.message);
-        setSaveStatus("error");
-        return;
-      }
-
-      localStorage.setItem("latest_result_id", String(insertedResult.id));
-
-      const answerRows = results.map((item) => ({
-        result_id: insertedResult.id,
-        question_id: Number(item.id),
-        selected_answer: item.userAnswer,
-        is_correct: item.isCorrect,
-      }));
-
-      const { error: answersError } = await supabase
-        .from("answers")
-        .insert(answerRows);
-
-      if (answersError) {
-        console.error("Supabase answers save error:", answersError.message);
-        setSaveStatus("error");
-        return;
-      }
-
-      setSaveStatus("saved");
-    }
-
-    saveResultAndAnswers();
-  }, [candidate, results, totalScore, resultsEnabled, lookupMode]);
+  const totalScore = summary?.score ?? 0;
+  const totalPossible = summary?.total ?? 400;
 
   const handleLookup = async () => {
-    const value = lookupPhone.trim();
+    const phone = lookupPhone.trim();
+    const code = lookupCode.trim().toUpperCase();
 
-    if (!value) {
+    if (!phone) {
       setLookupError("Please enter your phone number.");
+      setLookupResult(null);
+      return;
+    }
+
+    if (codeRequired && !code) {
+      setLookupError("Please enter the access code you used for the exam.");
       setLookupResult(null);
       return;
     }
@@ -203,27 +105,16 @@ export default function ResultPage() {
     setLookupError("");
     setLookupResult(null);
 
-    const { data, error } = await supabase
-      .from("results")
-      .select("id, name, phone, subject, score, total, created_at")
-      .eq("phone", value)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const res = await fetchLookup(phone, codeRequired ? code : "");
 
     setLookupLoading(false);
 
-    if (error) {
-      setLookupError(error.message);
+    if (isError(res)) {
+      setLookupError(res.message);
       return;
     }
 
-    if (!data) {
-      setLookupError("No result found for this phone number.");
-      return;
-    }
-
-    setLookupResult(data);
+    setLookupResult(res);
   };
 
   if (resultsEnabled === null) {
@@ -274,6 +165,15 @@ export default function ResultPage() {
               className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
             />
 
+            {codeRequired && (
+              <input
+                value={lookupCode}
+                onChange={(e) => setLookupCode(e.target.value)}
+                placeholder="Enter the Access Code you used"
+                className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
+
             <button
               onClick={handleLookup}
               disabled={lookupLoading}
@@ -307,7 +207,7 @@ export default function ResultPage() {
                   <span className="font-semibold">Name:</span> {lookupResult.name}
                 </p>
                 <p>
-                  <span className="font-semibold">Phone Number:</span> {lookupResult.phone}
+                  <span className="font-semibold">Phone Number:</span> {lookupPhone.trim()}
                 </p>
                 <p>
                   <span className="font-semibold">Subject:</span> {lookupResult.subject}
@@ -340,22 +240,6 @@ export default function ResultPage() {
           BRAINLAB CBT RESULT
         </h1>
 
-        <div className="mt-4">
-          {saveStatus === "saving" && (
-            <p className="text-sm text-blue-700">Saving result and answers.</p>
-          )}
-          {saveStatus === "saved" && (
-            <p className="text-sm text-green-700">
-              Result and answers saved successfully.
-            </p>
-          )}
-          {saveStatus === "error" && (
-            <p className="text-sm text-red-700">
-              Result or answers could not be saved to backend.
-            </p>
-          )}
-        </div>
-
         <div className="mt-8 space-y-2 text-lg text-gray-700">
           <p>
             <span className="font-semibold">Name:</span> {candidate.name}
@@ -379,7 +263,7 @@ export default function ResultPage() {
               : subjectScores.Mathematics}
           </p>
           <p className="pt-3 text-2xl font-bold text-blue-700">
-            Total Score: {totalScore} / 400
+            Total Score: {totalScore} / {totalPossible}
           </p>
         </div>
 
