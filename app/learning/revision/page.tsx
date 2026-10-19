@@ -114,7 +114,7 @@ export default function RevisionPlannerPage() {
 
     void loadPlan();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, accountStorageKey]);
 
   useEffect(() => {
     if (!hydrated || !userId) return;
