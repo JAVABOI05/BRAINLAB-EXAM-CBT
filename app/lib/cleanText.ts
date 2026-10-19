@@ -40,3 +40,26 @@ export function cleanAIResponse(raw: string): string {
  */
 export const MAX_CANDIDATE_INPUT_CHARS = 300;
 export const MAX_AI_OUTPUT_TOKENS = 350;
+
+/**
+ * Strips trailing source-metadata tags like "— Set 16", "– Set 7", or "- Set 24"
+ * from question stems, while strictly preserving legitimate math/science set terminology
+ * (e.g., "The empty set is...", "given the set of integers").
+ */
+export function cleanQuestionText(raw: string): string {
+  if (!raw || typeof raw !== "string") return "";
+  return raw.replace(/\s*[–—\-]\s*Set\s*\d+\s*$/i, "").trim();
+}
+
+/**
+ * Removes generic distractor-elimination boilerplate from original answer key notes,
+ * keeping only genuine pedagogical explanations.
+ */
+export function cleanAnswerKeyNote(raw: string): string {
+  if (!raw || typeof raw !== "string") return "";
+  return raw
+    .replace(/\s*This harder rebuild expects careful elimination of distractors before calculation or recall\.?/gi, "")
+    .replace(/\s*Advanced JAMB-standard note: treat close options carefully, check formula setup, and eliminate distractors that fail on valency, mechanism, trend, or stoichiometric ratio\.?/gi, "")
+    .trim();
+}
+

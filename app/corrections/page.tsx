@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings } from "../lib/examApi";
 import { streamAiTutor, type AiCoachContext } from "../lib/aiTutor";
-import { cleanAIResponse } from "../lib/cleanText";
+import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import QuestionAITutor from "./QuestionAITutor";
 
 type ResultItem = {
@@ -529,7 +529,7 @@ export default function CorrectionsPage() {
                             </span>
                           </div>
 
-                          <h2 className="question-text">{item.text}</h2>
+                          <h2 className="question-text">{cleanQuestionText(item.text)}</h2>
                           {safeImageUrl(item.questionImageUrl) && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -601,10 +601,10 @@ export default function CorrectionsPage() {
                       {/* BrainLab AI Tutor breakdown */}
                       <QuestionAITutor item={item} questionNumber={index + 1} />
 
-                      {item.explanation && (
+                      {cleanAnswerKeyNote(item.explanation) && (
                         <div className="explanation-box">
                           <h3 className="explanation-title">Original Answer Key Note</h3>
-                          <p className="explanation-text">{item.explanation}</p>
+                          <p className="explanation-text">{cleanAnswerKeyNote(item.explanation)}</p>
                           {safeImageUrl(item.explanationImageUrl) && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img

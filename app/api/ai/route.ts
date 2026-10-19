@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getCachedExplanation, setCachedExplanation, computeQuestionFingerprint } from "@/app/lib/explanationCache";
 
 export const dynamic = "force-dynamic";
 
@@ -177,6 +178,47 @@ export async function POST(request: NextRequest) {
     return jsonError("Invalid JSON request.", 400);
   }
 
+  // Active exam guard: never disclose explanations during active exams
+  const isExamActive =
+    request.headers.get("x-brainlab-exam-active") === "true" ||
+    body.exam_active === true;
+  if (isExamActive && (body.mode === "explain" || body.mode === "why_wrong")) {
+    return jsonError("Explanations are strictly unavailable during an active timed exam attempt.", 403);
+  }
+
+  // Shared Explanation Cache Lookup
+  const qRecord = isRecord(body.question) ? body.question : null;
+  const questionId = qRecord?.id ? String(qRecord.id) : null;
+  const isForceRefresh = Boolean(body.forceRefresh);
+
+  if (body.mode === "explain" && questionId && !isForceRefresh) {
+    const qText = safeString(qRecord?.text, 2000);
+    const qOptions = isRecord(qRecord?.options) ? (qRecord.options as Record<string, string>) : {};
+    const qAns = safeString(qRecord?.correctAnswer, 4);
+    const fingerprint = computeQuestionFingerprint(qText, qOptions, qAns);
+
+    const cached = await getCachedExplanation(questionId, fingerprint).catch(() => null);
+    if (cached) {
+      const encoder = new TextEncoder();
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(encoder.encode(cached.explanation));
+            controller.close();
+          },
+        }),
+        {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "X-BrainLab-Cached": "true",
+            "X-BrainLab-Model": cached.model,
+          },
+        }
+      );
+    }
+  }
+
   let prompt: ReturnType<typeof buildPrompt>;
   try {
     prompt = buildPrompt(body);
@@ -227,6 +269,7 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       const reader = upstream.body!.getReader();
       let buffer = "";
+      let accumulatedCleaned = "";
       try {
         while (true) {
           const { value, done } = await reader.read();
@@ -263,7 +306,10 @@ export async function POST(request: NextRequest) {
                 const cleanedChunk = content
                   .replace(/\s\*\s/g, " × ")
                   .replace(/[#*`]/g, "");
-                if (cleanedChunk) controller.enqueue(encoder.encode(cleanedChunk));
+                if (cleanedChunk) {
+                  accumulatedCleaned += cleanedChunk;
+                  controller.enqueue(encoder.encode(cleanedChunk));
+                }
               }
             } catch {
               // Ignore malformed event frames
@@ -271,6 +317,21 @@ export async function POST(request: NextRequest) {
           }
         }
         controller.close();
+
+        // Save generated standard explanation to shared cache
+        if (body.mode === "explain" && questionId && accumulatedCleaned.trim()) {
+          void setCachedExplanation({
+            questionId,
+            subject: safeString(qRecord?.subject, 120) || "General",
+            questionText: safeString(qRecord?.text, 2000),
+            options: isRecord(qRecord?.options) ? (qRecord.options as Record<string, string>) : {},
+            correctAnswer: safeString(qRecord?.correctAnswer, 4),
+            explanation: accumulatedCleaned.trim(),
+            model,
+          }).catch((cacheErr) => {
+            console.warn("[app/api/ai] Failed to cache explanation:", cacheErr);
+          });
+        }
       } catch {
         controller.error(new Error("AI Tutor stream interrupted."));
       } finally {

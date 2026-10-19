@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { cleanAIResponse } from "../lib/cleanText";
+import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import { streamAiTutor } from "../lib/aiTutor";
 
 type OptionKey = "A" | "B" | "C" | "D";
@@ -37,6 +37,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
   const [loading, setLoading] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [model, setModel] = useState<string | null>(null);
+  const [isCached, setIsCached] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState("");
   const [followUpLoading, setFollowUpLoading] = useState(false);
@@ -44,8 +45,10 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
 
   const cacheKey = `brainlab_ai_corr_${item.id}`;
 
-  // Load cached AI explanation on mount
+  // Load cached AI explanation on mount: first check localStorage, then Supabase shared cache
   useEffect(() => {
+    let active = true;
+
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -57,6 +60,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
         if (parsed.explanation) {
           setExplanation(cleanAIResponse(parsed.explanation));
           if (parsed.model) setModel(parsed.model);
+          setIsCached(true);
           if (Array.isArray(parsed.chat)) {
             setChatMessages(
               parsed.chat.map((msg) => ({
@@ -65,16 +69,70 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
               }))
             );
           }
+          return;
         }
       }
     } catch {
       // Ignore cache parse errors
     }
-  }, [cacheKey]);
 
-  async function fetchAIExplanation(customPrompt?: string) {
+    // Query Supabase shared explanation cache across learners
+    fetch(`/api/ai/explanation?question_id=${encodeURIComponent(String(item.id))}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.cached && data.explanation) {
+          const cleaned = cleanAIResponse(data.explanation);
+          setExplanation(cleaned);
+          if (data.model) setModel(data.model);
+          setIsCached(true);
+          try {
+            localStorage.setItem(
+              cacheKey,
+              JSON.stringify({
+                explanation: cleaned,
+                model: data.model || "Gemini 3 Flash",
+                chat: [],
+              })
+            );
+          } catch {
+            // Ignore quota errors
+          }
+        }
+      })
+      .catch(() => {
+        // Shared cache lookup failure handled gracefully
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [cacheKey, item.id]);
+
+  async function fetchAIExplanation(customPrompt?: string, forceRefresh?: boolean) {
     setLoading(true);
     setError(null);
+
+    // Fast check: If not forceRefresh and no customPrompt, check Supabase shared cache
+    if (!forceRefresh && !customPrompt) {
+      try {
+        const cacheRes = await fetch(`/api/ai/explanation?question_id=${encodeURIComponent(String(item.id))}`);
+        const cacheData = await cacheRes.json();
+        if (cacheData.cached && cacheData.explanation) {
+          const cleaned = cleanAIResponse(cacheData.explanation);
+          setExplanation(cleaned);
+          if (cacheData.model) setModel(cacheData.model);
+          setIsCached(true);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Fall through to live generation
+      }
+    }
+
+    const cleanedText = cleanQuestionText(item.text);
+    const cleanedNote = cleanAnswerKeyNote(item.explanation || "");
 
     // 1. Fast Streaming Mode
     try {
@@ -82,18 +140,21 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
       await streamAiTutor(
         {
           mode: "explain",
+          forceRefresh: Boolean(forceRefresh),
           question: {
+            id: item.id,
             subject: item.subject,
-            text: item.text,
+            text: cleanedText,
             options: item.options,
             correctAnswer: item.correctAnswer,
             userAnswer: item.userAnswer,
-            explanation: item.explanation,
+            explanation: cleanedNote,
           },
         },
         (chunk) => {
           accumulated += chunk;
           setExplanation(cleanAIResponse(accumulated));
+          setIsCached(false);
           setLoading(false);
         }
       );
@@ -102,6 +163,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
       if (finalText) {
         setExplanation(finalText);
         setModel("Gemini 3 Flash");
+        setIsCached(true);
         try {
           localStorage.setItem(
             cacheKey,
@@ -130,7 +192,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
       `You are BrainLab Academy's AI Tutor. Provide a concise, step-by-step pedagogical breakdown under 180 words for this CBT exam question. Never output markdown hashtags (#) or asterisks (* or **). Write in clean plain text only using simple numbered steps (1., 2.).
 
 Subject: ${item.subject}
-Question #${questionNumber}: ${item.text}
+Question #${questionNumber}: ${cleanedText}
 Options:
 A: ${item.options.A}
 B: ${item.options.B}
@@ -140,7 +202,7 @@ D: ${item.options.D}
 Candidate's Selection: ${userSelected}
 Result: ${item.isCorrect ? "Correct" : item.userAnswer ? "Incorrect" : "Unanswered"}
 Official Correct Answer: ${correctSelected}
-${item.explanation ? `Original Answer Key Note: ${item.explanation}` : ""}
+${cleanedNote ? `Original Answer Key Note: ${cleanedNote}` : ""}
 
 Structure your response with clear plain-text numbered sections:
 1. Core Concept: State the fundamental principle or formula in simple terms.
@@ -180,6 +242,7 @@ ${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${ite
       const text = cleanAIResponse(data.response as string);
       setExplanation(text);
       if (data.model) setModel(data.model);
+      setIsCached(true);
 
       try {
         localStorage.setItem(
@@ -227,12 +290,13 @@ ${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${ite
         {
           mode: "chat",
           question: {
+            id: item.id,
             subject: item.subject,
-            text: item.text,
+            text: cleanQuestionText(item.text),
             options: item.options,
             correctAnswer: item.correctAnswer,
             userAnswer: item.userAnswer,
-            explanation: item.explanation,
+            explanation: cleanAnswerKeyNote(item.explanation || ""),
           },
           messages: [
             ...chatMessages.map((m) => ({
@@ -271,7 +335,7 @@ ${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${ite
     } catch {
       // Fallback to /api/generate
       const followUpPrompt = `You are BrainLab Academy's AI Tutor helping a student review Question #${questionNumber} (${item.subject}).
-Question: "${item.text}"
+Question: "${cleanQuestionText(item.text)}"
 Correct Answer: Option ${item.correctAnswer} (${item.options[item.correctAnswer]})
 Prior Explanation: "${explanation?.slice(0, 300)}..."
 
@@ -351,20 +415,20 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
           <span className="ai-sparkle-icon" aria-hidden="true">✨</span>
           <span>
             {explanation
-              ? (isOpen ? "Hide AI Tutor Explanation" : "View AI Tutor Explanation")
+              ? (isOpen ? "Hide AI Tutor Explanation" : (isCached ? "View Saved AI Breakdown" : "View AI Tutor Explanation"))
               : (loading ? "Generating AI Breakdown..." : "Ask AI Tutor to Explain This")}
           </span>
-          <span className="ai-badge-pill">{model || "Gemini 3.8 Flash"}</span>
+          <span className="ai-badge-pill">{model || "Gemini 3 Flash"}</span>
           <span className="ai-chevron" aria-hidden="true">{isOpen ? "▲" : "▼"}</span>
         </button>
 
         {explanation && isOpen && (
           <button
             type="button"
-            onClick={() => void fetchAIExplanation()}
+            onClick={() => void fetchAIExplanation(undefined, true)}
             disabled={loading}
             className="ai-tutor-refresh-btn"
-            title="Regenerate explanation with Gemini"
+            title="Regenerate explanation with Gemini and update saved cache"
           >
             {loading ? "Refreshing..." : "↻ Refresh"}
           </button>
@@ -383,7 +447,11 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
                 </p>
               </div>
             </div>
-            <span className="ai-status-live">● Live AI Analysis</span>
+            {isCached ? (
+              <span className="ai-status-cached">✓ Saved Explanation</span>
+            ) : (
+              <span className="ai-status-live">✨ Live AI Analysis</span>
+            )}
           </div>
 
           {loading && (

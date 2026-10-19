@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateGeminiContent } from "@/app/lib/gemini";
 import { getUserFromRequest, saveAIGeneration } from "@/app/lib/supabaseServer";
+import { getCachedExplanation, setCachedExplanation } from "@/app/lib/explanationCache";
 
 export const dynamic = "force-dynamic";
 
@@ -109,6 +110,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const metadataObj =
+      typeof body.metadata === "object" && body.metadata !== null
+        ? (body.metadata as Record<string, unknown>)
+        : {};
+    const questionId = metadataObj.question_id ? String(metadataObj.question_id) : null;
+
+    // Check shared cache if requesting a standard correction explanation
+    if (questionId && metadataObj.source === "corrections_page") {
+      const cached = await getCachedExplanation(questionId).catch(() => null);
+      if (cached) {
+        return NextResponse.json({
+          success: true,
+          prompt,
+          response: cached.explanation,
+          model: cached.model,
+          cached: true,
+          user_id: user?.id ?? null,
+        });
+      }
+    }
+
     const requestedModel =
       typeof body.model === "string" && body.model.trim()
         ? body.model.trim()
@@ -146,6 +168,21 @@ export async function POST(request: NextRequest) {
       console.warn("[app/api/generate] Background Supabase save warning:", saveErr);
     });
 
+    // If generated for a specific question on corrections, cache for all learners
+    if (questionId && metadataObj.source === "corrections_page") {
+      void setCachedExplanation({
+        questionId,
+        subject: String(metadataObj.subject || "General"),
+        questionText: prompt,
+        options: {},
+        correctAnswer: "",
+        explanation: text,
+        model,
+      }).catch((cacheErr) => {
+        console.warn("[app/api/generate] Failed to save shared cache:", cacheErr);
+      });
+    }
+
     // 6. Return response immediately
     return NextResponse.json(
       {
@@ -154,6 +191,7 @@ export async function POST(request: NextRequest) {
         response: text,
         model,
         user_id: user?.id ?? null,
+        cached: false,
       },
       {
         status: 200,

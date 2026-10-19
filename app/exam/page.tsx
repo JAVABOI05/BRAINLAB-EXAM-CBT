@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
 import FloatingCalculator from "../components/FloatingCalculator";
+import { cleanQuestionText } from "../lib/cleanText";
 
 type QuestionRow = PaperQuestion;
 
@@ -574,7 +575,7 @@ export default function ExamPage() {
 
             <div className="exam-soft-card mb-6 p-5">
               <p className="exam-question-text">
-                {currentIndex + 1}. {currentQuestion.question}
+                {currentIndex + 1}. {cleanQuestionText(currentQuestion.question)}
               </p>
               {safeImageUrl(currentQuestion.question_image_url) && (
                 // eslint-disable-next-line @next/next/no-img-element

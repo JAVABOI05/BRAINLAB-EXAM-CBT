@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 export type AiOptionKey = "A" | "B" | "C" | "D";
 
 export type AiQuestionContext = {
+  id?: string | number;
   subject: string;
   type?: string;
   text: string;
@@ -28,7 +29,7 @@ export type AiCoachContext = {
 export type AiChatMessage = { role: "user" | "assistant"; content: string };
 
 export type AiTutorRequest =
-  | { mode: "explain" | "why_wrong"; question: AiQuestionContext }
+  | { mode: "explain" | "why_wrong"; question: AiQuestionContext; forceRefresh?: boolean }
   | { mode: "chat"; question: AiQuestionContext; messages: AiChatMessage[] }
   | { mode: "coach"; context: AiCoachContext; messages: AiChatMessage[] };
 
