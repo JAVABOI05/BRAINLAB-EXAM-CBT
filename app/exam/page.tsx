@@ -63,6 +63,7 @@ export default function ExamPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [started, setStarted] = useState(false);
+  const [resumedNotice, setResumedNotice] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(DEFAULT_EXAM_DURATION);
   const [examDuration, setExamDuration] = useState(DEFAULT_EXAM_DURATION);
   const [awayWarning, setAwayWarning] = useState(false);
@@ -143,13 +144,42 @@ export default function ExamPage() {
       }
       if (resumed.finished) { storeFinished(resumed); router.push("/result"); return; }
       const attempt: AttemptPayload = resumed;
-      setQuestions(attempt.questions); setAnswers(attempt.answers); setCurrentIndex(0); setFlagged({});
+      setQuestions(attempt.questions);
+      let mergedAnswers = attempt.answers || {};
+      try {
+        const localAns = localStorage.getItem("exam_answers");
+        if (localAns) {
+          const parsed = JSON.parse(localAns);
+          if (parsed && typeof parsed === "object") {
+            mergedAnswers = { ...mergedAnswers, ...parsed };
+          }
+        }
+      } catch {}
+      setAnswers(mergedAnswers);
+
+      let restoredIndex = 0;
+      try {
+        const savedIdx = Number(localStorage.getItem("exam_current_index"));
+        if (!isNaN(savedIdx) && savedIdx >= 0 && savedIdx < attempt.questions.length) {
+          restoredIndex = savedIdx;
+        }
+      } catch {}
+      setCurrentIndex(restoredIndex);
+
+      let restoredFlagged: FlaggedMap = {};
+      try {
+        const savedFlagged = localStorage.getItem("exam_flagged");
+        if (savedFlagged) restoredFlagged = JSON.parse(savedFlagged);
+      } catch {}
+      setFlagged(restoredFlagged);
+
       setSessionId(attempt.session_id); setSessionToken(attempt.token);
       setElectiveSubject(attempt.elective as ElectiveSubject);
       setExamDuration(attempt.duration_seconds); setTimeLeft(attempt.time_left_seconds);
       tabSwitchCountRef.current = attempt.tab_switch_count;
       localStorage.setItem("exam_session_id", attempt.session_id); localStorage.setItem("exam_token", attempt.token);
       setStarted(true);
+      setResumedNotice("Active exam session recovered. Your time and saved answers have been restored.");
     }
     void loadPageData();
   }, [router]);
@@ -553,6 +583,19 @@ export default function ExamPage() {
 
   return (
     <main className="exam-shell">
+      {resumedNotice && (
+        <div className="bg-emerald-700 px-4 py-2.5 text-center text-xs font-semibold text-white shadow-sm flex items-center justify-center gap-2">
+          <span>🔄 {resumedNotice}</span>
+          <button
+            type="button"
+            onClick={() => setResumedNotice(null)}
+            className="ml-2 rounded px-1.5 py-0.5 text-emerald-200 hover:bg-emerald-800 hover:text-white"
+            aria-label="Dismiss notice"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="exam-topbar">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
           <div>
