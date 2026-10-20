@@ -30,6 +30,7 @@ function makeId() {
 export default function RevisionPlannerPage() {
   const router = useRouter();
   const [authLoading, setAuthLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [goal, setGoal] = useState("Prepare confidently for my next exam");
   const [days, setDays] = useState(7);
   const [dailyMinutes, setDailyMinutes] = useState(30);
@@ -38,6 +39,7 @@ export default function RevisionPlannerPage() {
   const [tasks, setTasks] = useState<RevisionTask[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const accountStorageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
 
   useEffect(() => {
     let active = true;
@@ -48,6 +50,7 @@ export default function RevisionPlannerPage() {
         router.replace("/account");
         return;
       }
+      setUserId(user.id);
       setAuthLoading(false);
     }
     void checkAccount();
@@ -55,15 +58,24 @@ export default function RevisionPlannerPage() {
   }, [router]);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as Partial<SavedPlan>;
-        if (typeof saved.goal === "string") setGoal(saved.goal);
-        if (typeof saved.days === "number" && saved.days >= 1 && saved.days <= 30) setDays(saved.days);
-        if (typeof saved.dailyMinutes === "number" && saved.dailyMinutes >= 10 && saved.dailyMinutes <= 180) setDailyMinutes(saved.dailyMinutes);
-        if (Array.isArray(saved.tasks)) {
-          setTasks(saved.tasks.filter((task): task is RevisionTask =>
+    if (!userId) return;
+    let active = true;
+
+    async function loadPlan() {
+      const { data, error } = await supabase
+        .from("learning_revision_plans")
+        .select("goal, plan_days, daily_minutes, tasks")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (data && !error) {
+        if (typeof data.goal === "string") setGoal(data.goal);
+        if (typeof data.plan_days === "number" && data.plan_days >= 1 && data.plan_days <= 30) setDays(data.plan_days);
+        if (typeof data.daily_minutes === "number" && data.daily_minutes >= 10 && data.daily_minutes <= 180) setDailyMinutes(data.daily_minutes);
+        if (Array.isArray(data.tasks)) {
+          setTasks(data.tasks.filter((task): task is RevisionTask =>
             typeof task?.id === "string" &&
             typeof task?.topic === "string" &&
             typeof task?.subject === "string" &&
@@ -71,24 +83,76 @@ export default function RevisionPlannerPage() {
             typeof task?.done === "boolean"
           ));
         }
+        setSavedMessage("Loaded from your BrainLab account");
+      } else {
+        // Preserve existing browser-only plans and migrate them into the account on save.
+        try {
+          const raw = window.localStorage.getItem(accountStorageKey) || window.localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const saved = JSON.parse(raw) as Partial<SavedPlan>;
+            if (typeof saved.goal === "string") setGoal(saved.goal);
+            if (typeof saved.days === "number" && saved.days >= 1 && saved.days <= 30) setDays(saved.days);
+            if (typeof saved.dailyMinutes === "number" && saved.dailyMinutes >= 10 && saved.dailyMinutes <= 180) setDailyMinutes(saved.dailyMinutes);
+            if (Array.isArray(saved.tasks)) {
+              setTasks(saved.tasks.filter((task): task is RevisionTask =>
+                typeof task?.id === "string" &&
+                typeof task?.topic === "string" &&
+                typeof task?.subject === "string" &&
+                typeof task?.minutes === "number" &&
+                typeof task?.done === "boolean"
+              ));
+            }
+          }
+        } catch {
+          // Ignore malformed local data; a fresh plan can still be created.
+        }
+        setSavedMessage(error ? "Restored your device copy; cloud sync will retry." : "Ready to save your plan to your account");
       }
-    } catch {
-      // Ignore invalid local data and let the learner create a fresh plan.
-    } finally {
+
       setHydrated(true);
     }
-  }, []);
+
+    void loadPlan();
+    return () => { active = false; };
+  }, [userId, accountStorageKey]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !userId) return;
+    let active = true;
     const plan: SavedPlan = { goal, days, dailyMinutes, tasks };
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
-      setSavedMessage("Saved on this device");
-    } catch {
-      setSavedMessage("Browser storage is unavailable; keep a copy of your plan");
-    }
-  }, [goal, days, dailyMinutes, tasks, hydrated]);
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        window.localStorage.setItem(accountStorageKey, JSON.stringify(plan));
+      } catch {
+        // Cloud persistence remains available even if browser storage is disabled.
+      }
+
+      setSavedMessage("Saving to your BrainLab account…");
+      const { error } = await supabase.from("learning_revision_plans").upsert({
+        user_id: userId,
+        goal,
+        plan_days: days,
+        daily_minutes: dailyMinutes,
+        tasks,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+
+      if (!active) return;
+      if (!error) {
+        // Remove the legacy shared-device key only after the account save succeeds.
+        try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* Ignore unavailable browser storage. */ }
+      }
+      setSavedMessage(error
+        ? "Cloud save failed. Your device copy is preserved; please try again."
+        : "Saved to your BrainLab account");
+    }, 700);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [goal, days, dailyMinutes, tasks, hydrated, userId, accountStorageKey]);
 
   const completed = tasks.filter((task) => task.done).length;
   const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
@@ -126,7 +190,7 @@ export default function RevisionPlannerPage() {
             `${index + 1}. [${task.done ? "x" : " "}] ${task.topic} — ${task.subject} — ${task.minutes} minutes`)
         : ["No topics added yet."]),
       "",
-      "Saved locally by BrainLab Academy's revision planner.",
+      "Saved to the learner's BrainLab account, with a device backup.",
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -241,13 +305,13 @@ export default function RevisionPlannerPage() {
 
       <section className="mt-6 rounded-3xl bg-[#012153] p-6 text-white sm:p-8">
         <h2 className="text-xl font-extrabold">Make your next session count</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-7 text-blue-100">Try a simple loop: review one concept, practise a few questions, check what you missed, then revisit the topic later. This planner does not yet import exam results or generate AI recommendations.</p>
+        <p className="mt-2 max-w-2xl text-sm leading-7 text-blue-100">Try a simple loop: review one concept, practise a few questions, check what you missed, then revisit the topic later. This planner is saved to your BrainLab account. Automatic recommendations from exam results are a later improvement.</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/login" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-4 py-2 font-bold text-[#012153]">Open CBT practice</Link>
           <Link href="/about" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/30 px-4 py-2 font-bold text-white">Explore the Academy vision</Link>
         </div>
       </section>
-      <p className="mt-5 text-xs leading-5 text-slate-500">Privacy note: this first version saves your plan in this browser on this device. It is not yet synced to your BrainLab account or across devices. Avoid entering sensitive personal information in topic names.</p>
+      <p className="mt-5 text-xs leading-5 text-slate-500">Privacy note: your plan is saved to your signed-in BrainLab account and backed up in this browser. Row-level security restricts cloud access to the account owner. Avoid entering sensitive personal information in topic names.</p>
     </main>
   );
 }

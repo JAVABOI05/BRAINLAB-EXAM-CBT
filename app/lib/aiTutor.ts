@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 export type AiOptionKey = "A" | "B" | "C" | "D";
 
 export type AiQuestionContext = {
+  id?: string | number;
   subject: string;
   type?: string;
   text: string;
@@ -28,14 +29,14 @@ export type AiCoachContext = {
 export type AiChatMessage = { role: "user" | "assistant"; content: string };
 
 export type AiTutorRequest =
-  | { mode: "explain" | "why_wrong"; question: AiQuestionContext }
+  | { mode: "explain" | "why_wrong"; question: AiQuestionContext; forceRefresh?: boolean }
   | { mode: "chat"; question: AiQuestionContext; messages: AiChatMessage[] }
   | { mode: "coach"; context: AiCoachContext; messages: AiChatMessage[] };
 
-export const MAX_CHAT_MESSAGES = 10;
-export const MAX_CHAT_MESSAGE_CHARS = 2_000;
+export const MAX_CHAT_MESSAGES = 6;
+export const MAX_CHAT_MESSAGE_CHARS = 300;
 
-/** Keep only the newest turns so every request stays small and affordable. */
+/** Keep only the newest turns so every request stays small, concise, and affordable. */
 export function trimChatHistory(messages: AiChatMessage[]): AiChatMessage[] {
   return messages
     .filter((message) => message.content.trim().length > 0)
@@ -48,28 +49,26 @@ export function trimChatHistory(messages: AiChatMessage[]): AiChatMessage[] {
 
 /**
  * POST a tutoring request with the signed-in user's access token, then forward
- * streamed text chunks to onDelta. The API route must validate the token server-side.
+ * streamed text chunks to onDelta. The API route validates the token server-side.
  */
 export async function streamAiTutor(
   request: AiTutorRequest,
   onDelta: (chunk: string) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+  const { data } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+  const session = data?.session;
 
-  if (sessionError || !session?.access_token) {
-    throw new Error("Please sign in again to use the AI Tutor.");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (session?.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
   const response = await fetch("/api/ai", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers,
     body: JSON.stringify(request),
     signal,
     cache: "no-store",
@@ -89,7 +88,7 @@ export async function streamAiTutor(
         message = data.error;
       }
     } catch {
-      // Keep the generic message when the body is not JSON.
+      // Keep generic message when body is not JSON
     }
     throw new Error(message);
   }
@@ -99,7 +98,7 @@ export async function streamAiTutor(
 
   const decoder = new TextDecoder();
   try {
-    for (;;) {
+    while (true) {
       const { value, done } = await reader.read();
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });

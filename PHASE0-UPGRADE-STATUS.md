@@ -115,3 +115,14 @@ A read-only inspection was performed through the connected Supabase integration 
 - The production migration history now reports three applied migrations (`20261016175421`, `20261016175446`, `20261016175534`) for partial containment of privileged RPCs. This supersedes the earlier statement that no production migration had been applied. The latest read-only checks confirm some destructive function grants were removed, but broad public/anonymous table policies and other callable legacy functions remain. See `docs/SECURITY-RECONCILIATION.md` for the current findings.
 - No additional production SQL was executed during this update. Do not treat the three recorded migrations as complete remediation; the production schema is still incompatible with the review-branch candidate RPC contract.
 - The review pull request remains a draft. No merge or Vercel deployment was performed.
+
+
+## Administrator role hierarchy implementation — 2026-10-17
+
+- Added the proposed role hierarchy and central permission catalogue in `app/lib/adminRoles.ts`.
+- Admin dashboard session checks now verify the Supabase user and database-backed role rather than trusting `localStorage.admin_user`. Dashboard data summaries and navigation are gated by explicit permission checks.
+- Added a Super Admin-only administrator access workspace at `/admin/users` with role assignment/removal RPC calls and database audit events.
+- Added role-specific gates to the AI/content, moderation, analytics and security placeholder routes.
+- Added `supabase/migrations/20261017103000_admin_role_hierarchy.sql` and the rollout/test plan in `docs/ADMIN-ROLE-HIERARCHY.md`.
+- **The migration has not been applied to staging or production.** Production/staging schema differences and existing legacy CBT/public policies remain a release blocker. Do not deploy this branch until the migration is reviewed, staging regression passes, and the production schema is reconciled.
+- This work does not claim to complete admin MFA, school/classroom-scoped permissions, every legacy RPC grant, all anonymous policy remediation, or the candidate/CBT security audit. Existing exam timing, scoring, submission, result release and corrections must be regression-tested before release.

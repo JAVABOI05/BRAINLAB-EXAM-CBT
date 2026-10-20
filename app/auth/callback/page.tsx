@@ -50,6 +50,15 @@ export default function AuthCallbackPage() {
         return;
       }
 
+      // Email/password accounts must have completed Supabase email verification.
+      // OAuth providers with no email address are handled by their own provider flow.
+      if (session.user.email && !session.user.email_confirmed_at) {
+        await supabase.auth.signOut();
+        await clearOperatorGate();
+        setMessage("Your email has not been verified yet. Check your inbox for the verification link, then return to sign in.");
+        return;
+      }
+
       const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
       if (permissionError) {
         await clearOperatorGate();

@@ -5,9 +5,18 @@ on:
   push:
     branches:
       - feature/brainlab-academy-upgrade
+      - feature/learning-hub-foundation
+      - fix/learning-hub-assessment-atomicity
+- feature/learner-dashboard-profile-on-learning-hub
   pull_request:
     branches:
       - main
+      - feature/brainlab-academy-upgrade
+      - feature/learning-hub-foundation
+
+concurrency:
+  group: brainlab-upgrade-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -45,6 +54,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check patch whitespace
+        run: git diff --check
+
       - name: Run ESLint
         run: npm run lint
 
@@ -57,3 +69,4 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-public-anon-key
           NEXT_PUBLIC_SITE_URL: https://example.com
+
