@@ -38,6 +38,32 @@ export default function AcademyResultsAdminPage(){
    setWorking(false);
  },[]);
 
+  function exportCsv() {
+    if (!attempts.length) return;
+    const headers = ["Learner User ID", "Attempt Number", "Status", "Score", "Total", "Percentage", "Answers Saved", "Started At", "Submitted At", "Auto Submitted"];
+    const rows = attempts.map((a) => [
+      a.user_id,
+      a.attempt_number,
+      a.status,
+      a.score ?? "",
+      a.total ?? "",
+      a.percentage ?? "",
+      a.answer_count,
+      a.started_at,
+      a.submitted_at ?? "",
+      a.auto_submitted ? "Yes" : "No",
+    ]);
+    const csvContent = [headers.join(","), ...rows.map((r) => r.map((val) => '"' + String(val).replaceAll('"', '""') + '"').join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "academy_results_" + (assessmentId || "export") + "_" + Date.now() + ".csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+
  useEffect(()=>{
    let active=true;
    async function init(){
