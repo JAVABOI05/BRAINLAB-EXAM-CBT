@@ -1,109 +1,501 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import type { PaperQuestion, Option, ResultItem } from "../../lib/examApi";
+import BrandHeader from "../../components/BrandHeader";
 
-type Assessment = { id: string; assessment_type: string; title: string; description: string|null; question_count: number; duration_seconds: number|null; max_attempts: number; starts_at: string|null; ends_at: string|null; access_code_required: boolean; result_release: string };
-type Attempt = { attempt_id:string; attempt_token:string; deadline_at:string|null; questions:PaperQuestion[] };
-type Submission = { ok:true; results_available:boolean; message?:string; score?:number; total?:number; percentage?:number; items?:ResultItem[]; auto_submitted?:boolean };
-type Failure = { ok:false; message?:string; error?:string };
+interface AssessmentInfo {
+  id: string;
+  title: string;
+  description?: string;
+  assessment_type: "organisation_quiz" | "competition";
+  question_count: number;
+  duration_seconds: number | null;
+  max_attempts: number;
+  access_code_required: boolean;
+  result_release: string;
+}
 
-const safeImageUrl=(value:string|null|undefined)=>{try{const u=new URL(value??"");return u.protocol==="https:"?u.toString():null;}catch{return null;}};
-const fmt=(seconds:number)=>`${Math.floor(Math.max(0,seconds)/60).toString().padStart(2,"0")}:${(Math.max(0,seconds)%60).toString().padStart(2,"0")}`;
+interface QuestionItem {
+  id: number;
+  subject: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  question_image_url?: string;
+}
 
-export default function OrganisedAssessmentPage(){
-  const router=useRouter();
-  const params=useParams<{id:string}>();
-  const assessmentId=String(params.id??"");
-  const [assessment,setAssessment]=useState<Assessment|null>(null);
-  const [attempt,setAttempt]=useState<Attempt|null>(null);
-  const [answers,setAnswers]=useState<Record<string,Option>>({});
-  const [code,setCode]=useState("");
-  const [result,setResult]=useState<Submission|null>(null);
-  const [secondsLeft,setSecondsLeft]=useState<number|null>(null);
-  const [pendingSaves,setPendingSaves]=useState(0);
-  const [loading,setLoading]=useState(true);
-  const [working,setWorking]=useState(false);
-  const [error,setError]=useState("");
-  const [message,setMessage]=useState("");
+export default function AssessmentRunnerPage() {
+  const params = useParams();
+  const router = useRouter();
+  const assessmentId = params?.id as string;
 
-  useEffect(()=>{
-    let active=true;
-    async function load(){
-      const {data:auth,error:authError}=await supabase.auth.getUser();
-      if(!active)return;
-      if(authError||!auth.user){router.replace("/account");return;}
-      const {data,error:queryError}=await supabase.from("learning_assessments")
-        .select("id,assessment_type,title,description,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release")
-        .eq("id",assessmentId).eq("is_published",true).maybeSingle();
-      if(!active)return;
-      if(queryError||!data)setError("This assessment is not available to your account, or the assessment system is not deployed in this environment.");
-      else setAssessment(data as Assessment);
+  const [assessment, setAssessment] = useState<AssessmentInfo | null>(null);
+  const [accessCode, setAccessCode] = useState("");
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptToken, setAttemptToken] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<QuestionItem[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [deadline, setDeadline] = useState<Date | null>(null);
+  const [timeLeftSec, setTimeLeftSec] = useState<number | null>(null);
+
+  const [phase, setPhase] = useState<"briefing" | "running" | "submitting" | "completed">("briefing");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [resultScore, setResultScore] = useState<{ score: number; total: number; percentage: number } | null>(null);
+
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 1. Load assessment metadata
+  useEffect(() => {
+    let active = true;
+
+    async function loadMeta() {
+      setLoading(true);
+      setError("");
+
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) {
+        router.replace(`/login?next=/assessments/${assessmentId}`);
+        return;
+      }
+
+      const { data, error: err } = await supabase
+        .from("learning_assessments")
+        .select("id, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
+        .eq("id", assessmentId)
+        .eq("is_published", true)
+        .single();
+
+      if (!active) return;
+
+      if (err || !data) {
+        setError("Assessment not found or is currently closed.");
+      } else {
+        setAssessment(data as AssessmentInfo);
+      }
       setLoading(false);
     }
-    if(assessmentId)void load().catch(()=>{if(active){setError("Could not load assessment.");setLoading(false);}});
-    return()=>{active=false;};
-  },[router,assessmentId]);
 
-  useEffect(()=>{
-    if(!attempt?.deadline_at||result)return;
-    const deadline=new Date(attempt.deadline_at).getTime();
-    const tick=()=>setSecondsLeft(Math.max(0,Math.ceil((deadline-Date.now())/1000)));
-    const timer=window.setInterval(tick,1000);return()=>window.clearInterval(timer);
-  },[attempt?.deadline_at,result]);
+    if (assessmentId) void loadMeta();
 
-  async function start(event:{preventDefault:()=>void}){
-    event.preventDefault();if(!assessment)return;
-    setWorking(true);setError("");setMessage("");
-    const {data,error:rpcError}=await supabase.rpc("start_organisation_assessment",{p_assessment_id:assessment.id,p_access_code:code.trim()||null});
-    if(rpcError)setError(rpcError.message);
-    else if(!data?.ok)setError((data as Failure).message||"Could not start this assessment.");
-    else{
-      const nextAttempt={attempt_id:data.attempt_id,attempt_token:data.attempt_token,deadline_at:data.deadline_at??null,questions:(data.questions??[]) as PaperQuestion[]};
-      setAttempt(nextAttempt);setSecondsLeft(nextAttempt.deadline_at?Math.max(0,Math.ceil((new Date(nextAttempt.deadline_at).getTime()-Date.now())/1000)):null);
-      setAnswers({});setMessage("Assessment started. Answers are saved to your account; the answer key stays server-side.");
+    return () => {
+      active = false;
+    };
+  }, [assessmentId, router]);
+
+  // 2. Timer tick
+  useEffect(() => {
+    if (phase !== "running" || !deadline) return;
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((deadline.getTime() - Date.now()) / 1000));
+      setTimeLeftSec(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        void handleAutoSubmit();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [phase, deadline]);
+
+  // 3. Start Assessment
+  async function handleStart() {
+    setError("");
+    setLoading(true);
+
+    try {
+      const { data, error: rpcErr } = await supabase.rpc("start_organisation_assessment", {
+        p_assessment_id: assessmentId,
+        p_access_code: accessCode.trim() || null,
+      });
+
+      if (rpcErr || !data?.ok) {
+        setError(data?.message || rpcErr?.message || "Failed to start assessment.");
+        setLoading(false);
+        return;
+      }
+
+      setAttemptId(data.attempt_id);
+      setAttemptToken(data.attempt_token);
+      setQuestions(data.questions || []);
+
+      if (data.deadline_at) {
+        const d = new Date(data.deadline_at);
+        setDeadline(d);
+        setTimeLeftSec(Math.max(0, Math.floor((d.getTime() - Date.now()) / 1000)));
+      }
+
+      setPhase("running");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error starting assessment.");
+    } finally {
+      setLoading(false);
     }
-    setWorking(false);
   }
 
-  const chooseAnswer=useCallback(async(questionId:number,option:Option)=>{
-    if(!attempt||result||secondsLeft===0)return;
-    const key=String(questionId);setAnswers((old)=>({...old,[key]:option}));setPendingSaves((n)=>n+1);
-    try{
-      const {data,error:saveError}=await supabase.rpc("save_organisation_assessment_progress",{
-        p_attempt_id:attempt.attempt_id,p_attempt_token:attempt.attempt_token,p_answers:{[key]:option},
+  // 4. Select answer & autosave
+  function handleSelectOption(option: "A" | "B" | "C" | "D") {
+    const q = questions[currentIndex];
+    if (!q) return;
+
+    const nextAnswers = { ...answers, [String(q.id)]: option };
+    setAnswers(nextAnswers);
+
+    // Debounced autosave
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      if (attemptId && attemptToken) {
+        void supabase.rpc("save_organisation_assessment_progress", {
+          p_attempt_id: attemptId,
+          p_attempt_token: attemptToken,
+          p_answers: nextAnswers,
+        });
+      }
+    }, 1200);
+  }
+
+  // 5. Submit Attempt
+  const submitAttempt = useCallback(async () => {
+    if (!attemptId || !attemptToken) return;
+    setPhase("submitting");
+
+    try {
+      const { data, error: submitErr } = await supabase.rpc("submit_organisation_assessment", {
+        p_attempt_id: attemptId,
+        p_attempt_token: attemptToken,
+        p_answers: answers,
       });
-      if(saveError||!data?.ok)setError(saveError?.message||(data as Failure|null)?.message||"Answer could not be saved.");
-    }finally{setPendingSaves((n)=>Math.max(0,n-1));}
-  },[attempt,result,secondsLeft]);
 
-  const submit=useCallback(async()=>{
-    if(!attempt||result||working||pendingSaves>0)return;
-    setWorking(true);setError("");setMessage("");
-    const {data,error:submitError}=await supabase.rpc("submit_organisation_assessment",{
-      p_attempt_id:attempt.attempt_id,p_attempt_token:attempt.attempt_token,p_answers:answers,
-    });
-    if(submitError)setError(submitError.message);
-    else if(!data?.ok)setError((data as Failure).message||"Could not submit this assessment.");
-    else{
-      const submission=data as Submission;setResult(submission);setAttempt(null);
-      setMessage(submission.message||(submission.auto_submitted?"Time expired; saved answers were submitted.":"Assessment submitted."));
+      if (submitErr || !data?.ok) {
+        setError(data?.message || "Failed to finalize submission.");
+        setPhase("running");
+        return;
+      }
+
+      if (data.score !== undefined) {
+        setResultScore({
+          score: Number(data.score),
+          total: Number(data.total),
+          percentage: Number(data.percentage || 0),
+        });
+      }
+
+      setPhase("completed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Submission error.");
+      setPhase("running");
     }
-    setWorking(false);
-  },[attempt,result,working,pendingSaves,answers]);
+  }, [attemptId, attemptToken, answers]);
 
-  if(loading)return <main className="mx-auto max-w-4xl px-5 py-16">Loading assessment…</main>;
-  if(!assessment)return <main className="mx-auto max-w-3xl px-5 py-12"><div className="rounded-2xl bg-white p-7"><h1 className="text-2xl font-bold">Assessment unavailable</h1><p className="mt-3 text-slate-600">{error||"This assessment is not available."}</p><button className="mt-5 rounded-xl bg-indigo-700 px-4 py-3 text-white" onClick={()=>router.push("/assessments")}>Back to assessments</button></div></main>;
+  async function handleAutoSubmit() {
+    await submitAttempt();
+  }
 
-  return <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6"><div className="mx-auto max-w-5xl space-y-5">
-    <header className="rounded-2xl bg-white p-6 shadow-sm"><p className="text-sm font-bold uppercase tracking-wide text-indigo-700">{assessment.assessment_type.replaceAll("_"," ")}</p><h1 className="mt-2 text-3xl font-extrabold">{assessment.title}</h1><p className="mt-3 text-slate-600">{assessment.description||"Read each question carefully and submit before the time limit expires."}</p><div className="mt-4 flex flex-wrap gap-2 text-sm"><span className="rounded bg-slate-100 px-3 py-1">{assessment.question_count} questions</span><span className="rounded bg-slate-100 px-3 py-1">{assessment.duration_seconds?Math.round(assessment.duration_seconds/60)+" minutes":"Untimed"}</span><span className="rounded bg-slate-100 px-3 py-1">Maximum attempts: {assessment.max_attempts}</span></div><button className="mt-4 text-sm font-semibold text-indigo-700 underline" onClick={()=>router.push("/assessments")}>Back to assessment list</button></header>
-    {error&&<div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800" role="alert">{error}</div>}{message&&<div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-900" role="status">{message}</div>}
-    {!attempt&&!result&&<form className="rounded-2xl bg-white p-6 shadow-sm" onSubmit={start}>{assessment.access_code_required&&<><label className="mb-2 block font-semibold" htmlFor="assessment-code">Assessment access code</label><input id="assessment-code" className="w-full rounded-xl border border-slate-300 p-3 font-mono uppercase" value={code} onChange={(e)=>setCode(e.target.value.toUpperCase())} required placeholder="Enter the code issued for this assessment"/></>}<button className="mt-2 rounded-xl bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50" disabled={working}>{working?"Preparing assessment…":"Start assessment"}</button></form>}
-    {attempt&&<section className="space-y-5"><div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm"><div><strong>{attempt.questions.length} questions</strong><p className="text-sm text-slate-500">{Object.keys(answers).length} answered{pendingSaves? " · saving answers…":""}</p></div><div className="flex items-center gap-3">{secondsLeft!==null&&<strong className={secondsLeft<60?"text-red-700":""}>Time: {fmt(secondsLeft)}</strong>}<button className="rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={working||pendingSaves>0} onClick={()=>void submit()}>{working?"Submitting…":pendingSaves?"Saving…":"Submit"}</button></div></div>
-      {attempt.questions.map((q,i)=><article key={q.id} className="rounded-2xl bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-wrap justify-between gap-2"><span className="text-sm font-semibold text-indigo-700">Question {i+1} of {attempt.questions.length}</span><span className="text-sm text-slate-500">{q.subject} · {q.section}</span></div>{q.passage_text&&<div className="mt-4 rounded-lg bg-slate-50 p-4"><strong>{q.passage_title||"Passage"}</strong><p className="mt-2 whitespace-pre-wrap">{q.passage_text}</p></div>}<h2 className="mt-4 whitespace-pre-wrap text-lg font-semibold">{q.question}</h2>{safeImageUrl(q.question_image_url)&&<img src={safeImageUrl(q.question_image_url)!} alt={q.question_image_alt||"Question illustration"} className="mt-3 block max-h-96 max-w-full rounded-lg border object-contain" loading="lazy"/>}<div className="mt-4 grid gap-3 sm:grid-cols-2">{(["A","B","C","D"] as const).map((k)=>{const key=`option_${k.toLowerCase()}` as "option_a"|"option_b"|"option_c"|"option_d";const imageKey=`${key}_image_url` as "option_a_image_url"|"option_b_image_url"|"option_c_image_url"|"option_d_image_url";const altKey=`${key}_image_alt` as "option_a_image_alt"|"option_b_image_alt"|"option_c_image_alt"|"option_d_image_alt";return <label key={k} className={`flex gap-3 rounded-xl border p-4 ${answers[String(q.id)]===k?"border-indigo-600 bg-indigo-50":"border-slate-200"}`}><input className="mt-1" type="radio" name={`q-${q.id}`} checked={answers[String(q.id)]===k} disabled={secondsLeft===0||working} onChange={()=>void chooseAnswer(q.id,k)}/><span><strong>{k}.</strong> {q[key]||""}{safeImageUrl(q[imageKey])&&<img src={safeImageUrl(q[imageKey])!} alt={q[altKey]||`Option ${k} illustration`} className="mt-2 block max-h-56 max-w-full object-contain" loading="lazy"/>}</span></label>})}</div></article>)}
-      {secondsLeft===0&&<div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">Time is up. Submit your saved answers to finish.</div>}<button className="rounded-xl bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50" disabled={working||pendingSaves>0} onClick={()=>void submit()}>{working?"Submitting…":"Submit assessment"}</button></section>}
-    {result&&<section className="space-y-5"><div className="rounded-2xl bg-white p-7 shadow-sm"><h2 className="text-2xl font-bold">{result.results_available?"Assessment results":"Submission received"}</h2>{result.results_available?<p className="mt-2 text-lg">{result.score} / {result.total} · {result.percentage}%</p>:<p className="mt-2 text-slate-600">{result.message||"Your submission was recorded."}</p>}<button className="mt-5 rounded-xl bg-indigo-700 px-4 py-3 font-semibold text-white" onClick={()=>router.push("/assessments")}>Back to assessments</button></div>{result.results_available&&(result.items??[]).map((item,i)=><article key={item.id} className="rounded-2xl bg-white p-6 shadow-sm"><div className="flex justify-between gap-3"><strong>Question {i+1}</strong><span className={item.isCorrect?"text-green-700":"text-red-700"}>{item.isCorrect?"Correct":"Review"}</span></div><h3 className="mt-3 text-lg font-semibold">{item.text}</h3><div className="mt-3 grid gap-2 sm:grid-cols-2">{(["A","B","C","D"] as const).map((k)=><div key={k} className={`rounded-lg border p-3 ${item.correctAnswer===k?"border-green-400 bg-green-50":item.userAnswer===k?"border-red-300 bg-red-50":"border-slate-200"}`}><strong>{k}.</strong> {item.options?.[k]||""}</div>)}</div><p className="mt-3 text-sm">Your answer: {item.userAnswer||"Not answered"} · Correct answer: {item.correctAnswer}</p>{item.explanation&&<p className="mt-3 rounded-lg bg-blue-50 p-4">{item.explanation}</p>}</article>)}</section>}
-  </div></main>;
+  function formatTime(seconds: number) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  }
+
+  if (loading && phase === "briefing") {
+    return (
+      <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+        <BrandHeader />
+        <main className="flex flex-1 items-center justify-center p-6">
+          <p className="text-sm font-semibold text-slate-500">Loading assessment details...</p>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+      <BrandHeader />
+
+      <main className="flex-1 py-8 sm:py-12">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          {error && (
+            <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800">
+              {error}
+            </div>
+          )}
+
+          {/* PHASE 1: Briefing & Access Code */}
+          {phase === "briefing" && assessment && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-7 sm:p-10 shadow-sm">
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-indigo-700 border border-indigo-200">
+                {assessment.assessment_type === "competition" ? "🏆 Official Competition" : "📝 Organisation Assessment"}
+              </span>
+              <h1 className="mt-4 text-3xl font-black text-slate-950">{assessment.title}</h1>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {assessment.description || "Review the parameters below before beginning your attempt."}
+              </p>
+
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
+                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                  <span className="text-slate-400 block font-bold uppercase">Questions</span>
+                  <span className="mt-1 text-xl font-black text-slate-900">{assessment.question_count}</span>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                  <span className="text-slate-400 block font-bold uppercase">Timer</span>
+                  <span className="mt-1 text-xl font-black text-slate-900">
+                    {assessment.duration_seconds ? `${Math.round(assessment.duration_seconds / 60)} mins` : "Untimed"}
+                  </span>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                  <span className="text-slate-400 block font-bold uppercase">Attempts</span>
+                  <span className="mt-1 text-xl font-black text-slate-900">{assessment.max_attempts}</span>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                  <span className="text-slate-400 block font-bold uppercase">Scoring</span>
+                  <span className="mt-1 text-sm font-bold text-slate-900">Auto-Graded</span>
+                </div>
+              </div>
+
+              {assessment.access_code_required && (
+                <div className="mt-6 rounded-2xl bg-amber-50/70 border border-amber-200 p-5">
+                  <label className="block text-xs font-bold text-amber-950 uppercase">
+                    🔑 Access Code Required
+                  </label>
+                  <p className="mt-1 text-xs text-amber-800">
+                    Enter the access pass code issued by your institution or competition host:
+                  </p>
+                  <input
+                    type="text"
+                    value={accessCode}
+                    onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. BL-COMP-2026"
+                    className="mt-2 w-full max-w-sm rounded-xl border border-amber-300 bg-white p-2.5 text-xs font-mono font-bold uppercase focus:border-indigo-600 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handleStart}
+                  className="rounded-xl bg-[#012153] px-8 py-3.5 text-xs font-bold text-white shadow-sm hover:bg-[#0a2e70] transition"
+                >
+                  Start Assessment Now →
+                </button>
+                <Link
+                  href="/assessments"
+                  className="rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-center text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel &amp; Return
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* PHASE 2: Running Assessment */}
+          {phase === "running" && questions.length > 0 && (
+            <div>
+              {/* Runner Header Bar */}
+              <div className="sticky top-4 z-20 mb-6 flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-md backdrop-blur">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                    {assessment?.title}
+                  </h2>
+                  <span className="text-xs text-slate-500">
+                    Question {currentIndex + 1} of {questions.length} · Answered{" "}
+                    {Object.keys(answers).length} / {questions.length}
+                  </span>
+                </div>
+
+                {timeLeftSec !== null && (
+                  <div
+                    className={`rounded-xl px-3 py-1.5 font-mono text-sm font-black ${
+                      timeLeftSec < 120
+                        ? "bg-rose-100 text-rose-700 animate-pulse"
+                        : "bg-slate-100 text-slate-800"
+                    }`}
+                  >
+                    ⏱ {formatTime(timeLeftSec)}
+                  </div>
+                )}
+              </div>
+
+              {/* Question Card */}
+              {(() => {
+                const q = questions[currentIndex];
+                const selected = answers[String(q.id)];
+
+                return (
+                  <div className="rounded-3xl border border-slate-200 bg-white p-7 sm:p-10 shadow-sm">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700">
+                      {q.subject}
+                    </span>
+
+                    <h3 className="mt-3 text-lg font-medium leading-relaxed text-slate-950 sm:text-xl">
+                      {q.question}
+                    </h3>
+
+                    {/* Options */}
+                    <div className="mt-6 space-y-3">
+                      {(["A", "B", "C", "D"] as const).map((optKey) => {
+                        const optText = (q as any)[`option_${optKey.toLowerCase()}`];
+                        if (!optText) return null;
+                        const isChosen = selected === optKey;
+
+                        return (
+                          <button
+                            key={optKey}
+                            type="button"
+                            onClick={() => handleSelectOption(optKey)}
+                            className={`flex w-full items-start gap-3.5 rounded-2xl border p-4 text-left transition ${
+                              isChosen
+                                ? "border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-600"
+                                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60"
+                            }`}
+                          >
+                            <span
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-black ${
+                                isChosen ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {optKey}
+                            </span>
+                            <span className="pt-0.5 text-sm font-medium text-slate-800">
+                              {optText}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bottom Navigation */}
+                    <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-6">
+                      <button
+                        type="button"
+                        disabled={currentIndex === 0}
+                        onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+                        className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                      >
+                        ← Previous
+                      </button>
+
+                      <div className="flex gap-2">
+                        {currentIndex < questions.length - 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => setCurrentIndex((prev) => Math.min(questions.length - 1, prev + 1))}
+                            className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white hover:bg-slate-800"
+                          >
+                            Next Question →
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm("Submit your finalized answers now?")) {
+                                void submitAttempt();
+                              }
+                            }}
+                            className="rounded-xl bg-emerald-600 px-6 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm"
+                          >
+                            Finalize &amp; Submit ✓
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Question Navigation Drawer */}
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                  Question Palette
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {questions.map((q, idx) => {
+                    const answered = Boolean(answers[String(q.id)]);
+                    const isCurrent = idx === currentIndex;
+
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => setCurrentIndex(idx)}
+                        className={`h-8 w-8 rounded-lg text-xs font-bold transition ${
+                          isCurrent
+                            ? "bg-indigo-700 text-white ring-2 ring-indigo-400"
+                            : answered
+                            ? "bg-indigo-100 text-indigo-900 font-extrabold"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PHASE 3: Submitting */}
+          {phase === "submitting" && (
+            <div className="rounded-3xl border border-blue-200 bg-white p-12 text-center shadow-sm">
+              <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+              <h2 className="mt-4 text-xl font-bold text-slate-900">Finalizing &amp; Scoring Attempt...</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Your answers are being graded securely on the server with atomic integrity.
+              </p>
+            </div>
+          )}
+
+          {/* PHASE 4: Completed */}
+          {phase === "completed" && (
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-8 sm:p-12 text-center shadow-sm">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white">
+                ✓
+              </div>
+              <span className="mt-4 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase text-emerald-800">
+                Attempt Finalized
+              </span>
+              <h2 className="mt-3 text-3xl font-black text-slate-950">Assessment Completed</h2>
+
+              {resultScore ? (
+                <div className="mx-auto mt-6 max-w-sm rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Your Score</span>
+                  <p className="mt-2 text-4xl font-black text-emerald-700">
+                    {resultScore.score} / {resultScore.total}
+                  </p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-700">{resultScore.percentage}%</p>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-slate-600">
+                  Your answers have been recorded. Results will be released once the competition closes.
+                </p>
+              )}
+
+              <div className="mt-8 flex justify-center gap-3">
+                <Link
+                  href="/assessments"
+                  className="rounded-xl bg-[#012153] px-6 py-3 text-xs font-bold text-white hover:bg-[#0a2e70]"
+                >
+                  Back to Assessments
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  My Dashboard
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 }

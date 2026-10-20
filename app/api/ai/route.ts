@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getCachedExplanation, setCachedExplanation, computeQuestionFingerprint } from "@/app/lib/explanationCache";
+import { getAIPlatformConfig } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -52,12 +53,12 @@ function safeMessages(value: unknown): ChatItem[] {
     .map((m) => ({ role: m.role, content: m.content.slice(0, 300) }));
 }
 
-function buildPrompt(body: JsonRecord): {
+function buildPrompt(body: JsonRecord, customSystemPrompt?: string): {
   system: string;
   messages: { role: "user" | "assistant"; content: string }[];
 } {
-  const system =
-    "You are BrainLab Academy's AI Tutor. Provide clear, direct, and concise pedagogical explanations under 180 words. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean plain text only using simple numbered lists (1., 2.) or regular line breaks. Help students understand the concept and avoid common mistakes without long essays.";
+  const system = customSystemPrompt?.trim() || "You are BrainLab Academy's AI Tutor. Provide clear, direct, and concise pedagogical explanations under 180 words. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean plain text only using simple numbered lists (1., 2.) or regular line breaks. Help students understand the concept and avoid common mistakes without long essays.";
+
 
   if (body.mode === "explain" || body.mode === "why_wrong") {
     const question = safeQuestion(body.question);
@@ -158,11 +159,13 @@ export async function POST(request: NextRequest) {
   // Check providers: Groq offers ultra-fast ~200ms latency, Gemini 3 offers ~1.3s latency
   const groqKey = process.env.GROQ_API_KEY || process.env.GROQAPIKEY;
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINIAPIKEY;
-  const provider = groqKey ? "groq" : geminiKey ? "gemini" : null;
-  const model =
+  const aiConfig = await getAIPlatformConfig().catch(() => null);
+  const configuredProvider = aiConfig?.provider;
+  const provider = (configuredProvider === "gemini" && geminiKey) ? "gemini" : (configuredProvider === "groq" && groqKey) ? "groq" : (groqKey ? "groq" : geminiKey ? "gemini" : null);
+  const model = (provider === "groq" ? aiConfig?.groq_model : aiConfig?.gemini_model)?.trim() || (
     provider === "groq"
       ? process.env.GROQ_MODEL?.trim() || "qwen/qwen3.8-27b"
-      : process.env.GEMINI_MODEL?.trim() || "gemini-3-flash-preview";
+      : process.env.GEMINI_MODEL?.trim() || "gemini-3-flash-preview");
 
   if (!provider) {
     return jsonError("AI Tutor is not configured yet. Please try again later.", 503);
@@ -221,11 +224,12 @@ export async function POST(request: NextRequest) {
 
   let prompt: ReturnType<typeof buildPrompt>;
   try {
-    prompt = buildPrompt(body);
+    prompt = buildPrompt(body, aiConfig?.system_prompt_tone);
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "Invalid tutor request.", 400);
   }
 
+  const maxTokens = aiConfig?.max_output_tokens || 350;
   const upstream = await fetch(
     provider === "gemini"
       ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`
@@ -244,13 +248,13 @@ export async function POST(request: NextRequest) {
                 role: message.role === "assistant" ? "model" : "user",
                 parts: [{ text: message.content }],
               })),
-              generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
+              generationConfig: { temperature: 0.3, maxOutputTokens: maxTokens },
             }
           : {
               model,
               stream: true,
               temperature: 0.3,
-              max_tokens: 350,
+              max_tokens: maxTokens,
               messages: [{ role: "system", content: prompt.system }, ...prompt.messages],
             }
       ),

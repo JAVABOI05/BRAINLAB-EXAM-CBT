@@ -1,7 +1,18 @@
-import { redirect } from "next/navigation";
+"use client";
 
-// The private entry and the public site share one sign-in experience.
-// The proxy still hides this route from direct unauthenticated requests.
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 export default function PrivateSignInRedirect() {
-  redirect("/account");
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/account");
+  }, [router]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
+      <p className="text-sm font-medium">Redirecting to account portal...</p>
+    </div>
+  );
 }

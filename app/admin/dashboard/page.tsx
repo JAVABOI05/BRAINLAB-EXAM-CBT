@@ -2,6 +2,7 @@
 
 import { adminSignOut, getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission, ADMIN_ROLE_DETAILS, type AdminPermission } from "../../lib/adminRoles";
+import { getFeatureFlags, setFeatureFlag, type FeatureFlags } from "../../lib/platformConfig";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -47,6 +48,28 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlags>({
+    competitions_enabled: true,
+    ai_hints_enabled: true,
+    offline_mode: true,
+    public_leaderboard: true,
+    mock_exams: true,
+    calculator_enabled: true,
+    certificates_enabled: true,
+    negative_marking: false,
+  });
+
+  useEffect(() => {
+    void getFeatureFlags().then((flags) => setFeatureFlags(flags));
+  }, []);
+
+  async function handleToggleFlag(key: keyof FeatureFlags) {
+    if (!adminUser) return;
+    const newVal = !featureFlags[key];
+    setFeatureFlags((prev) => ({ ...prev, [key]: newVal }));
+    await setFeatureFlag(key, newVal, { id: adminUser.id, email: adminUser.email });
+    setMessage(`Feature flag "${String(key)}" set to ${newVal ? "Enabled" : "Disabled"}.`);
+  }
   const [organisations, setOrganisations] = useState<{ id: string; name: string; slug: string; status: string }[]>([]);
   const [activeOrgId, setActiveOrgId] = useState<string>("");
 
@@ -135,6 +158,7 @@ export default function AdminDashboardPage() {
         "community.moderate",
         "analytics.read",
         "institution.manage",
+        "finance.billing.manage",
       ];
       const entries = await Promise.all(
         permissionKeys.map(async (permission) => [
@@ -260,6 +284,7 @@ export default function AdminDashboardPage() {
                 Results
               </button>
 
+              <button onClick={() => router.push("/admin/pricing")} className="admin-btn-light">Pricing</button>
               <button onClick={handleLogout} className="admin-btn-primary">
                 Logout
               </button>
@@ -343,6 +368,12 @@ export default function AdminDashboardPage() {
   {(permissions["learning.content.manage"] || permissions["cbt.codes.manage"]) && <button onClick={() => router.push("/admin/academy-access")} className="admin-card text-left"><h2 className="admin-card-title">Organisations & Access</h2><p className="admin-card-text">Manage organisations, membership access codes, temporary codes, entitlements and revocation.</p></button>}
   {permissions["community.moderate"] && <button onClick={() => router.push("/admin/moderation")} className="admin-card text-left"><h2 className="admin-card-title">Community Moderation</h2><p className="admin-card-text">Review community safety and support workflows.</p></button>}
   {permissions["analytics.read"] && <button onClick={() => router.push("/admin/analytics")} className="admin-card text-left"><h2 className="admin-card-title">Analytics</h2><p className="admin-card-text">Open permitted platform reporting.</p></button>}
+  {(permissions["finance.billing.manage"] || adminUser?.role === "super_admin" || adminUser?.role === "platform_admin") && <button onClick={() => router.push("/admin/pricing")} className="admin-card text-left"><h2 className="admin-card-title">Plans & Pricing</h2><p className="admin-card-text">Manage subscription tiers, AI quotas, feature access, dynamic pricing, and review configuration audit logs.</p></button>}
+  {(permissions["finance.billing.manage"] || adminUser?.role === "super_admin" || adminUser?.role === "platform_admin") && <button onClick={() => router.push("/admin/refunds")} className="admin-card text-left"><h2 className="admin-card-title">Refund Queue</h2><p className="admin-card-text">Review and adjudicate learner refund requests within the 24-hour guarantee window.</p></button>}
+  {(permissions["finance.billing.manage"] || adminUser?.role === "super_admin" || adminUser?.role === "platform_admin") && <button onClick={() => router.push("/admin/coupons")} className="admin-card text-left"><h2 className="admin-card-title">Coupons & Campaigns</h2><p className="admin-card-text">Create promotional discount codes with concurrency caps, expiry dates, and minimum spend limits.</p></button>}
+  {(adminUser?.role === "super_admin" || adminUser?.role === "platform_admin" || permissions["learning.content.manage"]) && <button onClick={() => router.push("/admin/academic")} className="admin-card text-left"><h2 className="admin-card-title">Academic Structure</h2><p className="admin-card-text">Manage class cohorts, academic sessions, curricula, and official question bank subjects.</p></button>}
+  {(adminUser?.role === "super_admin" || adminUser?.role === "platform_admin") && <button onClick={() => router.push("/admin/ai")} className="admin-card text-left"><h2 className="admin-card-title">AI Controls & Quotas</h2><p className="admin-card-text">Configure primary AI providers, models, daily token quotas, and pedagogical prompt rules.</p></button>}
+  {(adminUser?.role === "super_admin" || adminUser?.role === "platform_admin") && <button onClick={() => router.push("/admin/audit")} className="admin-card text-left"><h2 className="admin-card-title">Audit Trail</h2><p className="admin-card-text">Review the complete immutable ledger of administrative pricing, plan, and rule changes.</p></button>}
 </section>
 
         {permissions["cbt.config.manage"] && (

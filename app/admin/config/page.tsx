@@ -5,6 +5,7 @@ import { adminHasPermission } from "../../lib/adminRoles";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { getExamSettings, saveExamSettings, type ExamSettings } from "../../lib/platformConfig";
 import "../admin.css";
 
 type AdminUser = {
@@ -79,6 +80,15 @@ export default function AdminConfigPage() {
 
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
   const [electiveEnabled, setElectiveEnabled] = useState(true);
+  const [examSettings, setExamSettings] = useState<ExamSettings>({
+    exam_duration_seconds: 7200,
+    pass_mark_percent: 50,
+    negative_marking: false,
+    max_attempts_per_code: 1,
+    randomize_questions: true,
+    randomize_options: true,
+    show_results_immediately: true,
+  });
 
   useEffect(() => {
     let active = true;
@@ -150,6 +160,8 @@ export default function AdminConfigPage() {
       }
     });
 
+    const loadedExamSettings = await getExamSettings().catch(() => null);
+    if (loadedExamSettings) setExamSettings(loadedExamSettings);
     setLoading(false);
   }
 
@@ -179,6 +191,9 @@ export default function AdminConfigPage() {
         saveConfigRow("access_code_required", accessCodeRequired),
         saveConfigRow("elective_enabled", electiveEnabled),
       ]);
+      if (adminUser) {
+        await saveExamSettings(examSettings, adminUser, "Updated CBT exam rules and duration");
+      }
 
       setMessage("Exam configuration saved successfully.");
     } catch (error) {
@@ -572,6 +587,109 @@ export default function AdminConfigPage() {
             <button onClick={addOrderSlot} className="admin-btn-light" type="button">
               Add Subject Slot
             </button>
+          </div>
+        </section>
+
+        
+        <section className="admin-section admin-card">
+          <h2 className="admin-card-title">CBT Timing, Pass Mark & Exam Rules</h2>
+          <p className="admin-card-text">
+            Configure live exam rules applied to student examination sessions.
+          </p>
+
+          <div className="admin-settings-grid">
+            <div className="admin-setting-box">
+              <label className="admin-label">Exam Duration (Minutes)</label>
+              <input
+                type="number"
+                min={10}
+                max={360}
+                value={Math.round(examSettings.exam_duration_seconds / 60)}
+                onChange={(e) =>
+                  setExamSettings((prev) => ({
+                    ...prev,
+                    exam_duration_seconds: Math.max(600, (Number(e.target.value) || 120) * 60),
+                  }))
+                }
+                className="admin-input"
+              />
+              <p className="admin-help">Standard 2 hours = 120 minutes ({examSettings.exam_duration_seconds}s).</p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">Pass Mark Percentage (%)</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={examSettings.pass_mark_percent}
+                onChange={(e) =>
+                  setExamSettings((prev) => ({
+                    ...prev,
+                    pass_mark_percent: Number(e.target.value) || 50,
+                  }))
+                }
+                className="admin-input"
+              />
+              <p className="admin-help">Minimum percentage needed to achieve a PASS grade.</p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">Max Attempts Per Access Code</label>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={examSettings.max_attempts_per_code}
+                onChange={(e) =>
+                  setExamSettings((prev) => ({
+                    ...prev,
+                    max_attempts_per_code: Number(e.target.value) || 1,
+                  }))
+                }
+                className="admin-input"
+              />
+              <p className="admin-help">Number of times a student can reuse a test PIN.</p>
+            </div>
+
+            <div className="admin-setting-box flex flex-col justify-between">
+              <label className="admin-label">Negative Marking (-0.25 mark per wrong answer)</label>
+              <button
+                type="button"
+                onClick={() =>
+                  setExamSettings((prev) => ({ ...prev, negative_marking: !prev.negative_marking }))
+                }
+                className={examSettings.negative_marking ? "admin-btn-primary" : "admin-btn-light"}
+              >
+                {examSettings.negative_marking ? "✓ Negative Marking Enabled" : "Disabled (Standard UTME)"}
+              </button>
+            </div>
+
+            <div className="admin-setting-box flex flex-col justify-between">
+              <label className="admin-label">Show Results Immediately After Exam</label>
+              <button
+                type="button"
+                onClick={() =>
+                  setExamSettings((prev) => ({ ...prev, show_results_immediately: !prev.show_results_immediately }))
+                }
+                className={examSettings.show_results_immediately ? "admin-btn-primary" : "admin-btn-light"}
+              >
+                {examSettings.show_results_immediately ? "✓ Instant Results ON" : "Hold Results (Admin Approval)"}
+              </button>
+            </div>
+
+            <div className="admin-setting-box flex flex-col justify-between">
+              <label className="admin-label">Randomize Question Order</label>
+              <button
+                type="button"
+                onClick={() =>
+                  setExamSettings((prev) => ({ ...prev, randomize_questions: !prev.randomize_questions }))
+                }
+                className={examSettings.randomize_questions ? "admin-btn-primary" : "admin-btn-light"}
+              >
+                {examSettings.randomize_questions ? "✓ Question Shuffling ON" : "Fixed Question Order"}
+              </button>
+            </div>
           </div>
         </section>
 
