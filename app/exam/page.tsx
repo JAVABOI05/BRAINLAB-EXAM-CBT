@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
 import FloatingCalculator from "../components/FloatingCalculator";
+import { cleanQuestionText } from "../lib/cleanText";
 
 type QuestionRow = PaperQuestion;
 
@@ -27,6 +28,15 @@ const DEFAULT_EXAM_DURATION = 2 * 60 * 60;
 
 function getOptionValue(value: string | null | undefined): string {
   return value?.trim() || "";
+}
+
+function safeImageUrl(value: string | null | undefined): string | null {
+  try {
+    const url = new URL(value ?? "");
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function formatTime(totalSeconds: number) {
@@ -61,6 +71,47 @@ export default function ExamPage() {
   const [mockEnabled, setMockEnabled] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
+
+
+  // Track network connectivity and auto-retry sync when online
+  useEffect(() => {
+    const handleOnline = () => {
+      setSyncStatus("syncing");
+      if (sessionId && sessionToken) {
+        void saveProgress(sessionId, sessionToken, answers).then((saved) => {
+          if (!isError(saved)) {
+            setSyncStatus("synced");
+          }
+        });
+      }
+    };
+    const handleOffline = () => {
+      setSyncStatus("offline");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSyncStatus("offline");
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [sessionId, sessionToken, answers]);
+
+  // Offline backup: cache active questions locally
+  useEffect(() => {
+    if (started && questions.length > 0) {
+      try {
+        localStorage.setItem("exam_questions_cached", JSON.stringify(questions));
+      } catch {
+        // Ignore quota
+      }
+    }
+  }, [started, questions]);
 
   const submitLockRef = useRef(false);
   const tabSwitchCountRef = useRef(0);
@@ -108,7 +159,8 @@ export default function ExamPage() {
   }
 
   function storeFinished(res: FinishedPayload) {
-    localStorage.setItem("exam_result", JSON.stringify(res.items));
+    // Answer keys are stripped from client storage to prevent inspection.
+    localStorage.removeItem("exam_result");
     localStorage.setItem("exam_summary", JSON.stringify({
       result_id: res.result_id, score: res.score, total: res.total,
       subject_scores: res.subject_scores, show_results: res.show_results, status: res.status,
@@ -164,13 +216,23 @@ export default function ExamPage() {
     return () => clearInterval(timer);
   }, [started, questions.length, timeLeft]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!started || !sessionId || !sessionToken) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSyncStatus("offline");
+      return;
+    }
+    setSyncStatus("syncing");
     const timeout = setTimeout(async () => {
       const saved = await saveProgress(sessionId, sessionToken, answers);
-      if (isError(saved)) { if (saved.error === "time_up") void handleSubmit(true); return; }
-      setTimeLeft((prev) => Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev);
-    }, 4000);
+      if (isError(saved)) {
+        if (saved.error === "time_up") void handleSubmit(true);
+        else if (saved.error === "network") setSyncStatus("offline");
+        return;
+      }
+      setSyncStatus("synced");
+      setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+    }, 3000);
     return () => clearTimeout(timeout);
   }, [answers, started, sessionId, sessionToken]);
 
@@ -341,6 +403,7 @@ export default function ExamPage() {
   const handleSubmit = async (autoSubmitted = false) => {
     if (questions.length === 0 || submitLockRef.current) return;
     if (!autoSubmitted && !window.confirm("Are you sure you want to submit?")) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) { setError("You are currently offline. Your answers are safely stored on this device. Reconnect to the internet and click Submit Exam to record your score."); return; }
     if (!sessionId || !sessionToken) { setError("No active server exam session was found. Please refresh and try again."); return; }
     submitLockRef.current = true; setLoading(true); setError("");
     const res = await submitExam(sessionId, sessionToken, answers, autoSubmitted, flagged);
@@ -428,13 +491,30 @@ export default function ExamPage() {
               </div>
             )}
 
-            <div className="exam-soft-card mb-6 p-4 text-sm text-gray-700">
-              <p>English</p>
-              <p>Chemistry</p>
-              <p>Physics</p>
-              <p>{shouldChooseElective ? "Elective Subject" : candidate.subject}</p>
-              <p className="mt-2 font-semibold">Total Score: 400</p>
-              <p className="font-semibold">Duration: {formatTime(examDuration)}</p>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 mb-6">
+              <h2 className="text-xs font-extrabold uppercase tracking-wider text-blue-900 mb-3">Examination Structure</h2>
+              <div className="grid grid-cols-2 gap-2.5 text-sm text-slate-700 mb-4">
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">English</span>
+                  <span className="text-xs text-slate-500">60 Questions</span>
+                </div>
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">Chemistry</span>
+                  <span className="text-xs text-slate-500">40 Questions</span>
+                </div>
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">Physics</span>
+                  <span className="text-xs text-slate-500">40 Questions</span>
+                </div>
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">{shouldChooseElective ? (electiveSubject || "Elective Subject") : candidate.subject}</span>
+                  <span className="text-xs text-slate-500">40 Questions</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-3 text-xs font-bold text-slate-700">
+                <span>Total: 180 Questions · 400 Marks</span>
+                <span>Time Allowed: {formatTime(examDuration)}</span>
+              </div>
             </div>
 
             <button
@@ -479,11 +559,28 @@ export default function ExamPage() {
             <h1 className="text-xl font-bold text-gray-800">
               Brainlab CBT Exam
             </h1>
-            <p className="text-sm text-gray-600">
-              Candidate: {candidate.name} | Elective:{" "}
-              {electiveSubject || candidate.subject} | Answered: {answeredCount} /{" "}
-              {totalQuestions}
-            </p>
+                        <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-gray-600">
+                Candidate: {candidate.name} | Elective:{" "}
+                {electiveSubject || candidate.subject} | Answered: {answeredCount} /{" "}
+                {totalQuestions}
+              </p>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  syncStatus === "offline"
+                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    : syncStatus === "syncing"
+                    ? "bg-sky-100 text-sky-800 border border-sky-300 animate-pulse"
+                    : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                }`}
+              >
+                {syncStatus === "offline"
+                  ? "⚡ Offline (Answers saved on device)"
+                  : syncStatus === "syncing"
+                  ? "↻ Syncing answers..."
+                  : "✓ Answers Synced"}
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -565,16 +662,25 @@ export default function ExamPage() {
 
             <div className="exam-soft-card mb-6 p-5">
               <p className="exam-question-text">
-                {currentIndex + 1}. {currentQuestion.question}
+                {currentIndex + 1}. {cleanQuestionText(currentQuestion.question)}
               </p>
+              {safeImageUrl(currentQuestion.question_image_url) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={safeImageUrl(currentQuestion.question_image_url)!}
+                  alt={currentQuestion.question_image_alt?.trim() || "Question illustration"}
+                  loading="lazy"
+                  className="mt-4 block max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
+                />
+              )}
             </div>
 
             <div className="space-y-3">
               {[
-                { key: "A" as const, value: optionA },
-                { key: "B" as const, value: optionB },
-                { key: "C" as const, value: optionC },
-                { key: "D" as const, value: optionD },
+                { key: "A" as const, value: optionA, imageUrl: currentQuestion.option_a_image_url, imageAlt: currentQuestion.option_a_image_alt },
+                { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
+                { key: "C" as const, value: optionC, imageUrl: currentQuestion.option_c_image_url, imageAlt: currentQuestion.option_c_image_alt },
+                { key: "D" as const, value: optionD, imageUrl: currentQuestion.option_d_image_url, imageAlt: currentQuestion.option_d_image_alt },
               ].map((option) => (
                 <label
                   key={option.key}
@@ -593,6 +699,15 @@ export default function ExamPage() {
                     <div>
                       <span className="exam-option-letter">{option.key}.</span>
                       <span>{option.value}</span>
+                      {safeImageUrl(option.imageUrl) && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={safeImageUrl(option.imageUrl)!}
+                          alt={option.imageAlt?.trim() || `Option ${option.key} illustration`}
+                          loading="lazy"
+                          className="mt-2 block max-h-64 w-auto max-w-full rounded-lg object-contain"
+                        />
+                      )}
                     </div>
                   </div>
                 </label>

@@ -1,0 +1,42 @@
+name: BrainLab CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - phase0-hardening
+      - fix/learning-hub-assessment-atomicity
+
+permissions:
+  contents: read
+
+concurrency:
+  group: brainlab-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Build-only placeholders. Never use these values for a deployed environment.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check whitespace and patch integrity
+        run: git diff --check
+      - name: ESLint
+        run: npm run lint
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Production build
+        run: npm run build

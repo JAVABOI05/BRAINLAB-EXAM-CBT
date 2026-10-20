@@ -132,6 +132,7 @@ export default function AdminDashboardPage() {
         "learning.content.manage",
         "community.moderate",
         "analytics.read",
+        "institution.manage",
       ];
       const entries = await Promise.all(
         permissionKeys.map(async (permission) => [
@@ -272,6 +273,10 @@ export default function AdminDashboardPage() {
   {adminUser?.role === "super_admin" && <button onClick={() => router.push("/admin/users")} className="admin-card text-left"><h2 className="admin-card-title">Admin Roles</h2><p className="admin-card-text">Assign and review administrator roles.</p></button>}
   {adminUser?.role === "super_admin" && <button onClick={() => router.push("/admin/security")} className="admin-card text-left"><h2 className="admin-card-title">Security & Settings</h2><p className="admin-card-text">Access the restricted security workspace.</p></button>}
   {permissions["learning.content.manage"] && <button onClick={() => router.push("/admin/content")} className="admin-card text-left"><h2 className="admin-card-title">AI & Learning Content</h2><p className="admin-card-text">Manage approved learning content when the tools are enabled.</p></button>}
+  {permissions["learning.content.manage"] && <button onClick={() => router.push("/admin/academy-assessments")} className="admin-card text-left"><h2 className="admin-card-title">Learning Assessments</h2><p className="admin-card-text">Create topic tests, configure timing and pass marks, manage questions, and publish assessments.</p></button>}
+  {(permissions["institution.manage"] || permissions["learning.content.manage"]) && <button onClick={() => router.push("/admin/organised-assessments")} className="admin-card text-left"><h2 className="admin-card-title">Organisation Quizzes & Competitions</h2><p className="admin-card-text">Configure organisation assessments, competition settings, schedules, attempt limits, access-code requirements, and result-release rules.</p></button>}
+  {(permissions["analytics.read"] || permissions["cbt.results.read"] || permissions["institution.manage"] || permissions["learning.content.manage"]) && <button onClick={() => router.push("/admin/academy-results")} className="admin-card text-left"><h2 className="admin-card-title">Assessment Results</h2><p className="admin-card-text">Review assessment attempts, scores, submission times, and auto-submissions, including results held from learners.</p></button>}
+  {(permissions["learning.content.manage"] || permissions["cbt.codes.manage"]) && <button onClick={() => router.push("/admin/academy-access")} className="admin-card text-left"><h2 className="admin-card-title">Organisations & Access</h2><p className="admin-card-text">Manage organisations, membership access codes, temporary codes, entitlements and revocation.</p></button>}
   {permissions["community.moderate"] && <button onClick={() => router.push("/admin/moderation")} className="admin-card text-left"><h2 className="admin-card-title">Community Moderation</h2><p className="admin-card-text">Review community safety and support workflows.</p></button>}
   {permissions["analytics.read"] && <button onClick={() => router.push("/admin/analytics")} className="admin-card text-left"><h2 className="admin-card-title">Analytics</h2><p className="admin-card-text">Open permitted platform reporting.</p></button>}
 </section>

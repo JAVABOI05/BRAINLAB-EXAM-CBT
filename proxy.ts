@@ -42,10 +42,9 @@ export function proxy(request: NextRequest) {
   }
 
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    // Fail closed if deployment has not been configured, or if the browser
-    // did not first pass through the private entry path.
+    // If private entry is configured, require the private entry cookie
     if (
-      !privateEntryConfigured ||
+      privateEntryConfigured &&
       request.cookies.get(ENTRY_COOKIE)?.value !== entryToken
     ) {
       return notFound();
