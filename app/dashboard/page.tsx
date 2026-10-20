@@ -66,6 +66,21 @@ export default function LearnerDashboardPage() {
   const { resolvedTheme } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savedRevisionPlan, setSavedRevisionPlan] = useState<{
+    plan: string;
+    date: string;
+    score?: number;
+    total?: number;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("brainlab_saved_revision_plan");
+      if (saved) {
+        setSavedRevisionPlan(JSON.parse(saved));
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -198,13 +213,13 @@ export default function LearnerDashboardPage() {
                   href="/learn"
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-[#071c43] shadow-lg transition hover:-translate-y-0.5 hover:bg-cyan-50"
                 >
-                  Explore Learning Hub <span aria-hidden="true">↗</span>
+                  Continue learning <span aria-hidden="true">→</span>
                 </Link>
                 <Link
                   href="/learning/revision"
                   className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
                 >
-                  Open my study planner
+                  My revision plan
                 </Link>
               </div>
             </div>
@@ -228,6 +243,49 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
         </section>
+
+        {/* Saved AI Revision Plan */}
+        {savedRevisionPlan && (
+          <section className="overflow-hidden rounded-3xl border border-cyan-200 bg-gradient-to-br from-cyan-50/80 via-white to-blue-50/80 p-6 sm:p-8 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-700 text-lg text-white shadow-sm">
+                  🧠
+                </span>
+                <div>
+                  <span className="text-xs font-black uppercase tracking-wider text-cyan-800">
+                    Your Saved AI Study Plan
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900">
+                    Targeted Revision Guidance
+                  </h3>
+                </div>
+              </div>
+              <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
+                Created {savedRevisionPlan.date}
+              </span>
+            </div>
+
+            <div className="mt-4 whitespace-pre-wrap rounded-2xl border border-cyan-100 bg-white p-5 text-sm leading-7 text-slate-800 shadow-inner">
+              {savedRevisionPlan.plan}
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/self-practice"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#071c43] px-5 py-2.5 text-xs font-extrabold text-white shadow transition hover:bg-[#123566]"
+              >
+                Practise Weak Topics in Self Practice →
+              </Link>
+              <Link
+                href="/corrections"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              >
+                View Full Exam Corrections
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* Learning Paths */}
         <section aria-labelledby="spaces-heading">
@@ -320,7 +378,7 @@ export default function LearnerDashboardPage() {
               <span className="text-2xl" aria-hidden="true">📅</span>
               <h3 className="mt-2 text-base font-bold text-slate-950">Revision Planner</h3>
               <p className="mt-1.5 text-xs leading-5 text-slate-600">
-                Set a study goal, add topics and track your revision checklist day by day.
+                Set a study goal, add topics and track your revision checklist. Saved to your account across devices.
               </p>
               <Link
                 href="/learning/revision"
@@ -337,7 +395,7 @@ export default function LearnerDashboardPage() {
                 Activate an access code issued for tutorials, memberships, or assessments.
               </p>
               <Link
-                href="/redeem-access"
+                href="/account/access"
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50"
               >
                 Redeem Code →
@@ -354,6 +412,9 @@ export default function LearnerDashboardPage() {
           <div className="flex flex-wrap gap-4">
             <Link href="/profile" className="font-semibold text-slate-700 hover:text-blue-800">
               Profile
+            </Link>
+            <Link href="/account/access" className="font-semibold text-slate-700 hover:text-blue-800">
+              My access
             </Link>
             <Link href="/settings" className="font-semibold text-slate-700 hover:text-blue-800">
               Settings

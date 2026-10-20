@@ -4,7 +4,7 @@ import "./corrections.css";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getPublicSettings } from "../lib/examApi";
+import { getPublicSettings, getResultCorrections, isError } from "../lib/examApi";
 import { streamAiTutor, type AiCoachContext } from "../lib/aiTutor";
 import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import QuestionAITutor from "./QuestionAITutor";
@@ -93,6 +93,24 @@ function CorrectionStudyCoach({
   const [answer, setAnswer] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [savedPlan, setSavedPlan] = useState(false);
+
+  function savePlanToDashboard() {
+    const cleanedPlan = cleanAIResponse(answer);
+    if (!cleanedPlan) return;
+    try {
+      localStorage.setItem(
+        "brainlab_saved_revision_plan",
+        JSON.stringify({
+          plan: cleanedPlan,
+          date: new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
+          score: summary.correct,
+          total: summary.total,
+        })
+      );
+      setSavedPlan(true);
+    } catch {}
+  }
 
   async function generatePlan() {
     if (busy || !results.length) return;
@@ -164,11 +182,32 @@ function CorrectionStudyCoach({
         </p>
       )}
       {answer && (
-        <div
-          className="mt-5 whitespace-pre-wrap rounded-xl border border-cyan-100 bg-white p-5 text-sm leading-7 text-slate-800 shadow-inner"
-          aria-live="polite"
-        >
-          {cleanAIResponse(answer)}
+        <div className="mt-5 space-y-3">
+          <div
+            className="whitespace-pre-wrap rounded-xl border border-cyan-100 bg-white p-5 text-sm leading-7 text-slate-800 shadow-inner"
+            aria-live="polite"
+          >
+            {cleanAIResponse(answer)}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <button
+              type="button"
+              onClick={savePlanToDashboard}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold shadow-sm transition ${
+                savedPlan
+                  ? "bg-emerald-700 text-white"
+                  : "bg-[#061a3a] text-white hover:bg-[#123566]"
+              }`}
+            >
+              {savedPlan ? "✓ Saved to Learner Dashboard" : "💾 Save Plan to Dashboard"}
+            </button>
+            <a
+              href="/dashboard"
+              className="text-xs font-bold text-cyan-900 hover:underline"
+            >
+              View in Dashboard →
+            </a>
+          </div>
         </div>
       )}
       <p className="mt-3 text-xs leading-5 text-slate-500">
@@ -197,9 +236,8 @@ export default function CorrectionsPage() {
 
       const savedSummary = localStorage.getItem("exam_summary");
       const savedCandidate = localStorage.getItem("candidate");
-      const savedResults = localStorage.getItem("exam_result");
 
-      if (!savedResults || !savedSummary) {
+      if (!savedSummary) {
         router.replace("/result");
         return;
       }
@@ -214,13 +252,30 @@ export default function CorrectionsPage() {
           setCandidate(JSON.parse(savedCandidate) as Candidate);
         }
 
-        const parsedResults = JSON.parse(savedResults);
-        if (!Array.isArray(parsedResults)) {
+        // Fetch authoritative corrections securely from server by result_id
+        const res = await getResultCorrections(parsedSummary.result_id);
+        let items: unknown[] | null = null;
+        if (!isError(res) && res.ok && Array.isArray(res.items) && res.items.length > 0) {
+          items = res.items;
+        } else {
+          // Fallback to local session storage if available
+          const savedResults = localStorage.getItem("exam_result");
+          if (savedResults) {
+            try {
+              const parsed = JSON.parse(savedResults);
+              if (Array.isArray(parsed)) items = parsed;
+            } catch {
+              items = null;
+            }
+          }
+        }
+
+        if (!items || !Array.isArray(items)) {
           router.replace("/result");
           return;
         }
 
-        if (isSyntheticPreviewData(parsedResults)) {
+        if (isSyntheticPreviewData(items)) {
           setResults([]);
           setDataIssue(
             "This preview contains placeholder test questions rather than answers from your verified exam attempt. Placeholder data has been withheld. Please take a CBT exam to review genuine question corrections."
@@ -229,7 +284,7 @@ export default function CorrectionsPage() {
           return;
         }
 
-        setResults(parsedResults as ResultItem[]);
+        setResults(items as ResultItem[]);
         setLoading(false);
       } catch {
         router.replace("/result");

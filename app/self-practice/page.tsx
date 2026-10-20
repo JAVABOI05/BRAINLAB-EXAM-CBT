@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { PaperQuestion, Option, ResultItem } from "../lib/examApi";
@@ -26,6 +26,7 @@ export default function SelfPracticePage() {
   const [catalog, setCatalog] = useState<CatalogSubject[]>([]);
   const [maxQuestions, setMaxQuestions] = useState(50);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [questionCount, setQuestionCount] = useState(10);
   const [durationMinutes, setDurationMinutes] = useState(0);
   const [attempt, setAttempt] = useState<PracticeAttempt | null>(null);
@@ -66,6 +67,18 @@ export default function SelfPracticePage() {
     return () => window.clearInterval(timer);
   }, [attempt?.deadline_at, result]);
 
+  const availableCategories = useMemo(() => {
+    const list: string[] = [];
+    catalog
+      .filter((s) => selectedSubjects.includes(s.name))
+      .forEach((s) => {
+        (s.categories || []).forEach((c) => {
+          if (c && !list.includes(c)) list.push(c);
+        });
+      });
+    return list.sort();
+  }, [catalog, selectedSubjects]);
+
   const availableSelected = catalog.filter((s) => selectedSubjects.includes(s.name)).reduce((n, s) => n + s.question_count, 0);
 
   async function startPractice(event: { preventDefault: () => void }) {
@@ -79,7 +92,7 @@ export default function SelfPracticePage() {
       p_subjects: selectedSubjects,
       p_question_count: questionCount,
       p_duration_seconds: durationMinutes ? durationMinutes * 60 : null,
-      p_categories: [],
+      p_categories: selectedCategories,
     });
     if (rpcError) setError(rpcError.message);
     else if (!data?.ok) setError((data as ApiFailure).message || "Could not start this attempt.");

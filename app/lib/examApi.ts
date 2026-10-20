@@ -79,8 +79,12 @@ export type FinishedPayload = {
   total: number;
   subject_scores: Record<string, number>;
   show_results: boolean;
-  items: ResultItem[];
+  items?: ResultItem[];
 };
+export type CorrectionsPayload =
+  | { ok: true; items: ResultItem[] }
+  | ApiError;
+
 const NETWORK_ERROR: ApiError = {
   ok: false,
   error: "network",
@@ -122,6 +126,9 @@ export async function submitExam(sessionId: string, token: string, answers: Reco
 }
 export async function lookupResult(phone: string, code: string) {
   return call<{ ok: true; name: string; subject: string; score: number; total: number; created_at: string }>("lookup_result", { p_phone: phone, p_code: code });
+}
+export async function getResultCorrections(resultId: string): Promise<CorrectionsPayload> {
+  return call<CorrectionsPayload>("get_result_corrections", { p_result_id: resultId });
 }
 export type LeaderboardRow = { id: string; name: string; subject: string; score: number; total: number; created_at?: string };
 export async function getLeaderboard(limit = 10) {

@@ -5,6 +5,7 @@ import { adminHasPermission } from "../../../lib/adminRoles";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import Papa from "papaparse";
 import "../../admin.css";
 
 type AdminUser = {
@@ -164,6 +165,42 @@ export default function AdminQuestionManagerPage() {
     }
   }
 
+  function exportQuestionsToCsv() {
+    if (filteredQuestions.length === 0) {
+      alert("No questions to export.");
+      return;
+    }
+
+    const csvData = filteredQuestions.map((q) => ({
+      id: q.id,
+      source_question_id: q.source_question_id || "",
+      subject: q.subject,
+      section: q.section,
+      category: q.category || "",
+      question: q.question,
+      correct_answer: q.correct_answer,
+      marks: q.marks,
+      difficulty: q.difficulty || "medium",
+      is_active: q.is_active ? "TRUE" : "FALSE",
+    }));
+
+    const csvString = Papa.unparse(csvData);
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `brainlab_questions_${subjectFilter.toLowerCase()}_${dateStr}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setMessage(`Successfully exported ${filteredQuestions.length} questions to CSV.`);
+  }
+
   function handleLogout() {
     void adminSignOut();
     router.push("/admin/login");
@@ -241,6 +278,13 @@ export default function AdminQuestionManagerPage() {
                 Dashboard
               </button>
 
+              <button
+                onClick={exportQuestionsToCsv}
+                className="admin-btn-light"
+                title="Download filtered questions as CSV"
+              >
+                📥 Export CSV
+              </button>
               <button
                 onClick={() => router.push("/admin/questions")}
                 className="admin-btn-light"

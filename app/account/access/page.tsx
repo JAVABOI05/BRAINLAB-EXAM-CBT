@@ -44,6 +44,6 @@ export default function RedeemAccessPage() {
     </form>
     {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800" role="alert">{error}</div>}
     {result && <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-green-950" role="status"><h2 className="font-bold">{result.already_redeemed ? "This account already has this access" : "Access code redeemed successfully"}</h2><p className="mt-2 text-sm">Access type: {result.scope_type?.replaceAll("_"," ")}{result.permanent ? " · Permanent access" : result.expires_at ? ` · Expires ${new Date(result.expires_at).toLocaleString()}` : ""}{typeof result.max_questions === "number" ? ` · Up to ${result.max_questions} practice questions per attempt` : ""}</p><Link href="/self-practice" className="mt-4 inline-flex rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white">Go to Self Practice</Link></div>}
-    <div className="mt-7 flex flex-wrap gap-4 text-sm"><Link href="/dashboard" className="font-semibold text-indigo-700 underline">Learner dashboard</Link><Link href="/cbt" className="font-semibold text-indigo-700 underline">CBT and exam practice</Link></div>
+    <div className="mt-7 flex flex-wrap gap-4 text-sm"><Link href="/dashboard" className="font-semibold text-indigo-700 underline">Learner dashboard</Link><Link href="/login" className="font-semibold text-indigo-700 underline">CBT and exam practice</Link></div>
   </div></main>;
 }
