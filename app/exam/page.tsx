@@ -491,13 +491,30 @@ export default function ExamPage() {
               </div>
             )}
 
-            <div className="exam-soft-card mb-6 p-4 text-sm text-gray-700">
-              <p>English</p>
-              <p>Chemistry</p>
-              <p>Physics</p>
-              <p>{shouldChooseElective ? "Elective Subject" : candidate.subject}</p>
-              <p className="mt-2 font-semibold">Total Score: 400</p>
-              <p className="font-semibold">Duration: {formatTime(examDuration)}</p>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 mb-6">
+              <h2 className="text-xs font-extrabold uppercase tracking-wider text-blue-900 mb-3">Examination Structure</h2>
+              <div className="grid grid-cols-2 gap-2.5 text-sm text-slate-700 mb-4">
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">English</span>
+                  <span className="text-xs text-slate-500">60 Questions</span>
+                </div>
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">Chemistry</span>
+                  <span className="text-xs text-slate-500">40 Questions</span>
+                </div>
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">Physics</span>
+                  <span className="text-xs text-slate-500">40 Questions</span>
+                </div>
+                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
+                  <span className="font-bold block text-slate-900">{shouldChooseElective ? (electiveSubject || "Elective Subject") : candidate.subject}</span>
+                  <span className="text-xs text-slate-500">40 Questions</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-3 text-xs font-bold text-slate-700">
+                <span>Total: 180 Questions · 400 Marks</span>
+                <span>Time Allowed: {formatTime(examDuration)}</span>
+              </div>
             </div>
 
             <button
