@@ -2,6 +2,7 @@
 // The browser never sees answer keys and never computes scores: it only sends answers and
 // receives results from these functions.
 import { supabase } from "./supabase";
+import { getExamSettings, getFeatureFlags } from "./platformConfig";
 
 export type Option = "A" | "B" | "C" | "D";
 export type ApiError = { ok: false; error: string; message: string };
@@ -103,8 +104,21 @@ export function isError(value: unknown): value is ApiError {
   return typeof value === "object" && value !== null && (value as { ok?: unknown }).ok === false;
 }
 export async function getPublicSettings(): Promise<PublicSettings | null> {
-  const res = await call<PublicSettings>("get_public_settings");
-  return isError(res) ? null : res;
+  try { const res = await call<PublicSettings>("get_public_settings"); if (!isError(res) && res) return res; } catch {}
+  try {
+    const [examSettings, flags] = await Promise.all([getExamSettings(), getFeatureFlags()]);
+    return {
+      mock_enabled: flags.mock_exams,
+      calculator_enabled: flags.calculator_enabled,
+      show_results: examSettings.show_results_immediately,
+      leaderboard_enabled: flags.public_leaderboard,
+      exam_duration: examSettings.exam_duration_seconds,
+      access_code_required: true,
+    };
+  } catch {
+    return { mock_enabled: true, calculator_enabled: true, show_results: true, leaderboard_enabled: true, exam_duration: 7200, access_code_required: true };
+  }
+
 }
 export async function checkAccessCode(code: string, phone: string) {
   return call<{ ok: true; type: "master" | "normal" | "none" }>("check_access_code", { p_code: code, p_phone: phone });

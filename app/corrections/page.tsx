@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import "./corrections.css";
 
 import { useEffect, useMemo, useState } from "react";
