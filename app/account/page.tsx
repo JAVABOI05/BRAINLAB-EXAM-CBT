@@ -87,8 +87,9 @@ export default function AccountPage() {
         body: JSON.stringify({ accessToken: session.access_token }),
       });
       if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
         await clearOperatorGate();
-        setError("Your sign-in was successful, but secure access could not be prepared. Please contact the platform owner.");
+        setError(errorData?.error || "Your sign-in was successful, but secure access could not be prepared. Please contact the platform owner.");
         return;
       }
 

@@ -85,7 +85,7 @@ export default function LearnerSettingsClient() {
   const avatar = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture;
 
   return (
-    <main id="main" data-theme={resolvedTheme} className="learner-theme min-h-[75vh] bg-[#f5f7fb] px-5 py-8 text-slate-900 sm:px-8 sm:py-12">
+    <main id="main" data-theme={resolvedTheme} className="learner-theme min-h-[75vh] px-5 py-8 text-slate-900 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-5xl">
         <Link href="/dashboard" className="inline-flex min-h-10 items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-blue-900"><span aria-hidden="true">←</span> Back to my learning</Link>
         <header className="mb-8 mt-6">

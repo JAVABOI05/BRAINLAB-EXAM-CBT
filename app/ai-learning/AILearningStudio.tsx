@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { supabase } from "@/app/lib/supabase";
+import { cleanAIResponse } from "@/app/lib/cleanText";
 
 type Intent = "understand" | "practise" | "mistake" | "exam";
 type Method = "decode" | "solve" | "spot" | "apply" | "teach";
@@ -26,7 +28,14 @@ export default function AILearningStudio() {
   const [method, setMethod] = useState<Method>("decode");
   const [topic, setTopic] = useState("");
   const [plan, setPlan] = useState(false);
-  const [notice, setNotice] = useState("");
+
+  // AI Tutor interactive state
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiModel, setAiModel] = useState<string | null>(null);
+
   const selectedIntent = intents.find((item) => item.id === intent) ?? intents[0];
   const selectedMethod = methods.find((item) => item.id === method) ?? methods[0];
 
@@ -35,12 +44,65 @@ export default function AILearningStudio() {
     setPlan(true);
   }
 
+  async function handleAskAi(customPrompt?: string) {
+    const queryTopic = topic.trim();
+    const basePrompt =
+      customPrompt ||
+      aiQuestion.trim() ||
+      (queryTopic
+        ? `I am studying "${queryTopic}". My goal is to "${selectedIntent.title}" using the method "${selectedMethod.title}". Please give me a brief, step-by-step explanation and 1 guided question to test my understanding.`
+        : "Please give me a high-yield study strategy for computer-based testing (CBT) exams.");
+
+    const promptToSend = `${basePrompt}\n\nNote: Provide a concise, direct answer under 180 words without markdown hashtags (#) or asterisks (* or **). Write in clean plain text only.`;
+
+    setAiLoading(true);
+    setAiError(null);
+    setAiResponse(null);
+
+    try {
+      // Pass user session if authenticated
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.access_token) {
+        headers["Authorization"] = `Bearer ${sessionData.session.access_token}`;
+      }
+
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          prompt: promptToSend,
+          metadata: {
+            source: "ai_learning_studio",
+            topic: queryTopic || "general",
+            intent,
+            method,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to generate AI guidance.");
+      }
+
+      setAiResponse(cleanAIResponse(data.response));
+      setAiModel(data.model);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "An error occurred calling AI Tutor.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   return (
     <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:py-20">
       <div className="max-w-3xl">
         <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-800">Guided study mission</p>
         <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Make your next study session count.</h2>
-        <p className="mt-4 leading-7 text-slate-600">Choose a goal and a learning method to create a small, practical session brief. This planner runs in your browser; it does not claim to diagnose mastery or generate an AI answer.</p>
+        <p className="mt-4 leading-7 text-slate-600">Choose a goal and a learning method to create a practical session brief, then ask the BrainLab AI Tutor to guide your thinking step-by-step.</p>
       </div>
 
       <form onSubmit={createPlan} className="mt-8 grid gap-6 lg:grid-cols-[1fr_.9fr]">
@@ -84,20 +146,96 @@ export default function AILearningStudio() {
           {plan ? (
             <div className="mt-6 rounded-2xl border border-cyan-200/30 bg-cyan-300/10 p-4">
               <p className="text-xs font-extrabold uppercase tracking-wider text-cyan-200">Your plan</p>
-              <p className="mt-2 font-extrabold">{topic.trim() || "Choose one specific topic to begin"}</p>
+              <p className="mt-2 font-extrabold">{topic.trim() || "General CBT Study Plan"}</p>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-blue-50">
                 <li>Write down what you already understand.</li>
                 <li>{selectedMethod.title}: {selectedMethod.description.toLowerCase()}</li>
                 <li>Try a fresh example without looking at a solution.</li>
                 <li>Note what remains unclear and choose one next step.</li>
               </ol>
-              <p className="mt-4 text-xs leading-5 text-cyan-100">Created locally from your selections. This plan has not been saved to your account.</p>
+              <div className="mt-4 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => handleAskAi()}
+                  disabled={aiLoading}
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-cyan-300 px-4 py-2 text-xs font-extrabold text-[#061a3a] hover:bg-cyan-200 disabled:opacity-50"
+                >
+                  {aiLoading ? "Generating AI guidance..." : "Ask AI Tutor for guidance on this plan →"}
+                </button>
+              </div>
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-white/15 bg-white/[0.05] p-4 text-sm leading-6 text-blue-100">Choose a goal and method, then create your study plan.</div>
           )}
         </aside>
       </form>
+
+      {/* Interactive AI Tutor Section */}
+      <section className="mt-10 rounded-3xl border border-blue-100 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-800 border border-emerald-200">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              BrainLab AI Tutor (Online)
+            </span>
+            <h3 className="mt-2 text-2xl font-black text-slate-950">Ask the AI Tutor</h3>
+          </div>
+          {aiModel && (
+            <span className="text-xs font-semibold text-slate-500">
+              Powered by {aiModel}
+            </span>
+          )}
+        </div>
+
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Get step-by-step reasoning, conceptual breakdowns, or guided practice questions on any topic.
+        </p>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={aiQuestion}
+              onChange={(e) => setAiQuestion(e.target.value)}
+              placeholder={topic.trim() ? `Ask a question about ${topic.trim()}...` : "e.g. Why does cross-multiplication work in fractions?"}
+              maxLength={250}
+              className="min-h-12 w-full rounded-xl border border-slate-300 pl-4 pr-16 text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !aiLoading) {
+                  e.preventDefault();
+                  handleAskAi();
+                }
+              }}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 pointer-events-none">
+              {aiQuestion.length}/250
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleAskAi()}
+            disabled={aiLoading}
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-800 px-6 font-extrabold text-white hover:bg-blue-900 disabled:opacity-50"
+          >
+            {aiLoading ? "Thinking..." : "Ask Tutor"}
+          </button>
+        </div>
+
+        {aiError && (
+          <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+            {aiError}
+          </div>
+        )}
+
+        {aiResponse && (
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-blue-800">Tutor Response</p>
+            <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-800">
+              {aiResponse}
+            </div>
+          </div>
+        )}
+      </section>
 
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         <article className="rounded-2xl border border-slate-200 bg-white p-5">
@@ -112,12 +250,11 @@ export default function AILearningStudio() {
           <p className="mt-2 text-sm leading-6 text-slate-600">Review released exam feedback where your exam settings make corrections available.</p>
           <Link className="mt-4 inline-flex font-bold text-blue-800 hover:underline" href="/corrections">Open Corrections →</Link>
         </article>
-        <article className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-          <p className="text-xs font-extrabold uppercase tracking-wider text-amber-900">AI Tutor status</p>
-          <h3 className="mt-2 text-lg font-extrabold text-slate-950">Secure tutor connection</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-700">Live AI responses are not enabled from this page yet. Your questions are not sent anywhere by this planner.</p>
-          <button type="button" onClick={() => setNotice("The AI Tutor connection is not yet enabled on this page. No message was sent or saved. Please use the Learning Hub or Corrections links while the secure connection is integrated.")} className="mt-4 inline-flex font-bold text-amber-950 underline underline-offset-2">Check status</button>
-          {notice && <p role="status" className="mt-3 rounded-xl border border-amber-300 bg-white p-3 text-sm leading-6 text-amber-950">{notice}</p>}
+        <article className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-900">AI Tutor Active</p>
+          <h3 className="mt-2 text-lg font-extrabold text-slate-950">Google AI Studio Connected</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-700">The tutor service is live with Gemini 3.8 Flash. Interactions adhere to exam integrity and responsible study guidelines.</p>
+          <Link className="mt-4 inline-flex font-bold text-emerald-950 underline underline-offset-2" href="/ai-learning">Try a study prompt ↑</Link>
         </article>
       </div>
     </section>

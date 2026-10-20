@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
 import FloatingCalculator from "../components/FloatingCalculator";
+import { cleanQuestionText } from "../lib/cleanText";
 
 type QuestionRow = PaperQuestion;
 
@@ -70,6 +71,47 @@ export default function ExamPage() {
   const [mockEnabled, setMockEnabled] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
+
+
+  // Track network connectivity and auto-retry sync when online
+  useEffect(() => {
+    const handleOnline = () => {
+      setSyncStatus("syncing");
+      if (sessionId && sessionToken) {
+        void saveProgress(sessionId, sessionToken, answers).then((saved) => {
+          if (!isError(saved)) {
+            setSyncStatus("synced");
+          }
+        });
+      }
+    };
+    const handleOffline = () => {
+      setSyncStatus("offline");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSyncStatus("offline");
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [sessionId, sessionToken, answers]);
+
+  // Offline backup: cache active questions locally
+  useEffect(() => {
+    if (started && questions.length > 0) {
+      try {
+        localStorage.setItem("exam_questions_cached", JSON.stringify(questions));
+      } catch {
+        // Ignore quota
+      }
+    }
+  }, [started, questions]);
 
   const submitLockRef = useRef(false);
   const tabSwitchCountRef = useRef(0);
@@ -117,7 +159,8 @@ export default function ExamPage() {
   }
 
   function storeFinished(res: FinishedPayload) {
-    localStorage.setItem("exam_result", JSON.stringify(res.items));
+    // Answer keys are stripped from client storage to prevent inspection.
+    localStorage.removeItem("exam_result");
     localStorage.setItem("exam_summary", JSON.stringify({
       result_id: res.result_id, score: res.score, total: res.total,
       subject_scores: res.subject_scores, show_results: res.show_results, status: res.status,
@@ -173,13 +216,23 @@ export default function ExamPage() {
     return () => clearInterval(timer);
   }, [started, questions.length, timeLeft]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!started || !sessionId || !sessionToken) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSyncStatus("offline");
+      return;
+    }
+    setSyncStatus("syncing");
     const timeout = setTimeout(async () => {
       const saved = await saveProgress(sessionId, sessionToken, answers);
-      if (isError(saved)) { if (saved.error === "time_up") void handleSubmit(true); return; }
-      setTimeLeft((prev) => Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev);
-    }, 4000);
+      if (isError(saved)) {
+        if (saved.error === "time_up") void handleSubmit(true);
+        else if (saved.error === "network") setSyncStatus("offline");
+        return;
+      }
+      setSyncStatus("synced");
+      setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+    }, 3000);
     return () => clearTimeout(timeout);
   }, [answers, started, sessionId, sessionToken]);
 
@@ -350,6 +403,7 @@ export default function ExamPage() {
   const handleSubmit = async (autoSubmitted = false) => {
     if (questions.length === 0 || submitLockRef.current) return;
     if (!autoSubmitted && !window.confirm("Are you sure you want to submit?")) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) { setError("You are currently offline. Your answers are safely stored on this device. Reconnect to the internet and click Submit Exam to record your score."); return; }
     if (!sessionId || !sessionToken) { setError("No active server exam session was found. Please refresh and try again."); return; }
     submitLockRef.current = true; setLoading(true); setError("");
     const res = await submitExam(sessionId, sessionToken, answers, autoSubmitted, flagged);
@@ -488,11 +542,28 @@ export default function ExamPage() {
             <h1 className="text-xl font-bold text-gray-800">
               Brainlab CBT Exam
             </h1>
-            <p className="text-sm text-gray-600">
-              Candidate: {candidate.name} | Elective:{" "}
-              {electiveSubject || candidate.subject} | Answered: {answeredCount} /{" "}
-              {totalQuestions}
-            </p>
+                        <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-gray-600">
+                Candidate: {candidate.name} | Elective:{" "}
+                {electiveSubject || candidate.subject} | Answered: {answeredCount} /{" "}
+                {totalQuestions}
+              </p>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  syncStatus === "offline"
+                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    : syncStatus === "syncing"
+                    ? "bg-sky-100 text-sky-800 border border-sky-300 animate-pulse"
+                    : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                }`}
+              >
+                {syncStatus === "offline"
+                  ? "⚡ Offline (Answers saved on device)"
+                  : syncStatus === "syncing"
+                  ? "↻ Syncing answers..."
+                  : "✓ Answers Synced"}
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -574,7 +645,7 @@ export default function ExamPage() {
 
             <div className="exam-soft-card mb-6 p-5">
               <p className="exam-question-text">
-                {currentIndex + 1}. {currentQuestion.question}
+                {currentIndex + 1}. {cleanQuestionText(currentQuestion.question)}
               </p>
               {safeImageUrl(currentQuestion.question_image_url) && (
                 // eslint-disable-next-line @next/next/no-img-element

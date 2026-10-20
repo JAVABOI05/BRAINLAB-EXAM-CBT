@@ -40,6 +40,8 @@ export default function AdminCodesPage() {
   const [masterCode, setMasterCode] = useState("");
   const [newMasterCode, setNewMasterCode] = useState("");
 
+  const [showVouchers, setShowVouchers] = useState(false);
+  const [voucherCodes, setVoucherCodes] = useState<string[]>([]);
   const [lastExportedCodes, setLastExportedCodes] = useState<string[]>([]);
 
   useEffect(() => {
@@ -397,6 +399,27 @@ export default function AdminCodesPage() {
               </button>
 
               <button
+                onClick={() => {
+                  const toPrint =
+                    lastExportedCodes.length > 0
+                      ? lastExportedCodes
+                      : codes
+                          .filter((c) => !c.is_used && c.code !== masterCode)
+                          .slice(0, 12)
+                          .map((c) => c.code);
+                  if (toPrint.length === 0) {
+                    setMessage("No fresh or unused codes available to print vouchers.");
+                    return;
+                  }
+                  setVoucherCodes(toPrint);
+                  setShowVouchers(true);
+                }}
+                className="admin-btn-light"
+                title="Format and print cut-out access vouchers for candidates"
+              >
+                🖨️ Print Vouchers
+              </button>
+              <button
                 onClick={() => router.push("/admin/results")}
                 className="admin-btn-light"
               >
@@ -653,6 +676,64 @@ export default function AdminCodesPage() {
           )}
         </section>
       </div>
+      {showVouchers && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">
+                  Print Examination Vouchers ({voucherCodes.length} codes)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Formatted cut-out voucher cards for CBT candidates and tutorial centres.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="rounded-xl bg-[#071c43] px-4 py-2 text-xs font-black text-white hover:bg-[#123566]"
+                >
+                  🖨️ Send to Printer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowVouchers(false)}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {voucherCodes.map((c, idx) => (
+                <div
+                  key={idx}
+                  className="flex flex-col justify-between rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/70 p-4 text-center shadow-sm"
+                >
+                  <div className="border-b border-slate-200 pb-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-blue-900">
+                      BrainLab Academy CBT
+                    </span>
+                    <h4 className="text-xs font-bold text-slate-700">Official Exam Voucher</h4>
+                  </div>
+                  <div className="my-3 py-2 bg-white rounded-xl border border-slate-200 shadow-inner">
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase">Access Code</span>
+                    <p className="font-mono text-lg font-black tracking-widest text-[#071c43]">
+                      {c}
+                    </p>
+                  </div>
+                  <p className="text-[10px] leading-4 text-slate-500">
+                    Visit: <strong>brainlabexam-cbt.vercel.app</strong><br />
+                    Single candidate attempt. Valid for 1 session.
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

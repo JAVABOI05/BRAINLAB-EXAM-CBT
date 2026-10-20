@@ -10,11 +10,11 @@ import { useLearnerTheme, type AppearancePreference } from "./LearnerThemeProvid
 function firstName(user: User) {
   const metadata = user.user_metadata ?? {};
   const value = metadata.full_name ?? metadata.name;
-  return typeof value === "string" && value.trim() ? value.trim().split(/\s+/)[0] : "there";
+  return typeof value === "string" && value.trim() ? value.trim().split(/\s+/)[0] : "";
 }
 
 function initials(value: string) {
-  return value.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "B";
+  return value.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "BL";
 }
 
 function greeting() {
@@ -88,7 +88,7 @@ export default function GlobalLearnerToolbar() {
     };
   }, []);
 
-  const name = user ? firstName(user) : candidateName ? candidateName.split(/\s+/)[0] : "";
+  const name = user ? (firstName(user) || (candidateName ? candidateName.split(/\s+/)[0] : "")) : (candidateName ? candidateName.split(/\s+/)[0] : "");
   const avatarValue = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture;
   const avatar = typeof avatarValue === "string" && /^https:\/\//i.test(avatarValue) ? avatarValue : "";
 
@@ -99,11 +99,11 @@ export default function GlobalLearnerToolbar() {
           {user && avatar ? (
             <img src={avatar} alt="" referrerPolicy="no-referrer" className="global-learner-avatar" />
           ) : user || candidateName ? (
-            <span className="global-learner-avatar global-learner-avatar-fallback" aria-hidden="true">{initials(name)}</span>
+            <span className="global-learner-avatar global-learner-avatar-fallback" aria-hidden="true">{initials(name || "BrainLab")}</span>
           ) : null}
           <div className="global-learner-welcome">
-            <span className="global-learner-greeting">{name ? `${greetingText},` : "Welcome"}</span>
-            <span className="global-learner-name">{name || "BrainLab Academy"}</span>
+            <span className="global-learner-greeting">{name ? `${greetingText},` : greetingText}</span>
+            <span className="global-learner-name">{name || "BrainLab Learner"}</span>
           </div>
         </div>
         <div className="global-learner-actions">
