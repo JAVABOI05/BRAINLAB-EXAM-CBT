@@ -1,7 +1,8 @@
 "use client";
 
-import { adminSignOut } from "../../lib/adminAuth";
-import { useEffect, useState } from "react";
+import { adminSignOut, getAdminSession, type AdminUser } from "../../lib/adminAuth";
+import { adminHasPermission, ADMIN_ROLE_DETAILS, type AdminPermission } from "../../lib/adminRoles";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import "../admin.css";
@@ -24,16 +25,11 @@ type StatCard = {
   value: number;
 };
 
-type AdminUser = {
-  id: string;
-  email: string;
-  role: string;
-};
-
 export default function AdminDashboardPage() {
   const router = useRouter();
 
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [permissions, setPermissions] = useState<Partial<Record<AdminPermission, boolean>>>({});
   const [settings, setSettings] = useState<SettingsMap>({
     exam_duration: 7200,
     calculator_enabled: true,
@@ -52,42 +48,41 @@ export default function AdminDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const savedAdmin = localStorage.getItem("admin_user");
-
-    if (!savedAdmin) {
-      router.push("/admin/login");
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(savedAdmin) as AdminUser;
-      setAdminUser(parsed);
-      loadAdminData();
-    } catch {
-      localStorage.removeItem("admin_user");
-      router.push("/admin/login");
-    }
-  }, [router]);
-
-  async function loadAdminData() {
+  const loadAdminData = useCallback(async (access: Partial<Record<AdminPermission, boolean>> = {}) => {
     setLoading(true);
     setMessage("");
 
-    const [settingsRes, questionsRes, resultsRes, codesRes] = await Promise.all([
-      supabase.from("settings").select("key, value"),
-      supabase.from("questions").select("*", { count: "exact", head: true }),
-      supabase.from("results").select("*", { count: "exact", head: true }),
-      supabase.from("access_codes").select("*", { count: "exact", head: true }),
+    const canReadConfig = access["cbt.config.read"] === true;
+    const canReadQuestions = access["cbt.questions.manage"] === true;
+    const canReadResults = access["cbt.results.read"] === true;
+    const canReadCodes = access["cbt.codes.manage"] === true;
+
+    const [settingsResult, questionCount, resultCount, codeCount] = await Promise.all([
+      (async () => canReadConfig
+        ? await supabase.from("settings").select("key, value")
+        : { data: [] as SettingRow[], error: null })(),
+      (async () => {
+        if (!canReadQuestions) return 0;
+        const { count } = await supabase.from("questions").select("*", { count: "exact", head: true });
+        return count ?? 0;
+      })(),
+      (async () => {
+        if (!canReadResults) return 0;
+        const { count } = await supabase.from("results").select("*", { count: "exact", head: true });
+        return count ?? 0;
+      })(),
+      (async () => {
+        if (!canReadCodes) return 0;
+        const { count } = await supabase.from("access_codes").select("*", { count: "exact", head: true });
+        return count ?? 0;
+      })(),
     ]);
 
-    if (settingsRes.error) {
-      setMessage(`Failed to load settings: ${settingsRes.error.message}`);
+    if (settingsResult.error) {
+      setMessage("You do not have permission to read examination settings.");
       setLoading(false);
       return;
     }
-
-    const rows = (settingsRes.data || []) as SettingRow[];
 
     const nextSettings: SettingsMap = {
       exam_duration: 7200,
@@ -97,42 +92,65 @@ export default function AdminDashboardPage() {
       mock_enabled: true,
     };
 
-    rows.forEach((row: SettingRow) => {
-      if (row.key === "exam_duration") {
-        nextSettings.exam_duration = Number(row.value) || 7200;
-      }
-
-      if (row.key === "calculator_enabled") {
-        nextSettings.calculator_enabled =
-          row.value === true || row.value === "true";
-      }
-
-      if (row.key === "leaderboard_enabled") {
-        nextSettings.leaderboard_enabled =
-          row.value === true || row.value === "true";
-      }
-
-      if (row.key === "show_results") {
-        nextSettings.show_results =
-          row.value === true || row.value === "true";
-      }
-
-      if (row.key === "mock_enabled") {
-        nextSettings.mock_enabled =
-          row.value === true || row.value === "true";
-      }
+    (settingsResult.data || []).forEach((row: SettingRow) => {
+      if (row.key === "exam_duration") nextSettings.exam_duration = Number(row.value) || 7200;
+      if (row.key === "calculator_enabled") nextSettings.calculator_enabled = row.value === true || row.value === "true";
+      if (row.key === "leaderboard_enabled") nextSettings.leaderboard_enabled = row.value === true || row.value === "true";
+      if (row.key === "show_results") nextSettings.show_results = row.value === true || row.value === "true";
+      if (row.key === "mock_enabled") nextSettings.mock_enabled = row.value === true || row.value === "true";
     });
 
-    setSettings(nextSettings);
-
+    if (canReadConfig) setSettings(nextSettings);
     setStats([
-      { title: "Question Bank", value: questionsRes.count || 0 },
-      { title: "Results", value: resultsRes.count || 0 },
-      { title: "Access Codes", value: codesRes.count || 0 },
+      { title: "Question Bank", value: questionCount },
+      { title: "Results", value: resultCount },
+      { title: "Access Codes", value: codeCount },
     ]);
-
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function initializeDashboard() {
+      const admin = await getAdminSession();
+      if (!active) return;
+      if (!admin) {
+        router.replace("/account");
+        return;
+      }
+
+      setAdminUser(admin);
+      const permissionKeys: AdminPermission[] = [
+        "cbt.config.read",
+        "cbt.config.manage",
+        "cbt.questions.manage",
+        "cbt.results.read",
+        "cbt.codes.manage",
+        "cbt.sessions.read",
+        "audit.logs.read",
+        "learning.content.manage",
+        "community.moderate",
+        "analytics.read",
+        "institution.manage",
+      ];
+      const entries = await Promise.all(
+        permissionKeys.map(async (permission) => [
+          permission,
+          await adminHasPermission(permission),
+        ] as const)
+      );
+      if (!active) return;
+      const access = Object.fromEntries(entries) as Partial<Record<AdminPermission, boolean>>;
+      setPermissions(access);
+      await loadAdminData(access);
+    }
+
+    void initializeDashboard().catch(() => {
+      if (active) router.replace("/account");
+    });
+    return () => { active = false; };
+  }, [router, loadAdminData]);
 
   async function saveSetting(key: keyof SettingsMap, value: number | boolean) {
     const { error } = await supabase
@@ -176,9 +194,9 @@ export default function AdminDashboardPage() {
     return `${hrs}h ${mins}m`;
   }
 
-  function handleLogout() {
-    void adminSignOut();
-    router.push("/admin/login");
+  async function handleLogout() {
+    await adminSignOut();
+    router.replace("/account");
   }
 
   if (loading) {
@@ -201,7 +219,7 @@ export default function AdminDashboardPage() {
         <section className="admin-hero">
           <div className="admin-hero-top">
             <div>
-<div className="admin-badge">Brainlab Admin Dashboard</div>
+<div className="admin-badge">BrainLab · {adminUser ? ADMIN_ROLE_DETAILS[adminUser.role].label : "Admin Dashboard"}</div>
 <h1 className="admin-title">CBT Control Center</h1>
 <p className="admin-subtitle">
   Monitor results, manage question banks, generate access codes, track exam
@@ -238,7 +256,7 @@ export default function AdminDashboardPage() {
         </section>
 
         <section className="admin-section admin-stats">
-          {stats.map((stat) => (
+          {stats.filter((stat) => stat.title === "Question Bank" ? permissions["cbt.questions.manage"] : stat.title === "Results" ? permissions["cbt.results.read"] : permissions["cbt.codes.manage"]).map((stat) => (
             <div key={stat.title} className="admin-stat-card">
               <p className="admin-stat-label">{stat.title}</p>
               <p className="admin-stat-value">{stat.value}</p>
@@ -247,57 +265,23 @@ export default function AdminDashboardPage() {
         </section>
 
 <section className="admin-section admin-grid-2">
-  <button
-    onClick={() => router.push("/admin/codes")}
-    className="admin-card text-left"
-  >
-    <h2 className="admin-card-title">Access Codes</h2>
-    <p className="admin-card-text">
-      Generate and monitor exam access codes.
-    </p>
-  </button>
-
-  <button
-    onClick={() => router.push("/admin/results")}
-    className="admin-card text-left"
-  >
-    <h2 className="admin-card-title">Results</h2>
-    <p className="admin-card-text">
-      View candidate scores and performance.
-    </p>
-  </button>
-
-  <button
-    onClick={() => router.push("/admin/questions/manage")}
-    className="admin-card text-left"
-  >
-    <h2 className="admin-card-title">Questions</h2>
-    <p className="admin-card-text">
-      Manage your question bank.
-    </p>
-  </button>
-
-  <button
-    onClick={() => router.push("/admin/sessions")}
-    className="admin-card text-left"
-  >
-    <h2 className="admin-card-title">Exam Sessions</h2>
-    <p className="admin-card-text">
-      Monitor activity and detect cheating.
-    </p>
-  </button>
-
-  <button
-    onClick={() => router.push("/admin/config")}
-    className="admin-card text-left"
-  >
-    <h2 className="admin-card-title">Exam Configuration</h2>
-    <p className="admin-card-text">
-      Control subjects, arrangement, counts, and access settings.
-    </p>
-  </button>
+  {permissions["cbt.codes.manage"] && <button onClick={() => router.push("/admin/codes")} className="admin-card text-left"><h2 className="admin-card-title">Access Codes</h2><p className="admin-card-text">Generate and monitor exam access codes.</p></button>}
+  {permissions["cbt.results.read"] && <button onClick={() => router.push("/admin/results")} className="admin-card text-left"><h2 className="admin-card-title">Results</h2><p className="admin-card-text">View authorized candidate results and performance.</p></button>}
+  {permissions["cbt.questions.manage"] && <button onClick={() => router.push("/admin/questions/manage")} className="admin-card text-left"><h2 className="admin-card-title">Questions</h2><p className="admin-card-text">Manage the authorized question bank.</p></button>}
+  {permissions["cbt.sessions.read"] && <button onClick={() => router.push("/admin/sessions")} className="admin-card text-left"><h2 className="admin-card-title">Exam Sessions</h2><p className="admin-card-text">Review authorized exam-session activity.</p></button>}
+  {permissions["cbt.config.manage"] && <button onClick={() => router.push("/admin/config")} className="admin-card text-left"><h2 className="admin-card-title">Exam Configuration</h2><p className="admin-card-text">Manage approved exam settings.</p></button>}
+  {adminUser?.role === "super_admin" && <button onClick={() => router.push("/admin/users")} className="admin-card text-left"><h2 className="admin-card-title">Admin Roles</h2><p className="admin-card-text">Assign and review administrator roles.</p></button>}
+  {adminUser?.role === "super_admin" && <button onClick={() => router.push("/admin/security")} className="admin-card text-left"><h2 className="admin-card-title">Security & Settings</h2><p className="admin-card-text">Access the restricted security workspace.</p></button>}
+  {permissions["learning.content.manage"] && <button onClick={() => router.push("/admin/content")} className="admin-card text-left"><h2 className="admin-card-title">AI & Learning Content</h2><p className="admin-card-text">Manage approved learning content when the tools are enabled.</p></button>}
+  {permissions["learning.content.manage"] && <button onClick={() => router.push("/admin/academy-assessments")} className="admin-card text-left"><h2 className="admin-card-title">Learning Assessments</h2><p className="admin-card-text">Create topic tests, configure timing and pass marks, manage questions, and publish assessments.</p></button>}
+  {(permissions["institution.manage"] || permissions["learning.content.manage"]) && <button onClick={() => router.push("/admin/organised-assessments")} className="admin-card text-left"><h2 className="admin-card-title">Organisation Quizzes & Competitions</h2><p className="admin-card-text">Configure organisation assessments, competition settings, schedules, attempt limits, access-code requirements, and result-release rules.</p></button>}
+  {(permissions["analytics.read"] || permissions["cbt.results.read"] || permissions["institution.manage"] || permissions["learning.content.manage"]) && <button onClick={() => router.push("/admin/academy-results")} className="admin-card text-left"><h2 className="admin-card-title">Assessment Results</h2><p className="admin-card-text">Review assessment attempts, scores, submission times, and auto-submissions, including results held from learners.</p></button>}
+  {(permissions["learning.content.manage"] || permissions["cbt.codes.manage"]) && <button onClick={() => router.push("/admin/academy-access")} className="admin-card text-left"><h2 className="admin-card-title">Organisations & Access</h2><p className="admin-card-text">Manage organisations, membership access codes, temporary codes, entitlements and revocation.</p></button>}
+  {permissions["community.moderate"] && <button onClick={() => router.push("/admin/moderation")} className="admin-card text-left"><h2 className="admin-card-title">Community Moderation</h2><p className="admin-card-text">Review community safety and support workflows.</p></button>}
+  {permissions["analytics.read"] && <button onClick={() => router.push("/admin/analytics")} className="admin-card text-left"><h2 className="admin-card-title">Analytics</h2><p className="admin-card-text">Open permitted platform reporting.</p></button>}
 </section>
 
+        {permissions["cbt.config.manage"] && (
         <section className="admin-section admin-card">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -422,13 +406,14 @@ export default function AdminDashboardPage() {
               {saving ? "Saving..." : "Save Settings"}
             </button>
 
-            <button onClick={loadAdminData} className="admin-btn-light">
+            <button onClick={() => loadAdminData(permissions)} className="admin-btn-light">
               Refresh Dashboard
             </button>
           </div>
 
           {message && <div className="admin-message">{message}</div>}
         </section>
+        )}
       </div>
     </main>
   );

@@ -22,10 +22,20 @@ export type PaperQuestion = {
   passage_title: string | null;
   passage_text: string | null;
   question: string;
+  question_image_url: string | null;
+  question_image_alt: string | null;
   option_a: string | null;
+  option_a_image_url: string | null;
+  option_a_image_alt: string | null;
   option_b: string | null;
+  option_b_image_url: string | null;
+  option_b_image_alt: string | null;
   option_c: string | null;
+  option_c_image_url: string | null;
+  option_c_image_alt: string | null;
   option_d: string | null;
+  option_d_image_url: string | null;
+  option_d_image_alt: string | null;
   marks: number;
 };
 export type AttemptPayload = {
@@ -47,8 +57,14 @@ export type ResultItem = {
   type?: string;
   text: string;
   options: Record<Option, string>;
+  optionImages?: Partial<Record<Option, string | null>>;
+  optionImageAlts?: Partial<Record<Option, string>>;
+  questionImageUrl?: string | null;
+  questionImageAlt?: string;
   correctAnswer: Option;
   explanation: string;
+  explanationImageUrl?: string | null;
+  explanationImageAlt?: string;
   userAnswer: Option | null;
   isCorrect: boolean;
   flagged?: boolean;
@@ -63,8 +79,12 @@ export type FinishedPayload = {
   total: number;
   subject_scores: Record<string, number>;
   show_results: boolean;
-  items: ResultItem[];
+  items?: ResultItem[];
 };
+export type CorrectionsPayload =
+  | { ok: true; items: ResultItem[] }
+  | ApiError;
+
 const NETWORK_ERROR: ApiError = {
   ok: false,
   error: "network",
@@ -106,6 +126,9 @@ export async function submitExam(sessionId: string, token: string, answers: Reco
 }
 export async function lookupResult(phone: string, code: string) {
   return call<{ ok: true; name: string; subject: string; score: number; total: number; created_at: string }>("lookup_result", { p_phone: phone, p_code: code });
+}
+export async function getResultCorrections(resultId: string): Promise<CorrectionsPayload> {
+  return call<CorrectionsPayload>("get_result_corrections", { p_result_id: resultId });
 }
 export type LeaderboardRow = { id: string; name: string; subject: string; score: number; total: number; created_at?: string };
 export async function getLeaderboard(limit = 10) {

@@ -1,28 +1,27 @@
-// Admin authentication via Supabase Auth. Being logged in is NOT enough: the account must also
-// be listed in public.admin_profiles (checked by the is_admin() database function). The database
-// enforces the same rule on every table through RLS, so this check is only for the UI.
+// Admin identity helper for UI routing. It is not an authorization boundary: every protected
+// database operation must still be enforced by RLS or a permission-checking database RPC.
 import { supabase } from "./supabase";
+import { ADMIN_ROLES, type AdminRole } from "./adminRoles";
 
 export type AdminUser = {
   id: string;
   email: string;
-  role: "admin" | "super_admin";
+  role: AdminRole;
 };
 
 export async function getAdminSession(): Promise<AdminUser | null> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) return null;
+  // getUser() validates the identity with Supabase Auth; browser storage is never
+  // used as proof of an administrator role.
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) return null;
 
-  const { data: isAdmin, error } = await supabase.rpc("is_admin");
-  if (error || isAdmin !== true) return null;
+  const { data: role, error: roleError } = await supabase.rpc("get_admin_role");
+  if (roleError || typeof role !== "string" || !ADMIN_ROLES.includes(role as AdminRole)) return null;
 
-  const { data: isSuper } = await supabase.rpc("is_super_admin");
   return {
-    id: session.user.id,
-    email: session.user.email ?? "",
-    role: isSuper === true ? "super_admin" : "admin",
+    id: user.id,
+    email: user.email ?? "",
+    role: role as AdminRole,
   };
 }
 
@@ -38,9 +37,8 @@ export async function adminSignIn(
     await supabase.auth.signOut();
     return { ok: false, message: "This account is not an administrator." };
   }
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem("admin_user", JSON.stringify(admin));
-  }
+  // Do not persist the role as a browser-side authorization credential.
+  // Protected data access is enforced by the database permission function/RLS.
   return { ok: true };
 }
 

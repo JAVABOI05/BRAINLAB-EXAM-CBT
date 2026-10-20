@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
@@ -19,6 +19,32 @@ export default function AccountPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+      setMode("signup");
+    }
+    let active = true;
+    async function redirectIfAlreadySignedIn() {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (!active || sessionError || !session) return;
+
+      // Never treat a persisted browser session as proof that email verification
+      // is complete. This is a client-side guard; Supabase settings and server
+      // authorization must also enforce the policy.
+      if (session.user.email && !session.user.email_confirmed_at) {
+        await clearOperatorGate();
+        await supabase.auth.signOut();
+        setError("Please verify your email before entering BrainLab. Check your inbox for the verification link, then sign in again.");
+        return;
+      }
+      router.replace("/dashboard");
+    }
+    void redirectIfAlreadySignedIn().catch(() => {
+      // Keep the form available if session restoration temporarily fails.
+    });
+    return () => { active = false; };
+  }, [router]);
+
   async function clearOperatorGate() {
     try {
       await fetch("/api/auth/operator-gate", {
@@ -32,6 +58,20 @@ export default function AccountPage() {
 
   async function continueWithSession(session: Session) {
     setError("");
+    setMessage("");
+
+    // Defense in depth for projects where email confirmation is enabled.
+    // The Supabase project must still have Confirm email enabled; otherwise
+    // Supabase may mark new accounts confirmed without sending a verification email.
+    if (session.user.email && !session.user.email_confirmed_at) {
+      await clearOperatorGate();
+      await supabase.auth.signOut();
+      setMessage("Your account needs email verification before you can continue. Check your inbox for the verification link, then sign in again.");
+      setMode("signin");
+      setPassword("");
+      return;
+    }
+
     const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
 
     if (permissionError) {
@@ -47,9 +87,15 @@ export default function AccountPage() {
         body: JSON.stringify({ accessToken: session.access_token }),
       });
       if (!response.ok) {
-        setError("Your sign-in was successful, but secure access could not be prepared. Please contact the platform owner.");
+        const errorData = await response.json().catch(() => null);
+        await clearOperatorGate();
+        setError(errorData?.error || "Your sign-in was successful, but secure access could not be prepared. Please contact the platform owner.");
         return;
       }
+
+      // The dashboard re-checks the current role from Supabase before loading data.
+      // Do not persist an admin role in browser storage as an authorization signal.
+      window.localStorage.removeItem("admin_user");
       router.replace("/admin/dashboard");
       return;
     }
@@ -88,6 +134,10 @@ export default function AccountPage() {
         });
         if (signUpError) {
           setError(signUpError.message);
+          return;
+        }
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setError("An account may already exist for this email. Try signing in or use password recovery.");
           return;
         }
         if (data.session) {
@@ -190,7 +240,7 @@ export default function AccountPage() {
           <div className="my-5 flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400"><span className="h-px flex-1 bg-slate-200" />or use email<span className="h-px flex-1 bg-slate-200" /></div>
 
           <form onSubmit={(event) => { event.preventDefault(); void submitCredentials(); }} className="space-y-4">
-            {mode === "signup" && <div><label htmlFor="account-name" className="mb-1.5 block text-sm font-semibold text-slate-700">Full name</label><input id="account-name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100" placeholder="Your full name" /></div>}
+            {mode === "signup" && <div><label htmlFor="account-name" className="mb-1.5 block text-sm font-semibold text-slate-700">Full name</label><input id="account-name" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100" placeholder="Your full name" /></div>}
             <div><label htmlFor="account-email" className="mb-1.5 block text-sm font-semibold text-slate-700">Email address</label><input id="account-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100" placeholder="you@example.com" /></div>
             <div><label htmlFor="account-password" className="mb-1.5 block text-sm font-semibold text-slate-700">Password</label><div className="flex gap-2"><input id="account-password" type={showPassword ? "text" : "password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} required value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-12 min-w-0 flex-1 rounded-xl border border-slate-300 px-4 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100" placeholder={mode === "signup" ? "At least 8 characters" : "Your password"} /><button type="button" onClick={() => setShowPassword((visible) => !visible)} className="rounded-xl border border-slate-300 px-3 text-sm font-semibold text-slate-700">{showPassword ? "Hide" : "Show"}</button></div></div>
             {mode === "signin" && <button type="button" onClick={() => void sendPasswordReset()} disabled={busy} className="text-sm font-semibold text-blue-800 underline underline-offset-4">Forgot your password?</button>}
@@ -205,3 +255,5 @@ export default function AccountPage() {
     </main>
   );
 }
+
+
