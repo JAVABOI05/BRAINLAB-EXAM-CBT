@@ -724,7 +724,9 @@ export default function ExamPage() {
                 { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
                 { key: "C" as const, value: optionC, imageUrl: currentQuestion.option_c_image_url, imageAlt: currentQuestion.option_c_image_alt },
                 { key: "D" as const, value: optionD, imageUrl: currentQuestion.option_d_image_url, imageAlt: currentQuestion.option_d_image_alt },
-              ].map((option) => (
+              ]
+                .filter((opt) => Boolean(opt.value?.trim()) || Boolean(safeImageUrl(opt.imageUrl)))
+                .map((option) => (
                 <label
                   key={option.key}
                   className={`exam-option block ${
