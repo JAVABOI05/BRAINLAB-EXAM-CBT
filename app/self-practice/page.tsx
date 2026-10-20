@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { PaperQuestion, Option, ResultItem } from "../lib/examApi";
 import { cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
+import { getTopicMasteryRecords, recordTopicAttempt, type TopicMastery } from "../lib/adaptiveEngine";
+import { enqueueMissedQuestion } from "../lib/spacedRepetition";
+import { streamAiTutor } from "../lib/aiTutor";
 
 type CatalogSubject = { name: string; question_count: number; categories: string[] };
 type PracticeAttempt = { attempt_id: string; attempt_token: string; deadline_at: string | null; questions: PaperQuestion[]; answers: Record<string, Option> };
@@ -41,6 +44,48 @@ export default function SelfPracticePage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [retryReference, setRetryReference] = useState<Record<string, ResultItem> | null>(null);
+  const [topicMasteryList, setTopicMasteryList] = useState<TopicMastery[]>([]);
+  const [activeHints, setActiveHints] = useState<Record<string, string>>({});
+  const [hintLoading, setHintLoading] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    void getTopicMasteryRecords().then((list) => setTopicMasteryList(list));
+  }, []);
+
+  async function requestHint(q: PaperQuestion) {
+    const qIdStr = String(q.id);
+    if (activeHints[qIdStr] || hintLoading[qIdStr]) return;
+    setHintLoading((prev) => ({ ...prev, [qIdStr]: true }));
+    try {
+      let accumulated = "";
+      await streamAiTutor(
+        {
+          mode: "hint",
+          question: {
+            id: q.id,
+            subject: q.subject,
+            text: cleanQuestionText(q.question),
+            options: {
+              A: q.option_a || "",
+              B: q.option_b || "",
+              C: q.option_c || "",
+              D: q.option_d || "",
+            },
+            correctAnswer: "A",
+            userAnswer: null,
+          },
+        },
+        (chunk) => {
+          accumulated += chunk;
+          setActiveHints((prev) => ({ ...prev, [qIdStr]: accumulated }));
+        }
+      );
+    } catch {
+      setActiveHints((prev) => ({ ...prev, [qIdStr]: "Review the fundamental definitions and units for this question." }));
+    } finally {
+      setHintLoading((prev) => ({ ...prev, [qIdStr]: false }));
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -260,6 +305,24 @@ export default function SelfPracticePage() {
       {attempt && <section className="space-y-5">
         <div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur"><div><strong>{attempt.questions.length} questions</strong><p className="text-sm text-slate-500">{Object.keys(answers).length} answered{pendingSaves ? " · saving answers…" : " · no repeated question IDs"}</p></div><div className="flex items-center gap-3">{secondsLeft !== null && <span className={secondsLeft < 60 ? "font-bold text-red-700" : "font-semibold"}>Time left: {formatTime(secondsLeft)}</span>}<button className="rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={working || pendingSaves > 0} onClick={() => void submitPractice()}>{working ? "Submitting…" : "Submit practice"}</button></div></div>
         {attempt.questions.map((q,index) => <article key={q.id} className="rounded-2xl bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-semibold text-indigo-700">Question {index+1} of {attempt.questions.length}</span><span className="text-sm text-slate-500">{q.subject}{q.section ? ` · ${q.section}` : ""}</span></div>{q.passage_text && <div className="mt-4 rounded-lg bg-slate-50 p-4"><p className="font-semibold">{q.passage_title || "Reading passage"}</p><p className="mt-2 whitespace-pre-wrap text-slate-700">{q.passage_text}</p></div>}<h2 className="mt-4 whitespace-pre-wrap text-lg font-semibold text-slate-900">{cleanQuestionText(q.question)}</h2>{safeImageUrl(q.question_image_url) && <img src={safeImageUrl(q.question_image_url)!} alt={q.question_image_alt || "Question illustration"} className="mt-4 block max-h-96 max-w-full rounded-lg border object-contain" loading="lazy" />}
+          <div className="mt-3 flex items-center justify-between">
+            {!activeHints[String(q.id)] ? (
+              <button
+                type="button"
+                onClick={() => void requestHint(q)}
+                disabled={hintLoading[String(q.id)]}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition disabled:opacity-50"
+              >
+                <span>💡</span>
+                <span>{hintLoading[String(q.id)] ? "Generating Clue…" : "Need a Hint? (No Answer Spoilers)"}</span>
+              </button>
+            ) : (
+              <div className="w-full rounded-xl border border-amber-200 bg-amber-50/90 p-3 text-xs leading-5 text-amber-950">
+                <span className="font-extrabold block text-amber-900 mb-1">💡 AI Tutor Clue:</span>
+                {activeHints[String(q.id)]}
+              </div>
+            )}
+          </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">{(["A","B","C","D"] as const).filter((key) => { const text = q[`option_${key.toLowerCase()}` as "option_a"|"option_b"|"option_c"|"option_d"]; const image = q[`option_${key.toLowerCase()}_image_url` as "option_a_image_url"|"option_b_image_url"|"option_c_image_url"|"option_d_image_url"]; return Boolean(text?.trim()) || Boolean(image); }).map((key) => { const text = q[`option_${key.toLowerCase()}` as "option_a"|"option_b"|"option_c"|"option_d"]; const image = q[`option_${key.toLowerCase()}_image_url` as "option_a_image_url"|"option_b_image_url"|"option_c_image_url"|"option_d_image_url"]; const alt = q[`option_${key.toLowerCase()}_image_alt` as "option_a_image_alt"|"option_b_image_alt"|"option_c_image_alt"|"option_d_image_alt"]; return <label key={key} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${answers[String(q.id)]===key ? "border-indigo-600 bg-indigo-50" : "border-slate-200"} ${secondsLeft===0 ? "opacity-70" : ""}`}><input type="radio" name={`question-${q.id}`} checked={answers[String(q.id)]===key} disabled={secondsLeft===0 || working} onChange={() => void chooseAnswer(q.id,key)} className="mt-1" /><span className="min-w-0"><strong>{key}.</strong> {text || ""}{safeImageUrl(image) && <img src={safeImageUrl(image)!} alt={alt || `Option ${key} illustration`} className="mt-2 block max-h-56 max-w-full object-contain" loading="lazy" />}</span></label>; })}</div>
         </article>)}
         {secondsLeft===0 && <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">Time is up. Your answer inputs are locked. Submit now to grade the answers saved so far.</div>}

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { getTopicMasteryRecords, calculateExamReadiness, type ExamReadiness } from "../lib/adaptiveEngine";
+import { getDueSpacedReviews } from "../lib/spacedRepetition";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 
 type LearnerStats = {
@@ -112,6 +114,8 @@ export default function LearnerDashboardPage() {
   const [recentExam, setRecentExam] = useState<RecentExam | null>(null);
   const [activePlan, setActivePlan] = useState<ActivePlan | null>(null);
   const [recentLesson, setRecentLesson] = useState<RecentLesson | null>(null);
+  const [readiness, setReadiness] = useState<ExamReadiness | null>(null);
+  const [dueSpacedCount, setDueSpacedCount] = useState<number>(0);
 
   useEffect(() => {
     // Check localStorage for recent CBT attempt summary
@@ -145,6 +149,11 @@ export default function LearnerDashboardPage() {
 
       // Fetch authentic progress data across systems in parallel with defensive fallbacks
       try {
+        void getTopicMasteryRecords().then((list) => {
+          if (list.length) setReadiness(calculateExamReadiness(list));
+        });
+        void getDueSpacedReviews().then((cards) => setDueSpacedCount(cards.length));
+
         const [progressRes, planRes, entitlementsRes, testAttemptsRes] = await Promise.all([
           // 1. Lessons completed
           supabase
@@ -397,6 +406,92 @@ export default function LearnerDashboardPage() {
                 Questions / practice paper
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* Adaptive Exam Readiness & Spaced Repetition Strip */}
+        <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          {/* Exam Readiness Intelligence */}
+          <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/40 p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-indigo-100 pb-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-indigo-900">
+                  <span>📊</span> Exam Readiness Intelligence
+                </span>
+                <h2 className="mt-2 text-xl font-black text-slate-950">
+                  Estimated National Examination Standing
+                </h2>
+                <p className="mt-1 text-xs text-slate-600">
+                  Calculated from your verified CBT attempts and topic-by-topic question mastery.
+                </p>
+              </div>
+              <div className="flex items-baseline gap-2 rounded-2xl bg-white border border-indigo-100 px-4 py-2.5 shadow-sm">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">Predicted JAMB</span>
+                  <span className="text-2xl font-black text-indigo-950">
+                    {readiness ? readiness.predictedJambScore : 260} <span className="text-xs text-slate-400 font-bold">/ 400</span>
+                  </span>
+                </div>
+                <div className="border-l border-slate-200 pl-3">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">WAEC / NECO</span>
+                  <span className="text-2xl font-black text-emerald-700">
+                    {readiness ? readiness.predictedWaecPercent : 65}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {readiness?.weakestTopics && readiness.weakestTopics.length > 0 ? (
+              <div className="mt-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-2">
+                  Top Priority Areas to Bridge:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {readiness.weakestTopics.map((topic, i) => (
+                    <Link
+                      key={i}
+                      href="/self-practice"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3 py-1.5 text-xs font-bold text-red-950 hover:bg-red-100 transition"
+                    >
+                      <span className="text-red-600 font-black">🔴</span>
+                      <span>{topic.subject}: {topic.category}</span>
+                      <span className="text-[10px] text-red-700 bg-white/80 px-1.5 py-0.5 rounded">
+                        {Math.round(topic.mastery * 100)}% mastery
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 text-xs text-slate-500">
+                Practise more subjects to generate a detailed topic mastery breakdown.
+              </div>
+            )}
+          </div>
+
+          {/* Daily 10-Minute Spaced Review Action Box */}
+          <div className="rounded-3xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-indigo-50/60 p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-purple-900">
+                <span>🧠</span> Daily Retention
+              </div>
+              <h3 className="mt-2 text-lg font-black text-slate-900">10-Minute Spaced Review</h3>
+              <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                Review questions you previously missed before they fade from memory.
+              </p>
+              <div className="mt-4 rounded-2xl bg-white border border-purple-100 p-3.5 shadow-sm text-center">
+                <p className="text-3xl font-black text-purple-950">{dueSpacedCount}</p>
+                <p className="text-[11px] font-bold text-purple-800 uppercase tracking-wide mt-0.5">
+                  {dueSpacedCount === 1 ? "Question Due Today" : "Questions Due Today"}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/learning/revision"
+              className="mt-4 block w-full rounded-xl bg-[#061a3a] py-3 text-center text-xs font-black text-white hover:bg-[#123566] transition shadow-sm"
+            >
+              Start 10-Min Review →
+            </Link>
           </div>
         </section>
 

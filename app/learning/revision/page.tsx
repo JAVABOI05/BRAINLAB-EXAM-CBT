@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { getDueSpacedReviews, rateCardReview, type SpacedReviewCard } from "../../lib/spacedRepetition";
 
 type RevisionTask = {
   id: string;
@@ -39,6 +40,29 @@ export default function RevisionPlannerPage() {
   const [tasks, setTasks] = useState<RevisionTask[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const [spacedCards, setSpacedCards] = useState<SpacedReviewCard[]>([]);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [cardFlipped, setCardFlipped] = useState(false);
+  const [spacedReviewDone, setSpacedReviewDone] = useState(false);
+  const [spacedRatingWorking, setSpacedRatingWorking] = useState(false);
+
+  useEffect(() => {
+    void getDueSpacedReviews().then((cards) => setSpacedCards(cards));
+  }, []);
+
+  async function handleRateCard(rating: 1 | 2 | 3) {
+    if (spacedRatingWorking || !spacedCards[currentCardIndex]) return;
+    setSpacedRatingWorking(true);
+    const card = spacedCards[currentCardIndex];
+    await rateCardReview(card.id, rating);
+    setCardFlipped(false);
+    setSpacedRatingWorking(false);
+    if (currentCardIndex + 1 < spacedCards.length) {
+      setCurrentCardIndex((prev) => prev + 1);
+    } else {
+      setSpacedReviewDone(true);
+    }
+  }
   const accountStorageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
 
   useEffect(() => {
@@ -224,6 +248,133 @@ export default function RevisionPlannerPage() {
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Your revision planner</h1>
         <p className="mt-3 max-w-3xl leading-7 text-slate-600">Turn a broad study goal into manageable topics. Add the areas you want to revise, choose a realistic daily time, and tick off each session as you complete it.</p>
       </div>
+
+      {/* Daily 10-Minute Spaced Review (SM-2 Algorithm) */}
+      <section className="mb-8 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/50 p-6 shadow-sm sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-indigo-900">
+              <span>🧠</span> Spaced Repetition (SM-2)
+            </div>
+            <h2 className="mt-2 text-2xl font-black text-slate-900">Daily 10-Minute Knowledge Review</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              BrainLab automatically surfaces questions you previously answered incorrectly using the SM-2 spaced repetition curve.
+            </p>
+          </div>
+          {spacedCards.length > 0 && !spacedReviewDone && (
+            <span className="rounded-xl bg-[#061a3a] px-3.5 py-1.5 text-xs font-black text-white">
+              Card {currentCardIndex + 1} of {spacedCards.length} Due Today
+            </span>
+          )}
+        </div>
+
+        {spacedCards.length === 0 || spacedReviewDone ? (
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-6 text-center">
+            <span className="text-3xl">🎉</span>
+            <h3 className="mt-2 text-lg font-bold text-emerald-950">
+              {spacedReviewDone ? "10-Minute Session Complete!" : "Your Spaced Repetition Deck is Up to Date!"}
+            </h3>
+            <p className="mt-1 text-sm text-emerald-800">
+              {spacedReviewDone
+                ? "Excellent retention practice! Your next review interval has been calculated and updated."
+                : "No questions are currently due for memory review. Any mistakes from CBT exams or Self Practice will be queued here automatically."}
+            </p>
+            <div className="mt-4 flex justify-center gap-3">
+              <Link href="/self-practice" className="rounded-xl bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-900">
+                Start Self Practice →
+              </Link>
+              <Link href="/login" className="rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-xs font-bold text-emerald-900 hover:bg-emerald-50">
+                Take a Mock Exam →
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6">
+            {spacedCards[currentCardIndex] && (
+              <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-700">
+                    {spacedCards[currentCardIndex].subject} · {spacedCards[currentCardIndex].category}
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    Repetition #{spacedCards[currentCardIndex].repetitionCount} · Interval: {spacedCards[currentCardIndex].intervalDays} day(s)
+                  </span>
+                </div>
+
+                <div className="mt-4">
+                  <h3 className="text-base font-bold text-slate-900">
+                    {spacedCards[currentCardIndex].questionText || "Question text saved from your previous attempt."}
+                  </h3>
+
+                  {spacedCards[currentCardIndex].options && (
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2 text-sm">
+                      {Object.entries(spacedCards[currentCardIndex].options!).map(([key, val]) => (
+                        <div
+                          key={key}
+                          className={`p-3 rounded-xl border ${cardFlipped && key === spacedCards[currentCardIndex].correctAnswer ? "border-emerald-500 bg-emerald-50 font-bold text-emerald-950" : "border-slate-200 bg-slate-50/50 text-slate-800"}`}
+                        >
+                          <span className="font-bold">{key}.</span> {val}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {!cardFlipped ? (
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setCardFlipped(true)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#061a3a] px-5 py-3 text-sm font-extrabold text-white transition hover:bg-[#123566]"
+                    >
+                      <span>🔄</span> Reveal Correct Answer & Reason
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-6 border-t border-slate-100 pt-4">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wider text-emerald-900">Correct Answer</p>
+                      <p className="mt-1 text-sm font-extrabold text-emerald-950">
+                        Option {spacedCards[currentCardIndex].correctAnswer || "A"}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-xs font-bold text-slate-700">How well did you recall this concept?</p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={spacedRatingWorking}
+                          onClick={() => void handleRateCard(1)}
+                          className="rounded-xl border border-red-300 bg-red-50 px-3.5 py-2 text-xs font-extrabold text-red-900 hover:bg-red-100 transition"
+                        >
+                          🔴 Hard (Review Tomorrow)
+                        </button>
+                        <button
+                          type="button"
+                          disabled={spacedRatingWorking}
+                          onClick={() => void handleRateCard(2)}
+                          className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-extrabold text-amber-900 hover:bg-amber-100 transition"
+                        >
+                          🟡 Good (Review in 3 Days)
+                        </button>
+                        <button
+                          type="button"
+                          disabled={spacedRatingWorking}
+                          onClick={() => void handleRateCard(3)}
+                          className="rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-extrabold text-emerald-900 hover:bg-emerald-100 transition"
+                        >
+                          🟢 Easy (Mastered / 7+ Days)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="grid gap-5 md:grid-cols-[1fr_180px_180px]">

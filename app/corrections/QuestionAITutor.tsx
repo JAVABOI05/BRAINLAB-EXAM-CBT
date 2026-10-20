@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import { streamAiTutor } from "../lib/aiTutor";
+import { enqueueMissedQuestion } from "../lib/spacedRepetition";
 
 type OptionKey = "A" | "B" | "C" | "D";
 
@@ -42,6 +43,55 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
   const [followUp, setFollowUp] = useState("");
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [selectedStyle, setSelectedStyle] = useState<"standard" | "simple" | "detailed" | "exam_traps">("standard");
+  const [savedToSpaced, setSavedToSpaced] = useState(false);
+
+  async function saveToSpacedDeck() {
+    await enqueueMissedQuestion({
+      questionId: item.id,
+      subject: item.subject,
+      category: "Exam Question",
+      questionText: item.text,
+      options: item.options,
+      correctAnswer: item.correctAnswer,
+    });
+    setSavedToSpaced(true);
+  }
+
+  async function switchMode(newStyle: "standard" | "simple" | "detailed" | "exam_traps") {
+    setSelectedStyle(newStyle);
+    setLoading(true);
+    setError(null);
+    try {
+      let accumulated = "";
+      await streamAiTutor(
+        {
+          mode: newStyle === "exam_traps" ? "distractor_traps" : "explain",
+          style: newStyle,
+          forceRefresh: true,
+          question: {
+            id: item.id,
+            subject: item.subject,
+            text: cleanQuestionText(item.text),
+            options: item.options,
+            correctAnswer: item.correctAnswer,
+            userAnswer: item.userAnswer,
+            explanation: cleanAnswerKeyNote(item.explanation || ""),
+          },
+        },
+        (chunk) => {
+          accumulated += chunk;
+          setExplanation(cleanAIResponse(accumulated));
+          setIsCached(false);
+          setLoading(false);
+        }
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not generate breakdown.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const cacheKey = `brainlab_ai_corr_${item.id}`;
 
