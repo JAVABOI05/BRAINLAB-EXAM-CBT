@@ -8,3 +8,6 @@ build/
 coverage/
 .vercel/
 *.tsbuildinfo
+
+# Blueprint archives and unpacked assets
+BrainLab_Phoenix_Complete_Package/
