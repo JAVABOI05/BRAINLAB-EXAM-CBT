@@ -38,6 +38,32 @@ export default function AcademyResultsAdminPage(){
    setWorking(false);
  },[]);
 
+  function exportCsv() {
+    if (!attempts.length) return;
+    const headers = ["Learner User ID", "Attempt Number", "Status", "Score", "Total", "Percentage", "Answers Saved", "Started At", "Submitted At", "Auto Submitted"];
+    const rows = attempts.map((a) => [
+      a.user_id,
+      a.attempt_number,
+      a.status,
+      a.score ?? "",
+      a.total ?? "",
+      a.percentage ?? "",
+      a.answer_count,
+      a.started_at,
+      a.submitted_at ?? "",
+      a.auto_submitted ? "Yes" : "No",
+    ]);
+    const csvContent = [headers.join(","), ...rows.map((r) => r.map((val) => '"' + String(val).replaceAll('"', '""') + '"').join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "academy_results_" + (assessmentId || "export") + "_" + Date.now() + ".csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+
  useEffect(()=>{
    let active=true;
    async function init(){
@@ -60,7 +86,7 @@ export default function AcademyResultsAdminPage(){
   <section className="admin-section admin-card"><label className="admin-label">Assessment</label><select className="admin-input" value={assessmentId} onChange={(e)=>{const id=e.target.value;setAssessmentId(id);if(id){setWorking(true);void loadResults(id);}else{setAttempts([]);setResultRelease("");}}}><option value="">Choose assessment</option>{assessments.map((a)=><option key={a.id} value={a.id}>{a.title} · {a.assessment_type.replaceAll("_"," ")}</option>)}</select>
    {selected&&<p className="admin-help mt-2">Release policy: {resultRelease||"Loading…"} · {selected.is_published?"Published":"Draft"}</p>}
    <div className="mt-5 flex flex-wrap gap-3"><div className="admin-stat-card"><p className="admin-stat-label">Attempts</p><p className="admin-stat-value">{attempts.length}</p></div><div className="admin-stat-card"><p className="admin-stat-label">Submitted</p><p className="admin-stat-value">{attempts.filter((a)=>a.status==="submitted").length}</p></div><div className="admin-stat-card"><p className="admin-stat-label">Auto-submitted</p><p className="admin-stat-value">{attempts.filter((a)=>a.auto_submitted).length}</p></div></div>
-   <div className="mt-6 flex justify-end"><button className="admin-btn-primary" disabled={working||!assessmentId} onClick={()=>{setWorking(true);void loadResults(assessmentId);}}>{working?"Loading…":"Refresh results"}</button></div>
+   <div className="mt-6 flex flex-wrap items-center justify-end gap-3"><button type="button" className="admin-btn-light" disabled={!attempts.length} onClick={exportCsv}>📥 Export CSV</button><button className="admin-btn-primary" disabled={working||!assessmentId} onClick={()=>{setWorking(true);void loadResults(assessmentId);}}>{working?"Loading…":"Refresh results"}</button></div>
   </section>
   <section className="admin-section admin-card"><h2 className="admin-card-title">Attempt records</h2>{attempts.length===0?<p className="admin-help">No attempts recorded for this assessment yet.</p>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="py-2 pr-3">Learner account ID</th><th className="py-2 pr-3">Attempt</th><th className="py-2 pr-3">Status</th><th className="py-2 pr-3">Score</th><th className="py-2 pr-3">Answers saved</th><th className="py-2 pr-3">Started</th><th className="py-2 pr-3">Submitted</th><th className="py-2">Auto</th></tr></thead><tbody>{attempts.map((a)=><tr key={a.attempt_id} className="border-t"><td className="py-3 pr-3 font-mono text-xs">{a.user_id}</td><td className="py-3 pr-3">{a.attempt_number}</td><td className="py-3 pr-3">{a.status}</td><td className="py-3 pr-3">{a.score===null?"—":`${a.score} / ${a.total} (${a.percentage}%)`}</td><td className="py-3 pr-3">{a.answer_count}</td><td className="py-3 pr-3">{new Date(a.started_at).toLocaleString()}</td><td className="py-3 pr-3">{a.submitted_at?new Date(a.submitted_at).toLocaleString():"—"}</td><td className="py-3">{a.auto_submitted?"Yes":"No"}</td></tr>)}</tbody></table></div>}</section>
  </div></main>;
