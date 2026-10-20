@@ -274,6 +274,29 @@ export default function EditQuestionPage() {
               />
             </div>
 
+            <div className="admin-setting-box" style={{ gridColumn: "1 / -1" }}>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Answer Options</span>
+                <button
+                  type="button"
+                  className="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-800 hover:bg-indigo-100"
+                  onClick={() => {
+                    setQuestion({
+                      ...question,
+                      category: "true_false",
+                      option_a: "True",
+                      option_b: "False",
+                      option_c: "",
+                      option_d: "",
+                      correct_answer: ["A", "B"].includes(question.correct_answer) ? question.correct_answer : "A",
+                    });
+                  }}
+                >
+                  ⚡ Preset: True / False
+                </button>
+              </div>
+            </div>
+
             <div className="admin-setting-box">
               <label className="admin-label">Option A</label>
               <input

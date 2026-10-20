@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 // Backwards-compatible route: the old Learning Lab is now split between
-// Learning Hub and AI Learning. The interactive mission planner lives in AI Learning.
+// Learning Hub (/learn) and AI Learning (/ai-learning).
 export default function LegacyLearningRoute() {
-  redirect("/ai-learning");
+  permanentRedirect("/ai-learning");
 }

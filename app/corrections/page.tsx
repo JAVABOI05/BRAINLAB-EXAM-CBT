@@ -8,6 +8,8 @@ import { getPublicSettings, getResultCorrections, isError } from "../lib/examApi
 import { streamAiTutor, type AiCoachContext } from "../lib/aiTutor";
 import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import QuestionAITutor from "./QuestionAITutor";
+import { recordTopicAttempt } from "../lib/adaptiveEngine";
+import { enqueueMissedQuestion } from "../lib/spacedRepetition";
 
 type ResultItem = {
   id: string | number;
@@ -285,6 +287,21 @@ export default function CorrectionsPage() {
         }
 
         setResults(items as ResultItem[]);
+
+        // Feed Adaptive Learning Engine & Spaced Repetition queue
+        (items as ResultItem[]).forEach((resItem) => {
+          void recordTopicAttempt(resItem.subject, "Exam Question", resItem.isCorrect);
+          if (!resItem.isCorrect) {
+            void enqueueMissedQuestion({
+              questionId: resItem.id,
+              subject: resItem.subject,
+              category: "Exam Question",
+              questionText: resItem.text,
+              options: resItem.options,
+              correctAnswer: resItem.correctAnswer,
+            });
+          }
+        });
         setLoading(false);
       } catch {
         router.replace("/result");

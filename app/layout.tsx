@@ -28,6 +28,15 @@ export const metadata: Metadata = {
       "Learn smarter, practise with purpose and grow beyond the exam.",
     images: ["/opengraph-image"],
   },
+  icons: {
+    icon: [
+      { url: "/brainlab-mark.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    shortcut: "/brainlab-mark.svg",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

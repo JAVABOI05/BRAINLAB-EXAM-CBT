@@ -47,6 +47,8 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [organisations, setOrganisations] = useState<{ id: string; name: string; slug: string; status: string }[]>([]);
+  const [activeOrgId, setActiveOrgId] = useState<string>("");
 
   const loadAdminData = useCallback(async (access: Partial<Record<AdminPermission, boolean>> = {}) => {
     setLoading(true);
@@ -143,6 +145,16 @@ export default function AdminDashboardPage() {
       if (!active) return;
       const access = Object.fromEntries(entries) as Partial<Record<AdminPermission, boolean>>;
       setPermissions(access);
+      try {
+        const { data: orgsData } = await supabase.from("learning_organisations").select("id, name, slug, status").order("name");
+        if (orgsData) {
+          setOrganisations(orgsData);
+          const savedOrg = typeof window !== "undefined" ? localStorage.getItem("admin_active_org_id") : null;
+          if (savedOrg && orgsData.some((o: { id: string }) => o.id === savedOrg)) {
+            setActiveOrgId(savedOrg);
+          }
+        }
+      } catch {}
       await loadAdminData(access);
     }
 
@@ -251,6 +263,58 @@ export default function AdminDashboardPage() {
               <button onClick={handleLogout} className="admin-btn-primary">
                 Logout
               </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="admin-section admin-card mb-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-extrabold uppercase tracking-wider text-indigo-700">🏢 Multi-Tenant Institution Scope</span>
+                {activeOrgId && (
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+                    Scoped
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Filter assessments, learner access codes, and results by institutional boundary.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                aria-label="Active Organisation Context"
+                className="admin-input !mt-0 !w-auto min-w-[220px] text-xs font-semibold"
+                value={activeOrgId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setActiveOrgId(val);
+                  if (typeof window !== "undefined") {
+                    if (val) localStorage.setItem("admin_active_org_id", val);
+                    else localStorage.removeItem("admin_active_org_id");
+                  }
+                }}
+              >
+                <option value="">Global / All Institutions</option>
+                {organisations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name} ({org.status})
+                  </option>
+                ))}
+              </select>
+              {activeOrgId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveOrgId("");
+                    if (typeof window !== "undefined") localStorage.removeItem("admin_active_org_id");
+                  }}
+                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Reset to Global
+                </button>
+              )}
             </div>
           </div>
         </section>

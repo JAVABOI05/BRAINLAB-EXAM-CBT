@@ -30,7 +30,6 @@ function safeHttpUrl(value: unknown): string | null {
 function contentText(content: Record<string, unknown>): string {
   const candidate = content.markdown ?? content.text ?? content.html ?? content.body;
   if (typeof candidate !== "string") return "";
-  // We deliberately render lesson text as text, never as unsanitized HTML.
   return candidate.replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, "\n\n")
     .replace(/<br\s*\/?\s*>/gi, "\n")
     .replace(/<[^>]*>/g, "")
@@ -160,6 +159,39 @@ export default function LessonViewerPage() {
   const [progressStatus, setProgressStatus] = useState<"signed_out" | "in_progress" | "completed">("signed_out");
   const [progressSaving, setProgressSaving] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    // Check initial bookmark state
+    try {
+      const stored = localStorage.getItem("learning_bookmarked_lessons");
+      if (stored) {
+        const bookmarks: string[] = JSON.parse(stored);
+        if (Array.isArray(bookmarks) && bookmarks.includes(lessonId)) {
+          setIsBookmarked(true);
+        }
+      }
+    } catch {}
+  }, [lessonId]);
+
+  function toggleBookmark() {
+    try {
+      const stored = localStorage.getItem("learning_bookmarked_lessons");
+      let bookmarks: string[] = [];
+      if (stored) {
+        bookmarks = JSON.parse(stored);
+        if (!Array.isArray(bookmarks)) bookmarks = [];
+      }
+      if (bookmarks.includes(lessonId)) {
+        bookmarks = bookmarks.filter((id) => id !== lessonId);
+        setIsBookmarked(false);
+      } else {
+        bookmarks.push(lessonId);
+        setIsBookmarked(true);
+      }
+      localStorage.setItem("learning_bookmarked_lessons", JSON.stringify(bookmarks));
+    } catch {}
+  }
 
   useEffect(() => {
     let active = true;
@@ -250,7 +282,7 @@ export default function LessonViewerPage() {
     return () => { active = false; };
   }, [lessonId, subjectSlug]);
 
-  const durationLabel = useMemo(() => lesson ? `${lesson.estimated_duration_mins} min` : "", [lesson]);
+  const durationLabel = useMemo(() => lesson ? `${lesson.estimated_duration_mins} min read` : "", [lesson]);
 
   async function markLessonComplete() {
     if (!lesson || progressStatus === "signed_out" || progressSaving) return;
@@ -280,17 +312,49 @@ export default function LessonViewerPage() {
 
   return (
     <main id="main" className="mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
-      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
-        <Link href="/learn" className="text-blue-800 underline underline-offset-4">Learning Hub</Link><span aria-hidden="true">/</span>
-        {subject && <Link href={`/learn/${subject.slug}`} className="text-blue-800 underline underline-offset-4">{subject.name}</Link>}
-        {topic && <><span aria-hidden="true">/</span><span>{topic.title}</span></>}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-500">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/learn" className="text-blue-800 underline underline-offset-4">Learning Hub</Link>
+          <span aria-hidden="true">/</span>
+          {subject && <Link href={`/learn/${subject.slug}`} className="text-blue-800 underline underline-offset-4">{subject.name}</Link>}
+          {topic && <><span aria-hidden="true">/</span><span>{topic.title}</span></>}
+        </div>
+        <button
+          type="button"
+          onClick={toggleBookmark}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
+            isBookmarked
+              ? "border-amber-300 bg-amber-50 text-amber-900"
+              : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+          aria-label={isBookmarked ? "Remove bookmark" : "Bookmark this lesson"}
+        >
+          {isBookmarked ? "★ Bookmarked" : "☆ Bookmark"}
+        </button>
       </div>
+
       {loading && <p className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600" role="status">Loading lesson…</p>}
-      {!loading && error && <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950" role="alert"><h1 className="text-xl font-extrabold">Lesson unavailable</h1><p className="mt-2">{error}</p><Link href="/learn" className="mt-4 inline-block font-bold underline underline-offset-4">Return to Learning Hub</Link></div>}
+      {!loading && error && (
+        <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950" role="alert">
+          <h1 className="text-xl font-extrabold">Lesson unavailable</h1>
+          <p className="mt-2">{error}</p>
+          <Link href="/learn" className="mt-4 inline-block font-bold underline underline-offset-4">Return to Learning Hub</Link>
+        </div>
+      )}
+
       {!loading && !error && lesson && subject && topic && (
         <>
           <header className="mt-6 rounded-3xl bg-[#061a3a] p-7 text-white sm:p-10">
-            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-cyan-200">Lesson · {durationLabel}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-cyan-200">
+                Lesson · {durationLabel}
+              </p>
+              {progressStatus === "completed" && (
+                <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-extrabold text-emerald-300 border border-emerald-400/30">
+                  Completed ✓
+                </span>
+              )}
+            </div>
             <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{lesson.title}</h1>
             {lesson.summary && <p className="mt-4 max-w-3xl leading-7 text-blue-100">{lesson.summary}</p>}
             <div className="mt-6 flex flex-wrap gap-3">
@@ -298,16 +362,47 @@ export default function LessonViewerPage() {
               <span className="rounded-full border border-white/20 px-3 py-1.5 text-sm">{blocks.length} learning {blocks.length === 1 ? "block" : "blocks"}</span>
             </div>
           </header>
-          {blocks.length === 0 ? <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7"><h2 className="text-lg font-extrabold text-slate-950">Lesson content is being prepared</h2><p className="mt-2 leading-7 text-slate-600">This lesson has been published without any content blocks. Please return later or choose another lesson.</p></div> : <div className="mt-8 space-y-6">{blocks.map((block, index) => <div key={block.id} className="space-y-2"><p className="px-1 text-xs font-extrabold uppercase tracking-wider text-slate-400">Part {index + 1}</p><BlockRenderer block={block} /></div>)}</div>}
+
+          {blocks.length === 0 ? (
+            <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7">
+              <h2 className="text-lg font-extrabold text-slate-950">Lesson content is being prepared</h2>
+              <p className="mt-2 leading-7 text-slate-600">This lesson has been published without any content blocks. Please return later or choose another lesson.</p>
+            </div>
+          ) : (
+            <div className="mt-8 space-y-6">
+              {blocks.map((block, index) => (
+                <div key={block.id} className="space-y-2">
+                  <p className="px-1 text-xs font-extrabold uppercase tracking-wider text-slate-400">Part {index + 1}</p>
+                  <BlockRenderer block={block} />
+                </div>
+              ))}
+            </div>
+          )}
+
           <footer className="mt-10 border-t border-slate-200 pt-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <p className="max-w-xl text-sm leading-6 text-slate-500">Take your time. Use checkpoints to test understanding, not just recall.</p>
               <div className="flex flex-wrap gap-3">
-                {progressStatus === "signed_out" ? <Link href="/account" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800">Sign in to track progress</Link> : <button type="button" disabled={progressSaving || blocks.length === 0 || progressStatus === "completed"} onClick={() => void markLessonComplete()} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{progressStatus === "completed" ? "Lesson completed ✓" : progressSaving ? "Saving progress…" : "Mark lesson complete"}</button>}
-                <Link href={`/learn/${subject.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Back to topics</Link>
+                {progressStatus === "signed_out" ? (
+                  <Link href="/account" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-800">
+                    Sign in to track progress
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={progressSaving || blocks.length === 0 || progressStatus === "completed"}
+                    onClick={() => void markLessonComplete()}
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                  >
+                    {progressStatus === "completed" ? "Lesson completed ✓" : progressSaving ? "Saving progress…" : "Mark lesson complete"}
+                  </button>
+                )}
+                <Link href={`/learn/${subject.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white transition hover:bg-[#093278]">
+                  Back to topics
+                </Link>
               </div>
             </div>
-            {progressMessage && <p role="status" className="mt-3 text-sm text-slate-600">{progressMessage}</p>}
+            {progressMessage && <p role="status" className="mt-3 text-sm font-medium text-slate-700">{progressMessage}</p>}
           </footer>
         </>
       )}

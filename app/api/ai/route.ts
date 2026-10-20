@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
   const isExamActive =
     request.headers.get("x-brainlab-exam-active") === "true" ||
     body.exam_active === true;
-  if (isExamActive && (body.mode === "explain" || body.mode === "why_wrong")) {
+  if (isExamActive && (body.mode === "explain" || body.mode === "why_wrong" || body.mode === "distractor_traps")) {
     return jsonError("Explanations are strictly unavailable during an active timed exam attempt.", 403);
   }
 

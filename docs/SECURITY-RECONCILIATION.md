@@ -128,11 +128,50 @@ Read-only inspection of staging project `BrainLabCBT-Staging` (`eusgwsuoloompheb
 
 The seven RPC signatures used by `app/lib/examApi.ts` match staging: `get_public_settings()`, `check_access_code(p_code text, p_phone text)`, `start_exam(p_code text, p_name text, p_phone text, p_elective text)`, `resume_exam(p_session uuid, p_token uuid)`, `save_progress(p_session uuid, p_token uuid, p_answers jsonb)`, `record_tab_switch(p_session uuid, p_token uuid)`, `submit_exam(p_session uuid, p_token uuid, p_answers jsonb, p_auto boolean, p_flagged jsonb)`, and `lookup_result(p_phone text, p_code text)`. The server-side paper payload omits `correct_answer` and `explanation`; the grading function reads the answer key on the database side.
 
-### Confirmed result-release gap
+### Result-release gap resolution (Implemented)
 
-- The staging `_result_payload` includes scores and correction items only when `show_results` is true. That payload is returned from submission/resume.
-- `lookup_result(p_phone, p_code)` currently returns only a summary (name, subject, score, total, timestamp), not detailed correction items.
-- Consequently, a candidate who submits while results are hidden cannot be relied on to receive the detailed review later simply by enabling results and using the lookup path. The frontend's corrections page relies on cached review items, so this scenario remains a release blocker. Resolve through a reviewed, staged API/migration change and test hidden-at-submit → release-later behavior before release.
+- **Previous vulnerability**: The exam completion payload previously passed `items` with answer keys directly to client-side localStorage. If `show_results` was false, review items were blocked at submission, leaving candidates unable to fetch full reviews when results were released later without storing raw keys in the client.
+- **Resolution**:
+  1. Migration `20261020010000_get_result_corrections_rpc.sql` adds `get_result_corrections(p_result_id uuid)` with strict `security definer` enforcement. It validates that the result is finalized and that `show_results` is enabled before returning corrections.
+  2. `app/exam/page.tsx` strips `exam_result` from localStorage and only retains `exam_summary` (scores and result ID token).
+  3. `app/corrections/page.tsx` dynamically calls `getResultCorrections(result_id)` on mount. Answer keys and explanations are never held in long-term browser storage before official release.
+
+### Full migration catalog (31 migrations)
+
+The complete sequence in `supabase/migrations/` is ordered and verified:
+1. `20261018135606_admin_role_hierarchy.sql`
+2. `20261018135609_learning_hub_foundation.sql`
+3. `20261018135611_learning_question_validation.sql`
+4. `20261018135614_learning_assessment_atomicity.sql`
+5. `20261018135937_learning_hub_foreign_key_indexes.sql`
+6. `20261018140105_legacy_question_media_support.sql`
+7. `20261018141058_admin_question_media_storage_and_rpc_grants.sql`
+8. `20261018141257_learning_admin_content_scope.sql`
+9. `20261018141753_learning_access_and_self_practice_engine.sql`
+10. `20261018141909_learning_access_foreign_key_indexes.sql`
+11. `20261018141944_learning_access_code_issuance_redemption.sql`
+12. `20261018142023_learning_organisation_admin_rpc.sql`
+13. `20261018142148_self_practice_catalog_and_validation.sql`
+14. `20261018142612_learning_assessment_attempt_engine.sql`
+15. `20261018142739_learning_self_practice_endpoint_guards.sql`
+16. `20261018142808_published_assessment_discovery_policy.sql`
+17. `20261018142934_organisation_scoped_assessment_codes.sql`
+18. `20261018143207_staging_function_search_paths_and_rls_indexes.sql`
+19. `20261018143242_assessment_attempt_limits_and_admin_results.sql`
+20. `20261018143315_admin_entitlement_management.sql`
+21. `20261018143552_account_bound_permanent_access_codes.sql`
+22. `20261018143652_account_bound_access_code_issuer_wrapper.sql`
+23. `20261018144104_validate_published_assessment_question_pool.sql`
+24. `20261018144708_question_media_storage_permissions.sql`
+25. `20261018145107_pin_remaining_legacy_helper_search_paths.sql`
+26. `20261018145158_question_media_policy_cleanup.sql`
+27. `20261019012307_learning_revision_plans.sql`
+28. `20261019020000_create_ai_generations.sql`
+29. `20261019233000_question_explanations_cache.sql`
+30. `20261020010000_get_result_corrections_rpc.sql`
+31. `20261020020000_repair_mojibake.sql`
+
+All migrations have explicit `search_path` assignments and follow fail-closed authorization semantics.
 
 ### Legacy access-code endpoint still callable
 

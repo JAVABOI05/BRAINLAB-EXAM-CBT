@@ -71,8 +71,24 @@ export const MAX_AI_OUTPUT_TOKENS = 350;
  */
 export function cleanQuestionText(raw: string): string {
   if (!raw || typeof raw !== "string") return "";
-  const repaired = repairMojibake(raw);
-  return repaired.replace(/\s*[–—\-]\s*Set\s*\d+\s*$/i, "").trim();
+  let cleaned = repairMojibake(raw);
+
+  // Case A: Inside sentence before a question mark or bracket: e.g. "solution in Advanced Set N2? [Na = 23...]" -> "solution? [Na = 23...]"
+  cleaned = cleaned.replace(/\s*,?\s*(?:in|for|from)?\s*(?:Advanced|Organic|Basic|Standard)?\s*Set\s+[A-Za-z]?\d+\s*(\?|\[)/gi, "$1");
+
+  // Case B: At end of string or before end question mark
+  cleaned = cleaned.replace(/\s*[–—\-]?\s*,?\s*(?:in|for|from)?\s*(?:Advanced|Organic|Basic|Standard)?\s*Set\s+[A-Za-z]?\d+\s*(\?)?$/gi, "$1");
+
+  // Case C: Embedded inside a sentence: e.g. "HNO3 in Advanced Set N8 is" -> "HNO3 is"
+  cleaned = cleaned.replace(/\s*,?\s*(?:in|for|from)?\s*(?:Advanced|Organic|Basic|Standard)?\s*Set\s+[A-Za-z]?\d+,?\s*/gi, " ");
+
+  // Normalize duplicate spaces and punctuation
+  cleaned = cleaned.replace(/\s{2,}/g, " ").replace(/\s+\?/g, "?").replace(/,\s*,/g, ",").trim();
+
+  // If ended with trailing comma because of removal (e.g. "because it,"), remove trailing comma
+  cleaned = cleaned.replace(/,\s*$/g, "");
+
+  return cleaned;
 }
 
 /**
