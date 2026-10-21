@@ -140,7 +140,14 @@ export default function SubjectLearningPage() {
                   <div className="flex items-start gap-4 border-b border-slate-100 p-5 sm:p-6">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-sm font-black text-blue-900">{String(index + 1).padStart(2, "0")}</span>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-lg font-extrabold text-slate-950">{topic.title}</h3>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <Link href={`/learn/${subject.slug}/topic/${topic.slug}`} className="hover:text-blue-700 hover:underline">
+                          <h3 className="text-lg font-extrabold text-slate-950">{topic.title}</h3>
+                        </Link>
+                        <Link href={`/learn/${subject.slug}/topic/${topic.slug}`} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100">
+                          Study Topic Path ?
+                        </Link>
+                      </div>
                       {topic.description && <p className="mt-1 text-sm leading-6 text-slate-600">{topic.description}</p>}
                       <p className="mt-2 text-xs font-semibold text-slate-500">{topic.lessons.length} published {topic.lessons.length === 1 ? "lesson" : "lessons"}</p><div className="mt-3 max-w-xs"><div className="flex justify-between gap-3 text-xs font-semibold text-slate-500"><span>{hasStudentSession ? "Progress" : "Sign in to track progress"}</span>{hasStudentSession && <span>{topic.completedCount}/{topic.lessons.length} complete</span>}</div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-emerald-600" style={{ width: `${hasStudentSession && topic.lessons.length ? (topic.completedCount / topic.lessons.length) * 100 : 0}%` }} /></div></div>
                     </div>
