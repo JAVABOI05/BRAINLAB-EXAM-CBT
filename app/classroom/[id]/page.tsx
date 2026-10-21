@@ -305,10 +305,16 @@ export default function LiveClassroomPage({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-white">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-        <h2 className="mt-5 text-xl font-bold">Connecting to BrainLab Live Classroom…</h2>
-        <p className="mt-2 text-sm text-slate-400">Verifying course enrollment and issuing secure credentials.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-white animate-fade-in-up">
+        <div className="relative flex items-center justify-center">
+          <div className="h-16 w-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+          <div className="absolute h-8 w-8 rounded-full bg-blue-600/30 animate-ping" />
+          <span className="absolute text-lg">🎓</span>
+        </div>
+        <h2 className="mt-6 text-xl font-black text-white">Connecting to Live Classroom…</h2>
+        <p className="mt-2 text-xs text-slate-400 max-w-sm text-center leading-relaxed">
+          Verifying course enrollment, testing network latency, and issuing room security tokens.
+        </p>
       </div>
     );
   }
@@ -596,7 +602,7 @@ export default function LiveClassroomPage({
         <div className="flex items-center gap-2">
           <button
             onClick={toggleAudio}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition active-press hover-lift ${
               isAudioEnabled ? "bg-slate-700 text-white" : "bg-rose-600/20 text-rose-300 border border-rose-500/30"
             }`}
           >
@@ -605,7 +611,7 @@ export default function LiveClassroomPage({
 
           <button
             onClick={toggleVideo}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition active-press hover-lift ${
               isVideoEnabled ? "bg-slate-700 text-white" : "bg-slate-800 text-slate-400 hover:text-white"
             }`}
           >
@@ -614,7 +620,7 @@ export default function LiveClassroomPage({
 
           <button
             onClick={toggleScreenShare}
-            className={`hidden sm:flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
+            className={`hidden sm:flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition active-press hover-lift ${
               isScreenSharing ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:text-white"
             }`}
           >
@@ -626,7 +632,7 @@ export default function LiveClassroomPage({
         <div className="flex items-center gap-2">
           <button
             onClick={toggleHandRaise}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold border transition ${
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold border transition active-press hover-lift ${
               isHandRaised
                 ? "border-amber-500 bg-amber-500/20 text-amber-300"
                 : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
@@ -640,7 +646,7 @@ export default function LiveClassroomPage({
               <button
                 key={emoji}
                 onClick={() => sendReaction(emoji)}
-                className="hover:scale-125 transition px-1.5 py-0.5 text-base"
+                className="hover:scale-125 transition px-1.5 py-0.5 text-base active-press"
                 title={`React with ${emoji}`}
               >
                 {emoji}
