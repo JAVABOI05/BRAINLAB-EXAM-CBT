@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import { CardSkeleton } from "../components/SkeletonLoader";
 
 type Recording = {
   id: string;
@@ -103,9 +104,8 @@ export default function ClassRecordingsPage() {
       </div>
 
       {loading ? (
-        <div className="p-16 text-center text-xs text-slate-500">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-3 border-blue-600 border-t-transparent" />
-          <p className="mt-4 font-semibold">Loading class recordings…</p>
+        <div className="pt-6 animate-fade-in-up">
+          <CardSkeleton count={3} />
         </div>
       ) : recordings.length === 0 ? (
         <div className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
@@ -153,7 +153,7 @@ export default function ClassRecordingsPage() {
                       <button
                         key={sp}
                         onClick={() => changeSpeed(sp)}
-                        className={`rounded-lg px-2.5 py-1 font-bold transition ${
+                        className={`rounded-lg px-2.5 py-1 font-bold transition active-press ${
                           playbackSpeed === sp
                             ? "bg-blue-600 text-white"
                             : "bg-slate-800 text-slate-300 hover:bg-slate-700"
@@ -199,7 +199,7 @@ export default function ClassRecordingsPage() {
                   <button
                     key={rec.id}
                     onClick={() => setActiveRecording(rec)}
-                    className={`w-full text-left p-3.5 rounded-2xl border transition flex items-start gap-3 ${
+                    className={`w-full text-left p-3.5 rounded-2xl border transition flex items-start gap-3 hover-lift active-press ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/50 shadow-xs"
                         : "border-slate-200 bg-white hover:bg-slate-50"

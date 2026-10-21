@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
 import FloatingCalculator from "../components/FloatingCalculator";
@@ -489,7 +490,16 @@ export default function ExamPage() {
       <main className="exam-shell px-4 py-8">
         <div className="mx-auto max-w-2xl">
           <div className="exam-card p-8">
-            <h1 className="mb-3 text-2xl font-bold text-gray-800">
+            <div className="mb-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-5">
+              <div className="flex items-center gap-3">
+                <Image src="/brainlab-logo.svg" alt="BrainLab Academy" width={100} height={55} className="h-10 w-auto dark:hidden" />
+                <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={100} height={55} className="h-10 w-auto hidden dark:block" />
+              </div>
+              <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-3 py-1 text-xs font-black text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
+                Official Examination
+              </span>
+            </div>
+            <h1 className="mb-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               CBT Exam Setup
             </h1>
             <p className="mb-3 text-gray-600">
@@ -556,7 +566,7 @@ export default function ExamPage() {
             <button
               onClick={handleStartExam}
               disabled={loading}
-              className="exam-submit-btn w-full"
+              className="w-full rounded-2xl bg-[#012153] hover:bg-[#071c43] px-6 py-4 text-base font-black text-white shadow-lg transition-all duration-150 hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:transform-none"
             >
               {loading ? "Loading Questions..." : "Start Exam"}
             </button>
@@ -605,7 +615,13 @@ export default function ExamPage() {
       <div className="exam-topbar">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="shrink-0">
+                <Image src="/brainlab-logo.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto dark:hidden" />
+                <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto hidden dark:block" />
+              </div>
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+              <h1 className="text-lg font-black text-slate-900 dark:text-white">
               Brainlab CBT Exam
             </h1>
                         <div className="flex flex-wrap items-center gap-2">

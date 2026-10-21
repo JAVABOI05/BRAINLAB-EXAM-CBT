@@ -1,211 +1,273 @@
 @import "tailwindcss";
 
-/* ===== BASE ===== */
+/* ==========================================================================
+   1. BASE TYPOGRAPHY & SHELL
+   ========================================================================== */
 
 html,
 body {
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  color: #111827;
+  color: #0f172a;
   background: #f8fafc;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ===== EXAM PAGE ===== */
+/* ==========================================================================
+   2. UNIVERSAL BUTTON & INTERACTION FEEDBACK
+   ========================================================================== */
+
+button:not(:disabled),
+a[role="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+.exam-nav-btn:not(:disabled),
+.exam-submit-btn:not(:disabled),
+.exam-calc-btn:not(:disabled),
+.exam-palette-btn:not(:disabled) {
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.15s ease,
+              background-color 0.15s ease,
+              border-color 0.15s ease,
+              color 0.15s ease,
+              filter 0.15s ease;
+}
+
+button:not(:disabled):hover,
+a[role="button"]:not(:disabled):hover,
+.exam-nav-btn:not(:disabled):hover,
+.exam-submit-btn:not(:disabled):hover,
+.exam-calc-btn:not(:disabled):hover {
+  transform: translateY(-1.5px);
+  filter: brightness(1.04);
+}
+
+button:not(:disabled):active,
+a[role="button"]:not(:disabled):active,
+.exam-nav-btn:not(:disabled):active,
+.exam-submit-btn:not(:disabled):active,
+.exam-calc-btn:not(:disabled):active,
+.exam-palette-btn:not(:disabled):active {
+  transform: scale(0.97) translateY(0);
+  filter: brightness(0.96);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+button:disabled,
+.exam-nav-btn:disabled,
+.exam-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  filter: none !important;
+}
+
+/* ==========================================================================
+   3. CBT EXAMINATION ENVIRONMENT (BRAINLAB SIGNATURE PALETTE)
+   ========================================================================== */
 
 .exam-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 28%),
-    radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 24%),
-    linear-gradient(180deg, #eef4ff 0%, #dde8fb 100%);
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 30%),
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent 25%),
+    linear-gradient(180deg, #f0f5ff 0%, #e2ecfd 100%);
 }
 
 .exam-topbar {
   position: sticky;
   top: 0;
-  z-index: 20;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.88);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  z-index: 30;
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
 }
 
 .exam-card {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02);
 }
 
 .exam-soft-card {
   background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
 }
 
 .exam-timer {
   min-width: 140px;
   text-align: center;
   border-radius: 16px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  color: white;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+  background: linear-gradient(135deg, #071c43 0%, #0b2a5b 100%);
+  color: #e0f2fe;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 6px 18px rgba(7, 28, 67, 0.25);
 }
 
 .exam-warning {
   border: 1px solid #fecaca;
   background: #fef2f2;
-  color: #b91c1c;
+  color: #991b1b;
   border-radius: 16px;
+  font-weight: 600;
 }
 
 .exam-question-meta {
-  color: #2563eb;
-  font-weight: 600;
-  font-size: 0.95rem;
+  color: #0369a1;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .exam-question-text {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   line-height: 1.9;
-  color: #111827;
-  font-weight: 500;
+  color: #0f172a;
+  font-weight: 600;
 }
 
 .exam-option {
-  border: 1px solid #d1d5db;
+  border: 1.5px solid #cbd5e1;
   background: #ffffff;
-  border-radius: 18px;
-  padding: 16px 18px;
-  transition: all 0.18s ease;
+  border-radius: 20px;
+  padding: 16px 20px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+  display: block;
 }
 
 .exam-option:hover {
-  background: #f8fafc;
-  border-color: #93c5fd;
-  transform: translateY(-1px);
+  background: #f0f7ff;
+  border-color: #38bdf8;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.1);
 }
 
 .exam-option.selected {
   background: #eff6ff;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18), 0 4px 12px rgba(14, 165, 233, 0.12);
 }
 
 .exam-option-letter {
-  font-weight: 700;
-  color: #1e3a8a;
-  margin-right: 8px;
+  font-weight: 800;
+  color: #0369a1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #e0f2fe;
+  margin-right: 12px;
+  font-size: 0.9rem;
+}
+
+.exam-option.selected .exam-option-letter {
+  background: #0284c7;
+  color: white;
 }
 
 .exam-nav-btn {
   border-radius: 14px;
   padding: 12px 22px;
-  font-weight: 600;
-  transition: all 0.18s ease;
+  font-weight: 700;
+  font-size: 0.9rem;
   border: none;
-  cursor: pointer;
-}
-
-.exam-nav-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.exam-nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .exam-submit-btn {
   border-radius: 14px;
-  padding: 12px 18px;
-  font-weight: 700;
+  padding: 12px 20px;
+  font-weight: 800;
   color: white;
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.22);
-  transition: all 0.18s ease;
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  box-shadow: 0 6px 18px rgba(22, 101, 52, 0.28);
   border: none;
-  cursor: pointer;
-}
-
-.exam-submit-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.03);
 }
 
 .exam-calc-btn {
   border-radius: 14px;
   padding: 12px 18px;
-  font-weight: 600;
+  font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
-  transition: all 0.18s ease;
-  border: none;
-  cursor: pointer;
-}
-
-.exam-calc-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .exam-palette-btn {
   height: 42px;
   border-radius: 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #cbd5e1;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 800;
   transition: all 0.15s ease;
-  cursor: pointer;
-}
-
-.exam-palette-btn:hover {
-  transform: translateY(-1px);
 }
 
 .exam-palette-btn.current {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: #071c43;
+  border-color: #071c43;
   color: white;
+  box-shadow: 0 0 0 2px #38bdf8;
 }
 
 .exam-palette-btn.answered {
   background: #dcfce7;
   border-color: #86efac;
-  color: #166534;
+  color: #14532d;
 }
+
 .exam-palette-btn.flagged {
-  background: #fde68a;
+  background: #fef08a;
   border-color: #facc15;
-  color: #854d0e;
+  color: #713f12;
 }
 
 .exam-palette-btn.unanswered {
   background: #f8fafc;
-  border-color: #d1d5db;
+  border-color: #cbd5e1;
   color: #475569;
 }
 
+.exam-palette-btn.unanswered:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
 .exam-passage {
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  border-radius: 18px;
-  padding: 18px;
+  border: 1.5px solid #bae6fd;
+  background: #f0f9ff;
+  border-radius: 20px;
+  padding: 20px;
 }
 
 .exam-passage-title {
-  font-weight: 700;
-  color: #1d4ed8;
+  font-weight: 800;
+  color: #0369a1;
   margin-bottom: 8px;
 }
 
 .exam-passage-text {
   line-height: 1.9;
-  color: #1f2937;
+  color: #0f172a;
   white-space: pre-line;
 }
 
@@ -215,15 +277,19 @@ body {
   border-radius: 999px;
   display: inline-block;
   margin-right: 8px;
+  vertical-align: middle;
 }
 
-/* ===== CALCULATOR ===== */
+/* ==========================================================================
+   4. FLOATING CALCULATOR
+   ========================================================================== */
 
 .calc-window {
-  border-radius: 20px;
+  border-radius: 24px;
   border: 1px solid #cbd5e1;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
   overflow: hidden;
+  background: #ffffff;
 }
 
 .calc-display {
@@ -231,24 +297,22 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 16px;
+  padding: 0 18px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  font-size: 1.8rem;
-  font-weight: 600;
+  border-radius: 16px;
+  font-size: 1.85rem;
+  font-weight: 700;
   color: #0f172a;
 }
 
 .calc-btn {
   height: 48px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #0f172a;
-  font-weight: 700;
-  transition: all 0.15s ease;
-  cursor: pointer;
+  font-weight: 800;
 }
 
 .calc-btn:hover {
@@ -257,28 +321,24 @@ body {
 
 .calc-op-btn {
   height: 48px;
-  border-radius: 12px;
-  border: 1px solid #64748b;
-  background: #64748b;
+  border-radius: 14px;
+  border: 1px solid #0284c7;
+  background: #0284c7;
   color: white;
-  font-weight: 700;
-  transition: all 0.15s ease;
-  cursor: pointer;
+  font-weight: 800;
 }
 
 .calc-op-btn:hover {
-  background: #475569;
+  background: #0369a1;
 }
 
 .calc-top-btn {
   height: 48px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid #94a3b8;
   background: #94a3b8;
   color: white;
-  font-weight: 700;
-  transition: all 0.15s ease;
-  cursor: pointer;
+  font-weight: 800;
 }
 
 .calc-top-btn:hover {
@@ -286,132 +346,391 @@ body {
 }
 
 .calc-equal-btn {
-  height: 102px;
-  border-radius: 12px;
-  border: 1px solid #f97316;
-  background: #f97316;
-  color: white;
-  font-size: 1.25rem;
-  font-weight: 800;
-  transition: all 0.15s ease;
-  cursor: pointer;
+  height: 104px;
+  border-radius: 14px;
+  border: 1px solid #f59e0b;
+  background: #f59e0b;
+  color: #78350f;
+  font-size: 1.35rem;
+  font-weight: 900;
 }
 
 .calc-equal-btn:hover {
-  background: #ea580c;
-}
-@keyframes shine {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
+  background: #d97706;
+  color: white;
 }
 
+/* ==========================================================================
+   5. GLOBAL LEARNER TOOLBAR
+   ========================================================================== */
 
-/* ===== APPLICATION-WIDE APPEARANCE ===== */
-html[data-theme="dark"] body{color:#e5edf9;background-color:#0b1220!important}
-html[data-theme="dark"] .bg-\[\#f5f7fb\],html[data-theme="dark"] .bg-\[\#dfe8f7\],html[data-theme="dark"] .bg-\[\#eef4ff\],html[data-theme="dark"] .bg-\[\#f8fafc\]{background-color:#0b1220!important}
-html[data-theme="dark"] .bg-\[\#f0f5ff\],html[data-theme="dark"] .bg-\[\#eaf2ff\]{background-color:#17243a!important}
-html[data-theme="dark"] .border-blue-100,html[data-theme="dark"] .border-blue-200{border-color:#2b3a52!important}
-.global-learner-toolbar{position:relative;z-index:45;width:100%;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#334155;font-family:Arial,Helvetica,sans-serif}
-.global-learner-toolbar-inner{display:flex;min-height:48px;max-width:1440px;align-items:center;justify-content:space-between;gap:12px;margin:0 auto;padding:6px 16px}
-.global-learner-identity,.global-learner-actions{display:flex;min-width:0;align-items:center;gap:10px}
-.global-learner-avatar{display:inline-flex;width:32px;height:32px;flex:0 0 32px;align-items:center;justify-content:center;overflow:hidden;border-radius:50%;object-fit:cover}
-.global-learner-avatar-fallback{background:#dbeafe;color:#1e3a8a;font-size:12px;font-weight:800}
-.global-learner-welcome{display:flex;min-width:0;flex-wrap:wrap;align-items:baseline;gap:4px;font-size:12px}
-.global-learner-greeting{color:#64748b}
-.global-learner-name{overflow:hidden;color:#0f172a;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
-.global-learner-actions{justify-content:flex-end}
-.global-learner-action-link{display:inline-flex;min-height:34px;align-items:center;border-radius:8px;padding:5px 9px;color:#334155;font-size:12px;font-weight:700;text-decoration:none}
-.global-learner-action-link:hover{background:#e2e8f0}
-.global-learner-theme-button{display:inline-flex;min-height:36px;align-items:center;justify-content:center;gap:7px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:6px 11px;color:#0f172a;font-size:12px;font-weight:800;cursor:pointer}
-.global-learner-theme-button:hover{background:#f1f5f9}
-.global-learner-theme-button:focus-visible,.global-learner-action-link:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
-html[data-theme="dark"] .global-learner-toolbar{border-color:#26364c;background:#0d1727;color:#e5edf9}
-html[data-theme="dark"] .global-learner-greeting,html[data-theme="dark"] .global-learner-action-link{color:#a7b6cc}
-html[data-theme="dark"] .global-learner-name{color:#e5edf9}
-html[data-theme="dark"] .global-learner-avatar-fallback{background:#243b5b;color:#dbeafe}
-html[data-theme="dark"] .global-learner-action-link:hover{background:#1c2a3e;color:#fff}
-html[data-theme="dark"] .global-learner-theme-button{border-color:#40516a;background:#17243a;color:#e5edf9}
-html[data-theme="dark"] .global-learner-theme-button:hover{background:#22334d}
-html[data-theme="dark"] .bg-white{background-color:#111c2f!important}
-html[data-theme="dark"] .bg-slate-50,html[data-theme="dark"] .bg-gray-50,html[data-theme="dark"] .bg-gray-100,html[data-theme="dark"] .bg-slate-100{background-color:#17243a!important}
-html[data-theme="dark"] .bg-blue-50,html[data-theme="dark"] .bg-indigo-50,html[data-theme="dark"] .bg-emerald-50,html[data-theme="dark"] .bg-violet-50,html[data-theme="dark"] .bg-rose-50,html[data-theme="dark"] .bg-yellow-50{background-color:#1a2b43!important}
-html[data-theme="dark"] .text-slate-950,html[data-theme="dark"] .text-slate-900,html[data-theme="dark"] .text-slate-800,html[data-theme="dark"] .text-slate-700,html[data-theme="dark"] .text-gray-900,html[data-theme="dark"] .text-gray-800,html[data-theme="dark"] .text-gray-700{color:#e5edf9!important}
-html[data-theme="dark"] .text-slate-600,html[data-theme="dark"] .text-slate-500,html[data-theme="dark"] .text-slate-400,html[data-theme="dark"] .text-gray-600,html[data-theme="dark"] .text-gray-500{color:#a7b6cc!important}
-html[data-theme="dark"] .text-blue-950,html[data-theme="dark"] .text-blue-900,html[data-theme="dark"] .text-indigo-900{color:#c7dcff!important}
-html[data-theme="dark"] .border-slate-100,html[data-theme="dark"] .border-slate-200,html[data-theme="dark"] .border-slate-300,html[data-theme="dark"] .border-gray-100,html[data-theme="dark"] .border-gray-200,html[data-theme="dark"] .border-gray-300{border-color:#2b3a52!important}
-html[data-theme="dark"] input:not([type="radio"]):not([type="checkbox"]),html[data-theme="dark"] textarea,html[data-theme="dark"] select{color:#e5edf9;background-color:#0f1a2b;border-color:#3a4b64}
-html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:#8799b2}
-html[data-theme="dark"] .exam-shell{background:radial-gradient(circle at top left,rgba(59,130,246,.12),transparent 28%),radial-gradient(circle at top right,rgba(99,102,241,.1),transparent 24%),linear-gradient(180deg,#101b2c 0%,#0b1220 100%)}
-html[data-theme="dark"] .exam-topbar{background:rgba(13,23,39,.94);border-color:#2b3a52}
-html[data-theme="dark"] .exam-card,html[data-theme="dark"] .exam-option{background:#111c2f;border-color:#2b3a52;color:#e5edf9}
-html[data-theme="dark"] .exam-soft-card,html[data-theme="dark"] .exam-option:hover{background:#17243a;border-color:#354862;color:#e5edf9}
-html[data-theme="dark"] .exam-option.selected{background:#172d4c;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.16)}
-html[data-theme="dark"] .exam-question-text,html[data-theme="dark"] .exam-passage-text{color:#e5edf9}
-html[data-theme="dark"] .exam-option-letter,html[data-theme="dark"] .exam-question-meta,html[data-theme="dark"] .exam-passage-title{color:#93c5fd}
-html[data-theme="dark"] .exam-nav-btn.border,html[data-theme="dark"] .exam-palette-btn.unanswered{background:#17243a;border-color:#40516a;color:#e5edf9}
-html[data-theme="dark"] .exam-passage{background:#142743;border-color:#294d7a}
-html[data-theme="dark"] .exam-palette-btn.answered{background:#174333;border-color:#287451;color:#bbf7d0}
-html[data-theme="dark"] .exam-palette-btn.flagged{background:#51411b;border-color:#8b6a1c;color:#fef3c7}
-html[data-theme="dark"] .calc-window{border-color:#334155;background:#0f1a2b}
-html[data-theme="dark"] .calc-display,html[data-theme="dark"] .calc-btn{border-color:#3a4b64;background:#17243a;color:#e5edf9}
-html[data-theme="dark"] .calc-btn:hover{background:#24364e}
-@media(max-width:540px){.global-learner-toolbar-inner{align-items:flex-start;padding:7px 10px}.global-learner-actions{gap:4px}.global-learner-action-link{padding-inline:5px;font-size:11px}.global-learner-theme-button{gap:4px;padding-inline:8px}.global-learner-welcome{max-width:160px}}
-@media(prefers-reduced-motion:reduce){.learner-theme,.global-learner-theme-button{transition:none}}
-
-/* ===== MICRO-INTERACTIONS & POLISH ===== */
-.hover-lift {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+.global-learner-toolbar {
+  position: relative;
+  z-index: 45;
+  width: 100%;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
 }
 
-.active-press {
-  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), filter 0.12s ease;
-}
-.active-press:active {
-  transform: scale(0.97);
-  filter: brightness(0.97);
-}
-
-.glow-blue {
-  box-shadow: 0 0 20px -3px rgba(37, 99, 235, 0.35);
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.global-learner-toolbar-inner {
+  display: flex;
+  min-height: 48px;
+  max-width: 1440px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 auto;
+  padding: 6px 16px;
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.global-learner-identity,
+.global-learner-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
 }
 
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 15px -3px rgba(37, 99, 235, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 25px 2px rgba(37, 99, 235, 0.65);
-  }
+.global-learner-avatar {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
-.pulse-glow {
-  animation: pulseGlow 2.5s infinite ease-in-out;
+.global-learner-avatar-fallback {
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 800;
 }
 
-/* Polished Slender Scrollbars */
+.global-learner-welcome {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.global-learner-greeting {
+  color: #64748b;
+}
+
+.global-learner-name {
+  overflow: hidden;
+  color: #0f172a;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.global-learner-actions {
+  justify-content: flex-end;
+}
+
+.global-learner-action-link {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  border-radius: 8px;
+  padding: 5px 9px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.global-learner-action-link:hover {
+  background: #e2e8f0;
+}
+
+.global-learner-theme-button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  padding: 6px 11px;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.global-learner-theme-button:hover {
+  background: #f1f5f9;
+}
+
+/* ==========================================================================
+   6. DARK MODE ARCHITECTURE (EXHAUSTIVE HIGH-CONTRAST PALETTE)
+   ========================================================================== */
+
+html[data-theme="dark"] body {
+  color: #f1f5f9 !important;
+  background-color: #060e1a !important;
+}
+
+/* Base Surfaces in Dark Mode */
+html[data-theme="dark"] header {
+  background-color: rgba(7, 19, 40, 0.96) !important;
+  border-color: rgba(30, 41, 59, 0.85) !important;
+}
+
+html[data-theme="dark"] .bg-white {
+  background-color: #0c1728 !important;
+}
+
+html[data-theme="dark"] [class*="bg-white/"] {
+  background-color: rgba(12, 23, 40, 0.95) !important;
+}
+
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] .bg-gray-50,
+html[data-theme="dark"] .bg-gray-100,
+html[data-theme="dark"] .bg-slate-100,
+html[data-theme="dark"] [class*="bg-slate-50/"] {
+  background-color: #111f36 !important;
+}
+
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-slate-300,
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-gray-300,
+html[data-theme="dark"] [class*="border-slate-200/"],
+html[data-theme="dark"] [class*="border-white/"] {
+  border-color: #1e2e47 !important;
+}
+
+/* Text Hierarchy in Dark Mode */
+html[data-theme="dark"] .text-slate-950,
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .text-slate-600,
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .text-slate-400,
+html[data-theme="dark"] .text-gray-400 {
+  color: #64748b !important;
+}
+
+/* High-Contrast Badges & Accents in Dark Mode */
+html[data-theme="dark"] .bg-blue-50,
+html[data-theme="dark"] .bg-indigo-50 {
+  background-color: rgba(30, 58, 138, 0.3) !important;
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+html[data-theme="dark"] .text-blue-700,
+html[data-theme="dark"] .text-blue-800,
+html[data-theme="dark"] .text-blue-900,
+html[data-theme="dark"] .text-indigo-700,
+html[data-theme="dark"] .text-indigo-800,
+html[data-theme="dark"] .text-indigo-900 {
+  color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .bg-emerald-50,
+html[data-theme="dark"] .bg-green-50 {
+  background-color: rgba(6, 78, 59, 0.35) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+html[data-theme="dark"] .text-emerald-700,
+html[data-theme="dark"] .text-emerald-800,
+html[data-theme="dark"] .text-emerald-900 {
+  color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .bg-amber-50,
+html[data-theme="dark"] .bg-amber-100,
+html[data-theme="dark"] .bg-yellow-50 {
+  background-color: rgba(120, 53, 15, 0.35) !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+html[data-theme="dark"] .text-amber-700,
+html[data-theme="dark"] .text-amber-800,
+html[data-theme="dark"] .text-amber-900,
+html[data-theme="dark"] .text-amber-950 {
+  color: #fde68a !important;
+}
+
+html[data-theme="dark"] .bg-rose-50,
+html[data-theme="dark"] .bg-red-50 {
+  background-color: rgba(136, 19, 55, 0.35) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+html[data-theme="dark"] .text-rose-700,
+html[data-theme="dark"] .text-rose-800,
+html[data-theme="dark"] .text-rose-900 {
+  color: #fca5a5 !important;
+}
+
+/* Dark Mode Toolbar */
+html[data-theme="dark"] .global-learner-toolbar {
+  border-color: #1e2e47;
+  background: #08111e;
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .global-learner-greeting {
+  color: #94a3b8;
+}
+html[data-theme="dark"] .global-learner-name {
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .global-learner-avatar-fallback {
+  background: #1e3a8a;
+  color: #e0f2fe;
+}
+html[data-theme="dark"] .global-learner-action-link {
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .global-learner-action-link:hover {
+  background: #17243a;
+  color: #ffffff;
+}
+html[data-theme="dark"] .global-learner-theme-button {
+  border-color: #2b3a52;
+  background: #111f36;
+  color: #f1f5f9;
+}
+html[data-theme="dark"] .global-learner-theme-button:hover {
+  background: #172a48;
+}
+
+/* Dark Mode Inputs, Selects, Textareas */
+html[data-theme="dark"] input:not([type="radio"]):not([type="checkbox"]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  color: #f1f5f9 !important;
+  background-color: #0b1524 !important;
+  border-color: #2b3e59 !important;
+}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Dark Mode CBT Environment */
+html[data-theme="dark"] .exam-shell {
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 30%),
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent 25%),
+    linear-gradient(180deg, #060e1a 0%, #030712 100%) !important;
+}
+html[data-theme="dark"] .exam-topbar {
+  background: rgba(7, 19, 40, 0.95) !important;
+  border-color: #1e2e47 !important;
+}
+html[data-theme="dark"] .exam-card {
+  background: #0c1728 !important;
+  border-color: #1e2e47 !important;
+}
+html[data-theme="dark"] .exam-soft-card {
+  background: #111f36 !important;
+  border-color: #1e2e47 !important;
+}
+html[data-theme="dark"] .exam-option {
+  background: #0c1728 !important;
+  border-color: #1e2e47 !important;
+  color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .exam-option:hover {
+  background: #111f36 !important;
+  border-color: #38bdf8 !important;
+}
+html[data-theme="dark"] .exam-option.selected {
+  background: rgba(14, 165, 233, 0.15) !important;
+  border-color: #38bdf8 !important;
+}
+html[data-theme="dark"] .exam-option-letter {
+  background: #17243a !important;
+  color: #38bdf8 !important;
+}
+html[data-theme="dark"] .exam-option.selected .exam-option-letter {
+  background: #0284c7 !important;
+  color: white !important;
+}
+html[data-theme="dark"] .exam-question-text,
+html[data-theme="dark"] .exam-passage-text {
+  color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .exam-question-meta,
+html[data-theme="dark"] .exam-passage-title {
+  color: #38bdf8 !important;
+}
+html[data-theme="dark"] .exam-passage {
+  background: rgba(14, 165, 233, 0.08) !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+}
+html[data-theme="dark"] .exam-palette-btn.unanswered {
+  background: #111f36 !important;
+  border-color: #2b3e59 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .exam-palette-btn.unanswered:hover {
+  background: #172a48 !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .exam-palette-btn.answered {
+  background: rgba(6, 78, 59, 0.6) !important;
+  border-color: #059669 !important;
+  color: #a7f3d0 !important;
+}
+html[data-theme="dark"] .exam-palette-btn.flagged {
+  background: rgba(120, 53, 15, 0.6) !important;
+  border-color: #d97706 !important;
+  color: #fef08a !important;
+}
+html[data-theme="dark"] .calc-window {
+  border-color: #1e2e47 !important;
+  background: #0c1728 !important;
+}
+html[data-theme="dark"] .calc-display {
+  background: #111f36 !important;
+  border-color: #1e2e47 !important;
+  color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .calc-btn {
+  background: #0c1728 !important;
+  border-color: #2b3e59 !important;
+  color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .calc-btn:hover {
+  background: #17243a !important;
+}
+
+/* ==========================================================================
+   7. SLENDER POLISHED SCROLLBARS
+   ========================================================================== */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

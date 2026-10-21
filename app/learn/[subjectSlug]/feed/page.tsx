@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import AudioPlayer from "../../../components/AudioPlayer";
 import VoiceNoteRecorder from "../../../components/VoiceNoteRecorder";
+import { ListSkeleton } from "../../../components/SkeletonLoader";
+import { toast } from "../../../lib/toast";
 
 type FeedPost = {
   id: string;
@@ -217,7 +219,7 @@ export default function SubjectFeedPage({
           {isTutor && (
             <button
               onClick={() => setShowComposer(true)}
-              className="rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-900 transition"
+              className="rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-900 transition hover-lift active-press"
             >
               + Publish Announcement
             </button>
@@ -225,7 +227,7 @@ export default function SubjectFeedPage({
 
           <Link
             href={`/learn/${subjectSlug}`}
-            className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+            className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition active-press"
           >
             ← Subject Lessons
           </Link>
@@ -238,7 +240,7 @@ export default function SubjectFeedPage({
           <button
             key={tag.name}
             onClick={() => setActiveTag(tag.name)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition hover-lift active-press ${
               activeTag === tag.name
                 ? "bg-[#012153] text-white shadow-xs"
                 : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
@@ -348,9 +350,8 @@ export default function SubjectFeedPage({
       {/* Posts Stream */}
       <div className="mt-6 space-y-4">
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-            <p className="mt-3 font-semibold">Loading feed items…</p>
+          <div className="pt-2 animate-fade-in-up">
+            <ListSkeleton count={3} />
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
@@ -364,7 +365,7 @@ export default function SubjectFeedPage({
           posts.map((post) => (
             <article
               key={post.id}
-              className={`rounded-3xl border p-5 sm:p-6 transition shadow-xs ${
+              className={`rounded-3xl border p-5 sm:p-6 transition shadow-xs hover-lift ${
                 post.is_pinned
                   ? "border-blue-300 bg-blue-50/20"
                   : "border-slate-200 bg-white"

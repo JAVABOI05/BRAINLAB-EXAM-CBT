@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import { ListSkeleton } from "../components/SkeletonLoader";
 
 interface NotificationItem {
   id: string;
@@ -128,14 +129,14 @@ export default function NotificationsPage() {
           {notifications.some((n) => !n.is_read) && (
             <button
               onClick={markAllAsRead}
-              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition active-press"
             >
               Mark all as read
             </button>
           )}
           <Link
             href="/dashboard"
-            className="rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-900 transition"
+            className="rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-900 transition active-press hover-lift"
           >
             ← My Learning
           </Link>
@@ -154,7 +155,7 @@ export default function NotificationsPage() {
           <button
             key={tab.key}
             onClick={() => setFilterType(tab.key)}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold capitalize transition ${
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold capitalize transition hover-lift active-press ${
               filterType === tab.key
                 ? "bg-[#012153] text-white shadow-xs"
                 : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
@@ -168,9 +169,8 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <div className="mt-6 space-y-3">
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-500">
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-            <p className="mt-3 font-semibold">Loading notifications…</p>
+          <div className="pt-2 animate-fade-in-up">
+            <ListSkeleton count={4} />
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
@@ -187,7 +187,7 @@ export default function NotificationsPage() {
               onClick={() => {
                 if (!item.is_read) markAsRead(item.id);
               }}
-              className={`rounded-2xl border p-4 transition flex items-start gap-3 cursor-pointer ${
+              className={`rounded-2xl border p-4 transition flex items-start gap-3 cursor-pointer hover-lift active-press ${
                 item.is_read
                   ? "border-slate-200 bg-white"
                   : "border-blue-200 bg-blue-50/40 shadow-xs"
