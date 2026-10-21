@@ -12,6 +12,15 @@ interface RateLimitBucket {
 }
 const rateLimitMap = new Map<string, RateLimitBucket>();
 
+// Fast in-memory cache for repeated study prompts and tutor queries
+interface PromptCacheItem {
+  response: string;
+  model: string;
+  cachedAt: number;
+}
+const promptMemoryCache = new Map<string, PromptCacheItem>();
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 function checkRateLimit(
   identifier: string,
   limit: number,
@@ -141,12 +150,49 @@ export async function POST(request: NextRequest) {
         ? body.systemInstruction.trim()
         : undefined;
 
+    // Check fast in-memory prompt cache for sub-millisecond response on repeated queries
+    const cacheFingerprint = `${requestedModel || "default"}:${prompt.toLowerCase().replace(/\s+/g, " ").trim()}`;
+    const memCached = promptMemoryCache.get(cacheFingerprint);
+    if (memCached && Date.now() - memCached.cachedAt < CACHE_TTL_MS) {
+      return NextResponse.json(
+        {
+          success: true,
+          prompt,
+          response: memCached.response,
+          model: memCached.model,
+          user_id: user?.id ?? null,
+          cached: true,
+        },
+        {
+          status: 200,
+          headers: {
+            "X-RateLimit-Limit": String(limit),
+            "X-RateLimit-Remaining": String(remaining),
+            "X-BrainLab-FastCache": "hit",
+          },
+        }
+      );
+    }
+
     // 4. Call Gemini via Google AI Studio
     const { text, model } = await generateGeminiContent(prompt, {
       model: requestedModel,
       systemInstruction: customSystemInstruction,
       maxOutputTokens: 350,
     });
+
+    // Save to fast in-memory prompt cache
+    if (text) {
+      if (promptMemoryCache.size > 800) {
+        const oldest = promptMemoryCache.keys().next().value;
+        if (oldest) promptMemoryCache.delete(oldest);
+      }
+      promptMemoryCache.set(cacheFingerprint, {
+        response: text,
+        model,
+        cachedAt: Date.now(),
+      });
+    }
 
     // 5. Save prompt, response, and user attribution to Supabase asynchronously without blocking client
     const authHeader = request.headers.get("authorization");

@@ -10,6 +10,7 @@ import { getDueSpacedReviews } from "../lib/spacedRepetition";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import UserBadges from "../components/UserBadges";
 import { getUserGamificationProfile, type UserGamificationProfile } from "../lib/gamification";
+import { CardSkeleton, StatsSkeleton } from "../components/SkeletonLoader";
 
 type LearnerStats = {
   lessonsCompleted: number;
@@ -289,17 +290,21 @@ export default function LearnerDashboardPage() {
 
   if (loading) {
     return (
-      <main id="main" className="min-h-[70vh] px-5 py-16">
-        <div className="mx-auto max-w-5xl animate-pulse space-y-6">
-          <div className="h-6 w-48 rounded bg-slate-200" />
-          <div className="h-12 max-w-md rounded-2xl bg-slate-200" />
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="h-28 rounded-2xl bg-slate-200" />
-            <div className="h-28 rounded-2xl bg-slate-200" />
-            <div className="h-28 rounded-2xl bg-slate-200" />
-            <div className="h-28 rounded-2xl bg-slate-200" />
+      <main id="main" className="min-h-[70vh] max-w-5xl mx-auto px-5 py-12 space-y-8 animate-fade-in-up">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="space-y-2">
+            <div className="h-4 w-32 rounded-full bg-slate-200 animate-pulse" />
+            <div className="h-8 w-64 rounded-xl bg-slate-200 animate-pulse" />
           </div>
-          <div className="h-56 rounded-3xl bg-slate-200" />
+          <div className="h-10 w-28 rounded-full bg-slate-200 animate-pulse" />
+        </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
+          <div className="h-4 w-44 rounded-full bg-slate-200 mb-4 animate-pulse" />
+          <StatsSkeleton count={4} />
+        </div>
+        <div className="space-y-3">
+          <div className="h-4 w-40 rounded-full bg-slate-200 animate-pulse" />
+          <CardSkeleton count={3} />
         </div>
       </main>
     );
@@ -413,7 +418,7 @@ export default function LearnerDashboardPage() {
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Lessons Completed</span>
               <p className="mt-2 text-3xl font-black text-slate-900">
                 {stats.lessonsCompleted > 0 ? stats.lessonsCompleted : "0"}
@@ -423,7 +428,7 @@ export default function LearnerDashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Questions</span>
               <p className="mt-2 text-3xl font-black text-slate-900">
                 {stats.questionsPracticed > 0 ? stats.questionsPracticed : "0"}
@@ -433,7 +438,7 @@ export default function LearnerDashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Revision Checklist</span>
               <p className="mt-2 text-3xl font-black text-slate-900">
                 {stats.revisionTasksTotal > 0
@@ -447,7 +452,7 @@ export default function LearnerDashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Limit</span>
               <p className="mt-2 text-3xl font-black text-slate-900">
                 {stats.maxQuestions}
@@ -713,7 +718,7 @@ export default function LearnerDashboardPage() {
             {spaces.map((space) => (
               <article
                 key={space.href}
-                className="group flex min-h-[260px] flex-col rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-md sm:p-7"
+                className="group flex min-h-[260px] flex-col rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-md hover-lift sm:p-7"
               >
                 <div className="flex items-center justify-between">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-sm font-black text-blue-900">
@@ -732,7 +737,7 @@ export default function LearnerDashboardPage() {
                 </p>
                 <Link
                   href={space.href}
-                  className="mt-5 inline-flex min-h-11 items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm font-extrabold text-[#0b2a5b]"
+                  className="mt-5 inline-flex min-h-11 items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm font-extrabold text-[#0b2a5b] active-press"
                 >
                   {space.action}
                   <span aria-hidden="true" className="transition group-hover:translate-x-1">
@@ -755,7 +760,7 @@ export default function LearnerDashboardPage() {
             </h2>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5">
+            <article className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 hover-lift">
               <span className="text-2xl" aria-hidden="true">✓</span>
               <h3 className="mt-2 text-base font-bold text-slate-950">Self Practice</h3>
               <p className="mt-1.5 text-xs leading-5 text-slate-600">
@@ -763,13 +768,13 @@ export default function LearnerDashboardPage() {
               </p>
               <Link
                 href="/self-practice"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 active-press hover-lift"
               >
                 Start Practice →
               </Link>
             </article>
 
-            <article className="rounded-2xl border border-slate-200 bg-white p-5">
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 hover-lift">
               <span className="text-2xl" aria-hidden="true">🎯</span>
               <h3 className="mt-2 text-base font-bold text-slate-950">Quizzes & Contests</h3>
               <p className="mt-1.5 text-xs leading-5 text-slate-600">
@@ -777,13 +782,13 @@ export default function LearnerDashboardPage() {
               </p>
               <Link
                 href="/assessments"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition active-press"
               >
                 Browse Quizzes →
               </Link>
             </article>
 
-            <article className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+            <article className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5 hover-lift">
               <span className="text-2xl" aria-hidden="true">📅</span>
               <h3 className="mt-2 text-base font-bold text-slate-950">Revision Planner</h3>
               <p className="mt-1.5 text-xs leading-5 text-slate-600">
@@ -791,13 +796,13 @@ export default function LearnerDashboardPage() {
               </p>
               <Link
                 href="/learning/revision"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 active-press hover-lift"
               >
                 Open Planner →
               </Link>
             </article>
 
-            <article className="rounded-2xl border border-slate-200 bg-white p-5">
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 hover-lift">
               <span className="text-2xl" aria-hidden="true">🔑</span>
               <h3 className="mt-2 text-base font-bold text-slate-950">My Access & Code</h3>
               <p className="mt-1.5 text-xs leading-5 text-slate-600">
@@ -805,7 +810,7 @@ export default function LearnerDashboardPage() {
               </p>
               <Link
                 href="/account/access"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition active-press"
               >
                 View Access →
               </Link>
