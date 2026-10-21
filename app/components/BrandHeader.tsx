@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import UserBadges from "./UserBadges";
 
 const links = [
   { href: "/login", label: "CBT Practice" },
@@ -83,6 +84,7 @@ export default function BrandHeader() {
               <Link href="/profile" onClick={closeMenu} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50" title={user.email ?? "Your profile"}>
                 {user.user_metadata?.avatar_url || user.user_metadata?.picture ? <img src={user.user_metadata.avatar_url ?? user.user_metadata.picture} alt="" referrerPolicy="no-referrer" className="h-7 w-7 rounded-full object-cover" /> : <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-extrabold text-blue-950">{displayName(user).charAt(0).toUpperCase()}</span>}
                 <span className="max-w-[140px] truncate">{displayName(user)}</span>
+                <UserBadges userId={user.id} maxVisible={2} size="xs" />
               </Link>
               <button type="button" onClick={() => void signOut()} disabled={signingOut} className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-60">{signingOut ? "Signing out…" : "Sign out"}</button>
             </div>
