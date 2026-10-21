@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import BrandHeader from "../../components/BrandHeader";
+import { recordLearningActivity } from "../../lib/gamification";
 
 interface AssessmentInfo {
   id: string;
@@ -188,6 +189,7 @@ export default function AssessmentRunnerPage() {
         });
       }
 
+      void recordLearningActivity("competition", assessmentId, Number(data.percentage || 0));
       setPhase("completed");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submission error.");
