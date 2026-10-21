@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import BrandHeader from "@/app/components/BrandHeader";
 import BrandFooter from "@/app/components/BrandFooter";
+import { recordLearningActivity } from "@/app/lib/gamification";
 
 interface ContentItem {
   id: string;
@@ -158,6 +159,7 @@ export default function StudentTopicContentPage() {
             feedback: data.feedback || [],
           },
         }));
+        void recordLearningActivity("topic_mcq", itemId, data.percentage);
       }
     } catch {
       // Handle error gracefully
