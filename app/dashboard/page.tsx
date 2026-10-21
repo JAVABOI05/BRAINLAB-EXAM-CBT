@@ -8,6 +8,8 @@ import { supabase } from "../lib/supabase";
 import { getTopicMasteryRecords, calculateExamReadiness, type ExamReadiness } from "../lib/adaptiveEngine";
 import { getDueSpacedReviews } from "../lib/spacedRepetition";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
+import UserBadges from "../components/UserBadges";
+import { getUserGamificationProfile, type UserGamificationProfile } from "../lib/gamification";
 
 type LearnerStats = {
   lessonsCompleted: number;
@@ -116,6 +118,7 @@ export default function LearnerDashboardPage() {
   const [recentLesson, setRecentLesson] = useState<RecentLesson | null>(null);
   const [readiness, setReadiness] = useState<ExamReadiness | null>(null);
   const [dueSpacedCount, setDueSpacedCount] = useState<number>(0);
+  const [gamification, setGamification] = useState<UserGamificationProfile | null>(null);
 
   useEffect(() => {
     // Check localStorage for recent CBT attempt summary
@@ -153,6 +156,9 @@ export default function LearnerDashboardPage() {
           if (list.length) setReadiness(calculateExamReadiness(list));
         });
         void getDueSpacedReviews().then((cards) => setDueSpacedCount(cards.length));
+        void getUserGamificationProfile(currentUser.id).then((gp) => {
+          if (active && gp) setGamification(gp);
+        });
 
         const [progressRes, planRes, entitlementsRes, testAttemptsRes] = await Promise.all([
           // 1. Lessons completed
@@ -303,10 +309,38 @@ export default function LearnerDashboardPage() {
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-800">
               Your BrainLab account
             </p>
-            <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
-              {greeting}
-              {firstName ? `, ${firstName}` : ""}.
+            <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl flex items-center gap-2 flex-wrap">
+              <span>{greeting}</span>
+              {firstName ? <span>, {firstName}</span> : null}
+              {user && <UserBadges userId={user.id} size="sm" maxVisible={3} />}
             </h1>
+
+            {gamification && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-black text-amber-900">
+                  ⭐ Level {gamification.current_level} · {gamification.level_name} ({gamification.lifetime_xp.toLocaleString()} XP)
+                </span>
+                {gamification.current_streak_days > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-50 px-2.5 py-0.5 text-xs font-black text-rose-800">
+                    🔥 {gamification.current_streak_days} Day Streak
+                  </span>
+                )}
+                <Link
+                  href="/leaderboard"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:underline"
+                >
+                  🏆 Leaderboard
+                </Link>
+                <Link
+                  href="/profile/achievements"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:underline"
+                >
+                  🏅 Achievements & Rewards
+                </Link>
+              </div>
+            )}
+
+
           </div>
           <div className="flex items-center gap-3">
             <Link

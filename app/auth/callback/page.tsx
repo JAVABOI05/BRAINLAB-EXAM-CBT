@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -29,17 +31,25 @@ export default function AuthCallbackPage() {
     async function completeSignIn() {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
+      const nextParam = params.get("next");
+
       if (params.has("error") || params.has("error_description")) {
         await clearOperatorGate();
-        setMessage("The sign-in could not be completed. Return to BrainLab and try again.");
+        const errDesc = params.get("error_description") || "The sign-in could not be completed.";
+        setMessage(`${errDesc} Return to BrainLab and try again.`);
         return;
       }
+
       if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          await clearOperatorGate();
-          setMessage("This sign-in link could not be verified or has expired. Return to BrainLab and try again.");
-          return;
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          // Check if session is already active before reporting an error
+          const { data: existing } = await supabase.auth.getSession();
+          if (!existing?.session) {
+            await clearOperatorGate();
+            setMessage("This sign-in link could not be verified or has expired. Return to BrainLab and try again.");
+            return;
+          }
         }
       }
 
@@ -51,22 +61,27 @@ export default function AuthCallbackPage() {
       }
 
       // Email/password accounts must have completed Supabase email verification.
-      // OAuth providers with no email address are handled by their own provider flow.
-      if (session.user.email && !session.user.email_confirmed_at) {
+      // OAuth providers (e.g. Google) already verify email on the provider end.
+      const isEmailProvider = session.user.app_metadata?.provider === "email";
+      if (isEmailProvider && session.user.email && !session.user.email_confirmed_at) {
         await supabase.auth.signOut();
         await clearOperatorGate();
         setMessage("Your email has not been verified yet. Check your inbox for the verification link, then return to sign in.");
         return;
       }
 
-      const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
-      if (permissionError) {
-        await clearOperatorGate();
-        setMessage("Your identity was received, but account permissions could not be verified. Please try again later.");
-        return;
+      // Check if user is an operator / administrator
+      let isOperator = false;
+      try {
+        const { data: adminFlag, error: rpcErr } = await supabase.rpc("is_admin");
+        if (!rpcErr && adminFlag === true) {
+          isOperator = true;
+        }
+      } catch {
+        isOperator = false;
       }
 
-      if (isOperator === true) {
+      if (isOperator) {
         const response = await fetch("/api/auth/operator-gate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -82,10 +97,12 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      // Never let a gate cookie from an earlier operator session survive a
-      // candidate's OAuth callback in the same browser.
+      // Standard learner: clean any operator cookies and proceed to destination
       await clearOperatorGate();
-      router.replace("/dashboard");
+      const targetDestination = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+        ? nextParam
+        : "/dashboard";
+      router.replace(targetDestination);
     }
 
     void completeSignIn().catch(async () => {
@@ -96,11 +113,24 @@ export default function AuthCallbackPage() {
           cache: "no-store",
         });
       } catch {
-        // The callback still reports failure without granting any new access.
+        // Safe fail-closed cleanup
       }
       setMessage("The sign-in could not be completed. Return to BrainLab and try again.");
     });
   }, [router]);
 
-  return <main id="main" className="flex min-h-[65vh] items-center justify-center px-5 py-16"><section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-xl text-blue-900" aria-hidden="true">↻</div><h1 className="mt-5 text-2xl font-extrabold text-slate-950">Finishing sign-in</h1><p role="status" className="mt-3 leading-7 text-slate-600">{message}</p><Link href="/account" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Return to sign in</Link></section></main>;
+  return (
+    <main id="main" className="flex min-h-[65vh] items-center justify-center px-5 py-16">
+      <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-xl text-blue-900" aria-hidden="true">
+          ↻
+        </div>
+        <h1 className="mt-5 text-2xl font-extrabold text-slate-950">Finishing sign-in</h1>
+        <p role="status" className="mt-3 leading-7 text-slate-600">{message}</p>
+        <Link href="/account" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white shadow hover:bg-[#0a2f72]">
+          Return to sign in
+        </Link>
+      </section>
+    </main>
+  );
 }

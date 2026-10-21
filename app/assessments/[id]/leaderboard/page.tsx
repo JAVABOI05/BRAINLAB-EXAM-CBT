@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 import BrandHeader from "../../../components/BrandHeader";
 import BrandFooter from "../../../components/BrandFooter";
+import UserBadges from "../../../components/UserBadges";
 
 interface LeaderboardEntry {
   rank: number;
@@ -214,7 +215,8 @@ export default function AssessmentLeaderboardPage() {
                         </td>
                         <td className="py-3 px-3">
                           <span className={entry.is_current_user ? "text-indigo-800 font-extrabold" : "text-slate-900 font-medium"}>
-                            {entry.masked_handle}
+                            {entry.masked_handle}</span>
+                          {entry.user_id && <UserBadges userId={entry.user_id} size="xs" maxVisible={2} className="ml-2" />}<span style={{ display: "none" }}>
                           </span>
                         </td>
                         <td className="py-3 px-3 font-bold text-slate-900">

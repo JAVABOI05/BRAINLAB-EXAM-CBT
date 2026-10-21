@@ -20,7 +20,14 @@ export default function AccountPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get("code");
+    const err = searchParams.get("error");
+    if (code || err) {
+      window.location.replace(`/auth/callback${window.location.search}${window.location.hash}`);
+      return;
+    }
+    if (searchParams.get("mode") === "signup") {
       setMode("signup");
     }
     let active = true;

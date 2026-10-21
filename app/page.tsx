@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 
 const pathways = [
   {
@@ -49,6 +50,15 @@ const pillars = [
 ];
 
 export default function HomePage() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get("code");
+    const error = searchParams.get("error");
+    if (code || error) {
+      window.location.replace(`/auth/callback${window.location.search}${window.location.hash}`);
+    }
+  }, []);
   return (
     <main id="main">
       <div role="status" className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm leading-6 text-amber-950 sm:px-6"><strong>Platform upgrade notice:</strong> BrainLab is undergoing a major website and assessment-system overhaul. Some features may be temporarily unavailable, and exam progress can be interrupted. Avoid starting an important timed attempt during the maintenance window.</div>
