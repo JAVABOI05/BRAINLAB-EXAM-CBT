@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
 import FloatingCalculator from "../components/FloatingCalculator";
 import { cleanQuestionText } from "../lib/cleanText";
+import { recordLearningActivity } from "../lib/gamification";
 
 type QuestionRow = PaperQuestion;
 
@@ -196,6 +197,10 @@ export default function ExamPage() {
       subject_scores: res.subject_scores, show_results: res.show_results, status: res.status,
     }));
     clearAttemptStorage();
+    if (typeof res.score === "number" && typeof res.total === "number" && res.total > 0) {
+      const pct = Math.round((res.score / res.total) * 100);
+      void recordLearningActivity("quiz_complete", res.result_id, pct);
+    }
   }
 
   useEffect(() => {
@@ -379,7 +384,8 @@ export default function ExamPage() {
       const code = candidate?.code || localStorage.getItem("access_code") || "";
       const res = await startExam(code, candidate?.name || "", candidate?.phone || "", finalElective);
       if (isError(res)) { setError(res.message); return; }
-      clearAttemptStorage(); localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");
+      clearAttemptStorage();
+      localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");
       setQuestions(res.questions); setCurrentIndex(0); setAnswers(res.answers); setFlagged({});
       setSessionId(res.session_id); setSessionToken(res.token); setExamDuration(res.duration_seconds); setTimeLeft(res.time_left_seconds);
       setElectiveSubject(res.elective as ElectiveSubject); tabSwitchCountRef.current = res.tab_switch_count;
