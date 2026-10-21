@@ -622,8 +622,9 @@ export default function ExamPage() {
               </div>
               <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
               <h1 className="text-lg font-black text-slate-900 dark:text-white">
-              Brainlab CBT Exam
-            </h1>
+                Brainlab CBT Exam
+              </h1>
+            </div>
                         <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm text-gray-600">
                 Candidate: {candidate.name} | Elective:{" "}
