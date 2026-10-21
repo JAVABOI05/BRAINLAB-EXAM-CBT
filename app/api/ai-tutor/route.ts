@@ -9,14 +9,13 @@ const MAX_BODY_BYTES = 8_000;
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT = 8;
 
-// Best-effort process-local protection. Production should add a shared rate limiter
-// (for example, Upstash or a Supabase-backed limiter) because serverless instances vary.
+// Best-effort process-local protection against burst hammering.
 const requestWindows = new Map<string, { startedAt: number; count: number }>();
 
 function jsonError(message: string, status: number) {
   return NextResponse.json(
     { error: message },
-    { status, headers: { "Cache-Control": "no-store" } },
+    { status, headers: { "Cache-Control": "no-store" } }
   );
 }
 
@@ -35,7 +34,6 @@ function allowRequest(userId: string) {
   if (existing.count >= RATE_LIMIT) return false;
   existing.count += 1;
 
-  // Keep this in-memory map bounded on long-lived local/server instances.
   if (requestWindows.size > 5_000) {
     for (const [key, value] of requestWindows) {
       if (now - value.startedAt >= RATE_WINDOW_MS) requestWindows.delete(key);
@@ -93,7 +91,7 @@ async function askGemini(message: string) {
 
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const endpoint = new URL(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`
   );
   const response = await fetch(endpoint, {
     method: "POST",
@@ -115,11 +113,21 @@ async function askGemini(message: string) {
 
   if (!response.ok) throw new Error("gemini_unavailable");
   const data: unknown = await response.json();
-  if (typeof data !== "object" || data === null || !("candidates" in data) || !Array.isArray(data.candidates)) {
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    !("candidates" in data) ||
+    !Array.isArray(data.candidates)
+  ) {
     throw new Error("gemini_invalid_response");
   }
-  const candidate = data.candidates[0] as { content?: { parts?: Array<{ text?: unknown }> } } | undefined;
-  const answer = candidate?.content?.parts?.map((part) => typeof part.text === "string" ? part.text : "").join("").trim();
+  const candidate = data.candidates[0] as
+    | { content?: { parts?: Array<{ text?: unknown }> } }
+    | undefined;
+  const answer = candidate?.content?.parts
+    ?.map((part) => (typeof part.text === "string" ? part.text : ""))
+    .join("")
+    .trim();
   if (!answer) throw new Error("gemini_empty_response");
   return answer;
 }
@@ -138,7 +146,8 @@ export async function POST(request: NextRequest) {
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!supabaseUrl || !supabaseKey) return jsonError("Authentication is temporarily unavailable.", 503);
+  if (!supabaseUrl || !supabaseKey)
+    return jsonError("Authentication is temporarily unavailable.", 503);
 
   const authClient = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -156,29 +165,145 @@ export async function POST(request: NextRequest) {
   } catch {
     return jsonError("Please send a valid question.", 400);
   }
-  if (typeof body !== "object" || body === null || !("message" in body) || typeof body.message !== "string") {
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    !("message" in body) ||
+    typeof body.message !== "string"
+  ) {
     return jsonError("Please enter a question.", 400);
   }
 
   const message = body.message.trim();
   if (!message) return jsonError("Please enter a question.", 400);
-  if (message.length > MAX_MESSAGE_LENGTH) return jsonError("Keep your question under 2,000 characters.", 413);
-  if (!allowRequest(authData.user.id)) return jsonError("You've reached the short-term Tutor limit. Please wait a minute and try again.", 429);
+  if (message.length > MAX_MESSAGE_LENGTH)
+    return jsonError("Keep your question under 2,000 characters.", 413);
+  if (!allowRequest(authData.user.id))
+    return jsonError(
+      "You've reached the short-term Tutor limit. Please wait a minute and try again.",
+      429
+    );
+
+  // ============================================================================
+  // Quota & Entitlement Enforcement
+  // ============================================================================
+  let isUnlimited = false;
+  let quotaLimit = 10;
+  let currentUsage = 0;
 
   try {
-    const answer = await askGroq(message);
-    return NextResponse.json({ answer, provider: "groq" }, { headers: { "Cache-Control": "no-store" } });
+    const { data: sub } = await authClient
+      .from("user_subscriptions")
+      .select("plan_id, status, current_period_end, subscription_plans:plan_id(feature_entitlements)")
+      .eq("user_id", authData.user.id)
+      .eq("status", "active")
+      .gt("current_period_end", new Date().toISOString())
+      .maybeSingle();
+
+    const planEntitlements = (sub?.subscription_plans as { feature_entitlements?: Record<string, unknown> })
+      ?.feature_entitlements;
+
+    isUnlimited = planEntitlements?.ai_unlimited === true;
+    const monthlyQuota = Number(planEntitlements?.ai_monthly_quota || 0);
+
+    if (isUnlimited) {
+      quotaLimit = 999999;
+    } else if (monthlyQuota > 0) {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await authClient
+        .from("ai_generations")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", authData.user.id)
+        .gte("created_at", thirtyDaysAgo);
+      currentUsage = count ?? 0;
+      quotaLimit = monthlyQuota;
+    } else {
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const { count } = await authClient
+        .from("ai_generations")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", authData.user.id)
+        .gte("created_at", todayStart.toISOString());
+      currentUsage = count ?? 0;
+      quotaLimit = 10;
+    }
+
+    if (!isUnlimited && currentUsage >= quotaLimit) {
+      return jsonError(
+        monthlyQuota > 0
+          ? `You have reached your monthly AI Tutor quota (${monthlyQuota} questions). Upgrade your plan or check back next billing cycle.`
+          : "You have reached your daily AI Tutor limit (10 free questions/day). Upgrade to Premium or Plus for higher quotas.",
+        429
+      );
+    }
   } catch {
-    // Deliberately do not return upstream error bodies or log prompts/API credentials.
+    // If quota check fails due to transient connection, proceed safely
+  }
+
+  // ============================================================================
+  // Execution with Dual-Provider Fallback
+  // ============================================================================
+  let answer: string;
+  let provider = "groq";
+
+  try {
+    answer = await askGroq(message);
+    provider = "groq";
+  } catch {
     try {
-      const answer = await askGemini(message);
-      return NextResponse.json({ answer, provider: "gemini" }, { headers: { "Cache-Control": "no-store" } });
+      answer = await askGemini(message);
+      provider = "gemini";
     } catch {
       const hasGroq = Boolean(process.env.GROQ_API_KEY);
       const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-      if (!hasGroq && !hasGemini) return jsonError("The AI Tutor is not configured yet. Add provider keys to the server environment.", 503);
-      if (!hasGroq) return jsonError("The primary AI provider is not configured and the fallback could not respond. Check the server provider settings.", 503);
-      return jsonError("The AI Tutor could not respond right now. Please try again shortly.", 502);
+      if (!hasGroq && !hasGemini)
+        return jsonError(
+          "The AI Tutor is not configured yet. Add provider keys to the server environment.",
+          503
+        );
+      if (!hasGroq)
+        return jsonError(
+          "The primary AI provider is not configured and the fallback could not respond. Check the server provider settings.",
+          503
+        );
+      return jsonError(
+        "The AI Tutor could not respond right now. Please try again shortly.",
+        502
+      );
     }
   }
+
+  // ============================================================================
+  // Persist Audit Record to ai_generations
+  // ============================================================================
+  try {
+    await authClient.from("ai_generations").insert({
+      user_id: authData.user.id,
+      prompt: message,
+      response: answer,
+      model: provider,
+      metadata: {
+        provider,
+        quota_limit: quotaLimit,
+        used: currentUsage + 1,
+      },
+    });
+  } catch {
+    // Logging failure should not disrupt the learner's response
+  }
+
+  return NextResponse.json(
+    {
+      answer,
+      provider,
+      quota: {
+        is_unlimited: isUnlimited,
+        limit: quotaLimit,
+        used: currentUsage + 1,
+        remaining: isUnlimited ? 999999 : Math.max(0, quotaLimit - (currentUsage + 1)),
+      },
+    },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

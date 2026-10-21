@@ -76,11 +76,48 @@ export interface WebsiteContentConfig {
   maintenance_mode: boolean;
 }
 
+export interface LiveClassroomConfig {
+  provider: "webrtc" | "livekit" | "agora" | "daily";
+  max_capacity_default: number;
+  default_duration_minutes: number;
+  student_mic_default: boolean;
+  student_cam_default: boolean;
+  student_chat_default: boolean;
+  student_screenshare_default: boolean;
+  recordings_enabled: boolean;
+  attendance_min_minutes: number;
+  attendance_threshold_percent: number;
+  waiting_room_default: boolean;
+  formats_enabled: ("interactive" | "broadcast" | "hybrid")[];
+}
+
+export interface CommunicationConfig {
+  private_messaging_enabled: boolean;
+  group_messaging_enabled: boolean;
+  student_can_message_tutor: boolean;
+  read_receipts_enabled: boolean;
+  reactions_enabled: boolean;
+  official_tags_enabled: boolean;
+  announcement_views_enabled: boolean;
+  presence_visibility_default: boolean;
+  message_rate_limit_per_minute: number;
+}
+
+export interface AudioPolicyConfig {
+  max_duration_seconds: number;
+  max_file_size_mb: number;
+  allowed_formats: string[];
+  student_audio_enabled_globally: boolean;
+  transcription_enabled: boolean;
+  audio_retention_days: number;
+  allow_downloads: boolean;
+}
+
 export interface AuditLogEntry {
   id?: string;
   admin_id?: string;
   admin_email: string;
-  entity_type: "config" | "plan" | "coupon" | "academic" | "ai" | "content" | "exam";
+  entity_type: "config" | "plan" | "coupon" | "academic" | "ai" | "content" | "exam" | "classroom" | "communication" | "audio";
   entity_id: string;
   action: "created" | "updated" | "published" | "deleted";
   previous_value?: unknown;
@@ -192,6 +229,43 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContentConfig = {
   support_email: "support@brainlabacademy.com",
   support_phone: "+234 800 BRAINLAB",
   maintenance_mode: false,
+};
+
+const DEFAULT_CLASSROOM_CONFIG: LiveClassroomConfig = {
+  provider: "webrtc",
+  max_capacity_default: 100,
+  default_duration_minutes: 60,
+  student_mic_default: true,
+  student_cam_default: false,
+  student_chat_default: true,
+  student_screenshare_default: false,
+  recordings_enabled: true,
+  attendance_min_minutes: 15,
+  attendance_threshold_percent: 60,
+  waiting_room_default: false,
+  formats_enabled: ["interactive", "broadcast", "hybrid"],
+};
+
+const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
+  private_messaging_enabled: true,
+  group_messaging_enabled: true,
+  student_can_message_tutor: true,
+  read_receipts_enabled: true,
+  reactions_enabled: true,
+  official_tags_enabled: true,
+  announcement_views_enabled: true,
+  presence_visibility_default: true,
+  message_rate_limit_per_minute: 20,
+};
+
+const DEFAULT_AUDIO_CONFIG: AudioPolicyConfig = {
+  max_duration_seconds: 300,
+  max_file_size_mb: 25,
+  allowed_formats: ["audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg", "audio/wav"],
+  student_audio_enabled_globally: true,
+  transcription_enabled: true,
+  audio_retention_days: 90,
+  allow_downloads: true,
 };
 
 /**
@@ -596,4 +670,55 @@ export async function logAdminAction(entry: AuditLogEntry): Promise<void> {
 export async function getAuditLogs(limit: number = 50): Promise<AuditLogEntry[]> {
   const logs = await getPlatformConfig<AuditLogEntry[]>("audit_logs_trail", []);
   return logs.slice(0, limit);
+}
+
+// ----------------------------------------------------------------------------
+// Live Classroom Configuration
+// ----------------------------------------------------------------------------
+export async function getLiveClassroomConfig(): Promise<LiveClassroomConfig> {
+  return await getPlatformConfig<LiveClassroomConfig>("live_classroom_config", DEFAULT_CLASSROOM_CONFIG);
+}
+
+export async function saveLiveClassroomConfig(
+  config: Partial<LiveClassroomConfig>,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  const current = await getLiveClassroomConfig();
+  const updated = { ...current, ...config };
+  return await setPlatformConfig("live_classroom_config", updated, adminUser, reason || "Updated Live Classroom policy");
+}
+
+// ----------------------------------------------------------------------------
+// Communication & Messaging Configuration
+// ----------------------------------------------------------------------------
+export async function getCommunicationConfig(): Promise<CommunicationConfig> {
+  return await getPlatformConfig<CommunicationConfig>("communication_config", DEFAULT_COMMUNICATION_CONFIG);
+}
+
+export async function saveCommunicationConfig(
+  config: Partial<CommunicationConfig>,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  const current = await getCommunicationConfig();
+  const updated = { ...current, ...config };
+  return await setPlatformConfig("communication_config", updated, adminUser, reason || "Updated communication policy");
+}
+
+// ----------------------------------------------------------------------------
+// Audio & Voice Notes Policy Configuration
+// ----------------------------------------------------------------------------
+export async function getAudioPolicyConfig(): Promise<AudioPolicyConfig> {
+  return await getPlatformConfig<AudioPolicyConfig>("audio_policy_config", DEFAULT_AUDIO_CONFIG);
+}
+
+export async function saveAudioPolicyConfig(
+  config: Partial<AudioPolicyConfig>,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  const current = await getAudioPolicyConfig();
+  const updated = { ...current, ...config };
+  return await setPlatformConfig("audio_policy_config", updated, adminUser, reason || "Updated audio & voice note policy");
 }

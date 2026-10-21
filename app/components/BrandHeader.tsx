@@ -11,6 +11,7 @@ import UserBadges from "./UserBadges";
 const links = [
   { href: "/login", label: "CBT Practice" },
   { href: "/learn", label: "Learning Hub" },
+  { href: "/calendar", label: "Timetable" },
   { href: "/self-practice", label: "Self Practice" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/support", label: "Help" },
@@ -81,6 +82,12 @@ export default function BrandHeader() {
           ) : user ? (
             <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-3 xl:ml-3 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0">
               <Link href="/dashboard" onClick={closeMenu} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0b2a5b] px-4 py-2 text-sm font-extrabold text-white shadow-sm transition hover:bg-blue-900"><span aria-hidden="true">⌂</span> My learning</Link>
+              <Link href="/messages" onClick={closeMenu} className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100" title="Private & Group Messages">
+                💬 <span className="xl:hidden ml-1.5">Messages</span>
+              </Link>
+              <Link href="/notifications" onClick={closeMenu} className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100" title="Notifications">
+                🔔 <span className="xl:hidden ml-1.5">Notifications</span>
+              </Link>
               <Link href="/profile" onClick={closeMenu} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50" title={user.email ?? "Your profile"}>
                 {user.user_metadata?.avatar_url || user.user_metadata?.picture ? <img src={user.user_metadata.avatar_url ?? user.user_metadata.picture} alt="" referrerPolicy="no-referrer" className="h-7 w-7 rounded-full object-cover" /> : <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-extrabold text-blue-950">{displayName(user).charAt(0).toUpperCase()}</span>}
                 <span className="max-w-[140px] truncate">{displayName(user)}</span>

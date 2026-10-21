@@ -125,9 +125,12 @@ export default function SubjectLearningPage() {
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-cyan-200">Learning subject</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{subject.name}</h1>
             <p className="mt-4 max-w-3xl leading-7 text-blue-100">{subject.description || "Work through the topics in order, study each lesson, and use checkpoints to test your understanding."}</p>
-            <div className="mt-6 flex flex-wrap gap-3 text-sm">
+            <div className="mt-6 flex flex-wrap gap-3 text-sm items-center">
               <span className="rounded-full border border-white/20 px-3 py-1.5">{topics.length} published {topics.length === 1 ? "topic" : "topics"}</span>
               <span className="rounded-full border border-white/20 px-3 py-1.5">{lessonCount} published {lessonCount === 1 ? "lesson" : "lessons"}</span>
+              <Link href={`/learn/${subject.slug}/feed`} className="rounded-full bg-white text-[#061a3a] font-bold px-4 py-1.5 hover:bg-blue-50 transition shadow-sm">
+                📢 Course Feed & Updates →
+              </Link>
             </div>
           </header>
 

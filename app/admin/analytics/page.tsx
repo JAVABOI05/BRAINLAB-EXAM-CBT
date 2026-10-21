@@ -32,6 +32,9 @@ export default function AdminAnalyticsPage() {
   const [results, setResults] = useState<ResultSummary[]>([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [totalCodes, setTotalCodes] = useState(0);
+  const [totalLiveClasses, setTotalLiveClasses] = useState(0);
+  const [totalAttendance, setTotalAttendance] = useState(0);
+  const [totalAudioAssets, setTotalAudioAssets] = useState(0);
   const [selectedSubject, setSelectedSubject] = useState("all");
 
   const loadAnalytics = useCallback(async () => {
@@ -39,7 +42,7 @@ export default function AdminAnalyticsPage() {
     setError("");
 
     try {
-      const [resultsRes, questionsRes, codesRes] = await Promise.all([
+      const [resultsRes, questionsRes, codesRes, classesRes, attendRes, audioRes] = await Promise.all([
         supabase
           .from("results")
           .select("id, name, subject, score, total, created_at")
@@ -47,6 +50,9 @@ export default function AdminAnalyticsPage() {
           .limit(200),
         supabase.from("questions").select("*", { count: "exact", head: true }),
         supabase.from("access_codes").select("*", { count: "exact", head: true }),
+        supabase.from("live_classes").select("*", { count: "exact", head: true }),
+        supabase.from("class_attendance_records").select("*", { count: "exact", head: true }),
+        supabase.from("audio_assets").select("*", { count: "exact", head: true }),
       ]);
 
       if (resultsRes.error) {
@@ -57,6 +63,9 @@ export default function AdminAnalyticsPage() {
 
       setTotalQuestions(questionsRes.count ?? 0);
       setTotalCodes(codesRes.count ?? 0);
+      setTotalLiveClasses(classesRes.count ?? 0);
+      setTotalAttendance(attendRes.count ?? 0);
+      setTotalAudioAssets(audioRes.count ?? 0);
     } catch {
       setError("An unexpected error occurred while fetching platform metrics.");
     } finally {
@@ -277,6 +286,18 @@ export default function AdminAnalyticsPage() {
         <div className="admin-stat-card">
           <p className="admin-stat-label">Access Codes Total</p>
           <p className="admin-stat-value">{totalCodes}</p>
+        </div>
+        <div className="admin-stat-card border-blue-200 bg-blue-50/20">
+          <p className="admin-stat-label">Live Classes Scheduled</p>
+          <p className="admin-stat-value text-blue-900">{totalLiveClasses}</p>
+        </div>
+        <div className="admin-stat-card border-emerald-200 bg-emerald-50/20">
+          <p className="admin-stat-label">Class Attendance Records</p>
+          <p className="admin-stat-value text-emerald-900">{totalAttendance}</p>
+        </div>
+        <div className="admin-stat-card border-indigo-200 bg-indigo-50/20">
+          <p className="admin-stat-label">Tutor Voice Notes & Audio</p>
+          <p className="admin-stat-value text-indigo-900">{totalAudioAssets}</p>
         </div>
       </section>
 

@@ -361,3 +361,47 @@ html[data-theme="dark"] .calc-display,html[data-theme="dark"] .calc-btn{border-c
 html[data-theme="dark"] .calc-btn:hover{background:#24364e}
 @media(max-width:540px){.global-learner-toolbar-inner{align-items:flex-start;padding:7px 10px}.global-learner-actions{gap:4px}.global-learner-action-link{padding-inline:5px;font-size:11px}.global-learner-theme-button{gap:4px;padding-inline:8px}.global-learner-welcome{max-width:160px}}
 @media(prefers-reduced-motion:reduce){.learner-theme,.global-learner-theme-button{transition:none}}
+
+/* ===== MICRO-INTERACTIONS & POLISH ===== */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+
+.active-press {
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), filter 0.12s ease;
+}
+.active-press:active {
+  transform: scale(0.97);
+  filter: brightness(0.97);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px -3px rgba(37, 99, 235, 0.35);
+}
+
+/* Polished Slender Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}

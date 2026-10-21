@@ -26,6 +26,30 @@ export interface CachedExplanationResult {
   fingerprint: string;
 }
 
+// In-Memory Fast Cache (TTL: 15 minutes, max 1000 items) for ultra-fast <1ms lookups
+const memoryCache = new Map<string, { result: CachedExplanationResult; expiresAt: number }>();
+
+function getFromMemoryCache(key: string, fingerprint?: string): CachedExplanationResult | null {
+  const item = memoryCache.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expiresAt) {
+    memoryCache.delete(key);
+    return null;
+  }
+  if (fingerprint && item.result.fingerprint && item.result.fingerprint !== fingerprint) {
+    return null;
+  }
+  return item.result;
+}
+
+function setToMemoryCache(key: string, result: CachedExplanationResult, ttlMinutes = 15): void {
+  if (memoryCache.size > 1000) {
+    const oldestKey = memoryCache.keys().next().value;
+    if (oldestKey) memoryCache.delete(oldestKey);
+  }
+  memoryCache.set(key, { result, expiresAt: Date.now() + ttlMinutes * 60 * 1000 });
+}
+
 /**
  * Looks up a previously generated and saved explanation from Supabase.
  * Checks both `question_explanations` table and `ai_generations` shared cache.
@@ -36,6 +60,10 @@ export async function getCachedExplanation(
 ): Promise<CachedExplanationResult | null> {
   const qIdStr = String(questionId).trim();
   if (!qIdStr) return null;
+
+  // 0. Ultra-fast in-memory check
+  const inMem = getFromMemoryCache(qIdStr, fingerprint);
+  if (inMem) return inMem;
 
   const supabase = getSupabaseServerClient();
 
@@ -49,13 +77,15 @@ export async function getCachedExplanation(
 
     if (!error && data) {
       if (!fingerprint || data.fingerprint === fingerprint) {
-        return {
+        const res: CachedExplanationResult = {
           explanation: data.explanation,
           model: data.model,
           cachedAt: data.updated_at || data.created_at,
           verified: data.verified ?? true,
           fingerprint: data.fingerprint,
         };
+        setToMemoryCache(qIdStr, res);
+        return res;
       }
     }
   } catch {
@@ -116,6 +146,15 @@ export async function setCachedExplanation(params: {
 
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
+
+  // Populate memory cache immediately for zero-latency instant hits
+  setToMemoryCache(qIdStr, {
+    explanation: params.explanation,
+    model: params.model,
+    cachedAt: now,
+    verified: true,
+    fingerprint,
+  });
 
   // 1. Save to `question_explanations` if table exists
   try {

@@ -95,6 +95,22 @@ const spaces = [
     href: "/login",
     action: "Open CBT practice",
   },
+  {
+    number: "04",
+    eyebrow: "LIVE INTERACTIVE CLASSES",
+    title: "Live Classroom & Timetable",
+    description: "Join scheduled tutor sessions, participate with audio/chat, and watch lecture recordings.",
+    href: "/calendar",
+    action: "Open Calendar & Classes",
+  },
+  {
+    number: "05",
+    eyebrow: "STUDY COMMUNICATION",
+    title: "Messages & Voice Notes",
+    description: "Direct discussions with course tutors, audio note review, and study group communication.",
+    href: "/messages",
+    action: "Open Messages",
+  },
 ];
 
 export default function LearnerDashboardPage() {
