@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { cleanAIResponse } from "@/app/lib/cleanText";
+import { toast } from "@/app/lib/toast";
+import { AiResponseSkeleton } from "@/app/components/SkeletonLoader";
 
 type Intent = "understand" | "practise" | "mistake" | "exam";
 type Method = "decode" | "solve" | "spot" | "apply" | "teach";
@@ -111,7 +113,7 @@ export default function AILearningStudio() {
             <legend className="text-base font-extrabold text-slate-950">1. What do you want to do?</legend>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {intents.map((item) => (
-                <button key={item.id} type="button" onClick={() => { setIntent(item.id); setPlan(false); }} aria-pressed={intent === item.id} className={`rounded-2xl border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${intent === item.id ? "border-blue-800 bg-blue-50 ring-1 ring-blue-800" : "border-slate-200 bg-white hover:border-blue-300"}`}>
+                <button key={item.id} type="button" onClick={() => { setIntent(item.id); setPlan(false); }} aria-pressed={intent === item.id} className={`rounded-2xl border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover-lift active-press ${intent === item.id ? "border-blue-800 bg-blue-50 ring-1 ring-blue-800 shadow-xs" : "border-slate-200 bg-white hover:border-blue-300"}`}>
                   <span className="block font-extrabold text-slate-950">{item.title}</span>
                   <span className="mt-2 block text-sm leading-6 text-slate-600">{item.description}</span>
                 </button>
@@ -123,16 +125,16 @@ export default function AILearningStudio() {
             <legend className="text-base font-extrabold text-slate-950">2. How will you work on it?</legend>
             <div className="mt-4 flex flex-wrap gap-2">
               {methods.map((item) => (
-                <button key={item.id} type="button" onClick={() => { setMethod(item.id); setPlan(false); }} aria-pressed={method === item.id} className={`min-h-10 rounded-full border px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${method === item.id ? "border-[#012153] bg-[#012153] text-white" : "border-slate-300 bg-white text-slate-700 hover:border-blue-400"}`}>{item.title}</button>
+                <button key={item.id} type="button" onClick={() => { setMethod(item.id); setPlan(false); }} aria-pressed={method === item.id} className={`min-h-10 rounded-full border px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover-lift active-press ${method === item.id ? "border-[#012153] bg-[#012153] text-white shadow-xs" : "border-slate-300 bg-white text-slate-700 hover:border-blue-400"}`}>{item.title}</button>
               ))}
             </div>
           </fieldset>
 
           <div className="mt-7">
             <label htmlFor="ai-learning-topic" className="block text-sm font-extrabold text-slate-950">3. Which topic? <span className="font-normal text-slate-500">(optional)</span></label>
-            <input id="ai-learning-topic" value={topic} onChange={(event) => { setTopic(event.target.value); setPlan(false); }} maxLength={120} placeholder="e.g. simultaneous equations" className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100" />
+            <input id="ai-learning-topic" value={topic} onChange={(event) => { setTopic(event.target.value); setPlan(false); }} maxLength={120} placeholder="e.g. simultaneous equations" className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition" />
           </div>
-          <button type="submit" className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-extrabold text-white transition hover:bg-[#0a2f72] sm:w-auto">Create my study plan <span aria-hidden="true" className="ml-2">→</span></button>
+          <button type="submit" className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-extrabold text-white transition hover:bg-[#0a2f72] hover-lift active-press sm:w-auto">Create my study plan <span aria-hidden="true" className="ml-2">→</span></button>
         </div>
 
         <aside className="rounded-3xl bg-[#061a3a] p-6 text-white shadow-sm sm:p-8" aria-live="polite">
@@ -199,7 +201,7 @@ export default function AILearningStudio() {
               onChange={(e) => setAiQuestion(e.target.value)}
               placeholder={topic.trim() ? `Ask a question about ${topic.trim()}...` : "e.g. Why does cross-multiplication work in fractions?"}
               maxLength={250}
-              className="min-h-12 w-full rounded-xl border border-slate-300 pl-4 pr-16 text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+              className="min-h-12 w-full rounded-xl border border-slate-300 pl-4 pr-16 text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100 transition"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !aiLoading) {
                   e.preventDefault();
@@ -215,10 +217,32 @@ export default function AILearningStudio() {
             type="button"
             onClick={() => handleAskAi()}
             disabled={aiLoading}
-            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-800 px-6 font-extrabold text-white hover:bg-blue-900 disabled:opacity-50"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-800 px-6 font-extrabold text-white hover:bg-blue-900 disabled:opacity-50 transition hover-lift active-press"
           >
             {aiLoading ? "Thinking..." : "Ask Tutor"}
           </button>
+        </div>
+
+        {/* Quick Suggestion Pills */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            "📐 Quick Math CBT Strategy",
+            "⚡ Eliminate Trap Options",
+            "📖 Comprehension Recall Steps",
+            "⏱️ CBT Time Management",
+          ].map((promptText) => (
+            <button
+              key={promptText}
+              type="button"
+              onClick={() => {
+                setAiQuestion(promptText);
+                void handleAskAi(promptText);
+              }}
+              className="rounded-full border border-blue-200 bg-blue-50/70 px-3 py-1 text-xs font-semibold text-blue-900 transition hover:bg-blue-100 hover-lift active-press"
+            >
+              {promptText}
+            </button>
+          ))}
         </div>
 
         {aiError && (
@@ -227,10 +251,28 @@ export default function AILearningStudio() {
           </div>
         )}
 
-        {aiResponse && (
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
-            <p className="text-xs font-extrabold uppercase tracking-wider text-blue-800">Tutor Response</p>
-            <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-800">
+        {aiLoading && (
+          <div className="mt-6 animate-fade-in-up">
+            <AiResponseSkeleton />
+          </div>
+        )}
+
+        {aiResponse && !aiLoading && (
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6 animate-fade-in-up">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-blue-800">Tutor Response</p>
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(aiResponse);
+                  toast.success("AI guidance copied to clipboard!");
+                }}
+                className="text-xs font-bold text-slate-600 hover:text-blue-900 transition active-press"
+              >
+                📋 Copy Guidance
+              </button>
+            </div>
+            <div className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
               {aiResponse}
             </div>
           </div>
