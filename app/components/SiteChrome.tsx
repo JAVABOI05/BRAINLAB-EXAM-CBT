@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import BrandFooter from "./BrandFooter";
 import BrandHeader from "./BrandHeader";
 import GlobalLearnerToolbar from "./GlobalLearnerToolbar";
+import ToastContainer from "./Toast";
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
@@ -28,6 +29,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
 
   return (
     <>
+      <ToastContainer />
       <GlobalLearnerToolbar />
       {!hidePublicChrome && <BrandHeader />}
       {children}

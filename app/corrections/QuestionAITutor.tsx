@@ -5,6 +5,8 @@ import { supabase } from "../lib/supabase";
 import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import { streamAiTutor } from "../lib/aiTutor";
 import { enqueueMissedQuestion } from "../lib/spacedRepetition";
+import { AiResponseSkeleton } from "../components/SkeletonLoader";
+import { toast } from "../lib/toast";
 
 type OptionKey = "A" | "B" | "C" | "D";
 
@@ -56,7 +58,18 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
       correctAnswer: item.correctAnswer,
     });
     setSavedToSpaced(true);
+    toast.success("Saved to Spaced Repetition review deck!");
   }
+
+  const copyExplanation = async () => {
+    if (!explanation) return;
+    try {
+      await navigator.clipboard.writeText(explanation);
+      toast.success("AI explanation copied to clipboard!");
+    } catch {
+      toast.info("Failed to copy automatically.");
+    }
+  };
 
   async function switchMode(newStyle: "standard" | "simple" | "detailed" | "exam_traps") {
     setSelectedStyle(newStyle);
@@ -505,11 +518,9 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
           </div>
 
           {loading && (
-            <div className="ai-tutor-loading-state">
-              <div className="ai-pulse-bar" />
-              <div className="ai-pulse-bar short" />
-              <div className="ai-pulse-bar" />
-              <p className="ai-loading-text">
+            <div className="ai-tutor-loading-state my-2">
+              <AiResponseSkeleton />
+              <p className="ai-loading-text mt-3 text-xs text-slate-500 text-center font-medium">
                 Analyzing Option {item.correctAnswer} vs Option {item.userAnswer ?? "Unanswered"}...
               </p>
             </div>
@@ -521,7 +532,7 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
               <button
                 type="button"
                 onClick={() => void fetchAIExplanation()}
-                className="ai-retry-btn"
+                className="ai-retry-btn active-press"
               >
                 Try Again
               </button>
@@ -530,12 +541,65 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
 
           {explanation && !loading && (
             <div className="ai-tutor-content">
+              {/* Style Switcher Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 mb-4 pb-3 border-b border-slate-100">
+                <span className="text-[11px] font-bold text-slate-500 mr-1">Style:</span>
+                {(
+                  [
+                    { id: "standard", label: "Standard" },
+                    { id: "simple", label: "Simple" },
+                    { id: "detailed", label: "Step-by-Step" },
+                    { id: "exam_traps", label: "Trap Analysis" },
+                  ] as const
+                ).map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => void switchMode(st.id)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition active-press ${
+                      selectedStyle === st.id
+                        ? "bg-[#012153] text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="ai-tutor-prose">
                 {explanation.split("\n\n").map((paragraph, idx) => (
                   <p key={idx} className="ai-tutor-paragraph">
                     {paragraph}
                   </p>
                 ))}
+              </div>
+
+              {/* Action Toolbar: Spaced Repetition + Copy */}
+              <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => void saveToSpacedDeck()}
+                  disabled={savedToSpaced}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition active-press ${
+                    savedToSpaced
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-200 cursor-default"
+                      : "bg-purple-50 text-purple-900 border border-purple-200 hover:bg-purple-100"
+                  }`}
+                >
+                  <span>🧠</span>
+                  <span>{savedToSpaced ? "✓ Saved to Review Deck" : "Save to Spaced Review"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={copyExplanation}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition active-press"
+                  title="Copy explanation text"
+                >
+                  <span>📋</span>
+                  <span>Copy Note</span>
+                </button>
               </div>
 
               {/* Interactive Follow-Up Questions */}
@@ -579,7 +643,7 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
                   <button
                     type="submit"
                     disabled={followUpLoading || !followUp.trim()}
-                    className="ai-followup-btn"
+                    className="ai-followup-btn active-press hover-lift"
                   >
                     {followUpLoading ? "Thinking..." : "Ask"}
                   </button>
