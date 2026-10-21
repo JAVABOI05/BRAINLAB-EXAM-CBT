@@ -383,6 +383,34 @@ html[data-theme="dark"] .calc-btn:hover{background:#24364e}
   box-shadow: 0 0 20px -3px rgba(37, 99, 235, 0.35);
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px -3px rgba(37, 99, 235, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 25px 2px rgba(37, 99, 235, 0.65);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
 /* Polished Slender Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

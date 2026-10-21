@@ -42,6 +42,7 @@ export default function MessagesPage() {
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   // 1. Authenticate and load conversations
   useEffect(() => {
@@ -85,10 +86,11 @@ export default function MessagesPage() {
     if (!activeConvId) return;
     let active = true;
 
-    async function loadMessages() {
+    async function loadMessages(isInitial = false) {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) return;
 
+      if (isInitial) setMessagesLoading(true);
       try {
         const res = await fetch(`/api/messages?conversationId=${activeConvId}`, {
           headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
@@ -99,11 +101,13 @@ export default function MessagesPage() {
         }
       } catch (err) {
         console.warn("Error fetching messages:", err);
+      } finally {
+        if (active && isInitial) setMessagesLoading(false);
       }
     }
 
-    void loadMessages();
-    const interval = setInterval(loadMessages, 8000); // Polling refresh
+    void loadMessages(true);
+    const interval = setInterval(() => void loadMessages(false), 8000); // Polling refresh
     return () => {
       active = false;
       clearInterval(interval);
@@ -247,7 +251,9 @@ export default function MessagesPage() {
           {/* List */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {loading ? (
-              <p className="p-4 text-xs text-slate-500 text-center">Loading conversations…</p>
+              <div className="p-3">
+                <ListSkeleton count={4} />
+              </div>
             ) : conversations.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-500">
                 <p className="font-bold text-slate-700">No conversations yet</p>
@@ -265,8 +271,8 @@ export default function MessagesPage() {
                         setActiveConvId(conv.id);
                         setMobileShowChat(true);
                       }}
-                      className={`w-full text-left p-4 transition flex items-start gap-3 hover:bg-slate-50 ${
-                        isSelected ? "bg-blue-50/60" : ""
+                      className={`w-full text-left p-4 transition flex items-start gap-3 hover:bg-slate-50 active-press ${
+                        isSelected ? "bg-blue-50/80 font-semibold" : ""
                       }`}
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#012153] text-white font-bold text-sm">
@@ -331,7 +337,23 @@ export default function MessagesPage() {
 
               {/* Messages Body */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.length === 0 ? (
+                {messagesLoading ? (
+                  <div className="space-y-4 p-2 animate-fade-in-up">
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 rounded-full bg-slate-200 animate-pulse shrink-0" />
+                      <div className="max-w-xs sm:max-w-md p-4 rounded-2xl bg-white border border-slate-200 space-y-2 animate-pulse flex-1">
+                        <div className="h-3.5 w-1/3 bg-slate-200 rounded" />
+                        <div className="h-3 w-5/6 bg-slate-100 rounded" />
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-end gap-3">
+                      <div className="max-w-xs sm:max-w-md p-4 rounded-2xl bg-blue-100/70 space-y-2 animate-pulse flex-1">
+                        <div className="h-3.5 w-1/2 bg-blue-200 rounded ml-auto" />
+                        <div className="h-3 w-3/4 bg-blue-200 rounded ml-auto" />
+                      </div>
+                    </div>
+                  </div>
+                ) : messages.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-xs text-slate-400">
                     No messages in this conversation yet. Send a note or voice memo below.
                   </div>
@@ -424,7 +446,7 @@ export default function MessagesPage() {
                     <button
                       type="button"
                       onClick={() => setIsRecordingVoice(true)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-900 transition"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-900 transition active-press"
                       title="Record Voice Note"
                     >
                       🎙️
@@ -435,13 +457,13 @@ export default function MessagesPage() {
                       placeholder="Type a message…"
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
-                      className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white"
+                      className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition"
                     />
 
                     <button
                       type="submit"
                       disabled={!textInput.trim()}
-                      className="rounded-xl bg-[#012153] px-5 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 disabled:opacity-50 transition"
+                      className="rounded-xl bg-[#012153] px-5 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 disabled:opacity-50 transition active-press hover-lift"
                     >
                       Send
                     </button>
