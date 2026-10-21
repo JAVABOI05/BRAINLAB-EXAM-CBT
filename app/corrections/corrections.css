@@ -1272,3 +1272,19 @@ html[data-theme="dark"] .empty-state {
 html[data-theme="dark"] .empty-state-text {
   color: #e2e8f0;
 }
+
+
+html[data-theme="dark"] .action-btn.secondary {
+  background: #111c2f;
+  color: #cbd5e1;
+  border-color: #2b3a52;
+}
+
+html[data-theme="dark"] .action-btn.secondary:hover {
+  background: #17243a;
+  color: #ffffff;
+}
+
+.action-btn:active {
+  transform: scale(0.97);
+}

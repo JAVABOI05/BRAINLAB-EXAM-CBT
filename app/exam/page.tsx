@@ -625,10 +625,10 @@ export default function ExamPage() {
                 Brainlab CBT Exam
               </h1>
             </div>
-                        <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm text-gray-600">
-                Candidate: {candidate.name} | Elective:{" "}
-                {electiveSubject || candidate.subject} | Answered: {answeredCount} /{" "}
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                Candidate: <span className="font-bold text-slate-900 dark:text-white">{candidate.name}</span> | Elective:{" "}
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{electiveSubject || candidate.subject}</span> | Answered: <span className="font-bold text-blue-700 dark:text-cyan-400">{answeredCount}</span> /{" "}
                 {totalQuestions}
               </p>
               <span
@@ -641,10 +641,10 @@ export default function ExamPage() {
                 }`}
               >
                 {syncStatus === "offline"
-                  ? "⚡ Offline (Answers saved on device)"
+                  ? "⚡ Offline (Saved locally)"
                   : syncStatus === "syncing"
-                  ? "↻ Syncing answers..."
-                  : "✓ Answers Synced"}
+                  ? "↻ Syncing..."
+                  : "✓ Synced"}
               </span>
             </div>
           </div>
@@ -654,19 +654,19 @@ export default function ExamPage() {
               <p className="text-xs uppercase tracking-wide opacity-90">
                 Time Left
               </p>
-              <p className="text-xl font-bold">{formatTime(timeLeft)}</p>
+              <p className="text-xl font-bold font-mono">{formatTime(timeLeft)}</p>
             </div>
 
             {calculatorEnabled && (
               <button
                 onClick={() => setShowCalculator((prev) => !prev)}
-                className="exam-calc-btn"
+                className="exam-calc-btn hover:opacity-90 active:scale-95 transition-all"
               >
                 Calculator
               </button>
             )}
 
-            <button onClick={() => handleSubmit()} className="exam-submit-btn">
+            <button onClick={() => handleSubmit()} className="exam-submit-btn hover:opacity-90 active:scale-95 transition-all">
               Submit Exam
             </button>
           </div>
@@ -683,17 +683,17 @@ export default function ExamPage() {
       )}
 
       <div className="mx-auto max-w-7xl p-4">
-        <div className="exam-card mb-6 p-4">
-          <h2 className="mb-3 font-bold text-gray-800">Subjects</h2>
-          <div className="flex flex-wrap gap-3">
+        <div className="exam-card mb-6 p-4 sm:p-5">
+          <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Examination Subjects</h2>
+          <div className="flex flex-wrap gap-2.5">
             {subjectOrder.map((subject) => (
               <button
                 key={subject}
                 onClick={() => goToSubject(subject)}
-                className={`rounded-xl px-4 py-2 font-semibold transition ${
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all duration-150 active:scale-95 ${
                   currentSubject === subject
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-[#012153] text-white shadow-md shadow-blue-950/20 ring-2 ring-[#38bdf8]/50"
+                    : "border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
                 }`}
               >
                 {subject}
@@ -782,41 +782,41 @@ export default function ExamPage() {
               ))}
             </div>
 
-            <div className="mt-8 flex items-center justify-between gap-4">
+            <div className="mt-8 flex items-center justify-between gap-3 sm:gap-4">
               <button
                 onClick={handlePrevious}
                 disabled={currentIndex === 0}
-                className="exam-nav-btn border border-gray-300 bg-white text-gray-700"
+                className="exam-nav-btn border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
               >
-                Previous
+                ← Previous
               </button>
 
               <button
                 onClick={toggleFlag}
-                className={`exam-nav-btn ${
+                className={`exam-nav-btn active:scale-95 transition-all ${
                   currentIsFlagged
-                    ? "bg-yellow-400 text-gray-900"
-                    : "border border-yellow-300 bg-yellow-50 text-yellow-800"
+                    ? "bg-amber-400 text-slate-950 font-black shadow-sm"
+                    : "border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
                 }`}
               >
-                {currentIsFlagged ? "Unflag" : "Flag"}
+                {currentIsFlagged ? "⚐ Unflag" : "⚐ Flag"}
               </button>
 
               <button
                 onClick={handleNext}
                 disabled={currentIndex === totalQuestions - 1}
-                className="exam-nav-btn bg-blue-600 text-white"
+                className="exam-nav-btn bg-[#012153] hover:bg-[#071c43] text-white shadow-md shadow-blue-950/20 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
               >
-                Next
+                Next →
               </button>
             </div>
           </div>
 
           <div className="exam-card h-fit p-4 lg:sticky lg:top-24">
-            <h2 className="mb-1 font-bold text-gray-800">Question Palette</h2>
-            <p className="mb-3 text-sm text-gray-500">{currentSubject}</p>
+            <h2 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">Question Palette</h2>
+            <p className="mb-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{currentSubject}</p>
 
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
               {currentSubjectQuestions.map((question) => {
                 const answered = Boolean(answers[String(question.id)]);
                 const active = question.originalIndex === currentIndex;
@@ -826,7 +826,7 @@ export default function ExamPage() {
                   <button
                     key={question.id}
                     onClick={() => goToQuestion(question.originalIndex)}
-                    className={`exam-palette-btn ${
+                    className={`exam-palette-btn active:scale-90 ${
                       active
                         ? "current"
                         : isFlagged
@@ -842,21 +842,21 @@ export default function ExamPage() {
               })}
             </div>
 
-            <div className="mt-4 space-y-2 text-sm text-gray-600">
-              <p>
-                <span className="exam-legend-dot bg-blue-600" />
+            <div className="mt-5 space-y-2 text-xs font-medium text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3">
+              <p className="flex items-center">
+                <span className="exam-legend-dot bg-[#071c43] dark:bg-sky-400" />
                 Current
               </p>
-              <p>
-                <span className="exam-legend-dot bg-yellow-300" />
-                Flagged
+              <p className="flex items-center">
+                <span className="exam-legend-dot bg-amber-400" />
+                Flagged for Review
               </p>
-              <p>
-                <span className="exam-legend-dot bg-green-300" />
+              <p className="flex items-center">
+                <span className="exam-legend-dot bg-emerald-500" />
                 Answered
               </p>
-              <p>
-                <span className="exam-legend-dot bg-gray-300" />
+              <p className="flex items-center">
+                <span className="exam-legend-dot bg-slate-300 dark:bg-slate-700" />
                 Unanswered
               </p>
             </div>

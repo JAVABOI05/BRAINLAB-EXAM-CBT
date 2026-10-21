@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { checkAccessCode, getPublicSettings, isError } from "../lib/examApi";
 
 export default function AccessPage() {
@@ -122,9 +124,10 @@ export default function AccessPage() {
 
   if (pageLoading) {
     return (
-      <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
-        <div className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-md">
-          <p className="text-lg text-gray-700">Loading access page...</p>
+      <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff_45%,#f8fbff_80%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_30%),linear-gradient(180deg,#060e1a_0%,#030712_100%)] flex items-center justify-center px-4 py-8">
+        <div className="mx-auto max-w-md w-full rounded-3xl border border-white/70 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-8 shadow-xl text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading access requirements...</p>
         </div>
       </main>
     );
@@ -132,21 +135,22 @@ export default function AccessPage() {
 
   if (!mockEnabled) {
     return (
-      <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
-        <div className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-md">
-          <h1 className="text-2xl font-bold text-gray-800">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff_45%,#f8fbff_80%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_30%),linear-gradient(180deg,#060e1a_0%,#030712_100%)] flex items-center justify-center px-4 py-8">
+        <div className="mx-auto max-w-md w-full rounded-3xl border border-white/70 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-xl text-center">
+          <span className="text-4xl" aria-hidden="true">🔒</span>
+          <h1 className="mt-3 text-2xl font-black text-slate-900 dark:text-white">
             Exam Currently Unavailable
           </h1>
-          <p className="mt-3 text-gray-600">
-            The exam is currently closed. Please check back later.
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            The exam session is currently closed by the administrator. Please check back later.
           </p>
 
-          <button
-            onClick={() => router.push("/")}
-            className="mt-6 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-3 font-semibold text-white shadow-md transition hover:scale-[1.01]"
+          <Link
+            href="/"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-[#012153] hover:bg-[#071c43] px-4 py-3 font-bold text-white shadow transition hover:-translate-y-0.5 active:scale-95 text-sm"
           >
-            Back Home
-          </button>
+            ← Return to Home
+          </Link>
         </div>
       </main>
     );
@@ -157,45 +161,69 @@ export default function AccessPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#dfe8f7] px-4 py-8">
-      <div className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-md">
-        <h1 className="text-center text-3xl font-bold text-gray-800">
-          Enter Access Code
+    <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff_45%,#f8fbff_80%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_30%),linear-gradient(180deg,#060e1a_0%,#030712_100%)] flex items-center justify-center px-4 py-8">
+      <div className="mx-auto max-w-md w-full rounded-3xl border border-white/70 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 sm:p-8 shadow-2xl shadow-blue-100/40 dark:shadow-none backdrop-blur-md">
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <Image src="/brainlab-logo.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto dark:hidden" />
+          <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto hidden dark:block" />
+        </div>
+
+        <h1 className="text-center text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+          Enter Exam Access Code
         </h1>
 
-        <p className="mt-3 text-center text-sm text-gray-600">
-          Enter your phone number and valid access code to continue.
+        <p className="mt-2 text-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          Provide your candidate phone number and the access code issued for this session.
         </p>
 
-        <div className="mt-6 space-y-4">
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Phone Number"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="mt-6 space-y-3.5">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Candidate Phone
+            </label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 08012345678"
+              className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
 
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="BLT-XXXX-XXXX or master code"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 uppercase outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Access Code
+            </label>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="e.g. BLT-XXXX-XXXX"
+              className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-sm uppercase text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-mono tracking-wider"
+            />
+          </div>
 
           <button
             onClick={handleValidateCode}
             disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-3 font-semibold text-white shadow-md transition hover:scale-[1.01] disabled:opacity-50"
+            className="mt-2 w-full rounded-xl bg-[#012153] hover:bg-[#071c43] px-4 py-3.5 font-bold text-white shadow-md shadow-blue-950/20 transition hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:transform-none text-sm"
           >
-            {loading ? "Checking..." : "Continue"}
+            {loading ? "Verifying Code..." : "Validate and Continue →"}
           </button>
         </div>
 
         {errorText && (
-          <div className="mt-4 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
+          <div className="mt-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs font-semibold text-rose-800 dark:text-rose-200">
             {errorText}
           </div>
         )}
+
+        <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 text-center">
+          <Link
+            href="/login"
+            className="text-xs font-bold text-blue-700 dark:text-cyan-400 hover:underline"
+          >
+            ← Back to Candidate Login
+          </Link>
+        </div>
       </div>
     </main>
   );

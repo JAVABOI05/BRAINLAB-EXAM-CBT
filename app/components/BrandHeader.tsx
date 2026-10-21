@@ -166,7 +166,7 @@ export default function BrandHeader() {
               <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" /> Checking account…
             </span>
           ) : user ? (
-            <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-3 xl:ml-3 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0">
+            <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 xl:ml-3 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0">
               <Link
                 href="/dashboard"
                 onClick={closeMenu}
@@ -244,7 +244,7 @@ export default function BrandHeader() {
               </button>
             </div>
           ) : (
-            <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-3 xl:ml-3 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0">
+            <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 xl:ml-3 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0">
               <Link
                 href="/account"
                 onClick={closeMenu}
