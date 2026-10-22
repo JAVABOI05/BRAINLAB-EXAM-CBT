@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 import { supabase } from "../lib/supabase";
 import { getSubscriptionPlans, validateCoupon, type SubscriptionPlan } from "../lib/platformConfig";
 
@@ -469,7 +467,6 @@ export default function PricingPage() {
           </div>
         </div>
       </main>
-      <BrandFooter />
     </div>
   );
 }

@@ -729,7 +729,7 @@ export default function AdminConfigPage() {
 
           <div className="admin-settings-grid">
             <div className="admin-setting-box">
-              <label className="admin-label">Public Support Email</label>
+              <label className="admin-label">Public Support Email (CBT Helpdesk)</label>
               <input
                 type="email"
                 value={footerConfig.support_email}
@@ -740,7 +740,23 @@ export default function AdminConfigPage() {
                 className="admin-input"
               />
               <p className="admin-help">
-                Primary public learner support address. Never expose private internal administrator mailboxes here.
+                Primary public learner CBT and technical support address.
+              </p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">Academy Email (Admissions &amp; Office)</label>
+              <input
+                type="email"
+                value={footerConfig.academy_email || "academy@brainlab.edu.ng"}
+                onChange={(e) =>
+                  setFooterConfig((prev) => ({ ...prev, academy_email: e.target.value }))
+                }
+                placeholder="academy@brainlab.edu.ng"
+                className="admin-input"
+              />
+              <p className="admin-help">
+                Official academy correspondence and admissions address.
               </p>
             </div>
 

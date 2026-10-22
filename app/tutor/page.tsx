@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { CardSkeleton } from "../components/SkeletonLoader";
+import ActivePresenceBar from "../components/ActivePresenceBar";
 
 type Subject = { id: string; name: string; slug: string; description: string | null; membership_role: "tutor" | "reviewer" | "admin" };
 
@@ -66,6 +67,8 @@ export default function TutorHomePage() {
       <p className="text-sm font-extrabold uppercase tracking-[0.15em] text-blue-800">BrainLab Academy · Authoring Portal</p>
       <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">Teach with structure. Help learners progress.</h1>
       <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg">Create lessons from reusable content blocks, organize topics, and build assessments that check understanding. Published content is separated from drafts.</p>
+
+      <ActivePresenceBar activityContext="Tutor Management Portal" variant="banner" className="mt-6" />
 
       {!signedIn && !loading && <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-7"><h2 className="text-xl font-extrabold text-slate-950">Sign in to access authoring tools</h2><p className="mt-2 leading-7 text-slate-600">Tutor access is assigned by a BrainLab administrator. Signing in alone does not grant permission to edit learning content.</p><Link href="/account" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Sign in</Link></section>}
 

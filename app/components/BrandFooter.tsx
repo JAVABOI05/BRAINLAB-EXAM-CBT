@@ -29,10 +29,10 @@ function PhoneIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-function WhatsAppIcon({ className = "w-4 h-4" }: { className?: string }) {
+function AcademicCapIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
-    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.98-.276-.1-.477-.15-.678.15-.2.301-.778.98-.953 1.18-.175.201-.351.226-.652.075-.301-.15-1.27-.468-2.42-1.493-.895-.798-1.5-1.784-1.676-2.085-.175-.301-.019-.464.132-.614.136-.134.301-.351.451-.527.151-.175.201-.301.301-.501.101-.201.05-.376-.025-.526-.075-.151-.678-1.632-.929-2.235-.245-.589-.494-.509-.678-.518-.176-.009-.376-.011-.577-.011-.201 0-.527.075-.803.376-.276.301-1.054 1.03-1.054 2.511 0 1.482 1.079 2.913 1.23 3.114.15.201 2.123 3.242 5.143 4.547.718.311 1.279.497 1.716.636.721.23 1.378.197 1.897.12.578-.087 1.78-.727 2.031-1.43.251-.703.251-1.305.176-1.43-.076-.125-.276-.201-.577-.351zM12.04 2C6.517 2 2.033 6.484 2.033 12.008c0 1.93.548 3.733 1.498 5.27L2 22l4.873-1.488a9.96 9.96 0 005.167 1.496c5.523 0 10.007-4.484 10.007-10.008C22.047 6.484 17.563 2 12.04 2zm0 18.254c-1.616 0-3.118-.475-4.382-1.294l-.315-.198-2.888.882.898-2.815-.218-.328a8.214 8.214 0 01-1.375-4.493c0-4.561 3.711-8.272 8.28-8.272 4.569 0 8.28 3.711 8.28 8.272 0 4.561-3.711 8.272-8.28 8.272z" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342" />
     </svg>
   );
 }
@@ -77,14 +77,6 @@ function TikTokIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-function ArrowUpRightIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-    </svg>
-  );
-}
-
 function renderSocialIcon(platform: SocialLinkConfig["platform"]) {
   switch (platform) {
     case "x":
@@ -97,8 +89,6 @@ function renderSocialIcon(platform: SocialLinkConfig["platform"]) {
       return <YouTubeIcon className="h-4 w-4" />;
     case "tiktok":
       return <TikTokIcon className="h-4 w-4" />;
-    case "whatsapp":
-      return <WhatsAppIcon className="h-4 w-4" />;
     default:
       return null;
   }
@@ -120,6 +110,7 @@ export default function BrandFooter() {
     };
   }, []);
 
+  // Filter out any social links that are disabled, empty, or placeholder '#'
   const activeSocialLinks = (config.social_links || []).filter(
     (item) =>
       item.enabled &&
@@ -127,6 +118,10 @@ export default function BrandFooter() {
       item.url.trim() !== "#" &&
       (item.url.startsWith("http://") || item.url.startsWith("https://"))
   );
+
+  const supportEmail = config.support_email || "support@brainlab.edu.ng";
+  const academyEmail = config.academy_email || "academy@brainlab.edu.ng";
+  const supportPhone = config.support_phone || "+234 907 431 0204";
 
   return (
     <footer
@@ -137,98 +132,105 @@ export default function BrandFooter() {
         BrainLab Academy Footer
       </h2>
 
-      {/* Main Multi-Column Footer Grid */}
-      <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:py-16">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+      {/* Main Spacious 4-Column Layout */}
+      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-10">
           
-          {/* Column 1: Brand Introduction, Direct Support Channels & Open CBT Support Action */}
+          {/* Column 1: Brand Introduction & Dual Official Support/Academy Channels (lg:col-span-4) */}
           <div className="lg:col-span-4">
             <Link
               href="/"
               className="inline-flex rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400"
-              aria-label="BrainLab Academy homepage"
+              aria-label="BrainLab Academy home"
             >
               <Image
                 src="/brainlab-logo-light.svg"
                 alt="BrainLab Academy"
                 width={128}
                 height={70}
-                className="h-11 w-auto"
+                className="h-10 w-auto"
                 priority={false}
               />
             </Link>
 
-            <p className="mt-4 text-sm font-semibold text-slate-100">
+            <p className="mt-3 text-sm font-semibold text-slate-100">
               {config.brand_tagline}
             </p>
 
-            <p className="mt-2 text-xs leading-6 text-slate-400">
+            <p className="mt-2 text-xs leading-5 text-slate-400">
               {config.brand_description}
             </p>
 
-            {/* Direct Official Contact Info */}
-            <div className="mt-6 space-y-2.5 text-xs text-slate-300">
-              {config.support_email && (
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-800/90 text-blue-400">
-                    <MailIcon className="h-3.5 w-3.5" />
-                  </span>
+            {/* Clear, Non-repetitive Contact Channels */}
+            <div className="mt-5 space-y-2 text-xs text-slate-300">
+              {/* CBT & Technical Support Email */}
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 text-blue-400 shrink-0">
+                  <MailIcon className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">CBT Support:</span>
                   <a
-                    href={`mailto:${config.support_email}?subject=BrainLab%20Support%20Inquiry`}
+                    href={`mailto:${supportEmail}?subject=BrainLab%20CBT%20Support%20Request`}
                     className="font-medium text-slate-200 transition-colors hover:text-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
                   >
-                    {config.support_email}
+                    {supportEmail}
                   </a>
                 </div>
-              )}
+              </div>
 
-              {config.support_phone && (
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-800/90 text-emerald-400">
-                    <PhoneIcon className="h-3.5 w-3.5" />
-                  </span>
+              {/* Academy & Admissions Office Email */}
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 text-indigo-400 shrink-0">
+                  <AcademicCapIcon className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Academy Office:</span>
                   <a
-                    href={`tel:${config.support_phone.replace(/\s+/g, "")}`}
+                    href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20Inquiry`}
+                    className="font-medium text-slate-200 transition-colors hover:text-indigo-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+                  >
+                    {academyEmail}
+                  </a>
+                </div>
+              </div>
+
+              {/* Direct Support Line */}
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 text-emerald-400 shrink-0">
+                  <PhoneIcon className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Phone Line:</span>
+                  <a
+                    href={`tel:${supportPhone.replace(/\s+/g, "")}`}
                     className="font-medium text-slate-200 transition-colors hover:text-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
                   >
-                    {config.support_phone}
+                    {supportPhone}
                   </a>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Prominent Action Buttons: Open CBT Support & WhatsApp Helpdesk */}
-            <div className="mt-6 flex flex-wrap gap-2.5">
+            {/* Single Focused Primary CTA */}
+            <div className="mt-5">
               <a
-                href={`mailto:${config.support_email || "support@brainlab.edu.ng"}?subject=BrainLab%20CBT%20Support%20Request`}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 active:scale-95"
-                title="Send an email to support@brainlab.edu.ng"
+                href={`mailto:${supportEmail}?subject=BrainLab%20CBT%20Support%20Request`}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 active:scale-95"
+                title={`Email ${supportEmail}`}
               >
                 <MailIcon className="h-3.5 w-3.5" />
                 <span>Open CBT support</span>
               </a>
-
-              {config.whatsapp_number && (
-                <a
-                  href={`https://wa.me/${config.whatsapp_number}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/70 px-3.5 py-2 text-xs font-semibold text-slate-200 transition-all hover:border-emerald-600/50 hover:bg-slate-800 hover:text-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 active:scale-95"
-                  aria-label="Chat with BrainLab learner support on WhatsApp"
-                >
-                  <WhatsAppIcon className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>WhatsApp Helpdesk</span>
-                </a>
-              )}
             </div>
           </div>
 
-          {/* Column 2: CBT Practice & Exam Support (lg:col-span-2) */}
+          {/* Column 2: CBT Practice & Exam Suite (lg:col-span-2) */}
           <div className="lg:col-span-2">
             <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white">
               CBT Practice
             </h3>
-            <ul className="mt-4 space-y-2.5 text-xs">
+            <ul className="mt-4 space-y-2 text-xs">
               <li>
                 <Link className="text-slate-300 transition-colors hover:text-white" href="/login">
                   JAMB UTME CBT
@@ -254,25 +256,15 @@ export default function BrandFooter() {
                   National Leaderboard
                 </Link>
               </li>
-              {/* Explicit CBT Support Mail Link */}
-              <li className="pt-1 border-t border-slate-800/80">
-                <a
-                  className="inline-flex items-center gap-1.5 font-bold text-sky-400 transition-colors hover:text-sky-300"
-                  href={`mailto:${config.support_email || "support@brainlab.edu.ng"}?subject=BrainLab%20CBT%20Support%20Request`}
-                >
-                  <MailIcon className="h-3.5 w-3.5" />
-                  <span>Open CBT Support</span>
-                </a>
-              </li>
             </ul>
           </div>
 
-          {/* Column 3: Learning Hub & Classes (lg:col-span-2) */}
-          <div className="lg:col-span-2">
+          {/* Column 3: Learning Hub & Classes (lg:col-span-3) */}
+          <div className="lg:col-span-3">
             <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white">
               Learning Hub
             </h3>
-            <ul className="mt-4 space-y-2.5 text-xs">
+            <ul className="mt-4 space-y-2 text-xs">
               <li>
                 <Link className="text-slate-300 transition-colors hover:text-white" href="/learn">
                   Subject Curriculum
@@ -285,12 +277,12 @@ export default function BrandFooter() {
               </li>
               <li>
                 <Link className="text-slate-300 transition-colors hover:text-white" href="/learn?tab=live">
-                  Live Classroom Portal
+                  Live Classroom Stage
                 </Link>
               </li>
               <li>
                 <Link className="text-slate-300 transition-colors hover:text-white" href="/recordings">
-                  Class Recordings Archive
+                  Class Recordings
                 </Link>
               </li>
               <li>
@@ -299,35 +291,52 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/verify">
-                  Verify Certificate
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/challenge-arena">
+                  Challenge Arena (Daily Sprints)
+                </Link>
+              </li>
+              <li>
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/resources">
+                  Formula Sheets &amp; Resources
+                </Link>
+              </li>
+              <li>
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/learning-dna">
+                  Learning DNA Diagnostic
+                </Link>
+              </li>
+              <li>
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/study-groups">
+                  Study Circles &amp; Groups
+                </Link>
+              </li>
+              <li>
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/learning/achievements">
+                  Achievements &amp; Streaks
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Academics & Company (lg:col-span-2) */}
-          <div className="lg:col-span-2">
+          {/* Column 4: Support & Trust (lg:col-span-3) */}
+          <div className="lg:col-span-3">
             <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white">
-              BrainLab
+              Support &amp; Trust
             </h3>
-            <ul className="mt-4 space-y-2.5 text-xs">
+            <ul className="mt-4 space-y-2 text-xs">
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/about">
-                  About Our Academy
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/support">
+                  Help Centre &amp; FAQs
                 </Link>
               </li>
               <li>
                 <Link className="text-slate-300 transition-colors hover:text-white" href="/contact">
-                  Contact Us
+                  Contact Directory
                 </Link>
               </li>
               <li>
-                <Link
-                  className="text-slate-300 transition-colors hover:text-white"
-                  href="/contact?subject=Tutor+Application"
-                >
-                  Become a Tutor
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/about">
+                  About Our Academy
                 </Link>
               </li>
               <li>
@@ -336,67 +345,8 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/account/access">
-                  Membership &amp; Access
-                </Link>
-              </li>
-              <li>
-                {config.whatsapp_channel_url ? (
-                  <a
-                    className="inline-flex items-center gap-1.5 text-slate-300 transition-colors hover:text-emerald-300"
-                    href={config.whatsapp_channel_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <span>Community Channel</span>
-                    <ArrowUpRightIcon className="h-3 w-3 text-slate-400" />
-                  </a>
-                ) : (
-                  <Link className="text-slate-300 transition-colors hover:text-white" href="/learn">
-                    Community Hub
-                  </Link>
-                )}
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 5: Help & Support (lg:col-span-2) */}
-          <div className="lg:col-span-2">
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white">
-              Help &amp; Support
-            </h3>
-            <ul className="mt-4 space-y-2.5 text-xs">
-              {/* Prominent Open CBT Support Link */}
-              <li>
-                <a
-                  className="inline-flex items-center gap-1.5 font-bold text-sky-400 transition-colors hover:text-sky-300"
-                  href={`mailto:${config.support_email || "support@brainlab.edu.ng"}?subject=BrainLab%20CBT%20Support%20Request`}
-                >
-                  <MailIcon className="h-3.5 w-3.5" />
-                  <span>Open CBT Support</span>
-                </a>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/support">
-                  Help Centre
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/faq">
-                  FAQs &amp; Answers
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className="text-slate-300 transition-colors hover:text-white"
-                  href="/contact?subject=Issue+Report"
-                >
-                  Report a Problem
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/account/access">
-                  Billing &amp; Access Support
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/verify">
+                  Verify Certificate
                 </Link>
               </li>
               <li>
@@ -404,66 +354,46 @@ export default function BrandFooter() {
                   Refund Policy
                 </Link>
               </li>
-              <li>
-                <a
-                  className="text-slate-400 transition-colors hover:text-slate-200"
-                  href={`mailto:${config.support_email || "support@brainlab.edu.ng"}`}
-                >
-                  {config.support_email || "support@brainlab.edu.ng"}
-                </a>
-              </li>
             </ul>
           </div>
 
         </div>
       </div>
 
-      {/* Sub-Footer Bottom Bar: Legal, Attribution & Accessible Social Links */}
+      {/* Clean Sub-Footer Bar */}
       <div className="border-t border-slate-800/80 bg-[#000814]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-6 text-xs text-slate-400 sm:px-8 md:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-xs text-slate-400 sm:px-8 md:flex-row">
           
-          {/* Copyright & Mission Statement */}
-          <div className="flex flex-col items-center gap-1 text-center sm:items-start sm:text-left">
-            <span>
-              &copy; {currentYear} {config.copyright_notice}
-            </span>
-            <span className="text-[11px] text-slate-400">
-              {config.accreditation_statement}
-            </span>
+          {/* Copyright Notice */}
+          <div className="text-center sm:text-left">
+            <span>&copy; {currentYear} {config.copyright_notice}</span>
           </div>
 
-          {/* Legal Navigation Links */}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-slate-300">
+          {/* Essential Legal Links */}
+          <div className="flex items-center gap-4 text-xs text-slate-400">
             <Link
               href="/privacy"
               className="transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             >
               Privacy Notice
             </Link>
-            <span className="text-slate-600" aria-hidden="true">&bull;</span>
+            <span className="text-slate-700" aria-hidden="true">&bull;</span>
             <Link
               href="/terms"
               className="transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             >
               Terms of Use
             </Link>
-            <span className="text-slate-600" aria-hidden="true">&bull;</span>
+            <span className="text-slate-700" aria-hidden="true">&bull;</span>
             <Link
               href="/account/subscription/refund"
               className="transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             >
               Refund Policy
             </Link>
-            <span className="text-slate-600" aria-hidden="true">&bull;</span>
-            <Link
-              href="/verify"
-              className="transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
-            >
-              Verify Certificate
-            </Link>
           </div>
 
-          {/* Social Media Link Pills (Renders only configured, valid URLs) */}
+          {/* Social Media Link Pills */}
           {activeSocialLinks.length > 0 && (
             <div className="flex items-center gap-2" aria-label="Social media channels">
               {activeSocialLinks.map((social) => {
@@ -475,7 +405,7 @@ export default function BrandFooter() {
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-300 transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-400 transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
                     aria-label={`BrainLab Academy on ${social.name}`}
                     title={social.name}
                   >

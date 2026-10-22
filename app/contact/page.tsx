@@ -3,14 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 
 const CONTACT_INFO = {
   primaryPhone: "0907 431 0204",
   secondaryPhone: "0902 111 8231",
   whatsappNumber: "2349074310204",
   email: "support@brainlab.edu.ng",
+  academyEmail: "academy@brainlab.edu.ng",
   whatsappChannel: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
   location: "Lagos, Nigeria",
   workingHours: "Monday – Saturday: 8:00 AM – 8:00 PM (WAT)",
@@ -85,8 +84,6 @@ export default function ContactPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-[#060e1a] text-slate-900 dark:text-slate-100 transition-colors">
-      <BrandHeader />
-
       <main className="flex-1 py-10 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header Hero */}
@@ -332,8 +329,6 @@ export default function ContactPage() {
           </div>
         </div>
       </main>
-
-      <BrandFooter />
     </div>
   );
 }

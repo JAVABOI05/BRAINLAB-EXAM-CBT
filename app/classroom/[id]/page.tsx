@@ -7,10 +7,31 @@ import { supabase } from "../../lib/supabase";
 import type {
   Participant,
   ClassroomMessage,
-  ClassroomPoll,
   LiveRoomTokenResponse,
-  RoomPermissions,
 } from "../../lib/liveClassroom/types";
+
+interface ClassroomPollOption {
+  id: string;
+  text: string;
+  votes: number;
+  percentage: number;
+  is_correct?: boolean;
+}
+
+interface ClassroomPollItem {
+  id: string;
+  class_id: string;
+  created_by: string;
+  question: string;
+  options: ClassroomPollOption[];
+  explanation?: string;
+  is_open: boolean;
+  duration_seconds?: number;
+  total_votes: number;
+  user_voted_option_id?: string | null;
+  created_at: string;
+  closed_at?: string | null;
+}
 
 export default function LiveClassroomPage({
   params,
@@ -42,7 +63,21 @@ export default function LiveClassroomPage({
   // Chat & Polls
   const [messages, setMessages] = useState<ClassroomMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
-  const [activePoll, setActivePoll] = useState<ClassroomPoll | null>(null);
+  const [polls, setPolls] = useState<ClassroomPollItem[]>([]);
+  const [activePoll, setActivePoll] = useState<ClassroomPollItem | null>(null);
+  const [isCreatingPoll, setIsCreatingPoll] = useState(false);
+  const [pollCountdown, setPollCountdown] = useState<number | null>(null);
+
+  // Poll Creator Form State
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState([
+    { id: "opt_1", text: "" },
+    { id: "opt_2", text: "" },
+  ]);
+  const [pollCorrectId, setPollCorrectId] = useState<string>("");
+  const [pollDuration, setPollDuration] = useState<number>(60);
+  const [pollExplanation, setPollExplanation] = useState("");
+  const [isSubmittingPoll, setIsSubmittingPoll] = useState(false);
 
   // Roster
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -53,8 +88,9 @@ export default function LiveClassroomPage({
   const localStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
   const attendanceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<any>(null);
 
-  // 1. Authenticate & Obtain Classroom Admission Token
+  // 1. Authenticate & Obtain Classroom Admission Token & Load Polls
   useEffect(() => {
     let active = true;
 
@@ -120,7 +156,7 @@ export default function LiveClassroomPage({
         };
         setParticipants([initialParticipant]);
 
-        // Default mock welcoming chat message
+        // Welcoming chat message
         setMessages([
           {
             id: "msg_welcome",
@@ -130,6 +166,82 @@ export default function LiveClassroomPage({
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           },
         ]);
+
+        // Fetch Classroom Polls
+        try {
+          const pollsRes = await fetch(`/api/classroom/polls?classId=${classId}`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          const pollsJson = await pollsRes.json();
+          if (pollsRes.ok && pollsJson.ok && Array.isArray(pollsJson.polls)) {
+            setPolls(pollsJson.polls);
+            const live = pollsJson.polls.find((p: ClassroomPollItem) => p.is_open);
+            if (live) setActivePoll(live);
+          }
+        } catch (pollErr) {
+          console.warn("Could not preload polls:", pollErr);
+        }
+
+        // Setup Supabase Realtime Channel for Live Polls & Quizzes
+        const channel = supabase.channel(`classroom:${classId}`, {
+          config: { broadcast: { self: false } },
+        });
+        channelRef.current = channel;
+
+        channel
+          .on("broadcast", { event: "poll_started" }, ({ payload }) => {
+            if (payload?.poll) {
+              setActivePoll(payload.poll);
+              setPolls((prev) => [payload.poll, ...prev.filter((p) => p.id !== payload.poll.id)]);
+            }
+          })
+          .on("broadcast", { event: "poll_vote" }, ({ payload }) => {
+            if (!payload?.pollId) return;
+            setPolls((prev) =>
+              prev.map((p) => {
+                if (p.id !== payload.pollId) return p;
+                const newTotal = p.total_votes + 1;
+                const newOptions = p.options.map((opt) => {
+                  const newVotes = opt.id === payload.selectedOptionId ? opt.votes + 1 : opt.votes;
+                  return {
+                    ...opt,
+                    votes: newVotes,
+                    percentage: newTotal > 0 ? Math.round((newVotes / newTotal) * 100) : 0,
+                  };
+                });
+                return { ...p, total_votes: newTotal, options: newOptions };
+              })
+            );
+            setActivePoll((current) => {
+              if (!current || current.id !== payload.pollId) return current;
+              const newTotal = current.total_votes + 1;
+              const newOptions = current.options.map((opt) => {
+                const newVotes = opt.id === payload.selectedOptionId ? opt.votes + 1 : opt.votes;
+                return {
+                  ...opt,
+                  votes: newVotes,
+                  percentage: newTotal > 0 ? Math.round((newVotes / newTotal) * 100) : 0,
+                };
+              });
+              return { ...current, total_votes: newTotal, options: newOptions };
+            });
+          })
+          .on("broadcast", { event: "poll_closed" }, ({ payload }) => {
+            if (!payload?.pollId) return;
+            setPolls((prev) =>
+              prev.map((p) =>
+                p.id === payload.pollId
+                  ? { ...p, is_open: false, options: payload.options || p.options, explanation: payload.explanation }
+                  : p
+              )
+            );
+            setActivePoll((current) =>
+              current && current.id === payload.pollId
+                ? { ...current, is_open: false, options: payload.options || current.options, explanation: payload.explanation }
+                : current
+            );
+          })
+          .subscribe();
 
         setLoading(false);
 
@@ -149,7 +261,7 @@ export default function LiveClassroomPage({
         }, 30000);
       } catch (err: any) {
         if (!active) return;
-        setError(err.message || "Connection failure.");
+        setError(err.message || "Failed to initialize classroom");
         setLoading(false);
       }
     }
@@ -159,44 +271,58 @@ export default function LiveClassroomPage({
     return () => {
       active = false;
       if (attendanceTimerRef.current) clearInterval(attendanceTimerRef.current);
-      // Clean up media tracks
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track) => track.stop());
-      }
-      if (screenStreamRef.current) {
-        screenStreamRef.current.getTracks().forEach((track) => track.stop());
-      }
-      // Report Leave
-      void fetch("/api/classroom/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId, action: "leave" }),
-      });
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, [classId, router]);
 
-  // 2. Toggle Audio / Microphone
+  // Active Poll Countdown Timer
+  useEffect(() => {
+    if (!activePoll || !activePoll.is_open || !activePoll.duration_seconds || activePoll.duration_seconds <= 0) {
+      setPollCountdown(null);
+      return;
+    }
+
+    const createdTime = new Date(activePoll.created_at).getTime();
+    const durationMs = activePoll.duration_seconds * 1000;
+    const endTime = createdTime + durationMs;
+
+    const interval = setInterval(() => {
+      const remainingMs = Math.max(0, endTime - Date.now());
+      const remainingSec = Math.ceil(remainingMs / 1000);
+      setPollCountdown(remainingSec);
+
+      if (remainingSec <= 0) {
+        clearInterval(interval);
+        // Automatically close poll on tutor client if expired
+        if (classDetails?.tutorId === currentUser?.id) {
+          void handleClosePoll(activePoll.id);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activePoll, classDetails?.tutorId, currentUser?.id]);
+
+  // 2. Toggle Audio / Mic
   const toggleAudio = async () => {
     if (!tokenData?.permissions.canPublishAudio) {
-      alert("Microphone publishing is currently disabled by the instructor.");
+      alert("Audio publishing is restricted for this session or requires host permission.");
       return;
     }
 
     try {
       if (!isAudioEnabled) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (localStreamRef.current) {
-          stream.getAudioTracks().forEach((track) => localStreamRef.current?.addTrack(track));
-        } else {
-          localStreamRef.current = stream;
-        }
+        localStreamRef.current = stream;
         setIsAudioEnabled(true);
       } else {
         localStreamRef.current?.getAudioTracks().forEach((track) => track.stop());
         setIsAudioEnabled(false);
       }
-    } catch (err) {
-      alert("Microphone permission denied or device not found.");
+    } catch {
+      alert("Unable to access microphone. Check browser permissions.");
     }
   };
 
@@ -222,7 +348,7 @@ export default function LiveClassroomPage({
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
         setIsVideoEnabled(false);
       }
-    } catch (err) {
+    } catch {
       alert("Unable to access camera. Check device permissions.");
     }
   };
@@ -251,7 +377,7 @@ export default function LiveClassroomPage({
         setIsScreenSharing(false);
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
       }
-    } catch (err) {
+    } catch {
       console.warn("Screen share cancelled or not allowed.");
     }
   };
@@ -287,13 +413,11 @@ export default function LiveClassroomPage({
   const toggleHandRaise = () => {
     setIsHandRaised(!isHandRaised);
     setParticipants((prev) =>
-      prev.map((p) =>
-        p.id === currentUser?.id ? { ...p, isHandRaised: !isHandRaised } : p
-      )
+      prev.map((p) => (p.id === currentUser?.id ? { ...p, isHandRaised: !isHandRaised } : p))
     );
   };
 
-  // 8. Low-Bandwidth Reconnect Simulation / Test
+  // 8. Reconnect Stream
   const handleReconnect = () => {
     setIsReconnecting(true);
     setNetworkQuality("reconnecting");
@@ -302,6 +426,182 @@ export default function LiveClassroomPage({
       setNetworkQuality("good");
     }, 1500);
   };
+
+  // 9. Student Votes on Poll
+  const handleVote = async (pollId: string, optionId: string) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+
+      // Optimistic update
+      setActivePoll((current) => {
+        if (!current || current.id !== pollId) return current;
+        const newTotal = current.total_votes + 1;
+        const newOptions = current.options.map((opt) => {
+          const newVotes = opt.id === optionId ? opt.votes + 1 : opt.votes;
+          return {
+            ...opt,
+            votes: newVotes,
+            percentage: newTotal > 0 ? Math.round((newVotes / newTotal) * 100) : 0,
+          };
+        });
+        return {
+          ...current,
+          user_voted_option_id: optionId,
+          total_votes: newTotal,
+          options: newOptions,
+        };
+      });
+
+      const res = await fetch("/api/classroom/polls/vote", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pollId, selectedOptionId: optionId }),
+      });
+
+      if (res.ok && channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "poll_vote",
+          payload: { pollId, selectedOptionId: optionId },
+        });
+      }
+    } catch (err) {
+      console.error("Failed to submit poll vote:", err);
+    }
+  };
+
+  // 10. Tutor Launches New Poll
+  const handleLaunchPoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pollQuestion.trim() || pollOptions.filter((o) => o.text.trim()).length < 2) {
+      alert("Provide a question and at least 2 answer choices.");
+      return;
+    }
+
+    setIsSubmittingPoll(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Unauthorized.");
+
+      const validOptions = pollOptions
+        .filter((o) => o.text.trim())
+        .map((o) => ({
+          id: o.id,
+          text: o.text.trim(),
+          is_correct: pollCorrectId ? o.id === pollCorrectId : undefined,
+        }));
+
+      const res = await fetch("/api/classroom/polls", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          classId,
+          question: pollQuestion.trim(),
+          options: validOptions,
+          explanation: pollExplanation.trim() || undefined,
+          durationSeconds: pollDuration,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || "Failed to launch poll.");
+
+      const newPoll: ClassroomPollItem = {
+        id: json.poll.id,
+        class_id: json.poll.class_id,
+        created_by: json.poll.created_by,
+        question: json.poll.question,
+        options: json.poll.options.map((o: any) => ({
+          id: o.id,
+          text: o.text,
+          votes: 0,
+          percentage: 0,
+          is_correct: o.is_correct,
+        })),
+        explanation: json.poll.explanation,
+        is_open: true,
+        duration_seconds: json.poll.duration_seconds,
+        total_votes: 0,
+        user_voted_option_id: null,
+        created_at: json.poll.created_at,
+      };
+
+      setActivePoll(newPoll);
+      setPolls((prev) => [newPoll, ...prev]);
+      setIsCreatingPoll(false);
+      setPollQuestion("");
+      setPollExplanation("");
+
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "poll_started",
+          payload: { poll: newPoll },
+        });
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to launch poll.");
+    } finally {
+      setIsSubmittingPoll(false);
+    }
+  };
+
+  // 11. Tutor Closes Poll & Reveals Answers
+  const handleClosePoll = async (pollId: string) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+
+      const res = await fetch("/api/classroom/polls", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pollId, isOpen: false }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        const updatedOptions = json.poll.options;
+        const explanation = json.poll.explanation;
+
+        setActivePoll((current) =>
+          current && current.id === pollId
+            ? { ...current, is_open: false, options: updatedOptions, explanation }
+            : current
+        );
+        setPolls((prev) =>
+          prev.map((p) =>
+            p.id === pollId ? { ...p, is_open: false, options: updatedOptions, explanation } : p
+          )
+        );
+
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "poll_closed",
+            payload: { pollId, options: updatedOptions, explanation },
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to close poll:", err);
+    }
+  };
+
+  const isTutorOrModerator =
+    Boolean(tokenData?.permissions.isModerator) || classDetails?.tutorId === currentUser?.id;
 
   if (loading) {
     return (
@@ -348,35 +648,28 @@ export default function LiveClassroomPage({
   return (
     <div className="flex h-screen flex-col bg-slate-950 text-slate-100 overflow-hidden select-none">
       {/* Top Header Bar */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900/90 px-4">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="text-slate-400 hover:text-white" title="Exit Classroom">
-            ←
+      <header className="h-14 shrink-0 border-b border-slate-800 bg-slate-900 px-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/dashboard" className="text-sm font-black text-blue-400 hover:text-blue-300">
+            BrainLab Live
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <h1 className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
-                {classDetails?.title || "Live Session"}
-              </h1>
-              <span className="rounded bg-blue-900/80 px-2 py-0.5 text-[11px] font-semibold text-blue-200 uppercase tracking-wider">
-                {classDetails?.format || "Interactive"}
-              </span>
-            </div>
-          </div>
+          <span className="text-slate-600">/</span>
+          <h1 className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+            {classDetails?.title || "Live Class"}
+          </h1>
+          <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-400 border border-emerald-500/20">
+            Live
+          </span>
         </div>
 
-        {/* Network & Presence Indicators */}
         <div className="flex items-center gap-3">
           <div
-            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
               networkQuality === "excellent"
-                ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"
+                ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
                 : networkQuality === "good"
-                ? "border-blue-500/40 bg-blue-950/40 text-blue-300"
-                : networkQuality === "poor"
-                ? "border-amber-500/40 bg-amber-950/40 text-amber-300"
-                : "border-rose-500/40 bg-rose-950/40 text-rose-300 animate-pulse"
+                ? "bg-blue-950 text-blue-400 border border-blue-800"
+                : "bg-amber-950 text-amber-400 border border-amber-800"
             }`}
             title="Optimized for Nigerian 3G/4G bandwidth"
           >
@@ -406,10 +699,7 @@ export default function LiveClassroomPage({
         {/* Floating Reactions Animation Canvas */}
         <div className="pointer-events-none absolute bottom-20 left-10 z-30 flex flex-col gap-2">
           {reactionFloat.map((r) => (
-            <div
-              key={r.id}
-              className="text-4xl animate-bounce transition duration-1000 ease-out"
-            >
+            <div key={r.id} className="text-4xl animate-bounce transition duration-1000 ease-out">
               {r.emoji}
             </div>
           ))}
@@ -455,6 +745,118 @@ export default function LiveClassroomPage({
                 </span>
               )}
             </div>
+
+            {/* IN-STAGE FLOATING LIVE QUIZ / POLL HUD */}
+            {activePoll && (
+              <div className="absolute bottom-4 right-4 z-20 w-80 sm:w-96 rounded-2xl border border-cyan-500/40 bg-slate-950/95 p-4 shadow-2xl backdrop-blur animate-fade-in-up">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+                    <span className="text-xs font-black uppercase tracking-wider text-cyan-300">
+                      {activePoll.is_open ? "Live Quiz Checkpoint" : "Quiz Checkpoint Result"}
+                    </span>
+                  </div>
+                  {activePoll.is_open && pollCountdown !== null && (
+                    <span className="rounded-full bg-cyan-950 px-2.5 py-0.5 text-xs font-mono font-bold text-cyan-300 border border-cyan-800">
+                      ⏱️ {pollCountdown}s
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-2 text-xs font-bold text-white leading-snug">{activePoll.question}</p>
+
+                {/* Voting options / Results preview */}
+                <div className="mt-3 space-y-2">
+                  {activePoll.options.map((opt, idx) => {
+                    const isVoted = activePoll.user_voted_option_id === opt.id;
+                    const canVote = activePoll.is_open && !activePoll.user_voted_option_id;
+
+                    return (
+                      <div key={opt.id} className="text-xs">
+                        {canVote ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleVote(activePoll.id, opt.id)}
+                            className="w-full text-left rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-slate-200 hover:border-cyan-400 hover:bg-slate-800 transition active-press flex items-center justify-between"
+                          >
+                            <span>
+                              <strong className="text-cyan-400 font-mono mr-2">
+                                {String.fromCharCode(65 + idx)}:
+                              </strong>
+                              {opt.text}
+                            </span>
+                            <span className="text-[10px] text-slate-500">Tap to vote</span>
+                          </button>
+                        ) : (
+                          <div
+                            className={`rounded-xl border p-2.5 ${
+                              isVoted
+                                ? "border-cyan-500 bg-cyan-950/40 text-cyan-100"
+                                : "border-slate-800 bg-slate-900/60 text-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">
+                                <strong className="font-mono mr-1.5 text-slate-400">
+                                  {String.fromCharCode(65 + idx)}:
+                                </strong>
+                                {opt.text}
+                                {isVoted && (
+                                  <span className="ml-2 text-[10px] font-bold text-cyan-400">
+                                    (Your Vote)
+                                  </span>
+                                )}
+                                {!activePoll.is_open && opt.is_correct && (
+                                  <span className="ml-2 text-[10px] font-bold text-emerald-400">
+                                    ✓ Correct
+                                  </span>
+                                )}
+                              </span>
+                              <span className="font-mono font-bold text-slate-400">
+                                {opt.percentage}% ({opt.votes})
+                              </span>
+                            </div>
+                            {/* Live Bar */}
+                            <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                              <div
+                                className={`h-full transition-all duration-500 rounded-full ${
+                                  !activePoll.is_open && opt.is_correct
+                                    ? "bg-emerald-500"
+                                    : isVoted
+                                    ? "bg-cyan-400"
+                                    : "bg-blue-600"
+                                }`}
+                                style={{ width: `${opt.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Explanation on Reveal */}
+                {!activePoll.is_open && activePoll.explanation && (
+                  <div className="mt-3 rounded-xl bg-blue-950/60 border border-blue-800/60 p-2.5 text-[11px] text-blue-200">
+                    💡 <strong className="text-white">Explanation:</strong> {activePoll.explanation}
+                  </div>
+                )}
+
+                {/* Tutor Controls */}
+                {isTutorOrModerator && activePoll.is_open && (
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void handleClosePoll(activePoll.id)}
+                      className="rounded-lg bg-rose-600/30 border border-rose-500/50 px-3 py-1 text-[11px] font-bold text-rose-300 hover:bg-rose-600 hover:text-white"
+                    >
+                      End Poll & Reveal Answer
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
 
@@ -471,6 +873,19 @@ export default function LiveClassroomPage({
               }`}
             >
               Chat ({messages.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("polls")}
+              className={`flex-1 py-3 text-center border-b-2 transition relative ${
+                activeTab === "polls"
+                  ? "border-blue-500 text-white bg-slate-900"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Polls {polls.length > 0 && `(${polls.length})`}
+              {activePoll?.is_open && (
+                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab("participants")}
@@ -490,7 +905,7 @@ export default function LiveClassroomPage({
                   : "border-transparent text-slate-400 hover:text-slate-200"
               }`}
             >
-              Resources
+              Links
             </button>
           </div>
 
@@ -533,7 +948,149 @@ export default function LiveClassroomPage({
             </div>
           )}
 
-          {/* Tab 2: Participants Roster */}
+          {/* Tab 2: Polls & Live Quizzes */}
+          {activeTab === "polls" && (
+            <div className="flex-1 flex flex-col overflow-hidden p-4">
+              {/* Tutor Launch Action */}
+              {isTutorOrModerator && (
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingPoll(true)}
+                    className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-extrabold text-white hover:bg-blue-500 shadow transition flex items-center justify-center gap-2"
+                  >
+                    <span>🎯 Launch Live Poll / Quiz</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Polls List */}
+              <div className="flex-1 overflow-y-auto space-y-4">
+                {polls.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-slate-800 p-6 text-center text-xs text-slate-500">
+                    No classroom polls yet. When the tutor launches a checkpoint quiz, it will appear here.
+                  </div>
+                )}
+
+                {polls.map((poll) => {
+                  return (
+                    <div
+                      key={poll.id}
+                      className={`rounded-2xl border p-4 space-y-3 ${
+                        poll.is_open
+                          ? "border-cyan-500/50 bg-slate-950"
+                          : "border-slate-800 bg-slate-900/60"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${
+                            poll.is_open
+                              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                              : "bg-slate-800 text-slate-400"
+                          }`}
+                        >
+                          {poll.is_open ? "Active Poll" : "Closed"}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {poll.total_votes} {poll.total_votes === 1 ? "vote" : "votes"}
+                        </span>
+                      </div>
+
+                      <h4 className="text-xs font-bold text-white">{poll.question}</h4>
+
+                      {/* Options */}
+                      <div className="space-y-2">
+                        {poll.options.map((opt, idx) => {
+                          const isVoted = poll.user_voted_option_id === opt.id;
+                          const canVote = poll.is_open && !poll.user_voted_option_id;
+
+                          return (
+                            <div key={opt.id} className="text-xs">
+                              {canVote ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleVote(poll.id, opt.id)}
+                                  className="w-full text-left rounded-xl border border-slate-700 bg-slate-800/80 p-2 text-slate-200 hover:border-cyan-400 hover:bg-slate-800 transition"
+                                >
+                                  <strong className="text-cyan-400 font-mono mr-2">
+                                    {String.fromCharCode(65 + idx)}:
+                                  </strong>
+                                  {opt.text}
+                                </button>
+                              ) : (
+                                <div
+                                  className={`rounded-xl border p-2 ${
+                                    isVoted
+                                      ? "border-cyan-500 bg-cyan-950/40 text-cyan-200"
+                                      : "border-slate-800 bg-slate-950/40 text-slate-300"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between text-[11px]">
+                                    <span>
+                                      <strong className="font-mono mr-1.5 text-slate-400">
+                                        {String.fromCharCode(65 + idx)}:
+                                      </strong>
+                                      {opt.text}
+                                      {isVoted && (
+                                        <span className="ml-1 text-[10px] font-bold text-cyan-400">
+                                          (Yours)
+                                        </span>
+                                      )}
+                                      {!poll.is_open && opt.is_correct && (
+                                        <span className="ml-1 text-[10px] font-bold text-emerald-400">
+                                          ✓
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="font-mono text-slate-400">
+                                      {opt.percentage}%
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 h-1 w-full rounded-full bg-slate-800 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${
+                                        !poll.is_open && opt.is_correct
+                                          ? "bg-emerald-500"
+                                          : isVoted
+                                          ? "bg-cyan-400"
+                                          : "bg-blue-600"
+                                      }`}
+                                      style={{ width: `${opt.percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Explanation */}
+                      {!poll.is_open && poll.explanation && (
+                        <p className="text-[11px] text-blue-200 bg-blue-950/60 p-2 rounded-xl border border-blue-900">
+                          💡 <strong>Explanation:</strong> {poll.explanation}
+                        </p>
+                      )}
+
+                      {/* Tutor Actions */}
+                      {isTutorOrModerator && poll.is_open && (
+                        <button
+                          type="button"
+                          onClick={() => void handleClosePoll(poll.id)}
+                          className="w-full rounded-xl border border-rose-500/40 bg-rose-950/30 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-600 hover:text-white transition"
+                        >
+                          End Poll & Reveal Answer
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 3: Participants Roster */}
           {activeTab === "participants" && (
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
@@ -564,7 +1121,7 @@ export default function LiveClassroomPage({
             </div>
           )}
 
-          {/* Tab 3: Lesson Resources & Quiz Links */}
+          {/* Tab 4: Lesson Resources & Quiz Links */}
           {activeTab === "resources" && (
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div>
@@ -595,6 +1152,148 @@ export default function LiveClassroomPage({
           )}
         </aside>
       </div>
+
+      {/* Tutor Poll Creator Modal */}
+      {isCreatingPoll && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <form
+            onSubmit={handleLaunchPoll}
+            className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-black text-white">Create Checkpoint Poll / Quiz</h3>
+              <button
+                type="button"
+                onClick={() => setIsCreatingPoll(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                Question Prompt
+              </label>
+              <textarea
+                required
+                rows={2}
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                placeholder="E.g., What is the primary SI unit of electrical resistance?"
+                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Answer Options (Select the correct option if grading)
+              </label>
+              <div className="space-y-2">
+                {pollOptions.map((opt, idx) => (
+                  <div key={opt.id} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="correct_option"
+                      checked={pollCorrectId === opt.id}
+                      onChange={() => setPollCorrectId(opt.id)}
+                      title="Mark as correct answer"
+                      className="h-4 w-4 accent-emerald-500"
+                    />
+                    <span className="font-mono font-bold text-xs text-slate-400 w-4">
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <input
+                      required
+                      type="text"
+                      value={opt.text}
+                      onChange={(e) => {
+                        const next = [...pollOptions];
+                        next[idx].text = e.target.value;
+                        setPollOptions(next);
+                      }}
+                      placeholder={`Choice ${String.fromCharCode(65 + idx)}`}
+                      className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {pollOptions.length < 4 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPollOptions((prev) => [
+                      ...prev,
+                      { id: `opt_${prev.length + 1}`, text: "" },
+                    ])
+                  }
+                  className="mt-2 text-xs font-bold text-cyan-400 hover:underline"
+                >
+                  + Add Option Choice
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Timer Limit
+                </label>
+                <select
+                  value={pollDuration}
+                  onChange={(e) => setPollDuration(Number(e.target.value))}
+                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white outline-none focus:border-cyan-400"
+                >
+                  <option value={30}>30 Seconds</option>
+                  <option value={60}>60 Seconds (1 min)</option>
+                  <option value={90}>90 Seconds</option>
+                  <option value={120}>2 Minutes</option>
+                  <option value={0}>Unlimited (Manual End)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Assessment Type
+                </label>
+                <div className="mt-2 text-xs text-slate-400 font-medium">
+                  {pollCorrectId ? "Checkpoint Quiz (Graded)" : "Opinion Poll / Survey"}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                Explanation (Revealed when closed)
+              </label>
+              <input
+                type="text"
+                value={pollExplanation}
+                onChange={(e) => setPollExplanation(e.target.value)}
+                placeholder="E.g., Resistance is measured in Ohms (Ω), derived from Ohm's Law."
+                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsCreatingPoll(false)}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingPoll}
+                className="rounded-xl bg-cyan-400 px-5 py-2 text-xs font-black text-slate-950 hover:bg-cyan-300 shadow disabled:opacity-50"
+              >
+                {isSubmittingPoll ? "Broadcasting…" : "Broadcast Live Poll"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Bottom Interactive Control Deck */}
       <footer className="h-18 shrink-0 border-t border-slate-800 bg-slate-900 px-4 py-2 flex items-center justify-between gap-4">

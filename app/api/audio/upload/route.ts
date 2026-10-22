@@ -31,8 +31,24 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const { data: tutorMembership } = await supabase
+      .from("learning_subject_memberships")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("membership_role", "tutor")
+      .limit(1)
+      .maybeSingle();
+
     const isTutorOrAdmin =
-      adminRole && ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminRole.role);
+      Boolean(adminRole && ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminRole.role)) ||
+      Boolean(adminUser && ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminUser.role)) ||
+      Boolean(tutorMembership);
 
     // If student submission: enforce student audio submission policies
     if (assetType === "student_submission") {

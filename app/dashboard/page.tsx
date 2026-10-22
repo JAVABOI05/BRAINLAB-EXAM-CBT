@@ -12,6 +12,7 @@ import UserBadges from "../components/UserBadges";
 import LearningStreakCard from "../components/LearningStreakCard";
 import { getUserGamificationProfile, type UserGamificationProfile } from "../lib/gamification";
 import { CardSkeleton, StatsSkeleton } from "../components/SkeletonLoader";
+import ActivePresenceBar from "../components/ActivePresenceBar";
 
 type LearnerStats = {
   lessonsCompleted: number;
@@ -363,6 +364,24 @@ export default function LearnerDashboardPage() {
                   ⚡ Challenge Arena (2× XP)
                 </Link>
                 <Link
+                  href="/learning-dna"
+                  className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-900 hover:bg-blue-100 transition shadow-xs"
+                >
+                  🧬 Learning DNA
+                </Link>
+                <Link
+                  href="/resources"
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-slate-100 transition shadow-xs"
+                >
+                  📚 Formulas
+                </Link>
+                <Link
+                  href="/study-groups"
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-900 hover:bg-emerald-100 transition shadow-xs"
+                >
+                  👥 Study Groups
+                </Link>
+                <Link
                   href="/leaderboard"
                   className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:underline"
                 >
@@ -380,6 +399,7 @@ export default function LearnerDashboardPage() {
 
           </div>
           <div className="flex items-center gap-3">
+            <ActivePresenceBar activityContext="Studying on Learner Dashboard" variant="pill" />
             <Link
               href="/account/access"
               className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1.5 text-xs font-bold text-blue-900 transition hover:bg-blue-100"

@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 import LearningStreakCard from "../components/LearningStreakCard";
 import { supabase } from "../lib/supabase";
 import {
@@ -501,8 +499,6 @@ export default function ChallengeArenaPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      <BrandHeader />
-
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Arena Breadcrumb & Header */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -931,8 +927,6 @@ export default function ChallengeArenaPage() {
           </div>
         )}
       </main>
-
-      <BrandFooter />
     </div>
   );
 }

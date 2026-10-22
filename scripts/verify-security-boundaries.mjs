@@ -204,9 +204,10 @@ runTest("Operator gate rejects requests missing access tokens or exceeding size 
 // -----------------------------------------------------------------------------
 // Boundary 7: Footer Security & Public Contact Hygiene
 // -----------------------------------------------------------------------------
-runTest("Footer public contact contract exposes support@brainlab.edu.ng and filters dead/placeholder links", () => {
+runTest("Footer public contact contract exposes support@brainlab.edu.ng and academy@brainlab.edu.ng and filters dead/placeholder links", () => {
   const footerConfig = {
     support_email: "support@brainlab.edu.ng",
+    academy_email: "academy@brainlab.edu.ng",
     social_links: [
       { platform: "whatsapp", url: "https://wa.me/2349074310204", enabled: true },
       { platform: "instagram", url: "https://instagram.com/brainlab_academy", enabled: true },
@@ -219,6 +220,7 @@ runTest("Footer public contact contract exposes support@brainlab.edu.ng and filt
   // Must not expose internal admin mailbox
   assert.equal(footerConfig.support_email.includes("admin@"), false, "Admin mailbox must not be exposed as public support email");
   assert.equal(footerConfig.support_email, "support@brainlab.edu.ng");
+  assert.equal(footerConfig.academy_email, "academy@brainlab.edu.ng");
 
   // Filter logic identically matching BrandFooter.tsx
   const activeSocialLinks = footerConfig.social_links.filter(

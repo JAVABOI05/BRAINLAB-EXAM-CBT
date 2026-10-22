@@ -313,6 +313,195 @@ test("Assignment rubric evaluation and audio critique validation", () => {
   assert.strictEqual(validateTutorAudio(1 * 1024 * 1024, "application/pdf"), false);
 });
 
+// -----------------------------------------------------------------------------
+// 11. CLASSROOM LIVE POLLS & CHECKPOINT QUIZ VALIDATION
+// -----------------------------------------------------------------------------
+test("Classroom Live Poll vote aggregation and correct answer reveal", () => {
+  function aggregatePoll(poll, votes) {
+    const totalVotes = votes.length;
+    const counts = {};
+    for (const v of votes) {
+      counts[v.optionId] = (counts[v.optionId] || 0) + 1;
+    }
+
+    const options = poll.options.map((opt) => {
+      const voteCount = counts[opt.id] || 0;
+      return {
+        ...opt,
+        votes: voteCount,
+        percentage: totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0,
+        // Hide is_correct if poll is still open
+        is_correct: poll.isOpen ? undefined : opt.is_correct,
+      };
+    });
+
+    return {
+      id: poll.id,
+      totalVotes,
+      options,
+      explanation: poll.isOpen ? undefined : poll.explanation,
+    };
+  }
+
+  const rawPoll = {
+    id: "poll-001",
+    isOpen: true,
+    question: "What is the SI unit of electric resistance?",
+    options: [
+      { id: "opt_1", text: "Volt", is_correct: false },
+      { id: "opt_2", text: "Ohm", is_correct: true },
+      { id: "opt_3", text: "Ampere", is_correct: false },
+    ],
+    explanation: "Ohm (Ω) is the standard SI unit of electrical resistance.",
+  };
+
+  const sampleVotes = [
+    { userId: "u1", optionId: "opt_2" },
+    { userId: "u2", optionId: "opt_2" },
+    { userId: "u3", optionId: "opt_1" },
+    { userId: "u4", optionId: "opt_2" },
+  ];
+
+  // While open: correct answers hidden, vote counts aggregated
+  const liveResult = aggregatePoll(rawPoll, sampleVotes);
+  assert.strictEqual(liveResult.totalVotes, 4);
+  assert.strictEqual(liveResult.options.find((o) => o.id === "opt_2").percentage, 75);
+  assert.strictEqual(liveResult.options.find((o) => o.id === "opt_1").percentage, 25);
+  assert.strictEqual(liveResult.options.find((o) => o.id === "opt_2").is_correct, undefined);
+  assert.strictEqual(liveResult.explanation, undefined);
+
+  // When closed: correct answers and pedagogical explanation revealed
+  const closedPoll = { ...rawPoll, isOpen: false };
+  const finalResult = aggregatePoll(closedPoll, sampleVotes);
+  assert.strictEqual(finalResult.options.find((o) => o.id === "opt_2").is_correct, true);
+  assert.strictEqual(finalResult.options.find((o) => o.id === "opt_1").is_correct, false);
+  assert.strictEqual(typeof finalResult.explanation, "string");
+});
+
+// -----------------------------------------------------------------------------
+// 12. AI AUTHORING COPILOT DRAFT & MCQ VALIDATION
+// -----------------------------------------------------------------------------
+test("AI Authoring Copilot lesson draft and MCQ structure validation", () => {
+  function validateDraft(draft) {
+    if (!draft.title || typeof draft.title !== "string" || !draft.title.trim()) return false;
+    if (!draft.markdownContent || typeof draft.markdownContent !== "string") return false;
+    return true;
+  }
+
+  function validateMcqQuestion(q) {
+    if (!q.question || typeof q.question !== "string") return false;
+    if (!Array.isArray(q.options) || q.options.length < 2) return false;
+    if (!q.correct_option_id) return false;
+    const hasCorrect = q.options.some((o) => o.id === q.correct_option_id);
+    return hasCorrect;
+  }
+
+  const validDraft = {
+    title: "Newtonian Mechanics & Momentum",
+    summary: "Introductory physics study guide for JAMB candidates.",
+    markdownContent: "# Principles of Momentum\n\nMomentum is mass in motion...",
+    keyTakeaways: ["Conservation of momentum holds in all isolated systems."],
+  };
+  assert.strictEqual(validateDraft(validDraft), true);
+  assert.strictEqual(validateDraft({ title: "" }), false);
+
+  const validMcq = {
+    question: "Which of the following is a scalar quantity?",
+    options: [
+      { id: "A", text: "Velocity" },
+      { id: "B", text: "Speed" },
+      { id: "C", text: "Acceleration" },
+      { id: "D", text: "Force" },
+    ],
+    correct_option_id: "B",
+    explanation: "Speed has magnitude only, with no directional vector.",
+  };
+  assert.strictEqual(validateMcqQuestion(validMcq), true);
+
+  const invalidMcq = {
+    question: "Invalid question missing options",
+    options: [{ id: "A", text: "Only one option" }],
+    correct_option_id: "A",
+  };
+  assert.strictEqual(validateMcqQuestion(invalidMcq), false);
+});
+
+// -----------------------------------------------------------------------------
+// 13. USER PRESENCE HEARTBEAT & ROLE CLASSIFICATION TEST
+// -----------------------------------------------------------------------------
+test("User presence heartbeat activity calculation and role classification", () => {
+  function classifyPresence(presence, thresholdMs = 180 * 1000) {
+    const isRecent = Date.now() - new Date(presence.last_heartbeat_at).getTime() < thresholdMs;
+    const isOnline = Boolean(presence.is_visible && isRecent);
+    const inClass = isOnline && (presence.status === "in_class" || Boolean(presence.current_class_id));
+    return {
+      isOnline,
+      inClass,
+      role: presence.role || "student",
+    };
+  }
+
+  // Active student in live class
+  const liveStudent = {
+    last_heartbeat_at: new Date(Date.now() - 30 * 1000).toISOString(),
+    is_visible: true,
+    status: "in_class",
+    current_class_id: "c-123",
+    role: "student",
+  };
+  assert.deepStrictEqual(classifyPresence(liveStudent), { isOnline: true, inClass: true, role: "student" });
+
+  // Active tutor studying feed
+  const feedTutor = {
+    last_heartbeat_at: new Date(Date.now() - 60 * 1000).toISOString(),
+    is_visible: true,
+    status: "online",
+    current_class_id: null,
+    role: "tutor",
+  };
+  assert.deepStrictEqual(classifyPresence(feedTutor), { isOnline: true, inClass: false, role: "tutor" });
+
+  // Expired heartbeat (>3m ago)
+  const expiredUser = {
+    last_heartbeat_at: new Date(Date.now() - 250 * 1000).toISOString(),
+    is_visible: true,
+    status: "online",
+    role: "student",
+  };
+  assert.strictEqual(classifyPresence(expiredUser).isOnline, false);
+});
+
+// -----------------------------------------------------------------------------
+// 14. COGNITIVE MASTERY RADAR & SUBJECT BREAKDOWN VALIDATION
+// -----------------------------------------------------------------------------
+test("Cognitive Mastery Radar calculation and subject banding", () => {
+  function getSubjectStatus(percentage) {
+    if (percentage >= 80) return "Mastered";
+    if (percentage >= 65) return "Proficient";
+    if (percentage >= 50) return "Emerging";
+    return "Needs Focus";
+  }
+
+  assert.strictEqual(getSubjectStatus(92), "Mastered");
+  assert.strictEqual(getSubjectStatus(74), "Proficient");
+  assert.strictEqual(getSubjectStatus(58), "Emerging");
+  assert.strictEqual(getSubjectStatus(42), "Needs Focus");
+
+  // Composite readiness calculation
+  function calculateReadiness(accuracy, speed, rigor, retention, consistency) {
+    return Math.round(
+      accuracy * 0.35 +
+      speed * 0.2 +
+      rigor * 0.15 +
+      retention * 0.15 +
+      consistency * 0.15
+    );
+  }
+
+  const score = calculateReadiness(80, 70, 65, 75, 90);
+  assert.strictEqual(score, 77);
+});
+
 console.log("\n-----------------------------------------------------------------");
 console.log(`RESULTS: ${passed} Passed, ${failed} Failed`);
 console.log("-----------------------------------------------------------------");

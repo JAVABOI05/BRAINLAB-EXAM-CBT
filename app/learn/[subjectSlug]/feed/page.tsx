@@ -8,6 +8,7 @@ import AudioPlayer from "../../../components/AudioPlayer";
 import VoiceNoteRecorder from "../../../components/VoiceNoteRecorder";
 import { ListSkeleton } from "../../../components/SkeletonLoader";
 import { toast } from "../../../lib/toast";
+import ActivePresenceBar from "../../../components/ActivePresenceBar";
 
 type FeedPost = {
   id: string;
@@ -224,6 +225,8 @@ export default function SubjectFeedPage({
               + Publish Announcement
             </button>
           )}
+
+          <ActivePresenceBar activityContext={subject ? `Studying ${subject.name} Course Feed` : "Course Feed"} variant="pill" />
 
           <Link
             href="/assignments"

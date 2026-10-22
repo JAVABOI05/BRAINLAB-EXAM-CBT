@@ -95,16 +95,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     }
 
-    // Check admin authorization
+    // Check admin or tutor authorization
     const supabase = getSupabaseServerClient();
     const { data: adminRecord } = await supabase
       .from("admin_users")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (!adminRecord || !["super_admin", "platform_admin", "ai_learning_admin", "content_reviewer", "teacher"].includes(adminRecord.role)) {
-      return NextResponse.json({ ok: false, error: "forbidden", message: "Admin access required." }, { status: 403 });
+    let isAuthorized = Boolean(
+      adminRecord && ["super_admin", "platform_admin", "ai_learning_admin", "content_reviewer", "teacher"].includes(adminRecord.role)
+    );
+
+    if (!isAuthorized) {
+      // Check if user is an assigned subject tutor
+      const { data: tutorMembership } = await supabase
+        .from("learning_subject_memberships")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("membership_role", "tutor")
+        .limit(1)
+        .maybeSingle();
+
+      if (tutorMembership) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ ok: false, error: "forbidden", message: "Admin or Tutor access required." }, { status: 403 });
     }
 
     const body = await request.json().catch(() => ({}));

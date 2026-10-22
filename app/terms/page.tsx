@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 
 export const metadata: Metadata = {
   title: "Terms of Use | BrainLab Academy",
@@ -14,8 +12,6 @@ export default function TermsOfUsePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      <BrandHeader />
-
       <main className="flex-1">
         {/* Hero Section */}
         <section className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#071328]/80 py-12 sm:py-16">
@@ -180,8 +176,6 @@ export default function TermsOfUsePage() {
           </div>
         </section>
       </main>
-
-      <BrandFooter />
     </div>
   );
 }

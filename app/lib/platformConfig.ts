@@ -72,6 +72,7 @@ export interface WebsiteContentConfig {
   banner_announcement: string;
   banner_active: boolean;
   support_email: string;
+  academy_email?: string;
   support_phone: string;
   maintenance_mode: boolean;
 }
@@ -87,6 +88,7 @@ export interface FooterConfig {
   brand_tagline: string;
   brand_description: string;
   support_email: string;
+  academy_email: string;
   support_phone: string;
   whatsapp_number: string;
   whatsapp_channel_url: string;
@@ -256,6 +258,7 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   brand_description:
     "Empowering Nigerian secondary and tertiary candidates with adaptive CBT mock exams, curriculum-aligned study materials, and instant AI tutor explanations.",
   support_email: "support@brainlab.edu.ng",
+  academy_email: "academy@brainlab.edu.ng",
   support_phone: "+234 907 431 0204",
   whatsapp_number: "2349074310204",
   whatsapp_channel_url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
