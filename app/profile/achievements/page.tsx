@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import BrandHeader from "../../components/BrandHeader";
-import BrandFooter from "../../components/BrandFooter";
 import { supabase } from "../../lib/supabase";
 import {
   getUserBadges,
@@ -407,8 +405,7 @@ export default function AchievementsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
+      
       <main className="flex-1 py-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           {/* Header breadcrumb */}
@@ -741,7 +738,6 @@ export default function AchievementsPage() {
         </div>
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

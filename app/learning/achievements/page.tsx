@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
-import BrandHeader from "@/app/components/BrandHeader";
-import BrandFooter from "@/app/components/BrandFooter";
 import LearningStreakCard from "@/app/components/LearningStreakCard";
 import {
   getUserGamificationProfile,
@@ -116,8 +114,7 @@ export default function AchievementsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-[#060e1a] text-slate-900 dark:text-slate-100 transition-colors">
-      <BrandHeader />
-
+      
       <main id="main" className="flex-1 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-6">
           {/* Header Banner */}
@@ -400,7 +397,6 @@ export default function AchievementsPage() {
         </div>
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

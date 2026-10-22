@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
-import BrandHeader from "../../../components/BrandHeader";
-import BrandFooter from "../../../components/BrandFooter";
 import UserBadges from "../../../components/UserBadges";
 
 interface LeaderboardEntry {
@@ -118,8 +116,7 @@ export default function AssessmentLeaderboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
+      
       <main className="flex-1 py-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <div className="mb-8">
@@ -240,7 +237,6 @@ export default function AssessmentLeaderboardPage() {
         </div>
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

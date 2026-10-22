@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 
 export const metadata: Metadata = {
   title: "Knowledge Base | BrainLab Academy",
@@ -63,8 +61,7 @@ const KNOWLEDGE_SECTIONS = [
 export default function KnowledgeBasePage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      <BrandHeader />
-
+      
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-10">
         <div className="border-b border-slate-200 dark:border-slate-800 pb-6">
           <nav className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -137,7 +134,6 @@ export default function KnowledgeBasePage() {
         </div>
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

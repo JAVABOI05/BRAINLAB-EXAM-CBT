@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import BrandHeader from "@/app/components/BrandHeader";
-import BrandFooter from "@/app/components/BrandFooter";
 import { supabase } from "@/app/lib/supabase";
 
 interface VerifiedCertificate {
@@ -74,8 +72,7 @@ export default function CertificateVerificationResultPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
+      
       <main className="flex-1 py-12 sm:py-16">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
           {/* Breadcrumb */}
@@ -309,7 +306,6 @@ export default function CertificateVerificationResultPage() {
         </div>
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

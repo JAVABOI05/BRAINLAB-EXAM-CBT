@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 import { supabase } from "../lib/supabase";
 
 interface StudyCircle {
@@ -125,8 +123,7 @@ export default function StudyGroupsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      <BrandHeader />
-
+      
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
         {/* Header Breadcrumb */}
         <div className="border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -396,7 +393,6 @@ export default function StudyGroupsPage() {
         )}
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

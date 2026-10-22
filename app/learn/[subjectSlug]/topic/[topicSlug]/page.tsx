@@ -4,8 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
-import BrandHeader from "@/app/components/BrandHeader";
-import BrandFooter from "@/app/components/BrandFooter";
 import { recordLearningActivity } from "@/app/lib/gamification";
 
 interface ContentItem {
@@ -171,19 +169,16 @@ export default function StudentTopicContentPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-slate-50">
-        <BrandHeader />
-        <main className="flex flex-1 items-center justify-center p-8">
+                <main className="flex flex-1 items-center justify-center p-8">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
         </main>
-        <BrandFooter />
-      </div>
+              </div>
     );
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
+      
       <main className="flex-1 py-10 sm:py-14">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           {/* Breadcrumbs */}
@@ -592,7 +587,6 @@ export default function StudentTopicContentPage() {
         </div>
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

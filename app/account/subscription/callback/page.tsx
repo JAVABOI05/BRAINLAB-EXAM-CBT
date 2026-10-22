@@ -3,8 +3,6 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import BrandHeader from "../../../components/BrandHeader";
-import BrandFooter from "../../../components/BrandFooter";
 
 function SubscriptionCallbackContent() {
   const searchParams = useSearchParams();
@@ -206,13 +204,11 @@ function SubscriptionCallbackContent() {
 export default function SubscriptionCallbackPage() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-      <main className="flex-1 py-12">
+            <main className="flex-1 py-12">
         <Suspense fallback={<div className="p-12 text-center text-sm text-slate-500">Loading payment details...</div>}>
           <SubscriptionCallbackContent />
         </Suspense>
       </main>
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

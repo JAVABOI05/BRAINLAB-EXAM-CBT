@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import BrandHeader from "../../components/BrandHeader";
 import { recordLearningActivity } from "../../lib/gamification";
 
 interface AssessmentInfo {
@@ -210,8 +209,7 @@ export default function AssessmentRunnerPage() {
   if (loading && phase === "briefing") {
     return (
       <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-        <BrandHeader />
-        <main className="flex flex-1 items-center justify-center p-6">
+                <main className="flex flex-1 items-center justify-center p-6">
           <p className="text-sm font-semibold text-slate-500">Loading assessment details...</p>
         </main>
       </div>
@@ -220,8 +218,7 @@ export default function AssessmentRunnerPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
+      
       <main className="flex-1 py-8 sm:py-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           {error && (

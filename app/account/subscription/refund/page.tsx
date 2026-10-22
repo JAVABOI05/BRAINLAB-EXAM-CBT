@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
-import BrandHeader from "../../../components/BrandHeader";
-import BrandFooter from "../../../components/BrandFooter";
 
 interface Transaction {
   id: string;
@@ -122,8 +120,7 @@ export default function StudentRefundPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
+      
       <main className="flex-1 py-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <div className="mb-8">
@@ -318,7 +315,6 @@ export default function StudentRefundPage() {
         </div>
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }
