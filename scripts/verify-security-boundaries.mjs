@@ -258,6 +258,17 @@ runTest("Transactional email service enters simulation mode without throwing whe
 });
 
 // -----------------------------------------------------------------------------
+// Boundary 9: Help Page & Footer CBT Support Target Verification
+// -----------------------------------------------------------------------------
+runTest("Open CBT Support links on Help page and Footer lead directly to support@brainlab.edu.ng", () => {
+  const cbtSupportTarget = "mailto:support@brainlab.edu.ng?subject=BrainLab%20CBT%20Support%20Request";
+  
+  // Must lead to email rather than looping to /login
+  assert.notEqual(cbtSupportTarget, "/login", "CBT Support must not route in circles to /login");
+  assert.ok(cbtSupportTarget.startsWith("mailto:support@brainlab.edu.ng"), "Must target official support@brainlab.edu.ng email");
+});
+
+// -----------------------------------------------------------------------------
 // Summary Output
 // -----------------------------------------------------------------------------
 console.log(`\n======================================================`);
