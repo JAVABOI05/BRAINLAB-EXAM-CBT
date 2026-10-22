@@ -256,6 +256,11 @@ export default function BrandFooter() {
                   National Leaderboard
                 </Link>
               </li>
+              <li>
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/schools">
+                  For Schools &amp; Centres
+                </Link>
+              </li>
             </ul>
           </div>
 

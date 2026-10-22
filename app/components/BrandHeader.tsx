@@ -12,6 +12,7 @@ import { useLearnerTheme } from "./LearnerThemeProvider";
 const links = [
   { href: "/login", label: "CBT Practice" },
   { href: "/learn", label: "Learning Hub" },
+  { href: "/skills-passport", label: "Skills Passport" },
   { href: "/challenge-arena", label: "Challenge Arena" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/support", label: "Help" },
