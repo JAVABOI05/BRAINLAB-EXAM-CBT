@@ -144,10 +144,10 @@ export default function BrandFooter() {
               aria-label="BrainLab Academy home"
             >
               <Image
-                src="/brainlab-logo-light.svg"
+                src="/brainlab-logo-light.png"
                 alt="BrainLab Academy"
                 width={128}
-                height={70}
+                height={109}
                 className="h-10 w-auto"
                 priority={false}
               />

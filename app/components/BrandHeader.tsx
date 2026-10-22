@@ -12,7 +12,7 @@ import { useLearnerTheme } from "./LearnerThemeProvider";
 const links = [
   { href: "/login", label: "CBT Practice" },
   { href: "/learn", label: "Learning Hub" },
-  { href: "/skills-passport", label: "Skills Passport" },
+  { href: "/skills-passport", label: "Study Report" },
   { href: "/challenge-arena", label: "Challenge Arena" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/support", label: "Help" },
@@ -93,18 +93,18 @@ export default function BrandHeader() {
           aria-label="BrainLab Academy home"
         >
           <Image
-            src="/brainlab-logo.svg"
+            src="/brainlab-logo.png"
             alt="BrainLab Academy"
-            width={110}
-            height={61}
+            width={120}
+            height={102}
             priority
             className="h-11 w-auto dark:hidden"
           />
           <Image
-            src="/brainlab-logo-light.svg"
+            src="/brainlab-logo-light.png"
             alt="BrainLab Academy"
-            width={110}
-            height={61}
+            width={120}
+            height={102}
             priority
             className="h-11 w-auto hidden dark:block"
           />

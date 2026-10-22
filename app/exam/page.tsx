@@ -492,8 +492,8 @@ export default function ExamPage() {
           <div className="exam-card p-8">
             <div className="mb-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-5">
               <div className="flex items-center gap-3">
-                <Image src="/brainlab-logo.svg" alt="BrainLab Academy" width={100} height={55} className="h-10 w-auto dark:hidden" />
-                <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={100} height={55} className="h-10 w-auto hidden dark:block" />
+                <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={120} height={102} className="h-11 w-auto dark:hidden" />
+                <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={120} height={102} className="h-11 w-auto hidden dark:block" />
               </div>
               <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-3 py-1 text-xs font-black text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
                 Official Examination
@@ -617,8 +617,8 @@ export default function ExamPage() {
           <div>
             <div className="flex items-center gap-3">
               <div className="shrink-0">
-                <Image src="/brainlab-logo.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto dark:hidden" />
-                <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto hidden dark:block" />
+                <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={100} height={85} className="h-9 w-auto dark:hidden" />
+                <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={100} height={85} className="h-9 w-auto hidden dark:block" />
               </div>
               <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
               <h1 className="text-lg font-black text-slate-900 dark:text-white">

@@ -58,8 +58,8 @@ export default function InstructionsPage() {
       <div className="mx-auto max-w-4xl rounded-3xl border border-white/70 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-6 sm:p-10 shadow-2xl shadow-blue-100/40 dark:shadow-none backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6 mb-6">
           <div className="flex items-center gap-3">
-            <Image src="/brainlab-logo.svg" alt="BrainLab Academy" width={90} height={48} className="h-9 w-auto dark:hidden" />
-            <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={90} height={48} className="h-9 w-auto hidden dark:block" />
+            <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={110} height={94} className="h-10 w-auto dark:hidden" />
+            <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={110} height={94} className="h-10 w-auto hidden dark:block" />
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                 Candidate Examination Briefing

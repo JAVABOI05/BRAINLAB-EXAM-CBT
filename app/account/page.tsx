@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
@@ -215,7 +216,9 @@ export default function AccountPage() {
     <main id="main" className="public-surface min-h-[75vh] px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-blue-950/5 md:grid-cols-[0.9fr_1.1fr]">
         <section className="bg-[#012153] p-7 text-white sm:p-10">
-          <Link href="/" className="text-sm font-semibold text-blue-100 hover:text-white">← BrainLab Academy</Link>
+          <Link href="/" className="inline-flex items-center gap-2 transition hover:opacity-90">
+            <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={110} height={94} className="h-10 w-auto" />
+          </Link>
           <p className="mt-12 text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Your learning journey</p>
           <h1 className="mt-4 text-3xl font-extrabold leading-tight sm:text-4xl">
             Learn with purpose. Keep moving forward.

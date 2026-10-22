@@ -86,23 +86,28 @@ export default function SkillsPassportPage() {
       <main id="main" className="mx-auto min-h-[60vh] max-w-lg px-5 py-20 text-center">
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
           <span className="text-4xl">🎓</span>
-          <h2 className="mt-4 text-xl font-black text-slate-900">Sign in for Skills Passport</h2>
+          <h2 className="mt-4 text-xl font-black text-slate-900">Sign in to View Your Study Report</h2>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">
-            Sign in with an enrolled BrainLab learner account to view your cognitive mastery radar,
-            subject performance, and verified study credentials.
+            Sign in or register your free learner account to track your progress, see your best subjects, and view your verified certificates.
           </p>
-          <div className="mt-6 flex flex-col gap-2">
+          <div className="mt-6 flex flex-col gap-2.5">
             <Link
-              href="/login?redirect=/skills-passport"
+              href="/account?redirect=/skills-passport"
               className="rounded-xl bg-[#012153] px-5 py-3 text-xs font-bold text-white hover:bg-blue-900 shadow transition"
             >
-              Sign In to BrainLab
+              Sign In to Your Account
             </Link>
             <Link
-              href="/cbt"
-              className="rounded-xl border border-slate-300 px-5 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+              href="/account?mode=signup&redirect=/skills-passport"
+              className="rounded-xl border border-blue-600 bg-blue-50 px-5 py-3 text-xs font-bold text-blue-900 hover:bg-blue-100 transition"
             >
-              Take Free Practice Assessment
+              Create Free Account →
+            </Link>
+            <Link
+              href="/login"
+              className="mt-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
+            >
+              Taking a mock exam? Go to CBT Exam Portal
             </Link>
           </div>
         </div>
@@ -130,7 +135,7 @@ export default function SkillsPassportPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-xs font-black uppercase tracking-[0.15em] text-cyan-200">
-                Verified Skills Passport · Pillar 7
+                Verified Study Report &amp; Badges
               </span>
               <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-300">
                 Active Candidate

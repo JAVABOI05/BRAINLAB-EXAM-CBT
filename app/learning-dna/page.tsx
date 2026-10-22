@@ -102,7 +102,7 @@ export default function LearningDnaPage() {
           ← Return to Dashboard
         </Link>
         <Link href="/skills-passport" className="rounded-full bg-cyan-50 px-3.5 py-1 text-cyan-900 border border-cyan-200 font-bold hover:bg-cyan-100 transition">
-          View Skills Passport →
+          View Study Report &amp; Badges →
         </Link>
       </div>
 
@@ -222,7 +222,7 @@ export default function LearningDnaPage() {
             href="/skills-passport"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 transition"
           >
-            Skills Passport
+            Study Report &amp; Badges
           </Link>
           <Link
             href="/cbt"

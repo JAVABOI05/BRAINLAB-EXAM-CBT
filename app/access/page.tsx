@@ -195,8 +195,8 @@ export default function AccessPage() {
     <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff_45%,#f8fbff_80%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_30%),linear-gradient(180deg,#060e1a_0%,#030712_100%)] flex items-center justify-center px-4 py-8">
       <div className="mx-auto max-w-md w-full rounded-3xl border border-white/70 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 sm:p-8 shadow-2xl shadow-blue-100/40 dark:shadow-none backdrop-blur-md">
         <div className="flex items-center justify-center gap-3 mb-6">
-          <Image src="/brainlab-logo.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto dark:hidden" />
-          <Image src="/brainlab-logo-light.svg" alt="BrainLab Academy" width={90} height={48} className="h-8 w-auto hidden dark:block" />
+          <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={110} height={94} className="h-10 w-auto dark:hidden" />
+          <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={110} height={94} className="h-10 w-auto hidden dark:block" />
         </div>
 
         <h1 className="text-center text-2xl font-black text-slate-900 dark:text-white tracking-tight">
