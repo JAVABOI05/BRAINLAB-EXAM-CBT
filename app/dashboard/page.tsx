@@ -9,6 +9,7 @@ import { getTopicMasteryRecords, calculateExamReadiness, type ExamReadiness } fr
 import { getDueSpacedReviews } from "../lib/spacedRepetition";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import UserBadges from "../components/UserBadges";
+import LearningStreakCard from "../components/LearningStreakCard";
 import { getUserGamificationProfile, type UserGamificationProfile } from "../lib/gamification";
 import { CardSkeleton, StatsSkeleton } from "../components/SkeletonLoader";
 
@@ -341,11 +342,18 @@ export default function LearnerDashboardPage() {
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-black text-amber-900">
                   ⭐ Level {gamification.current_level} · {gamification.level_name} ({gamification.lifetime_xp.toLocaleString()} XP)
                 </span>
-                {gamification.current_streak_days > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-50 px-2.5 py-0.5 text-xs font-black text-rose-800">
-                    🔥 {gamification.current_streak_days} Day Streak
-                  </span>
-                )}
+                <LearningStreakCard
+                  currentStreak={gamification.current_streak_days}
+                  longestStreak={gamification.longest_streak_days}
+                  lastActiveDate={gamification.last_activity_date}
+                  compact={true}
+                />
+                <Link
+                  href="/challenge-arena"
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50/90 px-3 py-1 text-xs font-black text-amber-950 hover:bg-amber-100 transition shadow-xs"
+                >
+                  ⚡ Challenge Arena (2× XP)
+                </Link>
                 <Link
                   href="/leaderboard"
                   className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:underline"
@@ -353,10 +361,10 @@ export default function LearnerDashboardPage() {
                   🏆 Leaderboard
                 </Link>
                 <Link
-                  href="/profile/achievements"
+                  href="/learning/achievements"
                   className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:underline"
                 >
-                  🏅 Achievements & Rewards
+                  🏅 Achievements &amp; Streaks
                 </Link>
               </div>
             )}
