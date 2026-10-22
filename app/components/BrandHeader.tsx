@@ -12,6 +12,7 @@ import { useLearnerTheme } from "./LearnerThemeProvider";
 const links = [
   { href: "/login", label: "CBT Practice" },
   { href: "/learn", label: "Learning Hub" },
+  { href: "/challenge-arena", label: "Challenge Arena" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/support", label: "Help" },
 ];
@@ -64,9 +65,12 @@ export default function BrandHeader() {
   async function signOut() {
     setSigningOut(true);
     try {
-      await fetch("/api/auth/operator-gate", { method: "DELETE", cache: "no-store" });
+      localStorage.removeItem("candidate");
+      localStorage.removeItem("exam_attempt");
+      localStorage.removeItem("exam_result");
+      localStorage.removeItem("exam_summary");
     } catch {
-      // Always proceed to sign out of the learner session.
+      // storage unavailable
     }
     await supabase.auth.signOut();
     setUser(null);
@@ -78,16 +82,8 @@ export default function BrandHeader() {
 
   const closeMenu = () => setMenuOpen(false);
 
-  const isDark = resolvedTheme === "dark";
-
   return (
-    <header
-      className={`sticky top-0 z-40 border-b backdrop-blur-xl transition-colors duration-200 ${
-        isDark
-          ? "border-slate-800 bg-[#071328]/95 text-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.45)]"
-          : "border-slate-200/80 bg-white/95 text-slate-900 shadow-[0_3px_18px_rgba(15,23,42,0.035)]"
-      }`}
-    >
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 text-slate-900 shadow-[0_3px_18px_rgba(15,23,42,0.035)] backdrop-blur-xl dark:border-slate-800 dark:bg-[#071328]/95 dark:text-slate-100 dark:shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors duration-200">
       <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-7 lg:px-10">
         <Link
           href="/"
@@ -96,23 +92,27 @@ export default function BrandHeader() {
           aria-label="BrainLab Academy home"
         >
           <Image
-            src={isDark ? "/brainlab-logo-light.svg" : "/brainlab-logo.svg"}
+            src="/brainlab-logo.svg"
             alt="BrainLab Academy"
             width={110}
             height={61}
             priority
-            className="h-11 w-auto"
+            className="h-11 w-auto dark:hidden"
+          />
+          <Image
+            src="/brainlab-logo-light.svg"
+            alt="BrainLab Academy"
+            width={110}
+            height={61}
+            priority
+            className="h-11 w-auto hidden dark:block"
           />
         </Link>
 
         {/* Mobile menu toggle */}
         <button
           type="button"
-          className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-base font-bold transition-all duration-150 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 xl:hidden ${
-            isDark
-              ? "border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700"
-              : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
-          }`}
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 text-base font-bold transition-all duration-150 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 xl:hidden"
           aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={menuOpen}
           aria-controls="brainlab-main-nav"
@@ -129,11 +129,7 @@ export default function BrandHeader() {
           aria-label="Main navigation"
           className={
             menuOpen
-              ? `absolute left-0 right-0 top-[72px] flex max-h-[calc(100dvh-72px)] flex-col gap-1 overflow-y-auto border-b p-4 shadow-2xl xl:static xl:max-h-none xl:flex-row xl:items-center xl:gap-0 xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none ${
-                  isDark
-                    ? "border-slate-800 bg-[#071328] text-slate-100"
-                    : "border-slate-200 bg-white text-slate-900"
-                }`
+              ? "absolute left-0 right-0 top-[72px] flex max-h-[calc(100dvh-72px)] flex-col gap-1 overflow-y-auto border-b border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-[#071328] dark:text-slate-100 p-4 shadow-2xl xl:static xl:max-h-none xl:flex-row xl:items-center xl:gap-0 xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
               : "hidden xl:flex xl:items-center xl:gap-0"
           }
         >
@@ -142,11 +138,7 @@ export default function BrandHeader() {
               key={link.href}
               href={link.href}
               onClick={closeMenu}
-              className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 xl:py-2 ${
-                isDark
-                  ? "text-slate-300 hover:bg-slate-800 hover:text-cyan-300"
-                  : "text-slate-700 hover:bg-slate-100 hover:text-[#0b2a5b]"
-              }`}
+              className="rounded-xl px-3.5 py-2.5 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-[#012153] dark:text-slate-200 dark:hover:bg-slate-800/80 dark:hover:text-cyan-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 xl:py-2"
             >
               {link.label}
             </Link>
@@ -154,11 +146,7 @@ export default function BrandHeader() {
 
           {checkingSession ? (
             <span
-              className={`mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm xl:ml-2 xl:mt-0 ${
-                isDark
-                  ? "border-slate-700 text-slate-400"
-                  : "border-slate-200 text-slate-500"
-              }`}
+              className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400 px-4 py-2 text-sm xl:ml-2 xl:mt-0"
               aria-live="polite"
             >
               <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" /> Checking account…
@@ -168,7 +156,7 @@ export default function BrandHeader() {
               <Link
                 href="/dashboard"
                 onClick={closeMenu}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0b2a5b] px-4 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:bg-blue-900 hover:shadow-md active:scale-95"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#012153] hover:bg-blue-900 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
               >
                 <span aria-hidden="true">⌂</span> My learning
               </Link>
@@ -176,11 +164,7 @@ export default function BrandHeader() {
               <Link
                 href="/messages"
                 onClick={closeMenu}
-                className={`inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 ${
-                  isDark
-                    ? "text-slate-300 hover:bg-slate-800 hover:text-white"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                }`}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                 title="Private & Group Messages"
               >
                 💬 <span className="xl:hidden ml-1.5">Messages</span>
@@ -189,11 +173,7 @@ export default function BrandHeader() {
               <Link
                 href="/notifications"
                 onClick={closeMenu}
-                className={`inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 ${
-                  isDark
-                    ? "text-slate-300 hover:bg-slate-800 hover:text-white"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                }`}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                 title="Notifications"
               >
                 🔔 <span className="xl:hidden ml-1.5">Notifications</span>
@@ -202,11 +182,7 @@ export default function BrandHeader() {
               <Link
                 href="/profile"
                 onClick={closeMenu}
-                className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 ${
-                  isDark
-                    ? "border-slate-700 bg-slate-800/80 text-slate-100 hover:border-slate-600 hover:bg-slate-700/80"
-                    : "border-slate-200 bg-white text-slate-800 hover:border-blue-200 hover:bg-blue-50"
-                }`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white text-slate-800 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-700 px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95"
                 title={user.email ?? "Your profile"}
               >
                 {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
@@ -232,11 +208,7 @@ export default function BrandHeader() {
                 type="button"
                 onClick={() => void signOut()}
                 disabled={signingOut}
-                className={`inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 disabled:opacity-60 ${
-                  isDark
-                    ? "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                }`}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 disabled:opacity-60 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               >
                 {signingOut ? "Signing out…" : "Sign out"}
               </button>
@@ -246,7 +218,7 @@ export default function BrandHeader() {
               <Link
                 href="/account"
                 onClick={closeMenu}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0b2a5b] hover:bg-blue-900 px-5 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-900 px-5 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
               >
                 Sign In / Register
               </Link>

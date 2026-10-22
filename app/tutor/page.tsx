@@ -79,7 +79,7 @@ export default function TutorHomePage() {
 
       {signedIn && !loading && !error && subjects.length > 0 && (
         <>
-          <section className="mt-8 grid gap-4 sm:grid-cols-3">
+          <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/calendar"
               className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5 hover:bg-blue-50 transition hover-lift active-press"
@@ -105,6 +105,15 @@ export default function TutorHomePage() {
               <span className="text-2xl">🎬</span>
               <h3 className="mt-2 text-base font-extrabold text-emerald-950">Class Recordings</h3>
               <p className="mt-1 text-xs text-slate-600">Publish video recordings, transcripts, and revision notes from past live classes.</p>
+            </Link>
+
+            <Link
+              href="/tutor/assignments"
+              className="rounded-2xl border border-purple-200 bg-purple-50/40 p-5 hover:bg-purple-50 transition hover-lift active-press"
+            >
+              <span className="text-2xl">📝</span>
+              <h3 className="mt-2 text-base font-extrabold text-purple-950">Assignments & Grading</h3>
+              <p className="mt-1 text-xs text-slate-600">Publish homework, review submissions, and record tutor voice feedback.</p>
             </Link>
           </section>
 

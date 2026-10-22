@@ -252,6 +252,67 @@ test("User presence expiration detection", () => {
   assert.strictEqual(isUserOnline(staleHeartbeat), false, "Heartbeat 5m ago must be offline");
 });
 
+// -----------------------------------------------------------------------------
+// 9. ASSIGNMENT DEADLINE & LATE SUBMISSION POLICY TEST
+// -----------------------------------------------------------------------------
+test("Assignment deadline and late submission policy enforcement", () => {
+  function canSubmitAssignment(assignment, submissionTimeMs = Date.now()) {
+    if (assignment.status !== "published") {
+      return { allowed: false, reason: "closed" };
+    }
+    if (assignment.due_date && new Date(assignment.due_date).getTime() < submissionTimeMs) {
+      if (!assignment.allow_late_submissions) {
+        return { allowed: false, reason: "deadline_passed" };
+      }
+      return { allowed: true, isLate: true };
+    }
+    return { allowed: true, isLate: false };
+  }
+
+  // 1. Open assignment before deadline
+  const futureDue = { status: "published", due_date: new Date(Date.now() + 86400000).toISOString(), allow_late_submissions: false };
+  assert.deepStrictEqual(canSubmitAssignment(futureDue), { allowed: true, isLate: false });
+
+  // 2. Past due with late submissions disabled
+  const pastDueStrict = { status: "published", due_date: new Date(Date.now() - 86400000).toISOString(), allow_late_submissions: false };
+  assert.deepStrictEqual(canSubmitAssignment(pastDueStrict), { allowed: false, reason: "deadline_passed" });
+
+  // 3. Past due with late submissions enabled
+  const pastDuePermissive = { status: "published", due_date: new Date(Date.now() - 86400000).toISOString(), allow_late_submissions: true };
+  assert.deepStrictEqual(canSubmitAssignment(pastDuePermissive), { allowed: true, isLate: true });
+
+  // 4. Closed assignment
+  const closed = { status: "closed", due_date: null, allow_late_submissions: true };
+  assert.deepStrictEqual(canSubmitAssignment(closed), { allowed: false, reason: "closed" });
+});
+
+// -----------------------------------------------------------------------------
+// 10. ASSIGNMENT RUBRIC EVALUATION & AUDIO CRITIQUE VALIDATION
+// -----------------------------------------------------------------------------
+test("Assignment rubric evaluation and audio critique validation", () => {
+  function validateGrade(grade, maxPoints) {
+    const num = Number(grade);
+    if (isNaN(num)) return { valid: false, error: "not_a_number" };
+    if (num < 0 || num > maxPoints) return { valid: false, error: "out_of_bounds" };
+    return { valid: true, percentage: Math.round((num / maxPoints) * 100) };
+  }
+
+  assert.deepStrictEqual(validateGrade(85, 100), { valid: true, percentage: 85 });
+  assert.deepStrictEqual(validateGrade(105, 100), { valid: false, error: "out_of_bounds" });
+  assert.deepStrictEqual(validateGrade(-5, 100), { valid: false, error: "out_of_bounds" });
+
+  // Tutor audio critique MIME and size check
+  function validateTutorAudio(fileSize, mimeType) {
+    const MAX_CRITIQUE_SIZE = 15 * 1024 * 1024; // 15MB
+    const ALLOWED_MIMES = ["audio/webm", "audio/mp4", "audio/mpeg", "audio/ogg"];
+    return fileSize <= MAX_CRITIQUE_SIZE && ALLOWED_MIMES.includes(mimeType);
+  }
+
+  assert.strictEqual(validateTutorAudio(2 * 1024 * 1024, "audio/webm"), true);
+  assert.strictEqual(validateTutorAudio(20 * 1024 * 1024, "audio/webm"), false);
+  assert.strictEqual(validateTutorAudio(1 * 1024 * 1024, "application/pdf"), false);
+});
+
 console.log("\n-----------------------------------------------------------------");
 console.log(`RESULTS: ${passed} Passed, ${failed} Failed`);
 console.log("-----------------------------------------------------------------");

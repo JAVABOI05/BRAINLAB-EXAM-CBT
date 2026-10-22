@@ -62,6 +62,11 @@ export default function RootLayout({
                 var theme = isDark ? 'dark' : 'light';
                 document.documentElement.dataset.theme = theme;
                 document.documentElement.style.colorScheme = theme;
+                if (isDark) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
               } catch (e) {}
             `,
           }}

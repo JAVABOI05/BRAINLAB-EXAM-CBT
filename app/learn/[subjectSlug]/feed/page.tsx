@@ -226,6 +226,13 @@ export default function SubjectFeedPage({
           )}
 
           <Link
+            href="/assignments"
+            className="rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-900 hover:bg-purple-100 transition active-press"
+          >
+            📝 Assignments
+          </Link>
+
+          <Link
             href={`/learn/${subjectSlug}`}
             className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition active-press"
           >

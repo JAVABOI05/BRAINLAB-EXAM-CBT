@@ -477,121 +477,121 @@ button:disabled,
    6. DARK MODE ARCHITECTURE (EXHAUSTIVE HIGH-CONTRAST PALETTE)
    ========================================================================== */
 
-html[data-theme="dark"] body {
+:is(html[data-theme="dark"], html.dark) body {
   color: #f1f5f9 !important;
   background-color: #060e1a !important;
 }
 
 /* Base Surfaces in Dark Mode */
-html[data-theme="dark"] header {
+:is(html[data-theme="dark"], html.dark) header {
   background-color: rgba(7, 19, 40, 0.96) !important;
   border-color: rgba(30, 41, 59, 0.85) !important;
 }
 
-html[data-theme="dark"] .bg-white {
+:is(html[data-theme="dark"], html.dark) .bg-white {
   background-color: #0c1728 !important;
 }
 
-html[data-theme="dark"] [class*="bg-white/"] {
+:is(html[data-theme="dark"], html.dark) [class*="bg-white/"] {
   background-color: rgba(12, 23, 40, 0.95) !important;
 }
 
-html[data-theme="dark"] .bg-slate-50,
-html[data-theme="dark"] .bg-gray-50,
-html[data-theme="dark"] .bg-gray-100,
-html[data-theme="dark"] .bg-slate-100,
-html[data-theme="dark"] [class*="bg-slate-50/"] {
+:is(html[data-theme="dark"], html.dark) .bg-slate-50,
+:is(html[data-theme="dark"], html.dark) .bg-gray-50,
+:is(html[data-theme="dark"], html.dark) .bg-gray-100,
+:is(html[data-theme="dark"], html.dark) .bg-slate-100,
+:is(html[data-theme="dark"], html.dark) [class*="bg-slate-50/"] {
   background-color: #111f36 !important;
 }
 
-html[data-theme="dark"] .border-slate-100,
-html[data-theme="dark"] .border-slate-200,
-html[data-theme="dark"] .border-slate-300,
-html[data-theme="dark"] .border-gray-100,
-html[data-theme="dark"] .border-gray-200,
-html[data-theme="dark"] .border-gray-300,
-html[data-theme="dark"] [class*="border-slate-200/"],
-html[data-theme="dark"] [class*="border-white/"] {
+:is(html[data-theme="dark"], html.dark) .border-slate-100,
+:is(html[data-theme="dark"], html.dark) .border-slate-200,
+:is(html[data-theme="dark"], html.dark) .border-slate-300,
+:is(html[data-theme="dark"], html.dark) .border-gray-100,
+:is(html[data-theme="dark"], html.dark) .border-gray-200,
+:is(html[data-theme="dark"], html.dark) .border-gray-300,
+:is(html[data-theme="dark"], html.dark) [class*="border-slate-200/"],
+:is(html[data-theme="dark"], html.dark) [class*="border-white/"] {
   border-color: #1e2e47 !important;
 }
 
 /* Text Hierarchy in Dark Mode */
-html[data-theme="dark"] .text-slate-950,
-html[data-theme="dark"] .text-slate-900,
-html[data-theme="dark"] .text-slate-800,
-html[data-theme="dark"] .text-gray-900,
-html[data-theme="dark"] .text-gray-800 {
+:is(html[data-theme="dark"], html.dark) .text-slate-950,
+:is(html[data-theme="dark"], html.dark) .text-slate-900,
+:is(html[data-theme="dark"], html.dark) .text-slate-800,
+:is(html[data-theme="dark"], html.dark) .text-gray-900,
+:is(html[data-theme="dark"], html.dark) .text-gray-800 {
   color: #f1f5f9 !important;
 }
 
-html[data-theme="dark"] .text-slate-700,
-html[data-theme="dark"] .text-gray-700 {
+:is(html[data-theme="dark"], html.dark) .text-slate-700,
+:is(html[data-theme="dark"], html.dark) .text-gray-700 {
   color: #cbd5e1 !important;
 }
 
-html[data-theme="dark"] .text-slate-600,
-html[data-theme="dark"] .text-slate-500,
-html[data-theme="dark"] .text-gray-600,
-html[data-theme="dark"] .text-gray-500 {
+:is(html[data-theme="dark"], html.dark) .text-slate-600,
+:is(html[data-theme="dark"], html.dark) .text-slate-500,
+:is(html[data-theme="dark"], html.dark) .text-gray-600,
+:is(html[data-theme="dark"], html.dark) .text-gray-500 {
   color: #94a3b8 !important;
 }
 
-html[data-theme="dark"] .text-slate-400,
-html[data-theme="dark"] .text-gray-400 {
+:is(html[data-theme="dark"], html.dark) .text-slate-400,
+:is(html[data-theme="dark"], html.dark) .text-gray-400 {
   color: #64748b !important;
 }
 
 /* High-Contrast Badges & Accents in Dark Mode */
-html[data-theme="dark"] .bg-blue-50,
-html[data-theme="dark"] .bg-indigo-50 {
+:is(html[data-theme="dark"], html.dark) .bg-blue-50,
+:is(html[data-theme="dark"], html.dark) .bg-indigo-50 {
   background-color: rgba(30, 58, 138, 0.3) !important;
   color: #93c5fd !important;
   border-color: rgba(59, 130, 246, 0.4) !important;
 }
-html[data-theme="dark"] .text-blue-700,
-html[data-theme="dark"] .text-blue-800,
-html[data-theme="dark"] .text-blue-900,
-html[data-theme="dark"] .text-indigo-700,
-html[data-theme="dark"] .text-indigo-800,
-html[data-theme="dark"] .text-indigo-900 {
+:is(html[data-theme="dark"], html.dark) .text-blue-700,
+:is(html[data-theme="dark"], html.dark) .text-blue-800,
+:is(html[data-theme="dark"], html.dark) .text-blue-900,
+:is(html[data-theme="dark"], html.dark) .text-indigo-700,
+:is(html[data-theme="dark"], html.dark) .text-indigo-800,
+:is(html[data-theme="dark"], html.dark) .text-indigo-900 {
   color: #93c5fd !important;
 }
 
-html[data-theme="dark"] .bg-emerald-50,
-html[data-theme="dark"] .bg-green-50 {
+:is(html[data-theme="dark"], html.dark) .bg-emerald-50,
+:is(html[data-theme="dark"], html.dark) .bg-green-50 {
   background-color: rgba(6, 78, 59, 0.35) !important;
   color: #6ee7b7 !important;
   border-color: rgba(16, 185, 129, 0.4) !important;
 }
-html[data-theme="dark"] .text-emerald-700,
-html[data-theme="dark"] .text-emerald-800,
-html[data-theme="dark"] .text-emerald-900 {
+:is(html[data-theme="dark"], html.dark) .text-emerald-700,
+:is(html[data-theme="dark"], html.dark) .text-emerald-800,
+:is(html[data-theme="dark"], html.dark) .text-emerald-900 {
   color: #6ee7b7 !important;
 }
 
-html[data-theme="dark"] .bg-amber-50,
-html[data-theme="dark"] .bg-amber-100,
-html[data-theme="dark"] .bg-yellow-50 {
+:is(html[data-theme="dark"], html.dark) .bg-amber-50,
+:is(html[data-theme="dark"], html.dark) .bg-amber-100,
+:is(html[data-theme="dark"], html.dark) .bg-yellow-50 {
   background-color: rgba(120, 53, 15, 0.35) !important;
   color: #fde68a !important;
   border-color: rgba(245, 158, 11, 0.4) !important;
 }
-html[data-theme="dark"] .text-amber-700,
-html[data-theme="dark"] .text-amber-800,
-html[data-theme="dark"] .text-amber-900,
-html[data-theme="dark"] .text-amber-950 {
+:is(html[data-theme="dark"], html.dark) .text-amber-700,
+:is(html[data-theme="dark"], html.dark) .text-amber-800,
+:is(html[data-theme="dark"], html.dark) .text-amber-900,
+:is(html[data-theme="dark"], html.dark) .text-amber-950 {
   color: #fde68a !important;
 }
 
-html[data-theme="dark"] .bg-rose-50,
-html[data-theme="dark"] .bg-red-50 {
+:is(html[data-theme="dark"], html.dark) .bg-rose-50,
+:is(html[data-theme="dark"], html.dark) .bg-red-50 {
   background-color: rgba(136, 19, 55, 0.35) !important;
   color: #fca5a5 !important;
   border-color: rgba(244, 63, 94, 0.4) !important;
 }
-html[data-theme="dark"] .text-rose-700,
-html[data-theme="dark"] .text-rose-800,
-html[data-theme="dark"] .text-rose-900 {
+:is(html[data-theme="dark"], html.dark) .text-rose-700,
+:is(html[data-theme="dark"], html.dark) .text-rose-800,
+:is(html[data-theme="dark"], html.dark) .text-rose-900 {
   color: #fca5a5 !important;
 }
 
@@ -607,180 +607,180 @@ html[data-theme="dark"] .text-rose-900 {
   color: #0f172a !important;
 }
 
-html[data-theme="dark"] .public-surface,
-html[data-theme="dark"] .public-surface .bg-white {
+:is(html[data-theme="dark"], html.dark) .public-surface,
+:is(html[data-theme="dark"], html.dark) .public-surface .bg-white {
   background-color: #ffffff !important;
 }
 
-html[data-theme="dark"] .public-surface .bg-slate-50 {
+:is(html[data-theme="dark"], html.dark) .public-surface .bg-slate-50 {
   background-color: #f8fafc !important;
 }
 
-html[data-theme="dark"] .public-surface .bg-slate-100 {
+:is(html[data-theme="dark"], html.dark) .public-surface .bg-slate-100 {
   background-color: #f1f5f9 !important;
 }
 
-html[data-theme="dark"] .public-surface .border-slate-200,
-html[data-theme="dark"] .public-surface .border-slate-300 {
+:is(html[data-theme="dark"], html.dark) .public-surface .border-slate-200,
+:is(html[data-theme="dark"], html.dark) .public-surface .border-slate-300 {
   border-color: #e2e8f0 !important;
 }
 
-html[data-theme="dark"] .public-surface .text-slate-950,
-html[data-theme="dark"] .public-surface .text-slate-900,
-html[data-theme="dark"] .public-surface .text-slate-800 {
+:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-950,
+:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-900,
+:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-800 {
   color: #0f172a !important;
 }
 
-html[data-theme="dark"] .public-surface .text-slate-700 {
+:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-700 {
   color: #334155 !important;
 }
 
-html[data-theme="dark"] .public-surface .text-slate-600,
-html[data-theme="dark"] .public-surface .text-slate-500 {
+:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-600,
+:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-500 {
   color: #475569 !important;
 }
 
-html[data-theme="dark"] .public-surface input:not([type="radio"]):not([type="checkbox"]) {
+:is(html[data-theme="dark"], html.dark) .public-surface input:not([type="radio"]):not([type="checkbox"]) {
   background-color: #ffffff !important;
   color: #0f172a !important;
   border-color: #cbd5e1 !important;
 }
 
-html[data-theme="dark"] .public-surface input::placeholder {
+:is(html[data-theme="dark"], html.dark) .public-surface input::placeholder {
   color: #94a3b8 !important;
 }
 
 /* Dark Mode Toolbar */
-html[data-theme="dark"] .global-learner-toolbar {
+:is(html[data-theme="dark"], html.dark) .global-learner-toolbar {
   border-color: #1e2e47;
   background: #08111e;
   color: #f1f5f9;
 }
-html[data-theme="dark"] .global-learner-greeting {
+:is(html[data-theme="dark"], html.dark) .global-learner-greeting {
   color: #94a3b8;
 }
-html[data-theme="dark"] .global-learner-name {
+:is(html[data-theme="dark"], html.dark) .global-learner-name {
   color: #f1f5f9;
 }
-html[data-theme="dark"] .global-learner-avatar-fallback {
+:is(html[data-theme="dark"], html.dark) .global-learner-avatar-fallback {
   background: #1e3a8a;
   color: #e0f2fe;
 }
-html[data-theme="dark"] .global-learner-action-link {
+:is(html[data-theme="dark"], html.dark) .global-learner-action-link {
   color: #cbd5e1;
 }
-html[data-theme="dark"] .global-learner-action-link:hover {
+:is(html[data-theme="dark"], html.dark) .global-learner-action-link:hover {
   background: #17243a;
   color: #ffffff;
 }
-html[data-theme="dark"] .global-learner-theme-button {
+:is(html[data-theme="dark"], html.dark) .global-learner-theme-button {
   border-color: #2b3a52;
   background: #111f36;
   color: #f1f5f9;
 }
-html[data-theme="dark"] .global-learner-theme-button:hover {
+:is(html[data-theme="dark"], html.dark) .global-learner-theme-button:hover {
   background: #172a48;
 }
 
 /* Dark Mode Inputs, Selects, Textareas */
-html[data-theme="dark"] input:not([type="radio"]):not([type="checkbox"]),
-html[data-theme="dark"] textarea,
-html[data-theme="dark"] select {
+:is(html[data-theme="dark"], html.dark) input:not([type="radio"]):not([type="checkbox"]),
+:is(html[data-theme="dark"], html.dark) textarea,
+:is(html[data-theme="dark"], html.dark) select {
   color: #f1f5f9 !important;
   background-color: #0b1524 !important;
   border-color: #2b3e59 !important;
 }
-html[data-theme="dark"] input::placeholder,
-html[data-theme="dark"] textarea::placeholder {
+:is(html[data-theme="dark"], html.dark) input::placeholder,
+:is(html[data-theme="dark"], html.dark) textarea::placeholder {
   color: #64748b !important;
 }
 
 /* Dark Mode CBT Environment */
-html[data-theme="dark"] .exam-shell {
+:is(html[data-theme="dark"], html.dark) .exam-shell {
   background:
     radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 30%),
     radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent 25%),
     linear-gradient(180deg, #060e1a 0%, #030712 100%) !important;
 }
-html[data-theme="dark"] .exam-topbar {
+:is(html[data-theme="dark"], html.dark) .exam-topbar {
   background: rgba(7, 19, 40, 0.95) !important;
   border-color: #1e2e47 !important;
 }
-html[data-theme="dark"] .exam-card {
+:is(html[data-theme="dark"], html.dark) .exam-card {
   background: #0c1728 !important;
   border-color: #1e2e47 !important;
 }
-html[data-theme="dark"] .exam-soft-card {
+:is(html[data-theme="dark"], html.dark) .exam-soft-card {
   background: #111f36 !important;
   border-color: #1e2e47 !important;
 }
-html[data-theme="dark"] .exam-option {
+:is(html[data-theme="dark"], html.dark) .exam-option {
   background: #0c1728 !important;
   border-color: #1e2e47 !important;
   color: #f1f5f9 !important;
 }
-html[data-theme="dark"] .exam-option:hover {
+:is(html[data-theme="dark"], html.dark) .exam-option:hover {
   background: #111f36 !important;
   border-color: #38bdf8 !important;
 }
-html[data-theme="dark"] .exam-option.selected {
+:is(html[data-theme="dark"], html.dark) .exam-option.selected {
   background: rgba(14, 165, 233, 0.15) !important;
   border-color: #38bdf8 !important;
 }
-html[data-theme="dark"] .exam-option-letter {
+:is(html[data-theme="dark"], html.dark) .exam-option-letter {
   background: #17243a !important;
   color: #38bdf8 !important;
 }
-html[data-theme="dark"] .exam-option.selected .exam-option-letter {
+:is(html[data-theme="dark"], html.dark) .exam-option.selected .exam-option-letter {
   background: #0284c7 !important;
   color: white !important;
 }
-html[data-theme="dark"] .exam-question-text,
-html[data-theme="dark"] .exam-passage-text {
+:is(html[data-theme="dark"], html.dark) .exam-question-text,
+:is(html[data-theme="dark"], html.dark) .exam-passage-text {
   color: #f1f5f9 !important;
 }
-html[data-theme="dark"] .exam-question-meta,
-html[data-theme="dark"] .exam-passage-title {
+:is(html[data-theme="dark"], html.dark) .exam-question-meta,
+:is(html[data-theme="dark"], html.dark) .exam-passage-title {
   color: #38bdf8 !important;
 }
-html[data-theme="dark"] .exam-passage {
+:is(html[data-theme="dark"], html.dark) .exam-passage {
   background: rgba(14, 165, 233, 0.08) !important;
   border-color: rgba(14, 165, 233, 0.3) !important;
 }
-html[data-theme="dark"] .exam-palette-btn.unanswered {
+:is(html[data-theme="dark"], html.dark) .exam-palette-btn.unanswered {
   background: #111f36 !important;
   border-color: #2b3e59 !important;
   color: #cbd5e1 !important;
 }
-html[data-theme="dark"] .exam-palette-btn.unanswered:hover {
+:is(html[data-theme="dark"], html.dark) .exam-palette-btn.unanswered:hover {
   background: #172a48 !important;
   color: #ffffff !important;
 }
-html[data-theme="dark"] .exam-palette-btn.answered {
+:is(html[data-theme="dark"], html.dark) .exam-palette-btn.answered {
   background: rgba(6, 78, 59, 0.6) !important;
   border-color: #059669 !important;
   color: #a7f3d0 !important;
 }
-html[data-theme="dark"] .exam-palette-btn.flagged {
+:is(html[data-theme="dark"], html.dark) .exam-palette-btn.flagged {
   background: rgba(120, 53, 15, 0.6) !important;
   border-color: #d97706 !important;
   color: #fef08a !important;
 }
-html[data-theme="dark"] .calc-window {
+:is(html[data-theme="dark"], html.dark) .calc-window {
   border-color: #1e2e47 !important;
   background: #0c1728 !important;
 }
-html[data-theme="dark"] .calc-display {
+:is(html[data-theme="dark"], html.dark) .calc-display {
   background: #111f36 !important;
   border-color: #1e2e47 !important;
   color: #f1f5f9 !important;
 }
-html[data-theme="dark"] .calc-btn {
+:is(html[data-theme="dark"], html.dark) .calc-btn {
   background: #0c1728 !important;
   border-color: #2b3e59 !important;
   color: #f1f5f9 !important;
 }
-html[data-theme="dark"] .calc-btn:hover {
+:is(html[data-theme="dark"], html.dark) .calc-btn:hover {
   background: #17243a !important;
 }
 
@@ -803,9 +803,9 @@ html[data-theme="dark"] .calc-btn:hover {
   background: rgba(100, 116, 139, 0.7);
 }
 
-html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+:is(html[data-theme="dark"], html.dark) ::-webkit-scrollbar-thumb {
   background: rgba(71, 85, 105, 0.5);
 }
-html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+:is(html[data-theme="dark"], html.dark) ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.7);
 }

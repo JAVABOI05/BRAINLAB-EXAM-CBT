@@ -63,6 +63,11 @@ export function LearnerThemeProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedTheme;
     document.documentElement.style.colorScheme = resolvedTheme;
+    if (resolvedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [resolvedTheme]);
 
   const value = useMemo(() => ({ appearance, resolvedTheme, setAppearance }), [appearance, resolvedTheme, setAppearance]);

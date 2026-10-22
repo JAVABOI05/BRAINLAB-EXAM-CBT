@@ -113,6 +113,14 @@ const spaces = [
     href: "/messages",
     action: "Open Messages",
   },
+  {
+    number: "06",
+    eyebrow: "CONTINUOUS ASSESSMENT",
+    title: "Assignments & Homework",
+    description: "Submit written tasks, record oral solutions, and receive tutor grades with audio critiques.",
+    href: "/assignments",
+    action: "View Assignments",
+  },
 ];
 
 export default function LearnerDashboardPage() {

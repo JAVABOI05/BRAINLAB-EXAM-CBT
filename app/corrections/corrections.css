@@ -1057,7 +1057,7 @@
    Corrections Dark Appearance Overrides
    ========================================================================== */
 
-html[data-theme="dark"] .corrections-page {
+:is(html[data-theme="dark"], html.dark) .corrections-page {
   background:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 28%),
     radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 24%),
@@ -1065,222 +1065,222 @@ html[data-theme="dark"] .corrections-page {
   color: #e2e8f0;
 }
 
-html[data-theme="dark"] .stat-card {
+:is(html[data-theme="dark"], html.dark) .stat-card {
   background: #111c2f;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .stat-card.total {
+:is(html[data-theme="dark"], html.dark) .stat-card.total {
   background: linear-gradient(135deg, #111c2f 0%, #17243a 100%);
   border-color: #3b82f6;
 }
 
-html[data-theme="dark"] .stat-label {
+:is(html[data-theme="dark"], html.dark) .stat-label {
   color: #94a3b8;
 }
 
-html[data-theme="dark"] .stat-value {
+:is(html[data-theme="dark"], html.dark) .stat-value {
   color: #f1f5f9;
 }
 
-html[data-theme="dark"] .side-card {
+:is(html[data-theme="dark"], html.dark) .side-card {
   background: #111c2f;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .side-card-title {
+:is(html[data-theme="dark"], html.dark) .side-card-title {
   color: #f1f5f9;
 }
 
-html[data-theme="dark"] .side-card-subtitle {
+:is(html[data-theme="dark"], html.dark) .side-card-subtitle {
   color: #94a3b8;
 }
 
-html[data-theme="dark"] .subject-btn {
+:is(html[data-theme="dark"], html.dark) .subject-btn {
   background: #17243a;
   border-color: #2b3a52;
   color: #cbd5e1;
 }
 
-html[data-theme="dark"] .subject-btn:hover {
+:is(html[data-theme="dark"], html.dark) .subject-btn:hover {
   background: #1e293b;
   border-color: #3b82f6;
 }
 
-html[data-theme="dark"] .subject-btn.active {
+:is(html[data-theme="dark"], html.dark) .subject-btn.active {
   background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
   color: #ffffff;
   border-color: #3b82f6;
 }
 
-html[data-theme="dark"] .subject-name {
+:is(html[data-theme="dark"], html.dark) .subject-name {
   color: #f1f5f9;
 }
 
-html[data-theme="dark"] .subject-btn.active .subject-name {
+:is(html[data-theme="dark"], html.dark) .subject-btn.active .subject-name {
   color: #ffffff;
 }
 
-html[data-theme="dark"] .palette-btn.unanswered {
+:is(html[data-theme="dark"], html.dark) .palette-btn.unanswered {
   background: #17243a;
   border-color: #2b3a52;
   color: #94a3b8;
 }
 
-html[data-theme="dark"] .palette-btn.correct {
+:is(html[data-theme="dark"], html.dark) .palette-btn.correct {
   background: #14532d;
   border-color: #16a34a;
   color: #86efac;
 }
 
-html[data-theme="dark"] .palette-btn.wrong {
+:is(html[data-theme="dark"], html.dark) .palette-btn.wrong {
   background: #7f1d1d;
   border-color: #dc2626;
   color: #fca5a5;
 }
 
-html[data-theme="dark"] .question-card {
+:is(html[data-theme="dark"], html.dark) .question-card {
   background: #111c2f;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .question-head {
+:is(html[data-theme="dark"], html.dark) .question-head {
   border-bottom-color: #2b3a52;
 }
 
-html[data-theme="dark"] .question-text {
+:is(html[data-theme="dark"], html.dark) .question-text {
   color: #f1f5f9;
 }
 
-html[data-theme="dark"] .tag.subject {
+:is(html[data-theme="dark"], html.dark) .tag.subject {
   background: #1e3a8a;
   color: #93c5fd;
   border-color: #2563eb;
 }
 
-html[data-theme="dark"] .tag.type {
+:is(html[data-theme="dark"], html.dark) .tag.type {
   background: #1e293b;
   color: #cbd5e1;
   border-color: #334155;
 }
 
-html[data-theme="dark"] .tag.number {
+:is(html[data-theme="dark"], html.dark) .tag.number {
   background: #312e81;
   color: #c7d2fe;
   border-color: #4338ca;
 }
 
-html[data-theme="dark"] .option-box.default {
+:is(html[data-theme="dark"], html.dark) .option-box.default {
   background: #17243a;
   border-color: #2b3a52;
   color: #e2e8f0;
 }
 
-html[data-theme="dark"] .option-box.default:hover {
+:is(html[data-theme="dark"], html.dark) .option-box.default:hover {
   background: #1e293b;
   border-color: #3b82f6;
 }
 
-html[data-theme="dark"] .option-box.correct {
+:is(html[data-theme="dark"], html.dark) .option-box.correct {
   background: #14532d;
   border-color: #22c55e;
   color: #bbf7d0;
 }
 
-html[data-theme="dark"] .option-box.wrong {
+:is(html[data-theme="dark"], html.dark) .option-box.wrong {
   background: #450a0a;
   border-color: #ef4444;
   color: #fecaca;
 }
 
-html[data-theme="dark"] .option-text {
+:is(html[data-theme="dark"], html.dark) .option-text {
   color: #e2e8f0;
 }
 
-html[data-theme="dark"] .answer-card {
+:is(html[data-theme="dark"], html.dark) .answer-card {
   background: #17243a;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .answer-card.your-answer {
+:is(html[data-theme="dark"], html.dark) .answer-card.your-answer {
   background: #17243a;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .answer-card.correct-answer {
+:is(html[data-theme="dark"], html.dark) .answer-card.correct-answer {
   background: #14532d;
   border-color: #16a34a;
 }
 
-html[data-theme="dark"] .answer-card.correct-answer .answer-value {
+:is(html[data-theme="dark"], html.dark) .answer-card.correct-answer .answer-value {
   color: #86efac;
 }
 
-html[data-theme="dark"] .answer-label {
+:is(html[data-theme="dark"], html.dark) .answer-label {
   color: #94a3b8;
 }
 
-html[data-theme="dark"] .answer-value {
+:is(html[data-theme="dark"], html.dark) .answer-value {
   color: #f1f5f9;
 }
 
-html[data-theme="dark"] .explanation-box {
+:is(html[data-theme="dark"], html.dark) .explanation-box {
   background: #17243a;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .explanation-title {
+:is(html[data-theme="dark"], html.dark) .explanation-title {
   color: #93c5fd;
 }
 
-html[data-theme="dark"] .explanation-text {
+:is(html[data-theme="dark"], html.dark) .explanation-text {
   color: #cbd5e1;
 }
 
-html[data-theme="dark"] .ai-tutor-panel {
+:is(html[data-theme="dark"], html.dark) .ai-tutor-panel {
   background: #111c2f;
   border-color: #3b82f6;
 }
 
-html[data-theme="dark"] .ai-tutor-prose {
+:is(html[data-theme="dark"], html.dark) .ai-tutor-prose {
   color: #e2e8f0;
 }
 
-html[data-theme="dark"] .ai-chat-bubble.user-bubble {
+:is(html[data-theme="dark"], html.dark) .ai-chat-bubble.user-bubble {
   background: #172d4c;
   border-color: #2563eb;
   color: #bfdbfe;
 }
 
-html[data-theme="dark"] .ai-chat-bubble.tutor-bubble {
+:is(html[data-theme="dark"], html.dark) .ai-chat-bubble.tutor-bubble {
   background: #17243a;
   border-color: #334155;
   color: #e2e8f0;
 }
 
-html[data-theme="dark"] .ai-followup-input {
+:is(html[data-theme="dark"], html.dark) .ai-followup-input {
   background: #0f172a;
   border-color: #334155;
   color: #f1f5f9;
 }
 
-html[data-theme="dark"] .empty-state {
+:is(html[data-theme="dark"], html.dark) .empty-state {
   background: #111c2f;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .empty-state-text {
+:is(html[data-theme="dark"], html.dark) .empty-state-text {
   color: #e2e8f0;
 }
 
 
-html[data-theme="dark"] .action-btn.secondary {
+:is(html[data-theme="dark"], html.dark) .action-btn.secondary {
   background: #111c2f;
   color: #cbd5e1;
   border-color: #2b3a52;
 }
 
-html[data-theme="dark"] .action-btn.secondary:hover {
+:is(html[data-theme="dark"], html.dark) .action-btn.secondary:hover {
   background: #17243a;
   color: #ffffff;
 }
