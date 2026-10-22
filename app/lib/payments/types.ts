@@ -4,6 +4,8 @@ export interface PaymentInitParams {
   reference: string;
   planId: string;
   userId: string;
+  currency?: string;
+  provider?: "bachs" | "paystack";
   couponCode?: string;
   callbackUrl?: string;
   metadata?: Record<string, unknown>;
@@ -14,6 +16,7 @@ export interface PaymentInitResult {
   authorizationUrl?: string;
   reference: string;
   accessCode?: string;
+  sessionId?: string;
   error?: string;
   isTestMode: boolean;
 }
@@ -23,6 +26,7 @@ export interface PaymentVerifyResult {
   reference: string;
   status: "success" | "failed" | "abandoned" | "pending";
   amountKobo: number;
+  currency?: string;
   paidAt?: string;
   channel?: string;
   customerEmail?: string;
@@ -34,6 +38,10 @@ export interface PaymentProvider {
   name: string;
   isLive: boolean;
   initializePayment(params: PaymentInitParams): Promise<PaymentInitResult>;
-  verifyPayment(reference: string): Promise<PaymentVerifyResult>;
-  verifyWebhookSignature(rawBody: string, signature: string): boolean;
+  verifyPayment(reference: string, providerReference?: string): Promise<PaymentVerifyResult>;
+  verifyWebhookSignature(
+    rawBody: string,
+    signature: string,
+    headers?: Record<string, string | null | undefined>
+  ): boolean;
 }

@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 import UserBadges from "../components/UserBadges";
 import {
   getGamificationLeaderboard,
@@ -36,8 +34,6 @@ export default function GlobalLeaderboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
       <main className="flex-1 py-10 sm:py-12">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           {/* Header */}
@@ -246,8 +242,6 @@ export default function GlobalLeaderboardPage() {
           </section>
         </div>
       </main>
-
-      <BrandFooter />
     </div>
   );
 }

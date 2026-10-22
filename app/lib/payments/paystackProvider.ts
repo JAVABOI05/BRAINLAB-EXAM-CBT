@@ -78,7 +78,7 @@ export class PaystackPaymentProvider implements PaymentProvider {
     }
   }
 
-  async verifyPayment(reference: string): Promise<PaymentVerifyResult> {
+  async verifyPayment(reference: string, _providerReference?: string): Promise<PaymentVerifyResult> {
     // If no secret key or in simulation mode with simulated prefix
     if (!this.secretKey || reference.startsWith("test_sim_") || reference.includes("simulated")) {
       return {
@@ -132,7 +132,7 @@ export class PaystackPaymentProvider implements PaymentProvider {
     }
   }
 
-  verifyWebhookSignature(rawBody: string, signature: string): boolean {
+  verifyWebhookSignature(rawBody: string, signature: string, _headers?: Record<string, string | null | undefined>): boolean {
     if (!this.secretKey) return false;
     try {
       const hash = crypto
@@ -146,4 +146,5 @@ export class PaystackPaymentProvider implements PaymentProvider {
   }
 }
 
-export const paymentProvider = new PaystackPaymentProvider();
+export const paystackPaymentProvider = new PaystackPaymentProvider();
+export const paymentProvider = paystackPaymentProvider;

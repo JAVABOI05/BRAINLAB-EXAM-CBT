@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { getSubscriptionPlans, validateCoupon, type SubscriptionPlan } from "../lib/platformConfig";
 import BrandHeader from "../components/BrandHeader";
 import BrandFooter from "../components/BrandFooter";
+import { supabase } from "../lib/supabase";
+import { getSubscriptionPlans, validateCoupon, type SubscriptionPlan } from "../lib/platformConfig";
 
 type UserSubscription = {
   plan_id: string;
@@ -22,6 +22,7 @@ export default function PricingPage() {
   
   // Checkout Modal State
   const [checkoutPlan, setCheckoutPlan] = useState<SubscriptionPlan | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<"bachs" | "paystack">("bachs");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
@@ -136,6 +137,7 @@ export default function PricingPage() {
         body: JSON.stringify({
           planId: checkoutPlan.id,
           couponCode: appliedCoupon?.code || undefined,
+          provider: selectedProvider,
         }),
       });
 
@@ -163,8 +165,6 @@ export default function PricingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
-
       <main id="main" className="flex-1 py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="text-center">
@@ -365,13 +365,56 @@ export default function PricingPage() {
                   </div>
                 )}
 
+                {/* Payment Provider Selection */}
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Payment Gateway
+                  </label>
+                  <div className="mt-2 grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProvider("bachs")}
+                      className={`flex flex-col items-start rounded-2xl border p-3 text-left transition-all duration-150 active:scale-95 ${
+                        selectedProvider === "bachs"
+                          ? "border-[#012153] bg-blue-50/80 ring-2 ring-[#012153]/20"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-slate-900">⚡ Bachs</span>
+                        <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-bold text-blue-800">
+                          Recommended
+                        </span>
+                      </div>
+                      <span className="mt-0.5 text-[10px] text-slate-500 font-medium">
+                        Cards, Transfer, USSD
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProvider("paystack")}
+                      className={`flex flex-col items-start rounded-2xl border p-3 text-left transition-all duration-150 active:scale-95 ${
+                        selectedProvider === "paystack"
+                          ? "border-[#012153] bg-blue-50/80 ring-2 ring-[#012153]/20"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="text-xs font-black text-slate-900">💳 Paystack</span>
+                      <span className="mt-0.5 text-[10px] text-slate-500 font-medium">
+                        Debit Cards &amp; Bank
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Policy disclaimers */}
                 <div className="mt-5 rounded-2xl bg-blue-50/70 p-3.5 text-[11px] leading-5 text-blue-900 border border-blue-200/60">
                   <p>
                     🛡️ <strong>24-Hour 100% Refund Guarantee:</strong> Full unconditional refund available if requested within 24 hours of payment.
                   </p>
                   <p className="mt-1 text-amber-900">
-                    🧪 <strong>Test Mode Active:</strong> Payment gateway is running in simulation sandbox. No real debits occur.
+                    🧪 <strong>Active Gateway:</strong> {selectedProvider === "bachs" ? "Bachs Checkout" : "Paystack"} (Secured via 256-bit encryption).
                   </p>
                 </div>
 
@@ -380,18 +423,18 @@ export default function PricingPage() {
                     type="button"
                     disabled={initiatingPayment}
                     onClick={handleProceedToPayment}
-                    className="w-full rounded-2xl bg-indigo-700 py-3.5 text-xs font-extrabold text-white shadow-md hover:bg-indigo-800 disabled:opacity-50"
+                    className="w-full rounded-2xl bg-[#012153] hover:bg-[#071c43] py-3.5 text-xs font-extrabold text-white shadow-md transition-all duration-150 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:transform-none"
                   >
                     {initiatingPayment
-                      ? "Connecting to Gateway..."
+                      ? `Connecting to ${selectedProvider === "bachs" ? "Bachs" : "Paystack"}...`
                       : !user
                       ? "Sign In to Proceed →"
-                      : "Proceed to Secure Checkout →"}
+                      : `Proceed with ${selectedProvider === "bachs" ? "Bachs" : "Paystack"} →`}
                   </button>
                   <button
                     type="button"
                     onClick={() => setCheckoutPlan(null)}
-                    className="w-full rounded-xl py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    className="w-full rounded-xl py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition active:scale-95"
                   >
                     Cancel
                   </button>
@@ -426,7 +469,6 @@ export default function PricingPage() {
           </div>
         </div>
       </main>
-
       <BrandFooter />
     </div>
   );

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "../../../lib/supabaseServer";
-import { paymentProvider } from "../../../lib/payments/paystackProvider";
+import { getPaymentProvider } from "../../../lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,8 @@ async function handleVerification(reference: string) {
     }
 
     // 3. Verify with Payment Gateway
-    const verifyResult = await paymentProvider.verifyPayment(reference);
+    const provider = getPaymentProvider(tx.provider);
+    const verifyResult = await provider.verifyPayment(reference, tx.provider_reference);
 
     if (!verifyResult.ok || verifyResult.status !== "success") {
       await supabase
@@ -80,7 +81,7 @@ async function handleVerification(reference: string) {
       .update({
         status: "success",
         paid_at: paidAt,
-        provider_reference: verifyResult.reference,
+        provider_reference: verifyResult.reference || tx.provider_reference,
         updated_at: new Date().toISOString(),
       })
       .eq("id", tx.id);
@@ -164,7 +165,7 @@ async function handleVerification(reference: string) {
     });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: "Internal verification error: " + (err instanceof Error ? err.message : String(err)) },
+      { ok: false, error: "server_error", message: err instanceof Error ? err.message : "Internal error" },
       { status: 500 }
     );
   }

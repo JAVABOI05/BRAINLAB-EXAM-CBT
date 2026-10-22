@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
-import { paymentProvider } from "../../../lib/payments/paystackProvider";
+import { getPaymentProvider } from "../../../lib/payments";
 import { getSubscriptionPlans, validateCoupon } from "../../../lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { planId, couponCode, callbackUrl } = body;
+    const { planId, couponCode, callbackUrl, provider } = body;
 
     if (!planId || typeof planId !== "string") {
       return NextResponse.json(
@@ -131,9 +131,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. Create pending transaction record
+    // 4. Resolve selected payment provider (Bachs or Paystack)
+    const selectedProvider = getPaymentProvider(provider);
     const reference = `BL_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
+    // 5. Create pending transaction record
     const { error: txError } = await supabase.from("payment_transactions").insert({
       reference,
       user_id: user.id,
@@ -141,7 +143,7 @@ export async function POST(request: NextRequest) {
       customer_email: user.email,
       amount_kobo: finalAmountKobo,
       currency: plan.currency || "NGN",
-      provider: "paystack",
+      provider: selectedProvider.name,
       status: "pending",
       coupon_id: appliedCouponId,
       discount_kobo: discountKobo,
@@ -149,6 +151,7 @@ export async function POST(request: NextRequest) {
         plan_name: plan.name,
         plan_interval: plan.interval,
         original_price_kobo: plan.price_kobo,
+        requested_provider: selectedProvider.name,
       },
     });
 
@@ -159,17 +162,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Initialize payment with PaymentProvider
+    // 6. Initialize payment with selected provider
     const host = request.headers.get("host") || "localhost:3000";
     const protocol = request.headers.get("x-forwarded-proto") || "http";
     const defaultCallback = `${protocol}://${host}/account/subscription/callback`;
 
-    const initResult = await paymentProvider.initializePayment({
+    const initResult = await selectedProvider.initializePayment({
       email: user.email,
       amountKobo: finalAmountKobo,
+      currency: plan.currency || "NGN",
       reference,
       planId: plan.id,
       userId: user.id,
+      provider: selectedProvider.name as "bachs" | "paystack",
       couponCode: couponCode || undefined,
       callbackUrl: callbackUrl || defaultCallback,
       metadata: {
@@ -190,11 +195,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update transaction with provider's session ID if returned (e.g. Bachs checkout session ID)
+    if (initResult.sessionId) {
+      await supabase
+        .from("payment_transactions")
+        .update({ provider_reference: initResult.sessionId })
+        .eq("reference", reference);
+    }
+
     return NextResponse.json({
       ok: true,
       reference,
       authorizationUrl: initResult.authorizationUrl,
       isTestMode: initResult.isTestMode,
+      provider: selectedProvider.name,
     });
   } catch (err) {
     return NextResponse.json(

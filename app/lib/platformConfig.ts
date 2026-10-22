@@ -76,6 +76,26 @@ export interface WebsiteContentConfig {
   maintenance_mode: boolean;
 }
 
+export interface SocialLinkConfig {
+  platform: "whatsapp" | "instagram" | "youtube" | "facebook" | "tiktok" | "linkedin" | "x";
+  name: string;
+  url: string;
+  enabled: boolean;
+}
+
+export interface FooterConfig {
+  brand_tagline: string;
+  brand_description: string;
+  support_email: string;
+  support_phone: string;
+  whatsapp_number: string;
+  whatsapp_channel_url: string;
+  office_location: string;
+  social_links: SocialLinkConfig[];
+  copyright_notice: string;
+  accreditation_statement: string;
+}
+
 export interface LiveClassroomConfig {
   provider: "webrtc" | "livekit" | "agora" | "daily";
   max_capacity_default: number;
@@ -117,7 +137,7 @@ export interface AuditLogEntry {
   id?: string;
   admin_id?: string;
   admin_email: string;
-  entity_type: "config" | "plan" | "coupon" | "academic" | "ai" | "content" | "exam" | "classroom" | "communication" | "audio";
+  entity_type: "config" | "plan" | "coupon" | "academic" | "ai" | "content" | "exam" | "classroom" | "communication" | "audio" | "footer";
   entity_id: string;
   action: "created" | "updated" | "published" | "deleted";
   previous_value?: unknown;
@@ -226,9 +246,60 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContentConfig = {
   hero_subtitle: "Adaptive CBT examination practice, live AI Tutor breakdowns, and national examination readiness intelligence for Nigerian learners.",
   banner_announcement: "🎓 2026/2027 JAMB UTME & WAEC Mock Examination series is now live!",
   banner_active: true,
-  support_email: "support@brainlabacademy.com",
-  support_phone: "+234 800 BRAINLAB",
+  support_email: "support@brainlab.edu.ng",
+  support_phone: "+234 907 431 0204",
   maintenance_mode: false,
+};
+
+export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
+  brand_tagline: "Helping learners prepare smarter, build confidence, and achieve their academic goals.",
+  brand_description:
+    "Empowering Nigerian secondary and tertiary candidates with adaptive CBT mock exams, curriculum-aligned study materials, and instant AI tutor explanations.",
+  support_email: "support@brainlab.edu.ng",
+  support_phone: "+234 907 431 0204",
+  whatsapp_number: "2349074310204",
+  whatsapp_channel_url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
+  office_location: "Lagos, Nigeria",
+  social_links: [
+    {
+      platform: "x",
+      name: "X (Twitter)",
+      url: "https://x.com/The_brainlabhub",
+      enabled: true,
+    },
+    {
+      platform: "instagram",
+      name: "Instagram",
+      url: "https://www.instagram.com/brain_labacademy?dlrf=NGJzcmFnaGcwZHV4",
+      enabled: true,
+    },
+    {
+      platform: "facebook",
+      name: "Facebook",
+      url: "https://www.facebook.com/profile.php?id=61595669640028",
+      enabled: true,
+    },
+    {
+      platform: "youtube",
+      name: "YouTube",
+      url: "https://youtube.com/@thebrainlabhub?si=z4sAVuNmJUdPom_u",
+      enabled: true,
+    },
+    {
+      platform: "tiktok",
+      name: "TikTok",
+      url: "https://www.tiktok.com/@brainlabacademy",
+      enabled: true,
+    },
+    {
+      platform: "whatsapp",
+      name: "WhatsApp Channel",
+      url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
+      enabled: true,
+    },
+  ],
+  copyright_notice: "BrainLab Academy. All rights reserved.",
+  accreditation_statement: "Dedicated to student excellence across Nigerian national examinations (JAMB UTME, WAEC SSCE, NECO).",
 };
 
 const DEFAULT_CLASSROOM_CONFIG: LiveClassroomConfig = {
@@ -721,4 +792,19 @@ export async function saveAudioPolicyConfig(
   const current = await getAudioPolicyConfig();
   const updated = { ...current, ...config };
   return await setPlatformConfig("audio_policy_config", updated, adminUser, reason || "Updated audio & voice note policy");
+}
+
+// ----------------------------------------------------------------------------
+// Footer Configuration & Social Channels
+// ----------------------------------------------------------------------------
+export async function getFooterConfig(): Promise<FooterConfig> {
+  return await getPlatformConfig<FooterConfig>("website_footer", DEFAULT_FOOTER_CONFIG);
+}
+
+export async function saveFooterConfig(
+  config: FooterConfig,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  return await setPlatformConfig("website_footer", config, adminUser, reason || "Updated website footer and official channels");
 }

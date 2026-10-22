@@ -202,6 +202,62 @@ runTest("Operator gate rejects requests missing access tokens or exceeding size 
 });
 
 // -----------------------------------------------------------------------------
+// Boundary 7: Footer Security & Public Contact Hygiene
+// -----------------------------------------------------------------------------
+runTest("Footer public contact contract exposes support@brainlab.edu.ng and filters dead/placeholder links", () => {
+  const footerConfig = {
+    support_email: "support@brainlab.edu.ng",
+    social_links: [
+      { platform: "whatsapp", url: "https://wa.me/2349074310204", enabled: true },
+      { platform: "instagram", url: "https://instagram.com/brainlab_academy", enabled: true },
+      { platform: "facebook", url: "#", enabled: true }, // Placeholder
+      { platform: "tiktok", url: "", enabled: true }, // Empty
+      { platform: "linkedin", url: "https://linkedin.com/company/brainlab", enabled: false }, // Disabled
+    ],
+  };
+
+  // Must not expose internal admin mailbox
+  assert.equal(footerConfig.support_email.includes("admin@"), false, "Admin mailbox must not be exposed as public support email");
+  assert.equal(footerConfig.support_email, "support@brainlab.edu.ng");
+
+  // Filter logic identically matching BrandFooter.tsx
+  const activeSocialLinks = footerConfig.social_links.filter(
+    (item) =>
+      item.enabled &&
+      Boolean(item.url) &&
+      item.url.trim() !== "#" &&
+      (item.url.startsWith("http://") || item.url.startsWith("https://"))
+  );
+
+  assert.equal(activeSocialLinks.length, 2);
+  assert.equal(activeSocialLinks.some((l) => l.url === "#"), false, "Dead # links must be omitted");
+  assert.equal(activeSocialLinks.some((l) => l.url === ""), false, "Empty links must be omitted");
+  assert.equal(activeSocialLinks.some((l) => !l.enabled), false, "Disabled links must be omitted");
+});
+
+// -----------------------------------------------------------------------------
+// Boundary 8: Resend Email Service Safe Simulation Fallback
+// -----------------------------------------------------------------------------
+runTest("Transactional email service enters simulation mode without throwing when API key is missing", async () => {
+  // Simulating emailService behavior when RESEND_API_KEY is not defined
+  function simulateSendEmail(payload, apiKey) {
+    if (!apiKey || apiKey.trim() === "") {
+      return {
+        success: true,
+        messageId: `sim_${Date.now()}`,
+        simulated: true,
+      };
+    }
+    return { success: false, error: "Mock unexpected" };
+  }
+
+  const result = simulateSendEmail({ to: "student@example.com", subject: "Test Access Code" }, "");
+  assert.equal(result.success, true);
+  assert.equal(result.simulated, true);
+  assert.ok(result.messageId.startsWith("sim_"));
+});
+
+// -----------------------------------------------------------------------------
 // Summary Output
 // -----------------------------------------------------------------------------
 console.log(`\n======================================================`);

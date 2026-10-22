@@ -12,12 +12,21 @@ function SubscriptionCallbackContent() {
 
   const reference = searchParams.get("reference");
   const isSimulated = searchParams.get("simulated") === "true";
+  const isCancelled = searchParams.get("cancelled") === "true";
+  const provider = searchParams.get("provider");
 
-  const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
+  const [status, setStatus] = useState<"verifying" | "success" | "cancelled" | "error">(
+    isCancelled ? "cancelled" : "verifying"
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const [planId, setPlanId] = useState("");
 
   useEffect(() => {
+    if (isCancelled) {
+      setStatus("cancelled");
+      return;
+    }
+
     if (!reference) {
       setStatus("error");
       setErrorMessage("No payment reference was found in the return link.");
@@ -25,6 +34,8 @@ function SubscriptionCallbackContent() {
     }
 
     let isMounted = true;
+    let pollCount = 0;
+    const maxPolls = 3;
 
     async function verify() {
       try {
@@ -41,6 +52,10 @@ function SubscriptionCallbackContent() {
         if (res.ok && data.ok) {
           setStatus("success");
           setPlanId(data.planId || "premium");
+        } else if (pollCount < maxPolls) {
+          // If gateway webhook is still propagating, retry briefly
+          pollCount++;
+          setTimeout(verify, 2000);
         } else {
           setStatus("error");
           setErrorMessage(data.error || data.details || "Payment could not be verified.");
@@ -57,22 +72,54 @@ function SubscriptionCallbackContent() {
     return () => {
       isMounted = false;
     };
-  }, [reference]);
+  }, [reference, isCancelled]);
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
       {status === "verifying" && (
-        <div className="max-w-md rounded-2xl border border-blue-200 bg-white p-8 shadow-sm">
+        <div className="max-w-md rounded-3xl border border-blue-200 bg-white p-8 shadow-sm">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <h2 className="text-xl font-bold text-slate-900">Verifying Your Payment...</h2>
+          <h2 className="text-xl font-black text-slate-900">Verifying Payment...</h2>
           <p className="mt-2 text-sm text-slate-600">
-            Please wait while we confirm your transaction and activate your tier entitlements.
+            Confirming your transaction with {provider === "bachs" ? "Bachs" : "the gateway"} and activating your tier access.
           </p>
           {isSimulated && (
             <span className="mt-4 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-              🧪 Test Mode Sandbox Simulation
+              🧪 Test Mode Simulation
             </span>
           )}
+        </div>
+      )}
+
+      {status === "cancelled" && (
+        <div className="max-w-md rounded-3xl border border-amber-200 bg-amber-50/70 p-8 shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-2xl text-amber-700">
+            ↩
+          </div>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-amber-800">
+            Checkout Cancelled
+          </span>
+          <h2 className="mt-3 text-xl font-black text-slate-900">
+            Payment Was Not Completed
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            You cancelled your checkout session before finishing. No charges were made to your card or account.
+          </p>
+
+          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+            <Link
+              href="/pricing"
+              className="inline-flex items-center justify-center rounded-xl bg-[#012153] px-5 py-2.5 text-xs font-bold text-white shadow transition hover:bg-[#071c43] active:scale-95"
+            >
+              ← Return to Pricing Plans
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
         </div>
       )}
 
@@ -109,13 +156,13 @@ function SubscriptionCallbackContent() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center justify-center rounded-xl bg-[#012153] hover:bg-[#071c43] px-6 py-3 text-sm font-bold text-white shadow-sm transition active:scale-95"
             >
               Go to My Dashboard →
             </Link>
             <Link
               href="/learn"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition active:scale-95"
             >
               Explore Learning Hub
             </Link>
@@ -124,22 +171,28 @@ function SubscriptionCallbackContent() {
       )}
 
       {status === "error" && (
-        <div className="max-w-md rounded-2xl border border-rose-200 bg-rose-50/60 p-8 shadow-sm">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-500 text-xl text-white">
+        <div className="max-w-md rounded-3xl border border-rose-200 bg-rose-50/60 p-8 shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-500 text-2xl text-white">
             ✕
           </div>
-          <h2 className="text-xl font-bold text-slate-900">Verification Issue</h2>
-          <p className="mt-2 text-sm text-slate-700">{errorMessage}</p>
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <Link
-              href="/pricing"
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white"
+          <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-rose-800">
+            Verification Issue
+          </span>
+          <h2 className="mt-3 text-xl font-bold text-slate-900">Could Not Verify Payment</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            {errorMessage || "We were unable to confirm this transaction. If you were debited, your subscription will be activated automatically once the webhook delivers."}
+          </p>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow hover:bg-slate-800 active:scale-95"
             >
-              Return to Pricing
-            </Link>
+              Retry Verification
+            </button>
             <Link
               href="/support"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
             >
               Contact Support
             </Link>
@@ -152,16 +205,10 @@ function SubscriptionCallbackContent() {
 
 export default function SubscriptionCallbackPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <BrandHeader />
       <main className="flex-1 py-12">
-        <Suspense
-          fallback={
-            <div className="flex min-h-[50vh] items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-            </div>
-          }
-        >
+        <Suspense fallback={<div className="p-12 text-center text-sm text-slate-500">Loading payment details...</div>}>
           <SubscriptionCallbackContent />
         </Suspense>
       </main>

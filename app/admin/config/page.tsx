@@ -5,7 +5,15 @@ import { adminHasPermission } from "../../lib/adminRoles";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
-import { getExamSettings, saveExamSettings, type ExamSettings } from "../../lib/platformConfig";
+import {
+  getExamSettings,
+  saveExamSettings,
+  type ExamSettings,
+  getFooterConfig,
+  saveFooterConfig,
+  DEFAULT_FOOTER_CONFIG,
+  type FooterConfig,
+} from "../../lib/platformConfig";
 import "../admin.css";
 
 type AdminUser = {
@@ -89,6 +97,18 @@ export default function AdminConfigPage() {
     randomize_options: true,
     show_results_immediately: true,
   });
+  const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
+
+  function updateSocialLink(platform: string, field: "url" | "enabled", value: string | boolean) {
+    setFooterConfig((prev) => {
+      const links = [...(prev.social_links || [])];
+      const index = links.findIndex((item) => item.platform === platform);
+      if (index !== -1) {
+        links[index] = { ...links[index], [field]: value };
+      }
+      return { ...prev, social_links: links };
+    });
+  }
 
   useEffect(() => {
     let active = true;
@@ -160,8 +180,12 @@ export default function AdminConfigPage() {
       }
     });
 
-    const loadedExamSettings = await getExamSettings().catch(() => null);
+    const [loadedExamSettings, loadedFooter] = await Promise.all([
+      getExamSettings().catch(() => null),
+      getFooterConfig().catch(() => null),
+    ]);
     if (loadedExamSettings) setExamSettings(loadedExamSettings);
+    if (loadedFooter) setFooterConfig(loadedFooter);
     setLoading(false);
   }
 
@@ -192,10 +216,13 @@ export default function AdminConfigPage() {
         saveConfigRow("elective_enabled", electiveEnabled),
       ]);
       if (adminUser) {
-        await saveExamSettings(examSettings, adminUser, "Updated CBT exam rules and duration");
+        await Promise.all([
+          saveExamSettings(examSettings, adminUser, "Updated CBT exam rules and duration"),
+          saveFooterConfig(footerConfig, adminUser, "Updated website footer and official channels"),
+        ]);
       }
 
-      setMessage("Exam configuration saved successfully.");
+      setMessage("Configuration and footer settings saved successfully.");
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Failed to save configuration."
@@ -690,6 +717,136 @@ export default function AdminConfigPage() {
                 {examSettings.randomize_questions ? "✓ Question Shuffling ON" : "Fixed Question Order"}
               </button>
             </div>
+          </div>
+        </section>
+
+        {/* Website Footer & Official Contact Channels */}
+        <section className="admin-section admin-card">
+          <h2 className="admin-card-title">Website Footer &amp; Official Contact Channels</h2>
+          <p className="admin-card-text">
+            Configure the public support channels, brand copy, and social media links displayed across the platform footer.
+          </p>
+
+          <div className="admin-settings-grid">
+            <div className="admin-setting-box">
+              <label className="admin-label">Public Support Email</label>
+              <input
+                type="email"
+                value={footerConfig.support_email}
+                onChange={(e) =>
+                  setFooterConfig((prev) => ({ ...prev, support_email: e.target.value }))
+                }
+                placeholder="support@brainlab.edu.ng"
+                className="admin-input"
+              />
+              <p className="admin-help">
+                Primary public learner support address. Never expose private internal administrator mailboxes here.
+              </p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">Public Support Phone</label>
+              <input
+                type="text"
+                value={footerConfig.support_phone}
+                onChange={(e) =>
+                  setFooterConfig((prev) => ({ ...prev, support_phone: e.target.value }))
+                }
+                placeholder="+234 907 431 0204"
+                className="admin-input"
+              />
+              <p className="admin-help">Displays in the footer with direct tel: and dialling capability.</p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">WhatsApp Helpdesk Number</label>
+              <input
+                type="text"
+                value={footerConfig.whatsapp_number}
+                onChange={(e) =>
+                  setFooterConfig((prev) => ({ ...prev, whatsapp_number: e.target.value }))
+                }
+                placeholder="2349074310204"
+                className="admin-input"
+              />
+              <p className="admin-help">Digits only (with country code 234) for direct WhatsApp chat links.</p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">WhatsApp Community Channel URL</label>
+              <input
+                type="url"
+                value={footerConfig.whatsapp_channel_url}
+                onChange={(e) =>
+                  setFooterConfig((prev) => ({ ...prev, whatsapp_channel_url: e.target.value }))
+                }
+                placeholder="https://whatsapp.com/channel/..."
+                className="admin-input"
+              />
+              <p className="admin-help">Official WhatsApp community announcements channel link.</p>
+            </div>
+
+            <div className="admin-setting-box col-span-full">
+              <label className="admin-label">Brand Tagline</label>
+              <input
+                type="text"
+                value={footerConfig.brand_tagline}
+                onChange={(e) =>
+                  setFooterConfig((prev) => ({ ...prev, brand_tagline: e.target.value }))
+                }
+                placeholder="Helping learners prepare smarter, build confidence, and achieve their academic goals."
+                className="admin-input"
+              />
+            </div>
+
+            <div className="admin-setting-box col-span-full">
+              <label className="admin-label">Brand Description</label>
+              <textarea
+                value={footerConfig.brand_description}
+                onChange={(e) =>
+                  setFooterConfig((prev) => ({ ...prev, brand_description: e.target.value }))
+                }
+                rows={2}
+                placeholder="Concise, verified description of active services..."
+                className="admin-input"
+              />
+            </div>
+          </div>
+
+          <h3 className="mt-8 text-sm font-bold uppercase tracking-wider text-slate-800">
+            Social Media Channels
+          </h3>
+          <p className="text-xs text-slate-500">
+            Enable or disable specific channels. Links with empty or invalid URLs are automatically hidden from the public footer.
+          </p>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {(footerConfig.social_links || []).map((social) => (
+              <div key={social.platform} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-800">{social.name}</span>
+                  <label className="admin-toggle">
+                    <input
+                      type="checkbox"
+                      checked={social.enabled}
+                      onChange={(e) =>
+                        updateSocialLink(social.platform, "enabled", e.target.checked)
+                      }
+                    />
+                    <span className="text-xs">{social.enabled ? "Visible" : "Hidden"}</span>
+                  </label>
+                </div>
+                <input
+                  type="url"
+                  value={social.url}
+                  onChange={(e) =>
+                    updateSocialLink(social.platform, "url", e.target.value)
+                  }
+                  placeholder={`https://${social.platform}.com/...`}
+                  className="admin-input mt-2 text-xs"
+                />
+              </div>
+            ))}
           </div>
         </section>
 

@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import BrandHeader from "../components/BrandHeader";
-import BrandFooter from "../components/BrandFooter";
 
 export default function CertificateLookupPage() {
   const router = useRouter();
@@ -24,7 +22,6 @@ export default function CertificateLookupPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <BrandHeader />
       <main id="main" className="flex-1 py-14 sm:py-20">
         <div className="mx-auto max-w-2xl px-5 sm:px-6">
           <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
@@ -81,7 +78,6 @@ export default function CertificateLookupPage() {
           </div>
         </div>
       </main>
-      <BrandFooter />
     </div>
   );
 }
