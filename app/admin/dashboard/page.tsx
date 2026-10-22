@@ -284,9 +284,41 @@ export default function AdminDashboardPage() {
                 Results
               </button>
 
+              <button onClick={() => router.push("/admin/classroom")} className="admin-btn-light !border-blue-600 !text-blue-900 font-bold">🎥 Live Classroom</button>
               <button onClick={() => router.push("/admin/pricing")} className="admin-btn-light">Pricing</button>
               <button onClick={handleLogout} className="admin-btn-primary">
                 Logout
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="admin-section mb-6 border border-blue-500/30 bg-gradient-to-br from-[#012153] via-blue-900 to-indigo-950 text-white p-6 rounded-3xl shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-300 border border-emerald-500/30">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Live Classroom Host Portal
+              </div>
+              <h2 className="mt-3 text-2xl font-black text-white">
+                Teacher &amp; Administrator Live Classroom
+              </h2>
+              <p className="mt-1.5 text-sm text-blue-100/90 max-w-xl leading-relaxed">
+                Host interactive live classes with WebRTC audio/video, broadcast whiteboard and screen shares, conduct instant multiple-choice polls, and monitor student attendance in real time.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => router.push("/classroom/demo-class")}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-3 text-sm font-black text-slate-950 shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-300 active:scale-95"
+              >
+                <span>🎥</span> Enter Live Stage as Host
+              </button>
+              <button
+                onClick={() => router.push("/admin/classroom")}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/20 active:scale-95"
+              >
+                Classroom Governance &amp; Rules
               </button>
             </div>
           </div>

@@ -101,7 +101,7 @@ const spaces = [
     eyebrow: "LIVE INTERACTIVE CLASSES",
     title: "Live Classroom & Timetable",
     description: "Join scheduled tutor sessions, participate with audio/chat, and watch lecture recordings.",
-    href: "/calendar",
+    href: "/learn?tab=timetable",
     action: "Open Calendar & Classes",
   },
   {
@@ -399,6 +399,38 @@ export default function LearnerDashboardPage() {
               >
                 ↗
               </span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Live Classroom Quick Launch Bar */}
+        <div className="rounded-3xl border border-blue-600/30 bg-gradient-to-r from-[#012153] via-blue-900 to-indigo-950 p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-300 text-lg">
+              🎥
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-300">Live Stage &amp; Timetable</span>
+              </div>
+              <p className="mt-0.5 text-sm font-bold text-white">
+                Live interactive classes, tutor sessions &amp; timetable schedule
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/classroom/demo-class"
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-400 hover:bg-emerald-300 px-4 py-2 text-xs font-black text-slate-950 transition active:scale-95 shadow-sm"
+            >
+              Enter Live Room ↗
+            </Link>
+            <Link
+              href="/learn?tab=timetable"
+              className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-2 text-xs font-bold text-white transition active:scale-95"
+            >
+              Timetable
             </Link>
           </div>
         </div>

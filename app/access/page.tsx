@@ -16,6 +16,16 @@ export default function AccessPage() {
   const [mockEnabled, setMockEnabled] = useState(true);
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
   const [errorText, setErrorText] = useState("");
+  const [failedCount, setFailedCount] = useState(0);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+  useEffect(() => {
+    if (lockoutRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutRemaining((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutRemaining]);
 
   useEffect(() => {
     async function loadSettings() {
@@ -42,6 +52,11 @@ export default function AccessPage() {
   }, [router]);
 
   const handleValidateCode = async () => {
+    if (lockoutRemaining > 0) {
+      setErrorText(`Too many failed attempts. Please wait ${lockoutRemaining} seconds.`);
+      return;
+    }
+
     if (!mockEnabled) {
       setErrorText("The exam is currently unavailable.");
       return;
@@ -66,17 +81,33 @@ export default function AccessPage() {
     const result = await checkAccessCode(normalizedCode, trimmedPhone);
 
     if (isError(result)) {
-      setErrorText(result.message || "Invalid access code.");
+      const nextFail = failedCount + 1;
+      setFailedCount(nextFail);
+      if (nextFail >= 3) {
+        setLockoutRemaining(30);
+        setErrorText("Too many invalid attempts. Please wait 30 seconds before trying again.");
+      } else {
+        setErrorText(result.message || "Invalid access code.");
+      }
       setLoading(false);
       return;
     }
 
     if (result.type === "none") {
-      setErrorText("Invalid access code or phone number. Please check your details and try again.");
+      const nextFail = failedCount + 1;
+      setFailedCount(nextFail);
+      if (nextFail >= 3) {
+        setLockoutRemaining(30);
+        setErrorText("Too many invalid attempts. Please wait 30 seconds before trying again.");
+      } else {
+        setErrorText("Invalid access code or phone number. Please check your details and try again.");
+      }
       setLoading(false);
       return;
     }
 
+    setFailedCount(0);
+    setLockoutRemaining(0);
     localStorage.setItem("access_code", normalizedCode);
 
     const savedCandidate = localStorage.getItem("candidate");
@@ -203,10 +234,14 @@ export default function AccessPage() {
 
           <button
             onClick={handleValidateCode}
-            disabled={loading}
+            disabled={loading || lockoutRemaining > 0}
             className="mt-2 w-full rounded-xl bg-[#012153] hover:bg-[#071c43] px-4 py-3.5 font-bold text-white shadow-md shadow-blue-950/20 transition hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:transform-none text-sm"
           >
-            {loading ? "Verifying Code..." : "Validate and Continue →"}
+            {lockoutRemaining > 0
+              ? `Cooldown active (${lockoutRemaining}s)`
+              : loading
+              ? "Verifying Code..."
+              : "Validate and Continue →"}
           </button>
         </div>
 

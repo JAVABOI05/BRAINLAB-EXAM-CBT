@@ -109,6 +109,7 @@ export default function AdminLiveClassroomControlPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link href="/classroom/demo-class" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">🎥 Enter Live Room</Link>
           <Link
             href="/admin/dashboard"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"

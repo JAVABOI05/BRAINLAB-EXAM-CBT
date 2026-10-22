@@ -18,7 +18,8 @@ export default function BrandFooter() {
           <ul className="mt-4 space-y-3 text-sm text-slate-300">
             <li><Link className="hover:text-white" href="/login">CBT Practice</Link></li>
             <li><Link className="hover:text-white" href="/learn">Learning Hub</Link></li>
-            <li><Link className="hover:text-white" href="/calendar">Live Classes &amp; Timetable</Link></li>
+            <li><Link className="hover:text-white" href="/learn?tab=timetable">Timetable &amp; Schedule</Link></li>
+            <li><Link className="hover:text-white" href="/classroom/demo-class">Live Classroom Stage</Link></li>
             <li><Link className="hover:text-white" href="/recordings">Class Recordings</Link></li>
             <li><Link className="hover:text-white" href="/messages">Messages &amp; Discussions</Link></li>
             <li><Link className="hover:text-white" href="/self-practice">Self Practice</Link></li>

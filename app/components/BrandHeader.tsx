@@ -12,8 +12,6 @@ import { useLearnerTheme } from "./LearnerThemeProvider";
 const links = [
   { href: "/login", label: "CBT Practice" },
   { href: "/learn", label: "Learning Hub" },
-  { href: "/calendar", label: "Timetable" },
-  { href: "/self-practice", label: "Self Practice" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/support", label: "Help" },
 ];
@@ -248,20 +246,9 @@ export default function BrandHeader() {
               <Link
                 href="/account"
                 onClick={closeMenu}
-                className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-bold transition-all duration-150 active:scale-95 ${
-                  isDark
-                    ? "text-slate-200 hover:bg-slate-800"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0b2a5b] hover:bg-blue-900 px-5 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
               >
-                Sign in
-              </Link>
-              <Link
-                href="/account?mode=signup"
-                onClick={closeMenu}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0b2a5b] px-4 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:bg-blue-900 hover:shadow-md active:scale-95"
-              >
-                Create account <span aria-hidden="true" className="ml-1">↗</span>
+                Sign In / Register
               </Link>
             </div>
           )}

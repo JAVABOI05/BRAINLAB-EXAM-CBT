@@ -81,10 +81,6 @@ export default function Page() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#dfe8f7_0%,#eaf2ff_45%,#f8fbff_80%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_30%),linear-gradient(180deg,#060e1a_0%,#030712_100%)] px-4 py-8 sm:px-6 sm:py-12 transition-colors duration-200">
-      <div role="status" className="mx-auto mb-6 max-w-6xl rounded-2xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm leading-6 text-amber-950 dark:text-amber-200 shadow-sm">
-        <strong>Platform upgrade notice:</strong> BrainLab is undergoing a website and assessment-system overhaul. Some features may be temporarily unavailable, and a timed attempt could be interrupted. Please avoid starting a high-stakes exam during the maintenance window.
-      </div>
-
       <div className="mx-auto mb-8 max-w-6xl rounded-[32px] border border-white/70 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 p-6 shadow-2xl shadow-blue-100/40 dark:shadow-none backdrop-blur-md md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>

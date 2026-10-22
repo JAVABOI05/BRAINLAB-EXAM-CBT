@@ -593,6 +593,61 @@ html[data-theme="dark"] .text-rose-900 {
   color: #fca5a5 !important;
 }
 
+/* ==========================================================================
+   PUBLIC BRAND SURFACES (GUARANTEED DAYLIGHT CONTRAST & AUTHENTIC PALETTE)
+   The public marketing landing page and authentication portals maintain
+   BrainLab's signature clean light theme with deep navy, royal blue, and
+   crisp high-contrast typography, regardless of OS dark mode.
+   ========================================================================== */
+
+.public-surface {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="dark"] .public-surface,
+html[data-theme="dark"] .public-surface .bg-white {
+  background-color: #ffffff !important;
+}
+
+html[data-theme="dark"] .public-surface .bg-slate-50 {
+  background-color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .public-surface .bg-slate-100 {
+  background-color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .public-surface .border-slate-200,
+html[data-theme="dark"] .public-surface .border-slate-300 {
+  border-color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .public-surface .text-slate-950,
+html[data-theme="dark"] .public-surface .text-slate-900,
+html[data-theme="dark"] .public-surface .text-slate-800 {
+  color: #0f172a !important;
+}
+
+html[data-theme="dark"] .public-surface .text-slate-700 {
+  color: #334155 !important;
+}
+
+html[data-theme="dark"] .public-surface .text-slate-600,
+html[data-theme="dark"] .public-surface .text-slate-500 {
+  color: #475569 !important;
+}
+
+html[data-theme="dark"] .public-surface input:not([type="radio"]):not([type="checkbox"]) {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .public-surface input::placeholder {
+  color: #94a3b8 !important;
+}
+
 /* Dark Mode Toolbar */
 html[data-theme="dark"] .global-learner-toolbar {
   border-color: #1e2e47;
