@@ -5,6 +5,7 @@ import { adminHasPermission } from "../../../lib/adminRoles";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import Papa from "papaparse";
 import "../../admin.css";
 
@@ -299,6 +300,7 @@ export default function AdminQuestionManagerPage() {
                 Results
               </button>
 
+              <AdminNotificationBell />
               <button onClick={handleLogout} className="admin-btn-primary">
                 Logout
               </button>

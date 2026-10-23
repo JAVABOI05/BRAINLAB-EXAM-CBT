@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getAdminSession } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
 import { useRouter } from "next/navigation";
+import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import Papa from "papaparse";
 import { supabase } from "../../lib/supabase";
 import "../admin.css";
@@ -316,6 +317,19 @@ export default function AdminQuestionsPage() {
             </div>
 
             <div className="admin-actions">
+              <button
+                onClick={() => router.push("/admin/questions/manage")}
+                className="admin-btn-light"
+              >
+                Question Bank
+              </button>
+              <button
+                onClick={() => router.push("/admin/schools")}
+                className="admin-btn-light"
+              >
+                Schools
+              </button>
+              <AdminNotificationBell />
               <button
                 onClick={() => router.push("/admin/dashboard")}
                 className="admin-btn-light"

@@ -11,6 +11,8 @@ import type {
   ClassroomMessage,
   LiveRoomTokenResponse,
 } from "../../lib/liveClassroom/types";
+import { SmartWhiteboard, SmartWhiteboardHandle } from "./SmartWhiteboard";
+import ClassroomSidebar from "./ClassroomSidebar";
 
 interface ClassroomPollOption {
   id: string;
@@ -121,12 +123,14 @@ export default function LiveClassroomPage({
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // Interactive Live Whiteboard State
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const smartWhiteboardRef = useRef<SmartWhiteboardHandle | null>(null);
   const [stageMode, setStageMode] = useState<"audio" | "whiteboard">("audio");
-  const [penColor, setPenColor] = useState("#06b6d4");
-  const [penWidth, setPenWidth] = useState(3);
-  const [isEraser, setIsEraser] = useState(false);
-  const isDrawingRef = useRef(false);
+  const [canStudentsDraw, setCanStudentsDraw] = useState(false);
+
+  // Mobile Adaptability & Responsive Hub Drawer State
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [isQuizCardMinimized, setIsQuizCardMinimized] = useState(false);
 
   // Big Screen & Pinned Lecture State
   const [pinnedMessage, setPinnedMessage] = useState<ClassroomMessage | null>(null);
@@ -273,6 +277,17 @@ export default function LiveClassroomPage({
             if (payload.message.isHost || payload.message.isPinned) {
               setPinnedMessage(payload.message);
             }
+            // Increment unread count if received from peer
+            if (payload.message.senderId !== user.id) {
+              setUnreadMessagesCount((prev) => prev + 1);
+            }
+          }
+        });
+
+        // Listen for whiteboard permission changes
+        channel.on("broadcast", { event: "whiteboard_toggle_student_draw" }, ({ payload }) => {
+          if (typeof payload?.allowed === "boolean") {
+            setCanStudentsDraw(payload.allowed);
           }
         });
 
@@ -285,6 +300,16 @@ export default function LiveClassroomPage({
 
         // WebRTC Real-Time Video & Screen Stream Signaling
         channel
+          .on("broadcast", { event: "webrtc_check_active_stream" }, ({ payload }) => {
+            const activeStream = screenStreamRef.current || localStreamRef.current;
+            if (activeStream && (user.id === json.data.classDetails.tutorId || json.data.permissions.canPublishVideo)) {
+              channel.send({
+                type: "broadcast",
+                event: "webrtc_stream_live",
+                payload: { hostId: user.id, targetStudentId: payload?.studentId },
+              });
+            }
+          })
           .on("broadcast", { event: "webrtc_stream_live" }, async ({ payload }) => {
             if (payload?.hostId && payload.hostId !== user.id) {
               setTutorStreaming(true);
@@ -297,7 +322,7 @@ export default function LiveClassroomPage({
           })
           .on("broadcast", { event: "webrtc_request_offer" }, async ({ payload }) => {
             const activeStream = screenStreamRef.current || localStreamRef.current;
-            if (payload?.studentId && activeStream && json.data.classDetails.tutorId === user.id) {
+            if (payload?.studentId && activeStream && (payload.hostId === user.id || json.data.classDetails.tutorId === user.id)) {
               try {
                 const pc = new RTCPeerConnection({
                   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -523,6 +548,12 @@ export default function LiveClassroomPage({
                 isHandRaised: false,
                 joinedAt: new Date().toISOString(),
                 networkQuality: "good",
+              });
+              // Check if tutor is already broadcasting video / screen
+              channel.send({
+                type: "broadcast",
+                event: "webrtc_check_active_stream",
+                payload: { studentId: user.id },
               });
             }
           });
@@ -961,65 +992,10 @@ export default function LiveClassroomPage({
     }
   };
 
-  // 5c. Whiteboard Canvas Handlers
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
-
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    isDrawingRef.current = true;
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawingRef.current) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
-
-    ctx.strokeStyle = isEraser ? (resolvedTheme === "dark" ? "#0f172a" : "#ffffff") : penColor;
-    ctx.lineWidth = isEraser ? penWidth * 5 : penWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  };
-
-  const stopDrawing = () => {
-    isDrawingRef.current = false;
-  };
-
-  const clearWhiteboard = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  };
-
-  const shareWhiteboardToChat = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !currentUser) return;
-    const dataUrl = canvas.toDataURL("image/png");
+  // 5c. Whiteboard Snapshot Sharing
+  const shareWhiteboardToChat = (customDataUrl?: string) => {
+    const dataUrl = customDataUrl || smartWhiteboardRef.current?.getCanvasDataUrl();
+    if (!dataUrl || !currentUser) return;
     const newMsg: ClassroomMessage = {
       id: `msg_wb_${Date.now()}`,
       senderId: currentUser.id,
@@ -1031,6 +1007,7 @@ export default function LiveClassroomPage({
       mediaUrl: dataUrl,
     };
     setMessages((prev) => [...prev, newMsg]);
+    setPinnedMessage(newMsg);
     setActiveTab("chat");
     try {
       channelRef.current?.send({
@@ -1289,25 +1266,25 @@ export default function LiveClassroomPage({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden select-none transition-colors duration-150">
+    <div className="flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex-col bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden select-none transition-colors duration-150">
       {/* Top Header Bar */}
-      <header className="h-14 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 flex items-center justify-between gap-4 transition-colors">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link href="/dashboard" className="text-sm font-black text-blue-400 hover:text-blue-300">
-            BrainLab Live
+      <header className="h-13 sm:h-14 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-4 transition-colors">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          <Link href="/dashboard" className="text-xs sm:text-sm font-black text-blue-500 hover:text-blue-400 shrink-0">
+            BrainLab
           </Link>
-          <span className="text-slate-600">/</span>
-          <h1 className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-xs sm:max-w-md">
+          <span className="text-slate-600 hidden xs:inline">/</span>
+          <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[120px] xs:max-w-[200px] sm:max-w-md">
             {classDetails?.title || "Live Class"}
           </h1>
-          <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-400 border border-emerald-500/20">
+          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase text-emerald-400 border border-emerald-500/20 shrink-0">
             Live
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <div
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold ${
               networkQuality === "excellent"
                 ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
                 : networkQuality === "good"
@@ -1317,30 +1294,52 @@ export default function LiveClassroomPage({
             title="Optimized for Nigerian 3G/4G bandwidth"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            <span className="hidden sm:inline">Network:</span> {networkQuality}
+            <span className="hidden sm:inline">Network:</span> <span className="capitalize">{networkQuality}</span>
           </div>
 
           <button
             onClick={handleReconnect}
             disabled={isReconnecting}
-            className="hidden sm:inline-flex rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700"
+            className="hidden md:inline-flex rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700"
           >
-            {isReconnecting ? "Reconnecting…" : "Refresh Stream"}
+            {isReconnecting ? "Reconnecting…" : "Refresh"}
           </button>
 
           <button
             type="button"
             onClick={() => setAppearance(resolvedTheme === "dark" ? "light" : "dark")}
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-1.5 shadow-2xs"
+            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-1 shadow-2xs"
             title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
           >
             <span>{resolvedTheme === "dark" ? "☀️" : "🌙"}</span>
-            <span className="hidden sm:inline">{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
+            <span className="hidden md:inline">{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
+          </button>
+
+          {/* Mobile Hub Drawer Toggle Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileDrawerOpen(true);
+              setUnreadMessagesCount(0);
+            }}
+            className="lg:hidden relative flex items-center gap-1 rounded-lg border border-blue-500/40 bg-blue-600/20 px-2 sm:px-2.5 py-1 text-xs font-bold text-blue-300 hover:bg-blue-600/30 transition active-press"
+            title="Open Chat & Tabs"
+          >
+            <span>💬</span>
+            <span className="hidden xs:inline">Hub</span>
+            {unreadMessagesCount > 0 && (
+              <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">
+                {unreadMessagesCount}
+              </span>
+            )}
+            {activePoll?.is_open && (
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+            )}
           </button>
 
           <Link
             href="/dashboard"
-            className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-500"
+            className="rounded-lg bg-rose-600 px-2.5 sm:px-3 py-1 text-xs font-bold text-white hover:bg-rose-500 active-press"
           >
             Leave
           </Link>
@@ -1359,7 +1358,7 @@ export default function LiveClassroomPage({
         </div>
 
         {/* Video / Stage Area */}
-        <main className="flex-1 flex flex-col items-center justify-center p-4 bg-slate-200/70 dark:bg-slate-950 relative transition-colors">
+        <main className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-slate-200/70 dark:bg-slate-950 relative transition-colors overflow-hidden">
           <div className="w-full h-full max-w-5xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
             {/* Top Right Stage Mode Switcher */}
             <div className="absolute top-4 right-4 z-20 flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-slate-700/80 backdrop-blur shadow-md">
@@ -1390,101 +1389,22 @@ export default function LiveClassroomPage({
 
             {stageMode === "whiteboard" ? (
               <div className="w-full h-full flex flex-col bg-slate-950 relative select-none">
-                {/* Whiteboard Floating Toolbar */}
-                <div className="z-20 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/90 px-4 py-2.5 backdrop-blur">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black uppercase text-cyan-300 flex items-center gap-1">
-                      <span>🎨</span> Canvas
-                    </span>
-                    <div className="h-4 w-px bg-slate-700 mx-1" />
-
-                    {/* Color palette */}
-                    <div className="flex items-center gap-1.5">
-                      {["#06b6d4", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ffffff", "#a855f7"].map(
-                        (col) => (
-                          <button
-                            key={col}
-                            type="button"
-                            onClick={() => {
-                              setPenColor(col);
-                              setIsEraser(false);
-                            }}
-                            className={`h-5 w-5 rounded-full border-2 transition ${
-                              penColor === col && !isEraser
-                                ? "scale-125 border-white shadow"
-                                : "border-transparent opacity-80 hover:opacity-100"
-                            }`}
-                            style={{ backgroundColor: col }}
-                            title={`Pen color ${col}`}
-                          />
-                        )
-                      )}
-                    </div>
-
-                    <div className="h-4 w-px bg-slate-700 mx-1" />
-
-                    {/* Stroke Widths */}
-                    <div className="flex items-center gap-1">
-                      {[2, 4, 8].map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => setPenWidth(size)}
-                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                            penWidth === size ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:text-white"
-                          }`}
-                        >
-                          {size === 2 ? "Fine" : size === 4 ? "Medium" : "Bold"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsEraser(!isEraser)}
-                      className={`rounded-lg px-2.5 py-1 text-xs font-bold border transition ${
-                        isEraser
-                          ? "bg-rose-500/20 border-rose-500 text-rose-300"
-                          : "border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
-                      }`}
-                    >
-                      <span>🧹 Eraser</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={clearWhiteboard}
-                      className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      type="button"
-                      onClick={shareWhiteboardToChat}
-                      className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-1 text-xs font-black text-white hover:opacity-90 shadow flex items-center gap-1"
-                    >
-                      <span>📸 Snapshot to Chat</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Canvas Sheet */}
-                <div className="flex-1 w-full h-full relative overflow-hidden bg-slate-950 cursor-crosshair">
-                  <canvas
-                    ref={canvasRef}
-                    width={1000}
-                    height={600}
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                    className="w-full h-full touch-none"
-                  />
-                </div>
+                <SmartWhiteboard
+                  ref={smartWhiteboardRef}
+                  classId={classId}
+                  isHost={isTutorOrModerator}
+                  canDraw={isTutorOrModerator || canStudentsDraw}
+                  channel={channelRef.current}
+                  currentUserName={
+                    currentUser?.user_metadata?.full_name ||
+                    currentUser?.email?.split("@")[0] ||
+                    "Learner"
+                  }
+                  currentUserId={currentUser?.id}
+                  onShareToChat={(dataUrl) => {
+                    shareWhiteboardToChat(dataUrl);
+                  }}
+                />
               </div>
             ) : isVideoEnabled || isScreenSharing ? (
               <video
@@ -1850,112 +1770,144 @@ export default function LiveClassroomPage({
 
             {/* IN-STAGE FLOATING LIVE QUIZ / POLL HUD */}
             {activePoll && (
-              <div className="absolute bottom-4 right-4 z-20 w-80 sm:w-96 rounded-2xl border border-cyan-500/40 bg-slate-950/95 p-4 shadow-2xl backdrop-blur animate-fade-in-up">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-                    <span className="text-xs font-black uppercase tracking-wider text-cyan-300">
-                      {activePoll.is_open ? "Live Quiz Checkpoint" : "Quiz Checkpoint Result"}
+              <div
+                className={`absolute z-20 transition-all duration-200 ${
+                  isQuizCardMinimized
+                    ? "bottom-16 sm:bottom-4 right-2 sm:right-4"
+                    : "bottom-16 sm:bottom-4 left-2 right-2 sm:left-auto sm:right-4 sm:w-96 max-h-[70vh] overflow-y-auto"
+                } rounded-2xl border border-cyan-500/50 bg-slate-950/95 p-3.5 sm:p-4 shadow-2xl backdrop-blur-md animate-fade-in-up`}
+              >
+                {isQuizCardMinimized ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsQuizCardMinimized(false)}
+                    className="flex items-center gap-2 text-xs font-black text-cyan-300 hover:text-cyan-200 active-press"
+                  >
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+                    <span>🎯 Checkpoint Quiz Active {pollCountdown !== null && `(${pollCountdown}s)`}</span>
+                    <span className="text-[10px] rounded-md bg-cyan-950 border border-cyan-800 px-1.5 py-0.5">
+                      Expand ↗
                     </span>
-                  </div>
-                  {activePoll.is_open && pollCountdown !== null && (
-                    <span className="rounded-full bg-cyan-950 px-2.5 py-0.5 text-xs font-mono font-bold text-cyan-300 border border-cyan-800">
-                      ⏱️ {pollCountdown}s
-                    </span>
-                  )}
-                </div>
-
-                <p className="mt-2 text-xs font-bold text-white leading-snug">{activePoll.question}</p>
-
-                {/* Voting options / Results preview */}
-                <div className="mt-3 space-y-2">
-                  {activePoll.options.map((opt, idx) => {
-                    const isVoted = activePoll.user_voted_option_id === opt.id;
-                    const canVote = activePoll.is_open && !activePoll.user_voted_option_id;
-
-                    return (
-                      <div key={opt.id} className="text-xs">
-                        {canVote ? (
-                          <button
-                            type="button"
-                            onClick={() => void handleVote(activePoll.id, opt.id)}
-                            className="w-full text-left rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-slate-200 hover:border-cyan-400 hover:bg-slate-800 transition active-press flex items-center justify-between"
-                          >
-                            <span>
-                              <strong className="text-cyan-400 font-mono mr-2">
-                                {String.fromCharCode(65 + idx)}:
-                              </strong>
-                              {opt.text}
-                            </span>
-                            <span className="text-[10px] text-slate-500">Tap to vote</span>
-                          </button>
-                        ) : (
-                          <div
-                            className={`rounded-xl border p-2.5 ${
-                              isVoted
-                                ? "border-cyan-500 bg-cyan-950/40 text-cyan-100"
-                                : "border-slate-800 bg-slate-900/60 text-slate-300"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">
-                                <strong className="font-mono mr-1.5 text-slate-400">
-                                  {String.fromCharCode(65 + idx)}:
-                                </strong>
-                                {opt.text}
-                                {isVoted && (
-                                  <span className="ml-2 text-[10px] font-bold text-cyan-400">
-                                    (Your Vote)
-                                  </span>
-                                )}
-                                {!activePoll.is_open && opt.is_correct && (
-                                  <span className="ml-2 text-[10px] font-bold text-emerald-400">
-                                    ✓ Correct
-                                  </span>
-                                )}
-                              </span>
-                              <span className="font-mono font-bold text-slate-400">
-                                {opt.percentage}% ({opt.votes})
-                              </span>
-                            </div>
-                            {/* Live Bar */}
-                            <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                              <div
-                                className={`h-full transition-all duration-500 rounded-full ${
-                                  !activePoll.is_open && opt.is_correct
-                                    ? "bg-emerald-500"
-                                    : isVoted
-                                    ? "bg-cyan-400"
-                                    : "bg-blue-600"
-                                }`}
-                                style={{ width: `${opt.percentage}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
+                  </button>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+                        <span className="text-xs font-black uppercase tracking-wider text-cyan-300">
+                          {activePoll.is_open ? "Live Quiz Checkpoint" : "Quiz Checkpoint Result"}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex items-center gap-2">
+                        {activePoll.is_open && pollCountdown !== null && (
+                          <span className="rounded-full bg-cyan-950 px-2.5 py-0.5 text-xs font-mono font-bold text-cyan-300 border border-cyan-800">
+                            ⏱️ {pollCountdown}s
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setIsQuizCardMinimized(true)}
+                          className="rounded-lg text-slate-400 hover:text-white p-1 text-xs"
+                          title="Minimize Quiz"
+                        >
+                          —
+                        </button>
+                      </div>
+                    </div>
 
-                {/* Explanation on Reveal */}
-                {!activePoll.is_open && activePoll.explanation && (
-                  <div className="mt-3 rounded-xl bg-blue-950/60 border border-blue-800/60 p-2.5 text-[11px] text-blue-200">
-                    💡 <strong className="text-white">Explanation:</strong> {activePoll.explanation}
-                  </div>
-                )}
+                    <p className="mt-2 text-xs font-bold text-white leading-snug">{activePoll.question}</p>
 
-                {/* Tutor Controls */}
-                {isTutorOrModerator && activePoll.is_open && (
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => void handleClosePoll(activePoll.id)}
-                      className="rounded-lg bg-rose-600/30 border border-rose-500/50 px-3 py-1 text-[11px] font-bold text-rose-300 hover:bg-rose-600 hover:text-white"
-                    >
-                      End Poll & Reveal Answer
-                    </button>
-                  </div>
+                    {/* Voting options / Results preview */}
+                    <div className="mt-3 space-y-2">
+                      {activePoll.options.map((opt, idx) => {
+                        const isVoted = activePoll.user_voted_option_id === opt.id;
+                        const canVote = activePoll.is_open && !activePoll.user_voted_option_id;
+
+                        return (
+                          <div key={opt.id} className="text-xs">
+                            {canVote ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleVote(activePoll.id, opt.id)}
+                                className="w-full text-left rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-slate-200 hover:border-cyan-400 hover:bg-slate-800 transition active-press flex items-center justify-between"
+                              >
+                                <span>
+                                  <strong className="text-cyan-400 font-mono mr-2">
+                                    {String.fromCharCode(65 + idx)}:
+                                  </strong>
+                                  {opt.text}
+                                </span>
+                                <span className="text-[10px] text-slate-500">Tap to vote</span>
+                              </button>
+                            ) : (
+                              <div
+                                className={`rounded-xl border p-2.5 ${
+                                  isVoted
+                                    ? "border-cyan-500 bg-cyan-950/40 text-cyan-100"
+                                    : "border-slate-800 bg-slate-900/60 text-slate-300"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">
+                                    <strong className="font-mono mr-1.5 text-slate-400">
+                                      {String.fromCharCode(65 + idx)}:
+                                    </strong>
+                                    {opt.text}
+                                    {isVoted && (
+                                      <span className="ml-2 text-[10px] font-bold text-cyan-400">
+                                        (Your Vote)
+                                      </span>
+                                    )}
+                                    {!activePoll.is_open && opt.is_correct && (
+                                      <span className="ml-2 text-[10px] font-bold text-emerald-400">
+                                        ✓ Correct
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="font-mono font-bold text-slate-400">
+                                    {opt.percentage}% ({opt.votes})
+                                  </span>
+                                </div>
+                                {/* Live Bar */}
+                                <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                                  <div
+                                    className={`h-full transition-all duration-500 rounded-full ${
+                                      !activePoll.is_open && opt.is_correct
+                                        ? "bg-emerald-500"
+                                        : isVoted
+                                        ? "bg-cyan-400"
+                                        : "bg-blue-600"
+                                    }`}
+                                    style={{ width: `${opt.percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Explanation on Reveal */}
+                    {!activePoll.is_open && activePoll.explanation && (
+                      <div className="mt-3 rounded-xl bg-blue-950/60 border border-blue-800/60 p-2.5 text-[11px] text-blue-200">
+                        💡 <strong className="text-white">Explanation:</strong> {activePoll.explanation}
+                      </div>
+                    )}
+
+                    {/* Tutor Controls */}
+                    {isTutorOrModerator && activePoll.is_open && (
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => void handleClosePoll(activePoll.id)}
+                          className="rounded-lg bg-rose-600/30 border border-rose-500/50 px-3 py-1 text-[11px] font-bold text-rose-300 hover:bg-rose-600 hover:text-white"
+                        >
+                          End Poll & Reveal Answer
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -2026,10 +1978,29 @@ export default function LiveClassroomPage({
                 {messages.map((m) => (
                   <div key={m.id} className="text-xs">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className={`font-bold ${m.isHost ? "text-amber-400" : "text-blue-400"}`}>
-                        {m.senderName} {m.isHost && "(Tutor)"}
-                      </span>
-                      <span className="text-[10px] text-slate-500">{m.timestamp}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`font-bold ${m.isHost ? "text-amber-400" : "text-blue-400"}`}>
+                          {m.senderName} {m.isHost && "(Tutor)"}
+                        </span>
+                        {(m.isPinned || pinnedMessage?.id === m.id) && (
+                          <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-black text-amber-300 border border-amber-400/40">
+                            📌 ON BIG SCREEN
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-slate-500">{m.timestamp}</span>
+                        {isTutorOrModerator && (
+                          <button
+                            type="button"
+                            onClick={() => handlePinToBigScreen(m)}
+                            className="text-[10px] text-slate-400 hover:text-amber-300 transition flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60"
+                            title="Pin this message to the Big Screen lecture board"
+                          >
+                            📌 Pin
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Image Message */}

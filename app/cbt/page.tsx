@@ -177,11 +177,19 @@ export default function CBTExamPortalPage() {
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300 md:text-base">
               {currentUser
                 ? `You are signed in as ${currentUser.user_metadata?.full_name || currentUser.email}. Your assessment results will be saved directly to your account.`
-                : "Launch your computer-based test session. Sign in to automatically link your scores, streaks, and skills passport."}
+                : "Launch your computer-based test session. Sign in or register to automatically link your scores, study streaks, and progress report."}
             </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
+            {!currentUser && (
+              <Link
+                href="/account"
+                className="inline-flex items-center justify-center rounded-xl border border-blue-600 bg-blue-50 dark:bg-blue-950/40 px-4 py-2.5 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-sm transition hover:bg-blue-100 dark:hover:bg-blue-900/60"
+              >
+                Sign In / Register
+              </Link>
+            )}
             <Link
               href="/dashboard"
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:-translate-y-0.5 active:scale-95"
@@ -192,7 +200,7 @@ export default function CBTExamPortalPage() {
               href="/skills-passport"
               className="inline-flex items-center justify-center rounded-xl bg-cyan-400 dark:bg-cyan-500 px-4 py-2.5 text-xs font-extrabold text-[#061a3a] shadow-sm transition hover:bg-cyan-300 hover:-translate-y-0.5 active:scale-95"
             >
-              Skills Passport →
+              Study Report &amp; Badges →
             </Link>
           </div>
         </div>
