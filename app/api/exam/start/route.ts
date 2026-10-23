@@ -54,51 +54,70 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Determine examination subjects (4 subjects)
+    // 2. Determine examination subjects (4 subjects: English is always compulsory Subject 1)
     let selectedSubjects: string[] = [];
 
     if (preconfiguredSubject) {
-      // Configured by tutor or competition
-      selectedSubjects = [preconfiguredSubject];
+      selectedSubjects = ["English", preconfiguredSubject];
     } else if (Array.isArray(subjects) && subjects.length > 0) {
-      // Candidate chose their 4 subjects!
-      selectedSubjects = subjects.map((s) => String(s).trim()).filter(Boolean);
+      // Candidate chose their subjects
+      const nonEnglish = subjects
+        .map((s) => String(s).trim())
+        .filter((s) => Boolean(s) && !s.toLowerCase().includes("english"));
+      selectedSubjects = ["English", ...nonEnglish.slice(0, 3)];
     } else if (elective) {
-      // Legacy fallback
       selectedSubjects = ["English", "Mathematics", "Physics", elective];
     } else {
       selectedSubjects = ["English", "Mathematics", "Physics", "Chemistry"];
     }
 
-    // 3. For each selected subject, gather question IDs from public.questions
+    // Ensure English is always the first subject and exactly 4 subjects are present
+    if (selectedSubjects[0]?.toLowerCase() !== "english") {
+      const remaining = selectedSubjects.filter((s) => !s.toLowerCase().includes("english"));
+      selectedSubjects = ["English", ...remaining.slice(0, 3)];
+    }
+
+    // Fallbacks if fewer than 4 subjects were provided
+    const defaultFillers = ["Mathematics", "Physics", "Chemistry", "Biology"];
+    while (selectedSubjects.length < 4) {
+      const nextFiller = defaultFillers.find((f) => !selectedSubjects.includes(f)) || "Mathematics";
+      selectedSubjects.push(nextFiller);
+    }
+
+    // 3. For each selected subject, gather randomized question IDs from public.questions
     const paperIds: number[] = [];
 
     for (const subj of selectedSubjects) {
-      // English traditionally takes 60 questions in UTME, others take 40
-      const targetCount = subj.toLowerCase().includes("english") ? 60 : 40;
+      // English takes 60 questions in JAMB UTME, each elective takes 40 questions
+      const isEnglish = subj.toLowerCase().includes("english");
+      const targetCount = isEnglish ? 60 : 40;
 
       const { data: qRows } = await supabase
         .from("questions")
         .select("id")
         .eq("is_active", true)
-        .ilike("subject", subj)
-        .limit(targetCount);
+        .ilike("subject", isEnglish ? "English" : subj)
+        .limit(250);
 
       if (qRows && qRows.length > 0) {
-        for (const q of qRows) {
+        // Randomly shuffle so candidates do not get identical question sequences
+        const shuffled = [...qRows].sort(() => 0.5 - Math.random()).slice(0, targetCount);
+        for (const q of shuffled) {
           paperIds.push(q.id);
         }
       }
     }
 
-    // If candidate selected subjects that have fewer questions in DB,
-    // fill up remaining from any available active questions to ensure a robust test paper
-    if (paperIds.length === 0) {
+    // If candidate selected subjects with sparse questions in DB,
+    // fill up remaining questions from active DB questions to maintain full 180 questions
+    if (paperIds.length < 180) {
+      const needed = 180 - paperIds.length;
       const { data: fallbackQuestions } = await supabase
         .from("questions")
         .select("id")
         .eq("is_active", true)
-        .limit(100);
+        .not("id", "in", `(${paperIds.length > 0 ? paperIds.join(",") : "0"})`)
+        .limit(needed);
 
       if (fallbackQuestions) {
         for (const q of fallbackQuestions) {

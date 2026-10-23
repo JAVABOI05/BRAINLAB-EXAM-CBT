@@ -139,53 +139,72 @@ export default function ExamPage() {
       setCalculatorEnabled(settings.calculator_enabled); setMockEnabled(settings.mock_enabled);
       if (!settings.mock_enabled) { router.push("/access"); return; }
       if (settings.access_code_required && !localStorage.getItem("access_code")) { router.push("/access"); return; }
+
+      // Check if candidate arrived from /instructions with start=true
+      const isStartParam = typeof window !== "undefined" && window.location.search.includes("start=true");
+
       const savedSessionId = localStorage.getItem("exam_session_id");
       const savedToken = localStorage.getItem("exam_token");
-      if (!savedSessionId || !savedToken) return;
-      const resumed = await resumeExam(savedSessionId, savedToken);
-      if (isError(resumed)) {
-        if (resumed.error === "network" || resumed.error === "rpc_error") setError(resumed.message);
-        else clearAttemptStorage();
-        return;
+
+      if (savedSessionId && savedToken && !isStartParam) {
+        const resumed = await resumeExam(savedSessionId, savedToken);
+        if (isError(resumed)) {
+          clearAttemptStorage();
+        } else if (resumed.finished) {
+          clearAttemptStorage();
+          storeFinished(resumed);
+          router.push("/result");
+          return;
+        } else if (typeof (resumed as AttemptPayload).time_left_seconds === "number" && (resumed as AttemptPayload).time_left_seconds <= 0) {
+          // Stale session that has already timed out in the past: clear it so student starts fresh
+          clearAttemptStorage();
+        } else {
+          const attempt: AttemptPayload = resumed as AttemptPayload;
+          setQuestions(attempt.questions);
+          let mergedAnswers = attempt.answers || {};
+          try {
+            const localAns = localStorage.getItem("exam_answers");
+            if (localAns) {
+              const parsed = JSON.parse(localAns);
+              if (parsed && typeof parsed === "object") {
+                mergedAnswers = { ...mergedAnswers, ...parsed };
+              }
+            }
+          } catch {}
+          setAnswers(mergedAnswers);
+
+          let restoredIndex = 0;
+          try {
+            const savedIdx = Number(localStorage.getItem("exam_current_index"));
+            if (!isNaN(savedIdx) && savedIdx >= 0 && savedIdx < attempt.questions.length) {
+              restoredIndex = savedIdx;
+            }
+          } catch {}
+          setCurrentIndex(restoredIndex);
+
+          let restoredFlagged: FlaggedMap = {};
+          try {
+            const savedFlagged = localStorage.getItem("exam_flagged");
+            if (savedFlagged) restoredFlagged = JSON.parse(savedFlagged);
+          } catch {}
+          setFlagged(restoredFlagged);
+
+          setSessionId(attempt.session_id); setSessionToken(attempt.token);
+          setElectiveSubject(attempt.elective as ElectiveSubject);
+          setExamDuration(attempt.duration_seconds); setTimeLeft(attempt.time_left_seconds);
+          tabSwitchCountRef.current = attempt.tab_switch_count;
+          localStorage.setItem("exam_session_id", attempt.session_id); localStorage.setItem("exam_token", attempt.token);
+          setStarted(true);
+          setResumedNotice("Active exam session recovered. Your time and saved answers have been restored.");
+          return;
+        }
       }
-      if (resumed.finished) { storeFinished(resumed); router.push("/result"); return; }
-      const attempt: AttemptPayload = resumed;
-      setQuestions(attempt.questions);
-      let mergedAnswers = attempt.answers || {};
-      try {
-        const localAns = localStorage.getItem("exam_answers");
-        if (localAns) {
-          const parsed = JSON.parse(localAns);
-          if (parsed && typeof parsed === "object") {
-            mergedAnswers = { ...mergedAnswers, ...parsed };
-          }
-        }
-      } catch {}
-      setAnswers(mergedAnswers);
 
-      let restoredIndex = 0;
-      try {
-        const savedIdx = Number(localStorage.getItem("exam_current_index"));
-        if (!isNaN(savedIdx) && savedIdx >= 0 && savedIdx < attempt.questions.length) {
-          restoredIndex = savedIdx;
-        }
-      } catch {}
-      setCurrentIndex(restoredIndex);
-
-      let restoredFlagged: FlaggedMap = {};
-      try {
-        const savedFlagged = localStorage.getItem("exam_flagged");
-        if (savedFlagged) restoredFlagged = JSON.parse(savedFlagged);
-      } catch {}
-      setFlagged(restoredFlagged);
-
-      setSessionId(attempt.session_id); setSessionToken(attempt.token);
-      setElectiveSubject(attempt.elective as ElectiveSubject);
-      setExamDuration(attempt.duration_seconds); setTimeLeft(attempt.time_left_seconds);
-      tabSwitchCountRef.current = attempt.tab_switch_count;
-      localStorage.setItem("exam_session_id", attempt.session_id); localStorage.setItem("exam_token", attempt.token);
-      setStarted(true);
-      setResumedNotice("Active exam session recovered. Your time and saved answers have been restored.");
+      // If user came with start=true, begin the exam immediately with their configured 4 subjects!
+      if (isStartParam) {
+        clearAttemptStorage();
+        void handleStartExam(parsedCandidate);
+      }
     }
     void loadPageData();
   }, [router]);
@@ -283,8 +302,6 @@ export default function ExamPage() {
   useEffect(() => {
     if (!started) return;
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
     const handleVisibilityChange = async () => {
       if (document.hidden) {
         setAwayWarning(true);
@@ -298,19 +315,13 @@ export default function ExamPage() {
           const recorded = await recordTabSwitch(sessionId, sessionToken);
           if (!isError(recorded)) {
             tabSwitchCountRef.current = recorded.tab_switch_count;
-            setTimeLeft(recorded.time_left_seconds);
+            if (typeof recorded.time_left_seconds === "number" && recorded.time_left_seconds > 0) {
+              setTimeLeft(recorded.time_left_seconds);
+            }
           }
         }
-
-        timeoutId = setTimeout(() => {
-          handleSubmit(true);
-        }, 10000);
       } else {
         setAwayWarning(false);
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
       }
     };
 
@@ -318,7 +329,6 @@ export default function ExamPage() {
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [started, sessionId, sessionToken]);
 
@@ -384,20 +394,27 @@ export default function ExamPage() {
       .filter((q) => q.subject === currentSubject);
   }, [questions, currentSubject]);
 
-  const handleStartExam = async () => {
-    const finalElective = electiveSubject || (candidate?.subjects && candidate.subjects[3]) || candidate?.subject || "Mathematics";
+  const handleStartExam = async (overrideCandidate?: Candidate) => {
+    const activeCand = overrideCandidate || candidate;
+    if (!activeCand) return;
+
+    let subjects = activeCand.subjects || [];
+    if (!subjects.length) {
+      subjects = activeCand.subject ? ["English", activeCand.subject] : ["English", "Mathematics", "Physics", "Chemistry"];
+    }
+    const finalElective = subjects[3] || subjects[1] || "Mathematics";
+
     if (!mockEnabled) { setError("This exam is currently unavailable."); return; }
     try {
       setLoading(true); setError("");
-      const code = candidate?.code || localStorage.getItem("access_code") || "";
-      const subjects = candidate?.subjects || (candidate?.subject ? [candidate.subject] : []);
-      const res = await startExam(code, candidate?.name || "", candidate?.phone || "", finalElective, subjects);
+      const code = activeCand.code || localStorage.getItem("access_code") || "";
+      const res = await startExam(code, activeCand.name || "", activeCand.phone || "", finalElective, subjects);
       if (isError(res)) { setError(res.message); return; }
       clearAttemptStorage();
       localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");
-      setQuestions(res.questions); setCurrentIndex(0); setAnswers(res.answers); setFlagged({});
+      setQuestions(res.questions); setCurrentIndex(0); setAnswers(res.answers || {}); setFlagged({});
       setSessionId(res.session_id); setSessionToken(res.token); setExamDuration(res.duration_seconds); setTimeLeft(res.time_left_seconds);
-      setElectiveSubject(res.elective as ElectiveSubject); tabSwitchCountRef.current = res.tab_switch_count;
+      setElectiveSubject(res.elective as ElectiveSubject); tabSwitchCountRef.current = res.tab_switch_count || 0;
       localStorage.setItem("exam_session_id", res.session_id); localStorage.setItem("exam_token", res.token); localStorage.setItem("selectedElective", res.elective);
       setStarted(true);
     } catch (err) { setError(err instanceof Error ? err.message : "Failed to start the exam."); }
@@ -524,8 +541,12 @@ export default function ExamPage() {
     );
   }
 
-  const shouldChooseElective =
-    candidate.subject !== "Biology" && candidate.subject !== "Mathematics";
+  const candidateSubjects = useMemo(() => {
+    if (candidate?.subjects && candidate.subjects.length > 0) {
+      return candidate.subjects;
+    }
+    return ["English", "Mathematics", "Physics", candidate?.subject || "Chemistry"];
+  }, [candidate]);
 
   if (!started) {
     return (
@@ -542,78 +563,59 @@ export default function ExamPage() {
               </span>
             </div>
             <h1 className="mb-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              CBT Exam Setup
+              Candidate CBT Setup
             </h1>
-            <p className="mb-3 text-gray-600">
-              Candidate: <span className="font-medium">{candidate.name}</span>
-            </p>
-            <p className="mb-6 text-gray-600">
-              {shouldChooseElective
-                ? "Choose your elective subject before starting the examination."
-                : `Elective subject already selected: ${candidate.subject}`}
+            <p className="mb-4 text-gray-600 dark:text-slate-400">
+              Candidate: <span className="font-bold text-slate-900 dark:text-white">{candidate.name}</span> · <span className="font-mono">{candidate.phone}</span>
             </p>
 
-            {shouldChooseElective && (
-              <div className="mb-6 space-y-3">
-                <label className="exam-option flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="elective"
-                    value="Biology"
-                    checked={electiveSubject === "Biology"}
-                    onChange={() => setElectiveSubject("Biology")}
-                  />
-                  <span className="font-medium">Biology</span>
-                </label>
-
-                <label className="exam-option flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="elective"
-                    value="Mathematics"
-                    checked={electiveSubject === "Mathematics"}
-                    onChange={() => setElectiveSubject("Mathematics")}
-                  />
-                  <span className="font-medium">Mathematics</span>
-                </label>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-5 mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-extrabold uppercase tracking-wider text-blue-900 dark:text-cyan-400">
+                  Registered 4-Subject Combination
+                </h2>
+                <span className="text-[11px] font-bold text-slate-500">180 Questions Total</span>
               </div>
-            )}
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 mb-6">
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-blue-900 mb-3">Examination Structure</h2>
-              <div className="grid grid-cols-2 gap-2.5 text-sm text-slate-700 mb-4">
-                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
-                  <span className="font-bold block text-slate-900">English</span>
-                  <span className="text-xs text-slate-500">60 Questions</span>
-                </div>
-                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
-                  <span className="font-bold block text-slate-900">Chemistry</span>
-                  <span className="text-xs text-slate-500">40 Questions</span>
-                </div>
-                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
-                  <span className="font-bold block text-slate-900">Physics</span>
-                  <span className="text-xs text-slate-500">40 Questions</span>
-                </div>
-                <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
-                  <span className="font-bold block text-slate-900">{shouldChooseElective ? (electiveSubject || "Elective Subject") : candidate.subject}</span>
-                  <span className="text-xs text-slate-500">40 Questions</span>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm mb-4">
+                {candidateSubjects.map((subj, idx) => {
+                  const isEng = subj.toLowerCase().includes("english");
+                  return (
+                    <div key={idx} className="rounded-xl bg-white dark:bg-slate-900 p-3 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-900 dark:text-white">{subj}</span>
+                          {isEng && (
+                            <span className="text-[9px] font-black uppercase text-blue-600 dark:text-cyan-400 bg-blue-50 dark:bg-blue-950/70 px-1.5 py-0.2 rounded border border-blue-200 dark:border-blue-800">
+                              Compulsory
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {isEng ? "60 Questions (100 Marks)" : "40 Questions (100 Marks)"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 font-mono">Slot {idx + 1}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-3 text-xs font-bold text-slate-700">
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 dark:border-slate-800 pt-3 text-xs font-bold text-slate-700 dark:text-slate-300">
                 <span>Total: 180 Questions · 400 Marks</span>
                 <span>Time Allowed: {formatTime(examDuration)}</span>
               </div>
             </div>
 
             <button
-              onClick={handleStartExam}
+              onClick={() => handleStartExam()}
               disabled={loading}
               className="w-full rounded-2xl bg-[#012153] hover:bg-[#071c43] px-6 py-4 text-base font-black text-white shadow-lg transition-all duration-150 hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:transform-none"
             >
-              {loading ? "Loading Questions..." : "Start Exam"}
+              {loading ? "Initializing Examination Paper..." : "🚀 Launch CBT Exam Now"}
             </button>
 
-            {error && <p className="mt-4 text-red-600">{error}</p>}
+            {error && <p className="mt-4 text-red-600 font-semibold text-center">{error}</p>}
           </div>
         </div>
       </main>

@@ -41,7 +41,16 @@ export default function InstructionsPage() {
       return;
     }
 
-    router.push("/exam");
+    // Clear stale session tokens so a new examination attempt starts fresh without auto-submitting
+    localStorage.removeItem("exam_session_id");
+    localStorage.removeItem("exam_token");
+    localStorage.removeItem("exam_time_left");
+    localStorage.removeItem("exam_answers");
+    localStorage.removeItem("exam_flagged");
+    localStorage.removeItem("exam_current_index");
+    localStorage.removeItem("exam_tab_switch_count");
+
+    router.push("/exam?start=true");
   };
 
   if (!candidate) {

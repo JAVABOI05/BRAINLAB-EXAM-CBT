@@ -150,6 +150,7 @@ export default function LiveClassroomPage({
   const screenStreamRef = useRef<MediaStream | null>(null);
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
   const [tutorStreaming, setTutorStreaming] = useState(false);
+  const [audioPlaybackBlocked, setAudioPlaybackBlocked] = useState(false);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const attendanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
@@ -378,9 +379,17 @@ export default function LiveClassroomPage({
 
                 pc.ontrack = (event) => {
                   if (remoteVideoRef.current && event.streams[0]) {
-                    remoteVideoRef.current.srcObject = event.streams[0];
-                    setHasRemoteVideo(true);
+                    const stream = event.streams[0];
+                    remoteVideoRef.current.srcObject = stream;
+                    const hasVideoTracks = stream.getVideoTracks().length > 0;
+                    setHasRemoteVideo(hasVideoTracks);
                     setTutorStreaming(true);
+                    remoteVideoRef.current.play().then(() => {
+                      setAudioPlaybackBlocked(false);
+                    }).catch((playErr) => {
+                      console.warn("Autoplay deferred:", playErr);
+                      setAudioPlaybackBlocked(true);
+                    });
                   }
                 };
 
@@ -644,11 +653,50 @@ export default function LiveClassroomPage({
     try {
       if (!isAudioEnabled) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        localStreamRef.current = stream;
+        
+        // Preserve any existing tracks (e.g. video)
+        if (localStreamRef.current) {
+          stream.getAudioTracks().forEach((track) => {
+            localStreamRef.current?.addTrack(track);
+          });
+        } else {
+          localStreamRef.current = stream;
+        }
+
+        const audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+          peerConnectionsRef.current.forEach((pc) => {
+            const senders = pc.getSenders();
+            const existingAudioSender = senders.find((s) => s.track?.kind === "audio");
+            if (existingAudioSender) {
+              existingAudioSender.replaceTrack(audioTrack);
+            } else {
+              pc.addTrack(audioTrack, localStreamRef.current!);
+            }
+          });
+        }
+
         setIsAudioEnabled(true);
+        // Announce live stream to listening students
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "webrtc_stream_live",
+          payload: { hostId: currentUser?.id },
+        });
       } else {
-        localStreamRef.current?.getAudioTracks().forEach((track) => track.stop());
+        localStreamRef.current?.getAudioTracks().forEach((track) => {
+          track.stop();
+          localStreamRef.current?.removeTrack(track);
+        });
         setIsAudioEnabled(false);
+        const remaining = (localStreamRef.current?.getTracks().length || 0) + (screenStreamRef.current?.getTracks().length || 0);
+        if (remaining === 0) {
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "webrtc_stream_stopped",
+            payload: { hostId: currentUser?.id },
+          });
+        }
       }
     } catch {
       toast.error("Unable to access microphone. Check browser permissions.");
@@ -1425,6 +1473,22 @@ export default function LiveClassroomPage({
             </div>
           ))}
         </div>
+
+        {/* Floating Audio Autoplay Unblock Banner for Students */}
+        {audioPlaybackBlocked && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 animate-bounce">
+            <button
+              type="button"
+              onClick={() => {
+                remoteVideoRef.current?.play().then(() => setAudioPlaybackBlocked(false)).catch(() => {});
+              }}
+              className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-xs font-black text-white shadow-2xl hover:bg-emerald-500 active-press border border-emerald-400"
+            >
+              <span>🔊</span>
+              <span>Tap to Hear Live Instructor Audio</span>
+            </button>
+          </div>
+        )}
 
         {/* Video / Stage Area */}
         <main className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-slate-200/70 dark:bg-slate-950 relative transition-colors overflow-hidden">

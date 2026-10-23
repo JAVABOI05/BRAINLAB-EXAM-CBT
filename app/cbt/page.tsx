@@ -22,16 +22,23 @@ export default function CBTExamPortalPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  
-  // Dynamic 4 Subjects Selection
-  const [availableSubjects, setAvailableSubjects] = useState<string[]>([
-    "English",
+
+  const availableElectiveSubjects = [
     "Mathematics",
     "Physics",
     "Chemistry",
     "Biology",
     "Government",
     "Literature in English",
+    "Economics",
+    "Commerce",
+    "Christian Religious Studies",
+  ];
+
+  // Dynamic 4 Subjects Selection (Slot 1 English is Compulsory for all candidates)
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([
+    "English",
+    ...availableElectiveSubjects,
   ]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([
     "English",
@@ -126,11 +133,19 @@ export default function CBTExamPortalPage() {
   }, []);
 
   const handleApplyPreset = (presetSubjects: string[]) => {
-    setSelectedSubjects(presetSubjects.slice(0, 4));
+    // English Language is always Slot 1 (Compulsory for all UTME candidates)
+    const electives = presetSubjects.filter((s) => s.toLowerCase() !== "english");
+    setSelectedSubjects([
+      "English",
+      electives[0] || "Mathematics",
+      electives[1] || "Physics",
+      electives[2] || "Chemistry",
+    ]);
     toast.success("Applied subject combination preset.");
   };
 
   const handleUpdateSubjectSlot = (index: number, newSubject: string) => {
+    if (index === 0) return; // Slot 1 English is locked and compulsory
     setSelectedSubjects((prev) => {
       const next = [...prev];
       next[index] = newSubject;
@@ -329,17 +344,37 @@ export default function CBTExamPortalPage() {
 
               {/* 4 Slot Selectors */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {[0, 1, 2, 3].map((slotIdx) => (
-                  <div key={slotIdx} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-2.5">
-                    <span className="block text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 mb-1">
-                      Subject {slotIdx + 1}
+                {/* Slot 1: Locked Compulsory English */}
+                <div className="rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/40 p-2.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="block text-[10px] font-extrabold uppercase text-blue-800 dark:text-cyan-400">
+                      Subject 1 (Compulsory)
                     </span>
+                    <span className="rounded-full bg-blue-200/60 dark:bg-blue-900/80 px-2 py-0.5 text-[9px] font-black text-blue-900 dark:text-cyan-300">
+                      🔒 All Candidates
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-black text-blue-950 dark:text-white">
+                    <span>English Language</span>
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-cyan-400">60 Questions</span>
+                  </div>
+                </div>
+
+                {/* Slots 2, 3, 4: Electives chosen by candidate */}
+                {[1, 2, 3].map((slotIdx) => (
+                  <div key={slotIdx} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="block text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500">
+                        Subject {slotIdx + 1} (Elective)
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-bold">40 Questions</span>
+                    </div>
                     <select
-                      value={selectedSubjects[slotIdx] || availableSubjects[slotIdx] || ""}
+                      value={selectedSubjects[slotIdx] || availableElectiveSubjects[slotIdx - 1]}
                       onChange={(e) => handleUpdateSubjectSlot(slotIdx, e.target.value)}
                       className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500"
                     >
-                      {availableSubjects.map((s) => (
+                      {availableElectiveSubjects.map((s) => (
                         <option key={s} value={s}>
                           {s}
                         </option>
