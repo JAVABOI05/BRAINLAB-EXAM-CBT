@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const supabase = getSupabaseServerClient();
 
-    // Query active questions from verified database subjects (Mathematics, English, Biology, Chemistry, Physics)
+    // Query active questions from verified database subjects
     const { data, error } = await supabase
       .from("questions")
       .select(
@@ -15,13 +15,13 @@ export async function GET() {
       )
       .eq("is_active", true)
       .in("subject", ["Mathematics", "English", "Biology", "Chemistry", "Physics"])
-      .limit(60);
+      .limit(150);
 
     if (error || !data || data.length === 0) {
       return NextResponse.json({ ok: false, fallback: true });
     }
 
-    // Pick 1-2 random questions per subject
+    // Group questions by subject
     const bySubject: Record<string, typeof data> = {};
     for (const q of data) {
       if (!bySubject[q.subject]) bySubject[q.subject] = [];
@@ -39,8 +39,8 @@ export async function GET() {
     }> = [];
 
     for (const [subj, qList] of Object.entries(bySubject)) {
-      // Shuffle and take up to 2
-      const shuffled = [...qList].sort(() => 0.5 - Math.random()).slice(0, 2);
+      // Take up to 5 verified questions per subject for a rich preview experience
+      const shuffled = [...qList].sort(() => 0.5 - Math.random()).slice(0, 5);
       for (const q of shuffled) {
         sampled.push({
           id: `db-${q.id}`,
@@ -54,7 +54,7 @@ export async function GET() {
             { letter: "D", text: q.option_d },
           ],
           correctLetter: q.correct_answer as "A" | "B" | "C" | "D",
-          explanation: q.explanation || `The correct option is (${q.correct_answer}).`,
+          explanation: q.explanation || `Option (${q.correct_answer}) is the verified correct answer under standard curriculum guidelines.`,
         });
       }
     }

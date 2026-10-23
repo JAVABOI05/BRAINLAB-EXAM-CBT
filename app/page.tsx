@@ -8,57 +8,61 @@ const pathways = [
   {
     number: "01",
     title: "CBT Examination Practice",
-    description: "Sit timed JAMB UTME, WAEC, and NECO practice tests with realistic exam conditions, automatic scoring, and offline safety backup.",
-    action: "Open CBT Portal",
+    description:
+      "Sit timed JAMB UTME, WAEC, and NECO practice tests with authentic 4-subject papers, instant automatic scoring, and offline safety backup.",
+    action: "Enter CBT Portal",
     href: "/login",
-    status: "Active",
+    status: "Active · Instant Practice",
   },
   {
     number: "02",
     title: "Learning Hub Curriculum",
-    description: "Review secondary school subjects topic by topic with structured syllabus lessons, worked examples, and topic-level tests.",
-    action: "Open Learning Hub",
+    description:
+      "Review Nigerian secondary school subjects topic by topic with structured syllabus notes, worked examples, and checkpoint tests.",
+    action: "Browse Subject Syllabus",
     href: "/learn",
-    status: "Active",
+    status: "Active · Self-Paced",
   },
   {
     number: "03",
-    title: "AI Learning Studio",
-    description: "Work through difficult concepts, decode tricky questions, understand mistakes, and receive guided revision explanations.",
-    action: "Launch AI Studio",
-    href: "/ai-learning",
-    status: "Active",
+    title: "AI Weak-Topic Drills",
+    description:
+      "Diagnose your test mistakes, generate targeted 5-question reinforcement drills, and retain formulas with daily SM-2 spaced repetition.",
+    action: "Generate AI Drill",
+    href: "/learning/revision",
+    status: "Active · On-Demand",
   },
   {
     number: "04",
     title: "Interactive Live Classroom",
-    description: "Attend interactive live video lessons with tutors, participate in real-time multiple-choice polls, and rewatch recorded classes.",
-    action: "Enter Classroom",
-    href: "/learn?tab=live",
-    status: "Active",
+    description:
+      "Attend scheduled tutor masterclasses featuring our responsive Smart Whiteboard, participate in live polls, and access lesson recordings.",
+    action: "View Class Timetable",
+    href: "/learn?tab=timetable",
+    status: "Scheduled Masterclasses",
   },
 ];
 
 const features = [
   {
     title: "Syllabus-Aligned Questions",
-    description: "Practice questions formatted according to current JAMB, WAEC, and NECO requirements with authentic options.",
-    badge: "Accurate",
+    description: "Authentic questions formatted according to current JAMB UTME, WAEC, and NECO standards with detailed worked explanations.",
+    badge: "Verified Curriculum",
   },
   {
     title: "Instant Scoring & Subject Breakdown",
     description: "Review your performance across individual subjects immediately after submitting your timed examination attempt.",
-    badge: "Transparent",
+    badge: "Transparent Grading",
   },
   {
-    title: "Offline Network Protection",
-    description: "Your answers are continuously cached on your device so weak or fluctuating mobile connections will not erase your work.",
-    badge: "Reliable",
+    title: "Low-Bandwidth Offline Protection",
+    description: "Your answers are continuously queued in local browser storage so fluctuating Nigerian 3G/4G networks will not erase your work.",
+    badge: "Offline Auto-Sync",
   },
   {
-    title: "Accessible on Any Device",
-    description: "Engineered to run smoothly on desktop browsers, laptops, tablets, and everyday mobile phone screens.",
-    badge: "Responsive",
+    title: "Accessible on Everyday Devices",
+    description: "Engineered to run smoothly on desktop browsers, laptops, tablets, and budget smartphone touchscreens.",
+    badge: "Mobile-First",
   },
 ];
 
@@ -121,7 +125,7 @@ export default function HomePage() {
                 <span className="text-emerald-600 font-black">✓</span> Instant score calculation
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="text-emerald-600 font-black">✓</span> Offline answer caching
+                <span className="text-emerald-600 font-black">✓</span> Low-data offline auto-sync
               </span>
             </div>
           </div>
@@ -158,7 +162,13 @@ export default function HomePage() {
                   <span className="text-xs font-black tracking-wider text-slate-400">
                     {pathway.number}
                   </span>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-100">
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold border ${
+                      pathway.status.includes("Active")
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-blue-50 text-blue-800 border-blue-200"
+                    }`}
+                  >
                     {pathway.status}
                   </span>
                 </div>
@@ -221,7 +231,7 @@ export default function HomePage() {
 
       {/* How It Works Step-by-Step */}
       <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:py-18">
-        <div className="grid gap-10 lg:grid-cols-[1fr_.9fr] lg:items-center">
+        <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
           <div>
             <span className="text-xs font-black uppercase tracking-wider text-blue-800">
               Candidate Examination Guide
@@ -237,23 +247,23 @@ export default function HomePage() {
               {[
                 {
                   step: "1",
-                  title: "Enter Candidate Information",
-                  desc: "Provide your name, phone number, and subject combination at the portal entrance.",
+                  title: "Enter Candidate Details & Subjects",
+                  desc: "Select your official 4-subject combination at the portal entrance.",
                 },
                 {
                   step: "2",
                   title: "Input Valid Access Code",
-                  desc: "Enter your official exam access code to unlock your personalized test paper.",
+                  desc: "Provide your examination access PIN to unlock your personalized test paper.",
                 },
                 {
                   step: "3",
-                  title: "Timed Examination Session",
-                  desc: "Answer the questions with the built-in timer, question palette, and offline answer sync.",
+                  title: "Timed Examination Simulation",
+                  desc: "Work through questions with the built-in timer, formula sheets, diagram zoom, and offline answer queueing.",
                 },
                 {
                   step: "4",
-                  title: "Instant Score & Corrections",
-                  desc: "Submit your paper to record your score and review step-by-step question solutions.",
+                  title: "Instant Score & Worked Solutions",
+                  desc: "Submit your paper to record your score and review step-by-step corrections.",
                 },
               ].map((item) => (
                 <div key={item.step} className="flex gap-3.5">
@@ -268,63 +278,87 @@ export default function HomePage() {
               ))}
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-5 py-3 text-xs font-black text-white shadow-md transition active:scale-95"
               >
                 Go to Examination Portal →
               </Link>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 transition"
+              >
+                View Practice Plans &amp; Pricing
+              </Link>
             </div>
           </div>
 
+          {/* Access Code Box (Polished per user recommendation) */}
           <div className="rounded-3xl border border-blue-200 bg-blue-50/70 p-6 sm:p-8">
-            <h3 className="text-lg font-black text-slate-950">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-blue-900">
+              <span>🔑</span> Candidate Access
+            </div>
+            <h3 className="mt-3 text-lg font-black text-slate-950">
               Need an Access Code?
             </h3>
             <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Official BrainLab access codes are distributed through school administrators and verified WhatsApp support channels.
+              Some examinations require an official BrainLab access code. Contact our support team for information about eligibility, registration, and available practice options.
             </p>
 
-            <div className="mt-6 rounded-2xl bg-white p-5 border border-blue-100">
-              <p className="text-xs font-bold text-slate-700">Access Code Assistance</p>
+            <div className="mt-6 rounded-2xl bg-white p-5 border border-blue-100 shadow-xs">
+              <p className="text-xs font-bold text-slate-800">Official WhatsApp Support Desk</p>
               <p className="mt-1 text-xs text-slate-500">
-                Contact our support desk on WhatsApp for registration and access inquiries.
+                Direct inquiry desk for candidate eligibility, registration PINs, and school licensing.
               </p>
-              <a
-                href="https://wa.me/2349074310204?text=Good%20day%20BrainLab,%20I%20would%20like%20to%20request%20an%20exam%20access%20code."
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
-              >
-                Chat on WhatsApp ↗
-              </a>
+              <div className="mt-4 flex flex-col sm:flex-row gap-2.5">
+                <a
+                  href="https://wa.me/2349074310204?text=Good%20day%20BrainLab%20Academy,%20I%20would%20like%20to%20inquire%20about%20examination%20access%20codes%20and%20registration."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
+                >
+                  Chat on WhatsApp ↗
+                </a>
+                <Link
+                  href="/access"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 transition"
+                >
+                  Redeem Code
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Bottom CTA Banner */}
+      {/* Contextual Bottom CTA Banner (Less repetitive) */}
       <section className="border-t border-slate-200 bg-white py-14 text-center sm:py-18">
         <div className="mx-auto max-w-3xl px-5">
           <h2 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-            Start Your Exam Preparation Today
+            Ready to Begin Your Preparation?
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-600">
-            Build the speed, accuracy, and subject knowledge needed to perform at your best.
+            Build the speed, conceptual accuracy, and subject mastery needed to excel in your upcoming examinations.
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               href="/login"
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-6 py-3 text-xs font-black text-white shadow-md transition active:scale-95"
             >
-              Start CBT Practice Now →
+              Take a Free Practice Test →
+            </Link>
+            <Link
+              href="/learning/revision"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-5 py-3 text-xs font-bold text-slate-800 transition"
+            >
+              Open Revision Planner
             </Link>
             <Link
               href="/account"
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-6 py-3 text-xs font-bold text-slate-800 transition"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/70 px-5 py-3 text-xs font-bold text-blue-950 transition"
             >
-              Sign In to Your Account
+              Student Account Login
             </Link>
           </div>
         </div>
