@@ -209,7 +209,7 @@ function wrapEmailTemplate(title: string, bodyContent: string): string {
  * 1. Send Welcome Email to newly registered students.
  */
 export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<SendEmailResult> {
-  const { to, studentName, loginUrl = "https://brainlab.edu.ng/login" } = params;
+  const { to, studentName, loginUrl = "https://brainlabacademy.com.ng/account" } = params;
 
   const html = wrapEmailTemplate(
     "Welcome to BrainLab Academy",
@@ -257,7 +257,7 @@ export async function sendAccessCodeEmail(params: AccessCodeEmailParams): Promis
     accessCode,
     examTitle,
     expiryDate,
-    portalUrl = "https://brainlab.edu.ng/access",
+    portalUrl = "https://brainlabacademy.com.ng/access",
   } = params;
 
   const html = wrapEmailTemplate(
@@ -277,7 +277,7 @@ export async function sendAccessCodeEmail(params: AccessCodeEmailParams): Promis
 
     <h3 style="margin:20px 0 8px 0;font-size:14px;font-weight:700;color:#0f172a;">How to use this code:</h3>
     <ol style="margin:0 0 24px 0;padding-left:20px;font-size:13px;line-height:1.8;color:#475569;">
-      <li>Navigate to the Exam Access portal: <a href="${portalUrl}" style="color:#0284c7;">brainlab.edu.ng/access</a></li>
+      <li>Navigate to the Exam Access portal: <a href="${portalUrl}" style="color:#0284c7;">brainlabacademy.com.ng/access</a></li>
       <li>Enter your student email and paste the PIN above.</li>
       <li>Ensure you have a stable internet connection before beginning.</li>
     </ol>
@@ -348,7 +348,7 @@ export async function sendExamResultReceipt(params: ExamResultEmailParams): Prom
     ` : ""}
 
     <div style="text-align:center;margin:28px 0;">
-      <a href="https://brainlab.edu.ng/leaderboard" style="background-color:#0f172a;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 24px;border-radius:8px;display:inline-block;">
+      <a href="https://brainlabacademy.com.ng/leaderboard" style="background-color:#0f172a;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 24px;border-radius:8px;display:inline-block;">
         View National Leaderboard
       </a>
     </div>

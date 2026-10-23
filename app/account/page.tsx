@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { getAuthRedirectUrl } from "../lib/authRedirect";
 
 type Mode = "signin" | "signup";
 
@@ -137,7 +138,7 @@ export default function AccountPage() {
           password,
           options: {
             data: { full_name: name.trim() },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
           },
         });
         if (signUpError) {
@@ -181,7 +182,7 @@ export default function AccountPage() {
     try {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: getAuthRedirectUrl("/auth/callback") },
       });
       if (oauthError) setError("Google sign-in is unavailable. Please try email sign-in or contact support.");
     } catch {
@@ -201,7 +202,7 @@ export default function AccountPage() {
     setMessage("");
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: getAuthRedirectUrl("/auth/reset-password"),
       });
       if (resetError) setError("We could not send a recovery email. Check the address and try again.");
       else setMessage("If an account exists for that address, a password recovery link will arrive by email.");

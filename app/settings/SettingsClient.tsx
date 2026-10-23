@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { getAuthRedirectUrl } from "../lib/authRedirect";
 import { useLearnerTheme, type AppearancePreference } from "../components/LearnerThemeProvider";
 
 const appearanceChoices: { value: AppearancePreference; title: string; description: string; icon: string }[] = [
@@ -53,7 +54,7 @@ export default function LearnerSettingsClient() {
     setResetMessage("");
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: getAuthRedirectUrl("/auth/reset-password"),
       });
       if (error) setResetError("We could not send a password recovery email. Please try again.");
       else setResetMessage("If this account can receive recovery messages, a password reset link will be sent to your email.");
