@@ -10,6 +10,7 @@ type Candidate = {
   name: string;
   phone: string;
   subject: string;
+  subjects?: string[];
   code: string;
 };
 
@@ -85,20 +86,28 @@ export default function InstructionsPage() {
               <br />
               <span className="font-semibold text-slate-900 dark:text-white">Phone:</span> {candidate.phone}
               <br />
-              <span className="font-semibold text-slate-900 dark:text-white">Chosen Elective:</span> {candidate.subject}
+              <span className="font-semibold text-slate-900 dark:text-white">Subjects:</span>{" "}
+              {candidate.subjects?.length ? candidate.subjects.join(", ") : candidate.subject}
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 p-5">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Subject Breakdown</h2>
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Selected 4-Subject Breakdown</h2>
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300">
-              <div>English: <strong className="text-slate-900 dark:text-white">60 Qs</strong></div>
-              <div>Chemistry: <strong className="text-slate-900 dark:text-white">40 Qs</strong></div>
-              <div>Physics: <strong className="text-slate-900 dark:text-white">40 Qs</strong></div>
-              <div>{candidate.subject}: <strong className="text-slate-900 dark:text-white">40 Qs</strong></div>
+              {(candidate.subjects && candidate.subjects.length > 0
+                ? candidate.subjects
+                : ["English", "Mathematics", "Physics", candidate.subject || "Chemistry"]
+              ).map((subj, idx) => (
+                <div key={idx} className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-blue-500" />
+                  <span>
+                    {subj}: <strong className="text-slate-900 dark:text-white">{subj.toLowerCase().includes("english") ? "60 Qs" : "40 Qs"}</strong>
+                  </span>
+                </div>
+              ))}
             </div>
             <p className="mt-3 text-xs font-bold text-blue-700 dark:text-cyan-400">
-              Total: 180 Questions · 400 Marks · 2 Hours Allowed
+              Total: ~180 Questions · 400 Marks · 2 Hours Allowed
             </p>
           </div>
         </div>

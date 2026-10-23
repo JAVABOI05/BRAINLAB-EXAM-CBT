@@ -19,6 +19,7 @@ type Candidate = {
   name: string;
   phone: string;
   subject: string;
+  subjects?: string[];
   code: string;
 };
 
@@ -63,6 +64,7 @@ export default function ExamPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswersMap>({});
   const [flagged, setFlagged] = useState<FlaggedMap>({});
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [started, setStarted] = useState(false);
@@ -383,13 +385,13 @@ export default function ExamPage() {
   }, [questions, currentSubject]);
 
   const handleStartExam = async () => {
-    const finalElective = electiveSubject || (candidate?.subject === "Biology" || candidate?.subject === "Mathematics" ? candidate.subject : "");
-    if (!finalElective) { setError("Please select Biology or Mathematics before starting the exam."); return; }
+    const finalElective = electiveSubject || (candidate?.subjects && candidate.subjects[3]) || candidate?.subject || "Mathematics";
     if (!mockEnabled) { setError("This exam is currently unavailable."); return; }
     try {
       setLoading(true); setError("");
       const code = candidate?.code || localStorage.getItem("access_code") || "";
-      const res = await startExam(code, candidate?.name || "", candidate?.phone || "", finalElective);
+      const subjects = candidate?.subjects || (candidate?.subject ? [candidate.subject] : []);
+      const res = await startExam(code, candidate?.name || "", candidate?.phone || "", finalElective, subjects);
       if (isError(res)) { setError(res.message); return; }
       clearAttemptStorage();
       localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");
@@ -501,7 +503,7 @@ export default function ExamPage() {
             <p className="text-lg text-gray-700">Loading exam...</p>
           </div>
         </div>
-      </main>
+        </main>
     );
   }
 
@@ -771,13 +773,23 @@ export default function ExamPage() {
                 {currentIndex + 1}. {cleanQuestionText(currentQuestion.question)}
               </p>
               {safeImageUrl(currentQuestion.question_image_url) && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={safeImageUrl(currentQuestion.question_image_url)!}
-                  alt={currentQuestion.question_image_alt?.trim() || "Question illustration"}
-                  loading="lazy"
-                  className="mt-4 block max-h-96 w-auto max-w-full rounded-lg border border-gray-200 object-contain"
-                />
+                <div className="relative mt-4 inline-block group max-w-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={safeImageUrl(currentQuestion.question_image_url)!}
+                    alt={currentQuestion.question_image_alt?.trim() || "Question illustration diagram"}
+                    loading="lazy"
+                    onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
+                    className="block max-h-96 w-auto max-w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 object-contain shadow-sm cursor-zoom-in transition hover:opacity-95"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 px-3 py-1 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
+                  >
+                    <span>🔍 Click diagram to enlarge</span>
+                  </button>
+                </div>
               )}
             </div>
 
@@ -969,6 +981,45 @@ export default function ExamPage() {
           isOpen={showCalculator}
           onClose={() => setShowCalculator(false)}
         />
+      )}
+    {/* High-Resolution Diagram Lightbox Modal */}
+      {zoomImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in"
+          onClick={() => setZoomImageUrl(null)}
+        >
+          <div
+            className="relative max-h-[92vh] max-w-[92vw] rounded-3xl bg-white dark:bg-slate-900 p-5 shadow-2xl border border-slate-200 dark:border-slate-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔬</span>
+                <span className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  High-Resolution Examination Diagram
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setZoomImageUrl(null)}
+                className="rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition active:scale-95"
+              >
+                ✕ Close (Esc)
+              </button>
+            </div>
+            <div className="mt-4 flex items-center justify-center overflow-auto max-h-[75vh]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={zoomImageUrl}
+                alt="Enlarged Diagram View"
+                className="max-h-[75vh] w-auto max-w-full rounded-2xl object-contain mx-auto shadow-sm"
+              />
+            </div>
+            <p className="mt-3 text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              Tip: Click outside or click Close to return to answering your question.
+            </p>
+          </div>
+        </div>
       )}
     </main>
   );

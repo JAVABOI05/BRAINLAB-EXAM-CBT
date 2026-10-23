@@ -13,7 +13,11 @@ type LeaderboardEntry = {
   created_at?: string;
 };
 
-export default function LeaderboardCard() {
+interface LeaderboardCardProps {
+  limit?: number;
+}
+
+export default function LeaderboardCard({ limit = 10 }: LeaderboardCardProps = {}) {
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -50,7 +54,7 @@ export default function LeaderboardCard() {
         .select("id, name, phone, subject, score, total, created_at")
         .order("score", { ascending: false })
         .order("created_at", { ascending: true })
-        .limit(10);
+        .limit(limit);
 
       if (error) {
         setErrorText(error.message);
