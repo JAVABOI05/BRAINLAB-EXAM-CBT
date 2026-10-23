@@ -11,8 +11,8 @@ import type {
   ClassroomMessage,
   LiveRoomTokenResponse,
 } from "../../lib/liveClassroom/types";
-import { SmartWhiteboard, SmartWhiteboardHandle } from "./SmartWhiteboard";
-import ClassroomSidebar from "./ClassroomSidebar";
+import { SmartWhiteboard, SmartWhiteboardHandle } from "../../components/SmartWhiteboard";
+import ClassroomSidebar from "../../components/ClassroomSidebar";
 
 interface ClassroomPollOption {
   id: string;
@@ -1401,7 +1401,7 @@ export default function LiveClassroomPage({
                     "Learner"
                   }
                   currentUserId={currentUser?.id}
-                  onShareToChat={(dataUrl) => {
+                  onShareToChat={(dataUrl: string) => {
                     shareWhiteboardToChat(dataUrl);
                   }}
                 />
@@ -1914,484 +1914,89 @@ export default function LiveClassroomPage({
           </div>
         </main>
 
-        {/* Right Interactive Sidebar (Chat, Participants, Polls, Resources) */}
-        <aside className="w-80 sm:w-96 border-l border-slate-800 bg-slate-900 flex flex-col shrink-0">
-          {/* Sidebar Nav Tabs */}
-          <div className="flex border-b border-slate-800 bg-slate-950 text-xs font-bold">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={`flex-1 py-3 text-center border-b-2 transition ${
-                activeTab === "chat"
-                  ? "border-blue-500 text-white bg-slate-900"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Chat ({messages.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("polls")}
-              className={`flex-1 py-3 text-center border-b-2 transition relative ${
-                activeTab === "polls"
-                  ? "border-blue-500 text-white bg-slate-900"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Polls {polls.length > 0 && `(${polls.length})`}
-              {activePoll?.is_open && (
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("participants")}
-              className={`flex-1 py-3 text-center border-b-2 transition ${
-                activeTab === "participants"
-                  ? "border-blue-500 text-white bg-slate-900"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              People ({participants.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("resources")}
-              className={`flex-1 py-3 text-center border-b-2 transition ${
-                activeTab === "resources"
-                  ? "border-blue-500 text-white bg-slate-900"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Links
-            </button>
-          </div>
-
-          {/* Tab 1: Live Chat */}
-          {activeTab === "chat" && (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.map((m) => (
-                  <div key={m.id} className="text-xs">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold ${m.isHost ? "text-amber-400" : "text-blue-400"}`}>
-                          {m.senderName} {m.isHost && "(Tutor)"}
-                        </span>
-                        {(m.isPinned || pinnedMessage?.id === m.id) && (
-                          <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-black text-amber-300 border border-amber-400/40">
-                            📌 ON BIG SCREEN
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-slate-500">{m.timestamp}</span>
-                        {isTutorOrModerator && (
-                          <button
-                            type="button"
-                            onClick={() => handlePinToBigScreen(m)}
-                            className="text-[10px] text-slate-400 hover:text-amber-300 transition flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60"
-                            title="Pin this message to the Big Screen lecture board"
-                          >
-                            📌 Pin
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Image Message */}
-                    {m.type === "image" && m.mediaUrl && (
-                      <div className="mt-1.5 space-y-1 bg-slate-800/60 rounded-xl p-2 border border-slate-700/60">
-                        <img
-                          src={m.mediaUrl}
-                          alt={m.text || "Classroom diagram"}
-                          onClick={() => setPreviewImage(m.mediaUrl || null)}
-                          className="max-h-48 w-auto rounded-lg object-contain cursor-pointer hover:opacity-90 transition border border-slate-700"
-                        />
-                        {m.text && <p className="text-[11px] text-slate-300 font-medium">{renderTextWithMentions(m.text, currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0])}</p>}
-                      </div>
-                    )}
-
-                    {/* Audio Voice Note Message */}
-                    {m.type === "audio" && m.mediaUrl && (
-                      <div className="mt-1.5 flex items-center gap-2.5 bg-slate-800/80 rounded-xl p-2.5 border border-cyan-500/30">
-                        <button
-                          type="button"
-                          onClick={() => togglePlayAudio(m.id, m.mediaUrl || "")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400 transition shrink-0"
-                          title="Play/Pause Voice Note"
-                        >
-                          {currentlyPlayingAudioId === m.id ? "⏸" : "▶"}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between text-[10px] font-bold text-cyan-300">
-                            <span>🎙️ Voice Note</span>
-                            <span>{m.duration ? `${m.duration}s` : "Audio"}</span>
-                          </div>
-                          <div className="mt-1 flex items-center gap-0.5 h-3">
-                            {[12, 8, 16, 20, 10, 14, 22, 18, 12, 16, 8, 14].map((bar, idx) => (
-                              <span
-                                key={idx}
-                                className={`w-1 rounded-full ${
-                                  currentlyPlayingAudioId === m.id
-                                    ? "bg-cyan-400 animate-pulse"
-                                    : "bg-slate-600"
-                                }`}
-                                style={{ height: `${bar}px` }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Plain Text Message */}
-                    {(!m.type || m.type === "text") && (
-                      <p className="mt-1 text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-100 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700/60">
-                        {m.text}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Chat Input & Media Actions */}
-              {isRecordingAudio ? (
-                <div className="p-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-3 w-3 rounded-full bg-rose-500 animate-ping" />
-                    <span className="text-xs font-bold text-rose-300">
-                      Recording Voice Note ({recordingDuration}s / 120s)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => stopVoiceRecording(false)}
-                      className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-700"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => stopVoiceRecording(true)}
-                      className="rounded-xl bg-cyan-400 hover:bg-cyan-300 px-3 py-1.5 text-xs font-black text-slate-950 shadow"
-                    >
-                      Send Note
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col gap-2 relative">
-                  {showMentions && (
-                    <div className="absolute bottom-full left-3 right-3 mb-2 max-h-48 overflow-y-auto rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-2 z-40">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">
-                        Tag a participant (@)
-                      </p>
-                      {participants
-                        .filter((p) => !mentionFilter || p.name.toLowerCase().includes(mentionFilter))
-                        .slice(0, 6)
-                        .map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => {
-                              setChatInput((prev) => prev.replace(/@\w*$/, `@${p.name} `));
-                              setShowMentions(false);
-                              setMentionFilter(null);
-                            }}
-                            className="w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left hover:bg-blue-50 dark:hover:bg-slate-800 transition"
-                          >
-                            <span className="font-semibold text-slate-900 dark:text-white">@{p.name}</span>
-                            <span className="text-[10px] text-slate-500 capitalize">{p.role}</span>
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={startVoiceRecording}
-                      title="Record Voice Note (Audio message)"
-                      className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-cyan-300 hover:bg-slate-700"
-                    >
-                      <span>🎙️</span>
-                      <span className="hidden sm:inline">Voice</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => imageInputRef.current?.click()}
-                      title="Share Diagram or Picture"
-                      className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-emerald-300 hover:bg-slate-700"
-                    >
-                      <span>📷</span>
-                      <span className="hidden sm:inline">Diagram</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("polls");
-                        if (isTutorOrModerator) setIsCreatingPoll(true);
-                      }}
-                      title="Launch or participate in live checkpoint quiz"
-                      className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-amber-300 hover:bg-slate-700"
-                    >
-                      <span>🎯</span>
-                      <span className="hidden sm:inline">Quiz</span>
-                    </button>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Ask a question or comment…"
-                      value={chatInput}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setChatInput(val);
-                        const match = val.match(/@(\w*)$/);
-                        if (match) {
-                          setMentionFilter(match[1].toLowerCase());
-                          setShowMentions(true);
-                        } else {
-                          setShowMentions(false);
-                          setMentionFilter(null);
-                        }
-                      }}
-                      className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-600"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!chatInput.trim()}
-                      className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50 hover:bg-blue-500"
-                    >
-                      Send
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          )}
-
-          {/* Tab 2: Polls & Live Quizzes */}
-          {activeTab === "polls" && (
-            <div className="flex-1 flex flex-col overflow-hidden p-4">
-              {/* Tutor Launch Action */}
-              {isTutorOrModerator && (
-                <div className="mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreatingPoll(true)}
-                    className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-extrabold text-white hover:bg-blue-500 shadow transition flex items-center justify-center gap-2"
-                  >
-                    <span>🎯 Launch Live Poll / Quiz</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Polls List */}
-              <div className="flex-1 overflow-y-auto space-y-4">
-                {polls.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-slate-800 p-6 text-center text-xs text-slate-500">
-                    No classroom polls yet. When the tutor launches a checkpoint quiz, it will appear here.
-                  </div>
-                )}
-
-                {polls.map((poll) => {
-                  return (
-                    <div
-                      key={poll.id}
-                      className={`rounded-2xl border p-4 space-y-3 ${
-                        poll.is_open
-                          ? "border-cyan-500/50 bg-slate-950"
-                          : "border-slate-800 bg-slate-900/60"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${
-                            poll.is_open
-                              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                              : "bg-slate-800 text-slate-400"
-                          }`}
-                        >
-                          {poll.is_open ? "Active Poll" : "Closed"}
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          {poll.total_votes} {poll.total_votes === 1 ? "vote" : "votes"}
-                        </span>
-                      </div>
-
-                      <h4 className="text-xs font-bold text-white">{poll.question}</h4>
-
-                      {/* Options */}
-                      <div className="space-y-2">
-                        {poll.options.map((opt, idx) => {
-                          const isVoted = poll.user_voted_option_id === opt.id;
-                          const canVote = poll.is_open && !poll.user_voted_option_id;
-
-                          return (
-                            <div key={opt.id} className="text-xs">
-                              {canVote ? (
-                                <button
-                                  type="button"
-                                  onClick={() => void handleVote(poll.id, opt.id)}
-                                  className="w-full text-left rounded-xl border border-slate-700 bg-slate-800/80 p-2 text-slate-200 hover:border-cyan-400 hover:bg-slate-800 transition"
-                                >
-                                  <strong className="text-cyan-400 font-mono mr-2">
-                                    {String.fromCharCode(65 + idx)}:
-                                  </strong>
-                                  {opt.text}
-                                </button>
-                              ) : (
-                                <div
-                                  className={`rounded-xl border p-2 ${
-                                    isVoted
-                                      ? "border-cyan-500 bg-cyan-950/40 text-cyan-200"
-                                      : "border-slate-800 bg-slate-950/40 text-slate-300"
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between text-[11px]">
-                                    <span>
-                                      <strong className="font-mono mr-1.5 text-slate-400">
-                                        {String.fromCharCode(65 + idx)}:
-                                      </strong>
-                                      {opt.text}
-                                      {isVoted && (
-                                        <span className="ml-1 text-[10px] font-bold text-cyan-400">
-                                          (Yours)
-                                        </span>
-                                      )}
-                                      {!poll.is_open && opt.is_correct && (
-                                        <span className="ml-1 text-[10px] font-bold text-emerald-400">
-                                          ✓
-                                        </span>
-                                      )}
-                                    </span>
-                                    <span className="font-mono text-slate-400">
-                                      {opt.percentage}%
-                                    </span>
-                                  </div>
-                                  <div className="mt-1 h-1 w-full rounded-full bg-slate-800 overflow-hidden">
-                                    <div
-                                      className={`h-full rounded-full ${
-                                        !poll.is_open && opt.is_correct
-                                          ? "bg-emerald-500"
-                                          : isVoted
-                                          ? "bg-cyan-400"
-                                          : "bg-blue-600"
-                                      }`}
-                                      style={{ width: `${opt.percentage}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Explanation */}
-                      {!poll.is_open && poll.explanation && (
-                        <p className="text-[11px] text-blue-200 bg-blue-950/60 p-2 rounded-xl border border-blue-900">
-                          💡 <strong>Explanation:</strong> {poll.explanation}
-                        </p>
-                      )}
-
-                      {/* Tutor Actions */}
-                      {isTutorOrModerator && poll.is_open && (
-                        <button
-                          type="button"
-                          onClick={() => void handleClosePoll(poll.id)}
-                          className="w-full rounded-xl border border-rose-500/40 bg-rose-950/30 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-600 hover:text-white transition"
-                        >
-                          End Poll & Reveal Answer
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Tab 3: Participants Roster */}
-          {activeTab === "participants" && (
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Connected Learners ({participants.length})
-              </h4>
-              {participants.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs border border-slate-200 dark:border-slate-700/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-950 text-blue-200 font-bold">
-                      {p.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-white">{p.name}</p>
-                      <p className="text-[10px] text-slate-400 capitalize">{p.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("chat");
-                        setChatInput((prev) => `@${p.name} ` + prev);
-                      }}
-                      className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-cyan-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                      title={`Tag ${p.name} in chat`}
-                    >
-                      @ Tag
-                    </button>
-                    {p.isHandRaised && <span title="Hand raised">✋</span>}
-                    <span className="text-[11px] text-slate-400">
-                      {p.isMuted ? "🔇" : "🎙️"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Tab 4: Lesson Resources & Quiz Links */}
-          {activeTab === "resources" && (
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Attached Study Links</h4>
-                <p className="mt-1 text-xs text-slate-300">Access supplementary lesson materials and CBT practice.</p>
-              </div>
-
-              <div className="space-y-2">
-                <Link
-                  href="/learn"
-                  target="_blank"
-                  className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500"
-                >
-                  <p className="text-xs font-bold text-blue-300">📖 Topic Reference Material</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Review lesson notes in Learning Hub</p>
-                </Link>
-
-                <Link
-                  href="/self-practice"
-                  target="_blank"
-                  className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500"
-                >
-                  <p className="text-xs font-bold text-emerald-300">✍️ Self-Practice Assessment</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Test your recall of key exam concepts</p>
-                </Link>
-              </div>
-            </div>
-          )}
+        {/* Desktop Docked Sidebar (Hidden on mobile/tablet) */}
+        <aside className="hidden lg:flex lg:w-80 xl:w-96 border-l border-slate-800 bg-slate-900 flex-col shrink-0">
+          <ClassroomSidebar
+            activeTab={activeTab}
+            setActiveTab={(tab: "chat" | "participants" | "polls" | "resources") => {
+              setActiveTab(tab);
+              if (tab === "chat") setUnreadMessagesCount(0);
+            }}
+            messages={messages}
+            currentUser={currentUser}
+            participants={participants}
+            polls={polls}
+            activePoll={activePoll}
+            isTutorOrModerator={isTutorOrModerator}
+            chatInput={chatInput}
+            setChatInput={setChatInput}
+            showMentions={showMentions}
+            setShowMentions={setShowMentions}
+            mentionFilter={mentionFilter}
+            setMentionFilter={setMentionFilter}
+            isRecordingAudio={isRecordingAudio}
+            recordingDuration={recordingDuration}
+            currentlyPlayingAudioId={currentlyPlayingAudioId}
+            onSendMessage={handleSendMessage}
+            onStartVoiceRecording={startVoiceRecording}
+            onStopVoiceRecording={stopVoiceRecording}
+            onImageUpload={handleImageUpload}
+            onTogglePlayAudio={togglePlayAudio}
+            onVotePoll={handleVote}
+            onClosePoll={handleClosePoll}
+            onOpenCreatePoll={() => setIsCreatingPoll(true)}
+            onPreviewImage={setPreviewImage}
+            imageInputRef={imageInputRef}
+          />
         </aside>
       </div>
+
+      {/* Mobile Slide-Over Drawer Modal (for mobile & tablet screens) */}
+      {mobileDrawerOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-50 flex justify-end bg-black/80 backdrop-blur-xs animate-fade-in"
+          onClick={() => setMobileDrawerOpen(false)}
+        >
+          <div
+            className="w-full sm:w-96 h-full bg-slate-900 flex flex-col relative shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ClassroomSidebar
+              activeTab={activeTab}
+              setActiveTab={(tab: "chat" | "participants" | "polls" | "resources") => {
+                setActiveTab(tab);
+                if (tab === "chat") setUnreadMessagesCount(0);
+              }}
+              messages={messages}
+              currentUser={currentUser}
+              participants={participants}
+              polls={polls}
+              activePoll={activePoll}
+              isTutorOrModerator={isTutorOrModerator}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              showMentions={showMentions}
+              setShowMentions={setShowMentions}
+              mentionFilter={mentionFilter}
+              setMentionFilter={setMentionFilter}
+              isRecordingAudio={isRecordingAudio}
+              recordingDuration={recordingDuration}
+              currentlyPlayingAudioId={currentlyPlayingAudioId}
+              onSendMessage={handleSendMessage}
+              onStartVoiceRecording={startVoiceRecording}
+              onStopVoiceRecording={stopVoiceRecording}
+              onImageUpload={handleImageUpload}
+              onTogglePlayAudio={togglePlayAudio}
+              onVotePoll={handleVote}
+              onClosePoll={handleClosePoll}
+              onOpenCreatePoll={() => setIsCreatingPoll(true)}
+              onPreviewImage={setPreviewImage}
+              imageInputRef={imageInputRef}
+              onCloseMobileDrawer={() => setMobileDrawerOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Expanded Diagram / Picture Modal */}
       {previewImage && (
@@ -2634,61 +2239,104 @@ export default function LiveClassroomPage({
       )}
 
       {/* Bottom Interactive Control Deck */}
-      <footer className="h-18 shrink-0 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 flex items-center justify-between gap-4 shadow-lg transition-colors">
-        {/* Media Controls */}
-        <div className="flex items-center gap-2">
+      <footer className="h-15 sm:h-17 shrink-0 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 sm:px-4 py-2 flex items-center justify-between gap-1.5 sm:gap-4 shadow-lg transition-colors overflow-x-auto scrollbar-none">
+        {/* Left: Media & Stage Controls */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <button
             onClick={toggleAudio}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition active-press hover-lift ${
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold transition active-press ${
               isAudioEnabled ? "bg-slate-700 text-white" : "bg-rose-600/20 text-rose-300 border border-rose-500/30"
             }`}
+            title={isAudioEnabled ? "Mute Microphone" : "Unmute Microphone"}
           >
-            {isAudioEnabled ? "🎙️ Mute" : "🔇 Unmute"}
+            <span>{isAudioEnabled ? "🎙️" : "🔇"}</span>
+            <span className="hidden xs:inline">{isAudioEnabled ? "Mute" : "Unmute"}</span>
           </button>
 
           <button
             onClick={toggleVideo}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition active-press hover-lift ${
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold transition active-press ${
               isVideoEnabled ? "bg-slate-700 text-white" : "bg-slate-800 text-slate-400 hover:text-white"
             }`}
+            title={isVideoEnabled ? "Stop Camera" : "Start Camera"}
           >
-            {isVideoEnabled ? "📹 Stop Cam" : "📷 Start Cam"}
+            <span>{isVideoEnabled ? "📹" : "📷"}</span>
+            <span className="hidden xs:inline">{isVideoEnabled ? "Cam Off" : "Cam"}</span>
           </button>
 
           <button
             onClick={toggleScreenShare}
-            className={`hidden sm:flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition active-press hover-lift ${
+            className={`hidden md:flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition active-press ${
               isScreenSharing ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:text-white"
             }`}
+            title="Share Screen"
           >
-            🖥️ {isScreenSharing ? "Stop Share" : "Share Screen"}
+            🖥️ {isScreenSharing ? "Stop Share" : "Share"}
+          </button>
+
+          {/* Quick Stage / Board Switcher */}
+          <button
+            type="button"
+            onClick={() => setStageMode(stageMode === "audio" ? "whiteboard" : "audio")}
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold border transition active-press ${
+              stageMode === "whiteboard"
+                ? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-sm"
+                : "border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
+            }`}
+            title={stageMode === "whiteboard" ? "Switch to Video Stage" : "Switch to Smart Whiteboard"}
+          >
+            <span>{stageMode === "whiteboard" ? "🎙️ Stage" : "🎨 Board"}</span>
           </button>
         </div>
 
-        {/* Center: Hand Raise, Quick Poll & Quick Reactions */}
-        <div className="flex items-center gap-2">
+        {/* Center / Right: Chat & Hub Drawer Trigger (Mobile), Hand Raise, Exit */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Mobile Chat & Hub Drawer Button (visible on screens < lg) */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileDrawerOpen(!mobileDrawerOpen);
+              setUnreadMessagesCount(0);
+            }}
+            className="lg:hidden relative flex items-center gap-1 rounded-xl border border-blue-500/40 bg-blue-600/20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-blue-300 hover:bg-blue-600/30 transition active-press"
+            title="Open Chat, Polls & Participants"
+          >
+            <span>💬</span>
+            <span className="hidden xs:inline">Hub</span>
+            {unreadMessagesCount > 0 && (
+              <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">
+                {unreadMessagesCount}
+              </span>
+            )}
+            {activePoll?.is_open && (
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+            )}
+          </button>
+
           {isTutorOrModerator && (
             <button
               onClick={() => {
                 setActiveTab("polls");
                 setIsCreatingPoll(true);
               }}
-              className="flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/30 transition active-press hover-lift"
+              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/30 transition active-press"
               title="Launch instant live poll or quiz checkpoint"
             >
-              <span>🎯 Quick Poll</span>
+              <span>🎯 Poll</span>
             </button>
           )}
 
           <button
             onClick={toggleHandRaise}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold border transition active-press hover-lift ${
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold border transition active-press ${
               isHandRaised
                 ? "border-amber-500 bg-amber-500/20 text-amber-300"
                 : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
             }`}
+            title={isHandRaised ? "Lower Hand" : "Raise Hand"}
           >
-            ✋ {isHandRaised ? "Lower Hand" : "Raise Hand"}
+            <span>✋</span>
+            <span className="hidden sm:inline">{isHandRaised ? "Lower" : "Hand"}</span>
           </button>
 
           <div className="hidden md:flex items-center gap-1 bg-slate-800/80 rounded-xl p-1 border border-slate-700">
@@ -2703,15 +2351,12 @@ export default function LiveClassroomPage({
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Right: Exit */}
-        <div>
           <Link
             href="/dashboard"
-            className="rounded-xl border border-rose-500/40 bg-rose-600/20 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-600 hover:text-white transition"
+            className="rounded-xl border border-rose-500/40 bg-rose-600/20 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-rose-300 hover:bg-rose-600 hover:text-white transition whitespace-nowrap active-press"
           >
-            Exit Class
+            Exit
           </Link>
         </div>
       </footer>
