@@ -518,6 +518,18 @@ export default function AdminQuestionsPage() {
       "marks",
       "difficulty",
       "is_active",
+      "question_image_url",
+      "question_image_alt",
+      "option_a_image_url",
+      "option_a_image_alt",
+      "option_b_image_url",
+      "option_b_image_alt",
+      "option_c_image_url",
+      "option_c_image_alt",
+      "option_d_image_url",
+      "option_d_image_alt",
+      "explanation_image_url",
+      "explanation_image_alt",
     ];
     const sample = [
       [
@@ -537,7 +549,7 @@ export default function AdminQuestionsPage() {
         "Subtract 9 from both sides: 3x = 15, then divide by 3: x = 5",
         "1",
         "easy",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
     ];
 
@@ -567,6 +579,18 @@ export default function AdminQuestionsPage() {
       "marks",
       "difficulty",
       "is_active",
+      "question_image_url",
+      "question_image_alt",
+      "option_a_image_url",
+      "option_a_image_alt",
+      "option_b_image_url",
+      "option_b_image_alt",
+      "option_c_image_url",
+      "option_c_image_alt",
+      "option_d_image_url",
+      "option_d_image_alt",
+      "explanation_image_url",
+      "explanation_image_alt",
     ];
 
     const sampleQuestions = [
@@ -587,7 +611,7 @@ export default function AdminQuestionsPage() {
         "The text explicitly notes cascade effects undermining soil fertility, water filtration, and climate resilience.",
         "1",
         "medium",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
       [
         "MTH-ALG-01",
@@ -606,7 +630,7 @@ export default function AdminQuestionsPage() {
         "Dividing by 2 gives x² - 4x + 3 = 0, which factors into (x - 1)(x - 3) = 0. Hence, x = 1 or x = 3.",
         "1",
         "medium",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
       [
         "PHY-MEC-01",
@@ -625,7 +649,7 @@ export default function AdminQuestionsPage() {
         "Using v = u + at with initial velocity u = 0: v = 0 + (2.5)(8) = 20 m/s.",
         "1",
         "easy",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
       [
         "CHM-BND-01",
@@ -644,7 +668,7 @@ export default function AdminQuestionsPage() {
         "NaCl is formed by complete electron transfer between highly electropositive sodium and electronegative chlorine.",
         "1",
         "easy",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
       [
         "BIO-GEN-01",
@@ -663,7 +687,7 @@ export default function AdminQuestionsPage() {
         "A monohybrid cross of heterozygous parents (Aa x Aa) yields 3 dominant to 1 recessive phenotype.",
         "1",
         "medium",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
       [
         "GOV-CON-01",
@@ -682,7 +706,7 @@ export default function AdminQuestionsPage() {
         "A rigid constitution requires a special, rigorous amendment procedure involving supermajorities or referendums.",
         "1",
         "medium",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
       [
         "ECO-MKT-01",
@@ -701,7 +725,7 @@ export default function AdminQuestionsPage() {
         "In perfect competition, individual firms are price takers facing a horizontal demand curve where P = AR = MR.",
         "1",
         "hard",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
       [
         "AGR-SOIL-01",
@@ -720,7 +744,7 @@ export default function AdminQuestionsPage() {
         "Terracing and contour plowing slow runoff velocity and retain topsoil on sloped farmland.",
         "1",
         "easy",
-        "true",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
     ];
 
