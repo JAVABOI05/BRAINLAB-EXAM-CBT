@@ -255,7 +255,7 @@ export default function AdminDashboardPage() {
         <section className="admin-hero">
           <div className="admin-hero-top">
             <div>
-<div className="admin-badge">BrainLab · {adminUser ? ADMIN_ROLE_DETAILS[adminUser.role].label : "Admin Dashboard"}</div>
+<div className="admin-badge">BrainLab · {adminUser ? (ADMIN_ROLE_DETAILS[adminUser.role]?.label ?? adminUser.role.replaceAll("_", " ")) : "Admin Dashboard"}</div>
 <h1 className="admin-title">CBT Control Center</h1>
 <p className="admin-subtitle">
   Monitor results, manage question banks, generate access codes, track exam
