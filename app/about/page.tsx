@@ -12,6 +12,7 @@ const values = [
 export const metadata = {
   title: "About BrainLab Academy",
   description: "Discover BrainLab Academy's vision, mission, values and long-term learning ecosystem direction.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {
