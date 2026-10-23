@@ -3,9 +3,7 @@ import SiteChrome from "./components/SiteChrome";
 import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
 import "./globals.css";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-  "https://www.brainlabacademy.com.ng";
+const siteUrl = "https://www.brainlabacademy.com.ng";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
