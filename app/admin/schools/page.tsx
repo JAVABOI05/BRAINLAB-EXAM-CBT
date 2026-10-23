@@ -94,6 +94,40 @@ export default function AdminSchoolsPage() {
   const [genExpiryDays, setGenExpiryDays] = useState<number>(30);
   const [batches, setBatches] = useState<MockPinBatch[]>([]);
   const [activeBatch, setActiveBatch] = useState<MockPinBatch | null>(null);
+  const [voucherModalBatch, setVoucherModalBatch] = useState<MockPinBatch | null>(null);
+
+  const handleQuickApproveAndGenerate = (inq: SchoolInquiry) => {
+    let parsedCount = 100;
+    if (inq.studentCount.includes("101-300")) parsedCount = 200;
+    else if (inq.studentCount.includes("301-600")) parsedCount = 400;
+    else if (inq.studentCount.includes("601+")) parsedCount = 700;
+    else if (inq.studentCount.includes("50-100")) parsedCount = 80;
+
+    const generatedPins: string[] = [];
+    for (let i = 0; i < parsedCount; i++) {
+      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
+      generatedPins.push(`BL-${randomSuffix}`);
+    }
+
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 45);
+
+    const newBatch: MockPinBatch = {
+      batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+      schoolName: inq.schoolName,
+      examType: inq.examType,
+      count: parsedCount,
+      pins: generatedPins,
+      createdAt: new Date().toLocaleString(),
+      expiryDate: expiryDate.toLocaleDateString(),
+    };
+
+    setBatches((prev) => [newBatch, ...prev]);
+    setInquiries((prev) =>
+      prev.map((item) => (item.id === inq.id ? { ...item, status: "Active Partner" } : item))
+    );
+    setVoucherModalBatch(newBatch);
+  };
 
   useEffect(() => {
     async function init() {
@@ -346,7 +380,15 @@ export default function AdminSchoolsPage() {
 
                   {/* Actions Bar */}
                   <div className="flex md:flex-col items-center md:items-end justify-between gap-2 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
-                    <div className="flex gap-2 text-xs">
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => handleQuickApproveAndGenerate(inq)}
+                        className="rounded-xl bg-gradient-to-r from-blue-700 to-cyan-600 px-3.5 py-1.5 font-bold text-white hover:from-blue-800 hover:to-cyan-700 transition shadow"
+                        title="1-Click Approve, Generate PIN batch, and open printable Accreditation Voucher"
+                      >
+                        ⚡ Approve &amp; Issue Slip
+                      </button>
                       <a
                         href={`https://wa.me/${inq.phone.replace(/[^0-9]/g, "")}?text=Hello%20${encodeURIComponent(
                           inq.contactName
@@ -355,7 +397,7 @@ export default function AdminSchoolsPage() {
                         })`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-xl bg-emerald-600 px-3.5 py-1.5 font-bold text-white hover:bg-emerald-500 transition shadow"
+                        className="rounded-xl bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-500 transition shadow"
                       >
                         WhatsApp
                       </a>
@@ -363,9 +405,9 @@ export default function AdminSchoolsPage() {
                         href={`mailto:${inq.email}?subject=BrainLab%20CBT%20Proposal%20for%20${encodeURIComponent(
                           inq.schoolName
                         )}&body=Dear%20${encodeURIComponent(inq.contactName)},`}
-                        className="rounded-xl bg-blue-600 px-3.5 py-1.5 font-bold text-white hover:bg-blue-500 transition shadow"
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-bold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
                       >
-                        Email Proposal
+                        Email
                       </a>
                     </div>
 
@@ -527,18 +569,26 @@ export default function AdminSchoolsPage() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setVoucherModalBatch(batch)}
+                        className="rounded-xl bg-gradient-to-r from-blue-700 to-cyan-600 px-3.5 py-2 text-xs font-bold text-white hover:from-blue-800 hover:to-cyan-700 transition shadow"
+                        title="View and print official BrainLab Accreditation Voucher Certificate"
+                      >
+                        📜 Accreditation Voucher
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleExportBatchCsv(batch)}
-                        className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 transition shadow"
+                        className="rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-500 transition shadow"
                       >
                         📥 Download CSV PINs
                       </button>
                       <button
                         type="button"
                         onClick={() => window.print()}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
                       >
                         🖨️ Print Lab Slips
                       </button>
@@ -568,6 +618,125 @@ export default function AdminSchoolsPage() {
           </div>
         )}
       </div>
+
+      {/* Official Institutional Accreditation Voucher Modal */}
+      {voucherModalBatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-3xl rounded-3xl bg-white p-6 sm:p-10 shadow-2xl text-slate-900 border-4 border-double border-blue-900">
+            {/* Header controls (hidden on print) */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 print:hidden">
+              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-900 uppercase tracking-widest">
+                Official Institutional Dispatch
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 transition flex items-center gap-1.5"
+                >
+                  <span>🖨️ Print / Save PDF Voucher</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVoucherModalBatch(null)}
+                  className="rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  ✕ Close
+                </button>
+              </div>
+            </div>
+
+            {/* Voucher Certificate Sheet */}
+            <div className="mt-6 space-y-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-blue-900 pb-5 text-center sm:text-left">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-800">
+                    BrainLab Academy • Directorate of Academic Assessment
+                  </p>
+                  <h2 className="mt-1 text-2xl sm:text-3xl font-black text-[#012153] tracking-tight">
+                    CBT ACCREDITATION &amp; PASS VOUCHER
+                  </h2>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Authorization for Computer Lab Automated Examination Session
+                  </p>
+                </div>
+                <div className="flex flex-col items-center sm:items-end">
+                  <span className="rounded-xl bg-slate-900 px-3 py-1 font-mono text-xs font-bold text-cyan-300">
+                    {voucherModalBatch.batchId}
+                  </span>
+                  <span className="text-[10px] text-slate-500 mt-1">
+                    Issued: {voucherModalBatch.createdAt}
+                  </span>
+                </div>
+              </div>
+
+              {/* Institution Metadata Grid */}
+              <div className="grid sm:grid-cols-2 gap-4 rounded-2xl bg-blue-50/70 p-5 border border-blue-200 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Accredited Institution:</span>
+                  <strong className="text-base text-blue-950 font-black">{voucherModalBatch.schoolName}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Examination Program:</span>
+                  <strong className="text-base text-blue-950 font-black">{voucherModalBatch.examType}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Candidate Seat Allocation:</span>
+                  <strong className="text-sm text-emerald-800 font-black">{voucherModalBatch.count} Authorized Candidates</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 block">Batch Expiration Date:</span>
+                  <strong className="text-sm text-rose-800 font-black">{voucherModalBatch.expiryDate}</strong>
+                </div>
+              </div>
+
+              {/* Activation Instructions */}
+              <div className="space-y-2 text-xs text-slate-700 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+                  📌 ICT Laboratory / Exam Officer Instructions:
+                </h4>
+                <ol className="list-decimal pl-5 space-y-1.5 leading-relaxed">
+                  <li>
+                    Instruct candidates to open their laboratory browser and visit:{" "}
+                    <code className="rounded bg-white px-1.5 py-0.5 font-mono font-bold text-blue-900 border border-slate-300">
+                      https://brainlabexam-cbt.vercel.app/access
+                    </code>
+                  </li>
+                  <li>
+                    Distribute an individual 6-digit Candidate PIN from this batch to each candidate seat.
+                  </li>
+                  <li>
+                    Candidates enter their PIN, verify their subject combination, and launch the timed CBT exam.
+                  </li>
+                  <li>
+                    Results and instantaneous cognitive diagnostic slips will generate automatically upon test completion.
+                  </li>
+                </ol>
+              </div>
+
+              {/* Signatures & Seal */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-slate-200 text-xs">
+                <div className="text-center sm:text-left">
+                  <div className="h-10 w-36 border-b border-dashed border-slate-400 mb-1" />
+                  <p className="font-bold text-slate-900">Dr. K. Adeleke</p>
+                  <p className="text-[10px] text-slate-500">Academic Assessment Director</p>
+                </div>
+                <div className="rounded-full border-2 border-double border-blue-900 p-3 text-center">
+                  <span className="text-xs font-black uppercase tracking-widest text-blue-950 block">
+                    ★ OFFICIAL SEAL ★
+                  </span>
+                  <span className="text-[9px] text-slate-500 block">BrainLab Nigeria</span>
+                </div>
+                <div className="text-center sm:text-right">
+                  <div className="h-10 w-36 border-b border-dashed border-slate-400 mb-1" />
+                  <p className="font-bold text-slate-900">Exam Officer / Principal</p>
+                  <p className="text-[10px] text-slate-500">{voucherModalBatch.schoolName}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

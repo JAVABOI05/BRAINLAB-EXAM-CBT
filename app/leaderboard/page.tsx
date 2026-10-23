@@ -58,8 +58,8 @@ export default function GlobalLeaderboardPage() {
               </div>
 
               <Link
-                href="/profile/achievements"
-                className="rounded-xl bg-[#071c43] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-950"
+                href="/learning/achievements"
+                className="rounded-xl bg-[#071c43] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-950 flex items-center gap-1"
               >
                 🏅 My Badges &amp; Level →
               </Link>
@@ -85,6 +85,29 @@ export default function GlobalLeaderboardPage() {
                 {tab.label}
               </button>
             ))}
+          </div>
+
+          {/* Weekly Academic Prize Pool & Challenge Arena Trigger */}
+          <div className="mb-8 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 via-cyan-50 to-amber-50 p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-700 to-cyan-500 text-2xl text-white shadow shrink-0">
+                🎁
+              </span>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-blue-900">
+                  Weekly Academic Prize Pool &amp; Streak Multipliers
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5 max-w-xl">
+                  Top 3 learners at Sunday midnight win 1-Month Premium CBT Access + Official UTME Champion Badges! Play the 10-Question Challenge Arena to boost your XP score.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/challenge-arena"
+              className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-black text-white shadow-sm transition whitespace-nowrap flex items-center gap-1.5"
+            >
+              <span>🔥 Play Arena (+2x XP) →</span>
+            </Link>
           </div>
 
           {/* Podium for Top 3 */}

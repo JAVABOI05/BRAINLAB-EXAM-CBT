@@ -27,6 +27,42 @@ export default function AdminLiveClassroomControlPage() {
   const [sessionRoomId, setSessionRoomId] = useState(`live-${Math.random().toString(36).substring(2, 8)}`);
   const [sessionFormat, setSessionFormat] = useState<"interactive" | "quiz" | "broadcast">("interactive");
   const [isCopied, setIsCopied] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastFeedback, setBroadcastFeedback] = useState("");
+
+  const handleWhatsAppShare = () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://brainlabexam-cbt.vercel.app";
+    const link = `${origin}/classroom/${sessionRoomId.trim() || "live-session"}`;
+    const text = `🎓 *BrainLab Live Academic Masterclass*\n📌 *Topic:* ${sessionTitle} - ${sessionTopic}\n🎙️ *Format:* Interactive Audio, Diagram Whiteboard & Speed Quizzes\n🔗 *Join Room Now:* ${link}\n\n_No downloads required. Works smoothly on phone or PC._`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
+  const handleBroadcastAlert = async () => {
+    setIsBroadcasting(true);
+    setBroadcastFeedback("");
+    try {
+      const res = await fetch("/api/classroom/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: sessionRoomId.trim() || "live-session",
+          title: sessionTitle,
+          topic: sessionTopic,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setBroadcastFeedback(data.message || "Alert dispatched to learners!");
+      } else {
+        setBroadcastFeedback(data.error || "Failed to dispatch alert.");
+      }
+    } catch {
+      setBroadcastFeedback("Network error broadcasting alert.");
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
   const [config, setConfig] = useState<LiveClassroomConfig>({
     provider: "webrtc",
     max_capacity_default: 100,
@@ -161,25 +197,54 @@ export default function AdminLiveClassroomControlPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
+                  onClick={handleWhatsAppShare}
+                  className="rounded-xl border border-emerald-400/40 bg-emerald-950/60 hover:bg-emerald-900/60 px-3.5 py-2.5 text-xs font-bold text-emerald-300 transition flex items-center gap-2"
+                  title="Share invitation with prefilled details directly to WhatsApp class group"
+                >
+                  <span>📲 Broadcast to WhatsApp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBroadcastAlert}
+                  disabled={isBroadcasting}
+                  className="rounded-xl border border-amber-400/40 bg-amber-950/60 hover:bg-amber-900/60 px-3.5 py-2.5 text-xs font-bold text-amber-300 transition flex items-center gap-2 disabled:opacity-50"
+                  title="Dispatch in-app notifications and banner to all logged-in students"
+                >
+                  <span>{isBroadcasting ? "Sending..." : "🔔 In-App Alert to Students"}</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     const link = `${window.location.origin}/classroom/${sessionRoomId.trim() || "live-session"}`;
                     navigator.clipboard.writeText(link);
                     setIsCopied(true);
                     setTimeout(() => setIsCopied(false), 2500);
                   }}
-                  className="rounded-xl border border-cyan-400/40 bg-cyan-950/60 hover:bg-cyan-900/60 px-4 py-2.5 text-xs font-bold text-cyan-300 transition flex items-center gap-2"
+                  className="rounded-xl border border-cyan-400/40 bg-cyan-950/60 hover:bg-cyan-900/60 px-3.5 py-2.5 text-xs font-bold text-cyan-300 transition flex items-center gap-2"
                 >
-                  <span>{isCopied ? "✅ Link Copied!" : "📋 Copy Student Join Link"}</span>
+                  <span>{isCopied ? "✅ Link Copied!" : "📋 Copy Link"}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push(`/classroom/${sessionRoomId.trim() || "live-session"}`)}
                   className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-2"
                 >
-                  <span>🚀 Launch Live Stage Now →</span>
+                  <span>🚀 Launch Live Stage →</span>
                 </button>
               </div>
             </div>
+
+            {broadcastFeedback && (
+              <div
+                className={`mt-4 rounded-xl p-3 text-xs font-bold ${
+                  broadcastFeedback.includes("success") || broadcastFeedback.includes("dispatched")
+                    ? "bg-emerald-900/60 border border-emerald-500/40 text-emerald-200"
+                    : "bg-rose-900/60 border border-rose-500/40 text-rose-200"
+                }`}
+              >
+                {broadcastFeedback}
+              </div>
+            )}
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>

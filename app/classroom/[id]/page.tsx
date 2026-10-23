@@ -119,6 +119,14 @@ export default function LiveClassroomPage({
   const [currentlyPlayingAudioId, setCurrentlyPlayingAudioId] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
+  // Interactive Live Whiteboard State
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [stageMode, setStageMode] = useState<"audio" | "whiteboard">("audio");
+  const [penColor, setPenColor] = useState("#06b6d4");
+  const [penWidth, setPenWidth] = useState(3);
+  const [isEraser, setIsEraser] = useState(false);
+  const isDrawingRef = useRef(false);
+
   // Roster
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [reactionFloat, setReactionFloat] = useState<{ id: string; emoji: string }[]>([]);
@@ -654,6 +662,88 @@ export default function LiveClassroomPage({
     }
   };
 
+  // 5c. Whiteboard Canvas Handlers
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    isDrawingRef.current = true;
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
+    ctx.strokeStyle = isEraser ? (resolvedTheme === "dark" ? "#0f172a" : "#ffffff") : penColor;
+    ctx.lineWidth = isEraser ? penWidth * 5 : penWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    isDrawingRef.current = false;
+  };
+
+  const clearWhiteboard = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const shareWhiteboardToChat = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !currentUser) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    const newMsg: ClassroomMessage = {
+      id: `msg_wb_${Date.now()}`,
+      senderId: currentUser.id,
+      senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+      text: "🎨 Shared live whiteboard sketch/diagram",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      isHost: classDetails?.tutorId === currentUser.id,
+      type: "image",
+      mediaUrl: dataUrl,
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setActiveTab("chat");
+    try {
+      channelRef.current?.send({
+        type: "broadcast",
+        event: "chat_message",
+        payload: { message: newMsg },
+      });
+    } catch {
+      // ignore
+    }
+  };
+
   // 6. Send Emoji Reaction
   const sendReaction = (emoji: string) => {
     const id = `react_${Date.now()}_${Math.random()}`;
@@ -972,7 +1062,132 @@ export default function LiveClassroomPage({
         {/* Video / Stage Area */}
         <main className="flex-1 flex flex-col items-center justify-center p-4 bg-slate-200/70 dark:bg-slate-950 relative transition-colors">
           <div className="w-full h-full max-w-5xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
-            {isVideoEnabled || isScreenSharing ? (
+            {/* Top Right Stage Mode Switcher */}
+            <div className="absolute top-4 right-4 z-20 flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-slate-700/80 backdrop-blur shadow-md">
+              <button
+                type="button"
+                onClick={() => setStageMode("audio")}
+                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                  stageMode === "audio"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                🎙️ Stage
+              </button>
+              <button
+                type="button"
+                onClick={() => setStageMode("whiteboard")}
+                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition flex items-center gap-1 ${
+                  stageMode === "whiteboard"
+                    ? "bg-cyan-500 text-slate-950"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>🎨 Whiteboard</span>
+                <span className="rounded-full bg-cyan-400/30 px-1 py-0.2 text-[9px] font-black uppercase">Live</span>
+              </button>
+            </div>
+
+            {stageMode === "whiteboard" ? (
+              <div className="w-full h-full flex flex-col bg-slate-950 relative select-none">
+                {/* Whiteboard Floating Toolbar */}
+                <div className="z-20 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/90 px-4 py-2.5 backdrop-blur">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black uppercase text-cyan-300 flex items-center gap-1">
+                      <span>🎨</span> Canvas
+                    </span>
+                    <div className="h-4 w-px bg-slate-700 mx-1" />
+
+                    {/* Color palette */}
+                    <div className="flex items-center gap-1.5">
+                      {["#06b6d4", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ffffff", "#a855f7"].map(
+                        (col) => (
+                          <button
+                            key={col}
+                            type="button"
+                            onClick={() => {
+                              setPenColor(col);
+                              setIsEraser(false);
+                            }}
+                            className={`h-5 w-5 rounded-full border-2 transition ${
+                              penColor === col && !isEraser
+                                ? "scale-125 border-white shadow"
+                                : "border-transparent opacity-80 hover:opacity-100"
+                            }`}
+                            style={{ backgroundColor: col }}
+                            title={`Pen color ${col}`}
+                          />
+                        )
+                      )}
+                    </div>
+
+                    <div className="h-4 w-px bg-slate-700 mx-1" />
+
+                    {/* Stroke Widths */}
+                    <div className="flex items-center gap-1">
+                      {[2, 4, 8].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => setPenWidth(size)}
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                            penWidth === size ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {size === 2 ? "Fine" : size === 4 ? "Medium" : "Bold"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEraser(!isEraser)}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-bold border transition ${
+                        isEraser
+                          ? "bg-rose-500/20 border-rose-500 text-rose-300"
+                          : "border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
+                      }`}
+                    >
+                      <span>🧹 Eraser</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearWhiteboard}
+                      className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={shareWhiteboardToChat}
+                      className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-1 text-xs font-black text-white hover:opacity-90 shadow flex items-center gap-1"
+                    >
+                      <span>📸 Snapshot to Chat</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Canvas Sheet */}
+                <div className="flex-1 w-full h-full relative overflow-hidden bg-slate-950 cursor-crosshair">
+                  <canvas
+                    ref={canvasRef}
+                    width={1000}
+                    height={600}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                    className="w-full h-full touch-none"
+                  />
+                </div>
+              </div>
+            ) : isVideoEnabled || isScreenSharing ? (
               <video
                 ref={localVideoRef}
                 autoPlay
