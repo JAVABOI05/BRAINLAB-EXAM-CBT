@@ -306,7 +306,7 @@ export default function StudentRefundPage() {
                 <div className="border-t border-blue-200 pt-3">
                   <p className="font-semibold text-blue-900">Need direct human assistance?</p>
                   <p className="mt-0.5">
-                    Email: <a href="mailto:support@brainlab.ac" className="underline font-bold">support@brainlab.ac</a>
+                    Email: <a href="mailto:support@brainlabacademy.com.ng" className="underline font-bold">support@brainlabacademy.com.ng</a>
                   </p>
                 </div>
               </aside>

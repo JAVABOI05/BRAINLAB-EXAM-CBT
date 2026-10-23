@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
       );
 
       await supabase.from("configuration_audit_logs").insert({
-        admin_email: "paystack-webhook@brainlab.ac",
+        admin_email: "paystack-webhook@brainlabacademy.com.ng",
         entity_type: "plan",
         entity_id: tx.plan_id,
         action: "updated",

@@ -99,7 +99,7 @@ export default function ResultPage() {
   // Handle WhatsApp Share
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🎯 BrainLab UTME Mock Scorecard\nCandidate: ${candidate?.name || "Student"}\nTotal Score: ${totalScore}/${totalPossible} (${percentage}%)\nStrongest Subject: ${bestSubject ? `${bestSubject[0]} (${bestSubject[1]}/100)` : "General"}\nCheck verified scores at https://brainlabcbt.com/result`
+      `🎯 BrainLab UTME Mock Scorecard\nCandidate: ${candidate?.name || "Student"}\nTotal Score: ${totalScore}/${totalPossible} (${percentage}%)\nStrongest Subject: ${bestSubject ? `${bestSubject[0]} (${bestSubject[1]}/100)` : "General"}\nCheck verified scores at https://www.brainlabacademy.com.ng/result`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
@@ -543,7 +543,7 @@ export default function ResultPage() {
                 Official BrainLab Digital Verification Code
               </p>
               <p className="mt-0.5 font-mono text-[11px]">
-                https://brainlabcbt.com/verify/{summary?.result_id || "mock-result"}
+                https://www.brainlabacademy.com.ng/verify/{summary?.result_id || "mock-result"}
               </p>
               <p className="mt-1 text-[10px]">
                 Issued by BrainLab Academy Examination Directorate under strict CBT proctoring standards.

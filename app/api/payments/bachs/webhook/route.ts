@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
 
       // Audit log entry
       await supabase.from("configuration_audit_logs").insert({
-        admin_email: "bachs-webhook@brainlab.ac",
+        admin_email: "bachs-webhook@brainlabacademy.com.ng",
         entity_type: "plan",
         entity_id: tx.plan_id,
         action: "updated",
