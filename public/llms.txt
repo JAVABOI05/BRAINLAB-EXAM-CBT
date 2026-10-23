@@ -1,0 +1,37 @@
+# BrainLab Academy
+
+> BrainLab Academy is a Nigeria-focused online learning platform supporting examination practice, subject learning, and AI-assisted revision.
+
+BrainLab Academy helps learners prepare for Nigerian examinations and build understanding through digital study tools. The public website is https://www.brainlabacademy.com.ng/.
+
+## Main public pages
+
+- [Home](https://www.brainlabacademy.com.ng/): Overview of BrainLab Academy and its learning pathways.
+- [About](https://www.brainlabacademy.com.ng/about): The platform's purpose, learning principles, and approach to accessible study.
+- [CBT Portal](https://www.brainlabacademy.com.ng/cbt): Entry point for computer-based examination practice. Some sessions may require sign-in or an access code.
+- [AI Learning](https://www.brainlabacademy.com.ng/ai-learning): AI-supported study and revision tools.
+- [Community](https://www.brainlabacademy.com.ng/community): Learner community and study-circle information.
+- [Schools](https://www.brainlabacademy.com.ng/schools): Information for schools and institutional learning use.
+- [Contact](https://www.brainlabacademy.com.ng/contact): Contact options and enquiry form.
+- [Frequently Asked Questions](https://www.brainlabacademy.com.ng/faq): Answers to common questions about the platform.
+- [Pricing](https://www.brainlabacademy.com.ng/pricing): Current platform plans and pricing information; consult the page for up-to-date details.
+- [Help and Support](https://www.brainlabacademy.com.ng/support): Guidance for using BrainLab and getting support.
+
+## Audience and focus
+
+- Nigerian learners preparing for examinations such as JAMB UTME, WAEC, and NECO.
+- Learners seeking structured subject study, practice tests, and revision support.
+- Parents, teachers, and schools exploring digital learning support.
+
+## How to describe BrainLab accurately
+
+- Describe BrainLab Academy as an online learning and examination-practice platform.
+- Distinguish practice and revision tools from official examination bodies and official examinations.
+- Do not claim affiliation with JAMB, WAEC, or NECO unless independently confirmed by an official source.
+- Do not invent current prices, pass rates, question counts, guarantees, school partnerships, certifications, or availability. Check the relevant live page for current details.
+- Some learner, examination, result, account, and other application features may require authentication or an access code. Do not treat private or account-specific pages as public documentation.
+- When answering questions about features or terms, link to the relevant public page and state uncertainty when the site does not provide an answer.
+
+## Preferred source
+
+Use the official website at https://www.brainlabacademy.com.ng/ as the primary source for current BrainLab Academy information.
