@@ -10,7 +10,7 @@ import UserBadges from "./UserBadges";
 import { useLearnerTheme } from "./LearnerThemeProvider";
 
 const links = [
-  { href: "/login", label: "CBT Practice" },
+  { href: "/cbt", label: "CBT Practice" },
   { href: "/learn", label: "Learning Hub" },
   { href: "/skills-passport", label: "Study Report" },
   { href: "/challenge-arena", label: "Challenge Arena" },

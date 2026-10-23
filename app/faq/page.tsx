@@ -20,8 +20,8 @@ const FAQ_DATABASE: FAQItem[] = [
     category: "cbt",
     categoryLabel: "CBT & Exams",
     question: "How do I begin CBT practice or start an official mock examination?",
-    answer: "Visit the CBT portal at /login. Enter your Candidate Name, active Phone Number, and select your elective subject (Mathematics or Biology). If your session requires an access code, enter the 6-character code provided by your school administrator or BrainLab support, then proceed to the Candidate Briefing instructions.",
-    actionHref: "/login",
+    answer: "Visit the CBT portal at /cbt. If signed in, your candidate profile is recognized automatically. Enter your elective subject (Mathematics or Biology). If your session requires an access code, enter the 6-character code provided by your school administrator or BrainLab support, then proceed to the Candidate Briefing instructions.",
+    actionHref: "/cbt",
     actionLabel: "Open CBT Portal",
   },
   {

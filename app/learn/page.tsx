@@ -329,7 +329,7 @@ export default function LearnPage() {
               <p className="mt-3 max-w-2xl leading-7 text-slate-600">
                 Published subjects will appear here when a tutor has created and reviewed the learning material.
               </p>
-              <Link href="/login" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">
+              <Link href="/cbt" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">
                 Practise with CBT
               </Link>
             </div>

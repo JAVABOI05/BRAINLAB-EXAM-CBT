@@ -21,7 +21,7 @@ export default function InstructionsPage() {
     const saved = localStorage.getItem("candidate");
 
     if (!saved) {
-      router.push("/login");
+      router.push("/cbt");
       return;
     }
 
@@ -29,7 +29,7 @@ export default function InstructionsPage() {
       const parsed = JSON.parse(saved) as Candidate;
       queueMicrotask(() => setCandidate(parsed));
     } catch {
-      router.push("/login");
+      router.push("/cbt");
     }
   }, [router]);
 
@@ -154,10 +154,10 @@ export default function InstructionsPage() {
         {/* Action Buttons */}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
           <button
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/cbt")}
             className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition"
           >
-            ← Back to Login
+            ← Back to CBT Launchpad
           </button>
 
           <button

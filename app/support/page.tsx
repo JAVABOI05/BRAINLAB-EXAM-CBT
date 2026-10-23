@@ -9,7 +9,7 @@ const faqs = [
   [
     "How do I start CBT practice?",
     "Open the CBT portal and enter your candidate name and subject combination. If an access code is enabled, enter your assigned PIN to start.",
-    "/login",
+    "/cbt",
     "Open CBT portal",
   ],
   [

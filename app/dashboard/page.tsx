@@ -95,7 +95,7 @@ const spaces = [
     eyebrow: "PRACTISE WITH PURPOSE",
     title: "CBT Practice",
     description: "Enter the candidate examination portal, test your readiness, and review released corrections.",
-    href: "/login",
+    href: "/cbt",
     action: "Open CBT practice",
   },
   {

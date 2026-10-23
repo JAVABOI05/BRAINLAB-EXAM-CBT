@@ -104,7 +104,7 @@ export default function SkillsPassportPage() {
               Create Free Account →
             </Link>
             <Link
-              href="/login"
+              href="/cbt"
               className="mt-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
             >
               Taking a mock exam? Go to CBT Exam Portal

@@ -2,47 +2,44 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Explore BrainLab Academy",
-  description: "Browse current BrainLab Academy pages and the Coming Soon areas planned for future development.",
+  description: "Browse BrainLab Academy's complete learning spaces, CBT portals, study circles, and institutional tools.",
 };
 
-const groups = [
-  { title: "Start here", description: "The current entry points and the Academy story.", items: [
-    { title: "Academy home", href: "/", status: "Available", detail: "Landing page and learning pathways." },
-    { title: "About BrainLab", href: "/about", status: "Available", detail: "Vision, mission and values." },
-    { title: "CBT portal", href: "/login", status: "Existing service", detail: "Continue to the existing candidate workflow." },
-    { title: "Learner account", href: "/account", status: "Existing service", detail: "Sign in, create an account or recover access." },
-    { title: "Learner dashboard", href: "/dashboard", status: "First version", detail: "A starting point for current learner tools." },
-    { title: "Revision planner", href: "/learning/revision", status: "First version", detail: "Browser-local study goals and topic checklist." },
-    { title: "Help and support", href: "/support", status: "Available", detail: "Current CBT and account FAQs." },
+const sections = [
+  { title: "Current core spaces", description: "The live and operational areas of BrainLab Academy.", items: [
+    { title: "Home", href: "/", status: "Available", detail: "The platform homepage and entry points." },
+    { title: "CBT Practice", href: "/cbt", status: "Available", detail: "JAMB UTME past question practice and mock portal." },
+    { title: "Learning Hub", href: "/learn", status: "Available", detail: "Curriculum-aligned lessons, syllabus, and study notes." },
+    { title: "Dashboard", href: "/dashboard", status: "Available", detail: "Your personalized study hub and revision progress." },
+    { title: "Revision planner", href: "/learning/revision", status: "Available", detail: "Account-linked study goals and topic checklist." },
+    { title: "Help and support", href: "/support", status: "Available", detail: "CBT guides, Bachs payment help, and account FAQs." },
   ]},
-  { title: "Learning and practice", description: "Planned spaces for study resources and new ways to practise.", items: [
-    { title: "CBT and Exam Practice", href: "/cbt", status: "Coming soon", detail: "A dedicated overview of available practice." },
-    { title: "AI Learning Companion", href: "/ai-learning", status: "Roadmap", detail: "Responsible AI-assisted explanations and practice." },
-    { title: "Courses", href: "/courses", status: "Roadmap", detail: "Future structured learning pathways." },
-    { title: "My Courses", href: "/learning/courses", status: "Coming soon", detail: "A future personal course area." },
-    { title: "Learning Resources", href: "/resources", status: "Coming soon", detail: "Reviewed notes and topic guides." },
-    { title: "Knowledge Base", href: "/knowledge-base", status: "Coming soon", detail: "A searchable reference library." },
-    { title: "Challenge Arena", href: "/challenge-arena", status: "Coming soon", detail: "Optional practice challenges." },
+  { title: "Learning and practice", description: "Live academic resources, formula sheets, and interactive practice tools.", items: [
+    { title: "Formula Sheets & Resources", href: "/resources", status: "Available", detail: "High-yield formulas, laws, and concord rules." },
+    { title: "Knowledge Base", href: "/knowledge-base", status: "Available", detail: "Searchable academic reference library and FAQs." },
+    { title: "Challenge Arena", href: "/challenge-arena", status: "Available", detail: "Daily 10-question sprint competitions & streaks." },
+    { title: "Self-Paced Practice", href: "/self-practice", status: "Available", detail: "Custom timed CBT quizzes across past papers." },
+    { title: "AI Learning Companion", href: "/ai-learning", status: "Available", detail: "AI-assisted explanations and topic summaries." },
+    { title: "Classroom Stage", href: "/classroom/demo-class", status: "Available", detail: "Live audio classroom and tutor presentations." },
   ]},
-  { title: "Progress and portfolio", description: "Personal learning views planned for future development.", items: [
-    { title: "My Progress", href: "/learning/progress", status: "Coming soon", detail: "Account-linked learning and practice signals." },
-    { title: "Achievements", href: "/learning/achievements", status: "Coming soon", detail: "Verified milestones, when supported." },
-    { title: "Learning DNA", href: "/learning-dna", status: "Concept", detail: "Explainable, data-supported learning insights." },
-    { title: "Skills Passport", href: "/skills-passport", status: "Concept", detail: "A learner-controlled project and skills portfolio." },
+  { title: "Progress and portfolio", description: "Personalized diagnostics, study records, and achievement tracking.", items: [
+    { title: "Learning DNA Diagnostic", href: "/learning-dna", status: "Available", detail: "Predicted JAMB score and competency spectrum." },
+    { title: "Study Report & Badges", href: "/skills-passport", status: "Available", detail: "Mastery radar, verified certificates, and progress report." },
+    { title: "Achievements & Streaks", href: "/learning/achievements", status: "Available", detail: "Study streaks, reward badges, and milestones." },
+    { title: "National Leaderboard", href: "/leaderboard", status: "Available", detail: "Top candidate rankings across Nigeria." },
   ]},
-  { title: "Community", description: "Future moderated peer-learning spaces.", items: [
-    { title: "Community overview", href: "/community", status: "Roadmap", detail: "The intended study community and safeguards." },
-    { title: "Study Groups", href: "/study-groups", status: "Coming soon", detail: "Moderated subject and goal-based study circles." },
-    { title: "Discussions", href: "/community/discussions", status: "Coming soon", detail: "Academic questions and peer discussion." },
-    { title: "Messages", href: "/messages", status: "Coming soon", detail: "Private messaging, subject to safety design." },
-    { title: "Notifications", href: "/notifications", status: "Coming soon", detail: "Important account and learning updates." },
+  { title: "Community & Peer Learning", description: "Moderated peer circles, cohorts, and academic discussions.", items: [
+    { title: "Community Overview", href: "/community", status: "Available", detail: "Academic cohorts, rules, and community guidelines." },
+    { title: "Study Groups & Circles", href: "/study-groups", status: "Available", detail: "Moderated subject cohorts (Medicine, Engineering, Arts)." },
+    { title: "Discussions & Q&A", href: "/community/discussions", status: "Available", detail: "Peer-to-peer past question explanations." },
+    { title: "Direct Messaging", href: "/messages", status: "Available", detail: "Secure communication with tutors and circle leads." },
   ]},
-  { title: "For institutions and support", description: "Public information and essential policy pages.", items: [
-    { title: "For Schools", href: "/schools", status: "Coming soon", detail: "Future school and institutional information." },
-    { title: "Contact", href: "/contact", status: "Coming soon", detail: "A central verified contact directory." },
-    { title: "FAQs", href: "/faq", status: "Coming soon", detail: "A fuller help centre." },
-    { title: "Privacy Notice", href: "/privacy", status: "Draft pending", detail: "Not a complete legal policy yet." },
-    { title: "Terms of Use", href: "/terms", status: "Draft pending", detail: "Not a complete legal terms document yet." },
+  { title: "Institutions & Essential Policies", description: "School licensing, directory, and verified policies.", items: [
+    { title: "For Schools & Institutions", href: "/schools", status: "Available", detail: "Computer lab CBT licensing and mock exam simulator." },
+    { title: "Official Contact Directory", href: "/contact", status: "Available", detail: "Central contact lines, WhatsApp desk, and emails." },
+    { title: "Comprehensive FAQs", href: "/faq", status: "Available", detail: "Searchable directory for parents, schools, and students." },
+    { title: "Privacy Notice", href: "/privacy", status: "Available", detail: "Official NDPR-compliant data protection notice." },
+    { title: "Terms of Use", href: "/terms", status: "Available", detail: "Governing terms, fair use, and academic integrity." },
   ]},
 ];
 
@@ -50,16 +47,40 @@ export default function ExplorePage() {
   return (
     <main id="main">
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
-          <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-blue-800">Academy directory</p>
-          <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl">The map of BrainLab Academy.</h1>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">Use this directory to see what is available now and which areas are reserved for future work. “Coming soon” means the page structure exists, not that the underlying feature is active.</p>
-          <div className="mt-6 flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full bg-blue-50 px-3 py-2 text-blue-900">Available now</span><span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">Coming soon / roadmap</span><span className="rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-slate-700">Policy review required</span></div>
+        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+          <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-blue-800">Sitemap and platform overview</span>
+          <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl">Explore BrainLab Academy.</h1>
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">A clear index of current features, learning spaces, and institutional capabilities across the BrainLab platform.</p>
         </div>
       </section>
-      <div className="mx-auto max-w-7xl space-y-12 px-5 py-12 sm:px-8 lg:py-16">
-        {groups.map((group) => <section key={group.title}><div className="max-w-2xl"><h2 className="text-2xl font-extrabold text-slate-950">{group.title}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{group.description}</p></div><div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{group.items.map((item) => <article key={item.href} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><h3 className="font-extrabold text-slate-950">{item.title}</h3><span className={item.status === "Available" || item.status === "Existing service" || item.status === "First version" ? "shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-900" : "shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-900"}>{item.status}</span></div><p className="mt-3 flex-1 text-sm leading-6 text-slate-600">{item.detail}</p><Link href={item.href} className="mt-4 inline-flex min-h-10 items-center font-bold text-blue-800 underline underline-offset-4">Open page <span aria-hidden="true" className="ml-2">→</span></Link></article>)}</div></section>)}
-      </div>
+      <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:py-20">
+        <div className="space-y-12">
+          {sections.map((section) => (
+            <div key={section.title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <h2 className="text-2xl font-extrabold text-slate-950">{section.title}</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-600">{section.description}</p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {section.items.map((item) => (
+                  <article key={item.title} className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-base font-extrabold text-slate-950">{item.title}</h3>
+                        <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-slate-600">{item.detail}</p>
+                    </div>
+                    <Link href={item.href} className="mt-4 inline-flex items-center text-xs font-bold text-blue-800 hover:text-blue-950">
+                      Open page <span aria-hidden="true" className="ml-1">→</span>
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

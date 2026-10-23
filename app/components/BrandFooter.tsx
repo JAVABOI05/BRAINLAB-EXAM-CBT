@@ -232,7 +232,7 @@ export default function BrandFooter() {
             </h3>
             <ul className="mt-4 space-y-2 text-xs">
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/login">
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/cbt">
                   JAMB UTME CBT
                 </Link>
               </li>
@@ -313,6 +313,16 @@ export default function BrandFooter() {
               <li>
                 <Link className="text-slate-300 transition-colors hover:text-white" href="/study-groups">
                   Study Circles &amp; Groups
+                </Link>
+              </li>
+              <li>
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/community">
+                  Community &amp; Discussions
+                </Link>
+              </li>
+              <li>
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/skills-passport">
+                  Study Report &amp; Badges
                 </Link>
               </li>
               <li>

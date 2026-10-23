@@ -144,7 +144,7 @@ export default function InteractiveSampleQuestion() {
           Ready for full timed subject tests and past questions?
         </p>
         <Link
-          href="/login"
+          href="/cbt"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#012153] hover:bg-blue-950 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
         >
           <span>Start CBT Practice</span>

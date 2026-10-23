@@ -527,7 +527,7 @@ export default function ChallengeArenaPage() {
               <span>Streak &amp; Badges</span>
             </Link>
             <Link
-              href="/login"
+              href="/cbt"
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-900"
             >
               <span>📝</span>
