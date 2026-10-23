@@ -1,10 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl =
-  (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.brainlabacademy.com.ng").replace(
-    /\/$/,
-    "",
-  );
+const siteUrl = "https://www.brainlabacademy.com.ng";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
