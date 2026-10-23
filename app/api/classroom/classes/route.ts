@@ -228,6 +228,45 @@ export async function PATCH(request: NextRequest) {
         .eq("class_id", classId);
     }
 
+    // When host/tutor marks session as live, notify students
+    if (status === "live") {
+      try {
+        const { data: learners } = await supabase
+          .from("learning_subject_memberships")
+          .select("user_id")
+          .limit(100);
+
+        const targetUserIds = new Set<string>();
+        for (const l of learners || []) {
+          if (l.user_id && l.user_id !== user.id) targetUserIds.add(l.user_id);
+        }
+
+        const { data: presences } = await supabase
+          .from("user_presence")
+          .select("user_id")
+          .limit(50);
+        for (const p of presences || []) {
+          if (p.user_id && p.user_id !== user.id) targetUserIds.add(p.user_id);
+        }
+
+        const notifs = Array.from(targetUserIds).map((uid) => ({
+          user_id: uid,
+          title: `🔴 Live Class: ${updatedClass.title || "Interactive Session"}`,
+          message: `Your tutor has started the live classroom session. Join now to participate!`,
+          type: "live_class",
+          link_url: `/classroom/${classId}`,
+          is_read: false,
+          created_at: new Date().toISOString(),
+        }));
+
+        if (notifs.length > 0) {
+          await supabase.from("notifications").insert(notifs);
+        }
+      } catch (notifErr) {
+        console.warn("Could not dispatch live class notifications:", notifErr);
+      }
+    }
+
     return NextResponse.json({ success: true, liveClass: updatedClass });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

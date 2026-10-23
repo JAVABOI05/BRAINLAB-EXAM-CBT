@@ -64,12 +64,60 @@ export default function GlobalLearnerToolbar() {
   const pathname = usePathname();
   const { appearance, resolvedTheme, setAppearance } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
+  const [liveClass, setLiveClass] = useState<{ id: string; title: string } | null>(null);
   const candidateName = useSyncExternalStore(subscribeCandidate, readCandidateName, () => "");
   const greetingText = useSyncExternalStore(subscribeGreeting, greeting, () => "Welcome");
 
   useEffect(() => {
     window.dispatchEvent(new Event(CANDIDATE_EVENT));
   }, [pathname]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkLive() {
+      try {
+        const { data } = await supabase
+          .from("live_classes")
+          .select("id, title")
+          .eq("status", "live")
+          .limit(1)
+          .maybeSingle();
+
+        if (active && data) {
+          setLiveClass(data);
+        } else if (active && !data) {
+          setLiveClass(null);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    void checkLive();
+    const interval = setInterval(checkLive, 30000);
+
+    const channel = supabase
+      .channel("live-alerts-global")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "live_classes" },
+        (payload) => {
+          if (payload.new && payload.new.status === "live") {
+            setLiveClass({ id: payload.new.id, title: payload.new.title });
+          } else if (payload.new && (payload.new.status === "completed" || payload.new.status === "cancelled")) {
+            setLiveClass((prev) => (prev && prev.id === payload.new.id ? null : prev));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -106,6 +154,16 @@ export default function GlobalLearnerToolbar() {
             <span className="global-learner-name">{name || "BrainLab Learner"}</span>
           </div>
         </div>
+        {liveClass && !pathname?.startsWith("/classroom") && (
+          <Link
+            href={`/classroom/${liveClass.id}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 animate-pulse hover:bg-rose-500/20 transition mr-2"
+          >
+            <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+            <span>🔴 Live Class In Session: {liveClass.title}</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        )}
         <div className="global-learner-actions">
           {user && <Link href="/settings" className="global-learner-action-link">Account settings</Link>}
           {user && <Link href="/profile" className="global-learner-action-link">Profile</Link>}

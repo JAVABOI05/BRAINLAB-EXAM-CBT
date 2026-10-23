@@ -253,7 +253,7 @@ export default function AccessPage() {
 
         <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 text-center">
           <Link
-            href="/cbt"
+            href="/login"
             className="text-xs font-bold text-blue-700 dark:text-cyan-400 hover:underline"
           >
             ← Back to CBT Launchpad

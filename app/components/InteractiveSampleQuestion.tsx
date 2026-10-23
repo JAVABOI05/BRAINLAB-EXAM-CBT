@@ -295,7 +295,7 @@ export default function InteractiveSampleQuestion() {
           </button>
         </div>
         <Link
-          href="/cbt"
+          href="/login"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#012153] hover:bg-blue-950 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
         >
           <span>Full CBT Practice</span>

@@ -456,7 +456,7 @@ export default function SkillsPassportPage() {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => window.print()}
@@ -465,10 +465,16 @@ export default function SkillsPassportPage() {
             🖨️ Print / Save PDF Report
           </button>
           <Link
-            href="/cbt"
+            href="/account"
+            className="rounded-xl border border-blue-600 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-xs"
+          >
+            Sign In / Register
+          </Link>
+          <Link
+            href="/login"
             className="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-extrabold text-white hover:bg-emerald-700 transition shadow"
           >
-            Take Next CBT Assessment
+            Practise CBT Questions →
           </Link>
         </div>
       </section>

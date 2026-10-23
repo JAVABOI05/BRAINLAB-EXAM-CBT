@@ -24,7 +24,7 @@ export default function AILearningPage() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/learn" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-300 px-6 py-3 font-extrabold text-[#061a3a] hover:bg-cyan-200">Explore Learning Hub <span aria-hidden="true" className="ml-2">→</span></Link>
             <Link href="/corrections" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-bold text-white hover:bg-white/10">Review corrections <span aria-hidden="true" className="ml-2">↗</span></Link>
-            <Link href="/cbt" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-bold text-white hover:bg-white/10">CBT practice <span aria-hidden="true" className="ml-2">↗</span></Link>
+            <Link href="/login" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-bold text-white hover:bg-white/10">CBT practice <span aria-hidden="true" className="ml-2">↗</span></Link>
           </div>
         </div>
       </section>

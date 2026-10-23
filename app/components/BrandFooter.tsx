@@ -240,7 +240,7 @@ export default function BrandFooter() {
             </h3>
             <ul className="mt-4 space-y-2 text-xs">
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/cbt">
+                <Link className="text-slate-300 transition-colors hover:text-white" href="/login">
                   JAMB UTME CBT
                 </Link>
               </li>

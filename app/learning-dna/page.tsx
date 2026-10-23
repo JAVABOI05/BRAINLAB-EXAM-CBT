@@ -225,7 +225,7 @@ export default function LearningDnaPage() {
             Study Report &amp; Badges
           </Link>
           <Link
-            href="/cbt"
+            href="/login"
             className="rounded-xl bg-[#012153] px-4 py-2 text-xs font-extrabold text-white hover:bg-blue-900 transition shadow"
           >
             Launch CBT Practice

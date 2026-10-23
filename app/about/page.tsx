@@ -23,7 +23,7 @@ export default function AboutPage() {
           <h1 className="mt-4 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl">A better learning journey, beyond the exam.</h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">BrainLab Academy is being developed as an intelligent learning ecosystem connecting examination preparation, deeper understanding, collaborative learning and skills development.</p>
           <p className="mt-4 max-w-3xl leading-7 text-slate-600">Our first market is Nigeria, with the ambition to expand across Africa and, over time, serve learners in wider international markets. We will grow the platform in practical stages, starting with a reliable CBT experience and clearly distinguishing live capabilities from future plans.</p>
-          <Link href="/cbt" className="mt-8 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] px-6 py-3 font-bold text-white transition hover:bg-[#0a2f72]">Explore CBT practice <span aria-hidden="true" className="ml-2">→</span></Link>
+          <Link href="/login" className="mt-8 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] px-6 py-3 font-bold text-white transition hover:bg-[#0a2f72]">Explore CBT practice <span aria-hidden="true" className="ml-2">→</span></Link>
         </div>
       </section>
 

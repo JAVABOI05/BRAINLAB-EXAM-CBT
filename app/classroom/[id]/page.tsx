@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { useLearnerTheme } from "../../components/LearnerThemeProvider";
 import type {
   Participant,
   ClassroomMessage,
@@ -31,6 +32,30 @@ interface ClassroomPollItem {
   user_voted_option_id?: string | null;
   created_at: string;
   closed_at?: string | null;
+}
+
+
+function renderTextWithMentions(text: string, currentUserName?: string) {
+  if (!text.includes("@")) return text;
+  const parts = text.split(/(@[\w\.-]+)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("@")) {
+      const isMe = currentUserName && part.toLowerCase() === `@${currentUserName.toLowerCase()}`;
+      return (
+        <span
+          key={i}
+          className={`font-bold px-1.5 py-0.5 rounded-md inline-block ${
+            isMe
+              ? "bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 ring-1 ring-amber-400"
+              : "bg-blue-100 text-blue-800 dark:bg-cyan-950/80 dark:text-cyan-300"
+          }`}
+        >
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
 }
 
 export default function LiveClassroomPage({
@@ -67,6 +92,10 @@ export default function LiveClassroomPage({
   const [activePoll, setActivePoll] = useState<ClassroomPollItem | null>(null);
   const [isCreatingPoll, setIsCreatingPoll] = useState(false);
   const [pollCountdown, setPollCountdown] = useState<number | null>(null);
+  const { resolvedTheme, setAppearance } = useLearnerTheme();
+  const [mentionFilter, setMentionFilter] = useState<string | null>(null);
+  const [showMentions, setShowMentions] = useState(false);
+
 
   // Poll Creator Form State
   const [pollQuestion, setPollQuestion] = useState("");
@@ -193,11 +222,82 @@ export default function LiveClassroomPage({
           console.warn("Could not preload polls:", pollErr);
         }
 
-        // Setup Supabase Realtime Channel for Live Polls & Quizzes
+        // Setup Supabase Realtime Channel for Live Chat, Presence, Polls & Quizzes
         const channel = supabase.channel(`classroom:${classId}`, {
-          config: { broadcast: { self: false } },
+          config: {
+            broadcast: { self: false },
+            presence: { key: user.id },
+          },
         });
         channelRef.current = channel;
+
+        // A. Listen for incoming live chat messages from all attendees
+        channel.on("broadcast", { event: "chat_message" }, ({ payload }) => {
+          if (payload?.message) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === payload.message.id)) return prev;
+              return [...prev, payload.message];
+            });
+          }
+        });
+
+        // B. Realtime Presence Sync: keep participants list completely live
+        channel
+          .on("presence", { event: "sync" }, () => {
+            const state = channel.presenceState();
+            const roster: Participant[] = [];
+            for (const [key, presences] of Object.entries(state)) {
+              if (Array.isArray(presences)) {
+                for (const p of presences as any[]) {
+                  if (p?.id && !roster.some((item) => item.id === p.id)) {
+                    roster.push({
+                      id: p.id,
+                      name: p.name || "Learner",
+                      role: p.role || (p.id === json.data.classDetails.tutorId ? "host" : "speaker"),
+                      isMuted: p.isMuted ?? true,
+                      isCameraOn: p.isCameraOn ?? false,
+                      isScreenSharing: p.isScreenSharing ?? false,
+                      isHandRaised: p.isHandRaised ?? false,
+                      joinedAt: p.joinedAt || new Date().toISOString(),
+                      networkQuality: p.networkQuality || "good",
+                    });
+                  }
+                }
+              }
+            }
+            if (roster.length > 0) {
+              setParticipants(roster);
+            }
+          })
+          .on("presence", { event: "join" }, ({ newPresences }) => {
+            if (Array.isArray(newPresences)) {
+              setParticipants((prev) => {
+                const updated = [...prev];
+                for (const p of newPresences as any[]) {
+                  if (p?.id && !updated.some((u) => u.id === p.id)) {
+                    updated.push({
+                      id: p.id,
+                      name: p.name || "Learner",
+                      role: p.role || "speaker",
+                      isMuted: p.isMuted ?? true,
+                      isCameraOn: p.isCameraOn ?? false,
+                      isScreenSharing: p.isScreenSharing ?? false,
+                      isHandRaised: p.isHandRaised ?? false,
+                      joinedAt: p.joinedAt || new Date().toISOString(),
+                      networkQuality: p.networkQuality || "good",
+                    });
+                  }
+                }
+                return updated;
+              });
+            }
+          })
+          .on("presence", { event: "leave" }, ({ leftPresences }) => {
+            if (Array.isArray(leftPresences)) {
+              const leavingIds = new Set((leftPresences as any[]).map((p) => p.id));
+              setParticipants((prev) => prev.filter((p) => !leavingIds.has(p.id) || p.id === user.id));
+            }
+          });
 
         channel
           .on("broadcast", { event: "poll_started" }, ({ payload }) => {
@@ -252,7 +352,22 @@ export default function LiveClassroomPage({
                 : current
             );
           })
-          .subscribe();
+          .subscribe(async (status) => {
+            if (status === "SUBSCRIBED") {
+              const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Learner";
+              await channel.track({
+                id: user.id,
+                name: userName,
+                role: json.data.classDetails.tutorId === user.id ? "host" : "speaker",
+                isMuted: true,
+                isCameraOn: false,
+                isScreenSharing: false,
+                isHandRaised: false,
+                joinedAt: new Date().toISOString(),
+                networkQuality: "good",
+              });
+            }
+          });
 
         setLoading(false);
 
@@ -409,6 +524,18 @@ export default function LiveClassroomPage({
 
     setMessages((prev) => [...prev, newMsg]);
     setChatInput("");
+    setShowMentions(false);
+
+    // Broadcast in real-time to all classroom participants
+    try {
+      channelRef.current?.send({
+        type: "broadcast",
+        event: "chat_message",
+        payload: { message: newMsg },
+      });
+    } catch (broadcastErr) {
+      console.warn("Could not broadcast message:", broadcastErr);
+    }
   };
 
   // 5b. Voice Note Recording & Media Handlers
@@ -773,15 +900,15 @@ export default function LiveClassroomPage({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-950 text-slate-100 overflow-hidden select-none">
+    <div className="flex h-screen flex-col bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden select-none transition-colors duration-150">
       {/* Top Header Bar */}
-      <header className="h-14 shrink-0 border-b border-slate-800 bg-slate-900 px-4 flex items-center justify-between gap-4">
+      <header className="h-14 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 flex items-center justify-between gap-4 transition-colors">
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/dashboard" className="text-sm font-black text-blue-400 hover:text-blue-300">
             BrainLab Live
           </Link>
           <span className="text-slate-600">/</span>
-          <h1 className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+          <h1 className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-xs sm:max-w-md">
             {classDetails?.title || "Live Class"}
           </h1>
           <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-400 border border-emerald-500/20">
@@ -812,6 +939,16 @@ export default function LiveClassroomPage({
             {isReconnecting ? "Reconnecting…" : "Refresh Stream"}
           </button>
 
+          <button
+            type="button"
+            onClick={() => setAppearance(resolvedTheme === "dark" ? "light" : "dark")}
+            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-1.5 shadow-2xs"
+            title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
+          >
+            <span>{resolvedTheme === "dark" ? "☀️" : "🌙"}</span>
+            <span className="hidden sm:inline">{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
+          </button>
+
           <Link
             href="/dashboard"
             className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-500"
@@ -833,8 +970,8 @@ export default function LiveClassroomPage({
         </div>
 
         {/* Video / Stage Area */}
-        <main className="flex-1 flex flex-col items-center justify-center p-4 bg-slate-950 relative">
-          <div className="w-full h-full max-w-5xl rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+        <main className="flex-1 flex flex-col items-center justify-center p-4 bg-slate-200/70 dark:bg-slate-950 relative transition-colors">
+          <div className="w-full h-full max-w-5xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
             {isVideoEnabled || isScreenSharing ? (
               <video
                 ref={localVideoRef}
@@ -846,7 +983,7 @@ export default function LiveClassroomPage({
             ) : (
               <div className="flex flex-col items-center text-center p-6 max-w-xl">
                 {/* Audio Wave Visualizer */}
-                <div className="flex items-center gap-1.5 h-14 mb-4 px-6 py-3 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner">
+                <div className="flex items-center gap-1.5 h-14 mb-4 px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-inner">
                   {[20, 36, 16, 48, 30, 52, 24, 44, 18, 34, 48, 22].map((h, i) => (
                     <span
                       key={i}
@@ -1124,7 +1261,7 @@ export default function LiveClassroomPage({
                           onClick={() => setPreviewImage(m.mediaUrl || null)}
                           className="max-h-48 w-auto rounded-lg object-contain cursor-pointer hover:opacity-90 transition border border-slate-700"
                         />
-                        {m.text && <p className="text-[11px] text-slate-300 font-medium">{m.text}</p>}
+                        {m.text && <p className="text-[11px] text-slate-300 font-medium">{renderTextWithMentions(m.text, currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0])}</p>}
                       </div>
                     )}
 
@@ -1163,7 +1300,7 @@ export default function LiveClassroomPage({
 
                     {/* Plain Text Message */}
                     {(!m.type || m.type === "text") && (
-                      <p className="mt-1 text-slate-300 leading-relaxed bg-slate-800/60 rounded-xl p-2.5">
+                      <p className="mt-1 text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-100 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700/60">
                         {m.text}
                       </p>
                     )}
@@ -1198,7 +1335,32 @@ export default function LiveClassroomPage({
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-950 flex flex-col gap-2">
+                <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col gap-2 relative">
+                  {showMentions && (
+                    <div className="absolute bottom-full left-3 right-3 mb-2 max-h-48 overflow-y-auto rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl p-2 z-40">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">
+                        Tag a participant (@)
+                      </p>
+                      {participants
+                        .filter((p) => !mentionFilter || p.name.toLowerCase().includes(mentionFilter))
+                        .slice(0, 6)
+                        .map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setChatInput((prev) => prev.replace(/@\w*$/, `@${p.name} `));
+                              setShowMentions(false);
+                              setMentionFilter(null);
+                            }}
+                            className="w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs text-left hover:bg-blue-50 dark:hover:bg-slate-800 transition"
+                          >
+                            <span className="font-semibold text-slate-900 dark:text-white">@{p.name}</span>
+                            <span className="text-[10px] text-slate-500 capitalize">{p.role}</span>
+                          </button>
+                        ))}
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -1237,8 +1399,19 @@ export default function LiveClassroomPage({
                       type="text"
                       placeholder="Ask a question or comment…"
                       value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setChatInput(val);
+                        const match = val.match(/@(\w*)$/);
+                        if (match) {
+                          setMentionFilter(match[1].toLowerCase());
+                          setShowMentions(true);
+                        } else {
+                          setShowMentions(false);
+                          setMentionFilter(null);
+                        }
+                      }}
+                      className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-600"
                     />
                     <button
                       type="submit"
@@ -1404,18 +1577,29 @@ export default function LiveClassroomPage({
               {participants.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between rounded-xl bg-slate-800/60 p-2.5 text-xs border border-slate-700/50"
+                  className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2.5 text-xs border border-slate-200 dark:border-slate-700/50"
                 >
                   <div className="flex items-center gap-2">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-950 text-blue-200 font-bold">
                       {p.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-white">{p.name}</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{p.name}</p>
                       <p className="text-[10px] text-slate-400 capitalize">{p.role}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("chat");
+                        setChatInput((prev) => `@${p.name} ` + prev);
+                      }}
+                      className="rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-cyan-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                      title={`Tag ${p.name} in chat`}
+                    >
+                      @ Tag
+                    </button>
                     {p.isHandRaised && <span title="Hand raised">✋</span>}
                     <span className="text-[11px] text-slate-400">
                       {p.isMuted ? "🔇" : "🎙️"}
@@ -1624,7 +1808,7 @@ export default function LiveClassroomPage({
       )}
 
       {/* Bottom Interactive Control Deck */}
-      <footer className="h-18 shrink-0 border-t border-slate-800 bg-slate-900 px-4 py-2 flex items-center justify-between gap-4">
+      <footer className="h-18 shrink-0 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 flex items-center justify-between gap-4 shadow-lg transition-colors">
         {/* Media Controls */}
         <div className="flex items-center gap-2">
           <button
