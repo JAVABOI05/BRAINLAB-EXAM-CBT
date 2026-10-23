@@ -776,6 +776,9 @@ export default function AdminQuestionsPage() {
               <button onClick={() => router.push("/admin/questions/manage")} className="admin-btn-light">
                 Manage Questions
               </button>
+              <button onClick={() => router.push("/admin/academic")} className="admin-btn-light">
+                Manage Subjects
+              </button>
               <button onClick={() => router.push("/admin/dashboard")} className="admin-btn-light">
                 Dashboard
               </button>

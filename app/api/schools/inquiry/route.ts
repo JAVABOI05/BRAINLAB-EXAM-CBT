@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +25,29 @@ export async function POST(req: NextRequest) {
     // Generate reference code BL-SCH-[Random 5 chars]
     const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
     const referenceCode = `BL-SCH-${randomHex}`;
+
+    // Broadcast instant alert to Admin Notification Bell via Supabase channel
+    try {
+      const supabase = getSupabaseServerClient();
+      const channel = supabase.channel("admin_live_alerts");
+      await channel.send({
+        type: "broadcast",
+        event: "new_school_inquiry",
+        payload: {
+          referenceCode,
+          schoolName,
+          contactName,
+          phone,
+          email,
+          location: location || "Nigeria",
+          studentCount: studentCount || "Unspecified",
+          examType: examType || "JAMB CBT",
+          submittedAt: new Date().toISOString(),
+        },
+      });
+    } catch (bcErr) {
+      console.warn("Failed to broadcast real-time school inquiry alert:", bcErr);
+    }
 
     // Log the inquiry for administration
     console.info(`[INSTITUTIONAL INQUIRY] Ref: ${referenceCode} | School: ${schoolName} | Contact: ${contactName} (${phone}, ${email}) | Students: ${studentCount || "Unspecified"} | Exam: ${examType || "General"}`);

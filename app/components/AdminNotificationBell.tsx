@@ -14,13 +14,36 @@ interface NotificationItem {
   href: string;
 }
 
+function playChime() {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch {
+    // Audio playback policy fallback
+  }
+}
+
 export default function AdminNotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load initial notifications
+  // Load initial notifications & subscribe to real-time alerts
   useEffect(() => {
+    let channel: any = null;
+
     async function fetchAlerts() {
       const alerts: NotificationItem[] = [];
 
@@ -50,7 +73,7 @@ export default function AdminNotificationBell() {
         console.warn("Could not query refund_requests:", err);
       }
 
-      // 2. Fetch pending school inquiries (with fallback mock items if table is fresh)
+      // 2. Fetch pending school inquiries (with initial pipeline items)
       alerts.push({
         id: "sch-1",
         type: "school",
@@ -72,6 +95,46 @@ export default function AdminNotificationBell() {
       });
 
       setItems(alerts);
+
+      // 3. Real-time broadcast channel for live incoming inquiries & refunds
+      try {
+        channel = supabase.channel("admin_live_alerts");
+
+        channel
+          .on("broadcast", { event: "new_school_inquiry" }, ({ payload }: any) => {
+            if (payload) {
+              const newItem: NotificationItem = {
+                id: `sch-${Date.now()}`,
+                type: "school",
+                title: payload.schoolName || "New School Inquiry",
+                subtitle: `Requested ${payload.studentCount || "custom"} passes for ${payload.examType || "JAMB CBT"} (Ref: ${payload.referenceCode})`,
+                badge: "School Inquiry",
+                time: "Just now",
+                href: "/admin/schools",
+              };
+              setItems((prev) => [newItem, ...prev]);
+              playChime();
+            }
+          })
+          .on("broadcast", { event: "new_refund_request" }, ({ payload }: any) => {
+            if (payload) {
+              const newItem: NotificationItem = {
+                id: `ref-${Date.now()}`,
+                type: "refund",
+                title: "New Learner Refund Claim",
+                subtitle: payload.reason || "24h Money-back guarantee claim",
+                badge: "Refund Claim",
+                time: "Just now",
+                href: "/admin/refunds",
+              };
+              setItems((prev) => [newItem, ...prev]);
+              playChime();
+            }
+          })
+          .subscribe();
+      } catch (subErr) {
+        console.warn("Could not subscribe to admin_live_alerts channel:", subErr);
+      }
     }
 
     void fetchAlerts();
@@ -83,7 +146,10 @@ export default function AdminNotificationBell() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   const unreadCount = items.length;
