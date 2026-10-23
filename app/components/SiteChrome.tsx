@@ -6,6 +6,7 @@ import BrandFooter from "./BrandFooter";
 import BrandHeader from "./BrandHeader";
 import GlobalLearnerToolbar from "./GlobalLearnerToolbar";
 import ToastContainer from "./Toast";
+import OfflineSyncManager from "./OfflineSyncManager";
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
@@ -33,6 +34,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   return (
     <>
       <ToastContainer />
+      <OfflineSyncManager />
       {!hidePublicChrome && <GlobalLearnerToolbar />}
       {!hidePublicChrome && <BrandHeader />}
       {children}

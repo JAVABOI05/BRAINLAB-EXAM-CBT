@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
+import { queueExamSubmission, queueProgress } from "../lib/offlineSync";
 import FloatingCalculator from "../components/FloatingCalculator";
 import { cleanQuestionText } from "../lib/cleanText";
 import { recordLearningActivity } from "../lib/gamification";
@@ -257,6 +258,7 @@ export default function ExamPage() {
     if (!started || !sessionId || !sessionToken) return;
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       setSyncStatus("offline");
+      queueProgress(sessionId, sessionToken, answers);
       return;
     }
     setSyncStatus("syncing");
@@ -264,7 +266,10 @@ export default function ExamPage() {
       const saved = await saveProgress(sessionId, sessionToken, answers);
       if (isError(saved)) {
         if (saved.error === "time_up") void handleSubmit(true);
-        else if (saved.error === "network") setSyncStatus("offline");
+        else if (saved.error === "network") {
+          queueProgress(sessionId, sessionToken, answers);
+          setSyncStatus("offline");
+        }
         return;
       }
       setSyncStatus("synced");
@@ -440,12 +445,19 @@ export default function ExamPage() {
 
   const executeSubmit = async (autoSubmitted = false) => {
     if (questions.length === 0 || submitLockRef.current) return;
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setError("You are currently offline. Your answers are safely stored on this device. Reconnect to the internet and click Submit Exam to record your score.");
-      return;
-    }
     if (!sessionId || !sessionToken) {
       setError("No active server exam session was found. Please refresh and try again.");
+      return;
+    }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      queueExamSubmission({
+        sessionId,
+        token: sessionToken,
+        answers,
+        autoSubmitted,
+        flagged,
+      });
+      setError("You are currently offline. Your exam answers have been safely queued in your device's offline storage. BrainLab will submit automatically as soon as internet connectivity is restored.");
       return;
     }
     submitLockRef.current = true;
@@ -455,6 +467,17 @@ export default function ExamPage() {
     if (isError(res)) {
       submitLockRef.current = false;
       setLoading(false);
+      if (res.error === "network") {
+        queueExamSubmission({
+          sessionId,
+          token: sessionToken,
+          answers,
+          autoSubmitted,
+          flagged,
+        });
+        setError("Network connection dropped during submission. Your exam answers are safely queued in offline storage and will submit automatically once connected.");
+        return;
+      }
       setError(res.message || "Your exam could not be submitted. Please try again.");
       return;
     }

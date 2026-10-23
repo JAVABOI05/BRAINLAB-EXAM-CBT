@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getDueSpacedReviews, rateCardReview, type SpacedReviewCard } from "../../lib/spacedRepetition";
+import AiRevisionDrillArena from "../../components/AiRevisionDrillArena";
 
 type RevisionTask = {
   id: string;

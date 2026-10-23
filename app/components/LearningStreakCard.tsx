@@ -159,8 +159,19 @@ export default function LearningStreakCard({
             onClick={() => setShowReminderSettings(!showReminderSettings)}
             className="rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-bold text-amber-900 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-slate-700 transition active:scale-95 shadow-sm"
           >
-            ⏰ {reminderEnabled ? "Reminder: " + reminderTime : "Set Streak Reminder"}
+            ⏰ {reminderEnabled ? "Alarm: " + reminderTime : "Set Streak Alarm"}
           </button>
+
+          <a
+            href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 px-3.5 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 transition active:scale-95 shadow-sm flex items-center gap-1.5"
+            title="Receive streak alarms and live class links via WhatsApp"
+          >
+            <span>💬</span>
+            <span>WhatsApp Alerts</span>
+          </a>
 
           <Link
             href="/challenge-arena"
@@ -244,6 +255,37 @@ export default function LearningStreakCard({
                 />
               </div>
             )}
+          </div>
+
+          {/* WhatsApp Study Alerts Box */}
+          <div className="mt-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+            <div>
+              <p className="font-bold text-emerald-950 dark:text-emerald-200 flex items-center gap-1.5">
+                <span>💬</span>
+                <span>Get Instant WhatsApp Streak &amp; Class Alerts</span>
+              </p>
+              <p className="text-[11px] text-emerald-800 dark:text-emerald-400 mt-0.5">
+                Join 5,000+ candidates on the BrainLab WhatsApp Channel for live class schedules, daily quiz reminders, and UTME updates.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 text-[11px] shadow-sm transition active:scale-95 inline-flex items-center gap-1"
+              >
+                Join Channel ↗
+              </a>
+              <a
+                href="https://wa.me/2348169389816?text=Hi%20BrainLab,%20please%20subscribe%20me%20to%20Daily%20Study%20Streak%20Reminders%20and%20Exam%20Alerts."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-bold px-2.5 py-1.5 text-[11px] hover:bg-emerald-50 transition"
+              >
+                DM Desk 💬
+              </a>
+            </div>
           </div>
         </div>
       )}

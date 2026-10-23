@@ -401,3 +401,127 @@ export async function sendPasswordResetEmail(params: PasswordResetEmailParams): 
     html,
   });
 }
+
+
+export interface StreakRescueEmailParams {
+  to: string;
+  studentName?: string;
+  currentStreakDays: number;
+  xpAtRisk?: number;
+  practiceUrl?: string;
+}
+
+/**
+ * 5. Send High-Yield Study Streak Rescue Notification email.
+ */
+export async function sendStreakRescueEmail(params: StreakRescueEmailParams): Promise<SendEmailResult> {
+  const {
+    to,
+    studentName = "Learner",
+    currentStreakDays,
+    xpAtRisk = currentStreakDays * 50,
+    practiceUrl = "https://brainlabacademy.com.ng/challenge-arena",
+  } = params;
+
+  const html = wrapEmailTemplate(
+    `Your ${currentStreakDays}-Day Study Streak is at Risk!`,
+    `
+    <div style="text-align:center;margin-bottom:20px;">
+      <span style="font-size:48px;">🔥</span>
+    </div>
+    <h1 style="margin:0 0 16px 0;font-size:24px;font-weight:900;color:#0f172a;text-align:center;">
+      Don't let your ${currentStreakDays}-day streak burn out!
+    </h1>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#334155;text-align:center;">
+      Hello ${studentName}, you haven't completed any revision questions today. Your <strong>${currentStreakDays}-day streak</strong> and <strong>${xpAtRisk} streak multiplier XP</strong> will expire at midnight.
+    </p>
+
+    <!-- Urgency Countdown Card -->
+    <div style="background-color:#fff7ed;border:2px solid #fdba74;border-radius:12px;padding:20px;text-align:center;margin:24px 0;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:#c2410c;margin-bottom:6px;">
+        Streak Expiration Notice
+      </div>
+      <p style="margin:0;font-size:14px;font-weight:700;color:#9a3412;">
+        Take just 3 minutes to answer 5 quick questions in the Challenge Arena to keep your flame alive.
+      </p>
+    </div>
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${practiceUrl}" style="background-color:#ea580c;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;padding:14px 32px;border-radius:10px;display:inline-block;box-shadow:0 3px 6px rgba(234,88,12,0.3);">
+        Save My Streak Now &rarr;
+      </a>
+    </div>
+
+    <p style="margin:0;font-size:12px;color:#64748b;text-align:center;line-height:1.5;">
+      Consistency beats cramming. Practicing even 5 minutes a day dramatically improves retention for JAMB UTME, WAEC, and NECO exams.
+    </p>
+    `
+  );
+
+  return sendEmail({
+    to,
+    subject: `Urgent: Your ${currentStreakDays}-day BrainLab streak expires tonight!`,
+    html,
+  });
+}
+
+export interface LiveClassReminderEmailParams {
+  to: string;
+  studentName?: string;
+  classTitle: string;
+  tutorName: string;
+  startTimeText: string;
+  classroomUrl: string;
+}
+
+/**
+ * 6. Send Live Masterclass Starting Reminder email.
+ */
+export async function sendLiveClassReminderEmail(params: LiveClassReminderEmailParams): Promise<SendEmailResult> {
+  const {
+    to,
+    studentName = "Learner",
+    classTitle,
+    tutorName,
+    startTimeText,
+    classroomUrl,
+  } = params;
+
+  const html = wrapEmailTemplate(
+    `Live Masterclass Starting Soon: ${classTitle}`,
+    `
+    <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:800;color:#0f172a;">
+      Live Class Starting Soon!
+    </h1>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#334155;">
+      Hello ${studentName}, your live interactive class <strong>${classTitle}</strong> with <strong>${tutorName}</strong> is starting at <strong>${startTimeText}</strong>.
+    </p>
+
+    <div style="background-color:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin:24px 0;">
+      <h3 style="margin:0 0 8px 0;font-size:14px;font-weight:700;color:#166534;">Class Highlights:</h3>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#15803d;">
+        <li>Interactive live digital lecture board and step-by-step problem solving.</li>
+        <li>Live audio voice notes and checkpoint quizzes.</li>
+        <li>Low-data consumption mode enabled for reliable participation.</li>
+      </ul>
+    </div>
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${classroomUrl}" style="background-color:#16a34a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:12px 28px;border-radius:8px;display:inline-block;box-shadow:0 2px 4px rgba(22,163,74,0.25);">
+        Enter Live Classroom &rarr;
+      </a>
+    </div>
+
+    <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">
+      Can't make it live? Lesson audio, diagrams, and quiz corrections will be published to your Class Recordings library afterwards.
+    </p>
+    `
+  );
+
+  return sendEmail({
+    to,
+    subject: `Starting soon: ${classTitle} with ${tutorName}`,
+    html,
+  });
+}
+
