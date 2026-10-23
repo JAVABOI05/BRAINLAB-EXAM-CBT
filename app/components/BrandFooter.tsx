@@ -77,6 +77,14 @@ function TikTokIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+const OFFICIAL_SOCIAL_FALLBACKS: SocialLinkConfig[] = [
+  { platform: "x", name: "X (Twitter)", url: "https://x.com/The_brainlabhub", enabled: true },
+  { platform: "instagram", name: "Instagram", url: "https://www.instagram.com/brain_labacademy?dlrf=NGJzcmFnaGcwZHV4", enabled: true },
+  { platform: "facebook", name: "Facebook", url: "https://www.facebook.com/profile.php?id=61595669640028", enabled: true },
+  { platform: "youtube", name: "YouTube", url: "https://youtube.com/@thebrainlabhub?si=z4sAVuNmJUdPom_u", enabled: true },
+  { platform: "tiktok", name: "TikTok", url: "https://www.tiktok.com/@brainlabacademy", enabled: true },
+];
+
 function renderSocialIcon(platform: SocialLinkConfig["platform"]) {
   switch (platform) {
     case "x":
@@ -111,7 +119,8 @@ export default function BrandFooter() {
   }, []);
 
   // Filter out any social links that are disabled, empty, or placeholder '#'
-  const activeSocialLinks = (config.social_links || []).filter(
+  const rawLinks = (config.social_links && config.social_links.length > 0) ? config.social_links : OFFICIAL_SOCIAL_FALLBACKS;
+  const activeSocialLinks = rawLinks.filter(
     (item) =>
       item.enabled &&
       Boolean(item.url) &&

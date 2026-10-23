@@ -349,7 +349,12 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       };
 
       const handleRemoteLaser = ({ payload }: { payload: any }) => {
-        if (payload?.point && payload.senderId !== currentUserId) {
+        if (payload?.senderId !== currentUserId) {
+          if (!payload?.point) {
+            setLaserPoint(null);
+            if (laserTimeoutRef.current) clearTimeout(laserTimeoutRef.current);
+            return;
+          }
           setLaserPoint(payload.point);
           if (laserTimeoutRef.current) clearTimeout(laserTimeoutRef.current);
           laserTimeoutRef.current = setTimeout(() => {
