@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Learner Community & Study Circles",
   description: "Connect with verified peer study circles, join subject cohorts, and engage in faculty-moderated academic discussions across Nigeria.",
+  alternates: { canonical: "/community" },
 };
 
 const COHORTS = [
