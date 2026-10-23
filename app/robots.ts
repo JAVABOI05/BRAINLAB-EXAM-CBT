@@ -1,9 +1,11 @@
 import type { MetadataRoute } from "next";
 
-export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.brainlabacademy.com.ng";
-  const baseUrl = siteUrl.replace(/\/$/, "");
+const siteUrl = "https://www.brainlabacademy.com.ng";
 
+// Robots directives are crawler guidance only, never access control. Do not list
+// the private operator route here: publishing a restricted path in robots.txt can
+// advertise that it exists. proxy.ts returns 404/noindex for direct admin-route access.
+export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
@@ -20,9 +22,8 @@ export default function robots(): MetadataRoute.Robots {
         "/dashboard",
         "/auth",
         "/api",
-        "/admin",
       ],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${siteUrl}/sitemap.xml`,
   };
 }
