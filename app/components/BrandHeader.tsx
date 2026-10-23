@@ -12,7 +12,6 @@ import { useLearnerTheme } from "./LearnerThemeProvider";
 const links = [
   { href: "/cbt", label: "CBT Practice" },
   { href: "/learn", label: "Learning Hub" },
-  { href: "/skills-passport", label: "Study Report" },
   { href: "/challenge-arena", label: "Challenge Arena" },
   { href: "/ai-learning", label: "AI Learning" },
   { href: "/support", label: "Help" },
@@ -89,25 +88,25 @@ export default function BrandHeader() {
         <Link
           href="/"
           onClick={closeMenu}
-          className="flex shrink-0 items-center rounded-lg transition-transform hover:scale-[1.02] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+          className="group flex shrink-0 items-center gap-2.5 sm:gap-3 rounded-xl transition-transform hover:scale-[1.02] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
           aria-label="BrainLab Academy home"
         >
           <Image
-            src="/brainlab-logo.png"
-            alt="BrainLab Academy"
-            width={120}
-            height={102}
+            src="/brainlab-mark.png"
+            alt="BrainLab Emblem"
+            width={48}
+            height={42}
             priority
-            className="h-11 w-auto dark:hidden"
+            className="h-11 sm:h-12 w-auto drop-shadow-xs transition-transform group-hover:scale-105"
           />
-          <Image
-            src="/brainlab-logo-light.png"
-            alt="BrainLab Academy"
-            width={120}
-            height={102}
-            priority
-            className="h-11 w-auto hidden dark:block"
-          />
+          <div className="flex flex-col justify-center leading-none">
+            <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              BrainLab
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-extrabold tracking-[0.24em] uppercase text-blue-700 dark:text-cyan-400 mt-1">
+              ACADEMY
+            </span>
+          </div>
         </Link>
 
         {/* Mobile menu toggle */}
