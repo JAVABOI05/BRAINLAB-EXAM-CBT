@@ -183,6 +183,19 @@ export default function RevisionPlannerPage() {
   const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
   const totalMinutes = useMemo(() => tasks.reduce((sum, task) => sum + task.minutes, 0), [tasks]);
 
+  function handleAddTopicFromDrill(drillTopic: string, drillSubject: string) {
+    const existing = tasks.some((t) => t.topic.toLowerCase() === drillTopic.toLowerCase());
+    if (existing) {
+      setSavedMessage(`"${drillTopic}" is already in your revision checklist.`);
+      return;
+    }
+    setTasks((current) => [
+      ...current,
+      { id: makeId(), topic: drillTopic, subject: drillSubject, minutes: dailyMinutes, done: false },
+    ]);
+    setSavedMessage(`Added "${drillTopic}" to your revision checklist.`);
+  }
+
   function addTopic(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const topic = topicInput.trim();
@@ -375,7 +388,16 @@ export default function RevisionPlannerPage() {
             )}
           </div>
         )}
-      </section>
+            </section>
+
+      {/* AI Weak-Topic Diagnostic & Rapid Drill Generator */}
+      <AiRevisionDrillArena
+        userId={userId}
+        onAddTopicToPlan={handleAddTopicFromDrill}
+        onDeckUpdated={() => {
+          void getDueSpacedReviews().then((cards) => setSpacedCards(cards));
+        }}
+      />
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="grid gap-5 md:grid-cols-[1fr_180px_180px]">
