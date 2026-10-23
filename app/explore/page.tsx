@@ -20,7 +20,7 @@ const sections = [
     { title: "Challenge Arena", href: "/challenge-arena", status: "Available", detail: "Daily 10-question sprint competitions & streaks." },
     { title: "Self-Paced Practice", href: "/self-practice", status: "Available", detail: "Custom timed CBT quizzes across past papers." },
     { title: "AI Learning Companion", href: "/ai-learning", status: "Available", detail: "AI-assisted explanations and topic summaries." },
-    { title: "Classroom Stage", href: "/classroom/demo-class", status: "Available", detail: "Live audio classroom and tutor presentations." },
+    { title: "Classroom Stage", href: "/classroom/BL-LIVE-101", status: "Available", detail: "Live audio classroom and tutor presentations." },
   ]},
   { title: "Progress and portfolio", description: "Personalized diagnostics, study records, and achievement tracking.", items: [
     { title: "Learning DNA Diagnostic", href: "/learning-dna", status: "Available", detail: "Predicted JAMB score and competency spectrum." },

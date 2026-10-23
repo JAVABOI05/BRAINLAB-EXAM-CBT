@@ -122,10 +122,14 @@ export default function LiveClassroomPage({
   const [currentlyPlayingAudioId, setCurrentlyPlayingAudioId] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  // Interactive Live Whiteboard State
+  // Interactive Live Whiteboard & Moderation State
   const smartWhiteboardRef = useRef<SmartWhiteboardHandle | null>(null);
   const [stageMode, setStageMode] = useState<"audio" | "whiteboard">("audio");
   const [canStudentsDraw, setCanStudentsDraw] = useState(false);
+  const [allowStudentMedia, setAllowStudentMedia] = useState(false);
+  const [allowStudentVoiceNotes, setAllowStudentVoiceNotes] = useState(true);
+  const [chatMuted, setChatMuted] = useState(false);
+  const [showModerationModal, setShowModerationModal] = useState(false);
 
   // Mobile Adaptability & Responsive Hub Drawer State
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -288,6 +292,16 @@ export default function LiveClassroomPage({
         channel.on("broadcast", { event: "whiteboard_toggle_student_draw" }, ({ payload }) => {
           if (typeof payload?.allowed === "boolean") {
             setCanStudentsDraw(payload.allowed);
+          }
+        });
+
+        // Listen for comprehensive classroom permission changes
+        channel.on("broadcast", { event: "classroom_permission_change" }, ({ payload }) => {
+          if (payload) {
+            if (typeof payload.canStudentsDraw === "boolean") setCanStudentsDraw(payload.canStudentsDraw);
+            if (typeof payload.allowStudentMedia === "boolean") setAllowStudentMedia(payload.allowStudentMedia);
+            if (typeof payload.allowStudentVoiceNotes === "boolean") setAllowStudentVoiceNotes(payload.allowStudentVoiceNotes);
+            if (typeof payload.chatMuted === "boolean") setChatMuted(payload.chatMuted);
           }
         });
 
@@ -1223,6 +1237,33 @@ export default function LiveClassroomPage({
   const isTutorOrModerator =
     Boolean(tokenData?.permissions.isModerator) || classDetails?.tutorId === currentUser?.id;
 
+  const updateClassroomPermissions = (updates: {
+    canStudentsDraw?: boolean;
+    allowStudentMedia?: boolean;
+    allowStudentVoiceNotes?: boolean;
+    chatMuted?: boolean;
+  }) => {
+    if (updates.canStudentsDraw !== undefined) setCanStudentsDraw(updates.canStudentsDraw);
+    if (updates.allowStudentMedia !== undefined) setAllowStudentMedia(updates.allowStudentMedia);
+    if (updates.allowStudentVoiceNotes !== undefined) setAllowStudentVoiceNotes(updates.allowStudentVoiceNotes);
+    if (updates.chatMuted !== undefined) setChatMuted(updates.chatMuted);
+
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "classroom_permission_change",
+        payload: updates,
+      });
+      if (updates.canStudentsDraw !== undefined) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "whiteboard_toggle_student_draw",
+          payload: { allowed: updates.canStudentsDraw },
+        });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-white animate-fade-in-up">
@@ -1274,15 +1315,43 @@ export default function LiveClassroomPage({
             BrainLab
           </Link>
           <span className="text-slate-600 hidden xs:inline">/</span>
-          <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[120px] xs:max-w-[200px] sm:max-w-md">
+          <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[120px] xs:max-w-[160px] sm:max-w-xs md:max-w-md">
             {classDetails?.title || "Live Class"}
           </h1>
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase text-emerald-400 border border-emerald-500/20 shrink-0">
             Live
           </span>
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            <span className="text-slate-400">Room:</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400">{classId}</span>
+          </span>
+          {isTutorOrModerator ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-600 dark:text-amber-300 shadow-2xs">
+              <span>👑</span>
+              <span>Tutor &amp; Host</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300">
+              <span>🎓</span>
+              <span>Student</span>
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* Tutor Moderation Controls Trigger */}
+          {isTutorOrModerator && (
+            <button
+              type="button"
+              onClick={() => setShowModerationModal(true)}
+              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2 sm:px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition active-press"
+              title="Classroom Permissions & Moderation"
+            >
+              <span>⚙️</span>
+              <span className="hidden md:inline">Permissions</span>
+            </button>
+          )}
+
           <div
             className={`flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold ${
               networkQuality === "excellent"
@@ -1947,6 +2016,9 @@ export default function LiveClassroomPage({
             onOpenCreatePoll={() => setIsCreatingPoll(true)}
             onPreviewImage={setPreviewImage}
             imageInputRef={imageInputRef}
+            allowStudentMedia={allowStudentMedia}
+            allowStudentVoiceNotes={allowStudentVoiceNotes}
+            chatMuted={chatMuted}
           />
         </aside>
       </div>
@@ -1993,6 +2065,9 @@ export default function LiveClassroomPage({
               onPreviewImage={setPreviewImage}
               imageInputRef={imageInputRef}
               onCloseMobileDrawer={() => setMobileDrawerOpen(false)}
+              allowStudentMedia={allowStudentMedia}
+              allowStudentVoiceNotes={allowStudentVoiceNotes}
+              chatMuted={chatMuted}
             />
           </div>
         </div>
@@ -2238,6 +2313,156 @@ export default function LiveClassroomPage({
         </div>
       )}
 
+      {/* Classroom Permissions & Moderation Modal (Tutor Only) */}
+      {showModerationModal && isTutorOrModerator && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs animate-fade-in"
+          onClick={() => setShowModerationModal(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-900 p-6 text-white shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚙️</span>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-amber-400">
+                    Classroom Moderation Controls
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Manage real-time interaction permissions for all students in this room
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModerationModal(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Whiteboard Drawing Permission */}
+              <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                <div className="pr-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🖍️</span>
+                    <h4 className="text-xs font-bold text-white">Student Whiteboard Drawing</h4>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                    When disabled, only you (the instructor) can write on the board. Enable if inviting students to draw or solve a problem.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateClassroomPermissions({ canStudentsDraw: !canStudentsDraw })}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    canStudentsDraw ? "bg-emerald-500" : "bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      canStudentsDraw ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Chat Media / Diagram Uploads */}
+              <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                <div className="pr-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📷</span>
+                    <h4 className="text-xs font-bold text-white">Student Diagram &amp; Image Uploads</h4>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                    Allow students to attach photos or diagrams in chat. Keep off during fast-paced lectures to prevent spam.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateClassroomPermissions({ allowStudentMedia: !allowStudentMedia })}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    allowStudentMedia ? "bg-emerald-500" : "bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      allowStudentMedia ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Student Voice Notes */}
+              <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                <div className="pr-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎙️</span>
+                    <h4 className="text-xs font-bold text-white">Student Voice Questions</h4>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                    Allow students to record voice notes in chat to ask spoken questions.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateClassroomPermissions({ allowStudentVoiceNotes: !allowStudentVoiceNotes })}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    allowStudentVoiceNotes ? "bg-emerald-500" : "bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      allowStudentVoiceNotes ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Chat Pause / Mute */}
+              <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                <div className="pr-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🔇</span>
+                    <h4 className="text-xs font-bold text-white">Pause Student Chat</h4>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                    Mute participant messages while you are delivering key explanations.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateClassroomPermissions({ chatMuted: !chatMuted })}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    chatMuted ? "bg-rose-500" : "bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      chatMuted ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowModerationModal(false)}
+                className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-500 transition active-press"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Interactive Control Deck */}
       <footer className="h-15 sm:h-17 shrink-0 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 sm:px-4 py-2 flex items-center justify-between gap-1.5 sm:gap-4 shadow-lg transition-colors overflow-x-auto scrollbar-none">
         {/* Left: Media & Stage Controls */}
@@ -2314,16 +2539,25 @@ export default function LiveClassroomPage({
           </button>
 
           {isTutorOrModerator && (
-            <button
-              onClick={() => {
-                setActiveTab("polls");
-                setIsCreatingPoll(true);
-              }}
-              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/30 transition active-press"
-              title="Launch instant live poll or quiz checkpoint"
-            >
-              <span>🎯 Poll</span>
-            </button>
+            <>
+              <button
+                onClick={() => setShowModerationModal(true)}
+                className="hidden sm:flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition active-press"
+                title="Classroom Permissions & Moderation"
+              >
+                <span>⚙️ Mod</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("polls");
+                  setIsCreatingPoll(true);
+                }}
+                className="hidden sm:flex items-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/20 px-3 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/30 transition active-press"
+                title="Launch instant live poll or quiz checkpoint"
+              >
+                <span>🎯 Poll</span>
+              </button>
+            </>
           )}
 
           <button

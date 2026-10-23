@@ -156,7 +156,7 @@ export default function StudyGroupsPage() {
               <span>💬</span> Messages &amp; Chat
             </Link>
             <Link
-              href="/classroom/demo-class"
+              href="/classroom/BL-LIVE-101"
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
             >
               <span>🎥</span> Live Room

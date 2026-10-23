@@ -79,6 +79,9 @@ export interface ClassroomSidebarProps {
   onPreviewImage: (url: string | null) => void;
   imageInputRef: RefObject<HTMLInputElement | null>;
   onCloseMobileDrawer?: () => void;
+  allowStudentMedia?: boolean;
+  allowStudentVoiceNotes?: boolean;
+  chatMuted?: boolean;
 }
 
 export default function ClassroomSidebar({
@@ -110,6 +113,9 @@ export default function ClassroomSidebar({
   onPreviewImage,
   imageInputRef,
   onCloseMobileDrawer,
+  allowStudentMedia = false,
+  allowStudentVoiceNotes = true,
+  chatMuted = false,
 }: ClassroomSidebarProps) {
   const currentUserName =
     currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Me";
@@ -268,7 +274,19 @@ export default function ClassroomSidebar({
           </div>
 
           {/* Chat Input & Media Actions */}
-          {isRecordingAudio ? (
+          {chatMuted && !isTutorOrModerator ? (
+            <div className="p-3 border-t border-slate-800 bg-slate-950/80 shrink-0">
+              <div className="flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-950/30 p-2.5 text-xs text-amber-200">
+                <span className="text-lg shrink-0">🔇</span>
+                <div className="text-left">
+                  <p className="font-bold text-amber-300">Chat paused by instructor</p>
+                  <p className="text-[10px] text-amber-400/80">
+                    The tutor has temporarily paused learner chat during presentation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : isRecordingAudio ? (
             <div className="p-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between gap-2 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="flex h-3 w-3 rounded-full bg-rose-500 animate-ping" />
@@ -327,8 +345,17 @@ export default function ClassroomSidebar({
                 <button
                   type="button"
                   onClick={onStartVoiceRecording}
-                  title="Record Voice Note"
-                  className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-cyan-300 hover:bg-slate-700"
+                  disabled={!isTutorOrModerator && !allowStudentVoiceNotes}
+                  title={
+                    !isTutorOrModerator && !allowStudentVoiceNotes
+                      ? "Voice notes paused by instructor"
+                      : "Record Voice Note"
+                  }
+                  className={`flex h-8 px-2 items-center gap-1 rounded-lg border text-[11px] font-bold transition ${
+                    !isTutorOrModerator && !allowStudentVoiceNotes
+                      ? "border-slate-800 bg-slate-900/60 text-slate-500 cursor-not-allowed opacity-60"
+                      : "border-slate-700 bg-slate-800 text-cyan-300 hover:bg-slate-700"
+                  }`}
                 >
                   <span>🎙️</span>
                   <span>Voice</span>
@@ -336,8 +363,17 @@ export default function ClassroomSidebar({
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
-                  title="Share Diagram or Picture"
-                  className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-emerald-300 hover:bg-slate-700"
+                  disabled={!isTutorOrModerator && !allowStudentMedia}
+                  title={
+                    !isTutorOrModerator && !allowStudentMedia
+                      ? "Image sharing restricted to instructor"
+                      : "Share Diagram or Picture"
+                  }
+                  className={`flex h-8 px-2 items-center gap-1 rounded-lg border text-[11px] font-bold transition ${
+                    !isTutorOrModerator && !allowStudentMedia
+                      ? "border-slate-800 bg-slate-900/60 text-slate-500 cursor-not-allowed opacity-60"
+                      : "border-slate-700 bg-slate-800 text-emerald-300 hover:bg-slate-700"
+                  }`}
                 >
                   <span>📷</span>
                   <span>Diagram</span>
@@ -348,11 +384,11 @@ export default function ClassroomSidebar({
                     setActiveTab("polls");
                     if (isTutorOrModerator) onOpenCreatePoll();
                   }}
-                  title="Checkpoint quiz"
+                  title={isTutorOrModerator ? "Launch checkpoint quiz" : "View active polls & quizzes"}
                   className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-amber-300 hover:bg-slate-700"
                 >
                   <span>🎯</span>
-                  <span>Quiz</span>
+                  <span>{isTutorOrModerator ? "+ Quiz" : "Quizzes"}</span>
                 </button>
               </div>
 
@@ -525,44 +561,118 @@ export default function ClassroomSidebar({
       )}
 
       {/* TAB 3: PARTICIPANTS ROSTER */}
-      {activeTab === "participants" && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-            Connected Learners ({participants.length})
-          </h4>
-          {participants.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center justify-between rounded-xl bg-slate-800/60 p-2.5 text-xs border border-slate-700/50"
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-950 text-blue-200 font-bold">
-                  {p.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-semibold text-white">{p.name}</p>
-                  <p className="text-[10px] text-slate-400 capitalize">{p.role}</p>
-                </div>
+      {activeTab === "participants" && (() => {
+        const tutorsAndHosts = participants.filter((p) => p.role === "host");
+        const studentsAndLearners = participants.filter((p) => p.role !== "host");
+
+        return (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Tutors & Instructors Section */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <span>👑</span>
+                  <span>Instructors &amp; Hosts</span>
+                </h4>
+                <span className="text-[10px] font-bold text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                  {tutorsAndHosts.length}
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("chat");
-                    setChatInput((prev) => `@${p.name} ` + prev);
-                  }}
-                  className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-slate-700 transition"
-                  title={`Tag ${p.name} in chat`}
-                >
-                  @ Tag
-                </button>
-                {p.isHandRaised && <span title="Hand raised">✋</span>}
-                <span className="text-[11px] text-slate-400">{p.isMuted ? "🔇" : "🎙️"}</span>
+              <div className="space-y-2">
+                {tutorsAndHosts.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic p-2 bg-slate-950/40 rounded-xl">Host connecting…</p>
+                ) : (
+                  tutorsAndHosts.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between rounded-xl bg-amber-950/20 p-2.5 text-xs border border-amber-500/30"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black">
+                          👑
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-white">{p.name}</p>
+                            <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-extrabold text-amber-300 border border-amber-500/30">
+                              Host
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-amber-300/70">Lead Instructor</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("chat");
+                            setChatInput((prev) => `@${p.name} ` + prev);
+                          }}
+                          className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-2 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-900/40 transition"
+                          title={`Ask ${p.name} in chat`}
+                        >
+                          @ Ask
+                        </button>
+                        <span className="text-[11px] text-slate-400">{p.isMuted ? "🔇" : "🎙️"}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* Students & Learners Section */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <span>🎓</span>
+                  <span>Learners in Class</span>
+                </h4>
+                <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">
+                  {studentsAndLearners.length}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {studentsAndLearners.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic p-2 bg-slate-950/40 rounded-xl">No students connected yet</p>
+                ) : (
+                  studentsAndLearners.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between rounded-xl bg-slate-800/60 p-2.5 text-xs border border-slate-700/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-950 text-blue-200 font-bold">
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{p.name}</p>
+                          <p className="text-[10px] text-slate-400">Student</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("chat");
+                            setChatInput((prev) => `@${p.name} ` + prev);
+                          }}
+                          className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-slate-700 transition"
+                          title={`Tag ${p.name} in chat`}
+                        >
+                          @ Tag
+                        </button>
+                        {p.isHandRaised && <span title="Hand raised">✋</span>}
+                        <span className="text-[11px] text-slate-400">{p.isMuted ? "🔇" : "🎙️"}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* TAB 4: LESSON RESOURCES */}
       {activeTab === "resources" && (

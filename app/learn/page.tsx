@@ -32,7 +32,7 @@ export default function LearnPage() {
   const [hasStudentSession, setHasStudentSession] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [recentLesson, setRecentLesson] = useState<RecentLessonResume | null>(null);
-  const [customRoomId, setCustomRoomId] = useState("demo-class");
+  const [customRoomId, setCustomRoomId] = useState("BL-LIVE-101");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -193,7 +193,7 @@ export default function LearnPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              href="/classroom/demo-class"
+              href="/classroom/BL-LIVE-101"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 hover:bg-emerald-300 px-6 py-3.5 text-sm font-black text-slate-950 shadow-lg shadow-emerald-950/20 transition active:scale-95"
             >
               <span>🎥</span> Enter Live Stage
@@ -450,7 +450,7 @@ export default function LearnPage() {
 
                 <div className="mt-6">
                   <Link
-                    href="/classroom/demo-class"
+                    href="/classroom/BL-LIVE-101"
                     className="inline-flex w-full items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-900 px-5 py-3 text-sm font-bold text-white shadow-md transition active:scale-95"
                   >
                     Enter Main Stage Now →
@@ -476,7 +476,7 @@ export default function LearnPage() {
                       type="text"
                       value={customRoomId}
                       onChange={(e) => setCustomRoomId(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-                      placeholder="e.g. math-class-1"
+                      placeholder="e.g. BL-LIVE-101"
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 shadow-xs"
                     />
                   </div>
@@ -484,7 +484,7 @@ export default function LearnPage() {
 
                 <div className="mt-6">
                   <Link
-                    href={`/classroom/${customRoomId.trim() || "demo-class"}`}
+                    href={`/classroom/${customRoomId.trim() || "BL-LIVE-101"}`}
                     className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-md transition active:scale-95"
                   >
                     Join Custom Room →

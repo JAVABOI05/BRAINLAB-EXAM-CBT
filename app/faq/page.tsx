@@ -120,7 +120,7 @@ const FAQ_DATABASE: FAQItem[] = [
     categoryLabel: "Classes & Timetable",
     question: "How do I join a live interactive tutor masterclass?",
     answer: "Navigate to the Live Classroom Stage from your dashboard or click 'Timetable & Schedule' under the Learning Hub. When a class is scheduled or active, click 'Enter Live Room' to join the live audio stream, interactive digital whiteboard, and class chat discussions.",
-    actionHref: "/classroom/demo-class",
+    actionHref: "/classroom/BL-LIVE-101",
     actionLabel: "Live Classroom Stage",
   },
   {

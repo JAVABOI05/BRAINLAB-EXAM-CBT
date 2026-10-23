@@ -24,7 +24,7 @@ export default function AdminLiveClassroomControlPage() {
   // Instant Live Class Launcher State
   const [sessionTitle, setSessionTitle] = useState("JAMB CBT Live Speed Drill & Audio Masterclass");
   const [sessionTopic, setSessionTopic] = useState("Mathematics & Physics Speed Strategies");
-  const [sessionRoomId, setSessionRoomId] = useState(`live-${Math.random().toString(36).substring(2, 8)}`);
+  const [sessionRoomId, setSessionRoomId] = useState("BL-LIVE-101");
   const [sessionFormat, setSessionFormat] = useState<"interactive" | "quiz" | "broadcast">("interactive");
   const [isCopied, setIsCopied] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -154,7 +154,7 @@ export default function AdminLiveClassroomControlPage() {
 
         <div className="flex items-center gap-2">
           <AdminNotificationBell />
-          <Link href="/classroom/demo-class" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">🎥 Demo Room</Link>
+          <Link href="/classroom/BL-LIVE-101" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">🎥 Live Room (BL-LIVE-101)</Link>
           <Link
             href="/admin/dashboard"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"

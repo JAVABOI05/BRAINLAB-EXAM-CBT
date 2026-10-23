@@ -495,6 +495,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         // ignore
       }
 
+      if (tool === "laser") {
+        setLaserPoint(null);
+        channel?.send({
+          type: "broadcast",
+          event: "whiteboard_laser",
+          payload: { point: null, senderId: currentUserId },
+        });
+        return;
+      }
+
       if (!isDrawingRef.current || !activeElementRef.current) {
         isDrawingRef.current = false;
         return;
@@ -524,6 +534,17 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         event: "whiteboard_element_add",
         payload: { element: completed, senderId: currentUserId },
       });
+    };
+
+    const handlePointerLeave = () => {
+      if (tool === "laser") {
+        setLaserPoint(null);
+        channel?.send({
+          type: "broadcast",
+          event: "whiteboard_laser",
+          payload: { point: null, senderId: currentUserId },
+        });
+      }
     };
 
     // Insert Text Annotation
@@ -746,7 +767,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
             <button
               type="button"
-              onClick={() => setTool("laser")}
+              onClick={() => setTool((prev) => (prev === "laser" ? "pen" : "laser"))}
               className={`rounded-lg p-1.5 text-xs font-bold transition flex items-center gap-1 ${
                 tool === "laser"
                   ? "bg-rose-500 text-white shadow-sm animate-pulse"
@@ -902,16 +923,19 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
+            onPointerLeave={handlePointerLeave}
             className="w-full h-full block touch-none"
             style={{ touchAction: "none" }}
           />
 
-          {/* Laser Pointer Highlight */}
+          {/* Laser Pointer Highlight (Turns off immediately on pointer release) */}
           {laserPoint && (
             <div
-              className="pointer-events-none absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-500/80 border-2 border-white shadow-2xl animate-ping"
+              className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-500 border-2 border-white shadow-[0_0_15px_rgba(244,63,94,0.95)] flex items-center justify-center transition-all duration-75"
               style={{ left: laserPoint.x, top: laserPoint.y }}
-            />
+            >
+              <div className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+            </div>
           )}
 
           {/* View-Only Learner Pill */}

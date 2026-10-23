@@ -51,6 +51,7 @@ export type AttemptPayload = {
   tab_switch_count: number;
   answers: Record<string, Option>;
   questions: PaperQuestion[];
+  subjects?: string[];
 };
 export type ResultItem = {
   id: string;
@@ -91,6 +92,7 @@ const NETWORK_ERROR: ApiError = {
   error: "network",
   message: "Could not reach the server. Check your connection and try again.",
 };
+
 async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T | ApiError> {
   try {
     const { data, error } = await supabase.rpc(fn, args);
@@ -100,11 +102,16 @@ async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T | 
     return NETWORK_ERROR;
   }
 }
+
 export function isError(value: unknown): value is ApiError {
   return typeof value === "object" && value !== null && (value as { ok?: unknown }).ok === false;
 }
+
 export async function getPublicSettings(): Promise<PublicSettings | null> {
-  try { const res = await call<PublicSettings>("get_public_settings"); if (!isError(res) && res) return res; } catch {}
+  try {
+    const res = await call<PublicSettings>("get_public_settings");
+    if (!isError(res) && res) return res;
+  } catch {}
   try {
     const [examSettings, flags] = await Promise.all([getExamSettings(), getFeatureFlags()]);
     return {
@@ -116,35 +123,80 @@ export async function getPublicSettings(): Promise<PublicSettings | null> {
       access_code_required: true,
     };
   } catch {
-    return { mock_enabled: true, calculator_enabled: true, show_results: true, leaderboard_enabled: true, exam_duration: 7200, access_code_required: true };
+    return {
+      mock_enabled: true,
+      calculator_enabled: true,
+      show_results: true,
+      leaderboard_enabled: true,
+      exam_duration: 7200,
+      access_code_required: true,
+    };
   }
-
 }
+
 export async function checkAccessCode(code: string, phone: string) {
   return call<{ ok: true; type: "master" | "normal" | "none" }>("check_access_code", { p_code: code, p_phone: phone });
 }
-export async function startExam(code: string, name: string, phone: string, elective: string) {
-  return call<AttemptPayload>("start_exam", { p_code: code, p_name: name, p_phone: phone, p_elective: elective });
+
+export async function startExam(
+  code: string,
+  name: string,
+  phone: string,
+  elective: string,
+  subjects?: string[]
+): Promise<AttemptPayload | ApiError> {
+  try {
+    const res = await fetch("/api/exam/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, name, phone, elective, subjects }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      return {
+        ok: false as const,
+        error: data.error || "start_failed",
+        message: data.message || "Failed to start exam.",
+      };
+    }
+    return data as AttemptPayload;
+  } catch {
+    return call<AttemptPayload>("start_exam", { p_code: code, p_name: name, p_phone: phone, p_elective: elective });
+  }
 }
+
 export async function resumeExam(sessionId: string, token: string) {
   return call<AttemptPayload | FinishedPayload>("resume_exam", { p_session: sessionId, p_token: token });
 }
+
 export async function saveProgress(sessionId: string, token: string, answers: Record<string, Option>) {
   return call<{ ok: true; time_left_seconds: number }>("save_progress", { p_session: sessionId, p_token: token, p_answers: answers });
 }
+
 export async function recordTabSwitch(sessionId: string, token: string) {
   return call<{ ok: true; tab_switch_count: number; time_left_seconds: number }>("record_tab_switch", { p_session: sessionId, p_token: token });
 }
-export async function submitExam(sessionId: string, token: string, answers: Record<string, Option>, auto: boolean, flagged: Record<string, boolean>) {
+
+export async function submitExam(
+  sessionId: string,
+  token: string,
+  answers: Record<string, Option>,
+  auto: boolean,
+  flagged: Record<string, boolean>
+) {
   return call<FinishedPayload>("submit_exam", { p_session: sessionId, p_token: token, p_answers: answers, p_auto: auto, p_flagged: flagged });
 }
+
 export async function lookupResult(phone: string, code: string) {
   return call<{ ok: true; name: string; subject: string; score: number; total: number; created_at: string }>("lookup_result", { p_phone: phone, p_code: code });
 }
+
 export async function getResultCorrections(resultId: string): Promise<CorrectionsPayload> {
   return call<CorrectionsPayload>("get_result_corrections", { p_result_id: resultId });
 }
+
 export type LeaderboardRow = { id: string; name: string; subject: string; score: number; total: number; created_at?: string };
+
 export async function getLeaderboard(limit = 10) {
   return call<{ enabled: boolean; rows: LeaderboardRow[] }>("get_leaderboard", { p_limit: limit });
 }
