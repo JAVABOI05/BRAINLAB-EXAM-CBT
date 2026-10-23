@@ -1,8 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-  "https://www.brainlabacademy.com.ng";
+const siteUrl = "https://www.brainlabacademy.com.ng";
 
 // Robots directives are crawler guidance only, never access control. Do not list
 // the private operator route here: publishing a restricted path in robots.txt can
