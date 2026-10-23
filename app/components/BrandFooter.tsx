@@ -128,8 +128,8 @@ export default function BrandFooter() {
       (item.url.startsWith("http://") || item.url.startsWith("https://"))
   );
 
-  const supportEmail = config.support_email || "support@brainlab.edu.ng";
-  const academyEmail = config.academy_email || "academy@brainlab.edu.ng";
+  const supportEmail = config.support_email || "support@brainlabacademy.com.ng";
+  const academyEmail = config.academy_email || "hello@brainlabacademy.com.ng";
   const supportPhone = config.support_phone || "+234 907 431 0204";
 
   return (
@@ -162,10 +162,10 @@ export default function BrandFooter() {
               />
               <div className="flex flex-col justify-center leading-none">
                 <span className="text-2xl font-black tracking-tight text-white">
-                  BrainLab
+                  BrainLab <span className="text-cyan-400">Academy</span>
                 </span>
-                <span className="text-[11px] font-extrabold tracking-[0.25em] uppercase text-cyan-400 mt-1">
-                  ACADEMY
+                <span className="text-[11px] font-semibold tracking-wider text-slate-400 mt-1">
+                  Learn Smarter · Practise with Purpose
                 </span>
               </div>
             </Link>
@@ -188,7 +188,7 @@ export default function BrandFooter() {
                 <div>
                   <span className="text-[11px] text-slate-400 block">CBT Support:</span>
                   <a
-                    href={`mailto:${supportEmail}?subject=BrainLab%20CBT%20Support%20Request`}
+                    href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
                     className="font-medium text-slate-200 transition-colors hover:text-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
                   >
                     {supportEmail}
@@ -204,7 +204,7 @@ export default function BrandFooter() {
                 <div>
                   <span className="text-[11px] text-slate-400 block">Academy Office:</span>
                   <a
-                    href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20Inquiry`}
+                    href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20and%20Partnership%20Inquiry`}
                     className="font-medium text-slate-200 transition-colors hover:text-indigo-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
                   >
                     {academyEmail}
@@ -232,7 +232,7 @@ export default function BrandFooter() {
             {/* Single Focused Primary CTA */}
             <div className="mt-5">
               <a
-                href={`mailto:${supportEmail}?subject=BrainLab%20CBT%20Support%20Request`}
+                href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 active:scale-95"
                 title={`Email ${supportEmail}`}
               >

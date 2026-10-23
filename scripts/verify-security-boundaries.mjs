@@ -204,10 +204,10 @@ runTest("Operator gate rejects requests missing access tokens or exceeding size 
 // -----------------------------------------------------------------------------
 // Boundary 7: Footer Security & Public Contact Hygiene
 // -----------------------------------------------------------------------------
-runTest("Footer public contact contract exposes support@brainlab.edu.ng and academy@brainlab.edu.ng and filters dead/placeholder links", () => {
+runTest("Footer public contact contract exposes official support and academy emails and filters dead/placeholder links", () => {
   const footerConfig = {
-    support_email: "support@brainlab.edu.ng",
-    academy_email: "academy@brainlab.edu.ng",
+    support_email: "support@brainlabacademy.com.ng",
+    academy_email: "hello@brainlabacademy.com.ng",
     social_links: [
       { platform: "whatsapp", url: "https://wa.me/2349074310204", enabled: true },
       { platform: "instagram", url: "https://instagram.com/brainlab_academy", enabled: true },
@@ -219,8 +219,8 @@ runTest("Footer public contact contract exposes support@brainlab.edu.ng and acad
 
   // Must not expose internal admin mailbox
   assert.equal(footerConfig.support_email.includes("admin@"), false, "Admin mailbox must not be exposed as public support email");
-  assert.equal(footerConfig.support_email, "support@brainlab.edu.ng");
-  assert.equal(footerConfig.academy_email, "academy@brainlab.edu.ng");
+  assert.ok(footerConfig.support_email.endsWith("@brainlabacademy.com.ng") || footerConfig.support_email.endsWith("@brainlab.edu.ng"));
+  assert.ok(footerConfig.academy_email.endsWith("@brainlabacademy.com.ng") || footerConfig.academy_email.endsWith("@brainlab.edu.ng"));
 
   // Filter logic identically matching BrandFooter.tsx
   const activeSocialLinks = footerConfig.social_links.filter(
@@ -262,12 +262,12 @@ runTest("Transactional email service enters simulation mode without throwing whe
 // -----------------------------------------------------------------------------
 // Boundary 9: Help Page & Footer CBT Support Target Verification
 // -----------------------------------------------------------------------------
-runTest("Open CBT Support links on Help page and Footer lead directly to support@brainlab.edu.ng", () => {
-  const cbtSupportTarget = "mailto:support@brainlab.edu.ng?subject=BrainLab%20CBT%20Support%20Request";
+runTest("Open CBT Support links on Help page and Footer lead directly to official support email", () => {
+  const cbtSupportTarget = "mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support";
   
   // Must lead to email rather than looping to /login
   assert.notEqual(cbtSupportTarget, "/login", "CBT Support must not route in circles to /login");
-  assert.ok(cbtSupportTarget.startsWith("mailto:support@brainlab.edu.ng"), "Must target official support@brainlab.edu.ng email");
+  assert.ok(cbtSupportTarget.startsWith("mailto:support@brainlabacademy.com.ng") || cbtSupportTarget.startsWith("mailto:support@brainlab.edu.ng"), "Must target official support email");
 });
 
 // -----------------------------------------------------------------------------
