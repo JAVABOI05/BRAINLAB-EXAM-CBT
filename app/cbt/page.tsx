@@ -94,12 +94,25 @@ export default function CBTExamPortalPage() {
   }, []);
 
   const handleStartExam = async () => {
-    if (!name.trim()) {
+    const effectiveName =
+      name.trim() ||
+      currentUser?.user_metadata?.full_name ||
+      currentUser?.user_metadata?.name ||
+      currentUser?.email?.split("@")[0] ||
+      "";
+
+    if (!effectiveName) {
       alert("Please provide your candidate name.");
       return;
     }
 
-    if (!phone.trim()) {
+    const effectivePhone =
+      phone.trim() ||
+      currentUser?.user_metadata?.phone ||
+      currentUser?.phone ||
+      (currentUser?.email ? currentUser.email.split("@")[0] : "");
+
+    if (!effectivePhone) {
       alert("Please enter a phone number to link your result.");
       return;
     }
@@ -111,13 +124,17 @@ export default function CBTExamPortalPage() {
     localStorage.setItem(
       "candidate",
       JSON.stringify({
-        name: name.trim(),
-        phone: phone.trim(),
+        name: effectiveName,
+        phone: effectivePhone,
         subject,
         code: savedCode,
         user_id: currentUser?.id || null,
       })
     );
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("brainlab-candidate-change"));
+    }
 
     setStarting(false);
 
@@ -311,7 +328,7 @@ export default function CBTExamPortalPage() {
             {/* Launch Action Button */}
             <button
               onClick={handleStartExam}
-              disabled={starting || !name.trim() || !phone.trim()}
+              disabled={starting || (!currentUser && (!name.trim() || !phone.trim()))}
               className="mt-4 w-full rounded-xl bg-[#012153] hover:bg-blue-900 py-3.5 text-center text-sm font-extrabold text-white shadow-lg transition active-press disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <span>{starting ? "Verifying…" : "🚀 Launch CBT Exam Session"}</span>
