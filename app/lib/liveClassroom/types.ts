@@ -52,6 +52,7 @@ export interface ClassroomMessage {
   type?: "text" | "image" | "audio" | "quiz";
   mediaUrl?: string;
   duration?: number;
+  isPinned?: boolean;
 }
 
 export interface ClassroomPoll {

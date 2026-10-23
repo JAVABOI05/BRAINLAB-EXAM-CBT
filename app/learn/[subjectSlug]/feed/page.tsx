@@ -136,8 +136,9 @@ export default function SubjectFeedPage({
 
     if (uploadJson.success) {
       setRecordedAudioId(uploadJson.asset.id);
+      toast.success("Audio note ready to publish!");
     } else {
-      alert(uploadJson.error || "Failed to upload audio.");
+      toast.error(uploadJson.error || "Failed to upload audio.");
     }
   };
 
@@ -175,8 +176,9 @@ export default function SubjectFeedPage({
       const updated = await fetch(`/api/feed/posts?subjectId=${subject.id}`);
       const updatedJson = await updated.json();
       if (updatedJson.success) setPosts(updatedJson.posts);
+      toast.success("Post published to subject feed! 📢");
     } else {
-      alert(json.error || "Failed to publish post.");
+      toast.error(json.error || "Failed to publish post.");
     }
   };
 

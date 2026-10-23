@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "../lib/toast";
 
 type Candidate = {
   name: string;
@@ -35,7 +36,7 @@ export default function InstructionsPage() {
 
   const handleStartExam = () => {
     if (!agreed) {
-      alert("Please read and agree to the instructions before starting.");
+      toast.error("Please confirm that you have read and agreed to the exam instructions.");
       return;
     }
 

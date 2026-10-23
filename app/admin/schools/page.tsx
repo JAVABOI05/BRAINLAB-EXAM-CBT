@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AdminNotificationBell from "@/app/components/AdminNotificationBell";
+import { toast } from "@/app/lib/toast";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import "@/app/admin/admin.css";
 
@@ -153,7 +154,7 @@ export default function AdminSchoolsPage() {
   const handleGenerateBatch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!genSchool.trim()) {
-      alert("Please enter the school or institution name.");
+      toast.error("Please enter the school or institution name.");
       return;
     }
 

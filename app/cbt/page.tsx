@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
+import { toast } from "../lib/toast";
 
 const CONFIG = {
   whatsappNumber: "2349074310204",
@@ -102,7 +103,7 @@ export default function CBTExamPortalPage() {
       "";
 
     if (!effectiveName) {
-      alert("Please provide your candidate name.");
+      toast.error("Please enter your candidate name.");
       return;
     }
 
@@ -113,7 +114,7 @@ export default function CBTExamPortalPage() {
       (currentUser?.email ? currentUser.email.split("@")[0] : "");
 
     if (!effectivePhone) {
-      alert("Please enter a phone number to link your result.");
+      toast.error("Please enter your phone number to link your result.");
       return;
     }
 
@@ -147,7 +148,7 @@ export default function CBTExamPortalPage() {
 
   const handleCheckResult = () => {
     if (!phone.trim()) {
-      alert("Please enter your phone number to look up your result.");
+      toast.error("Please enter your phone number to look up your result.");
       return;
     }
     router.push("/result");

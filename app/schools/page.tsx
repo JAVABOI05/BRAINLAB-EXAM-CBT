@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "../lib/toast";
 
 /* -------------------------------------------------------------------------
    Types & Presets
@@ -125,7 +126,7 @@ export default function SchoolsPage() {
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquirySchool || !inquiryName || !inquiryEmail || !inquiryPhone) {
-      alert("Please fill in the school name, contact person, email, and phone number.");
+      toast.error("Please fill in the school name, contact person, email, and phone number.");
       return;
     }
 
@@ -947,8 +948,8 @@ export default function SchoolsPage() {
               Need immediate assistance? Contact our institutional desk directly:
             </p>
             <div className="mt-3 flex justify-center gap-4 text-xs font-bold text-blue-600 dark:text-sky-400">
-              <a href="mailto:support@brainlabcbt.com" className="hover:underline">
-                ✉ support@brainlabcbt.com
+              <a href="mailto:support@brainlab.edu.ng" className="hover:underline">
+                ✉ support@brainlab.edu.ng
               </a>
               <span>•</span>
               <a href="tel:+2348169389816" className="hover:underline">

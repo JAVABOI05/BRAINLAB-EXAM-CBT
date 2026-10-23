@@ -500,41 +500,43 @@ export default function ChallengeArenaPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* Arena Breadcrumb & Header */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div>
-            <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-cyan-400">
-                Dashboard
-              </Link>
-              <span>/</span>
-              <span className="text-slate-900 dark:text-slate-200">Challenge Arena</span>
-            </nav>
-            <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-950 dark:text-white flex items-center gap-2.5">
-              <span>⚡ Challenge Arena</span>
-              <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 px-3 py-0.5 text-xs font-black text-amber-800 dark:text-amber-300">
-                DAILY SPRINT &amp; XP
-              </span>
-            </h1>
-          </div>
+        {/* Arena Breadcrumb & Header - Only shown in lobby view */}
+        {!activeSession && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <div>
+              <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-cyan-400">
+                  Dashboard
+                </Link>
+                <span>/</span>
+                <span className="text-slate-900 dark:text-slate-200">Challenge Arena</span>
+              </nav>
+              <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-950 dark:text-white flex items-center gap-2.5">
+                <span>⚡ Challenge Arena</span>
+                <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 px-3 py-0.5 text-xs font-black text-amber-800 dark:text-amber-300">
+                  DAILY SPRINT &amp; XP
+                </span>
+              </h1>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Link
-              href="/learning/achievements"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-amber-900 dark:text-amber-200 shadow-sm transition hover:bg-amber-100 dark:hover:bg-amber-900/40"
-            >
-              <span>🔥</span>
-              <span>Streak &amp; Badges</span>
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-900"
-            >
-              <span>📝</span>
-              <span>Full CBT Exam</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/learning/achievements"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-amber-900 dark:text-amber-200 shadow-sm transition hover:bg-amber-100 dark:hover:bg-amber-900/40"
+              >
+                <span>🔥</span>
+                <span>Streak &amp; Badges</span>
+              </Link>
+              <Link
+                href="/cbt"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-900"
+              >
+                <span>📝</span>
+                <span>Full CBT Exam</span>
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* LOBBY VIEW */}
         {!activeSession && (

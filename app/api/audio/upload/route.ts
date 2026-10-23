@@ -86,6 +86,8 @@ export async function POST(request: NextRequest) {
           );
         }
       }
+    } else if (assetType === "discussion_audio") {
+      // Discussion voice notes in chat and study circles are permitted for all authenticated users
     } else {
       // For tutor voice notes or lesson audio, sender must be tutor or admin
       if (!isTutorOrAdmin) {

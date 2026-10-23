@@ -75,6 +75,7 @@ export default function ExamPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
 
   // Track network connectivity and auto-retry sync when online
@@ -437,20 +438,36 @@ export default function ExamPage() {
     }
   };
 
-  const handleSubmit = async (autoSubmitted = false) => {
+  const executeSubmit = async (autoSubmitted = false) => {
     if (questions.length === 0 || submitLockRef.current) return;
-    if (!autoSubmitted && !window.confirm("Are you sure you want to submit?")) return;
-    if (typeof navigator !== "undefined" && !navigator.onLine) { setError("You are currently offline. Your answers are safely stored on this device. Reconnect to the internet and click Submit Exam to record your score."); return; }
-    if (!sessionId || !sessionToken) { setError("No active server exam session was found. Please refresh and try again."); return; }
-    submitLockRef.current = true; setLoading(true); setError("");
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setError("You are currently offline. Your answers are safely stored on this device. Reconnect to the internet and click Submit Exam to record your score.");
+      return;
+    }
+    if (!sessionId || !sessionToken) {
+      setError("No active server exam session was found. Please refresh and try again.");
+      return;
+    }
+    submitLockRef.current = true;
+    setLoading(true);
+    setError("");
     const res = await submitExam(sessionId, sessionToken, answers, autoSubmitted, flagged);
     if (isError(res)) {
-      submitLockRef.current = false; setLoading(false);
-      setError(res.message || "Your exam could not be submitted. Please try again."); return;
+      submitLockRef.current = false;
+      setLoading(false);
+      setError(res.message || "Your exam could not be submitted. Please try again.");
+      return;
     }
     storeFinished(res);
-    if (autoSubmitted) alert("Your exam has been submitted automatically.");
     router.push("/result");
+  };
+
+  const handleSubmit = (autoSubmitted = false) => {
+    if (autoSubmitted) {
+      void executeSubmit(true);
+    } else {
+      setShowSubmitModal(true);
+    }
   };
 
   if (!candidate) {
@@ -863,6 +880,66 @@ export default function ExamPage() {
           </div>
         </div>
       </div>
+
+      {/* Submission Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-cyan-300 text-2xl font-black">
+                📝
+              </span>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Submit Your CBT Exam?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Please review your question status before finalizing.</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/70 p-4 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-600 dark:text-slate-400">Total Questions:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{questions.length}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-600 dark:text-slate-400">Answered:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{Object.keys(answers).length}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-600 dark:text-slate-400">Unanswered:</span>
+                <span className={`font-bold ${questions.length - Object.keys(answers).length > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-500"}`}>
+                  {Math.max(0, questions.length - Object.keys(answers).length)}
+                </span>
+              </div>
+              {questions.length - Object.keys(answers).length > 0 && (
+                <div className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 rounded-xl p-2.5 border border-amber-200 dark:border-amber-800 mt-2">
+                  ⚠️ You still have <strong>{questions.length - Object.keys(answers).length} unanswered</strong> question{questions.length - Object.keys(answers).length === 1 ? "" : "s"}.
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowSubmitModal(false)}
+                className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95"
+              >
+                Return to Exam
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setShowSubmitModal(false);
+                  void executeSubmit(false);
+                }}
+                className="rounded-xl bg-[#012153] hover:bg-blue-900 py-2.5 text-xs font-bold text-white shadow transition active:scale-95"
+              >
+                {loading ? "Submitting..." : "Yes, Submit Exam"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {calculatorEnabled && (
         <FloatingCalculator

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "../lib/toast";
 
 const CONTACT_INFO = {
   primaryPhone: "0907 431 0204",
@@ -62,7 +63,7 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim() || !formData.message.trim()) {
-      alert("Please fill in your name, contact phone number, and inquiry message.");
+      toast.error("Please fill in your name, contact phone number, and inquiry message.");
       return;
     }
 

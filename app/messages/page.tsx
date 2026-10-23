@@ -34,13 +34,15 @@ type Message = {
 type OnlinePeer = {
   user_id: string;
   display_name: string;
+  email: string;
   role: string;
-  status: "online" | "in_class" | "studying" | "away";
+  status: "online" | "in_class" | "studying" | "away" | "offline";
   custom_status?: string | null;
   activity_context?: string;
   avatar_url?: string | null;
   last_heartbeat_at?: string;
   field?: string;
+  is_self?: boolean;
 };
 
 const CURATED_STUDY_CIRCLES = [
@@ -76,49 +78,6 @@ const CURATED_STUDY_CIRCLES = [
   },
 ];
 
-const DEFAULT_FACULTY_PEERS: OnlinePeer[] = [
-  {
-    user_id: "faculty_dr_adeyemi",
-    display_name: "Dr. Funke Adeyemi",
-    role: "tutor",
-    field: "Pre-Med & Human Anatomy Lead",
-    status: "online",
-    activity_context: "Consulting in Biology Hub",
-  },
-  {
-    user_id: "faculty_engr_babatunde",
-    display_name: "Engr. Kunle Babatunde",
-    role: "tutor",
-    field: "Physics & Engineering Guild",
-    status: "in_class",
-    activity_context: "Live in Electromagnetism Lab",
-  },
-  {
-    user_id: "peer_amina_bello",
-    display_name: "Amina Bello",
-    role: "student",
-    field: "JAMB 340+ Peer Mentor",
-    status: "online",
-    activity_context: "Practicing Chemistry Past Questions",
-  },
-  {
-    user_id: "peer_david_okonjo",
-    display_name: "David Okonjo",
-    role: "student",
-    field: "Commercial & Economics Circle",
-    status: "studying",
-    activity_context: "Reviewing Accounting Speed Drills",
-  },
-  {
-    user_id: "peer_zainab_aliyu",
-    display_name: "Zainab Aliyu",
-    role: "student",
-    field: "Legal Studies & Literature Syndicate",
-    status: "online",
-    activity_context: "Reading Government & Constitution",
-  },
-];
-
 export default function MessagesPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -135,8 +94,10 @@ export default function MessagesPage() {
   // Tab state: "chats" vs "peers"
   const [activeTab, setActiveTab] = useState<"chats" | "peers">("chats");
 
-  // Online peers state
+  // Real member directory & presence state
+  const [allPeers, setAllPeers] = useState<OnlinePeer[]>([]);
   const [onlinePeers, setOnlinePeers] = useState<OnlinePeer[]>([]);
+  const [peerFilter, setPeerFilter] = useState<"all" | "online" | "tutors">("all");
   const [peersLoading, setPeersLoading] = useState(false);
 
   // Friends state (persisted locally)
@@ -198,26 +159,42 @@ export default function MessagesPage() {
     };
   }, [router]);
 
-  // 2. Fetch Online Peers from /api/presence
+  // 2. Fetch Real Peers & Live Presence from /api/presence
   const fetchOnlinePeers = async () => {
     setPeersLoading(true);
     try {
+      // Send presence heartbeat for current user
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (token) {
+        await fetch("/api/presence", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: "online",
+            activityContext: "In Study Messages Portal",
+          }),
+        }).catch(() => {});
+      }
+
       const res = await fetch("/api/presence");
       const json = await res.json();
-      if (json.success && Array.isArray(json.activeUsers)) {
-        // Exclude current user from peer roster
-        const realPeers = json.activeUsers.filter((u: any) => u.user_id !== currentUser?.id);
-        const realIds = new Set(realPeers.map((u: any) => u.user_id));
+      if (json.success) {
+        const rawAll: OnlinePeer[] = Array.isArray(json.allPeers) ? json.allPeers : [];
+        const rawActive: OnlinePeer[] = Array.isArray(json.activeUsers) ? json.activeUsers : [];
 
-        // Supplement with on-duty faculty/peer mentors so learners always have peers to study with
-        const supplemental = DEFAULT_FACULTY_PEERS.filter((f) => !realIds.has(f.user_id));
-        setOnlinePeers([...realPeers, ...supplemental]);
-      } else {
-        setOnlinePeers(DEFAULT_FACULTY_PEERS);
+        // Exclude current user from peer list
+        const otherAll = rawAll.filter((u: any) => u.user_id !== currentUser?.id);
+        const otherActive = rawActive.filter((u: any) => u.user_id !== currentUser?.id);
+
+        setAllPeers(otherAll);
+        setOnlinePeers(otherActive);
       }
     } catch (e) {
       console.warn("Could not fetch presence:", e);
-      setOnlinePeers(DEFAULT_FACULTY_PEERS);
     } finally {
       setPeersLoading(false);
     }
@@ -517,13 +494,24 @@ export default function MessagesPage() {
   }, [conversations, searchQuery]);
 
   const filteredOnlinePeers = useMemo(() => {
-    return onlinePeers.filter(
-      (p) =>
-        p.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.field && p.field.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.activity_context && p.activity_context.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [onlinePeers, searchQuery]);
+    let list =
+      peerFilter === "online"
+        ? onlinePeers
+        : peerFilter === "tutors"
+        ? allPeers.filter((p) => p.role === "tutor" || p.role === "admin")
+        : allPeers;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.display_name.toLowerCase().includes(q) ||
+          (p.email || "").toLowerCase().includes(q) ||
+          (p.activity_context || "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [allPeers, onlinePeers, peerFilter, searchQuery]);
 
   return (
     <main id="main" className="mx-auto max-w-7xl h-[calc(100vh-80px)] p-2 sm:p-6 flex flex-col">
@@ -571,11 +559,11 @@ export default function MessagesPage() {
               }`}
             >
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Online Peers
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Peers & Members
               </span>
               <span className="rounded-full bg-emerald-100 text-emerald-800 px-1.5 py-0.2 text-[10px] font-bold">
-                {onlinePeers.length}
+                {allPeers.length}
               </span>
             </button>
           </div>
@@ -584,7 +572,7 @@ export default function MessagesPage() {
           <div className="px-3 pb-3 border-b border-slate-100">
             <input
               type="text"
-              placeholder={activeTab === "chats" ? "Search conversations…" : "Search online classmates or tutors…"}
+              placeholder={activeTab === "chats" ? "Search conversations…" : "Search real classmates or tutors…"}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 transition"
@@ -662,32 +650,70 @@ export default function MessagesPage() {
             </div>
           )}
 
-          {/* Tab 2: Online Peers Roster */}
+          {/* Tab 2: Real Member Directory & Presence */}
           {activeTab === "peers" && (
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-2">
+            <div className="flex-1 overflow-y-auto p-2 space-y-2">
               <div className="px-2 py-1 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
-                <span>Active Learners & Tutors</span>
+                <span>Real Learners & Instructors</span>
                 <button
                   onClick={() => void fetchOnlinePeers()}
                   className="text-blue-700 hover:text-blue-900 font-bold hover:underline"
                 >
-                  ↻ Refresh
+                  ↻ Refresh Live Status
                 </button>
               </div>
 
-              {peersLoading && onlinePeers.length === 0 ? (
+              {/* Filter Pills */}
+              <div className="flex items-center gap-1.5 px-2 pb-1 overflow-x-auto">
+                <button
+                  onClick={() => setPeerFilter("all")}
+                  className={`rounded-xl px-2.5 py-1 text-[11px] font-bold transition ${
+                    peerFilter === "all"
+                      ? "bg-[#012153] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  All Learners ({allPeers.length})
+                </button>
+                <button
+                  onClick={() => setPeerFilter("online")}
+                  className={`rounded-xl px-2.5 py-1 text-[11px] font-bold transition flex items-center gap-1 ${
+                    peerFilter === "online"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Online ({onlinePeers.length})
+                </button>
+                <button
+                  onClick={() => setPeerFilter("tutors")}
+                  className={`rounded-xl px-2.5 py-1 text-[11px] font-bold transition ${
+                    peerFilter === "tutors"
+                      ? "bg-amber-600 text-white shadow-xs"
+                      : "bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  }`}
+                >
+                  🎓 Tutors
+                </button>
+              </div>
+
+              {peersLoading && allPeers.length === 0 ? (
                 <div className="p-3">
                   <ListSkeleton count={4} />
                 </div>
               ) : filteredOnlinePeers.length === 0 ? (
                 <div className="p-6 text-center text-xs text-slate-400">
-                  No online peers match your search query.
+                  {peerFilter === "online"
+                    ? "No other classmates are currently active right now. Switch to 'All Learners' to send an offline message!"
+                    : "No members match your search query."}
                 </div>
               ) : (
                 filteredOnlinePeers.map((peer) => {
                   const isFriend = friendsList.includes(peer.user_id);
                   const isTutor = peer.role === "tutor" || peer.role === "admin";
                   const isInClass = peer.status === "in_class";
+                  const isOnline = peer.status !== "offline";
 
                   return (
                     <div
@@ -708,23 +734,29 @@ export default function MessagesPage() {
                             </div>
                             <span
                               className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
-                                isInClass ? "bg-amber-500" : "bg-emerald-500"
+                                isInClass
+                                  ? "bg-amber-500"
+                                  : isOnline
+                                  ? "bg-emerald-500 animate-pulse"
+                                  : "bg-slate-300"
                               }`}
-                              title={isInClass ? "In Live Class" : "Online Now"}
+                              title={isInClass ? "In Live Class" : isOnline ? "Online Now" : "Offline"}
                             />
                           </div>
 
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <h3 className="text-xs font-bold text-slate-900 truncate">{peer.display_name}</h3>
+                              <h3 className="text-xs font-bold text-slate-900 truncate">
+                                {peer.display_name}
+                              </h3>
                               {isTutor && (
                                 <span className="rounded-md bg-amber-100 text-amber-900 px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider">
                                   Tutor
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] text-slate-500 truncate">
-                              {peer.field || (isTutor ? "Faculty Mentor" : "UTME/JAMB Scholar")}
+                            <p className="text-[10px] text-slate-500 font-mono truncate">
+                              {peer.email}
                             </p>
                           </div>
                         </div>
@@ -733,19 +765,27 @@ export default function MessagesPage() {
                           className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
                             isInClass
                               ? "bg-amber-50 text-amber-800 border border-amber-200"
-                              : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : isOnline
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
                           }`}
                         >
                           <span
-                            className={`h-1.5 w-1.5 rounded-full ${isInClass ? "bg-amber-500" : "bg-emerald-500"}`}
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              isInClass
+                                ? "bg-amber-500"
+                                : isOnline
+                                ? "bg-emerald-500"
+                                : "bg-slate-400"
+                            }`}
                           />
-                          {isInClass ? "In Class" : "Active"}
+                          {isInClass ? "In Class" : isOnline ? "Online" : "Offline"}
                         </span>
                       </div>
 
                       {/* Context indicator */}
                       <p className="text-[11px] text-slate-600 bg-slate-50 rounded-xl px-2.5 py-1 font-medium truncate flex items-center gap-1 border border-slate-100">
-                        <span>🎯</span> {peer.activity_context || "Reviewing Study Questions"}
+                        <span>{isOnline ? "🟢" : "⚪"}</span> {peer.activity_context || (isOnline ? "Active on BrainLab" : "Offline")}
                       </p>
 
                       {/* 3 Direct Actions: Message, Add Friend, Add to Study Group */}
@@ -771,9 +811,12 @@ export default function MessagesPage() {
                         </button>
 
                         <button
-                          onClick={() => setSelectedPeerForGroup(peer)}
+                          onClick={() => {
+                            setSelectedPeerForGroup(peer);
+                            setCustomGroupName(`${peer.display_name} & ${currentUser?.user_metadata?.full_name || "Me"} Study Circle`);
+                          }}
                           className="flex items-center justify-center gap-1 rounded-xl bg-purple-50 border border-purple-200 px-2 py-1.5 text-[11px] font-bold text-purple-900 hover:bg-purple-100 transition active-press"
-                          title="Invite or add to study circle"
+                          title="Invite to Study Circle"
                         >
                           <span>👥</span> Group
                         </button>
@@ -954,7 +997,7 @@ export default function MessagesPage() {
                     <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Mention a classmate or tutor
                     </div>
-                    {onlinePeers
+                    {allPeers
                       .filter((p) => p.display_name.toLowerCase().includes(mentionQuery))
                       .slice(0, 6)
                       .map((p) => (
@@ -1038,7 +1081,7 @@ export default function MessagesPage() {
                 onClick={() => setActiveTab("peers")}
                 className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 transition"
               >
-                🟢 Browse Active Learners ({onlinePeers.length})
+                👥 Browse All Real Learners & Peers ({allPeers.length})
               </button>
             </div>
           )}

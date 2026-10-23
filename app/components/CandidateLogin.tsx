@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "../lib/toast";
 
 export default function CandidateLogin() {
   const router = useRouter();
@@ -12,80 +13,73 @@ export default function CandidateLogin() {
   const [code, setCode] = useState("");
 
   const handleStart = () => {
-    if (!name.trim() || !phone.trim() || !code.trim()) {
-      alert("Please fill all fields");
-      return;
-    }
-
-    if (code.trim() !== "BRAINLAB-TEST-CODE") {
-      alert("Invalid or Used Code");
+    if (!name.trim() || !phone.trim()) {
+      toast.error("Please enter your candidate name and phone number.");
       return;
     }
 
     localStorage.setItem(
       "candidate",
       JSON.stringify({
-        name,
-        phone,
+        name: name.trim(),
+        phone: phone.trim(),
         subject,
-        code,
+        code: code.trim().toUpperCase(),
       })
     );
 
-    router.push("/");
+    if (code.trim()) {
+      localStorage.setItem("access_code", code.trim().toUpperCase());
+    }
+
+    router.push("/cbt");
   };
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-md">
-      <h3 className="mb-4 text-center text-2xl font-bold text-gray-800">
-        Candidate Login
+    <div className="rounded-3xl bg-white p-6 shadow-md border border-slate-200">
+      <h3 className="mb-4 text-center text-2xl font-black text-slate-900">
+        Candidate Portal Access
       </h3>
 
       <input
         placeholder="Full Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+        className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
       />
 
       <input
         placeholder="Phone Number"
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
-        className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+        className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
       />
 
       <select
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
-        className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+        className="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option>Mathematics</option>
-        <option>Biology</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="Biology">Biology</option>
+        <option value="Economics">Economics</option>
+        <option value="Literature in English">Literature in English</option>
+        <option value="Government">Government</option>
       </select>
 
       <input
-        placeholder="Access Code"
+        placeholder="Access Code (Optional)"
         value={code}
         onChange={(e) => setCode(e.target.value)}
-        className="mt-3 w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+        className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm uppercase tracking-wider outline-none focus:ring-2 focus:ring-blue-500"
       />
 
       <button
         onClick={handleStart}
-        className="mt-4 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 px-4 py-3 font-semibold text-white shadow-md transition hover:scale-[1.02]"
+        className="mt-5 w-full rounded-xl bg-[#012153] py-3 text-sm font-bold text-white transition hover:bg-blue-900 active:scale-95"
       >
-        CLICK TO TEST
+        Continue to CBT Exam Portal
       </button>
-
-      <div className="mt-5 rounded-2xl bg-gray-100 p-4 text-sm">
-        <b className="text-gray-800">Exam Shortcuts</b>
-        <p className="mt-2 leading-6 text-gray-600">
-          N = Next · P = Previous · F = Flag · S = Submit
-          <br />
-          A/B/C/D = Answer
-        </p>
-      </div>
     </div>
   );
 }

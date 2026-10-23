@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import LearningStreakCard from "@/app/components/LearningStreakCard";
+import { toast } from "@/app/lib/toast";
 import {
   getUserGamificationProfile,
   getUserBadges,
@@ -380,7 +381,7 @@ export default function AchievementsPage() {
                             onClick={() => {
                               const url = `${window.location.origin}/verify/${cert.certificate_number}`;
                               void navigator.clipboard.writeText(url);
-                              alert("Verification link copied to clipboard!");
+                              toast.success("Verification link copied to clipboard! 📋");
                             }}
                             className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
                           >

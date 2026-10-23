@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import { toast } from "@/app/lib/toast";
 
 interface VerifiedCertificate {
   id: string;
@@ -285,7 +286,7 @@ export default function CertificateVerificationResultPage() {
                         });
                       } else {
                         void navigator.clipboard.writeText(window.location.href);
-                        alert("Verification link copied to clipboard!");
+                        toast.success("Verification link copied to clipboard! 📋");
                       }
                     }}
                     className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold text-slate-700 transition hover:bg-slate-100"

@@ -11,6 +11,8 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   const pathname = usePathname() ?? "/";
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   const isActiveExam = pathname === "/exam" || pathname.startsWith("/exam/");
+  const isClassroom = pathname === "/classroom" || pathname.startsWith("/classroom/");
+  const isMessages = pathname === "/messages" || pathname.startsWith("/messages/");
 
   // Intercept any Supabase PKCE authentication code or error landing on an arbitrary route
   // (e.g. root '/' or '/account') and automatically route it to the dedicated callback handler.
@@ -24,16 +26,17 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // The active exam has its own task-focused interface. Admin pages retain their own navigation.
-  const hidePublicChrome = isAdminArea || isActiveExam;
+  // The active exam and live classroom have their own focused task-oriented interfaces.
+  // Admin pages retain their own dedicated dashboard navigation.
+  const hidePublicChrome = isAdminArea || isActiveExam || isClassroom;
 
   return (
     <>
       <ToastContainer />
-      <GlobalLearnerToolbar />
+      {!hidePublicChrome && <GlobalLearnerToolbar />}
       {!hidePublicChrome && <BrandHeader />}
       {children}
-      {!hidePublicChrome && <BrandFooter />}
+      {!hidePublicChrome && !isMessages && <BrandFooter />}
     </>
   );
 }

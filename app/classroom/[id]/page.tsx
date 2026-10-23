@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useLearnerTheme } from "../../components/LearnerThemeProvider";
+import { toast } from "../../lib/toast";
 import type {
   Participant,
   ClassroomMessage,
@@ -127,14 +128,21 @@ export default function LiveClassroomPage({
   const [isEraser, setIsEraser] = useState(false);
   const isDrawingRef = useRef(false);
 
+  // Big Screen & Pinned Lecture State
+  const [pinnedMessage, setPinnedMessage] = useState<ClassroomMessage | null>(null);
+
   // Roster
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [reactionFloat, setReactionFloat] = useState<{ id: string; emoji: string }[]>([]);
 
-  // Video streams refs
+  // Video streams & WebRTC Peer Connection refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
+  const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+  const [tutorStreaming, setTutorStreaming] = useState(false);
+  const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const attendanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
 
@@ -204,16 +212,31 @@ export default function LiveClassroomPage({
         };
         setParticipants([initialParticipant]);
 
-        // Welcoming chat message
-        setMessages([
-          {
-            id: "msg_welcome",
-            senderId: "system",
-            senderName: "BrainLab Classroom",
-            text: `Welcome to ${json.data.classDetails.title}. Please keep your microphone muted unless invited to speak.`,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          },
-        ]);
+        // Load persistent classroom messages & pinned presentation items
+        try {
+          const msgsRes = await fetch(`/api/classroom/messages?classId=${classId}`);
+          const msgsJson = await msgsRes.json();
+          if (msgsRes.ok && Array.isArray(msgsJson.messages) && msgsJson.messages.length > 0) {
+            setMessages(msgsJson.messages);
+            const pinned =
+              msgsJson.messages.find((m: any) => m.isPinned) ||
+              [...msgsJson.messages].reverse().find((m: any) => m.isHost);
+            if (pinned) setPinnedMessage(pinned);
+          } else {
+            const welcomeMsg = {
+              id: "msg_welcome",
+              senderId: "system",
+              senderName: "BrainLab Classroom",
+              text: `Welcome to ${json.data.classDetails.title}. Please keep your microphone muted unless invited to speak.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              isHost: true,
+            };
+            setMessages([welcomeMsg]);
+            setPinnedMessage(welcomeMsg);
+          }
+        } catch {
+          // fallback
+        }
 
         // Fetch Classroom Polls
         try {
@@ -246,8 +269,135 @@ export default function LiveClassroomPage({
               if (prev.some((m) => m.id === payload.message.id)) return prev;
               return [...prev, payload.message];
             });
+            // Tutor messages or pinned items automatically show on the Big Screen!
+            if (payload.message.isHost || payload.message.isPinned) {
+              setPinnedMessage(payload.message);
+            }
           }
         });
+
+        // Pin to Big Screen Broadcast
+        channel.on("broadcast", { event: "pin_message" }, ({ payload }) => {
+          if (payload?.message) {
+            setPinnedMessage(payload.message);
+          }
+        });
+
+        // WebRTC Real-Time Video & Screen Stream Signaling
+        channel
+          .on("broadcast", { event: "webrtc_stream_live" }, async ({ payload }) => {
+            if (payload?.hostId && payload.hostId !== user.id) {
+              setTutorStreaming(true);
+              channel.send({
+                type: "broadcast",
+                event: "webrtc_request_offer",
+                payload: { studentId: user.id, hostId: payload.hostId },
+              });
+            }
+          })
+          .on("broadcast", { event: "webrtc_request_offer" }, async ({ payload }) => {
+            const activeStream = screenStreamRef.current || localStreamRef.current;
+            if (payload?.studentId && activeStream && json.data.classDetails.tutorId === user.id) {
+              try {
+                const pc = new RTCPeerConnection({
+                  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+                });
+                peerConnectionsRef.current.set(payload.studentId, pc);
+
+                activeStream.getTracks().forEach((track) => pc.addTrack(track, activeStream));
+
+                pc.onicecandidate = (event) => {
+                  if (event.candidate) {
+                    channel.send({
+                      type: "broadcast",
+                      event: "webrtc_ice",
+                      payload: { targetId: payload.studentId, candidate: event.candidate, senderId: user.id },
+                    });
+                  }
+                };
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                channel.send({
+                  type: "broadcast",
+                  event: "webrtc_offer",
+                  payload: { targetId: payload.studentId, offer, hostId: user.id },
+                });
+              } catch (rtcErr) {
+                console.warn("WebRTC offer creation error:", rtcErr);
+              }
+            }
+          })
+          .on("broadcast", { event: "webrtc_offer" }, async ({ payload }) => {
+            if (payload?.targetId === user.id && payload?.offer) {
+              try {
+                const pc = new RTCPeerConnection({
+                  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+                });
+                peerConnectionsRef.current.set(payload.hostId, pc);
+
+                pc.ontrack = (event) => {
+                  if (remoteVideoRef.current && event.streams[0]) {
+                    remoteVideoRef.current.srcObject = event.streams[0];
+                    setHasRemoteVideo(true);
+                    setTutorStreaming(true);
+                  }
+                };
+
+                pc.onicecandidate = (event) => {
+                  if (event.candidate) {
+                    channel.send({
+                      type: "broadcast",
+                      event: "webrtc_ice",
+                      payload: { targetId: payload.hostId, candidate: event.candidate, senderId: user.id },
+                    });
+                  }
+                };
+
+                await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+
+                channel.send({
+                  type: "broadcast",
+                  event: "webrtc_answer",
+                  payload: { hostId: payload.hostId, answer, studentId: user.id },
+                });
+              } catch (rtcErr) {
+                console.warn("WebRTC answer error:", rtcErr);
+              }
+            }
+          })
+          .on("broadcast", { event: "webrtc_answer" }, async ({ payload }) => {
+            if (payload?.hostId === user.id && payload?.studentId) {
+              const pc = peerConnectionsRef.current.get(payload.studentId);
+              if (pc) {
+                try {
+                  await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
+                } catch (e) {
+                  console.warn("WebRTC answer setting error:", e);
+                }
+              }
+            }
+          })
+          .on("broadcast", { event: "webrtc_ice" }, async ({ payload }) => {
+            if (payload?.targetId === user.id && payload?.candidate) {
+              const pc = peerConnectionsRef.current.get(payload.senderId);
+              if (pc) {
+                try {
+                  await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+                } catch {
+                  // candidate error
+                }
+              }
+            }
+          })
+          .on("broadcast", { event: "webrtc_stream_stopped" }, () => {
+            setHasRemoteVideo(false);
+            setTutorStreaming(false);
+            if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          });
 
         // B. Realtime Presence Sync: keep participants list completely live
         channel
@@ -442,7 +592,7 @@ export default function LiveClassroomPage({
   // 2. Toggle Audio / Mic
   const toggleAudio = async () => {
     if (!tokenData?.permissions.canPublishAudio) {
-      alert("Audio publishing is restricted for this session or requires host permission.");
+      toast.warning("Audio publishing is restricted for this session or requires host permission.");
       return;
     }
 
@@ -456,14 +606,14 @@ export default function LiveClassroomPage({
         setIsAudioEnabled(false);
       }
     } catch {
-      alert("Unable to access microphone. Check browser permissions.");
+      toast.error("Unable to access microphone. Check browser permissions.");
     }
   };
 
   // 3. Toggle Video / Camera
   const toggleVideo = async () => {
     if (!tokenData?.permissions.canPublishVideo) {
-      alert("Camera broadcasting is restricted to instructor or requires permission.");
+      toast.warning("Camera broadcasting is restricted to instructor or requires permission.");
       return;
     }
 
@@ -477,20 +627,30 @@ export default function LiveClassroomPage({
         }
         localStreamRef.current = stream;
         setIsVideoEnabled(true);
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "webrtc_stream_live",
+          payload: { hostId: currentUser?.id },
+        });
       } else {
         localStreamRef.current?.getVideoTracks().forEach((track) => track.stop());
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
         setIsVideoEnabled(false);
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "webrtc_stream_stopped",
+          payload: { hostId: currentUser?.id },
+        });
       }
     } catch {
-      alert("Unable to access camera. Check device permissions.");
+      toast.error("Unable to access camera. Check device permissions.");
     }
   };
 
   // 4. Toggle Screen Share
   const toggleScreenShare = async () => {
     if (!tokenData?.permissions.canPublishScreen) {
-      alert("Screen sharing is restricted for this session.");
+      toast.warning("Screen sharing is restricted for this session.");
       return;
     }
 
@@ -504,49 +664,91 @@ export default function LiveClassroomPage({
         stream.getVideoTracks()[0].onended = () => {
           setIsScreenSharing(false);
           if (localVideoRef.current) localVideoRef.current.srcObject = null;
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "webrtc_stream_stopped",
+            payload: { hostId: currentUser?.id },
+          });
         };
         setIsScreenSharing(true);
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "webrtc_stream_live",
+          payload: { hostId: currentUser?.id },
+        });
       } else {
         screenStreamRef.current?.getTracks().forEach((track) => track.stop());
         setIsScreenSharing(false);
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "webrtc_stream_stopped",
+          payload: { hostId: currentUser?.id },
+        });
       }
     } catch {
       console.warn("Screen share cancelled or not allowed.");
     }
   };
 
-  // 5. Send Chat Message
-  const handleSendMessage = (e: React.FormEvent) => {
+  // 5. Send Chat Message (Persisted & Broadcast)
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || !currentUser) return;
 
-    const newMsg: ClassroomMessage = {
-      id: `msg_${Date.now()}`,
-      senderId: currentUser.id,
-      senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
-      text: chatInput.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      isHost: classDetails?.tutorId === currentUser.id,
-    };
+    const textToSend = chatInput.trim();
+    const isHostUser = classDetails?.tutorId === currentUser.id;
 
-    setMessages((prev) => [...prev, newMsg]);
     setChatInput("");
     setShowMentions(false);
 
-    // Broadcast in real-time to all classroom participants
+    const payloadMsg = {
+      classId,
+      senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+      text: textToSend,
+      type: "text" as const,
+      isHost: isHostUser,
+    };
+
     try {
+      const res = await fetch("/api/classroom/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadMsg),
+      });
+      const data = await res.json();
+      const savedMsg: ClassroomMessage = data.message || {
+        ...payloadMsg,
+        id: `msg_${Date.now()}`,
+        senderId: currentUser.id,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+
+      setMessages((prev) => [...prev, savedMsg]);
+      if (savedMsg.isHost) setPinnedMessage(savedMsg);
+
       channelRef.current?.send({
         type: "broadcast",
         event: "chat_message",
-        payload: { message: newMsg },
+        payload: { message: savedMsg },
       });
-    } catch (broadcastErr) {
-      console.warn("Could not broadcast message:", broadcastErr);
+    } catch (err) {
+      console.warn("Error sending message:", err);
     }
   };
 
-  // 5b. Voice Note Recording & Media Handlers
+  // Helper: Pin Any Message to the Big Screen Presentation
+  const handlePinToBigScreen = (msg: ClassroomMessage) => {
+    const pinned = { ...msg, isPinned: true };
+    setPinnedMessage(pinned);
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "pin_message",
+      payload: { message: pinned },
+    });
+  };
+
+  // 5b. Voice Note Recording & Media Handlers (Real Server Upload)
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -578,7 +780,7 @@ export default function LiveClassroomPage({
         });
       }, 1000);
     } catch {
-      alert("Microphone permission was denied or not available on this device.");
+      toast.error("Microphone permission was denied or not available on this device.");
     }
   };
 
@@ -593,55 +795,152 @@ export default function LiveClassroomPage({
 
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state !== "inactive") {
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         if (send && audioChunksRef.current.length > 0 && currentUser) {
           const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const newMsg: ClassroomMessage = {
-            id: `msg_audio_${Date.now()}`,
-            senderId: currentUser.id,
+
+          // 1. Upload audio to real endpoint
+          const formData = new FormData();
+          formData.append("file", audioBlob, `voice_${Date.now()}.webm`);
+          formData.append("classId", classId);
+          formData.append("mediaType", "audio");
+          formData.append("duration", String(Math.max(1, duration)));
+
+          let uploadedUrl = URL.createObjectURL(audioBlob);
+          try {
+            const uploadRes = await fetch("/api/classroom/upload", {
+              method: "POST",
+              body: formData,
+            });
+            const uploadJson = await uploadRes.json();
+            if (uploadRes.ok && uploadJson.url) {
+              uploadedUrl = uploadJson.url;
+            }
+          } catch (e) {
+            console.warn("Audio upload fallback:", e);
+          }
+
+          // 2. Persist message
+          const payloadMsg = {
+            classId,
             senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
-            text: "Voice Note",
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            isHost: classDetails?.tutorId === currentUser.id,
-            type: "audio",
-            mediaUrl: audioUrl,
+            text: "🎙️ Voice Note",
+            type: "audio" as const,
+            mediaUrl: uploadedUrl,
             duration: Math.max(1, duration),
+            isHost: classDetails?.tutorId === currentUser.id,
           };
-          setMessages((prev) => [...prev, newMsg]);
+
+          try {
+            const postRes = await fetch("/api/classroom/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payloadMsg),
+            });
+            const postJson = await postRes.json();
+            const savedMsg: ClassroomMessage = postJson.message || {
+              ...payloadMsg,
+              id: `msg_audio_${Date.now()}`,
+              senderId: currentUser.id,
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            };
+
+            setMessages((prev) => [...prev, savedMsg]);
+            if (savedMsg.isHost) setPinnedMessage(savedMsg);
+
+            channelRef.current?.send({
+              type: "broadcast",
+              event: "chat_message",
+              payload: { message: savedMsg },
+            });
+          } catch (err) {
+            console.warn("Error saving audio message:", err);
+          }
         }
       };
       recorder.stop();
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be smaller than 5MB.");
+    if (file.size > 8 * 1024 * 1024) {
+      toast.warning("Image must be smaller than 8MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        const newMsg: ClassroomMessage = {
+    const isHostUser = classDetails?.tutorId === currentUser.id;
+
+    // 1. Upload file to server
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("classId", classId);
+    formData.append("mediaType", "image");
+
+    let uploadedUrl = "";
+    try {
+      const uploadRes = await fetch("/api/classroom/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const uploadJson = await uploadRes.json();
+      if (uploadRes.ok && uploadJson.url) {
+        uploadedUrl = uploadJson.url;
+      }
+    } catch {
+      // fallback
+    }
+
+    const dispatchImgMsg = async (url: string) => {
+      const payloadMsg = {
+        classId,
+        senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+        text: file.name || "Academic diagram / problem snapshot",
+        type: "image" as const,
+        mediaUrl: url,
+        isHost: isHostUser,
+      };
+
+      try {
+        const postRes = await fetch("/api/classroom/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadMsg),
+        });
+        const postJson = await postRes.json();
+        const savedMsg: ClassroomMessage = postJson.message || {
+          ...payloadMsg,
           id: `msg_img_${Date.now()}`,
           senderId: currentUser.id,
-          senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
-          text: file.name || "Academic diagram / problem snapshot",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          isHost: classDetails?.tutorId === currentUser.id,
-          type: "image",
-          mediaUrl: dataUrl,
         };
-        setMessages((prev) => [...prev, newMsg]);
+
+        setMessages((prev) => [...prev, savedMsg]);
+        if (savedMsg.isHost) setPinnedMessage(savedMsg);
+
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "chat_message",
+          payload: { message: savedMsg },
+        });
+      } catch (err) {
+        console.warn("Error saving image message:", err);
       }
     };
-    reader.readAsDataURL(file);
+
+    if (uploadedUrl) {
+      await dispatchImgMsg(uploadedUrl);
+    } else {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) await dispatchImgMsg(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+
     e.target.value = "";
   };
 
@@ -823,7 +1122,7 @@ export default function LiveClassroomPage({
   const handleLaunchPoll = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pollQuestion.trim() || pollOptions.filter((o) => o.text.trim()).length < 2) {
-      alert("Provide a question and at least 2 answer choices.");
+      toast.error("Provide a question and at least 2 answer choices.");
       return;
     }
 
@@ -893,7 +1192,7 @@ export default function LiveClassroomPage({
         });
       }
     } catch (err: any) {
-      alert(err.message || "Failed to launch poll.");
+      toast.error(err.message || "Failed to launch poll.");
     } finally {
       setIsSubmittingPoll(false);
     }
@@ -1196,78 +1495,344 @@ export default function LiveClassroomPage({
                 className="w-full h-full object-contain bg-black"
               />
             ) : (
-              <div className="flex flex-col items-center text-center p-6 max-w-xl">
-                {/* Audio Wave Visualizer */}
-                <div className="flex items-center gap-1.5 h-14 mb-4 px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-inner">
-                  {[20, 36, 16, 48, 30, 52, 24, 44, 18, 34, 48, 22].map((h, i) => (
-                    <span
-                      key={i}
-                      className="w-1.5 bg-gradient-to-t from-blue-500 to-cyan-300 rounded-full animate-pulse"
-                      style={{
-                        height: `${h}px`,
-                        animationDelay: `${(i % 4) * 180}ms`,
-                        animationDuration: "1.1s",
-                      }}
-                    />
-                  ))}
-                </div>
+              <div className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
+                {/* Remote Video element: Always bound in DOM for WebRTC streaming */}
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  className={hasRemoteVideo ? "w-full h-full object-contain bg-black rounded-2xl shadow-2xl" : "hidden"}
+                />
 
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-600/20 text-cyan-300 border-2 border-cyan-500/40 text-2xl font-black shadow-lg shadow-blue-500/10">
-                  BL
-                </div>
-                <h3 className="mt-4 text-xl font-black text-white">{classDetails?.title || "Live Masterclass"}</h3>
-                <p className="mt-2 text-xs text-slate-400 max-w-md leading-relaxed">
-                  Interactive Audio & Multimedia Discussion Stage. Low data consumption mode enabled for seamless participation across Nigeria.
-                </p>
+                {!hasRemoteVideo && (() => {
+                  const featuredMessage = pinnedMessage || messages.filter((m) => m.isHost).slice(-1)[0];
+                  const showQuizArena = Boolean(activePoll);
 
-                {/* Feature Tags */}
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                  <span className="rounded-full bg-blue-950/80 border border-blue-800/80 px-2.5 py-1 text-[11px] font-bold text-blue-300">
-                    🎙️ Voice Notes & Chat
-                  </span>
-                  <span className="rounded-full bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
-                    📷 Diagram Sharing
-                  </span>
-                  <span className="rounded-full bg-amber-950/80 border border-amber-800/80 px-2.5 py-1 text-[11px] font-bold text-amber-300">
-                    🎯 In-Class Live Quizzes
-                  </span>
-                </div>
+                  return (
+                    <div className="w-full max-w-4xl flex flex-col items-center my-auto animate-fade-in-up">
+                      {/* Big Screen Header Bar */}
+                      <div className="w-full mb-4 flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg backdrop-blur">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+                          <span className="text-xs font-black tracking-wider uppercase text-cyan-300">
+                            📡 Big Screen Lecture Board
+                          </span>
+                          <span className="hidden sm:inline-block rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-400">
+                            Low-data Audio Mode
+                          </span>
+                        </div>
 
-                {/* Quick Stage Actions */}
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={startVoiceRecording}
-                    disabled={isRecordingAudio}
-                    className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-bold text-cyan-300 transition flex items-center gap-1.5"
-                  >
-                    <span>🎙️ Record Voice Note</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => imageInputRef.current?.click()}
-                    className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-bold text-emerald-300 transition flex items-center gap-1.5"
-                  >
-                    <span>📷 Share Diagram</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("polls");
-                      if (isTutorOrModerator) setIsCreatingPoll(true);
-                    }}
-                    className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-bold text-amber-300 transition flex items-center gap-1.5"
-                  >
-                    <span>🎯 Launch / View Polls</span>
-                  </button>
-                </div>
+                        {/* Audio Wave Visualizer */}
+                        <div className="flex items-center gap-1 h-5 px-3 py-1 rounded-full bg-slate-950/80 border border-slate-800">
+                          <span className="text-[10px] font-bold text-cyan-400 mr-1">🎙️ LIVE</span>
+                          {[14, 20, 10, 24, 18, 12, 22, 16].map((h, i) => (
+                            <span
+                              key={i}
+                              className="w-1 bg-gradient-to-t from-cyan-500 to-blue-400 rounded-full animate-pulse"
+                              style={{
+                                height: `${h}px`,
+                                animationDelay: `${(i % 4) * 150}ms`,
+                                animationDuration: "0.9s",
+                              }}
+                            />
+                          ))}
+                        </div>
 
-                {classDetails?.isRecording && (
-                  <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-950/40 px-3 py-1 text-xs font-semibold text-rose-300">
-                    <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
-                    Recording active for student revision
-                  </div>
-                )}
+                        {/* Pin status badge or unpin action */}
+                        {pinnedMessage && (
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-[11px] font-black text-amber-300">
+                              📌 Pinned: {pinnedMessage.senderName}
+                            </span>
+                            {isTutorOrModerator && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPinnedMessage(null);
+                                  channelRef.current?.send({
+                                    type: "broadcast",
+                                    event: "pin_message",
+                                    payload: { message: null },
+                                  });
+                                }}
+                                className="text-[10px] text-slate-400 hover:text-rose-400 transition underline"
+                              >
+                                Clear Pin
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* STAGE ARENA: 1. Live Quiz Arena */}
+                      {showQuizArena && activePoll ? (
+                        <div className="w-full rounded-3xl border-2 border-cyan-500/40 bg-gradient-to-b from-slate-900/95 to-slate-950 p-6 md:p-8 shadow-2xl backdrop-blur">
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">🎯</span>
+                              <div>
+                                <h4 className="text-sm font-black uppercase tracking-wider text-cyan-300">
+                                  {activePoll.is_open ? "Interactive Checkpoint Quiz" : "Quiz Checkpoint Results"}
+                                </h4>
+                                <p className="text-[11px] text-slate-400">
+                                  Answer below to test your understanding before the tutor proceeds
+                                </p>
+                              </div>
+                            </div>
+                            {activePoll.is_open && pollCountdown !== null && (
+                              <span className="rounded-2xl bg-cyan-950 px-3 py-1.5 text-xs font-mono font-black text-cyan-300 border border-cyan-800 shadow-inner">
+                                ⏱️ {pollCountdown}s remaining
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="text-lg md:text-2xl font-black text-white text-center leading-snug my-4 px-2">
+                            {activePoll.question}
+                          </h3>
+
+                          {/* Options Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+                            {activePoll.options.map((opt, idx) => {
+                              const isVoted = activePoll.user_voted_option_id === opt.id;
+                              const canVote = activePoll.is_open && !activePoll.user_voted_option_id;
+
+                              return (
+                                <div key={opt.id} className="relative">
+                                  {canVote ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleVote(activePoll.id, opt.id)}
+                                      className="w-full text-left rounded-2xl border-2 border-slate-700 bg-slate-900/90 hover:border-cyan-400 hover:bg-slate-800/90 p-4 transition-all duration-200 active-press group flex items-start gap-3"
+                                    >
+                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 font-mono font-black text-sm border border-cyan-500/40 group-hover:bg-cyan-400 group-hover:text-slate-950 transition">
+                                        {String.fromCharCode(65 + idx)}
+                                      </span>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-slate-100 group-hover:text-white leading-snug">
+                                          {opt.text}
+                                        </p>
+                                        <span className="text-[11px] text-slate-500 group-hover:text-cyan-300 transition">
+                                          Tap to select this option
+                                        </span>
+                                      </div>
+                                    </button>
+                                  ) : (
+                                    <div
+                                      className={`rounded-2xl border-2 p-4 transition-all ${
+                                        isVoted
+                                          ? "border-cyan-500 bg-cyan-950/40 text-cyan-100 shadow-lg shadow-cyan-500/10"
+                                          : !activePoll.is_open && opt.is_correct
+                                          ? "border-emerald-500 bg-emerald-950/40 text-emerald-100 shadow-lg shadow-emerald-500/10"
+                                          : "border-slate-800 bg-slate-900/60 text-slate-300"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2.5">
+                                          <span className="font-mono font-black text-xs text-slate-400">
+                                            {String.fromCharCode(65 + idx)}:
+                                          </span>
+                                          <span className="text-sm font-bold">{opt.text}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          {isVoted && (
+                                            <span className="rounded bg-cyan-500/20 px-1.5 py-0.5 text-[10px] font-black text-cyan-300">
+                                              Your Vote
+                                            </span>
+                                          )}
+                                          {!activePoll.is_open && opt.is_correct && (
+                                            <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-black text-emerald-300">
+                                              ✓ Correct
+                                            </span>
+                                          )}
+                                          <span className="font-mono text-xs font-black text-slate-300">
+                                            {opt.percentage}%
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {/* Bar */}
+                                      <div className="mt-2.5 h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                                        <div
+                                          className={`h-full transition-all duration-700 rounded-full ${
+                                            !activePoll.is_open && opt.is_correct
+                                              ? "bg-emerald-400"
+                                              : isVoted
+                                              ? "bg-cyan-400"
+                                              : "bg-blue-600"
+                                          }`}
+                                          style={{ width: `${opt.percentage}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Explanation on Reveal */}
+                          {!activePoll.is_open && activePoll.explanation && (
+                            <div className="mt-5 rounded-2xl bg-blue-950/60 border border-blue-800/60 p-4 text-xs text-blue-200">
+                              💡 <strong className="text-white">Instructor's Explanation:</strong> {activePoll.explanation}
+                            </div>
+                          )}
+
+                          {/* Tutor Control to Close Poll */}
+                          {isTutorOrModerator && activePoll.is_open && (
+                            <div className="mt-5 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => void handleClosePoll(activePoll.id)}
+                                className="rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-black text-white shadow transition"
+                              >
+                                End Quiz & Reveal Answers
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : featuredMessage?.type === "image" && featuredMessage.mediaUrl ? (
+                        /* STAGE ARENA: 2. High-Res Diagram Projection */
+                        <div className="w-full flex flex-col items-center rounded-3xl border-2 border-cyan-500/30 bg-slate-900/90 p-5 shadow-2xl backdrop-blur">
+                          <div className="relative group max-h-[420px] overflow-hidden rounded-2xl border border-slate-700 bg-black flex items-center justify-center">
+                            <img
+                              src={featuredMessage.mediaUrl}
+                              alt={featuredMessage.text || "Classroom lecture diagram"}
+                              className="max-h-[400px] w-auto max-w-full object-contain cursor-pointer transition hover:scale-[1.01]"
+                              onClick={() => setPreviewImage(featuredMessage.mediaUrl || null)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage(featuredMessage.mediaUrl || null)}
+                              className="absolute bottom-3 right-3 rounded-xl bg-slate-900/90 border border-slate-700 px-3 py-1.5 text-xs font-bold text-cyan-300 shadow backdrop-blur hover:bg-slate-800"
+                            >
+                              🔍 Expand High-Res
+                            </button>
+                          </div>
+                          {featuredMessage.text && (
+                            <div className="mt-3.5 max-w-2xl text-center px-4 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-xs md:text-sm font-semibold text-cyan-100">
+                              {featuredMessage.text}
+                            </div>
+                          )}
+                          <div className="mt-2 text-[11px] text-slate-400">
+                            Shared by {featuredMessage.senderName} ({featuredMessage.timestamp})
+                          </div>
+                        </div>
+                      ) : featuredMessage?.type === "audio" && featuredMessage.mediaUrl ? (
+                        /* STAGE ARENA: 3. Masterclass Audio Lecture Spotlight */
+                        <div className="w-full flex flex-col items-center rounded-3xl border-2 border-cyan-500/30 bg-gradient-to-b from-slate-900/95 to-slate-950 p-8 shadow-2xl backdrop-blur text-center max-w-2xl">
+                          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 text-slate-950 shadow-2xl shadow-cyan-500/20 mb-4 animate-pulse">
+                            <button
+                              type="button"
+                              onClick={() => togglePlayAudio(featuredMessage.id, featuredMessage.mediaUrl || "")}
+                              className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-950 text-cyan-300 font-black text-2xl hover:scale-105 transition"
+                              title="Play/Pause Voice Lecture"
+                            >
+                              {currentlyPlayingAudioId === featuredMessage.id ? "⏸" : "▶"}
+                            </button>
+                          </div>
+                          <h4 className="text-lg font-black text-white">🎙️ Masterclass Audio Explanation</h4>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Shared by {featuredMessage.senderName} • {featuredMessage.duration ? `${featuredMessage.duration}s duration` : "Voice Note"}
+                          </p>
+                          <div className="mt-4 flex items-center justify-center gap-1 h-8">
+                            {[16, 28, 12, 34, 22, 14, 30, 24, 18, 32, 10, 26, 20, 36, 14, 28, 12, 22].map((bar, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-1.5 rounded-full transition-all duration-300 ${
+                                  currentlyPlayingAudioId === featuredMessage.id
+                                    ? "bg-cyan-400 animate-pulse"
+                                    : "bg-slate-700"
+                                }`}
+                                style={{
+                                  height: currentlyPlayingAudioId === featuredMessage.id ? `${bar}px` : "10px",
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ) : featuredMessage ? (
+                        /* STAGE ARENA: 4. Tutor Spotlight & Smartboard Card */
+                        <div className="w-full max-w-3xl flex flex-col items-center rounded-3xl border-2 border-cyan-500/30 bg-gradient-to-b from-slate-900/95 to-slate-950 p-8 md:p-10 shadow-2xl backdrop-blur text-center">
+                          <span className="rounded-full bg-cyan-950 border border-cyan-800/80 px-3 py-1 text-xs font-bold text-cyan-300 mb-4">
+                            📝 Tutor's Note on Big Screen
+                          </span>
+                          <p className="text-lg md:text-2xl font-extrabold text-cyan-50 leading-relaxed font-sans max-w-2xl">
+                            {featuredMessage.text}
+                          </p>
+                          <p className="mt-6 text-xs text-slate-400 font-mono">
+                            — {featuredMessage.senderName} ({featuredMessage.timestamp})
+                          </p>
+                        </div>
+                      ) : (
+                        /* STAGE ARENA: 5. Default Masterclass Welcome Arena */
+                        <div className="flex flex-col items-center text-center p-6 max-w-xl">
+                          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-600/20 text-cyan-300 border-2 border-cyan-500/40 text-2xl font-black shadow-lg shadow-blue-500/10">
+                            BL
+                          </div>
+                          <h3 className="mt-4 text-xl font-black text-white">{classDetails?.title || "Live Masterclass"}</h3>
+                          <p className="mt-2 text-xs text-slate-400 max-w-md leading-relaxed">
+                            Interactive Audio & Multimedia Discussion Stage. Low data consumption mode enabled for seamless participation across Nigeria.
+                          </p>
+
+                          {/* Feature Tags */}
+                          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                            <span className="rounded-full bg-blue-950/80 border border-blue-800/80 px-2.5 py-1 text-[11px] font-bold text-blue-300">
+                              🎙️ Voice Notes & Chat
+                            </span>
+                            <span className="rounded-full bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
+                              📷 Diagram Sharing
+                            </span>
+                            <span className="rounded-full bg-amber-950/80 border border-amber-800/80 px-2.5 py-1 text-[11px] font-bold text-amber-300">
+                              🎯 In-Class Live Quizzes
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quick Stage Actions for Tutor & Students */}
+                      <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={startVoiceRecording}
+                          disabled={isRecordingAudio}
+                          className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-cyan-300 transition flex items-center gap-1.5 shadow"
+                        >
+                          <span>🎙️ Record Voice Note</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-emerald-300 transition flex items-center gap-1.5 shadow"
+                        >
+                          <span>📷 Share Diagram</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("polls");
+                            if (isTutorOrModerator) setIsCreatingPoll(true);
+                          }}
+                          className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-amber-300 transition flex items-center gap-1.5 shadow"
+                        >
+                          <span>🎯 Launch / View Quizzes</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStageMode("whiteboard")}
+                          className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-purple-300 transition flex items-center gap-1.5 shadow"
+                        >
+                          <span>✏️ Open Smart Whiteboard</span>
+                        </button>
+                      </div>
+
+                      {classDetails?.isRecording && (
+                        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-950/40 px-3 py-1 text-xs font-semibold text-rose-300">
+                          <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+                          Recording active for student revision
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

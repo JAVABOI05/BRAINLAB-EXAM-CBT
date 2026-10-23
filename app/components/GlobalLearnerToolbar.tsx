@@ -136,6 +136,44 @@ export default function GlobalLearnerToolbar() {
     };
   }, []);
 
+  // Send periodic presence heartbeat while user is active on platform
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+
+    async function sendHeartbeat() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) return;
+
+        await fetch("/api/presence", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: "online",
+            activityContext: `Active on ${pathname || "BrainLab"}`,
+          }),
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    void sendHeartbeat();
+    const interval = setInterval(() => {
+      if (active) void sendHeartbeat();
+    }, 45000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [user, pathname]);
+
   const name = user ? (firstName(user) || (candidateName ? candidateName.split(/\s+/)[0] : "")) : (candidateName ? candidateName.split(/\s+/)[0] : "");
   const avatarValue = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture;
   const avatar = typeof avatarValue === "string" && /^https:\/\//i.test(avatarValue) ? avatarValue : "";

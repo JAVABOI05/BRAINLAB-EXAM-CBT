@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "../lib/toast";
 
 interface LearningStreakProps {
   currentStreak?: number;
@@ -70,7 +71,7 @@ export default function LearningStreakCard({
           const perm = await Notification.requestPermission();
           setNotificationPermission(perm);
           if (perm !== "granted") {
-            alert("Please allow browser notifications to receive daily streak reminders.");
+            toast.error("Please allow browser notifications to receive daily streak reminders.");
             return;
           }
         }
@@ -78,7 +79,7 @@ export default function LearningStreakCard({
       const newSettings = { enabled: true, time: reminderTime };
       localStorage.setItem("brainlab_streak_reminder", JSON.stringify(newSettings));
       setReminderEnabled(true);
-      alert(`Streak reminder set for ${reminderTime} daily! We'll help protect your flame 🔥.`);
+      toast.success(`Streak reminder set for ${reminderTime} daily! We'll help protect your flame 🔥.`);
     } else {
       const newSettings = { enabled: false, time: reminderTime };
       localStorage.setItem("brainlab_streak_reminder", JSON.stringify(newSettings));

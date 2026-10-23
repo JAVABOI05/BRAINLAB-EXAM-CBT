@@ -116,7 +116,7 @@ export default function AdminQuestionManagerPage() {
 
   async function updateFilteredQuestionsStatus(makeActive: boolean) {
     if (filteredQuestions.length === 0) {
-      alert(`No filtered questions to ${makeActive ? "activate" : "deactivate"}.`);
+      setMessage(`No filtered questions to ${makeActive ? "activate" : "deactivate"}.`);
       return;
     }
 
@@ -167,7 +167,7 @@ export default function AdminQuestionManagerPage() {
 
   function exportQuestionsToCsv() {
     if (filteredQuestions.length === 0) {
-      alert("No questions to export.");
+      setMessage("No questions to export.");
       return;
     }
 
