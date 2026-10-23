@@ -5,8 +5,8 @@ const siteUrl = "https://www.brainlabacademy.com.ng";
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
 
-  // Only include public, canonical pages. Do not expose learner, exam, result,
-  // correction, account, or API URLs through the sitemap.
+  // Keep this list limited to canonical, public-facing pages.
+  // Do not include learner accounts, exam sessions, results, or API routes.
   return [
     {
       url: siteUrl,
@@ -21,10 +21,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: `${siteUrl}/cbt`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${siteUrl}/ai-learning`,
       lastModified,
       changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.8,
     },
     {
       url: `${siteUrl}/community`,
@@ -37,6 +43,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly",
       priority: 0.6,
+    },
+    {
+      url: `${siteUrl}/contact`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.4,
+    },
+    {
+      url: `${siteUrl}/faq`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${siteUrl}/pricing`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${siteUrl}/support`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.4,
     },
   ];
 }
