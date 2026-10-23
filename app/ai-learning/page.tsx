@@ -4,6 +4,7 @@ import AILearningStudio from "./AILearningStudio";
 export const metadata = {
   title: "AI Learning | BrainLab Academy",
   description: "Plan focused study sessions, explore responsible AI learning support, and move between BrainLab's Learning Hub and correction tools.",
+  alternates: { canonical: "/ai-learning" },
 };
 
 const principles = [
