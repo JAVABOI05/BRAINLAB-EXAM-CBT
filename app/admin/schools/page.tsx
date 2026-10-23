@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import "@/app/admin/admin.css";
 
@@ -201,6 +202,7 @@ export default function AdminSchoolsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <AdminNotificationBell />
             <Link
               href="/admin/dashboard"
               className="rounded-xl border border-slate-700 bg-white/10 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/20 transition"
@@ -252,6 +254,12 @@ export default function AdminSchoolsPage() {
           >
             🖨️ Generated Batches ({batches.length})
           </button>
+          <Link
+            href="/admin/questions"
+            className="rounded-xl px-4 py-2 text-xs font-bold bg-white text-blue-800 border border-blue-200 hover:bg-blue-50 transition-all flex items-center gap-1.5"
+          >
+            📥 Bulk CSV Question Uploader ↗
+          </Link>
         </div>
 
         {/* -----------------------------------------------------------------

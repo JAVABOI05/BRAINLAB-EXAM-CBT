@@ -49,6 +49,9 @@ export interface ClassroomMessage {
   text: string;
   timestamp: string;
   isHost?: boolean;
+  type?: "text" | "image" | "audio" | "quiz";
+  mediaUrl?: string;
+  duration?: number;
 }
 
 export interface ClassroomPoll {

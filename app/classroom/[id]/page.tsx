@@ -79,6 +79,17 @@ export default function LiveClassroomPage({
   const [pollExplanation, setPollExplanation] = useState("");
   const [isSubmittingPoll, setIsSubmittingPoll] = useState(false);
 
+  // Multimedia & Audio Note Recording State
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [currentlyPlayingAudioId, setCurrentlyPlayingAudioId] = useState<string | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
   // Roster
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [reactionFloat, setReactionFloat] = useState<{ id: string; emoji: string }[]>([]);
@@ -400,6 +411,122 @@ export default function LiveClassroomPage({
     setChatInput("");
   };
 
+  // 5b. Voice Note Recording & Media Handlers
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      recorder.start();
+      setIsRecordingAudio(true);
+      setRecordingDuration(0);
+
+      recordIntervalRef.current = setInterval(() => {
+        setRecordingDuration((prev) => {
+          if (prev >= 120) {
+            stopVoiceRecording(true);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch {
+      alert("Microphone permission was denied or not available on this device.");
+    }
+  };
+
+  const stopVoiceRecording = (send: boolean = true) => {
+    if (recordIntervalRef.current) {
+      clearInterval(recordIntervalRef.current);
+      recordIntervalRef.current = null;
+    }
+    const duration = recordingDuration;
+    setIsRecordingAudio(false);
+    setRecordingDuration(0);
+
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      recorder.onstop = () => {
+        if (send && audioChunksRef.current.length > 0 && currentUser) {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const newMsg: ClassroomMessage = {
+            id: `msg_audio_${Date.now()}`,
+            senderId: currentUser.id,
+            senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+            text: "Voice Note",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            isHost: classDetails?.tutorId === currentUser.id,
+            type: "audio",
+            mediaUrl: audioUrl,
+            duration: Math.max(1, duration),
+          };
+          setMessages((prev) => [...prev, newMsg]);
+        }
+      };
+      recorder.stop();
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be smaller than 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        const newMsg: ClassroomMessage = {
+          id: `msg_img_${Date.now()}`,
+          senderId: currentUser.id,
+          senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+          text: file.name || "Academic diagram / problem snapshot",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isHost: classDetails?.tutorId === currentUser.id,
+          type: "image",
+          mediaUrl: dataUrl,
+        };
+        setMessages((prev) => [...prev, newMsg]);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const togglePlayAudio = (msgId: string, url: string) => {
+    if (currentlyPlayingAudioId === msgId) {
+      audioPlayerRef.current?.pause();
+      setCurrentlyPlayingAudioId(null);
+    } else {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
+      const audio = new Audio(url);
+      audioPlayerRef.current = audio;
+      audio.onended = () => setCurrentlyPlayingAudioId(null);
+      audio.onerror = () => setCurrentlyPlayingAudioId(null);
+      audio.play().catch(() => setCurrentlyPlayingAudioId(null));
+      setCurrentlyPlayingAudioId(msgId);
+    }
+  };
+
   // 6. Send Emoji Reaction
   const sendReaction = (emoji: string) => {
     const id = `react_${Date.now()}_${Math.random()}`;
@@ -717,16 +844,74 @@ export default function LiveClassroomPage({
                 className="w-full h-full object-contain bg-black"
               />
             ) : (
-              <div className="flex flex-col items-center text-center p-6">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-900/50 text-blue-200 border-2 border-blue-500/30 text-3xl font-black">
+              <div className="flex flex-col items-center text-center p-6 max-w-xl">
+                {/* Audio Wave Visualizer */}
+                <div className="flex items-center gap-1.5 h-14 mb-4 px-6 py-3 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner">
+                  {[20, 36, 16, 48, 30, 52, 24, 44, 18, 34, 48, 22].map((h, i) => (
+                    <span
+                      key={i}
+                      className="w-1.5 bg-gradient-to-t from-blue-500 to-cyan-300 rounded-full animate-pulse"
+                      style={{
+                        height: `${h}px`,
+                        animationDelay: `${(i % 4) * 180}ms`,
+                        animationDuration: "1.1s",
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-600/20 text-cyan-300 border-2 border-cyan-500/40 text-2xl font-black shadow-lg shadow-blue-500/10">
                   BL
                 </div>
-                <h3 className="mt-4 text-xl font-bold text-white">{classDetails?.title}</h3>
-                <p className="mt-2 text-sm text-slate-400 max-w-md">
-                  Audio-first learning mode active. Bandwidth optimized for smooth low-latency Nigerian networks.
+                <h3 className="mt-4 text-xl font-black text-white">{classDetails?.title || "Live Masterclass"}</h3>
+                <p className="mt-2 text-xs text-slate-400 max-w-md leading-relaxed">
+                  Interactive Audio & Multimedia Discussion Stage. Low data consumption mode enabled for seamless participation across Nigeria.
                 </p>
+
+                {/* Feature Tags */}
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <span className="rounded-full bg-blue-950/80 border border-blue-800/80 px-2.5 py-1 text-[11px] font-bold text-blue-300">
+                    🎙️ Voice Notes & Chat
+                  </span>
+                  <span className="rounded-full bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
+                    📷 Diagram Sharing
+                  </span>
+                  <span className="rounded-full bg-amber-950/80 border border-amber-800/80 px-2.5 py-1 text-[11px] font-bold text-amber-300">
+                    🎯 In-Class Live Quizzes
+                  </span>
+                </div>
+
+                {/* Quick Stage Actions */}
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={startVoiceRecording}
+                    disabled={isRecordingAudio}
+                    className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-bold text-cyan-300 transition flex items-center gap-1.5"
+                  >
+                    <span>🎙️ Record Voice Note</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-bold text-emerald-300 transition flex items-center gap-1.5"
+                  >
+                    <span>📷 Share Diagram</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("polls");
+                      if (isTutorOrModerator) setIsCreatingPoll(true);
+                    }}
+                    className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-bold text-amber-300 transition flex items-center gap-1.5"
+                  >
+                    <span>🎯 Launch / View Polls</span>
+                  </button>
+                </div>
+
                 {classDetails?.isRecording && (
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-950/40 px-3 py-1 text-xs font-semibold text-rose-300">
+                  <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-950/40 px-3 py-1 text-xs font-semibold text-rose-300">
                     <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
                     Recording active for student revision
                   </div>
@@ -912,6 +1097,14 @@ export default function LiveClassroomPage({
           {/* Tab 1: Live Chat */}
           {activeTab === "chat" && (
             <div className="flex-1 flex flex-col overflow-hidden">
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map((m) => (
                   <div key={m.id} className="text-xs">
@@ -921,30 +1114,142 @@ export default function LiveClassroomPage({
                       </span>
                       <span className="text-[10px] text-slate-500">{m.timestamp}</span>
                     </div>
-                    <p className="mt-1 text-slate-300 leading-relaxed bg-slate-800/60 rounded-xl p-2.5">
-                      {m.text}
-                    </p>
+
+                    {/* Image Message */}
+                    {m.type === "image" && m.mediaUrl && (
+                      <div className="mt-1.5 space-y-1 bg-slate-800/60 rounded-xl p-2 border border-slate-700/60">
+                        <img
+                          src={m.mediaUrl}
+                          alt={m.text || "Classroom diagram"}
+                          onClick={() => setPreviewImage(m.mediaUrl || null)}
+                          className="max-h-48 w-auto rounded-lg object-contain cursor-pointer hover:opacity-90 transition border border-slate-700"
+                        />
+                        {m.text && <p className="text-[11px] text-slate-300 font-medium">{m.text}</p>}
+                      </div>
+                    )}
+
+                    {/* Audio Voice Note Message */}
+                    {m.type === "audio" && m.mediaUrl && (
+                      <div className="mt-1.5 flex items-center gap-2.5 bg-slate-800/80 rounded-xl p-2.5 border border-cyan-500/30">
+                        <button
+                          type="button"
+                          onClick={() => togglePlayAudio(m.id, m.mediaUrl || "")}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400 transition shrink-0"
+                          title="Play/Pause Voice Note"
+                        >
+                          {currentlyPlayingAudioId === m.id ? "⏸" : "▶"}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-cyan-300">
+                            <span>🎙️ Voice Note</span>
+                            <span>{m.duration ? `${m.duration}s` : "Audio"}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-0.5 h-3">
+                            {[12, 8, 16, 20, 10, 14, 22, 18, 12, 16, 8, 14].map((bar, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-1 rounded-full ${
+                                  currentlyPlayingAudioId === m.id
+                                    ? "bg-cyan-400 animate-pulse"
+                                    : "bg-slate-600"
+                                }`}
+                                style={{ height: `${bar}px` }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Plain Text Message */}
+                    {(!m.type || m.type === "text") && (
+                      <p className="mt-1 text-slate-300 leading-relaxed bg-slate-800/60 rounded-xl p-2.5">
+                        {m.text}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
 
-              {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-950 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Ask a question or comment…"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                />
-                <button
-                  type="submit"
-                  disabled={!chatInput.trim()}
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50 hover:bg-blue-500"
-                >
-                  Send
-                </button>
-              </form>
+              {/* Chat Input & Media Actions */}
+              {isRecordingAudio ? (
+                <div className="p-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-3 w-3 rounded-full bg-rose-500 animate-ping" />
+                    <span className="text-xs font-bold text-rose-300">
+                      Recording Voice Note ({recordingDuration}s / 120s)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => stopVoiceRecording(false)}
+                      className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-700"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => stopVoiceRecording(true)}
+                      className="rounded-xl bg-cyan-400 hover:bg-cyan-300 px-3 py-1.5 text-xs font-black text-slate-950 shadow"
+                    >
+                      Send Note
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-950 flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={startVoiceRecording}
+                      title="Record Voice Note (Audio message)"
+                      className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-cyan-300 hover:bg-slate-700"
+                    >
+                      <span>🎙️</span>
+                      <span className="hidden sm:inline">Voice</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      title="Share Diagram or Picture"
+                      className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-emerald-300 hover:bg-slate-700"
+                    >
+                      <span>📷</span>
+                      <span className="hidden sm:inline">Diagram</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("polls");
+                        if (isTutorOrModerator) setIsCreatingPoll(true);
+                      }}
+                      title="Launch or participate in live checkpoint quiz"
+                      className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-amber-300 hover:bg-slate-700"
+                    >
+                      <span>🎯</span>
+                      <span className="hidden sm:inline">Quiz</span>
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Ask a question or comment…"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!chatInput.trim()}
+                      className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50 hover:bg-blue-500"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
 
@@ -1152,6 +1457,29 @@ export default function LiveClassroomPage({
           )}
         </aside>
       </div>
+
+      {/* Expanded Diagram / Picture Modal */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm cursor-zoom-out"
+        >
+          <div className="relative max-h-[90vh] max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={previewImage}
+              alt="Enlarged diagram"
+              className="max-h-[85vh] w-auto rounded-2xl object-contain border border-slate-700 shadow-2xl"
+            />
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-white border border-slate-600 hover:bg-slate-700 font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tutor Poll Creator Modal */}
       {isCreatingPoll && (

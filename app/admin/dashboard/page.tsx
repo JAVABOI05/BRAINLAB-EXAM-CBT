@@ -6,6 +6,7 @@ import { getFeatureFlags, setFeatureFlag, type FeatureFlags } from "../../lib/pl
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import "../admin.css";
 
 type SettingRow = {
@@ -270,6 +271,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="admin-actions">
+              <AdminNotificationBell />
               <button
                 onClick={() => router.push("/admin/codes")}
                 className="admin-btn-light"

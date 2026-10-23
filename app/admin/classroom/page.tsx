@@ -11,6 +11,7 @@ import {
   type LiveClassroomConfig,
 } from "../../lib/platformConfig";
 import { getAllVideoProvidersStatus } from "../../lib/liveClassroom/provider";
+import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import "../admin.css";
 
 export default function AdminLiveClassroomControlPage() {
@@ -19,6 +20,13 @@ export default function AdminLiveClassroomControlPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
+
+  // Instant Live Class Launcher State
+  const [sessionTitle, setSessionTitle] = useState("JAMB CBT Live Speed Drill & Audio Masterclass");
+  const [sessionTopic, setSessionTopic] = useState("Mathematics & Physics Speed Strategies");
+  const [sessionRoomId, setSessionRoomId] = useState(`live-${Math.random().toString(36).substring(2, 8)}`);
+  const [sessionFormat, setSessionFormat] = useState<"interactive" | "quiz" | "broadcast">("interactive");
+  const [isCopied, setIsCopied] = useState(false);
   const [config, setConfig] = useState<LiveClassroomConfig>({
     provider: "webrtc",
     max_capacity_default: 100,
@@ -109,7 +117,8 @@ export default function AdminLiveClassroomControlPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/classroom/demo-class" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">🎥 Enter Live Room</Link>
+          <AdminNotificationBell />
+          <Link href="/classroom/demo-class" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">🎥 Demo Room</Link>
           <Link
             href="/admin/dashboard"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
@@ -135,7 +144,104 @@ export default function AdminLiveClassroomControlPage() {
       {loading ? (
         <p className="p-8 text-center text-xs text-slate-500">Loading classroom configuration…</p>
       ) : (
-        <form onSubmit={handleSave} className="mt-6 space-y-6">
+        <>
+          {/* 1-Click Instant Live Class Stage Launcher */}
+          <section className="mt-6 rounded-3xl border-2 border-blue-500/30 bg-gradient-to-br from-slate-900 via-[#012153] to-slate-950 p-6 sm:p-8 text-white shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div>
+                <span className="rounded-full bg-cyan-400/20 border border-cyan-400/40 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-cyan-300">
+                  🔴 Live Interactive Classroom Launcher
+                </span>
+                <h2 className="mt-2 text-2xl font-black text-white">Start &amp; Host an Academic Stage</h2>
+                <p className="mt-1 text-xs text-slate-300 max-w-xl">
+                  Launch instant sessions with interactive audio, voice note recordings, diagram sharing, live in-chat checkpoint polls, and screen-sharing. Zero complex setup required.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const link = `${window.location.origin}/classroom/${sessionRoomId.trim() || "live-session"}`;
+                    navigator.clipboard.writeText(link);
+                    setIsCopied(true);
+                    setTimeout(() => setIsCopied(false), 2500);
+                  }}
+                  className="rounded-xl border border-cyan-400/40 bg-cyan-950/60 hover:bg-cyan-900/60 px-4 py-2.5 text-xs font-bold text-cyan-300 transition flex items-center gap-2"
+                >
+                  <span>{isCopied ? "✅ Link Copied!" : "📋 Copy Student Join Link"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/classroom/${sessionRoomId.trim() || "live-session"}`)}
+                  className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-2"
+                >
+                  <span>🚀 Launch Live Stage Now →</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
+                  Class Session Title
+                </label>
+                <input
+                  type="text"
+                  value={sessionTitle}
+                  onChange={(e) => setSessionTitle(e.target.value)}
+                  placeholder="E.g., JAMB CBT Physics &amp; Math Speed Drill"
+                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
+                  Subject / Topic Focus
+                </label>
+                <input
+                  type="text"
+                  value={sessionTopic}
+                  onChange={(e) => setSessionTopic(e.target.value)}
+                  placeholder="E.g., Wave Optics, Calculus &amp; Exam Hacks"
+                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
+                  Classroom Room Slug / ID
+                </label>
+                <div className="mt-1.5 flex gap-2">
+                  <input
+                    type="text"
+                    value={sessionRoomId}
+                    onChange={(e) => setSessionRoomId(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                    placeholder="room-slug-123"
+                    className="flex-1 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-mono text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSessionRoomId(`live-${Math.random().toString(36).substring(2, 8)}`)}
+                    title="Generate new ID"
+                    className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700"
+                  >
+                    🔄
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 pt-3 border-t border-white/10 text-xs text-slate-300">
+              <span className="font-bold text-slate-400">Classroom Features Active:</span>
+              <span className="inline-flex items-center gap-1 text-emerald-400">✓ Audio &amp; Voice Notes</span>
+              <span className="inline-flex items-center gap-1 text-cyan-400">✓ Multimedia Diagram Sharing</span>
+              <span className="inline-flex items-center gap-1 text-amber-400">✓ In-Chat Quizzes &amp; Polls</span>
+              <span className="inline-flex items-center gap-1 text-blue-300">✓ Nigerian 3G/4G Bandwidth Optimized</span>
+            </div>
+          </section>
+
+          <form onSubmit={handleSave} className="mt-6 space-y-6">
           {/* Provider Infrastructure Status */}
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
             <h2 className="text-base font-extrabold text-slate-950">
@@ -349,6 +455,7 @@ export default function AdminLiveClassroomControlPage() {
             </button>
           </div>
         </form>
+        </>
       )}
     </main>
   );
