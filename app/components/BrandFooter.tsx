@@ -125,7 +125,7 @@ export default function BrandFooter() {
 
   return (
     <footer
-      className="border-t border-slate-800 bg-[#000d21] text-slate-300"
+      className="border-t border-slate-800/80 bg-[#040e21] text-slate-300"
       aria-labelledby="footer-heading"
     >
       <h2 id="footer-heading" className="sr-only">
@@ -140,17 +140,25 @@ export default function BrandFooter() {
           <div className="lg:col-span-4">
             <Link
               href="/"
-              className="inline-flex rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400"
+              className="group inline-flex items-center gap-3 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400"
               aria-label="BrainLab Academy home"
             >
               <Image
-                src="/brainlab-logo-light.png"
-                alt="BrainLab Academy"
-                width={128}
-                height={109}
-                className="h-10 w-auto"
+                src="/brainlab-mark.png"
+                alt="BrainLab Emblem"
+                width={48}
+                height={42}
+                className="h-11 w-auto drop-shadow-md transition-transform group-hover:scale-105"
                 priority={false}
               />
+              <div className="flex flex-col justify-center leading-none">
+                <span className="text-2xl font-black tracking-tight text-white">
+                  BrainLab
+                </span>
+                <span className="text-[11px] font-extrabold tracking-[0.25em] uppercase text-cyan-400 mt-1">
+                  ACADEMY
+                </span>
+              </div>
             </Link>
 
             <p className="mt-3 text-sm font-semibold text-slate-100">
