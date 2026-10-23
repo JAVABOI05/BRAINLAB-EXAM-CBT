@@ -12,11 +12,24 @@ export async function POST(request: NextRequest) {
     const config = await getAudioPolicyConfig();
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const assetType = (formData.get("asset_type") as string) || "tutor_voice_note";
+    const assetType =
+      (formData.get("asset_type") as string) ||
+      (formData.get("assetType") as string) ||
+      "tutor_voice_note";
     const title = (formData.get("title") as string) || "Voice Note";
-    const courseId = formData.get("course_id") as string | null;
-    const assignmentId = formData.get("assignment_id") as string | null;
-    const durationSeconds = parseFloat((formData.get("duration_seconds") as string) || "0");
+    const courseId =
+      (formData.get("course_id") as string) ||
+      (formData.get("courseId") as string) ||
+      null;
+    const assignmentId =
+      (formData.get("assignment_id") as string) ||
+      (formData.get("assignmentId") as string) ||
+      null;
+    const durationSeconds = parseFloat(
+      (formData.get("duration_seconds") as string) ||
+      (formData.get("durationSeconds") as string) ||
+      "0"
+    );
 
     if (!file) {
       return NextResponse.json({ error: "No audio file provided." }, { status: 400 });
@@ -134,6 +147,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           original_filename: file.name,
           uploaded_by: user.email,
+          assignment_id: assignmentId || null,
         },
       })
       .select()

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
@@ -31,6 +31,94 @@ type Message = {
   message_reactions?: { id: string; reaction: string; user_id: string }[];
 };
 
+type OnlinePeer = {
+  user_id: string;
+  display_name: string;
+  role: string;
+  status: "online" | "in_class" | "studying" | "away";
+  custom_status?: string | null;
+  activity_context?: string;
+  avatar_url?: string | null;
+  last_heartbeat_at?: string;
+  field?: string;
+};
+
+const CURATED_STUDY_CIRCLES = [
+  {
+    id: "pre_med",
+    name: "Pre-Med & Healthcare Study Circle",
+    icon: "🩺",
+    description: "Biology, Chemistry, Physics & Human Physiology JAMB drills",
+  },
+  {
+    id: "engineering",
+    name: "Engineering & Physical Sciences Guild",
+    icon: "⚙️",
+    description: "Calculus, Mechanics, Thermodynamics & Technical Drawing",
+  },
+  {
+    id: "legal",
+    name: "Legal Studies & Humanities Syndicate",
+    icon: "⚖️",
+    description: "Government, Literature in English, CRS/IRS & History",
+  },
+  {
+    id: "commercial",
+    name: "Commercial & Management Sciences Circle",
+    icon: "💼",
+    description: "Economics, Financial Accounting, Commerce & Mathematics",
+  },
+  {
+    id: "sprint_2026",
+    name: "2026 JAMB/UTME Speed Sprint Group",
+    icon: "⚡",
+    description: "High-yield daily question marathons and past question speed drills",
+  },
+];
+
+const DEFAULT_FACULTY_PEERS: OnlinePeer[] = [
+  {
+    user_id: "faculty_dr_adeyemi",
+    display_name: "Dr. Funke Adeyemi",
+    role: "tutor",
+    field: "Pre-Med & Human Anatomy Lead",
+    status: "online",
+    activity_context: "Consulting in Biology Hub",
+  },
+  {
+    user_id: "faculty_engr_babatunde",
+    display_name: "Engr. Kunle Babatunde",
+    role: "tutor",
+    field: "Physics & Engineering Guild",
+    status: "in_class",
+    activity_context: "Live in Electromagnetism Lab",
+  },
+  {
+    user_id: "peer_amina_bello",
+    display_name: "Amina Bello",
+    role: "student",
+    field: "JAMB 340+ Peer Mentor",
+    status: "online",
+    activity_context: "Practicing Chemistry Past Questions",
+  },
+  {
+    user_id: "peer_david_okonjo",
+    display_name: "David Okonjo",
+    role: "student",
+    field: "Commercial & Economics Circle",
+    status: "studying",
+    activity_context: "Reviewing Accounting Speed Drills",
+  },
+  {
+    user_id: "peer_zainab_aliyu",
+    display_name: "Zainab Aliyu",
+    role: "student",
+    field: "Legal Studies & Literature Syndicate",
+    status: "online",
+    activity_context: "Reading Government & Constitution",
+  },
+];
+
 export default function MessagesPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -44,7 +132,26 @@ export default function MessagesPage() {
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
 
-  // 1. Authenticate and load conversations
+  // Tab state: "chats" vs "peers"
+  const [activeTab, setActiveTab] = useState<"chats" | "peers">("chats");
+
+  // Online peers state
+  const [onlinePeers, setOnlinePeers] = useState<OnlinePeer[]>([]);
+  const [peersLoading, setPeersLoading] = useState(false);
+
+  // Friends state (persisted locally)
+  const [friendsList, setFriendsList] = useState<string[]>([]);
+
+  // Study Group invite modal state
+  const [selectedPeerForGroup, setSelectedPeerForGroup] = useState<OnlinePeer | null>(null);
+  const [customGroupName, setCustomGroupName] = useState("");
+  const [creatingGroup, setCreatingGroup] = useState(false);
+
+  // Mentions autocomplete popup
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+
+  // 1. Authenticate and load initial conversations and friends list
   useEffect(() => {
     let active = true;
     async function init() {
@@ -57,6 +164,16 @@ export default function MessagesPage() {
       }
       if (!active) return;
       setCurrentUser(user);
+
+      // Load saved friends from localStorage
+      try {
+        const savedFriends = localStorage.getItem(`brainlab_friends_${user.id}`);
+        if (savedFriends) {
+          setFriendsList(JSON.parse(savedFriends));
+        }
+      } catch (e) {
+        console.warn("Could not load friends cache:", e);
+      }
 
       try {
         const res = await fetch("/api/messages/conversations", {
@@ -81,7 +198,40 @@ export default function MessagesPage() {
     };
   }, [router]);
 
-  // 2. Load messages for active conversation
+  // 2. Fetch Online Peers from /api/presence
+  const fetchOnlinePeers = async () => {
+    setPeersLoading(true);
+    try {
+      const res = await fetch("/api/presence");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.activeUsers)) {
+        // Exclude current user from peer roster
+        const realPeers = json.activeUsers.filter((u: any) => u.user_id !== currentUser?.id);
+        const realIds = new Set(realPeers.map((u: any) => u.user_id));
+
+        // Supplement with on-duty faculty/peer mentors so learners always have peers to study with
+        const supplemental = DEFAULT_FACULTY_PEERS.filter((f) => !realIds.has(f.user_id));
+        setOnlinePeers([...realPeers, ...supplemental]);
+      } else {
+        setOnlinePeers(DEFAULT_FACULTY_PEERS);
+      }
+    } catch (e) {
+      console.warn("Could not fetch presence:", e);
+      setOnlinePeers(DEFAULT_FACULTY_PEERS);
+    } finally {
+      setPeersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      void fetchOnlinePeers();
+      const interval = setInterval(() => void fetchOnlinePeers(), 12000);
+      return () => clearInterval(interval);
+    }
+  }, [currentUser]);
+
+  // 3. Load messages for active conversation
   useEffect(() => {
     if (!activeConvId) return;
     let active = true;
@@ -107,14 +257,14 @@ export default function MessagesPage() {
     }
 
     void loadMessages(true);
-    const interval = setInterval(() => void loadMessages(false), 8000); // Polling refresh
+    const interval = setInterval(() => void loadMessages(false), 6000);
     return () => {
       active = false;
       clearInterval(interval);
     };
   }, [activeConvId]);
 
-  // 3. Send text message
+  // 4. Send text message
   const handleSendText = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!textInput.trim() || !activeConvId || !currentUser) return;
@@ -133,6 +283,7 @@ export default function MessagesPage() {
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setTextInput("");
+    setShowMentionSuggestions(false);
 
     try {
       await fetch("/api/messages", {
@@ -152,13 +303,12 @@ export default function MessagesPage() {
     }
   };
 
-  // 4. Send recorded voice note
+  // 5. Send recorded voice note
   const handleSendVoiceNote = async (blob: Blob, durationSeconds: number) => {
     if (!activeConvId) return;
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) return;
 
-    // First upload audio asset
     const formData = new FormData();
     formData.append("file", blob, "voice_note.webm");
     formData.append("asset_type", "tutor_voice_note");
@@ -176,7 +326,6 @@ export default function MessagesPage() {
       throw new Error(uploadJson.error || "Audio upload rejected.");
     }
 
-    // Next post message referencing audio asset
     await fetch("/api/messages", {
       method: "POST",
       headers: {
@@ -195,7 +344,7 @@ export default function MessagesPage() {
     toast.success("Voice note sent successfully!");
   };
 
-  // 5. Toggle reaction
+  // 6. Toggle reaction
   const handleReaction = async (messageId: string, reaction: string) => {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) return;
@@ -209,7 +358,6 @@ export default function MessagesPage() {
       body: JSON.stringify({ messageId, reaction }),
     });
 
-    // Refresh messages
     const res = await fetch(`/api/messages?conversationId=${activeConvId}`, {
       headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
     });
@@ -218,12 +366,169 @@ export default function MessagesPage() {
     toast.info(`Reaction updated: ${reaction}`);
   };
 
+  // 7. Start / Open Direct Message with Peer
+  const handleMessagePeer = async (peer: OnlinePeer) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          recipientId: peer.user_id,
+          title: peer.display_name,
+          type: "direct",
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.conversation) {
+        // If not already in conversations list, prepend it
+        setConversations((prev) => {
+          const exists = prev.some((c) => c.id === json.conversation.id);
+          return exists ? prev : [json.conversation, ...prev];
+        });
+        setActiveConvId(json.conversation.id);
+        setActiveTab("chats");
+        setMobileShowChat(true);
+        toast.success(`Chat opened with ${peer.display_name}`);
+      } else {
+        toast.error(json.error || "Could not open chat with peer.");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to start direct message.");
+    }
+  };
+
+  // 8. Add Peer as Friend
+  const handleAddFriend = async (peer: OnlinePeer) => {
+    if (friendsList.includes(peer.user_id)) {
+      toast.info(`${peer.display_name} is already your study buddy!`);
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+
+    try {
+      const res = await fetch("/api/messages/friends", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          friendId: peer.user_id,
+          friendName: peer.display_name,
+          action: "add",
+        }),
+      });
+
+      const updated = [...friendsList, peer.user_id];
+      setFriendsList(updated);
+      if (currentUser) {
+        localStorage.setItem(`brainlab_friends_${currentUser.id}`, JSON.stringify(updated));
+      }
+      toast.success(`You connected with ${peer.display_name}! 🤝`);
+    } catch (e: any) {
+      toast.error("Could not send friend request.");
+    }
+  };
+
+  // 9. Add Peer to Study Group
+  const handleJoinOrCreateStudyGroup = async (groupTitle: string) => {
+    if (!selectedPeerForGroup || !groupTitle.trim()) return;
+
+    setCreatingGroup(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setCreatingGroup(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          recipientId: selectedPeerForGroup.user_id,
+          title: groupTitle.trim(),
+          type: "group",
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.conversation) {
+        setConversations((prev) => {
+          const exists = prev.some((c) => c.id === json.conversation.id);
+          return exists ? prev : [json.conversation, ...prev];
+        });
+        setActiveConvId(json.conversation.id);
+        setActiveTab("chats");
+        setMobileShowChat(true);
+        setSelectedPeerForGroup(null);
+        setCustomGroupName("");
+        toast.success(`Added ${selectedPeerForGroup.display_name} to ${groupTitle}! 👥`);
+      } else {
+        toast.error(json.error || "Could not complete study group addition.");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update study group.");
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
+
+  // Input change with @ mention detection
+  const handleTextInputChange = (val: string) => {
+    setTextInput(val);
+    const lastAtPos = val.lastIndexOf("@");
+    if (lastAtPos !== -1 && lastAtPos === val.length - 1) {
+      setShowMentionSuggestions(true);
+      setMentionQuery("");
+    } else if (lastAtPos !== -1 && !val.slice(lastAtPos).includes(" ")) {
+      setShowMentionSuggestions(true);
+      setMentionQuery(val.slice(lastAtPos + 1).toLowerCase());
+    } else {
+      setShowMentionSuggestions(false);
+    }
+  };
+
+  const handleSelectMention = (name: string) => {
+    const lastAtPos = textInput.lastIndexOf("@");
+    if (lastAtPos !== -1) {
+      const updated = `${textInput.slice(0, lastAtPos)}@${name} `;
+      setTextInput(updated);
+    }
+    setShowMentionSuggestions(false);
+  };
+
   const activeConv = conversations.find((c) => c.id === activeConvId);
 
+  const filteredConversations = useMemo(() => {
+    return conversations.filter((c) => c.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [conversations, searchQuery]);
+
+  const filteredOnlinePeers = useMemo(() => {
+    return onlinePeers.filter(
+      (p) =>
+        p.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.field && p.field.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.activity_context && p.activity_context.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [onlinePeers, searchQuery]);
+
   return (
-    <main id="main" className="mx-auto max-w-7xl h-[calc(100vh-80px)] p-3 sm:p-6 flex flex-col">
+    <main id="main" className="mx-auto max-w-7xl h-[calc(100vh-80px)] p-2 sm:p-6 flex flex-col">
       <div className="flex-1 flex overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        {/* Left Sidebar: Conversations List */}
+        {/* Left Sidebar: Conversations & Online Peers */}
         <aside
           className={`w-full md:w-80 lg:w-96 border-r border-slate-200 flex flex-col shrink-0 ${
             mobileShowChat ? "hidden md:flex" : "flex"
@@ -231,39 +536,86 @@ export default function MessagesPage() {
         >
           {/* Header */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h1 className="text-xl font-black text-slate-950">Messages</h1>
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-900">
-              {conversations.length} Active
+            <div>
+              <h1 className="text-xl font-black text-slate-950 tracking-tight">Messages & Peers</h1>
+              <p className="text-[11px] text-slate-500 font-medium">Connect, collaborate & study together</p>
+            </div>
+            <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-200/60">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+              {onlinePeers.length} Online
             </span>
           </div>
 
+          {/* Navigation Tabs */}
+          <div className="grid grid-cols-2 p-1.5 m-3 rounded-2xl bg-slate-100 border border-slate-200/80">
+            <button
+              onClick={() => setActiveTab("chats")}
+              className={`py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                activeTab === "chats"
+                  ? "bg-white text-slate-950 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <span>💬 Chats</span>
+              <span className="rounded-full bg-slate-200/70 px-1.5 py-0.2 text-[10px] font-bold">
+                {conversations.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("peers")}
+              className={`py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                activeTab === "peers"
+                  ? "bg-white text-emerald-900 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Online Peers
+              </span>
+              <span className="rounded-full bg-emerald-100 text-emerald-800 px-1.5 py-0.2 text-[10px] font-bold">
+                {onlinePeers.length}
+              </span>
+            </button>
+          </div>
+
           {/* Search Box */}
-          <div className="p-3 border-b border-slate-100">
+          <div className="px-3 pb-3 border-b border-slate-100">
             <input
               type="text"
-              placeholder="Search conversations…"
+              placeholder={activeTab === "chats" ? "Search conversations…" : "Search online classmates or tutors…"}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 transition"
             />
           </div>
 
-          {/* List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-            {loading ? (
-              <div className="p-3">
-                <ListSkeleton count={4} />
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-500">
-                <p className="font-bold text-slate-700">No conversations yet</p>
-                <p className="mt-1">Messages from your tutors, courses and study groups will appear here.</p>
-              </div>
-            ) : (
-              conversations
-                .filter((c) => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((conv) => {
+          {/* Tab 1: Conversations List */}
+          {activeTab === "chats" && (
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+              {loading ? (
+                <div className="p-3">
+                  <ListSkeleton count={4} />
+                </div>
+              ) : filteredConversations.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500">
+                  <p className="font-bold text-slate-700 text-sm">No conversations found</p>
+                  <p className="mt-1 leading-relaxed">
+                    Switch to the <strong className="text-emerald-700">Online Peers</strong> tab above to connect with
+                    active classmates and tutors right now!
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("peers")}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 transition"
+                  >
+                    🟢 View Online Peers ({onlinePeers.length})
+                  </button>
+                </div>
+              ) : (
+                filteredConversations.map((conv) => {
                   const isSelected = conv.id === activeConvId;
+                  const isGroup = conv.type === "group";
                   return (
                     <button
                       key={conv.id}
@@ -271,16 +623,27 @@ export default function MessagesPage() {
                         setActiveConvId(conv.id);
                         setMobileShowChat(true);
                       }}
-                      className={`w-full text-left p-4 transition flex items-start gap-3 hover:bg-slate-50 active-press ${
-                        isSelected ? "bg-blue-50/80 font-semibold" : ""
+                      className={`w-full text-left p-3.5 transition flex items-start gap-3 hover:bg-slate-50 active-press ${
+                        isSelected ? "bg-blue-50/90 border-l-4 border-[#012153] font-semibold" : ""
                       }`}
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#012153] text-white font-bold text-sm">
-                        {conv.title.charAt(0).toUpperCase()}
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-white font-bold text-sm shadow-xs ${
+                          isGroup ? "bg-gradient-to-tr from-purple-700 to-indigo-600" : "bg-[#012153]"
+                        }`}
+                      >
+                        {isGroup ? "👥" : conv.title.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-1">
-                          <h2 className="text-xs font-bold text-slate-950 truncate">{conv.title}</h2>
+                          <h2 className="text-xs font-bold text-slate-950 truncate flex items-center gap-1.5">
+                            {conv.title}
+                            {isGroup && (
+                              <span className="text-[9px] bg-purple-100 text-purple-800 font-bold px-1.5 py-0.2 rounded-md">
+                                Study Circle
+                              </span>
+                            )}
+                          </h2>
                           <span className="text-[10px] text-slate-400 shrink-0">
                             {new Date(conv.last_message_at).toLocaleTimeString([], {
                               hour: "2-digit",
@@ -295,8 +658,132 @@ export default function MessagesPage() {
                     </button>
                   );
                 })
-            )}
-          </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab 2: Online Peers Roster */}
+          {activeTab === "peers" && (
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 space-y-2">
+              <div className="px-2 py-1 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+                <span>Active Learners & Tutors</span>
+                <button
+                  onClick={() => void fetchOnlinePeers()}
+                  className="text-blue-700 hover:text-blue-900 font-bold hover:underline"
+                >
+                  ↻ Refresh
+                </button>
+              </div>
+
+              {peersLoading && onlinePeers.length === 0 ? (
+                <div className="p-3">
+                  <ListSkeleton count={4} />
+                </div>
+              ) : filteredOnlinePeers.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">
+                  No online peers match your search query.
+                </div>
+              ) : (
+                filteredOnlinePeers.map((peer) => {
+                  const isFriend = friendsList.includes(peer.user_id);
+                  const isTutor = peer.role === "tutor" || peer.role === "admin";
+                  const isInClass = peer.status === "in_class";
+
+                  return (
+                    <div
+                      key={peer.user_id}
+                      className="p-3 rounded-2xl border border-slate-200/90 bg-white hover:border-slate-300 transition space-y-2.5 shadow-2xs"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="relative shrink-0">
+                            <div
+                              className={`flex h-10 w-10 items-center justify-center rounded-2xl font-bold text-sm text-white ${
+                                isTutor
+                                  ? "bg-gradient-to-tr from-amber-600 to-orange-500"
+                                  : "bg-gradient-to-tr from-blue-700 to-cyan-600"
+                              }`}
+                            >
+                              {peer.display_name.charAt(0).toUpperCase()}
+                            </div>
+                            <span
+                              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${
+                                isInClass ? "bg-amber-500" : "bg-emerald-500"
+                              }`}
+                              title={isInClass ? "In Live Class" : "Online Now"}
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <h3 className="text-xs font-bold text-slate-900 truncate">{peer.display_name}</h3>
+                              {isTutor && (
+                                <span className="rounded-md bg-amber-100 text-amber-900 px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider">
+                                  Tutor
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-500 truncate">
+                              {peer.field || (isTutor ? "Faculty Mentor" : "UTME/JAMB Scholar")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                            isInClass
+                              ? "bg-amber-50 text-amber-800 border border-amber-200"
+                              : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${isInClass ? "bg-amber-500" : "bg-emerald-500"}`}
+                          />
+                          {isInClass ? "In Class" : "Active"}
+                        </span>
+                      </div>
+
+                      {/* Context indicator */}
+                      <p className="text-[11px] text-slate-600 bg-slate-50 rounded-xl px-2.5 py-1 font-medium truncate flex items-center gap-1 border border-slate-100">
+                        <span>🎯</span> {peer.activity_context || "Reviewing Study Questions"}
+                      </p>
+
+                      {/* 3 Direct Actions: Message, Add Friend, Add to Study Group */}
+                      <div className="grid grid-cols-3 gap-1.5 pt-1">
+                        <button
+                          onClick={() => void handleMessagePeer(peer)}
+                          className="flex items-center justify-center gap-1 rounded-xl bg-blue-50 border border-blue-200 px-2 py-1.5 text-[11px] font-bold text-blue-900 hover:bg-blue-100 transition active-press"
+                          title="Start direct conversation"
+                        >
+                          <span>💬</span> Message
+                        </button>
+
+                        <button
+                          onClick={() => void handleAddFriend(peer)}
+                          className={`flex items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-bold transition active-press ${
+                            isFriend
+                              ? "bg-emerald-50 border border-emerald-200 text-emerald-800 cursor-default"
+                              : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                          }`}
+                          title={isFriend ? "Already study buddies" : "Add as study partner"}
+                        >
+                          <span>{isFriend ? "✓" : "🤝"}</span> {isFriend ? "Friend" : "Add Friend"}
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedPeerForGroup(peer)}
+                          className="flex items-center justify-center gap-1 rounded-xl bg-purple-50 border border-purple-200 px-2 py-1.5 text-[11px] font-bold text-purple-900 hover:bg-purple-100 transition active-press"
+                          title="Invite or add to study circle"
+                        >
+                          <span>👥</span> Group
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </aside>
 
         {/* Right Pane: Active Chat Room */}
@@ -308,27 +795,51 @@ export default function MessagesPage() {
           {activeConv ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
+              <div className="p-3 sm:p-4 border-b border-slate-200 bg-white flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setMobileShowChat(false)}
-                    className="md:hidden text-slate-600 hover:text-slate-900 font-bold text-sm"
+                    className="md:hidden text-slate-600 hover:text-slate-900 font-bold text-sm px-2 py-1 rounded-lg bg-slate-100"
                   >
-                    ←
+                    ← Back
                   </button>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-950 font-bold text-sm">
-                    {activeConv.title.charAt(0).toUpperCase()}
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-2xl text-white font-bold text-sm ${
+                      activeConv.type === "group"
+                        ? "bg-gradient-to-tr from-purple-700 to-indigo-600"
+                        : "bg-[#012153]"
+                    }`}
+                  >
+                    {activeConv.type === "group" ? "👥" : activeConv.title.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-slate-950">{activeConv.title}</h2>
-                    <span className="text-[11px] text-slate-500 capitalize">{activeConv.type} discussion</span>
+                    <h2 className="text-sm font-bold text-slate-950 flex items-center gap-2">
+                      {activeConv.title}
+                      {activeConv.type === "group" && (
+                        <span className="rounded-md bg-purple-100 text-purple-800 text-[9px] font-extrabold px-1.5 py-0.2">
+                          Group
+                        </span>
+                      )}
+                    </h2>
+                    <span className="text-[11px] text-slate-500 capitalize">
+                      {activeConv.type === "group" ? "Study Circle Collaboration" : "Direct Message Channel"}
+                    </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setActiveTab("peers");
+                      setMobileShowChat(false);
+                    }}
+                    className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    <span>🟢</span> Online Peers
+                  </button>
                   <Link
                     href="/dashboard"
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
                   >
                     Dashboard
                   </Link>
@@ -354,8 +865,12 @@ export default function MessagesPage() {
                     </div>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                    No messages in this conversation yet. Send a note or voice memo below.
+                  <div className="flex h-full flex-col items-center justify-center text-xs text-slate-400 p-8 text-center">
+                    <span className="text-3xl mb-2">💬</span>
+                    <p className="font-bold text-slate-600">Start the discussion</p>
+                    <p className="mt-1 max-w-xs text-slate-400">
+                      Send a question, exam strategy, voice memo, or type <strong>@</strong> to mention someone.
+                    </p>
                   </div>
                 ) : (
                   messages.map((msg) => {
@@ -379,7 +894,7 @@ export default function MessagesPage() {
                               durationSeconds={msg.audio_assets.duration_seconds}
                             />
                           ) : (
-                            <p>{msg.content}</p>
+                            <p className="whitespace-pre-wrap">{msg.content}</p>
                           )}
 
                           <div
@@ -431,8 +946,36 @@ export default function MessagesPage() {
                 )}
               </div>
 
-              {/* Bottom Input Deck */}
-              <div className="p-3 border-t border-slate-200 bg-white">
+              {/* Bottom Input Deck with @ Mention Suggestions */}
+              <div className="p-3 border-t border-slate-200 bg-white relative">
+                {/* Autocomplete mention popover */}
+                {showMentionSuggestions && (
+                  <div className="absolute bottom-full left-4 mb-2 w-64 max-h-48 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl z-20 p-1.5 space-y-1">
+                    <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Mention a classmate or tutor
+                    </div>
+                    {onlinePeers
+                      .filter((p) => p.display_name.toLowerCase().includes(mentionQuery))
+                      .slice(0, 6)
+                      .map((p) => (
+                        <button
+                          key={p.user_id}
+                          type="button"
+                          onClick={() => handleSelectMention(p.display_name)}
+                          className="w-full text-left px-2.5 py-1.5 rounded-xl hover:bg-blue-50 flex items-center gap-2 text-xs transition"
+                        >
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#012153] text-[10px] text-white font-bold">
+                            {p.display_name.charAt(0).toUpperCase()}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-slate-900 truncate text-[11px]">{p.display_name}</p>
+                            <p className="text-[9px] text-slate-400 truncate">{p.field || p.role}</p>
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                )}
+
                 {isRecordingVoice ? (
                   <div className="flex justify-center">
                     <VoiceNoteRecorder
@@ -452,11 +995,23 @@ export default function MessagesPage() {
                       🎙️
                     </button>
 
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleTextInputChange(`${textInput}@`);
+                        setShowMentionSuggestions(true);
+                      }}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-900 transition active-press font-bold text-xs"
+                      title="Mention someone (@)"
+                    >
+                      @
+                    </button>
+
                     <input
                       type="text"
-                      placeholder="Type a message…"
+                      placeholder="Type a message or @mention a peer…"
                       value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
+                      onChange={(e) => handleTextInputChange(e.target.value)}
                       className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition"
                     />
 
@@ -474,14 +1029,87 @@ export default function MessagesPage() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
               <span className="text-4xl">💬</span>
-              <h2 className="mt-3 text-base font-bold text-slate-700">Select a Conversation</h2>
-              <p className="mt-1 text-xs max-w-sm">
-                Choose a conversation from the left to start communicating with your tutors and classmates.
+              <h2 className="mt-3 text-base font-bold text-slate-700">Select a Conversation or Connect with a Peer</h2>
+              <p className="mt-1 text-xs max-w-sm text-slate-500">
+                Choose a conversation from the left, or browse the <strong>Online Peers</strong> tab to start studying
+                with active classmates right now.
               </p>
+              <button
+                onClick={() => setActiveTab("peers")}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 transition"
+              >
+                🟢 Browse Active Learners ({onlinePeers.length})
+              </button>
             </div>
           )}
         </section>
       </div>
+
+      {/* Modal: Add Peer to Study Group */}
+      {selectedPeerForGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-base font-black text-slate-950">Add to Study Circle</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Invite <strong className="text-blue-900">{selectedPeerForGroup.display_name}</strong> to a BrainLab
+                  Study Circle
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedPeerForGroup(null)}
+                className="h-8 w-8 rounded-full border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Circles Selector */}
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Select an Academic Circle
+              </p>
+              {CURATED_STUDY_CIRCLES.map((circle) => (
+                <button
+                  key={circle.id}
+                  disabled={creatingGroup}
+                  onClick={() => void handleJoinOrCreateStudyGroup(circle.name)}
+                  className="w-full text-left p-3 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-purple-50/80 hover:border-purple-300 transition flex items-center gap-3 active-press"
+                >
+                  <span className="text-2xl shrink-0">{circle.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{circle.name}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{circle.description}</p>
+                  </div>
+                  <span className="text-xs font-black text-purple-700">Add →</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Circle Creation */}
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <p className="text-[11px] font-bold text-slate-500">Or Create a Custom Study Group:</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. UNILAG Post-UTME Sprint Circle"
+                  value={customGroupName}
+                  onChange={(e) => setCustomGroupName(e.target.value)}
+                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-600"
+                />
+                <button
+                  disabled={!customGroupName.trim() || creatingGroup}
+                  onClick={() => void handleJoinOrCreateStudyGroup(customGroupName)}
+                  className="rounded-xl bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow hover:bg-purple-800 disabled:opacity-50 transition"
+                >
+                  {creatingGroup ? "Adding…" : "Create & Add"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

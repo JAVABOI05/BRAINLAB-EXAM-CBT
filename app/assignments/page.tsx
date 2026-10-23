@@ -119,8 +119,17 @@ export default function StudentAssignmentsPage() {
       const formData = new FormData();
       formData.append("file", audioBlob, `assignment_audio_${Date.now()}.webm`);
       formData.append("title", `Submission for ${selectedAssignment?.title || "Assignment"}`);
+      formData.append("duration_seconds", String(durationSeconds));
       formData.append("durationSeconds", String(durationSeconds));
+      formData.append("asset_type", "student_submission");
       formData.append("assetType", "student_submission");
+      if (selectedAssignment?.id) {
+        formData.append("assignment_id", selectedAssignment.id);
+        formData.append("assignmentId", selectedAssignment.id);
+      }
+      if (selectedAssignment?.course_id) {
+        formData.append("course_id", selectedAssignment.course_id);
+      }
 
       const res = await fetch("/api/audio/upload", {
         method: "POST",

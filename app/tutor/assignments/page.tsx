@@ -204,8 +204,14 @@ export default function TutorAssignmentsPage() {
       const formData = new FormData();
       formData.append("file", audioBlob, `tutor_critique_${Date.now()}.webm`);
       formData.append("title", `Tutor Feedback for ${selectedAssignment?.title || "Submission"}`);
+      formData.append("duration_seconds", String(durationSeconds));
       formData.append("durationSeconds", String(durationSeconds));
+      formData.append("asset_type", "tutor_voice_note");
       formData.append("assetType", "tutor_voice_note");
+      if (selectedAssignment?.id) {
+        formData.append("assignment_id", selectedAssignment.id);
+        formData.append("assignmentId", selectedAssignment.id);
+      }
 
       const res = await fetch("/api/audio/upload", {
         method: "POST",

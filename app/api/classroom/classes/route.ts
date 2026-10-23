@@ -253,7 +253,7 @@ export async function PATCH(request: NextRequest) {
           user_id: uid,
           title: `🔴 Live Class: ${updatedClass.title || "Interactive Session"}`,
           message: `Your tutor has started the live classroom session. Join now to participate!`,
-          type: "live_class",
+          type: "class",
           link_url: `/classroom/${classId}`,
           is_read: false,
           created_at: new Date().toISOString(),

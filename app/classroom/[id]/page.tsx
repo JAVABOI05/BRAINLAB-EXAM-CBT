@@ -1683,6 +1683,81 @@ export default function LiveClassroomPage({
               </button>
             </div>
 
+            {/* Quick Templates */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                ⚡ Quick Templates (1-Click Fill)
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPollQuestion("Is the following statement True or False?");
+                    setPollOptions([
+                      { id: "opt_1", text: "True" },
+                      { id: "opt_2", text: "False" },
+                    ]);
+                    setPollDuration(30);
+                    setPollCorrectId("");
+                  }}
+                  className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition active-press"
+                >
+                  ✓ True / False
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPollQuestion("Do you agree with this approach?");
+                    setPollOptions([
+                      { id: "opt_1", text: "Yes" },
+                      { id: "opt_2", text: "No" },
+                    ]);
+                    setPollDuration(30);
+                    setPollCorrectId("");
+                  }}
+                  className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition active-press"
+                >
+                  👍 Yes / No
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPollQuestion("");
+                    setPollOptions([
+                      { id: "opt_1", text: "Option A" },
+                      { id: "opt_2", text: "Option B" },
+                      { id: "opt_3", text: "Option C" },
+                      { id: "opt_4", text: "Option D" },
+                    ]);
+                    setPollDuration(60);
+                    setPollCorrectId("");
+                  }}
+                  className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition active-press"
+                >
+                  🔤 4-Option MCQ (A-D)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPollQuestion("Understanding Check: How well do you grasp this concept?");
+                    setPollOptions([
+                      { id: "opt_1", text: "💯 100% Clear & Understood" },
+                      { id: "opt_2", text: "🤔 Mostly, Need Another Example" },
+                      { id: "opt_3", text: "❓ Confused, Please Re-explain" },
+                    ]);
+                    setPollDuration(45);
+                    setPollCorrectId("");
+                  }}
+                  className="rounded-lg border border-cyan-800/60 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition active-press"
+                >
+                  📊 Pulse Check
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
                 Question Prompt
@@ -1839,8 +1914,21 @@ export default function LiveClassroomPage({
           </button>
         </div>
 
-        {/* Center: Hand Raise & Quick Reactions */}
+        {/* Center: Hand Raise, Quick Poll & Quick Reactions */}
         <div className="flex items-center gap-2">
+          {isTutorOrModerator && (
+            <button
+              onClick={() => {
+                setActiveTab("polls");
+                setIsCreatingPoll(true);
+              }}
+              className="flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/20 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/30 transition active-press hover-lift"
+              title="Launch instant live poll or quiz checkpoint"
+            >
+              <span>🎯 Quick Poll</span>
+            </button>
+          )}
+
           <button
             onClick={toggleHandRaise}
             className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold border transition active-press hover-lift ${
