@@ -3,29 +3,50 @@ import SiteChrome from "./components/SiteChrome";
 import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const siteUrl = "https://www.brainlabacademy.com.ng";
 
 export const metadata: Metadata = {
-  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "BrainLab Academy | Learn Smarter. Practise with Purpose.",
+    default: "BrainLab Academy | JAMB, WAEC & NECO CBT Practice",
     template: "%s | BrainLab Academy",
   },
   description:
-    "Prepare for examinations, strengthen your understanding and keep progressing with BrainLab Academy's connected learning vision and existing CBT practice portal.",
+    "Prepare for JAMB UTME, WAEC and NECO with CBT exam practice, syllabus-aligned lessons, AI-supported revision and a connected learning experience built for Nigerian students.",
   applicationName: "BrainLab Academy",
+  keywords: [
+    "BrainLab Academy",
+    "JAMB CBT practice",
+    "JAMB UTME past questions",
+    "WAEC exam practice",
+    "NECO exam preparation",
+    "Nigerian students",
+    "online CBT",
+    "AI learning support",
+    "secondary school learning",
+  ],
   openGraph: {
-    title: "BrainLab Academy",
+    title: "BrainLab Academy | JAMB, WAEC & NECO CBT Practice",
     description:
-      "Learn smarter, practise with purpose and grow beyond the exam.",
+      "Practise for Nigerian examinations, strengthen subject understanding and revise with BrainLab Academy's connected learning tools.",
     type: "website",
-    images: ["/opengraph-image"],
+    siteName: "BrainLab Academy",
+    locale: "en_NG",
+    url: siteUrl,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "BrainLab Academy — Learn smarter. Practise with purpose.",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BrainLab Academy",
+    title: "BrainLab Academy | JAMB, WAEC & NECO CBT Practice",
     description:
-      "Learn smarter, practise with purpose and grow beyond the exam.",
+      "Practise for Nigerian examinations, strengthen subject understanding and revise with BrainLab Academy.",
     images: ["/opengraph-image"],
   },
   manifest: "/manifest.json",
@@ -47,14 +68,34 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  name: "BrainLab Academy",
+  url: siteUrl,
+  description:
+    "Online examination practice and learning support for Nigerian students preparing for JAMB UTME, WAEC and NECO.",
+  areaServed: {
+    "@type": "Country",
+    name: "Nigeria",
+  },
+  educationalLevel: "Secondary education",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en-NG" suppressHydrationWarning>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -81,7 +122,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <LearnerThemeProvider><SiteChrome>{children}</SiteChrome></LearnerThemeProvider>
+        <LearnerThemeProvider>
+          <SiteChrome>{children}</SiteChrome>
+        </LearnerThemeProvider>
       </body>
     </html>
   );
