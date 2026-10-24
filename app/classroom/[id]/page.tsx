@@ -1294,6 +1294,7 @@ export default function LiveClassroomPage({
 
   const isTutorOrModerator =
     Boolean(tokenData?.permissions.isModerator) || classDetails?.tutorId === currentUser?.id;
+  const isAssignedTutor = classDetails?.tutorId === currentUser?.id;
 
   const updateClassroomPermissions = (updates: {
     canStudentsDraw?: boolean;
@@ -1379,7 +1380,7 @@ export default function LiveClassroomPage({
 
   const startClassRecording = async () => {
     setClassRecordingMessage("");
-    if (!isTutorOrModerator) return;
+    if (!isAssignedTutor) return;
     if (!classDetails?.isRecording) {
       setClassRecordingMessage("Recording is disabled for this class. Ask a platform administrator to enable it.");
       return;
@@ -1556,14 +1557,15 @@ export default function LiveClassroomPage({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          {isTutorOrModerator && (
+          {isAssignedTutor && (
             <Link href="/tutor/recordings" className="hidden lg:inline-flex rounded-lg border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20">
               Recordings
             </Link>
           )}
-          {isTutorOrModerator && (
+          {isAssignedTutor && (
             <button
               type="button"
+              aria-label={isClassRecording ? "Stop class recording" : "Start class recording"}
               onClick={isClassRecording ? stopClassRecording : startClassRecording}
               disabled={isSavingClassRecording || (!isClassRecording && !classDetails?.isRecording)}
               className={`inline-flex items-center gap-1 rounded-lg border px-2 sm:px-2.5 py-1 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${isClassRecording ? "border-rose-500/50 bg-rose-600 text-white hover:bg-rose-500" : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"}`}
