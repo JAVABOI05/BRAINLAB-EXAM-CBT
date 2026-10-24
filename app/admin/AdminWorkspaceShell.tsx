@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { AdminPermission } from "../lib/adminRoles";
 import type { AdminUser } from "../lib/adminAuth";
 import AdminNotificationBell from "@/app/components/AdminNotificationBell";
@@ -64,25 +64,7 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
     }),
   })).filter((group) => group.items.length > 0), [user, permissions, query]);
 
-  useEffect(() => {
-    try {
-      setCollapsed(window.localStorage.getItem("brainlab-admin-sidebar") === "collapsed");
-    } catch {
-      // The sidebar remains usable when browser storage is unavailable.
-    }
-  }, []);
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("brainlab-admin-sidebar", collapsed ? "collapsed" : "expanded");
-    } catch {
-      // Persisting the preference is optional; the control still works for this visit.
-    }
-  }, [collapsed]);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   const currentLabel = pathname === "/admin/dashboard"
     ? "Platform overview"
