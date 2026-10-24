@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
-import { SmartWhiteboard } from "@/app/components/SmartWhiteboard";
+import { SmartWhiteboard, type WhiteboardPage } from "@/app/components/SmartWhiteboard";
 
 type Lesson = { id: string; title: string; subject: string | null; description: string | null; status: "draft" | "ready" | "archived"; updated_at: string; pages?: unknown[]; active_page_index?: number };
-type PageData = { id: string; title: string; aspectRatio: "16 / 9" | "4 / 3" | "9 / 16" | "free"; backgroundMode: string; elements: unknown[] };
+type PageData = WhiteboardPage & { backgroundMode?: string };
 
 export default function ClassroomStudioPage() {
   const router = useRouter();
@@ -27,6 +27,7 @@ export default function ClassroomStudioPage() {
   const [message, setMessage] = useState("Loading your classroom studio…");
   const [showStudioBoard, setShowStudioBoard] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onBoardPagesChange = useCallback((nextPages: WhiteboardPage[], nextIndex: number) => { setPages(nextPages as PageData[]); setActivePageIndex(nextIndex); }, []);
 
   const authHeaders = useCallback(() => ({ "Content-Type": "application/json", Authorization: `Bearer ${token}` }), [token]);
 
@@ -103,7 +104,13 @@ export default function ClassroomStudioPage() {
 
   const startLive = async () => {
     const id = await saveLesson("ready");
-    if (id) router.push(`/classroom/${id}`);
+    if (!id) return;
+    try {
+      const response = await fetch("/api/classroom/studio/live", { method: "POST", headers: authHeaders(), body: JSON.stringify({ lessonId: id }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not start the live class.");
+      router.push(data.url);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not start the live class. Your lesson is saved."); }
   };
 
   if (busy) return <main className="min-h-screen bg-slate-950 p-8 text-white">{message}</main>;
@@ -122,7 +129,7 @@ export default function ClassroomStudioPage() {
       <section className="min-w-0 space-y-4">
         {!showStudioBoard ? <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8"><h2 className="text-2xl font-black">Prepare before students arrive</h2><p className="mt-2 max-w-xl text-slate-400">Create a lesson, write notes on the board, set each page's layout, and save it as a draft. You can return later or prepare it for a live session.</p><button onClick={createLesson} className="mt-5 rounded-xl bg-blue-600 px-5 py-3 font-bold">Create your first lesson</button></div> : <>
           <div className="grid gap-3 md:grid-cols-2"><label className="text-xs font-bold text-slate-300">Class / lesson title<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={160} className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-base text-white outline-none focus:border-blue-500" /></label><label className="text-xs font-bold text-slate-300">Subject (optional)<input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={120} placeholder="e.g. Mathematics" className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-base text-white outline-none focus:border-blue-500" /></label><label className="text-xs font-bold text-slate-300 md:col-span-2">Lesson notes / description<textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={2} maxLength={2000} placeholder="What will learners cover?" className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none focus:border-blue-500" /></label></div>
-          <div className="overflow-hidden rounded-3xl border border-[#1356E8]/40 bg-[#0B1536] shadow-2xl"><div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-4 py-3"><div><h2 className="font-black">Lesson whiteboard</h2><p className="text-xs text-slate-400">Full-size board tools · per-page layout · autosave</p></div><span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-blue-200">{pages.length} page(s)</span></div><div className="min-h-[560px]"><SmartWhiteboard key={lessonId || "new-lesson"} classId={lessonId || "new-lesson"} isHost={true} currentUserId="studio-tutor" currentUserName="Tutor" showWatermark={true} /></div><div className="border-t border-white/10 p-3 text-xs text-slate-400">The board's pages and drawings autosave to the lesson when the whiteboard state is available to the studio.</div></div>
+          <div className="overflow-hidden rounded-3xl border border-[#1356E8]/40 bg-[#0B1536] shadow-2xl"><div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-4 py-3"><div><h2 className="font-black">Lesson whiteboard</h2><p className="text-xs text-slate-400">Full-size board tools · per-page layout · autosave</p></div><span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-blue-200">{pages.length} page(s)</span></div><div className="min-h-[560px]"><SmartWhiteboard key={lessonId || "new-lesson"} classId={lessonId || "new-lesson"} isHost={true} currentUserId="studio-tutor" currentUserName="Tutor" showWatermark={true} initialPages={pages} initialActivePageIndex={activePageIndex} onPagesChange={onBoardPagesChange} /></div><div className="border-t border-white/10 p-3 text-xs text-slate-400">The board's pages and drawings autosave to the lesson when the whiteboard state is available to the studio.</div></div>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4"><p className="text-sm text-slate-300">{message}</p><span className={`rounded-full px-3 py-1 text-xs font-bold ${saving ? "bg-amber-500/15 text-amber-200" : "bg-emerald-500/15 text-emerald-200"}`}>{saving ? "Saving…" : "Cloud save status"}</span></div>
         </>}
       </section>
