@@ -106,8 +106,12 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const activePage = pages[activePageIndex] || pages[0];
     const boardAspectRatio = activePage?.aspectRatio || "16 / 9";
     const setBoardAspectRatio = useCallback((ratio: BoardAspectRatio) => {
-      setPages((previous) => previous.map((page, index) => index === activePageIndex ? { ...page, aspectRatio: ratio } : page));
-    }, [activePageIndex]);
+      setPages((previous) => {
+        const nextPages = previous.map((page, index) => index === activePageIndex ? { ...page, aspectRatio: ratio } : page);
+        channel?.send({ type: "broadcast", event: "whiteboard_pages_sync", payload: { pages: nextPages, pageIndex: activePageIndex, senderId: currentUserId } });
+        return nextPages;
+      });
+    }, [activePageIndex, channel, currentUserId]);
     const [textFontFamily, setTextFontFamily] = useState<"brainlab" | "chalk" | "mono">("brainlab");
 
     // Text modal / prompt state
