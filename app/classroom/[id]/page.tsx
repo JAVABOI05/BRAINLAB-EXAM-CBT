@@ -1330,10 +1330,15 @@ export default function LiveClassroomPage({
       if (!classDetails?.id || !classDetails?.isRecording) {
         throw new Error("Recording is not enabled for this class.");
       }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again before saving this recording.");
 
       const uploadUrlResponse = await fetch("/api/recordings/upload-url", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           class_id: classDetails.id,
           filename: `brainlab-class-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`,
@@ -1356,7 +1361,10 @@ export default function LiveClassroomPage({
       const title = `${classDetails.title || "Live class"} — ${new Date().toLocaleDateString()}`;
       const saveResponse = await fetch("/api/recordings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           class_id: classDetails.id,
           title,
