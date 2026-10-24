@@ -223,9 +223,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.lineCap = "square";
         ctx.lineJoin = "round";
       } else if (el.type === "eraser") {
+        // Erase ink without painting a dark stroke. The board's parent uses the
+        // selected background colour so erased areas reveal a clean board surface.
         ctx.globalCompositeOperation = "destination-out";
         ctx.strokeStyle = "rgba(0,0,0,1)";
-        ctx.lineWidth = el.width * 4;
+        ctx.lineWidth = Math.max(18, el.width * 6);
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
       } else {
@@ -988,7 +990,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         </div>
 
         {/* CANVAS DRAWING SURFACE */}
-        <div className="flex-1 min-h-0 w-full relative overflow-auto bg-slate-950 cursor-crosshair touch-none flex items-center justify-center p-2 sm:p-3">
+        <div className={`flex-1 min-h-0 w-full relative overflow-auto ${backgroundMode === "whiteboard" ? "bg-slate-100" : "bg-slate-950"} cursor-crosshair touch-none flex items-center justify-center p-3 sm:p-5`}>
           <div
             ref={boardSurfaceRef}
             className="relative overflow-hidden rounded-xl border-[5px] border-slate-700 shadow-[0_16px_60px_rgba(0,0,0,0.45)] ring-1 ring-slate-500/40"
