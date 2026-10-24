@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       if (recording.storage_path && recording.processing_status === "ready") {
         const { data: signed, error: signedError } = await supabase.storage
           .from("live-class-recordings")
-          .createSignedUrl(recording.storage_path, 60 * 30);
+          .createSignedUrl(recording.storage_path, 60 * 60 * 4);
         videoUrl = signedError ? "" : (signed?.signedUrl || "");
       }
 
@@ -101,6 +101,16 @@ export async function POST(request: NextRequest) {
     const isAdmin = await isPlatformAdmin(supabase, user.id);
     if (!(await canManageClass(supabase, class_id, user.id, isAdmin))) {
       return NextResponse.json({ error: "Only the class tutor can save its recording." }, { status: 403 });
+    }
+    if (storage_path && !String(storage_path).startsWith(`${class_id}/${user.id}/`)) {
+      return NextResponse.json({ error: "The recording storage path does not belong to this tutor and class." }, { status: 403 });
+    }
+    if (!storage_path && video_url) {
+      try {
+        if (new URL(String(video_url)).protocol !== "https:") throw new Error("HTTPS required");
+      } catch {
+        return NextResponse.json({ error: "Use a valid HTTPS video URL." }, { status: 400 });
+      }
     }
 
     const { data: recording, error } = await supabase
