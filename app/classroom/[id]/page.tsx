@@ -133,6 +133,7 @@ export default function LiveClassroomPage({
   const [isSavingClassRecording, setIsSavingClassRecording] = useState(false);
   const [classRecordingSeconds, setClassRecordingSeconds] = useState(0);
   const [classRecordingMessage, setClassRecordingMessage] = useState("");
+  const [localRecordingUrl, setLocalRecordingUrl] = useState<string | null>(null);
   const classMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const classRecordingChunksRef = useRef<Blob[]>([]);
   const classDisplayStreamRef = useRef<MediaStream | null>(null);
@@ -1394,6 +1395,12 @@ export default function LiveClassroomPage({
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (localRecordingUrl) URL.revokeObjectURL(localRecordingUrl);
+    };
+  }, [localRecordingUrl]);
+
   const startClassRecording = async () => {
     setClassRecordingMessage("");
     if (!isAssignedTutor) return;
@@ -1456,6 +1463,13 @@ export default function LiveClassroomPage({
         const duration = Math.max(1, Math.round((now - classRecordingStartedAtRef.current - classRecordingPausedTotalMsRef.current - pendingPause) / 1000));
         const blob = new Blob(classRecordingChunksRef.current, { type: recorder.mimeType || "video/webm" });
         classRecordingChunksRef.current = [];
+        if (blob.size) {
+          const localUrl = URL.createObjectURL(blob);
+          setLocalRecordingUrl((previous) => {
+            if (previous) URL.revokeObjectURL(previous);
+            return localUrl;
+          });
+        }
         classDisplayStreamRef.current?.getTracks().forEach((track) => track.stop());
         classExtraMicStreamRef.current?.getTracks().forEach((track) => track.stop());
         classDisplayStreamRef.current = null;
@@ -2827,24 +2841,35 @@ export default function LiveClassroomPage({
           </button>
 
           {isAssignedTutor && classDetails?.isRecording && (
-            <div className="flex items-center gap-1 rounded-xl border border-rose-500/30 bg-rose-950/20 px-1.5 py-1">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-rose-500/40 bg-slate-950 px-2 py-1.5 shadow-sm sm:gap-2 sm:px-3">
               {isClassRecording ? (
                 <>
-                  <span className={`h-2 w-2 rounded-full ${isClassRecordingPaused ? "bg-amber-400" : "bg-rose-500 animate-pulse"}`} />
+                  <span className={`h-2.5 w-2.5 rounded-full ${isClassRecordingPaused ? "bg-amber-400" : "bg-rose-500 animate-pulse"}`} />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-rose-200">{isClassRecordingPaused ? "Paused" : "Recording"}</span>
                   <span className="hidden lg:inline text-[11px] font-black tabular-nums text-rose-200">
                     {Math.floor(classRecordingSeconds / 60).toString().padStart(2, "0")}:{(classRecordingSeconds % 60).toString().padStart(2, "0")}
                   </span>
-                  <button type="button" onClick={pauseOrResumeClassRecording} className="rounded-lg px-2 py-1.5 text-[11px] font-bold text-amber-200 hover:bg-amber-500/15" title={isClassRecordingPaused ? "Resume recording" : "Pause recording"}>
+                  <button type="button" onClick={pauseOrResumeClassRecording} className="min-h-9 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-[11px] font-extrabold text-amber-200 hover:bg-amber-400/20" title={isClassRecordingPaused ? "Resume recording" : "Pause recording"}>
                     {isClassRecordingPaused ? "▶ Resume" : "Ⅱ Pause"}
                   </button>
-                  <button type="button" onClick={() => { if (window.confirm("End this recording and save it to your private recordings?")) stopClassRecording(); }} className="rounded-lg bg-rose-600 px-2 py-1.5 text-[11px] font-black text-white hover:bg-rose-500">
+                  <button type="button" onClick={() => { if (window.confirm("End this recording and save it to your private recordings?")) stopClassRecording(); }} className="min-h-9 rounded-lg bg-rose-600 px-3 py-1.5 text-[11px] font-black text-white shadow-sm hover:bg-rose-500">
                     ■ End & Save
                   </button>
                 </>
               ) : (
-                <button type="button" disabled={isSavingClassRecording} onClick={startClassRecording} className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-[11px] font-black text-white hover:bg-rose-500 disabled:opacity-50" title="Record your shared screen and microphone">
-                  {isSavingClassRecording ? "Saving…" : "● Record class"}
+                <button type="button" disabled={isSavingClassRecording} onClick={startClassRecording} className="min-h-9 rounded-lg bg-rose-600 px-3 py-1.5 text-[11px] font-black text-white shadow-sm hover:bg-rose-500 disabled:opacity-50" title="Start recording the selected screen or browser tab and microphone">
+                  {isSavingClassRecording ? "Saving…" : "● Start Recording"}
                 </button>
+              )}
+              {localRecordingUrl && !isClassRecording && (
+                <a
+                  href={localRecordingUrl}
+                  download={`brainlab-class-${classDetails?.id || "recording"}-${new Date().toISOString().slice(0, 10)}.webm`}
+                  className="inline-flex min-h-9 items-center justify-center rounded-lg border border-blue-400/40 bg-blue-500/15 px-3 py-1.5 text-[11px] font-extrabold text-blue-100 hover:bg-blue-500/25"
+                  title="Download the recording directly to this device"
+                >
+                  ↓ Download to Device
+                </a>
               )}
             </div>
           )}
