@@ -33,7 +33,7 @@ export async function GET(
       .slice(0, 100);
     const { data: signed, error: signedError } = await supabase.storage
       .from("live-class-recordings")
-      .createSignedUrl(recording.storage_path, 60, { download: `${safeTitle}.webm` });
+      .createSignedUrl(recording.storage_path, 60 * 10, { download: `${safeTitle}.webm` });
 
     if (signedError || !signed?.signedUrl) {
       return NextResponse.json({ error: "Could not create a secure download link." }, { status: 500 });
