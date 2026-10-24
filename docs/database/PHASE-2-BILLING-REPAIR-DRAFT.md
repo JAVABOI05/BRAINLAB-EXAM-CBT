@@ -155,3 +155,16 @@ A repository configuration check found:
 3. Fix the application verification/fulfillment path to fail closed and use one idempotent database fulfillment operation.
 4. Create the additive schema migration only after choosing the subscription-history model and canonical entitlement field.
 5. Run clean-baseline and representative-existing-schema tests, lint/build, and security review. Only then open a review PR; do not merge or apply to production automatically.
+
+
+### Implementation progress — review required, not yet tested
+
+The repair branch now contains preliminary fail-closed changes in the application layer:
+
+- `app/lib/payments/bachsProvider.ts`: production checkout initialization fails if `BACHS_API_KEY` is missing; production verification no longer manufactures a successful result without credentials; explicitly simulated references are rejected when verifying against the provider.
+- `app/api/payments/verify/route.ts`: a successful provider response is rejected unless its reference, amount in kobo, and currency exactly match the stored transaction.
+- `app/api/payments/bachs/webhook/route.ts`: successful events now require amount, currency, and checkout ID, and the handler independently verifies the checkout with BACHS before marking the transaction successful.
+
+**Important limitations:** these are preliminary safeguards, not a completed billing repair. The webhook still performs transaction status update, coupon redemption/counter update, subscription upsert, and audit logging as separate operations. A single atomic/idempotent database fulfillment operation is still required. Existing writes also need error handling and concurrency protection. The verification route's current amount/currency guard is not a substitute for integration tests across the real BACHS response shapes.
+
+No local test environment was available in this session, so these code edits have **not** been validated by lint, build, unit tests, integration tests, or a live BACHS sandbox transaction. Do not merge or deploy yet. Next, run lint/build on the branch, add automated tests with mocked BACHS responses, and redesign fulfillment so the transaction and entitlements are committed atomically and exactly once.
