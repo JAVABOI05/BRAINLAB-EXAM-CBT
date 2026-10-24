@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      let activeSession: any = null;
+      let activeSession: Session | null = null;
 
       // 1. Fast Code Exchange
       if (code) {
