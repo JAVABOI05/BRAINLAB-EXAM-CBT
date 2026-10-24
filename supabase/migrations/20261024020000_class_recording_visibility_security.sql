@@ -19,6 +19,20 @@ on conflict (id) do update
 set public = false,
     allowed_mime_types = excluded.allowed_mime_types;
 
+-- Public delivery is appropriate for published lesson assets; only the server can mint upload tokens.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'learning-content-media',
+  'learning-content-media',
+  true,
+  104857600,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'audio/mpeg', 'audio/mp4', 'audio/webm', 'audio/ogg', 'audio/wav', 'video/mp4', 'video/webm', 'video/quicktime', 'application/pdf']
+)
+on conflict (id) do update
+set public = true,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
 drop policy if exists "class_recordings_select_visible_or_owner" on public.class_recordings;
 create policy "class_recordings_select_visible_or_owner"
 on public.class_recordings
