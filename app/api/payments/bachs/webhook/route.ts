@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
       "x-bachs-signature": signature,
     });
 
-    if (!isValid && process.env.NODE_ENV === "production") {
+    if (!isValid) {
+      // Invalid or missing signatures must never be accepted in preview/development
+      // either; test fixtures should mock the provider rather than bypass auth.
       return NextResponse.json({ error: "Invalid Bachs signature" }, { status: 401 });
     }
 
