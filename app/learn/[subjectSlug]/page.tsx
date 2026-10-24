@@ -226,6 +226,7 @@ export default function SubjectLearningPage() {
                   ) : <p className="px-5 py-4 text-sm text-slate-500 sm:px-6">Lessons for this topic are being prepared.</p>}
                   {topic.test && <div className="border-t border-slate-100 bg-blue-50/50 px-5 py-4 sm:px-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-extrabold text-slate-950">{topic.test.title}</p><p className="mt-1 text-xs text-slate-600">Check what you understand after studying this topic.</p></div><Link href={`/learn/${subject.slug}/topic/${topic.slug}/test`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-4 py-2.5 text-sm font-bold text-white">Take topic test →</Link></div></div>}
                 </article>
+                );
               })}
             </div>
           </section>
