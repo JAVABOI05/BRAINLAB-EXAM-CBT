@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   const activePageIndex = Number.isInteger(body.active_page_index) ? Math.min(Math.max(0, body.active_page_index, 0), pages.length - 1) : 0;
   const payload = { title, subject, description, status, pages, active_page_index: activePageIndex, last_opened_at: new Date().toISOString() };
   const id = typeof body.id === "string" ? body.id : null;
-  let query = supabase.from("classroom_lessons");
+  const query = supabase.from("classroom_lessons");
   const result = id
     ? await query.update(payload).eq("id", id).eq("tutor_id", user.id).select("*").maybeSingle()
     : await query.insert({ ...payload, tutor_id: user.id }).select("*").single();
