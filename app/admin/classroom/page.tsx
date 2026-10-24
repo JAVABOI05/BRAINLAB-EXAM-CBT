@@ -3,13 +3,13 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 import { getAdminSession } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
 import {
   getLiveClassroomConfig,
   saveLiveClassroomConfig,
   getPlatformConfig,
-  setPlatformConfig,
   type LiveClassroomConfig,
 } from "../../lib/platformConfig";
 import { getAllVideoProvidersStatus } from "../../lib/liveClassroom/provider";
@@ -121,13 +121,16 @@ export default function AdminLiveClassroomControlPage() {
     setSavingWatermark(true);
     setFeedback("");
     try {
-      const ok = await setPlatformConfig(
-        "whiteboard_watermark_enabled",
-        whiteboardWatermarkEnabled,
-        { id: adminUser.id, email: adminUser.email || "admin@brainlabacademy.com.ng" },
-        "Super Admin updated the BrainLab whiteboard watermark policy"
-      );
-      setFeedback(ok ? "Whiteboard watermark policy saved." : "Could not save the watermark policy. Check database permissions.");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again before changing platform branding.");
+      const response = await fetch("/api/admin/whiteboard-watermark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ enabled: whiteboardWatermarkEnabled }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Could not save the watermark policy.");
+      setFeedback("Whiteboard watermark policy saved.");
     } catch (error: any) {
       setFeedback(error?.message || "Could not save the watermark policy.");
     } finally {
