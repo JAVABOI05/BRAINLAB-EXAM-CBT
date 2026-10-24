@@ -580,6 +580,28 @@ export default function TopicContentStudioPage() {
           </div>
         </section>
 
+        <section aria-label="Recommended content workflow" className="mb-5 rounded-2xl border border-indigo-100 bg-gradient-to-r from-white via-indigo-50/50 to-blue-50/60 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl">
+              <h2 className="text-sm font-black text-slate-900">A simple path to a great lesson</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-600">Build in small steps. Preview the student experience before publishing so learners see a clear, complete sequence.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { number: "1", label: "Add notes" },
+                { number: "2", label: "Add media" },
+                { number: "3", label: "Add a checkpoint" },
+                { number: "4", label: "Preview & publish" },
+              ].map((step) => (
+                <div key={step.number} className="flex items-center gap-2 rounded-xl border border-white bg-white/90 px-3 py-2 shadow-sm">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-black text-indigo-800">{step.number}</span>
+                  <span className="text-[11px] font-bold leading-4 text-slate-700">{step.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {feedback && (
           <div
             className={`mb-4 rounded-xl p-4 text-xs font-semibold ${
@@ -645,7 +667,7 @@ export default function TopicContentStudioPage() {
                 return (
                   <div
                     key={item.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-indigo-200 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-start gap-3.5">
                       {/* Sequence Badge & Order buttons */}
