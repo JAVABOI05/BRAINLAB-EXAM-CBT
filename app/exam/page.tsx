@@ -471,9 +471,11 @@ export default function ExamPage() {
 
       setSyncStatus("synced");
       setError("");
-      setTimeLeft((prev) => (
-        Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev
-      ));
+      if (typeof saved.time_left_seconds === "number" && Number.isFinite(saved.time_left_seconds)) {
+        setTimeLeft((prev) => (
+          Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev
+        ));
+      }
 
       // Auto-advance only after the server confirms the latest selected answer was saved.
       // If the learner has navigated elsewhere or changed the answer, do not move them.
