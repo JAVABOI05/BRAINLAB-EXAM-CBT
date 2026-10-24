@@ -338,6 +338,7 @@ export default function ExamPage() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const activeTag = (document.activeElement as HTMLElement | null)?.tagName;
       if (
+        showSubmitModal ||
         activeTag === "INPUT" ||
         activeTag === "TEXTAREA" ||
         activeTag === "SELECT"
@@ -362,11 +363,19 @@ export default function ExamPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [started, currentIndex, questions, answers, flagged]);
+  }, [started, currentIndex, questions, answers, flagged, showSubmitModal]);
 
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
+  const unansweredCount = useMemo(
+    () => questions.filter((question) => !answers[String(question.id)]).length,
+    [questions, answers]
+  );
+  const firstUnansweredIndex = useMemo(
+    () => questions.findIndex((question) => !answers[String(question.id)]),
+    [questions, answers]
+  );
 
   const subjectOrder = useMemo(() => {
     const seen: string[] = [];
@@ -953,6 +962,19 @@ export default function ExamPage() {
                 </div>
               )}
             </div>
+
+            {firstUnansweredIndex >= 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentIndex(firstUnansweredIndex);
+                  setShowSubmitModal(false);
+                }}
+                className="w-full rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 py-2.5 text-xs font-extrabold text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition active:scale-95"
+              >
+                Review unanswered questions ({unansweredCount})
+              </button>
+            )}
 
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button
