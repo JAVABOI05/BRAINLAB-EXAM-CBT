@@ -50,7 +50,7 @@ export interface SmartWhiteboardHandle {
 }
 
 type BoardAspectRatio = "16 / 9" | "4 / 3" | "9 / 16" | "free";
-type WhiteboardPage = {
+export type WhiteboardPage = {
   id: string;
   title: string;
   elements: WhiteboardElement[];
