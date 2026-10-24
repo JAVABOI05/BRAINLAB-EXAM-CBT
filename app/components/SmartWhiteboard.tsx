@@ -22,6 +22,7 @@ export interface WhiteboardElement {
   endY?: number;
   text?: string;
   fontSize?: number;
+  fontFamily?: string;
 }
 
 export interface SmartWhiteboardProps {
@@ -90,6 +91,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [backgroundMode, setBackgroundMode] = useState<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [boardAspectRatio, setBoardAspectRatio] = useState<"16 / 9" | "4 / 3" | "9 / 16" | "free">("16 / 9");
+    const [textFontFamily, setTextFontFamily] = useState<"brainlab" | "chalk" | "mono">("brainlab");
 
     // Text modal / prompt state
     const [textPromptOpen, setTextPromptOpen] = useState(false);
@@ -290,7 +292,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.ellipse(centerX, centerY, Math.max(1, radiusX), Math.max(1, radiusY), 0, 0, 2 * Math.PI);
         ctx.stroke();
       } else if (el.type === "text" && el.startX !== undefined && el.startY !== undefined && el.text) {
-        ctx.font = `bold ${el.fontSize || 20}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        const fontFamily = el.fontFamily || '"Trebuchet MS", "Avenir Next", sans-serif';
+        ctx.font = `bold ${el.fontSize || 20}px ${fontFamily}`;
         ctx.fillStyle = el.color;
         ctx.fillText(el.text, el.startX, el.startY);
       }
@@ -598,6 +601,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         startY: pendingTextPos.y,
         text: textInput.trim(),
         fontSize: textFontSize,
+        fontFamily: textFontFamily === "chalk" ? '"Comic Sans MS", "Chalkboard SE", cursive' : textFontFamily === "mono" ? '"SFMono-Regular", Consolas, monospace' : '"Trebuchet MS", "Avenir Next", sans-serif',
       };
 
       setElements((prev) => [...prev, textElement]);
@@ -950,6 +954,14 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 <span className="hidden sm:inline">To Chat</span>
               </button>
             )}
+            <label className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-[11px] font-bold text-slate-200" title="Teaching typography">
+              <span className="hidden lg:inline">Type</span>
+              <select value={textFontFamily} onChange={(event) => setTextFontFamily(event.target.value as typeof textFontFamily)} className="max-w-[82px] bg-transparent text-[11px] font-bold text-white outline-none" aria-label="Whiteboard typography">
+                <option className="text-slate-900" value="brainlab">BrainLab</option>
+                <option className="text-slate-900" value="chalk">Chalk</option>
+                <option className="text-slate-900" value="mono">Mono</option>
+              </select>
+            </label>
             <label className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-[11px] font-bold text-slate-200" title="Board aspect ratio">
               <span className="hidden md:inline">Board</span>
               <select
