@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
         video_url: videoUrl,
         is_downloadable: false,
         canManage,
-        canDownload: canManage && Boolean(recording.storage_path),
+        canDownload: recording.live_classes?.tutor_id === user.id && Boolean(recording.storage_path),
       };
     }));
 
@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
         video_url: storage_path || video_url,
         storage_path: storage_path || null,
         duration_seconds: Math.max(0, Math.floor(Number(duration_seconds) || 0)),
+        file_size_bytes: Math.max(0, Math.floor(Number(body.file_size_bytes) || 0)),
         transcript_text: transcript_text || null,
         is_downloadable: false,
         is_visible_to_students: Boolean(is_visible_to_students),
