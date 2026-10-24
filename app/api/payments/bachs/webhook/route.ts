@@ -28,9 +28,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Parse event payload
-    let event: any;
+    let event: {
+      type?: unknown;
+      event?: unknown;
+      data?: Record<string, unknown>;
+      created_at?: string;
+    };
     try {
-      event = JSON.parse(rawBody);
+      const parsed: unknown = JSON.parse(rawBody);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return NextResponse.json({ error: "Invalid event payload" }, { status: 400 });
+      }
+      event = parsed as typeof event;
     } catch {
       return NextResponse.json({ error: "Malformed JSON payload" }, { status: 400 });
     }
