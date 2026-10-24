@@ -64,7 +64,6 @@ begin
         'questionImageAlt', q.question_image_alt,
         'correctAnswer', upper(trim(a.correct_answer)),
         'explanation', coalesce(q.explanation, ''),
-        'explanationImageUrl', q.explanation_image_url,
         'explanationImageAlt', q.explanation_image_alt,
         'userAnswer', case
           when upper(trim(coalesce(a.selected_answer, ''))) in ('A', 'B', 'C', 'D')
