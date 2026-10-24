@@ -1363,6 +1363,7 @@ export default function LiveClassroomPage({
           description: "Tutor-recorded classroom display with microphone audio.",
           storage_path: uploadUrlData.path,
           duration_seconds: durationSeconds,
+          file_size_bytes: blob.size,
           is_visible_to_students: false,
         }),
       });
