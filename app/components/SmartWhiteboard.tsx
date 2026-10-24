@@ -990,7 +990,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         </div>
 
         {/* CANVAS DRAWING SURFACE */}
-        <div className={`flex-1 min-h-0 w-full relative overflow-auto ${backgroundMode === "whiteboard" ? "bg-slate-100" : "bg-slate-950"} cursor-crosshair touch-none flex items-center justify-center p-3 sm:p-5`}>
+        <div className={`flex-1 min-h-0 w-full relative overflow-auto ${backgroundMode === "whiteboard" ? "bg-white" : backgroundMode === "lines" ? "bg-[#0b0f19]" : backgroundMode === "grid" ? "bg-[#090d16]" : "bg-[#070b14]"} cursor-crosshair touch-none flex items-center justify-center p-3 sm:p-5`}>
           <div
             ref={boardSurfaceRef}
             className="relative overflow-hidden rounded-xl border-[5px] border-slate-700 shadow-[0_16px_60px_rgba(0,0,0,0.45)] ring-1 ring-slate-500/40"
