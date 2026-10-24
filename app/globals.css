@@ -1088,3 +1088,66 @@ button:disabled,
 :is(html[data-theme="dark"], html.dark) .public-surface .text-white {
   color: #f8fbff !important;
 }
+
+
+/* ==========================================================================
+   9. HOMEPAGE HERO DARK-MODE CONTRAST HOTFIX
+   The hero uses a white radial/linear overlay and hard-coded light surfaces.
+   Override those specific layers, and explicitly set the headline/body copy
+   colors so no pale text is rendered over a light background.
+   ========================================================================== */
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type {
+  background-color: #070d18 !important;
+  background-image: none !important;
+  border-color: #26364c !important;
+  color: #f1f5f9 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type > div[aria-hidden="true"] {
+  background: radial-gradient(ellipse at 80% 10%, rgba(37, 99, 235, 0.12), transparent 52%),
+              linear-gradient(180deg, #070d18 0%, #0b1423 100%) !important;
+  opacity: 1 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type h1 {
+  color: #f8fafc !important;
+  opacity: 1 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type h1 span {
+  color: #8cc8ff !important;
+  opacity: 1 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type p {
+  color: #c4d0e0 !important;
+  opacity: 1 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type > div > div > span:first-child {
+  background-color: #172c49 !important;
+  border-color: #42648d !important;
+  color: #c4e2ff !important;
+  opacity: 1 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type > div > div > span:first-child span {
+  background-color: #60a5fa !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type .border-t {
+  border-color: #293950 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type .text-slate-500,
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type .text-slate-600,
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type .text-slate-400 {
+  color: #b8c7da !important;
+}
+
+:is(html[data-theme="dark"], html.dark) #main.public-surface > section:first-of-type a.border {
+  background-color: #111f33 !important;
+  border-color: #344861 !important;
+  color: #f1f5f9 !important;
+}
