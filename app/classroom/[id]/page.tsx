@@ -668,9 +668,20 @@ export default function LiveClassroomPage({
       return;
     }
 
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("This browser cannot access a microphone. Try a supported browser over HTTPS.");
+      return;
+    }
+
     try {
       if (!isAudioEnabled) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
         
         // Preserve any existing tracks (e.g. video)
         if (localStreamRef.current) {
@@ -716,8 +727,17 @@ export default function LiveClassroomPage({
           });
         }
       }
-    } catch {
-      toast.error("Unable to access microphone. Check browser permissions.");
+    } catch (error) {
+      const name = error instanceof DOMException ? error.name : "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        toast.error("Microphone permission was blocked. Allow microphone access in your browser or device settings, then try again.");
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        toast.error("No microphone was detected. Connect or enable a microphone and try again.");
+      } else if (name === "NotReadableError" || name === "TrackStartError") {
+        toast.error("Your microphone may be in use by another app. Close other apps using it and retry.");
+      } else {
+        toast.error(error instanceof Error ? `Microphone could not start: ${error.message}` : "Unable to access microphone. Check browser permissions.");
+      }
     }
   };
 
