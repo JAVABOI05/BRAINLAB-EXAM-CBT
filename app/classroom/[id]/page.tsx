@@ -126,6 +126,16 @@ export default function LiveClassroomPage({
   const smartWhiteboardRef = useRef<SmartWhiteboardHandle | null>(null);
   const [stageMode, setStageMode] = useState<"audio" | "whiteboard">("audio");
   const [canStudentsDraw, setCanStudentsDraw] = useState(false);
+  const [isClassRecording, setIsClassRecording] = useState(false);
+  const [isSavingClassRecording, setIsSavingClassRecording] = useState(false);
+  const [classRecordingSeconds, setClassRecordingSeconds] = useState(0);
+  const [classRecordingMessage, setClassRecordingMessage] = useState("");
+  const classMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const classRecordingChunksRef = useRef<Blob[]>([]);
+  const classDisplayStreamRef = useRef<MediaStream | null>(null);
+  const classExtraMicStreamRef = useRef<MediaStream | null>(null);
+  const classRecordingStartedAtRef = useRef<number>(0);
+  const classRecordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [allowStudentMedia, setAllowStudentMedia] = useState(false);
   const [allowStudentVoiceNotes, setAllowStudentVoiceNotes] = useState(true);
   const [chatMuted, setChatMuted] = useState(false);
@@ -1312,6 +1322,159 @@ export default function LiveClassroomPage({
     }
   };
 
+  const uploadCompletedClassRecording = async (blob: Blob, durationSeconds: number) => {
+    setIsSavingClassRecording(true);
+    setClassRecordingMessage("Saving your recording securely…");
+    try {
+      if (!classDetails?.id || !classDetails?.isRecording) {
+        throw new Error("Recording is not enabled for this class.");
+      }
+
+      const uploadUrlResponse = await fetch("/api/recordings/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          class_id: classDetails.id,
+          filename: `brainlab-class-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`,
+          content_type: "video/webm",
+        }),
+      });
+      const uploadUrlData = await uploadUrlResponse.json();
+      if (!uploadUrlResponse.ok || !uploadUrlData.success) {
+        throw new Error(uploadUrlData.error || "Could not prepare recording upload.");
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from(uploadUrlData.bucket)
+        .uploadToSignedUrl(uploadUrlData.path, uploadUrlData.token, blob, {
+          contentType: blob.type || "video/webm",
+          upsert: false,
+        });
+      if (uploadError) throw new Error("Upload failed. Please check your connection and try again.");
+
+      const title = `${classDetails.title || "Live class"} — ${new Date().toLocaleDateString()}`;
+      const saveResponse = await fetch("/api/recordings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          class_id: classDetails.id,
+          title,
+          description: "Tutor-recorded classroom display with microphone audio.",
+          storage_path: uploadUrlData.path,
+          duration_seconds: durationSeconds,
+          is_visible_to_students: false,
+        }),
+      });
+      const saveData = await saveResponse.json();
+      if (!saveResponse.ok || !saveData.success) {
+        throw new Error(saveData.error || "The video uploaded, but its recording entry could not be saved.");
+      }
+      setClassRecordingMessage("Recording saved privately. Publish or hide it later from Tutor tools → Class recordings.");
+    } catch (error) {
+      setClassRecordingMessage(error instanceof Error ? error.message : "Could not save this class recording.");
+    } finally {
+      setIsSavingClassRecording(false);
+    }
+  };
+
+  const startClassRecording = async () => {
+    setClassRecordingMessage("");
+    if (!isTutorOrModerator) return;
+    if (!classDetails?.isRecording) {
+      setClassRecordingMessage("Recording is disabled for this class. Ask a platform administrator to enable it.");
+      return;
+    }
+    if (!classDetails?.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(classDetails.id)) {
+      setClassRecordingMessage("Recording is available for scheduled classroom sessions, not demo rooms.");
+      return;
+    }
+    if (!navigator.mediaDevices?.getDisplayMedia || typeof MediaRecorder === "undefined") {
+      setClassRecordingMessage("This browser cannot record the classroom display. Try an up-to-date desktop browser.");
+      return;
+    }
+
+    let displayStream: MediaStream | null = null;
+    let extraMicStream: MediaStream | null = null;
+    try {
+      displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: 15, max: 24 } },
+        audio: false,
+      });
+
+      let microphoneTracks = (localStreamRef.current?.getAudioTracks() || []).filter((track) => track.readyState === "live");
+      if (!microphoneTracks.length) {
+        extraMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        microphoneTracks = extraMicStream.getAudioTracks();
+      }
+      if (!displayStream.getVideoTracks().length || !microphoneTracks.length) {
+        throw new Error("Select a screen or browser tab and allow microphone audio to record this class.");
+      }
+
+      const combinedStream = new MediaStream([...displayStream.getVideoTracks(), ...microphoneTracks]);
+      const preferredMime = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
+        .find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = preferredMime ? new MediaRecorder(combinedStream, { mimeType: preferredMime }) : new MediaRecorder(combinedStream);
+      classRecordingChunksRef.current = [];
+      classRecordingStartedAtRef.current = Date.now();
+      classDisplayStreamRef.current = displayStream;
+      classExtraMicStreamRef.current = extraMicStream;
+      classMediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) classRecordingChunksRef.current.push(event.data);
+      };
+      recorder.onerror = () => {
+        setClassRecordingMessage("The browser stopped recording unexpectedly. Please try again.");
+      };
+      recorder.onstop = () => {
+        if (classRecordingTimerRef.current) clearInterval(classRecordingTimerRef.current);
+        classRecordingTimerRef.current = null;
+        setIsClassRecording(false);
+        const duration = Math.max(1, Math.round((Date.now() - classRecordingStartedAtRef.current) / 1000));
+        const blob = new Blob(classRecordingChunksRef.current, { type: recorder.mimeType || "video/webm" });
+        classRecordingChunksRef.current = [];
+        classDisplayStreamRef.current?.getTracks().forEach((track) => track.stop());
+        classExtraMicStreamRef.current?.getTracks().forEach((track) => track.stop());
+        classDisplayStreamRef.current = null;
+        classExtraMicStreamRef.current = null;
+        classMediaRecorderRef.current = null;
+        if (blob.size) void uploadCompletedClassRecording(blob, duration);
+        else setClassRecordingMessage("No recording data was captured. Please try again.");
+      };
+      displayStream.getVideoTracks()[0]?.addEventListener("ended", () => {
+        if (recorder.state !== "inactive") recorder.stop();
+      }, { once: true });
+      recorder.start(1000);
+      setIsClassRecording(true);
+      setClassRecordingSeconds(0);
+      classRecordingTimerRef.current = setInterval(() => {
+        setClassRecordingSeconds(Math.floor((Date.now() - classRecordingStartedAtRef.current) / 1000));
+      }, 1000);
+      setClassRecordingMessage("Recording your shared screen and microphone. Stop the recording before leaving the class.");
+    } catch (error) {
+      displayStream?.getTracks().forEach((track) => track.stop());
+      extraMicStream?.getTracks().forEach((track) => track.stop());
+      setClassRecordingMessage(error instanceof Error ? error.message : "Could not start class recording.");
+      setIsClassRecording(false);
+    }
+  };
+
+  const stopClassRecording = () => {
+    const recorder = classMediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (classRecordingTimerRef.current) clearInterval(classRecordingTimerRef.current);
+      if (classMediaRecorderRef.current && classMediaRecorderRef.current.state !== "inactive") {
+        classMediaRecorderRef.current.stop();
+      }
+      classDisplayStreamRef.current?.getTracks().forEach((track) => track.stop());
+      classExtraMicStreamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-white animate-fade-in-up">
@@ -1356,6 +1519,12 @@ export default function LiveClassroomPage({
 
   return (
     <div className="flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex-col bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden select-none transition-colors duration-150">
+      {classRecordingMessage && (
+        <div role="status" className="fixed bottom-4 left-4 right-4 z-[80] mx-auto max-w-2xl rounded-xl border border-blue-200 bg-white/95 p-3 text-xs font-semibold text-slate-800 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-100">
+          {classRecordingMessage}
+          {isSavingClassRecording && <span className="ml-2 inline-block animate-pulse">Uploading…</span>}
+        </div>
+      )}
       {/* Top Header Bar */}
       <header className="h-13 sm:h-14 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-4 transition-colors">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
@@ -1387,6 +1556,23 @@ export default function LiveClassroomPage({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {isTutorOrModerator && (
+            <Link href="/tutor/recordings" className="hidden lg:inline-flex rounded-lg border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20">
+              Recordings
+            </Link>
+          )}
+          {isTutorOrModerator && (
+            <button
+              type="button"
+              onClick={isClassRecording ? stopClassRecording : startClassRecording}
+              disabled={isSavingClassRecording || (!isClassRecording && !classDetails?.isRecording)}
+              className={`inline-flex items-center gap-1 rounded-lg border px-2 sm:px-2.5 py-1 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${isClassRecording ? "border-rose-500/50 bg-rose-600 text-white hover:bg-rose-500" : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"}`}
+              title={classDetails?.isRecording ? "Record the shared screen and tutor microphone" : "Recording is disabled for this class"}
+            >
+              <span>{isClassRecording ? "■" : "●"}</span>
+              <span className="hidden sm:inline">{isSavingClassRecording ? "Saving…" : isClassRecording ? `Stop ${Math.floor(classRecordingSeconds / 60)}:${String(classRecordingSeconds % 60).padStart(2, "0")}` : "Record class"}</span>
+            </button>
+          )}
           {/* Tutor Moderation Controls Trigger */}
           {isTutorOrModerator && (
             <button
