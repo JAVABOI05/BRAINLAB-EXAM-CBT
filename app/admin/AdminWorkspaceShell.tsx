@@ -17,7 +17,7 @@ const always = () => true;
 const GROUPS: Group[] = [
   { label: "Overview", items: [
     { label: "Dashboard", href: "/admin/dashboard", description: "Platform overview and quick actions", visible: always },
-    { label: "Analytics & Reports", href: "/admin/analytics", description: "Permitted aggregate reporting", visible: (u,a) => a["analytics.read"] === true || platformAdmin(u) },
+    { label: "Analytics & Reports", href: "/admin/analytics", description: "Permitted aggregate reporting", visible: (_u,a) => a["analytics.read"] === true },
   ]},
   { label: "Manage the academy", items: [
     { label: "Question Bank", href: "/admin/questions/manage", description: "Questions and question-bank maintenance", visible: (_u,a) => a["cbt.questions.manage"] === true },
@@ -95,7 +95,7 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
     <div className="admin-workspace-main">
       <header className="admin-topbar">
         <button className="admin-mobile-menu" type="button" onClick={() => setMobileOpen((open) => !open)} aria-expanded={mobileOpen} aria-label={mobileOpen ? "Close navigation" : "Open navigation"}>☰</button>
-        <div className="admin-topbar-heading"><span>ADMINISTRATION</span><strong>{pathname === "/admin/dashboard" ? "Platform overview" : pathname.split("/").filter(Boolean).at(-1)?.replaceAll("-"," ") ?? "Workspace"}</strong></div>
+        <div className="admin-topbar-heading"><span>ADMINISTRATION</span><strong>{pathname === "/admin/dashboard" ? "Platform overview" : pathname.split("/").filter(Boolean).pop()?.replaceAll("-"," ") ?? "Workspace"}</strong></div>
         <div className="admin-topbar-actions"><span className="admin-environment-label">BrainLab Academy</span><AdminNotificationBell /></div>
       </header>
       <main className="admin-workspace-content">{children}</main>
