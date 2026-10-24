@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-explicit-any: "off" */
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -59,6 +60,8 @@ export default function TopicContentStudioPage() {
   const [showStudentPreview, setShowStudentPreview] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
 
   const loadTopicAndContent = useCallback(async () => {
     setLoading(true);
@@ -204,6 +207,60 @@ export default function TopicContentStudioPage() {
       setFeedback({ type: "error", text: "Error during save operation." });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadSelectedMedia(file: File | null) {
+    if (!file || !editingItem || !topicId) return;
+    const mediaType = editingItem.content_type;
+    if (!["audio", "video", "image", "document"].includes(mediaType)) return;
+    if (file.size > 100 * 1024 * 1024) {
+      setFeedback({ type: "error", text: "Files must be 100 MB or smaller. For large videos, use a hosted video link." });
+      return;
+    }
+
+    setMediaUploading(true);
+    setFeedback(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again before uploading lesson media.");
+      const response = await fetch("/api/learning/content-media/upload-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          topic_id: topicId,
+          filename: file.name,
+          content_type: file.type,
+          media_type: mediaType,
+        }),
+      });
+      const upload = await response.json();
+      if (!response.ok || !upload.success) throw new Error(upload.error || "Could not prepare upload.");
+
+      const { error: uploadError } = await supabase.storage
+        .from(upload.bucket)
+        .uploadToSignedUrl(upload.path, upload.token, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+      if (uploadError) throw new Error(uploadError.message || "Upload failed. Please check your connection.");
+
+      const { data: publicData } = supabase.storage.from(upload.bucket).getPublicUrl(upload.path);
+      setEditorData((current) => ({
+        ...current,
+        url: publicData.publicUrl,
+        ...(mediaType === "document" ? { file_name: file.name } : {}),
+        ...(mediaType === "video" ? { provider: "direct" } : {}),
+      }));
+      setFeedback({ type: "success", text: `${file.name} uploaded. Save the content item to attach it to this lesson.` });
+    } catch (error) {
+      setFeedback({ type: "error", text: error instanceof Error ? error.message : "Media upload failed." });
+    } finally {
+      setMediaUploading(false);
+      if (mediaFileInputRef.current) mediaFileInputRef.current.value = "";
     }
   }
 
@@ -580,6 +637,55 @@ export default function TopicContentStudioPage() {
           </div>
         </section>
 
+        <section aria-label="Recommended content workflow" className="mb-5 rounded-2xl border border-indigo-100 bg-gradient-to-r from-white via-indigo-50/50 to-blue-50/60 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl">
+              <h2 className="text-sm font-black text-slate-900">Build your lesson in a few easy steps</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-600">You do not need to fill every field at once. Add one learning block, save it, then continue. Upload a file directly or paste a hosted media link.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { number: "1", label: "Add notes" },
+                { number: "2", label: "Add media" },
+                { number: "3", label: "Add a checkpoint" },
+                { number: "4", label: "Preview & publish" },
+              ].map((step) => (
+                <div key={step.number} className="flex items-center gap-2 rounded-xl border border-white bg-white/90 px-3 py-2 shadow-sm">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-black text-indigo-800">{step.number}</span>
+                  <span className="text-[11px] font-bold leading-4 text-slate-700">{step.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section aria-label="Quick start actions" className="mb-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={openAddContent}
+            className="group flex items-center gap-3 rounded-2xl border border-blue-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-400 hover:shadow-md"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xl">＋</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black text-slate-900">Add learning material</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">Notes, examples, images, audio, video, PDFs or a quick quiz.</span>
+            </span>
+            <span aria-hidden="true" className="text-lg text-blue-700 transition group-hover:translate-x-1">→</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowLessonBuilder(true)}
+            className="group flex items-center gap-3 rounded-2xl border border-violet-200 bg-white p-4 text-left shadow-sm transition hover:border-violet-400 hover:shadow-md"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-xl">✦</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black text-slate-900">Build a lesson with AI</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">Start with a draft, review it, and edit it before learners see it.</span>
+            </span>
+            <span aria-hidden="true" className="text-lg text-violet-700 transition group-hover:translate-x-1">→</span>
+          </button>
+        </section>
+
         {feedback && (
           <div
             className={`mb-4 rounded-xl p-4 text-xs font-semibold ${
@@ -645,7 +751,7 @@ export default function TopicContentStudioPage() {
                 return (
                   <div
                     key={item.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-indigo-200 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-start gap-3.5">
                       {/* Sequence Badge & Order buttons */}
@@ -860,6 +966,44 @@ export default function TopicContentStudioPage() {
                 </div>
 
                 {/* TYPE-SPECIFIC EDITORS */}
+                {["audio", "video", "image", "document"].includes(editingItem.content_type) && (
+                  <section className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">Add a file from your device</h4>
+                        <p className="mt-1 max-w-xl text-xs leading-5 text-slate-600">
+                          Upload an audio clip, video, image, or PDF directly. You can still paste a hosted URL below if you prefer.
+                          Maximum file size: 100 MB.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => mediaFileInputRef.current?.click()}
+                        disabled={mediaUploading}
+                        className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-blue-700 px-4 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-blue-800 disabled:opacity-50"
+                      >
+                        {mediaUploading ? "Uploading…" : "Choose file"}
+                      </button>
+                    </div>
+                    <input
+                      ref={mediaFileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept={
+                        editingItem.content_type === "audio" ? "audio/mpeg,audio/mp4,audio/webm,audio/ogg,audio/wav" :
+                        editingItem.content_type === "video" ? "video/mp4,video/webm,video/quicktime" :
+                        editingItem.content_type === "image" ? "image/jpeg,image/png,image/webp,image/gif" :
+                        "application/pdf"
+                      }
+                      onChange={(event) => void uploadSelectedMedia(event.target.files?.[0] || null)}
+                    />
+                    {editorData.url && (
+                      <p className="mt-3 break-all rounded-lg border border-blue-100 bg-white px-3 py-2 text-[11px] font-semibold text-blue-900">
+                        File attached: {editorData.file_name || editorData.url}
+                      </p>
+                    )}
+                  </section>
+                )}
 
                 {/* A. Rich Text Editor */}
                 {editingItem.content_type === "rich_text" && (

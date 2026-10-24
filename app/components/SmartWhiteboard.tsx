@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-explicit-any: "off", react/no-unescaped-entities: "off" */
 "use client";
 
 import React, {
@@ -22,6 +23,7 @@ export interface WhiteboardElement {
   endY?: number;
   text?: string;
   fontSize?: number;
+  fontFamily?: string;
 }
 
 export interface SmartWhiteboardProps {
@@ -32,6 +34,12 @@ export interface SmartWhiteboardProps {
   currentUserName?: string;
   currentUserId?: string;
   onShareToChat?: (dataUrl: string) => void;
+  /** Branding is on by default; platform policy can disable it for the whole classroom. */
+  showWatermark?: boolean;
+  /** Optional persisted page snapshot for pre-class lesson preparation. */
+  initialPages?: WhiteboardPage[];
+  initialActivePageIndex?: number;
+  onPagesChange?: (pages: WhiteboardPage[], activePageIndex: number) => void;
 }
 
 export interface SmartWhiteboardHandle {
@@ -41,6 +49,14 @@ export interface SmartWhiteboardHandle {
   redo: () => void;
   downloadImage: () => void;
 }
+
+type BoardAspectRatio = "16 / 9" | "4 / 3" | "9 / 16" | "free";
+export type WhiteboardPage = {
+  id: string;
+  title: string;
+  elements: WhiteboardElement[];
+  aspectRatio: BoardAspectRatio;
+};
 
 const PRESET_COLORS = [
   { name: "Cyan", value: "#06b6d4" },
@@ -71,10 +87,15 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       currentUserName = "Learner",
       currentUserId = "user",
       onShareToChat,
+      showWatermark = true,
+      initialPages,
+      initialActivePageIndex = 0,
+      onPagesChange,
     },
     ref
   ) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const boardSurfaceRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     // Active tool state
@@ -85,6 +106,21 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [strokeWidth, setStrokeWidth] = useState<number>(4);
     const [backgroundMode, setBackgroundMode] = useState<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [pages, setPages] = useState<WhiteboardPage[]>(
+      initialPages?.length ? initialPages : [{ id: "page-1", title: "Page 1", elements: [], aspectRatio: "16 / 9" }]
+    );
+    const [activePageIndex, setActivePageIndex] = useState(initialActivePageIndex);
+    const [pagesHydrated, setPagesHydrated] = useState(false);
+    const activePage = pages[activePageIndex] || pages[0];
+    const boardAspectRatio = activePage?.aspectRatio || "16 / 9";
+    const setBoardAspectRatio = useCallback((ratio: BoardAspectRatio) => {
+      setPages((previous) => {
+        const nextPages = previous.map((page, index) => index === activePageIndex ? { ...page, aspectRatio: ratio } : page);
+        channel?.send({ type: "broadcast", event: "whiteboard_pages_sync", payload: { pages: nextPages, pageIndex: activePageIndex, senderId: currentUserId } });
+        return nextPages;
+      });
+    }, [activePageIndex, channel, currentUserId]);
+    const [textFontFamily, setTextFontFamily] = useState<"brainlab" | "chalk" | "mono">("brainlab");
 
     // Text modal / prompt state
     const [textPromptOpen, setTextPromptOpen] = useState(false);
@@ -92,9 +128,73 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [textInput, setTextInput] = useState("");
     const [textFontSize, setTextFontSize] = useState<number>(20);
 
-    // Vector History & Undo/Redo
-    const [elements, setElements] = useState<WhiteboardElement[]>([]);
+    // Each page owns its own vector elements and aspect ratio. This wrapper
+    // preserves the existing drawing handlers while writing edits to the active page.
+    const elements = activePage?.elements || [];
+    const setElements = useCallback((next: React.SetStateAction<WhiteboardElement[]>) => {
+      setPages((previous) => previous.map((page, index) => {
+        if (index !== activePageIndex) return page;
+        const nextElements = typeof next === "function" ? next(page.elements) : next;
+        return { ...page, elements: nextElements };
+      }));
+    }, [activePageIndex]);
     const [redoStack, setRedoStack] = useState<WhiteboardElement[]>([]);
+    const elementsRef = useRef<WhiteboardElement[]>([]);
+    const backgroundModeRef = useRef<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
+
+    useEffect(() => {
+      elementsRef.current = elements;
+    }, [elements]);
+
+    // Local-first draft recovery: a temporary network drop must not erase a tutor's
+    // prepared pages. Server persistence can sync these snapshots when connectivity returns.
+    useEffect(() => {
+      if (typeof window === "undefined") return;
+      const key = `brainlab-whiteboard-pages:${classId}`;
+      try {
+        const saved = window.localStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { pages?: WhiteboardPage[]; activePageIndex?: number };
+          if (Array.isArray(parsed.pages) && parsed.pages.length) {
+            setPages(parsed.pages.map((page, index) => ({
+              id: typeof page.id === "string" ? page.id : `page-${index + 1}`,
+              title: typeof page.title === "string" ? page.title : `Page ${index + 1}`,
+              elements: Array.isArray(page.elements) ? page.elements : [],
+              aspectRatio: ["16 / 9", "4 / 3", "9 / 16", "free"].includes(page.aspectRatio) ? page.aspectRatio : "16 / 9",
+            })));
+            setActivePageIndex(Math.min(Math.max(0, parsed.activePageIndex || 0), parsed.pages.length - 1));
+          }
+        }
+      } catch {
+        toast.warning("A saved local whiteboard draft could not be restored.");
+      } finally {
+        setPagesHydrated(true);
+      }
+    }, [classId]);
+
+    useEffect(() => {
+      if (initialPages?.length && !pagesHydrated) {
+        setPages(initialPages);
+        setActivePageIndex(Math.min(Math.max(0, initialActivePageIndex), initialPages.length - 1));
+      }
+    }, [initialPages, initialActivePageIndex, pagesHydrated]);
+
+    useEffect(() => {
+      onPagesChange?.(pages, activePageIndex);
+    }, [pages, activePageIndex, onPagesChange]);
+
+    useEffect(() => {
+      if (!pagesHydrated || typeof window === "undefined") return;
+      try {
+        window.localStorage.setItem(`brainlab-whiteboard-pages:${classId}`, JSON.stringify({ pages, activePageIndex }));
+      } catch {
+        // Quota/privacy errors should not stop the live whiteboard from working.
+      }
+    }, [classId, pages, activePageIndex, pagesHydrated]);
+
+    useEffect(() => {
+      backgroundModeRef.current = backgroundMode;
+    }, [backgroundMode]);
 
     // Drawing state refs
     const isDrawingRef = useRef(false);
@@ -104,7 +204,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     // Synchronize canvas dimensions & handle high DPI
     const resizeCanvas = useCallback(() => {
-      const container = containerRef.current;
+      const container = boardSurfaceRef.current;
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
 
@@ -206,9 +306,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.lineCap = "square";
         ctx.lineJoin = "round";
       } else if (el.type === "eraser") {
+        // Erase ink without painting a dark stroke. The board's parent uses the
+        // selected background colour so erased areas reveal a clean board surface.
         ctx.globalCompositeOperation = "destination-out";
         ctx.strokeStyle = "rgba(0,0,0,1)";
-        ctx.lineWidth = el.width * 4;
+        ctx.lineWidth = Math.max(18, el.width * 6);
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
       } else {
@@ -275,7 +377,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.ellipse(centerX, centerY, Math.max(1, radiusX), Math.max(1, radiusY), 0, 0, 2 * Math.PI);
         ctx.stroke();
       } else if (el.type === "text" && el.startX !== undefined && el.startY !== undefined && el.text) {
-        ctx.font = `bold ${el.fontSize || 20}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        const fontFamily = el.fontFamily || '"Trebuchet MS", "Avenir Next", sans-serif';
+        ctx.font = `bold ${el.fontSize || 20}px ${fontFamily}`;
         ctx.fillStyle = el.color;
         ctx.fillText(el.text, el.startX, el.startY);
       }
@@ -313,7 +416,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     // Handle ResizeObserver
     useEffect(() => {
-      const container = containerRef.current;
+      const container = boardSurfaceRef.current;
       if (!container) return;
 
       const ro = new ResizeObserver(() => {
@@ -328,6 +431,22 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     // Realtime channel event listeners
     useEffect(() => {
       if (!channel) return;
+
+      const handleRemotePagesSync = ({ payload }: { payload: any }) => {
+        if (payload?.senderId !== currentUserId && Array.isArray(payload?.pages) && payload.pages.length) {
+          setPages(payload.pages);
+          setActivePageIndex(Math.min(Math.max(0, Number(payload.pageIndex) || 0), payload.pages.length - 1));
+          setRedoStack([]);
+        }
+      };
+
+      const handleRemotePageChange = ({ payload }: { payload: any }) => {
+        if (payload?.senderId !== currentUserId && Number.isInteger(payload?.pageIndex) && payload.pageIndex >= 0) {
+          if (Array.isArray(payload.pages) && payload.pages.length) setPages(payload.pages);
+          setActivePageIndex(Math.min(payload.pageIndex, pages.length - 1));
+          setRedoStack([]);
+        }
+      };
 
       const handleRemoteAdd = ({ payload }: { payload: any }) => {
         if (payload?.element && payload.senderId !== currentUserId) {
@@ -348,6 +467,18 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         }
       };
 
+      const handleRemoteBackgroundChange = ({ payload }: { payload: any }) => {
+        const nextMode = payload?.backgroundMode;
+        if (payload?.senderId !== currentUserId && ["blackboard", "whiteboard", "grid", "lines"].includes(nextMode)) {
+          setBackgroundMode(nextMode);
+          setColor((current) => {
+            if (nextMode === "whiteboard" && ["#06b6d4", "#ffffff"].includes(current.toLowerCase())) return "#0f172a";
+            if (nextMode !== "whiteboard" && current.toLowerCase() === "#0f172a") return "#f8fafc";
+            return current;
+          });
+        }
+      };
+
       const handleRemoteLaser = ({ payload }: { payload: any }) => {
         if (payload?.senderId !== currentUserId) {
           if (!payload?.point) {
@@ -364,28 +495,32 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       };
 
       const handleSyncRequest = () => {
-        if (isHost && elements.length > 0) {
+        if (isHost) {
           channel.send({
             type: "broadcast",
             event: "whiteboard_sync_response",
-            payload: { elements, backgroundMode },
+            payload: { elements: elementsRef.current, backgroundMode: backgroundModeRef.current, pages, pageIndex: activePageIndex },
           });
         }
       };
 
       const handleSyncResponse = ({ payload }: { payload: any }) => {
-        if (payload?.elements && Array.isArray(payload.elements)) {
+        if (Array.isArray(payload?.pages) && payload.pages.length) {
+          setPages(payload.pages);
+          setActivePageIndex(Math.min(Math.max(0, Number(payload.pageIndex) || 0), payload.pages.length - 1));
+        } else if (payload?.elements && Array.isArray(payload.elements)) {
           setElements(payload.elements);
-          if (payload.backgroundMode) {
-            setBackgroundMode(payload.backgroundMode);
-          }
         }
+        if (payload.backgroundMode) setBackgroundMode(payload.backgroundMode);
       };
 
+      channel.on("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
+      channel.on("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
       channel.on("broadcast", { event: "whiteboard_element_add" }, handleRemoteAdd);
       channel.on("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
       channel.on("broadcast", { event: "whiteboard_undo" }, handleRemoteUndo);
       channel.on("broadcast", { event: "whiteboard_laser" }, handleRemoteLaser);
+      channel.on("broadcast", { event: "whiteboard_background_change" }, handleRemoteBackgroundChange);
       channel.on("broadcast", { event: "whiteboard_sync_request" }, handleSyncRequest);
       channel.on("broadcast", { event: "whiteboard_sync_response" }, handleSyncResponse);
 
@@ -399,9 +534,17 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       }
 
       return () => {
-        // channel listeners clean up
+        channel.off?.("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
+        channel.off?.("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
+        channel.off?.("broadcast", { event: "whiteboard_element_add" }, handleRemoteAdd);
+        channel.off?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
+        channel.off?.("broadcast", { event: "whiteboard_undo" }, handleRemoteUndo);
+        channel.off?.("broadcast", { event: "whiteboard_laser" }, handleRemoteLaser);
+        channel.off?.("broadcast", { event: "whiteboard_background_change" }, handleRemoteBackgroundChange);
+        channel.off?.("broadcast", { event: "whiteboard_sync_request" }, handleSyncRequest);
+        channel.off?.("broadcast", { event: "whiteboard_sync_response" }, handleSyncResponse);
       };
-    }, [channel, currentUserId, isHost, elements, backgroundMode]);
+    }, [channel, currentUserId, isHost, pages, activePageIndex, setElements]);
 
     // Coordinate conversion (CSS pixels relative to canvas)
     const getPointerCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -564,6 +707,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         startY: pendingTextPos.y,
         text: textInput.trim(),
         fontSize: textFontSize,
+        fontFamily: textFontFamily === "chalk" ? '"Comic Sans MS", "Chalkboard SE", cursive' : textFontFamily === "mono" ? '"SFMono-Regular", Consolas, monospace' : '"Trebuchet MS", "Avenir Next", sans-serif',
       };
 
       setElements((prev) => [...prev, textElement]);
@@ -843,9 +987,21 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           <div className="flex items-center gap-1 shrink-0">
             <select
               value={backgroundMode}
-              onChange={(e) => setBackgroundMode(e.target.value as any)}
-              className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-200 outline-none focus:border-cyan-400"
-              title="Whiteboard background style"
+              disabled={!isHost}
+              onChange={(e) => {
+                const nextMode = e.target.value as "blackboard" | "whiteboard" | "grid" | "lines";
+                setBackgroundMode(nextMode);
+                setColor((current) => nextMode === "whiteboard"
+                  ? (["#06b6d4", "#ffffff"].includes(current.toLowerCase()) ? "#0f172a" : current)
+                  : (current.toLowerCase() === "#0f172a" ? "#f8fafc" : current));
+                channel?.send({
+                  type: "broadcast",
+                  event: "whiteboard_background_change",
+                  payload: { backgroundMode: nextMode, senderId: currentUserId },
+                });
+              }}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-200 outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+              title={isHost ? "Choose a board style for everyone in the class" : "The tutor controls the board style"}
             >
               <option value="blackboard">🌑 Dark Board</option>
               <option value="whiteboard">⚪ White Dry-Erase</option>
@@ -855,6 +1011,66 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           </div>
 
           <div className="h-4 w-px bg-slate-700/80 mx-1 shrink-0" />
+
+          {/* Page navigator: every page keeps its own notes and aspect ratio. */}
+          <div className="flex min-w-0 items-center gap-1.5 rounded-xl border border-[#1356E8]/35 bg-[#0B1536] px-2 py-1.5">
+            <span className="hidden text-[10px] font-black uppercase tracking-wider text-blue-200 sm:inline">Pages</span>
+            <button
+              type="button"
+              disabled={activePageIndex === 0}
+              onClick={() => {
+                const nextIndex = Math.max(0, activePageIndex - 1);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_page_change", payload: { pageIndex: nextIndex, pages, senderId: currentUserId } });
+              }}
+              className="rounded-md border border-slate-700 px-2 py-1 text-xs font-bold text-white disabled:opacity-30"
+              aria-label="Previous whiteboard page"
+            >←</button>
+            <select
+              value={activePageIndex}
+              onChange={(event) => {
+                const nextIndex = Number(event.target.value);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_page_change", payload: { pageIndex: nextIndex, pages, senderId: currentUserId } });
+              }}
+              className="max-w-[112px] rounded-md bg-slate-900 px-2 py-1 text-xs font-bold text-white outline-none"
+              aria-label="Select whiteboard page"
+            >
+              {pages.map((page, index) => <option key={page.id} value={index}>{page.title || `Page ${index + 1}`}</option>)}
+            </select>
+            <button
+              type="button"
+              disabled={!isHost}
+              onClick={() => {
+                const newPage: WhiteboardPage = { id: `page-${Date.now()}`, title: `Page ${pages.length + 1}`, elements: [], aspectRatio: "16 / 9" };
+                const nextPages = [...pages, newPage];
+                const nextIndex = nextPages.length - 1;
+                setPages(nextPages);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_pages_sync", payload: { pages: nextPages, pageIndex: nextIndex, senderId: currentUserId } });
+              }}
+              className="rounded-md bg-blue-600 px-2 py-1 text-xs font-black text-white hover:bg-blue-500 disabled:opacity-40"
+              title="Add a new page without clearing existing pages"
+            >+ Page</button>
+            <button
+              type="button"
+              disabled={!isHost || pages.length < 2}
+              onClick={() => {
+                if (!window.confirm("Delete this page and its notes? Other pages will be kept.")) return;
+                const nextPages = pages.filter((_, index) => index !== activePageIndex);
+                const nextIndex = Math.max(0, Math.min(activePageIndex, nextPages.length - 1));
+                setPages(nextPages);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_pages_sync", payload: { pages: nextPages, pageIndex: nextIndex, senderId: currentUserId } });
+              }}
+              className="rounded-md border border-rose-500/40 px-2 py-1 text-xs font-bold text-rose-200 disabled:opacity-30"
+              title="Delete current page"
+            >Delete</button>
+          </div>
 
           {/* Group 5: History, Clear, Export, Fullscreen */}
           <div className="flex items-center gap-1 shrink-0 ml-auto">
@@ -904,6 +1120,28 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 <span className="hidden sm:inline">To Chat</span>
               </button>
             )}
+            <label className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-[11px] font-bold text-slate-200" title="Teaching typography">
+              <span className="hidden lg:inline">Type</span>
+              <select value={textFontFamily} onChange={(event) => setTextFontFamily(event.target.value as typeof textFontFamily)} className="max-w-[82px] bg-transparent text-[11px] font-bold text-white outline-none" aria-label="Whiteboard typography">
+                <option className="text-slate-900" value="brainlab">BrainLab</option>
+                <option className="text-slate-900" value="chalk">Chalk</option>
+                <option className="text-slate-900" value="mono">Mono</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-[11px] font-bold text-slate-200" title="Board aspect ratio">
+              <span className="hidden md:inline">Board</span>
+              <select
+                value={boardAspectRatio}
+                onChange={(event) => setBoardAspectRatio(event.target.value as typeof boardAspectRatio)}
+                className="max-w-[92px] bg-transparent text-[11px] font-bold text-white outline-none"
+                aria-label="Whiteboard aspect ratio"
+              >
+                <option className="text-slate-900" value="16 / 9">Landscape 16:9</option>
+                <option className="text-slate-900" value="4 / 3">Classic 4:3</option>
+                <option className="text-slate-900" value="9 / 16">Portrait 9:16</option>
+                <option className="text-slate-900" value="free">Flexible</option>
+              </select>
+            </label>
             <button
               type="button"
               onClick={() => setIsFullscreen(!isFullscreen)}
@@ -916,7 +1154,19 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         </div>
 
         {/* CANVAS DRAWING SURFACE */}
-        <div className="flex-1 w-full h-full relative overflow-hidden bg-slate-950 cursor-crosshair touch-none">
+        <div className={`flex-1 min-h-0 w-full relative overflow-auto ${backgroundMode === "whiteboard" ? "bg-white" : backgroundMode === "lines" ? "bg-[#0b0f19]" : backgroundMode === "grid" ? "bg-[#090d16]" : "bg-[#070b14]"} cursor-crosshair touch-none flex items-center justify-center p-3 sm:p-5`}>
+          <div
+            ref={boardSurfaceRef}
+            className="relative overflow-hidden rounded-xl border-[5px] border-slate-700 shadow-[0_16px_60px_rgba(0,0,0,0.45)] ring-1 ring-slate-500/40"
+            style={{
+              width: boardAspectRatio === "free" ? "100%" : "auto",
+              height: "100%",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              aspectRatio: boardAspectRatio === "free" ? undefined : boardAspectRatio,
+              flex: boardAspectRatio === "free" ? 1 : "0 1 auto",
+            }}
+          >
           <canvas
             ref={canvasRef}
             onPointerDown={handlePointerDown}
@@ -927,6 +1177,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             className="w-full h-full block touch-none"
             style={{ touchAction: "none" }}
           />
+          {showWatermark && (
+            <div aria-label="BrainLab Academy watermark" className="pointer-events-none absolute bottom-3 right-3 z-10 opacity-25 mix-blend-screen">
+              <img src="/brainlab-logo-light.png" alt="BrainLab Academy" className="h-7 sm:h-9 w-auto object-contain" draggable={false} />
+            </div>
+          )}
 
           {/* Laser Pointer Highlight (Turns off immediately on pointer release) */}
           {laserPoint && (
@@ -956,6 +1211,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               <span>✕</span> Exit Fullscreen
             </button>
           )}
+          </div>
         </div>
 
         {/* MODAL: Text Tool Input Prompt */}

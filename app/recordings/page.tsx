@@ -39,7 +39,15 @@ export default function ClassRecordingsPage() {
 
     async function load() {
       try {
-        const res = await fetch("/api/recordings");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          if (active) setRecordings([]);
+          return;
+        }
+        const res = await fetch("/api/recordings", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
         const json = await res.json();
         if (active && json.success) {
           setRecordings(json.recordings);
@@ -134,6 +142,9 @@ export default function ClassRecordingsPage() {
                     ref={videoRef}
                     src={activeRecording.video_url}
                     controls
+                    controlsList="nodownload"
+                    disablePictureInPicture
+                    onContextMenu={(event) => event.preventDefault()}
                     className="w-full h-full object-contain"
                   />
                 </div>

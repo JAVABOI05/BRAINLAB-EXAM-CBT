@@ -1,27 +1,40 @@
 /**
- * Resolves the canonical authentication redirect URL for Supabase Auth.
- * Ensures students and administrators always see and return to the branded
- * domain (https://brainlabacademy.com.ng) rather than outdated Vercel URLs,
- * while safely preserving localhost for local development.
+ * Resolves the authentication redirect URL for Supabase Auth.
+ * Production uses the branded BrainLab domain, while local development and
+ * this project's Vercel previews return to the origin that initiated sign-in.
  */
 export function getAuthRedirectUrl(path: string = "/auth/callback"): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
   if (typeof window !== "undefined" && window.location) {
-    const hostname = window.location.hostname;
+    const hostname = window.location.hostname.toLowerCase();
 
-    // 1. Preserve local developer environments
+    // Preserve local developer environments.
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local")) {
       return `${window.location.origin}${normalizedPath}`;
     }
 
-    // 2. If already browsing on a brainlab custom domain, keep their active origin (e.g. www vs apex)
-    if (hostname.includes("brainlabacademy.com.ng") || hostname.includes("brainlab.edu.ng")) {
+    // Preserve the active branded domain (including www vs apex).
+    if (hostname === "brainlabacademy.com.ng" ||
+        hostname.endsWith(".brainlabacademy.com.ng") ||
+        hostname === "brainlab.edu.ng" ||
+        hostname.endsWith(".brainlab.edu.ng")) {
+      return `${window.location.origin}${normalizedPath}`;
+    }
+
+    // Preserve only BrainLab's Vercel preview hostnames. Do not trust arbitrary
+    // *.vercel.app origins; the project-specific suffix limits this exception
+    // to deployments owned by the BrainLab Vercel team.
+    const isBrainLabVercelPreview =
+      hostname.startsWith("brainlabexam-") &&
+      hostname.endsWith("-brainlabtutorials-3645s-projects.vercel.app");
+
+    if (isBrainLabVercelPreview) {
       return `${window.location.origin}${normalizedPath}`;
     }
   }
 
-  // 3. In production, always return the canonical branded domain
+  // Production fallback remains the canonical branded domain.
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (envUrl && !envUrl.includes("localhost")) {
     return `${envUrl.replace(/\/$/, "")}${normalizedPath}`;

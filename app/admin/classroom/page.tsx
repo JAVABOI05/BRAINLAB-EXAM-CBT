@@ -1,13 +1,16 @@
+/* eslint @typescript-eslint/no-explicit-any: "off", react/no-unescaped-entities: "off" */
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 import { getAdminSession } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
 import {
   getLiveClassroomConfig,
   saveLiveClassroomConfig,
+  getPlatformConfig,
   type LiveClassroomConfig,
 } from "../../lib/platformConfig";
 import { getAllVideoProvidersStatus } from "../../lib/liveClassroom/provider";
@@ -79,6 +82,8 @@ export default function AdminLiveClassroomControlPage() {
   });
 
   const [providerStatuses, setProviderStatuses] = useState<any[]>([]);
+  const [whiteboardWatermarkEnabled, setWhiteboardWatermarkEnabled] = useState(true);
+  const [savingWatermark, setSavingWatermark] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -100,6 +105,7 @@ export default function AdminLiveClassroomControlPage() {
       const currentConfig = await getLiveClassroomConfig();
       if (active) {
         setConfig(currentConfig);
+        setWhiteboardWatermarkEnabled(await getPlatformConfig<boolean>("whiteboard_watermark_enabled", true));
         setProviderStatuses(getAllVideoProvidersStatus());
         setLoading(false);
       }
@@ -110,6 +116,28 @@ export default function AdminLiveClassroomControlPage() {
       active = false;
     };
   }, [router]);
+
+  const handleSaveWatermark = async () => {
+    if (!adminUser || adminUser.role !== "super_admin") return;
+    setSavingWatermark(true);
+    setFeedback("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again before changing platform branding.");
+      const response = await fetch("/api/admin/whiteboard-watermark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ enabled: whiteboardWatermarkEnabled }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Could not save the watermark policy.");
+      setFeedback("Whiteboard watermark policy saved.");
+    } catch (error: any) {
+      setFeedback(error?.message || "Could not save the watermark policy.");
+    } finally {
+      setSavingWatermark(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -306,7 +334,27 @@ export default function AdminLiveClassroomControlPage() {
             </div>
           </section>
 
-          <form onSubmit={handleSave} className="mt-6 space-y-6">
+          {adminUser?.role === "super_admin" && (
+        <section className="mt-6 rounded-2xl border border-blue-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-2xl">
+              <h2 className="text-base font-black text-slate-900">BrainLab Whiteboard Watermark</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">The BrainLab Academy logo appears on live whiteboards by default. Only Super Admin can change this platform-wide setting.</p>
+            </div>
+            <label className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+              <input type="checkbox" checked={whiteboardWatermarkEnabled} onChange={(event) => setWhiteboardWatermarkEnabled(event.target.checked)} className="h-5 w-5 accent-blue-700" />
+              <span className="text-sm font-bold text-slate-800">{whiteboardWatermarkEnabled ? "Watermark on" : "Watermark off"}</span>
+            </label>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button type="button" disabled={savingWatermark} onClick={handleSaveWatermark} className="rounded-xl bg-[#0B1536] px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-900 disabled:opacity-50">
+              {savingWatermark ? "Saving…" : "Save watermark setting"}
+            </button>
+          </div>
+        </section>
+      )}
+
+      <form onSubmit={handleSave} className="mt-6 space-y-6">
           {/* Provider Infrastructure Status */}
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
             <h2 className="text-base font-extrabold text-slate-950">
