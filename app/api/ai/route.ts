@@ -174,6 +174,11 @@ export async function POST(request: NextRequest) {
   let body: JsonRecord;
   try {
     const raw = await request.text();
+    // Content-Length is optional and may be missing on streamed/chunked requests.
+    // Enforce the limit on the actual body before parsing to bound memory and work.
+    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+      return jsonError("Your request is too large.", 413);
+    }
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return jsonError("Invalid tutor request.", 400);
     body = parsed;
