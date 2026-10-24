@@ -978,3 +978,113 @@ button:disabled,
 :is(html[data-theme="dark"], html.dark) ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.7);
 }
+
+
+/* ==========================================================================
+   8. TRUE DARK MODE — MARKETING, HERO, BADGES AND PUBLIC CONTENT
+   Overrides the legacy public-surface light-theme exemption when dark mode
+   is explicitly selected. Brand blues remain saturated but readable.
+   ========================================================================== */
+
+:is(html[data-theme="dark"], html.dark) .public-surface {
+  color: #e6edf7 !important;
+  background-color: #070d18 !important;
+  background-image: none;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .bg-white, .bg-slate-50, .bg-gray-50, .bg-zinc-50, .bg-neutral-50,
+  .bg-stone-50, .bg-slate-100, .bg-gray-100, .bg-zinc-100,
+  .bg-neutral-100, .bg-stone-100, .bg-blue-50, .bg-indigo-50
+) {
+  background-color: #101c2e !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .bg-white\/80, .bg-white\/90, .bg-white\/95, .bg-slate-50\/50,
+  .bg-slate-50\/80, .bg-blue-50\/50, .bg-blue-50\/80
+) {
+  background-color: rgba(16, 28, 46, 0.94) !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .text-slate-950, .text-slate-900, .text-slate-800, .text-gray-950,
+  .text-gray-900, .text-gray-800, .text-zinc-900, .text-neutral-900,
+  .text-stone-900
+) {
+  color: #f1f5f9 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .text-slate-700, .text-gray-700, .text-zinc-700, .text-neutral-700
+) {
+  color: #d1dbea !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .text-slate-600, .text-slate-500, .text-gray-600, .text-gray-500,
+  .text-zinc-600, .text-neutral-600
+) {
+  color: #b2c0d4 !important;
+}
+
+/* The hero's highlighted phrase and category eyebrow need strong contrast. */
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .text-blue-300, .text-blue-400, .text-blue-500, .text-blue-600,
+  .text-blue-700, .text-indigo-400, .text-indigo-500, .text-indigo-600,
+  .text-sky-400, .text-sky-500, .text-sky-600
+) {
+  color: #8cc8ff !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .border-slate-100, .border-slate-200, .border-slate-300,
+  .border-gray-100, .border-gray-200, .border-gray-300,
+  .border-blue-100, .border-blue-200
+) {
+  border-color: #2a3b53 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  input:not([type="radio"]):not([type="checkbox"]),
+  textarea, select, [contenteditable="true"]
+) {
+  background-color: #0b1524 !important;
+  color: #f1f5f9 !important;
+  border-color: #344760 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(input, textarea, select)::placeholder {
+  color: #9aadc5 !important;
+  opacity: 1;
+}
+
+/* Category/announcement pills: never use pale blue text on a pale blue pill. */
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .bg-blue-100, .bg-indigo-100, .bg-sky-100, .bg-blue-50, .bg-indigo-50
+) {
+  background-color: #172c49 !important;
+  color: #a8d6ff !important;
+  border-color: #355477 !important;
+}
+
+/* Retain clear separation for cards, filter chips, and interactive panels. */
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl
+) {
+  --tw-shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface a:not([class*="bg-"]) {
+  color: #9acbff;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  .bg-slate-900, .bg-slate-950, .bg-blue-950
+) {
+  background-color: #020817 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface .text-white {
+  color: #f8fbff !important;
+}
