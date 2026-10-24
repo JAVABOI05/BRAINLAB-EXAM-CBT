@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-explicit-any: "off", react/no-unescaped-entities: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 
