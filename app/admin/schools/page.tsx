@@ -374,7 +374,7 @@ export default function AdminSchoolsPage() {
 
                     {inq.notes && (
                       <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700 border border-slate-100 italic">
-                        "{inq.notes}"
+                        &quot;{inq.notes}&quot;
                       </div>
                     )}
                   </div>
@@ -537,7 +537,7 @@ export default function AdminSchoolsPage() {
                 <span className="text-4xl">🖨️</span>
                 <h3 className="mt-3 text-sm font-bold text-slate-900">No PIN batches generated yet</h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Switch to the "Bulk PIN Generator" tab to generate computer lab candidate passes.
+                  Switch to the &quot;Bulk PIN Generator&quot; tab to generate computer lab candidate passes.
                 </p>
                 <button
                   type="button"
