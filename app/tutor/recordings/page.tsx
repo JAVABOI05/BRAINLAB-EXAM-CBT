@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../../lib/supabase";
 
 type Recording = {
   id: string;
@@ -30,7 +31,12 @@ export default function TutorRecordingsPage() {
   const loadRecordings = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/recordings", { cache: "no-store" });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again to manage class recordings.");
+      const response = await fetch("/api/recordings", {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "Could not load recordings.");
       setRecordings((data.recordings || []).filter((item: Recording) => item.canManage));
@@ -47,9 +53,14 @@ export default function TutorRecordingsPage() {
     setBusyId(recording.id);
     setFeedback("");
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again to change recording visibility.");
       const response = await fetch("/api/recordings", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           recording_id: recording.id,
           is_visible_to_students: !recording.is_visible_to_students,
@@ -65,6 +76,25 @@ export default function TutorRecordingsPage() {
         : "Recording published to the student portal.");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Could not update visibility.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function downloadRecording(recording: Recording) {
+    setBusyId(recording.id);
+    setFeedback("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again to download this recording.");
+      const response = await fetch(`/api/recordings/${recording.id}/download`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success || !data.url) throw new Error(data.error || "Could not prepare the download.");
+      window.location.assign(data.url);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Could not download recording.");
     } finally {
       setBusyId(null);
     }
@@ -131,9 +161,9 @@ export default function TutorRecordingsPage() {
                     {busyId === recording.id ? "Saving…" : recording.is_visible_to_students ? "Hide from students" : "Publish to students"}
                   </button>
                   {recording.canDownload && (
-                    <a href={`/api/recordings/${recording.id}/download`} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-extrabold text-slate-700 hover:bg-slate-50">
-                      Download original
-                    </a>
+                    <button type="button" onClick={() => void downloadRecording(recording)} disabled={busyId === recording.id} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-extrabold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                      {busyId === recording.id ? "Preparing…" : "Download original"}
+                    </button>
                   )}
                 </div>
               </div>
