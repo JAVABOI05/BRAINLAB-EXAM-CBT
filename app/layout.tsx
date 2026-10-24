@@ -4,6 +4,9 @@ import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
 import "./globals.css";
 
 const siteUrl = "https://www.brainlabacademy.com.ng";
+const previewImageUrl = "/opengraph-image";
+const previewImageAlt =
+  "BrainLab Academy learning and CBT practice for Nigerian students preparing for JAMB, WAEC and NECO.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -35,10 +38,10 @@ export const metadata: Metadata = {
     url: siteUrl,
     images: [
       {
-        url: "/opengraph-image",
+        url: previewImageUrl,
         width: 1200,
         height: 630,
-        alt: "BrainLab Academy — Learn smarter. Practise with purpose.",
+        alt: previewImageAlt,
       },
     ],
   },
@@ -47,7 +50,23 @@ export const metadata: Metadata = {
     title: "BrainLab Academy | JAMB, WAEC & NECO CBT Practice",
     description:
       "Practise for Nigerian examinations, strengthen subject understanding and revise with BrainLab Academy.",
-    images: ["/opengraph-image"],
+    images: [
+      {
+        url: previewImageUrl,
+        alt: previewImageAlt,
+      },
+    ],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   manifest: "/manifest.json",
   icons: {
@@ -82,6 +101,20 @@ const organizationJsonLd = {
   educationalLevel: "Secondary education",
 };
 
+const homepageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "BrainLab Academy | JAMB, WAEC & NECO CBT Practice",
+  url: siteUrl,
+  primaryImageOfPage: {
+    "@type": "ImageObject",
+    url: new URL(previewImageUrl, siteUrl).toString(),
+    width: 1200,
+    height: 630,
+    caption: previewImageAlt,
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -94,6 +127,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(homepageJsonLd).replace(/</g, "\\u003c"),
           }}
         />
         <script
