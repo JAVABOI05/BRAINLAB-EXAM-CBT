@@ -24,10 +24,7 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
   const bypassShell = pathname === "/admin/login" || pathname === "/admin";
 
   useEffect(() => {
-    if (routeOwnsShell || bypassShell) {
-      setReady(true);
-      return;
-    }
+    if (routeOwnsShell || bypassShell) return;
     let active = true;
     async function initialise() {
       try {
