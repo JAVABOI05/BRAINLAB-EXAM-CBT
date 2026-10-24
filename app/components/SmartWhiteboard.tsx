@@ -45,6 +45,14 @@ export interface SmartWhiteboardHandle {
   downloadImage: () => void;
 }
 
+type BoardAspectRatio = "16 / 9" | "4 / 3" | "9 / 16" | "free";
+type WhiteboardPage = {
+  id: string;
+  title: string;
+  elements: WhiteboardElement[];
+  aspectRatio: BoardAspectRatio;
+};
+
 const PRESET_COLORS = [
   { name: "Cyan", value: "#06b6d4" },
   { name: "Blue", value: "#3b82f6" },
@@ -90,7 +98,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [strokeWidth, setStrokeWidth] = useState<number>(4);
     const [backgroundMode, setBackgroundMode] = useState<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [boardAspectRatio, setBoardAspectRatio] = useState<"16 / 9" | "4 / 3" | "9 / 16" | "free">("16 / 9");
+    const [pages, setPages] = useState<WhiteboardPage[]>([
+      { id: "page-1", title: "Page 1", elements: [], aspectRatio: "16 / 9" },
+    ]);
+    const [activePageIndex, setActivePageIndex] = useState(0);
+    const pagesLoadedRef = useRef(false);
+    const activePage = pages[activePageIndex] || pages[0];
+    const boardAspectRatio = activePage?.aspectRatio || "16 / 9";
+    const setBoardAspectRatio = useCallback((ratio: BoardAspectRatio) => {
+      setPages((previous) => previous.map((page, index) => index === activePageIndex ? { ...page, aspectRatio: ratio } : page));
+    }, [activePageIndex]);
     const [textFontFamily, setTextFontFamily] = useState<"brainlab" | "chalk" | "mono">("brainlab");
 
     // Text modal / prompt state
@@ -99,8 +116,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [textInput, setTextInput] = useState("");
     const [textFontSize, setTextFontSize] = useState<number>(20);
 
-    // Vector History & Undo/Redo
-    const [elements, setElements] = useState<WhiteboardElement[]>([]);
+    // Each page owns its own vector elements and aspect ratio. This wrapper
+    // preserves the existing drawing handlers while writing edits to the active page.
+    const elements = activePage?.elements || [];
+    const setElements = useCallback((next: React.SetStateAction<WhiteboardElement[]>) => {
+      setPages((previous) => previous.map((page, index) => {
+        if (index !== activePageIndex) return page;
+        const nextElements = typeof next === "function" ? next(page.elements) : next;
+        return { ...page, elements: nextElements };
+      }));
+    }, [activePageIndex]);
     const [redoStack, setRedoStack] = useState<WhiteboardElement[]>([]);
     const elementsRef = useRef<WhiteboardElement[]>([]);
     const backgroundModeRef = useRef<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
@@ -108,6 +133,41 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     useEffect(() => {
       elementsRef.current = elements;
     }, [elements]);
+
+    // Local-first draft recovery: a temporary network drop must not erase a tutor's
+    // prepared pages. Server persistence can sync these snapshots when connectivity returns.
+    useEffect(() => {
+      if (typeof window === "undefined") return;
+      const key = `brainlab-whiteboard-pages:${classId}`;
+      try {
+        const saved = window.localStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { pages?: WhiteboardPage[]; activePageIndex?: number };
+          if (Array.isArray(parsed.pages) && parsed.pages.length) {
+            setPages(parsed.pages.map((page, index) => ({
+              id: typeof page.id === "string" ? page.id : `page-${index + 1}`,
+              title: typeof page.title === "string" ? page.title : `Page ${index + 1}`,
+              elements: Array.isArray(page.elements) ? page.elements : [],
+              aspectRatio: ["16 / 9", "4 / 3", "9 / 16", "free"].includes(page.aspectRatio) ? page.aspectRatio : "16 / 9",
+            })));
+            setActivePageIndex(Math.min(Math.max(0, parsed.activePageIndex || 0), parsed.pages.length - 1));
+          }
+        }
+      } catch {
+        toast.warning("A saved local whiteboard draft could not be restored.");
+      } finally {
+        pagesLoadedRef.current = true;
+      }
+    }, [classId]);
+
+    useEffect(() => {
+      if (!pagesLoadedRef.current || typeof window === "undefined") return;
+      try {
+        window.localStorage.setItem(`brainlab-whiteboard-pages:${classId}`, JSON.stringify({ pages, activePageIndex }));
+      } catch {
+        // Quota/privacy errors should not stop the live whiteboard from working.
+      }
+    }, [classId, pages, activePageIndex]);
 
     useEffect(() => {
       backgroundModeRef.current = backgroundMode;
@@ -349,6 +409,22 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     useEffect(() => {
       if (!channel) return;
 
+      const handleRemotePagesSync = ({ payload }: { payload: any }) => {
+        if (payload?.senderId !== currentUserId && Array.isArray(payload?.pages) && payload.pages.length) {
+          setPages(payload.pages);
+          setActivePageIndex(Math.min(Math.max(0, Number(payload.pageIndex) || 0), payload.pages.length - 1));
+          setRedoStack([]);
+        }
+      };
+
+      const handleRemotePageChange = ({ payload }: { payload: any }) => {
+        if (payload?.senderId !== currentUserId && Number.isInteger(payload?.pageIndex) && payload.pageIndex >= 0) {
+          if (Array.isArray(payload.pages) && payload.pages.length) setPages(payload.pages);
+          setActivePageIndex(Math.min(payload.pageIndex, pages.length - 1));
+          setRedoStack([]);
+        }
+      };
+
       const handleRemoteAdd = ({ payload }: { payload: any }) => {
         if (payload?.element && payload.senderId !== currentUserId) {
           setElements((prev) => [...prev, payload.element]);
@@ -400,20 +476,23 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           channel.send({
             type: "broadcast",
             event: "whiteboard_sync_response",
-            payload: { elements: elementsRef.current, backgroundMode: backgroundModeRef.current },
+            payload: { elements: elementsRef.current, backgroundMode: backgroundModeRef.current, pages, pageIndex: activePageIndex },
           });
         }
       };
 
       const handleSyncResponse = ({ payload }: { payload: any }) => {
-        if (payload?.elements && Array.isArray(payload.elements)) {
+        if (Array.isArray(payload?.pages) && payload.pages.length) {
+          setPages(payload.pages);
+          setActivePageIndex(Math.min(Math.max(0, Number(payload.pageIndex) || 0), payload.pages.length - 1));
+        } else if (payload?.elements && Array.isArray(payload.elements)) {
           setElements(payload.elements);
-          if (payload.backgroundMode) {
-            setBackgroundMode(payload.backgroundMode);
-          }
         }
+        if (payload.backgroundMode) setBackgroundMode(payload.backgroundMode);
       };
 
+      channel.on("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
+      channel.on("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
       channel.on("broadcast", { event: "whiteboard_element_add" }, handleRemoteAdd);
       channel.on("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
       channel.on("broadcast", { event: "whiteboard_undo" }, handleRemoteUndo);
@@ -907,6 +986,66 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           </div>
 
           <div className="h-4 w-px bg-slate-700/80 mx-1 shrink-0" />
+
+          {/* Page navigator: every page keeps its own notes and aspect ratio. */}
+          <div className="flex min-w-0 items-center gap-1.5 rounded-xl border border-[#1356E8]/35 bg-[#0B1536] px-2 py-1.5">
+            <span className="hidden text-[10px] font-black uppercase tracking-wider text-blue-200 sm:inline">Pages</span>
+            <button
+              type="button"
+              disabled={activePageIndex === 0}
+              onClick={() => {
+                const nextIndex = Math.max(0, activePageIndex - 1);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_page_change", payload: { pageIndex: nextIndex, pages, senderId: currentUserId } });
+              }}
+              className="rounded-md border border-slate-700 px-2 py-1 text-xs font-bold text-white disabled:opacity-30"
+              aria-label="Previous whiteboard page"
+            >←</button>
+            <select
+              value={activePageIndex}
+              onChange={(event) => {
+                const nextIndex = Number(event.target.value);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_page_change", payload: { pageIndex: nextIndex, pages, senderId: currentUserId } });
+              }}
+              className="max-w-[112px] rounded-md bg-slate-900 px-2 py-1 text-xs font-bold text-white outline-none"
+              aria-label="Select whiteboard page"
+            >
+              {pages.map((page, index) => <option key={page.id} value={index}>{page.title || `Page ${index + 1}`}</option>)}
+            </select>
+            <button
+              type="button"
+              disabled={!isHost}
+              onClick={() => {
+                const newPage: WhiteboardPage = { id: `page-${Date.now()}`, title: `Page ${pages.length + 1}`, elements: [], aspectRatio: "16 / 9" };
+                const nextPages = [...pages, newPage];
+                const nextIndex = nextPages.length - 1;
+                setPages(nextPages);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_pages_sync", payload: { pages: nextPages, pageIndex: nextIndex, senderId: currentUserId } });
+              }}
+              className="rounded-md bg-blue-600 px-2 py-1 text-xs font-black text-white hover:bg-blue-500 disabled:opacity-40"
+              title="Add a new page without clearing existing pages"
+            >+ Page</button>
+            <button
+              type="button"
+              disabled={!isHost || pages.length < 2}
+              onClick={() => {
+                if (!window.confirm("Delete this page and its notes? Other pages will be kept.")) return;
+                const nextPages = pages.filter((_, index) => index !== activePageIndex);
+                const nextIndex = Math.max(0, Math.min(activePageIndex, nextPages.length - 1));
+                setPages(nextPages);
+                setActivePageIndex(nextIndex);
+                setRedoStack([]);
+                channel?.send({ type: "broadcast", event: "whiteboard_pages_sync", payload: { pages: nextPages, pageIndex: nextIndex, senderId: currentUserId } });
+              }}
+              className="rounded-md border border-rose-500/40 px-2 py-1 text-xs font-bold text-rose-200 disabled:opacity-30"
+              title="Delete current page"
+            >Delete</button>
+          </div>
 
           {/* Group 5: History, Clear, Export, Fullscreen */}
           <div className="flex items-center gap-1 shrink-0 ml-auto">
