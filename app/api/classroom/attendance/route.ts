@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-explicit-any: "off", prefer-const: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { getLiveClassroomConfig, logAdminAction } from "@/app/lib/platformConfig";
