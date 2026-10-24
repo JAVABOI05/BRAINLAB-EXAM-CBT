@@ -32,6 +32,8 @@ export interface SmartWhiteboardProps {
   currentUserName?: string;
   currentUserId?: string;
   onShareToChat?: (dataUrl: string) => void;
+  /** Branding is on by default; platform policy can disable it for the whole classroom. */
+  showWatermark?: boolean;
 }
 
 export interface SmartWhiteboardHandle {
@@ -71,10 +73,12 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       currentUserName = "Learner",
       currentUserId = "user",
       onShareToChat,
+      showWatermark = true,
     },
     ref
   ) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const boardSurfaceRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     // Active tool state
@@ -85,6 +89,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [strokeWidth, setStrokeWidth] = useState<number>(4);
     const [backgroundMode, setBackgroundMode] = useState<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [boardAspectRatio, setBoardAspectRatio] = useState<"16 / 9" | "4 / 3" | "9 / 16" | "free">("16 / 9");
 
     // Text modal / prompt state
     const [textPromptOpen, setTextPromptOpen] = useState(false);
@@ -114,7 +119,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     // Synchronize canvas dimensions & handle high DPI
     const resizeCanvas = useCallback(() => {
-      const container = containerRef.current;
+      const container = boardSurfaceRef.current;
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
 
@@ -323,7 +328,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     // Handle ResizeObserver
     useEffect(() => {
-      const container = containerRef.current;
+      const container = boardSurfaceRef.current;
       if (!container) return;
 
       const ro = new ResizeObserver(() => {
@@ -945,6 +950,20 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 <span className="hidden sm:inline">To Chat</span>
               </button>
             )}
+            <label className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-[11px] font-bold text-slate-200" title="Board aspect ratio">
+              <span className="hidden md:inline">Board</span>
+              <select
+                value={boardAspectRatio}
+                onChange={(event) => setBoardAspectRatio(event.target.value as typeof boardAspectRatio)}
+                className="max-w-[92px] bg-transparent text-[11px] font-bold text-white outline-none"
+                aria-label="Whiteboard aspect ratio"
+              >
+                <option className="text-slate-900" value="16 / 9">Landscape 16:9</option>
+                <option className="text-slate-900" value="4 / 3">Classic 4:3</option>
+                <option className="text-slate-900" value="9 / 16">Portrait 9:16</option>
+                <option className="text-slate-900" value="free">Flexible</option>
+              </select>
+            </label>
             <button
               type="button"
               onClick={() => setIsFullscreen(!isFullscreen)}
@@ -957,7 +976,19 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         </div>
 
         {/* CANVAS DRAWING SURFACE */}
-        <div className="flex-1 w-full h-full relative overflow-hidden bg-slate-950 cursor-crosshair touch-none">
+        <div className="flex-1 min-h-0 w-full relative overflow-auto bg-slate-950 cursor-crosshair touch-none flex items-center justify-center p-2 sm:p-3">
+          <div
+            ref={boardSurfaceRef}
+            className="relative overflow-hidden rounded-xl border-[5px] border-slate-700 shadow-[0_16px_60px_rgba(0,0,0,0.45)] ring-1 ring-slate-500/40"
+            style={{
+              width: boardAspectRatio === "9 / 16" ? "auto" : "100%",
+              height: boardAspectRatio === "9 / 16" ? "100%" : "auto",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              aspectRatio: boardAspectRatio === "free" ? undefined : boardAspectRatio,
+              flex: boardAspectRatio === "free" ? 1 : "0 1 auto",
+            }}
+          >
           <canvas
             ref={canvasRef}
             onPointerDown={handlePointerDown}
@@ -968,6 +999,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             className="w-full h-full block touch-none"
             style={{ touchAction: "none" }}
           />
+          {showWatermark && (
+            <div aria-label="BrainLab Academy watermark" className="pointer-events-none absolute bottom-3 right-3 z-10 opacity-25 mix-blend-screen">
+              <img src="/brainlab-logo-light.png" alt="BrainLab Academy" className="h-7 sm:h-9 w-auto object-contain" draggable={false} />
+            </div>
+          )}
 
           {/* Laser Pointer Highlight (Turns off immediately on pointer release) */}
           {laserPoint && (
@@ -997,6 +1033,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               <span>✕</span> Exit Fullscreen
             </button>
           )}
+          </div>
         </div>
 
         {/* MODAL: Text Tool Input Prompt */}
