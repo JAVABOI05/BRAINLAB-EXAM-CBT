@@ -301,7 +301,9 @@ export default function ExamPage() {
         }
         setSyncStatus("synced");
         setError("");
-        setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+        if (typeof saved.time_left_seconds === "number" && Number.isFinite(saved.time_left_seconds)) {
+          setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+        }
       });
       answerSaveQueueRef.current = saveTask.then(() => undefined, () => undefined);
     }, 3000);
