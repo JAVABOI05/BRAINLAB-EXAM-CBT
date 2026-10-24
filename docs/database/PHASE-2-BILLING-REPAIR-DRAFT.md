@@ -137,3 +137,21 @@ These should be fixed and tested alongside the migration; a schema-only patch wo
 **Not ready for an executable production migration.** First create an isolated local Supabase environment (Supabase CLI + Docker or another disposable Postgres environment), apply the repository migrations from a clean baseline, and add integration tests for the above payment and entitlement failure cases. Then test an additive reconciliation migration against a disposable copy of the live schema.
 
 Production remains unchanged. No paid Supabase branch was created, and no deployment was triggered.
+
+
+### Local test harness readiness check
+
+A repository configuration check found:
+
+- `package.json` currently exposes `dev`, `build`, `start`, and `lint` scripts, but no test script.
+- `supabase/config.toml` was not present at the expected path on `main`.
+- No standard `.github/workflows/ci.yml` or `.github/workflows/ci.yaml` was present at those paths.
+- Therefore, this session cannot claim that local Supabase migrations, payment integration tests, or CI have passed. The isolated test harness must be added or established before the migration is considered executable.
+
+### Next implementation sequence
+
+1. Add a local Supabase test configuration and repeatable migration test workflow on this repair branch, without linking it to production.
+2. Add payment unit/integration tests covering missing BACHS credentials, signature failure, absent amount/currency, amount/currency mismatch, duplicate webhook, and partial fulfillment.
+3. Fix the application verification/fulfillment path to fail closed and use one idempotent database fulfillment operation.
+4. Create the additive schema migration only after choosing the subscription-history model and canonical entitlement field.
+5. Run clean-baseline and representative-existing-schema tests, lint/build, and security review. Only then open a review PR; do not merge or apply to production automatically.
