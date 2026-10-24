@@ -75,7 +75,7 @@ export default function TutorTopicsPage() {
         .eq("subject_id", subjectId).eq("user_id", user.id).maybeSingle();
       const adminRole = await supabase.rpc("get_admin_role");
       if (!active) return;
-      const admin = !adminRole.error && ["super_admin", "platform_admin"].includes(String(adminRole.data ?? ""));
+      const admin = !adminRole.error && ["super_admin", "platform_admin", "ai_learning_admin"].includes(String(adminRole.data ?? ""));
       if (membershipError || (!membership && !admin)) {
         setError("Your account has not been assigned to this subject.");
         setLoading(false);
@@ -146,7 +146,7 @@ export default function TutorTopicsPage() {
       is_published: false,
       created_by: userId,
     }).select("id").single();
-    if (insertError || !data) setError("The lesson draft could not be created. Check your permission and try again.");
+    if (insertError || !data) setError(insertError ? `Lesson could not be created: ${insertError.message}${insertError.code ? ` (code ${insertError.code})` : ""}` : "Lesson could not be created because the database returned no lesson record. Please try again.");
     else router.push(`/tutor/lessons/${data.id}/builder`);
     setSaving(false);
   }
