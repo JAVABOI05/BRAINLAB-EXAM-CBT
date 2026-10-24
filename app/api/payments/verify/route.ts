@@ -74,7 +74,37 @@ async function handleVerification(reference: string) {
       );
     }
 
-    // 4. Mark transaction as successful
+    // 4. Validate the provider response against the stored order before fulfillment.
+    // Never accept a successful status alone: the reference, amount and currency
+    // must all match the transaction created by our server.
+    const expectedAmountKobo = Number(tx.amount_kobo);
+    const receivedAmountKobo = Number(verifyResult.amountKobo);
+    const expectedCurrency = String(tx.currency || "NGN").toUpperCase();
+    const receivedCurrency = String(verifyResult.currency || "").toUpperCase();
+    const referenceMatches = verifyResult.reference === tx.reference;
+    const amountMatches =
+      Number.isFinite(expectedAmountKobo) &&
+      Number.isFinite(receivedAmountKobo) &&
+      expectedAmountKobo > 0 &&
+      receivedAmountKobo === expectedAmountKobo;
+    const currencyMatches = Boolean(receivedCurrency) && receivedCurrency === expectedCurrency;
+
+    if (!referenceMatches || !amountMatches || !currencyMatches) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Payment verification details do not match the stored transaction.",
+          code: !referenceMatches
+            ? "REFERENCE_MISMATCH"
+            : !amountMatches
+              ? "AMOUNT_MISMATCH"
+              : "CURRENCY_MISMATCH",
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5. Mark transaction as successful only after all checks pass.
     const paidAt = verifyResult.paidAt || new Date().toISOString();
     await supabase
       .from("payment_transactions")
