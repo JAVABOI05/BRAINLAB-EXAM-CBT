@@ -221,9 +221,14 @@ export default function TopicContentStudioPage() {
     setMediaUploading(true);
     setFeedback(null);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again before uploading lesson media.");
       const response = await fetch("/api/learning/content-media/upload-url", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           topic_id: topicId,
           filename: file.name,
