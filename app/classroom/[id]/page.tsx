@@ -1348,7 +1348,7 @@ export default function LiveClassroomPage({
       const { error: uploadError } = await supabase.storage
         .from(uploadUrlData.bucket)
         .uploadToSignedUrl(uploadUrlData.path, uploadUrlData.token, blob, {
-          contentType: blob.type || "video/webm",
+          contentType: (blob.type || "video/webm").split(";")[0],
           upsert: false,
         });
       if (uploadError) throw new Error("Upload failed. Please check your connection and try again.");
