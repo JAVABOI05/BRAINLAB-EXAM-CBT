@@ -43,10 +43,12 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let active = true;
     async function initialise() {
+      let verifiedAdmin = false;
       try {
         const admin = await getAdminSession();
         if (!active) return;
-        if (!admin) { router.replace("/account"); return; }
+        if (!admin) { router.replace("/admin/login?reason=session"); return; }
+        verifiedAdmin = true;
         setUser(admin);
 
         const entries = await Promise.all(PERMISSIONS.map(async (permission) => [
@@ -88,7 +90,13 @@ export default function AdminDashboardPage() {
           setLoadError("Some dashboard data could not be loaded. Unavailable values are shown explicitly rather than as zero.");
         }
       } catch {
-        if (active) setLoadError("The dashboard could not load its data. Refresh the page or contact a platform administrator.");
+        if (active) {
+          if (!verifiedAdmin) {
+            router.replace("/admin/login?reason=verify");
+          } else {
+            setLoadError("Some dashboard services could not be reached. Your administrator session is still active; refresh or retry the affected panel.");
+          }
+        }
       } finally {
         if (active) setLoading(false);
       }

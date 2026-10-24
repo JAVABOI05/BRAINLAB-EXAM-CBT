@@ -55,6 +55,7 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
   const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const groups = useMemo(() => GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => item.visible(user, permissions)).filter((item) => {
@@ -63,9 +64,15 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
     }),
   })).filter((group) => group.items.length > 0), [user, permissions, query]);
 
-  return <div className="admin-workspace">
-    <aside className={"admin-sidebar " + (mobileOpen ? "is-open" : "")} aria-label="Admin navigation">
-      <Link href="/admin/dashboard" className="admin-brand" onClick={() => setMobileOpen(false)}>
+
+
+  const currentLabel = pathname === "/admin/dashboard"
+    ? "Platform overview"
+    : pathname.split("/").filter(Boolean).pop()?.replaceAll("-", " ") ?? "Workspace";
+
+  return <div className={"admin-workspace" + (collapsed ? " is-collapsed" : "")}>
+    <aside className={"admin-sidebar" + (mobileOpen ? " is-open" : "")} aria-label="Admin navigation">
+      <Link href="/admin/dashboard" className="admin-brand" onClick={() => setMobileOpen(false)} aria-label="BrainLab Academy admin dashboard">
         <span className="admin-brand-mark" aria-hidden="true">B</span>
         <span className="admin-brand-copy"><strong>BRAINLAB</strong><small>ACADEMY ADMIN</small></span>
       </Link>
@@ -79,14 +86,14 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
           <h2>{group.label}</h2>
           {group.items.map((item) => {
             const active = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href + "/"));
-            return <Link key={item.href} href={item.href} className={"admin-nav-link " + (active ? "is-active" : "")} aria-current={active ? "page" : undefined} title={item.description} onClick={() => setMobileOpen(false)}>
-              <span className="admin-nav-dot" aria-hidden="true" /><span>{item.label}</span>
+            return <Link key={item.href} href={item.href} className={"admin-nav-link " + (active ? "is-active" : "")} aria-current={active ? "page" : undefined} title={item.label + " — " + item.description} onClick={() => setMobileOpen(false)}>
+              <span className="admin-nav-glyph" aria-hidden="true">{item.label.slice(0, 1).toUpperCase()}</span><span className="admin-nav-label">{item.label}</span>
             </Link>;
           })}
         </section>)}
       </nav>
       <div className="admin-sidebar-footer">
-        <span className="admin-avatar" aria-hidden="true">{user.email.slice(0,1).toUpperCase()}</span>
+        <span className="admin-avatar" aria-hidden="true">{user.email.slice(0,1).toUpperCase() || "A"}</span>
         <div className="admin-sidebar-user"><strong>{user.email}</strong><span>{user.role.replaceAll("_"," ")}</span></div>
         <button className="admin-logout-button" type="button" onClick={onLogout} aria-label="Sign out" title="Sign out">↗</button>
       </div>
@@ -94,8 +101,9 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
     {mobileOpen && <button type="button" className="admin-nav-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
     <div className="admin-workspace-main">
       <header className="admin-topbar">
-        <button className="admin-mobile-menu" type="button" onClick={() => setMobileOpen((open) => !open)} aria-expanded={mobileOpen} aria-label={mobileOpen ? "Close navigation" : "Open navigation"}>☰</button>
-        <div className="admin-topbar-heading"><span>ADMINISTRATION</span><strong>{pathname === "/admin/dashboard" ? "Platform overview" : pathname.split("/").filter(Boolean).pop()?.replaceAll("-"," ") ?? "Workspace"}</strong></div>
+        <button className="admin-sidebar-toggle" type="button" onClick={() => setCollapsed((value) => !value)} aria-expanded={!collapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>{collapsed ? "»" : "«"}</button>
+        <button className="admin-mobile-menu" type="button" onClick={() => setMobileOpen((open) => !open)} aria-expanded={mobileOpen} aria-label={mobileOpen ? "Close navigation" : "Open navigation"}>{mobileOpen ? "×" : "☰"}</button>
+        <div className="admin-topbar-heading"><span>ADMINISTRATION</span><strong>{currentLabel}</strong></div>
         <div className="admin-topbar-actions"><span className="admin-environment-label">BrainLab Academy</span><AdminNotificationBell /></div>
       </header>
       <main className="admin-workspace-content">{children}</main>
