@@ -148,6 +148,9 @@ export async function POST(request: NextRequest) {
         paper_ids: paperIds,
         time_left_seconds: durationSeconds,
         duration_seconds: durationSeconds,
+        // The server-side save/resume/submit RPCs calculate time from this deadline.
+        // Without it, save_progress can return a null remaining time and the UI may auto-submit.
+        deadline_at: new Date(Date.now() + durationSeconds * 1000).toISOString(),
         attempt_token: attemptToken,
         is_master_code: isMasterCode,
         elective: selectedSubjects[selectedSubjects.length - 1] || "",
