@@ -95,6 +95,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     // Vector History & Undo/Redo
     const [elements, setElements] = useState<WhiteboardElement[]>([]);
     const [redoStack, setRedoStack] = useState<WhiteboardElement[]>([]);
+    const elementsRef = useRef<WhiteboardElement[]>([]);
+    const backgroundModeRef = useRef<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
+
+    useEffect(() => {
+      elementsRef.current = elements;
+    }, [elements]);
+
+    useEffect(() => {
+      backgroundModeRef.current = backgroundMode;
+    }, [backgroundMode]);
 
     // Drawing state refs
     const isDrawingRef = useRef(false);
@@ -349,10 +359,14 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       };
 
       const handleRemoteBackgroundChange = ({ payload }: { payload: any }) => {
-        if (payload?.senderId !== currentUserId && ["blackboard", "whiteboard", "grid", "lines"].includes(payload?.backgroundMode)) {
-          setBackgroundMode(payload.backgroundMode);
-          if (payload.backgroundMode === "whiteboard" && ["#06b6d4", "#ffffff"].includes(color.toLowerCase())) setColor("#0f172a");
-          if (payload.backgroundMode !== "whiteboard" && color.toLowerCase() === "#0f172a") setColor("#f8fafc");
+        const nextMode = payload?.backgroundMode;
+        if (payload?.senderId !== currentUserId && ["blackboard", "whiteboard", "grid", "lines"].includes(nextMode)) {
+          setBackgroundMode(nextMode);
+          setColor((current) => {
+            if (nextMode === "whiteboard" && ["#06b6d4", "#ffffff"].includes(current.toLowerCase())) return "#0f172a";
+            if (nextMode !== "whiteboard" && current.toLowerCase() === "#0f172a") return "#f8fafc";
+            return current;
+          });
         }
       };
 
@@ -372,11 +386,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       };
 
       const handleSyncRequest = () => {
-        if (isHost && elements.length > 0) {
+        if (isHost) {
           channel.send({
             type: "broadcast",
             event: "whiteboard_sync_response",
-            payload: { elements, backgroundMode },
+            payload: { elements: elementsRef.current, backgroundMode: backgroundModeRef.current },
           });
         }
       };
@@ -408,9 +422,15 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       }
 
       return () => {
-        // channel listeners clean up
+        channel.off?.("broadcast", { event: "whiteboard_element_add" }, handleRemoteAdd);
+        channel.off?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
+        channel.off?.("broadcast", { event: "whiteboard_undo" }, handleRemoteUndo);
+        channel.off?.("broadcast", { event: "whiteboard_laser" }, handleRemoteLaser);
+        channel.off?.("broadcast", { event: "whiteboard_background_change" }, handleRemoteBackgroundChange);
+        channel.off?.("broadcast", { event: "whiteboard_sync_request" }, handleSyncRequest);
+        channel.off?.("broadcast", { event: "whiteboard_sync_response" }, handleSyncResponse);
       };
-    }, [channel, currentUserId, isHost, elements, backgroundMode, color]);
+    }, [channel, currentUserId, isHost]);
 
     // Coordinate conversion (CSS pixels relative to canvas)
     const getPointerCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
