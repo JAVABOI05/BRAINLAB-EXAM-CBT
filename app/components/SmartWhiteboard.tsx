@@ -981,8 +981,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             ref={boardSurfaceRef}
             className="relative overflow-hidden rounded-xl border-[5px] border-slate-700 shadow-[0_16px_60px_rgba(0,0,0,0.45)] ring-1 ring-slate-500/40"
             style={{
-              width: boardAspectRatio === "9 / 16" ? "auto" : "100%",
-              height: boardAspectRatio === "9 / 16" ? "100%" : "auto",
+              width: boardAspectRatio === "free" ? "100%" : "auto",
+              height: "100%",
               maxWidth: "100%",
               maxHeight: "100%",
               aspectRatio: boardAspectRatio === "free" ? undefined : boardAspectRatio,
