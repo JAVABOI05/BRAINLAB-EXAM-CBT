@@ -102,7 +102,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       { id: "page-1", title: "Page 1", elements: [], aspectRatio: "16 / 9" },
     ]);
     const [activePageIndex, setActivePageIndex] = useState(0);
-    const pagesLoadedRef = useRef(false);
+    const [pagesHydrated, setPagesHydrated] = useState(false);
     const activePage = pages[activePageIndex] || pages[0];
     const boardAspectRatio = activePage?.aspectRatio || "16 / 9";
     const setBoardAspectRatio = useCallback((ratio: BoardAspectRatio) => {
@@ -156,18 +156,18 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       } catch {
         toast.warning("A saved local whiteboard draft could not be restored.");
       } finally {
-        pagesLoadedRef.current = true;
+        setPagesHydrated(true);
       }
     }, [classId]);
 
     useEffect(() => {
-      if (!pagesLoadedRef.current || typeof window === "undefined") return;
+      if (!pagesHydrated || typeof window === "undefined") return;
       try {
         window.localStorage.setItem(`brainlab-whiteboard-pages:${classId}`, JSON.stringify({ pages, activePageIndex }));
       } catch {
         // Quota/privacy errors should not stop the live whiteboard from working.
       }
-    }, [classId, pages, activePageIndex]);
+    }, [classId, pages, activePageIndex, pagesHydrated]);
 
     useEffect(() => {
       backgroundModeRef.current = backgroundMode;
@@ -511,6 +511,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       }
 
       return () => {
+        channel.off?.("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
+        channel.off?.("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
         channel.off?.("broadcast", { event: "whiteboard_element_add" }, handleRemoteAdd);
         channel.off?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
         channel.off?.("broadcast", { event: "whiteboard_undo" }, handleRemoteUndo);
@@ -519,7 +521,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         channel.off?.("broadcast", { event: "whiteboard_sync_request" }, handleSyncRequest);
         channel.off?.("broadcast", { event: "whiteboard_sync_response" }, handleSyncResponse);
       };
-    }, [channel, currentUserId, isHost]);
+    }, [channel, currentUserId, isHost, pages, activePageIndex, setElements]);
 
     // Coordinate conversion (CSS pixels relative to canvas)
     const getPointerCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
