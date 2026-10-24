@@ -541,12 +541,10 @@ export default function ExamPage() {
     );
   }
 
-  const candidateSubjects = useMemo(() => {
-    if (candidate?.subjects && candidate.subjects.length > 0) {
-      return candidate.subjects;
-    }
-    return ["English", "Mathematics", "Physics", candidate?.subject || "Chemistry"];
-  }, [candidate]);
+  const candidateSubjects =
+    candidate?.subjects && candidate.subjects.length > 0
+      ? candidate.subjects
+      : ["English", "Mathematics", "Physics", candidate?.subject || "Chemistry"];
 
   if (!started) {
     return (
