@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      let activeSession: any = null;
+      let activeSession: Session | null = null;
 
       // 1. Fast Code Exchange
       if (code) {
@@ -93,22 +94,25 @@ export default function AuthCallbackPage() {
       setStatusText("Preparing your personalized study hub…");
       setProgress(90);
 
-      // 3. Fast Role & Operator Check (with 2-second timeout guard so learners are never delayed)
+      // 3. Resolve the database-backed role before choosing a destination.
+      // A slow or failed role lookup must not silently send an administrator to
+      // the candidate dashboard.
       let isOperator = false;
       try {
-        const rpcPromise = supabase.rpc("is_admin");
-        const timeoutPromise = new Promise<{ data: null; error: true }>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: true }), 2000)
-        );
-        const result: any = await Promise.race([rpcPromise, timeoutPromise]);
-        if (result?.data === true) {
-          isOperator = true;
+        const { data, error: roleError } = await supabase.rpc("is_admin");
+        if (roleError) {
+          clearInterval(progressTimer);
+          setErrorDetails("We could not verify your account permissions. Please return to the account page and try again.");
+          return;
         }
+        isOperator = data === true;
       } catch {
-        isOperator = false;
+        clearInterval(progressTimer);
+        setErrorDetails("We could not verify your account permissions. Please return to the account page and try again.");
+        return;
       }
 
-      // 4. Instant Route Dispatch
+      // 4. Route only after role resolution has completed.
       clearInterval(progressTimer);
       setProgress(100);
 

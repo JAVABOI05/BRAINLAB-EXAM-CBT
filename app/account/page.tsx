@@ -46,7 +46,37 @@ export default function AccountPage() {
         setError("Please verify your email before entering BrainLab. Check your inbox for the verification link, then sign in again.");
         return;
       }
-      router.replace("/dashboard");
+      // Restore the destination from the verified database role, not from a
+      // default candidate redirect. A role lookup failure must never downgrade
+      // an administrator to the candidate dashboard.
+      const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
+      if (!active) return;
+
+      if (permissionError) {
+        setError("We could not verify your account permissions. Please try again.");
+        return;
+      }
+
+      if (isOperator === true) {
+        const gateResponse = await fetch("/api/auth/operator-gate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accessToken: session.access_token }),
+          cache: "no-store",
+        });
+        if (!active) return;
+        if (!gateResponse.ok) {
+          const errorData = await gateResponse.json().catch(() => null);
+          setError(errorData?.error || "Your administrator session is valid, but secure admin access could not be restored. Please try signing in again.");
+          return;
+        }
+        window.localStorage.removeItem("admin_user");
+        router.replace("/admin/dashboard");
+        return;
+      }
+
+      await clearOperatorGate();
+      if (active) router.replace("/dashboard");
     }
     void redirectIfAlreadySignedIn().catch(() => {
       // Keep the form available if session restoration temporarily fails.
