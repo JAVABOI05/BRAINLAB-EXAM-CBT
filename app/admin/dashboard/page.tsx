@@ -11,6 +11,9 @@ import AdminWorkspaceShell from "../AdminWorkspaceShell";
 type Access = Partial<Record<AdminPermission, boolean>>;
 type Metric = number | null;
 type Metrics = { questions: Metric; results: Metric; codes: Metric };
+type SettingsMap = { exam_duration: number; calculator_enabled: boolean; leaderboard_enabled: boolean; show_results: boolean; mock_enabled: boolean };
+type SettingRow = { key: string; value: unknown };
+const DEFAULT_SETTINGS: SettingsMap = { exam_duration: 7200, calculator_enabled: true, leaderboard_enabled: false, show_results: false, mock_enabled: true };
 
 const PERMISSIONS: AdminPermission[] = [
   "cbt.config.read", "cbt.config.manage", "cbt.questions.manage", "cbt.results.read",
@@ -33,6 +36,9 @@ export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState<Metrics>({ questions: null, results: null, codes: null });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [settings, setSettings] = useState<SettingsMap>(DEFAULT_SETTINGS);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -61,6 +67,23 @@ export default function AdminDashboardPage() {
           results: access["cbt.results.read"] ? (results && !results.error ? results.count ?? 0 : null) : null,
           codes: access["cbt.codes.manage"] ? (codes && !codes.error ? codes.count ?? 0 : null) : null,
         });
+        if (access["cbt.config.read"]) {
+          const { data: settingRows, error: settingsError } = await supabase.from("settings").select("key, value");
+          if (!active) return;
+          if (settingsError) {
+            setSettingsMessage("Exam quick settings could not be read. Use Exam Configuration if available.");
+          } else {
+            const next = { ...DEFAULT_SETTINGS };
+            (settingRows ?? []).forEach((row: SettingRow) => {
+              if (row.key === "exam_duration") next.exam_duration = Number(row.value) || 7200;
+              if (row.key === "calculator_enabled") next.calculator_enabled = row.value === true || row.value === "true";
+              if (row.key === "leaderboard_enabled") next.leaderboard_enabled = row.value === true || row.value === "true";
+              if (row.key === "show_results") next.show_results = row.value === true || row.value === "true";
+              if (row.key === "mock_enabled") next.mock_enabled = row.value === true || row.value === "true";
+            });
+            setSettings(next);
+          }
+        }
         if ([questions, results, codes].some((result) => result?.error)) {
           setLoadError("Some dashboard data could not be loaded. Unavailable values are shown explicitly rather than as zero.");
         }
@@ -73,6 +96,30 @@ export default function AdminDashboardPage() {
     void initialise();
     return () => { active = false; };
   }, [router]);
+
+  async function saveQuickSetting(key: keyof SettingsMap, value: number | boolean) {
+    const { error } = await supabase.from("settings").update({ value }).eq("key", key);
+    if (error) throw new Error(error.message);
+  }
+
+  async function saveQuickSettings() {
+    setSavingSettings(true);
+    setSettingsMessage("");
+    try {
+      await Promise.all([
+        saveQuickSetting("exam_duration", settings.exam_duration),
+        saveQuickSetting("calculator_enabled", settings.calculator_enabled),
+        saveQuickSetting("leaderboard_enabled", settings.leaderboard_enabled),
+        saveQuickSetting("show_results", settings.show_results),
+        saveQuickSetting("mock_enabled", settings.mock_enabled),
+      ]);
+      setSettingsMessage("Exam quick settings saved.");
+    } catch (error) {
+      setSettingsMessage(error instanceof Error ? error.message : "Could not save exam quick settings.");
+    } finally {
+      setSavingSettings(false);
+    }
+  }
 
   async function handleLogout() {
     await adminSignOut();
@@ -136,5 +183,17 @@ export default function AdminDashboardPage() {
         <Link className="admin-action-link" href="/admin/pricing"><strong>4. Validate BACHS reporting</strong><span>Confirm payment state and reconcile transaction references.</span></Link>
       </div>
     </section>
+
+    {canOpen("cbt.config.manage") && <section className="admin-panel" style={{ marginTop: 16 }}>
+      <div className="admin-panel-heading"><div><h2>Exam settings quick controls</h2><p>Existing settings-table controls retained during the dashboard migration.</p></div><Link className="admin-panel-link" href="/admin/config">Full configuration</Link></div>
+      <div className="admin-settings-directory">
+        <label><strong>Exam duration (seconds)</strong><input className="admin-input" type="number" min={60} value={settings.exam_duration} onChange={(event) => setSettings((prev) => ({ ...prev, exam_duration: Number(event.target.value) || 7200 }))} /></label>
+        <label><strong>Calculator enabled</strong><input type="checkbox" checked={settings.calculator_enabled} onChange={(event) => setSettings((prev) => ({ ...prev, calculator_enabled: event.target.checked }))} /></label>
+        <label><strong>Leaderboard enabled</strong><input type="checkbox" checked={settings.leaderboard_enabled} onChange={(event) => setSettings((prev) => ({ ...prev, leaderboard_enabled: event.target.checked }))} /></label>
+        <label><strong>Release results to candidates</strong><input type="checkbox" checked={settings.show_results} onChange={(event) => setSettings((prev) => ({ ...prev, show_results: event.target.checked }))} /></label>
+        <label><strong>Allow candidates to start exams</strong><input type="checkbox" checked={settings.mock_enabled} onChange={(event) => setSettings((prev) => ({ ...prev, mock_enabled: event.target.checked }))} /></label>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}><button className="admin-btn-primary" type="button" onClick={saveQuickSettings} disabled={savingSettings}>{savingSettings ? "Saving…" : "Save quick settings"}</button>{settingsMessage && <span role="status" className="admin-kpi-note">{settingsMessage}</span>}</div>
+    </section>}
   </AdminWorkspaceShell>;
 }
