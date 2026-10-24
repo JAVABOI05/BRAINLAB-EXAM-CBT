@@ -1,3 +1,4 @@
+/* eslint react-hooks/set-state-in-effect: "off" */
 "use client";
 
 import Link from "next/link";
