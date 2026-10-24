@@ -69,10 +69,10 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
         <span className="admin-brand-mark" aria-hidden="true">B</span>
         <span className="admin-brand-copy"><strong>BRAINLAB</strong><small>ACADEMY ADMIN</small></span>
       </Link>
-      <label className="admin-nav-search"><span aria-hidden="true">⌕</span>
+      <div className="admin-nav-search"><span aria-hidden="true">⌕</span>
         <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find an admin page" aria-label="Search admin navigation" />
         {query && <button type="button" onClick={() => setQuery("")} aria-label="Clear search">×</button>}
-      </label>
+      </div>
       <nav className="admin-nav-groups">
         {groups.length === 0 && <p className="admin-nav-empty">No matching pages.</p>}
         {groups.map((group) => <section className="admin-nav-group" key={group.label}>
