@@ -46,7 +46,7 @@ export default function AdminDashboardPage() {
       try {
         const admin = await getAdminSession();
         if (!active) return;
-        if (!admin) { router.replace("/account"); return; }
+        if (!admin) { router.replace("/admin/login?reason=session"); return; }
         setUser(admin);
 
         const entries = await Promise.all(PERMISSIONS.map(async (permission) => [
