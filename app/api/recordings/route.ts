@@ -45,9 +45,30 @@ export async function GET(request: NextRequest) {
     const { data: rows, error } = await query;
     if (error) return NextResponse.json({ error: "Could not load recordings." }, { status: 500 });
 
-    const visibleToUser = (rows ?? []).filter((recording: any) => {
+    const rowsList = rows ?? [];
+    const courseIds = [...new Set(rowsList
+      .filter((recording: any) => recording.course_id && recording.is_visible_to_students && recording.processing_status === "ready")
+      .map((recording: any) => recording.course_id))] as string[];
+    const { data: enrollments } = courseIds.length
+      ? await supabase.from("course_enrollments").select("course_id").eq("user_id", user.id).eq("status", "active").in("course_id", courseIds)
+      : { data: [] };
+    const enrolledCourseIds = new Set((enrollments ?? []).map((item: any) => item.course_id));
+    const { data: activeSubscription } = await supabase
+      .from("subscription_records")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+
+    const visibleToUser = rowsList.filter((recording: any) => {
       const ownsClass = recording.live_classes?.tutor_id === user.id;
-      return isAdmin || ownsClass || (recording.is_visible_to_students === true && recording.processing_status === "ready");
+      if (isAdmin || ownsClass) return true;
+      if (!recording.is_visible_to_students || recording.processing_status !== "ready") return false;
+      if (recording.access_policy === "tutors_only") return false;
+      if (recording.access_policy === "public") return true;
+      if (!recording.course_id) return true;
+      return enrolledCourseIds.has(recording.course_id) || Boolean(activeSubscription);
     });
 
     const recordings = await Promise.all(visibleToUser.map(async (recording: any) => {
