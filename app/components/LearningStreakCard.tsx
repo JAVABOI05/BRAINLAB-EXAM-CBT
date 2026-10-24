@@ -185,7 +185,7 @@ export default function LearningStreakCard({
       {/* 7-Day Week Dots */}
       <div className="mt-5 border-t border-amber-100 dark:border-slate-800 pt-4">
         <div className="flex justify-between items-center text-xs mb-2">
-          <span className="font-bold text-slate-700 dark:text-slate-300">This Week's Activity</span>
+          <span className="font-bold text-slate-700 dark:text-slate-300">This Week&apos;s Activity</span>
           <span className="text-[11px] text-slate-500 dark:text-slate-400">Practise daily to maintain multiplier bonus</span>
         </div>
 
@@ -230,7 +230,7 @@ export default function LearningStreakCard({
           </div>
 
           <p className="mt-1 text-slate-600 dark:text-slate-400 text-[11px]">
-            We will dispatch an alert to your browser if you haven't completed a quiz by your chosen time.
+            We will dispatch an alert to your browser if you haven&apos;t completed a quiz by your chosen time.
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
