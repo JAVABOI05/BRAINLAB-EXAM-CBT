@@ -90,9 +90,61 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, alreadyProcessed: true });
     }
 
-    // 7. Validate Amount & Currency Match
-    // Bachs amount is typically a decimal string (e.g. "15000.00")
-    if (data.amount !== undefined) {
+    // 7. Require amount and currency in the signed event, then independently
+    // verify the checkout with BACHS. A signed payload alone is not the source
+    // of truth for fulfillment, and missing fields must fail closed.
+    if (data.amount === undefined || data.currency === undefined || data.currency === null || !checkoutId) {
+      return NextResponse.json(
+        { error: "Successful BACHS event is missing amount, currency, or checkout ID." },
+        { status: 400 }
+      );
+    }
+
+    const incomingAmountDecimal = Number(data.amount);
+    const incomingKobo = Math.round(incomingAmountDecimal * 100);
+    const expectedKobo = Number(tx.amount_kobo);
+    if (
+      !Number.isFinite(incomingAmountDecimal) ||
+      !Number.isFinite(expectedKobo) ||
+      incomingKobo !== expectedKobo ||
+      String(data.currency).toUpperCase() !== String(tx.currency || "NGN").toUpperCase()
+    ) {
+      return NextResponse.json(
+        { error: "Payment amount or currency does not match order record" },
+        { status: 400 }
+      );
+    }
+
+    const providerCheck = await bachsPaymentProvider.verifyPayment(tx.reference, String(checkoutId));
+    const verifiedCurrency = String(providerCheck.currency || "").toUpperCase();
+    if (
+      !providerCheck.ok ||
+      providerCheck.status !== "success" ||
+      providerCheck.reference !== tx.reference ||
+      Number(providerCheck.amountKobo) !== expectedKobo ||
+      verifiedCurrency !== String(tx.currency || "NGN").toUpperCase()
+    ) {
+      return NextResponse.json(
+        { error: "BACHS could not independently verify this payment against the order." },
+        { status: 400 }
+      );
+    }
+
+    // 8. Mark transaction successful only after signature, provider verification,
+    // exact reference, amount and currency checks all pass.
+    const paidAt = providerCheck.paidAt || event.created_at || new Date().toISOString();
+
+    await supabase
+      .from("payment_transactions")
+      .update({
+        status: "success",
+        paid_at: paidAt,
+        provider_reference: checkoutId || tx.provider_reference,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", tx.id);
+
+    // 9. Coupon redemption recording
       const incomingAmountDecimal = parseFloat(String(data.amount));
       const incomingKobo = Math.round(incomingAmountDecimal * 100);
       const expectedKobo = Number(tx.amount_kobo);
