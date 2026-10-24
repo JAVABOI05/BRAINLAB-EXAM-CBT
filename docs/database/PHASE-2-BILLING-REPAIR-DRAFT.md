@@ -105,3 +105,35 @@ The final migration must be generated in the repository using the Supabase CLI a
 - No Supabase branch was created.
 - No subscription/payment table was created in production.
 - No migration was applied and no deployment was triggered.
+
+
+## Validation update (read-only production inspection + repository code review)
+
+Date: 2026-10-24
+
+### Confirmed live schema facts
+
+- The live database has `public.platform_configuration` and `public.exam_config`; their current columns and constraints were inspected read-only.
+- The live migration ledger contains the Learning Hub migrations and `20261024060427_restore_platform_configuration_dependency`, but does not contain the expected subscription, payment/refund/coupon, or BACHS migration versions.
+- The inspected live schema returned no columns for `subscription_plans`, `user_subscriptions`, `payment_transactions`, `coupon_campaigns`, `coupon_redemptions`, `refund_requests`, or `configuration_audit_logs`. Treat those billing tables as absent in production unless a fresh check proves otherwise.
+- No DDL or data changes were executed during this inspection.
+
+### Additional application-level blockers discovered
+
+These should be fixed and tested alongside the migration; a schema-only patch would not be sufficient.
+
+1. **Entitlement field mismatch:** `app/api/ai-tutor/route.ts` queries `subscription_plans.feature_entitlements`, while the repository migration defines `subscription_plans.entitlements`. The chosen canonical column and all consumers must be reconciled before rollout.
+2. **Missing subscription conflict target:** the payment webhook and verification routes upsert `user_subscriptions` with `onConflict: "user_id"`, but the migration's table definition does not declare a matching unique constraint. Do not simply add the constraint without deciding how to preserve subscription history and checking duplicates.
+3. **Payment verification doesn't validate returned amount/currency:** `app/api/payments/verify/route.ts` checks provider success but does not compare the provider's `amountKobo` and `currency` to the stored transaction before marking it successful.
+4. **Potential unsafe simulation path:** `app/lib/payments/bachsProvider.ts` returns a simulated successful verification when the BACHS API key is absent. This must be hard-disabled in production; missing live credentials should fail closed, never fulfill a paid subscription.
+5. **Webhook fields are not mandatory:** `app/api/payments/bachs/webhook/route.ts` validates amount/currency only when those fields are present. A successful event must be backed by a valid signature and authoritative provider verification, with exact transaction reference, amount, and currency checks.
+6. **Non-atomic fulfillment:** the webhook directly marks a transaction successful, increments coupon counters, and upserts subscription records in separate calls; several write errors are not checked. Retries or partial failures can produce a paid transaction without access, duplicate coupon counts, or inconsistent subscription state. Use a single trusted, idempotent server-side fulfillment path.
+7. **Legacy Paystack paths remain:** payment initialization still resolves providers dynamically, and shared webhook/environment settings mention Paystack. BACHS should be the configured default; do not delete historical Paystack records or provider code without a separately reviewed compatibility decision.
+8. **Coupon identity boundary:** `validate_and_apply_coupon` accepts a caller-provided `p_user_id` and is granted to `anon` and `authenticated`. Authorization-sensitive redemption must derive the user from `auth.uid()` or be restricted to a trusted server-side role. Coupon preview should not consume a redemption.
+9. **Schema defaults alone are not enough:** old migration seeds include hard-coded pricing/config defaults. The repair must preserve live plan/config values and must not seed or overwrite values until the intended billing model is reconciled.
+
+### Phase 2 gate
+
+**Not ready for an executable production migration.** First create an isolated local Supabase environment (Supabase CLI + Docker or another disposable Postgres environment), apply the repository migrations from a clean baseline, and add integration tests for the above payment and entitlement failure cases. Then test an additive reconciliation migration against a disposable copy of the live schema.
+
+Production remains unchanged. No paid Supabase branch was created, and no deployment was triggered.
