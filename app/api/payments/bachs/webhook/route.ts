@@ -145,56 +145,6 @@ export async function POST(request: NextRequest) {
       .eq("id", tx.id);
 
     // 9. Coupon redemption recording
-      const incomingAmountDecimal = parseFloat(String(data.amount));
-      const incomingKobo = Math.round(incomingAmountDecimal * 100);
-      const expectedKobo = Number(tx.amount_kobo);
-
-      // Verify that amount does not underpay the expected amount
-      if (incomingKobo > 0 && expectedKobo > 0 && Math.abs(incomingKobo - expectedKobo) > 5) {
-        await supabase
-          .from("payment_transactions")
-          .update({
-            metadata: {
-              ...tx.metadata,
-              amount_mismatch_warning: {
-                incoming_kobo: incomingKobo,
-                expected_kobo: expectedKobo,
-              },
-            },
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", tx.id);
-
-        return NextResponse.json(
-          { error: "Payment amount does not match order record" },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (data.currency && tx.currency) {
-      if (String(data.currency).toUpperCase() !== String(tx.currency).toUpperCase()) {
-        return NextResponse.json(
-          { error: "Currency mismatch between Bachs payment and order" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 8. Confirm Payment Success
-    const paidAt = event.created_at || new Date().toISOString();
-
-    await supabase
-      .from("payment_transactions")
-      .update({
-        status: "success",
-        paid_at: paidAt,
-        provider_reference: checkoutId || tx.provider_reference,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", tx.id);
-
-    // 9. Coupon redemption recording
     if (tx.coupon_id && tx.user_id) {
       await supabase.from("coupon_redemptions").upsert(
         {
