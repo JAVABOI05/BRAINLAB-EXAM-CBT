@@ -127,6 +127,7 @@ export default function LiveClassroomPage({
   const [stageMode, setStageMode] = useState<"audio" | "whiteboard">("audio");
   const [canStudentsDraw, setCanStudentsDraw] = useState(false);
   const [isClassRecording, setIsClassRecording] = useState(false);
+  const [isClassRecordingPaused, setIsClassRecordingPaused] = useState(false);
   const [isSavingClassRecording, setIsSavingClassRecording] = useState(false);
   const [classRecordingSeconds, setClassRecordingSeconds] = useState(0);
   const [classRecordingMessage, setClassRecordingMessage] = useState("");
@@ -135,6 +136,8 @@ export default function LiveClassroomPage({
   const classDisplayStreamRef = useRef<MediaStream | null>(null);
   const classExtraMicStreamRef = useRef<MediaStream | null>(null);
   const classRecordingStartedAtRef = useRef<number>(0);
+  const classRecordingPausedAtRef = useRef<number | null>(null);
+  const classRecordingPausedTotalMsRef = useRef<number>(0);
   const classRecordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [allowStudentMedia, setAllowStudentMedia] = useState(false);
   const [allowStudentVoiceNotes, setAllowStudentVoiceNotes] = useState(true);
@@ -1426,6 +1429,9 @@ export default function LiveClassroomPage({
       const recorder = preferredMime ? new MediaRecorder(combinedStream, { mimeType: preferredMime }) : new MediaRecorder(combinedStream);
       classRecordingChunksRef.current = [];
       classRecordingStartedAtRef.current = Date.now();
+      classRecordingPausedAtRef.current = null;
+      classRecordingPausedTotalMsRef.current = 0;
+      setIsClassRecordingPaused(false);
       classDisplayStreamRef.current = displayStream;
       classExtraMicStreamRef.current = extraMicStream;
       classMediaRecorderRef.current = recorder;
@@ -1440,7 +1446,10 @@ export default function LiveClassroomPage({
         if (classRecordingTimerRef.current) clearInterval(classRecordingTimerRef.current);
         classRecordingTimerRef.current = null;
         setIsClassRecording(false);
-        const duration = Math.max(1, Math.round((Date.now() - classRecordingStartedAtRef.current) / 1000));
+        setIsClassRecordingPaused(false);
+        const now = Date.now();
+        const pendingPause = classRecordingPausedAtRef.current ? now - classRecordingPausedAtRef.current : 0;
+        const duration = Math.max(1, Math.round((now - classRecordingStartedAtRef.current - classRecordingPausedTotalMsRef.current - pendingPause) / 1000));
         const blob = new Blob(classRecordingChunksRef.current, { type: recorder.mimeType || "video/webm" });
         classRecordingChunksRef.current = [];
         classDisplayStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -1458,14 +1467,36 @@ export default function LiveClassroomPage({
       setIsClassRecording(true);
       setClassRecordingSeconds(0);
       classRecordingTimerRef.current = setInterval(() => {
-        setClassRecordingSeconds(Math.floor((Date.now() - classRecordingStartedAtRef.current) / 1000));
+        const now = Date.now();
+        const pendingPause = classRecordingPausedAtRef.current ? now - classRecordingPausedAtRef.current : 0;
+        const elapsed = Math.max(0, now - classRecordingStartedAtRef.current - classRecordingPausedTotalMsRef.current - pendingPause);
+        if (classMediaRecorderRef.current?.state === "recording") setClassRecordingSeconds(Math.floor(elapsed / 1000));
       }, 1000);
-      setClassRecordingMessage("Recording your shared screen and microphone. Stop the recording before leaving the class.");
+      setClassRecordingMessage("Recording your shared screen and microphone. Pause as needed, then End & Save when finished.");
     } catch (error) {
       displayStream?.getTracks().forEach((track) => track.stop());
       extraMicStream?.getTracks().forEach((track) => track.stop());
       setClassRecordingMessage(error instanceof Error ? error.message : "Could not start class recording.");
       setIsClassRecording(false);
+    }
+  };
+
+  const pauseOrResumeClassRecording = () => {
+    const recorder = classMediaRecorderRef.current;
+    if (!recorder) return;
+    if (recorder.state === "recording") {
+      recorder.pause();
+      classRecordingPausedAtRef.current = Date.now();
+      setIsClassRecordingPaused(true);
+      setClassRecordingMessage("Recording paused. Resume when ready.");
+    } else if (recorder.state === "paused") {
+      if (classRecordingPausedAtRef.current) {
+        classRecordingPausedTotalMsRef.current += Date.now() - classRecordingPausedAtRef.current;
+        classRecordingPausedAtRef.current = null;
+      }
+      recorder.resume();
+      setIsClassRecordingPaused(false);
+      setClassRecordingMessage("Recording resumed.");
     }
   };
 
@@ -2733,10 +2764,11 @@ export default function LiveClassroomPage({
             className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold transition active-press ${
               isAudioEnabled ? "bg-slate-700 text-white" : "bg-rose-600/20 text-rose-300 border border-rose-500/30"
             }`}
-            title={isAudioEnabled ? "Mute Microphone" : "Unmute Microphone"}
+            title={isAudioEnabled ? "Turn microphone off" : "Turn microphone on"}
+            aria-label={isAudioEnabled ? "Turn microphone off" : "Turn microphone on"}
           >
             <span>{isAudioEnabled ? "🎙️" : "🔇"}</span>
-            <span className="hidden xs:inline">{isAudioEnabled ? "Mute" : "Unmute"}</span>
+            <span>{isAudioEnabled ? "Mic On" : "Mic Off"}</span>
           </button>
 
           <button
@@ -2759,6 +2791,33 @@ export default function LiveClassroomPage({
           >
             🖥️ {isScreenSharing ? "Stop Share" : "Share"}
           </button>
+
+          {isAssignedTutor && classDetails?.isRecording && (
+            <div className="flex items-center gap-1 rounded-xl border border-rose-500/30 bg-rose-950/20 px-1.5 py-1">
+              {isClassRecording ? (
+                <>
+                  <span className={`h-2 w-2 rounded-full ${isClassRecordingPaused ? "bg-amber-400" : "bg-rose-500 animate-pulse"}`} />
+                  <span className="hidden lg:inline text-[11px] font-black tabular-nums text-rose-200">
+                    {Math.floor(classRecordingSeconds / 60).toString().padStart(2, "0")}:{(classRecordingSeconds % 60).toString().padStart(2, "0")}
+                  </span>
+                  <button type="button" onClick={pauseOrResumeClassRecording} className="rounded-lg px-2 py-1.5 text-[11px] font-bold text-amber-200 hover:bg-amber-500/15" title={isClassRecordingPaused ? "Resume recording" : "Pause recording"}>
+                    {isClassRecordingPaused ? "▶ Resume" : "Ⅱ Pause"}
+                  </button>
+                  <button type="button" onClick={() => { if (window.confirm("End this recording and save it to your private recordings?")) stopClassRecording(); }} className="rounded-lg bg-rose-600 px-2 py-1.5 text-[11px] font-black text-white hover:bg-rose-500">
+                    ■ End & Save
+                  </button>
+                </>
+              ) : (
+                <button type="button" disabled={isSavingClassRecording} onClick={startClassRecording} className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-[11px] font-black text-white hover:bg-rose-500 disabled:opacity-50" title="Record your shared screen and microphone">
+                  {isSavingClassRecording ? "Saving…" : "● Record class"}
+                </button>
+              )}
+            </div>
+          )}
+          <div className="hidden sm:flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-2 text-[11px] font-bold text-slate-200" title="Connected participants in this classroom">
+            <span aria-hidden="true">👥</span>
+            <span>{participants.filter((participant) => participant.role !== "host").length} students</span>
+          </div>
 
           {/* Quick Stage / Board Switcher */}
           <button
