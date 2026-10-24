@@ -142,6 +142,9 @@ export default function ClassRecordingsPage() {
                     ref={videoRef}
                     src={activeRecording.video_url}
                     controls
+                    controlsList="nodownload"
+                    disablePictureInPicture
+                    onContextMenu={(event) => event.preventDefault()}
                     className="w-full h-full object-contain"
                   />
                 </div>
