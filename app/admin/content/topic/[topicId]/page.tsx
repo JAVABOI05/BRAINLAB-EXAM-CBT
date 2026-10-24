@@ -59,6 +59,8 @@ export default function TopicContentStudioPage() {
   const [showStudentPreview, setShowStudentPreview] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
 
   const loadTopicAndContent = useCallback(async () => {
     setLoading(true);
@@ -204,6 +206,55 @@ export default function TopicContentStudioPage() {
       setFeedback({ type: "error", text: "Error during save operation." });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadSelectedMedia(file: File | null) {
+    if (!file || !editingItem || !topicId) return;
+    const mediaType = editingItem.content_type;
+    if (!["audio", "video", "image", "document"].includes(mediaType)) return;
+    if (file.size > 100 * 1024 * 1024) {
+      setFeedback({ type: "error", text: "Files must be 100 MB or smaller. For large videos, use a hosted video link." });
+      return;
+    }
+
+    setMediaUploading(true);
+    setFeedback(null);
+    try {
+      const response = await fetch("/api/learning/content-media/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic_id: topicId,
+          filename: file.name,
+          content_type: file.type,
+          media_type: mediaType,
+        }),
+      });
+      const upload = await response.json();
+      if (!response.ok || !upload.success) throw new Error(upload.error || "Could not prepare upload.");
+
+      const { error: uploadError } = await supabase.storage
+        .from(upload.bucket)
+        .uploadToSignedUrl(upload.path, upload.token, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+      if (uploadError) throw new Error(uploadError.message || "Upload failed. Please check your connection.");
+
+      const { data: publicData } = supabase.storage.from(upload.bucket).getPublicUrl(upload.path);
+      setEditorData((current) => ({
+        ...current,
+        url: publicData.publicUrl,
+        ...(mediaType === "document" ? { file_name: file.name } : {}),
+        ...(mediaType === "video" ? { provider: "direct" } : {}),
+      }));
+      setFeedback({ type: "success", text: `${file.name} uploaded. Save the content item to attach it to this lesson.` });
+    } catch (error) {
+      setFeedback({ type: "error", text: error instanceof Error ? error.message : "Media upload failed." });
+    } finally {
+      setMediaUploading(false);
+      if (mediaFileInputRef.current) mediaFileInputRef.current.value = "";
     }
   }
 
@@ -882,6 +933,44 @@ export default function TopicContentStudioPage() {
                 </div>
 
                 {/* TYPE-SPECIFIC EDITORS */}
+                {["audio", "video", "image", "document"].includes(editingItem.content_type) && (
+                  <section className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">Add a file from your device</h4>
+                        <p className="mt-1 max-w-xl text-xs leading-5 text-slate-600">
+                          Upload an audio clip, video, image, or PDF directly. You can still paste a hosted URL below if you prefer.
+                          Maximum file size: 100 MB.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => mediaFileInputRef.current?.click()}
+                        disabled={mediaUploading}
+                        className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-blue-700 px-4 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-blue-800 disabled:opacity-50"
+                      >
+                        {mediaUploading ? "Uploading…" : "Choose file"}
+                      </button>
+                    </div>
+                    <input
+                      ref={mediaFileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept={
+                        editingItem.content_type === "audio" ? "audio/mpeg,audio/mp4,audio/webm,audio/ogg,audio/wav" :
+                        editingItem.content_type === "video" ? "video/mp4,video/webm,video/quicktime" :
+                        editingItem.content_type === "image" ? "image/jpeg,image/png,image/webp,image/gif" :
+                        "application/pdf"
+                      }
+                      onChange={(event) => void uploadSelectedMedia(event.target.files?.[0] || null)}
+                    />
+                    {editorData.url && (
+                      <p className="mt-3 break-all rounded-lg border border-blue-100 bg-white px-3 py-2 text-[11px] font-semibold text-blue-900">
+                        File attached: {editorData.file_name || editorData.url}
+                      </p>
+                    )}
+                  </section>
+                )}
 
                 {/* A. Rich Text Editor */}
                 {editingItem.content_type === "rich_text" && (
