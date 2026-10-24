@@ -49,7 +49,8 @@ export default function AccountPage() {
       // Restore the destination from the verified database role, not from a
       // default candidate redirect. A role lookup failure must never downgrade
       // an administrator to the candidate dashboard.
-      const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
+      const { data: adminRole, error: permissionError } = await supabase.rpc("get_admin_role");
+      const isOperator = typeof adminRole === "string" && adminRole.length > 0;
       if (!active) return;
 
       if (permissionError) {
@@ -111,7 +112,8 @@ export default function AccountPage() {
       return;
     }
 
-    const { data: isOperator, error: permissionError } = await supabase.rpc("is_admin");
+    const { data: adminRole, error: permissionError } = await supabase.rpc("get_admin_role");
+      const isOperator = typeof adminRole === "string" && adminRole.length > 0;
 
     if (permissionError) {
       await clearOperatorGate();

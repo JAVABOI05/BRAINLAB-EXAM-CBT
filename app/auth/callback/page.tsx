@@ -99,13 +99,13 @@ export default function AuthCallbackPage() {
       // the candidate dashboard.
       let isOperator = false;
       try {
-        const { data, error: roleError } = await supabase.rpc("is_admin");
+        const { data: adminRole, error: roleError } = await supabase.rpc("get_admin_role");
         if (roleError) {
           clearInterval(progressTimer);
           setErrorDetails("We could not verify your account permissions. Please return to the account page and try again.");
           return;
         }
-        isOperator = data === true;
+        isOperator = typeof adminRole === "string" && adminRole.length > 0;
       } catch {
         clearInterval(progressTimer);
         setErrorDetails("We could not verify your account permissions. Please return to the account page and try again.");
