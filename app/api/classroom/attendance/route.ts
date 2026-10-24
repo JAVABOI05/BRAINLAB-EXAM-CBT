@@ -19,6 +19,61 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     const config = await getLiveClassroomConfig();
 
+    if (action === "mark_present") {
+      const participantIds = Array.isArray(body.participantIds)
+        ? [...new Set(body.participantIds.filter((id: unknown) => typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id as string)))]
+        : [];
+      if (!participantIds.length || participantIds.length > 200) {
+        return NextResponse.json({ error: "Provide between 1 and 200 valid connected student IDs." }, { status: 400 });
+      }
+
+      const { data: liveClass } = await supabase
+        .from("live_classes")
+        .select("id, tutor_id")
+        .eq("id", classId)
+        .maybeSingle();
+      const { data: adminRole } = await supabase
+        .from("admin_user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const isAssignedTutor = liveClass?.tutor_id === user.id;
+      const isAuthorizedAdmin = ["super_admin", "platform_admin"].includes(adminRole?.role || "");
+      if (!liveClass || (!isAssignedTutor && !isAuthorizedAdmin)) {
+        return NextResponse.json({ error: "Only the assigned tutor or an authorized administrator can take attendance." }, { status: 403 });
+      }
+
+      const now = new Date().toISOString();
+      let markedCount = 0;
+      for (const participantId of participantIds as string[]) {
+        if (participantId === liveClass.tutor_id) continue;
+        const { data: activeRecord } = await supabase
+          .from("class_attendance_records")
+          .select("id")
+          .eq("class_id", classId)
+          .eq("user_id", participantId)
+          .is("leave_time", null)
+          .order("join_time", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (activeRecord) {
+          markedCount += 1;
+          continue;
+        }
+        const { error: insertError } = await supabase.from("class_attendance_records").insert({
+          class_id: classId,
+          user_id: participantId,
+          join_time: now,
+          attendance_status: "present",
+          manual_correction_reason: "Tutor took attendance of connected learners",
+          corrected_by: user.id,
+          updated_at: now,
+        });
+        if (!insertError) markedCount += 1;
+      }
+      return NextResponse.json({ success: true, markedCount, message: `Attendance taken for ${markedCount} connected learners.` });
+    }
+
     if (action === "join") {
       const now = new Date().toISOString();
       const { data: existing } = await supabase
