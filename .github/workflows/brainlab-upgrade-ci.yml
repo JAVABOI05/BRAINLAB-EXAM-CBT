@@ -7,12 +7,14 @@ on:
       - feature/brainlab-academy-upgrade
       - feature/learning-hub-foundation
       - fix/learning-hub-assessment-atomicity
-- feature/learner-dashboard-profile-on-learning-hub
+      - feature/learner-dashboard-profile-on-learning-hub
+      - chore/bachs-billing-db-repair-phase2
   pull_request:
     branches:
       - main
       - feature/brainlab-academy-upgrade
       - feature/learning-hub-foundation
+      - chore/bachs-billing-db-repair-phase2
 
 concurrency:
   group: brainlab-upgrade-ci-${{ github.ref }}
