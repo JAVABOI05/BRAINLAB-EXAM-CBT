@@ -595,6 +595,175 @@ button:disabled,
   color: #fca5a5 !important;
 }
 
+
+/* ==========================================================================
+   GLOBAL DARK THEME FOUNDATION
+   Consistent contrast for shared app surfaces, forms, tables, menus and
+   feedback states. Public marketing/auth surfaces are intentionally exempted
+   below so their established brand presentation remains unchanged.
+   ========================================================================== */
+
+:is(html[data-theme="dark"], html.dark) {
+  color-scheme: dark;
+  --bl-dark-canvas: #070d18;
+  --bl-dark-surface: #0d1727;
+  --bl-dark-elevated: #132137;
+  --bl-dark-subtle: #192940;
+  --bl-dark-border: #2a3b53;
+  --bl-dark-text: #edf4ff;
+  --bl-dark-muted: #b0bfd3;
+  --bl-dark-faint: #8ea2bc;
+  --bl-dark-accent: #7dd3fc;
+}
+
+:is(html[data-theme="dark"], html.dark) body {
+  background-color: var(--bl-dark-canvas);
+  color: var(--bl-dark-text);
+}
+
+/* Neutral surfaces: prevent white cards and pale backgrounds surviving in dark mode. */
+:is(html[data-theme="dark"], html.dark) .bg-white,
+:is(html[data-theme="dark"], html.dark) .bg-slate-50,
+:is(html[data-theme="dark"], html.dark) .bg-gray-50,
+:is(html[data-theme="dark"], html.dark) .bg-zinc-50,
+:is(html[data-theme="dark"], html.dark) .bg-neutral-50,
+:is(html[data-theme="dark"], html.dark) .bg-stone-50 {
+  background-color: var(--bl-dark-surface) !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .bg-slate-100,
+:is(html[data-theme="dark"], html.dark) .bg-gray-100,
+:is(html[data-theme="dark"], html.dark) .bg-zinc-100,
+:is(html[data-theme="dark"], html.dark) .bg-neutral-100,
+:is(html[data-theme="dark"], html.dark) .bg-stone-100,
+:is(html[data-theme="dark"], html.dark) .bg-slate-200,
+:is(html[data-theme="dark"], html.dark) .bg-gray-200 {
+  background-color: var(--bl-dark-elevated) !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .hover\:bg-white:hover,
+:is(html[data-theme="dark"], html.dark) .hover\:bg-slate-50:hover,
+:is(html[data-theme="dark"], html.dark) .hover\:bg-gray-50:hover,
+:is(html[data-theme="dark"], html.dark) .hover\:bg-slate-100:hover,
+:is(html[data-theme="dark"], html.dark) .hover\:bg-gray-100:hover {
+  background-color: var(--bl-dark-subtle) !important;
+}
+
+/* Neutral text and helper copy. Keep saturated semantic colors intact. */
+:is(html[data-theme="dark"], html.dark) .text-slate-950,
+:is(html[data-theme="dark"], html.dark) .text-slate-900,
+:is(html[data-theme="dark"], html.dark) .text-slate-800,
+:is(html[data-theme="dark"], html.dark) .text-gray-950,
+:is(html[data-theme="dark"], html.dark) .text-gray-900,
+:is(html[data-theme="dark"], html.dark) .text-gray-800,
+:is(html[data-theme="dark"], html.dark) .text-zinc-900,
+:is(html[data-theme="dark"], html.dark) .text-neutral-900,
+:is(html[data-theme="dark"], html.dark) .text-stone-900 {
+  color: var(--bl-dark-text) !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .text-slate-700,
+:is(html[data-theme="dark"], html.dark) .text-slate-600,
+:is(html[data-theme="dark"], html.dark) .text-slate-500,
+:is(html[data-theme="dark"], html.dark) .text-gray-700,
+:is(html[data-theme="dark"], html.dark) .text-gray-600,
+:is(html[data-theme="dark"], html.dark) .text-gray-500,
+:is(html[data-theme="dark"], html.dark) .text-zinc-700,
+:is(html[data-theme="dark"], html.dark) .text-zinc-600,
+:is(html[data-theme="dark"], html.dark) .text-neutral-700,
+:is(html[data-theme="dark"], html.dark) .text-stone-700 {
+  color: var(--bl-dark-muted) !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .placeholder\:text-slate-400::placeholder,
+:is(html[data-theme="dark"], html.dark) .placeholder\:text-gray-400::placeholder {
+  color: var(--bl-dark-faint) !important;
+}
+
+/* Borders and dividers should remain visible without looking overly bright. */
+:is(html[data-theme="dark"], html.dark) .border-slate-100,
+:is(html[data-theme="dark"], html.dark) .border-slate-200,
+:is(html[data-theme="dark"], html.dark) .border-slate-300,
+:is(html[data-theme="dark"], html.dark) .border-gray-100,
+:is(html[data-theme="dark"], html.dark) .border-gray-200,
+:is(html[data-theme="dark"], html.dark) .border-gray-300,
+:is(html[data-theme="dark"], html.dark) .border-zinc-200,
+:is(html[data-theme="dark"], html.dark) .border-neutral-200 {
+  border-color: var(--bl-dark-border) !important;
+}
+
+/* Forms, native controls, and dropdown options. */
+:is(html[data-theme="dark"], html.dark) input:not([type="radio"]):not([type="checkbox"]):not([type="range"]),
+:is(html[data-theme="dark"], html.dark) textarea,
+:is(html[data-theme="dark"], html.dark) select,
+:is(html[data-theme="dark"], html.dark) [contenteditable="true"] {
+  background-color: #0a1322;
+  color: var(--bl-dark-text);
+  border-color: var(--bl-dark-border);
+  caret-color: var(--bl-dark-accent);
+}
+
+:is(html[data-theme="dark"], html.dark) input::placeholder,
+:is(html[data-theme="dark"], html.dark) textarea::placeholder {
+  color: var(--bl-dark-faint);
+  opacity: 1;
+}
+
+:is(html[data-theme="dark"], html.dark) select option {
+  background-color: #0d1727;
+  color: var(--bl-dark-text);
+}
+
+:is(html[data-theme="dark"], html.dark) input[type="checkbox"],
+:is(html[data-theme="dark"], html.dark) input[type="radio"] {
+  accent-color: #60a5fa;
+}
+
+/* Data tables, menus, popovers and dialogs commonly use inline white surfaces. */
+:is(html[data-theme="dark"], html.dark) table {
+  color: var(--bl-dark-text);
+}
+
+:is(html[data-theme="dark"], html.dark) thead,
+:is(html[data-theme="dark"], html.dark) th {
+  color: #dbeafe;
+}
+
+:is(html[data-theme="dark"], html.dark) tbody tr {
+  border-color: var(--bl-dark-border);
+}
+
+:is(html[data-theme="dark"], html.dark) dialog,
+:is(html[data-theme="dark"], html.dark) [role="dialog"],
+:is(html[data-theme="dark"], html.dark) [role="listbox"],
+:is(html[data-theme="dark"], html.dark) [role="menu"] {
+  color: var(--bl-dark-text);
+}
+
+:is(html[data-theme="dark"], html.dark) dialog::backdrop {
+  background: rgba(1, 6, 16, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+/* Keep focus and disabled states legible and consistent. */
+:is(html[data-theme="dark"], html.dark) button:focus-visible,
+:is(html[data-theme="dark"], html.dark) a:focus-visible,
+:is(html[data-theme="dark"], html.dark) input:focus-visible,
+:is(html[data-theme="dark"], html.dark) select:focus-visible,
+:is(html[data-theme="dark"], html.dark) textarea:focus-visible,
+:is(html[data-theme="dark"], html.dark) [tabindex]:focus-visible {
+  outline-color: #7dd3fc !important;
+}
+
+:is(html[data-theme="dark"], html.dark) hr {
+  border-color: var(--bl-dark-border);
+}
+
+:is(html[data-theme="dark"], html.dark) ::selection {
+  background: rgba(56, 189, 248, 0.32);
+  color: #ffffff;
+}
+
 /* ==========================================================================
    PUBLIC BRAND SURFACES (GUARANTEED DAYLIGHT CONTRAST & AUTHENTIC PALETTE)
    The public marketing landing page and authentication portals maintain
