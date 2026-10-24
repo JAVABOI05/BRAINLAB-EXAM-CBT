@@ -285,18 +285,25 @@ export default function ExamPage() {
       return;
     }
     setSyncStatus("syncing");
-    const timeout = setTimeout(async () => {
-      const saved = await saveProgress(sessionId, sessionToken, answers);
-      if (isError(saved)) {
-        if (saved.error === "time_up") void handleSubmit(true);
-        else if (saved.error === "network") {
-          queueProgress(sessionId, sessionToken, answers);
-          setSyncStatus("offline");
+    const timeout = setTimeout(() => {
+      const saveTask = answerSaveQueueRef.current.then(async () => {
+        const saved = await saveProgress(sessionId, sessionToken, answers);
+        if (isError(saved)) {
+          if (saved.error === "time_up") void handleSubmit(true);
+          else if (saved.error === "network") {
+            queueProgress(sessionId, sessionToken, answers);
+            setSyncStatus("offline");
+          } else {
+            setSyncStatus("error");
+            setError(saved.message || "Your answers could not be confirmed by the server.");
+          }
+          return;
         }
-        return;
-      }
-      setSyncStatus("synced");
-      setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+        setSyncStatus("synced");
+        setError("");
+        setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+      });
+      answerSaveQueueRef.current = saveTask.then(() => undefined, () => undefined);
     }, 3000);
     return () => clearTimeout(timeout);
   }, [answers, started, sessionId, sessionToken]);
