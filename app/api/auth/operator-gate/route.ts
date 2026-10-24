@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Session is invalid or expired." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
-  const { data: isOperator, error: roleError } = await client.rpc("is_admin");
-  if (roleError || isOperator !== true) {
+  const { data: adminRole, error: roleError } = await client.rpc("get_admin_role");
+  if (roleError || typeof adminRole !== "string" || adminRole.length === 0) {
     return NextResponse.json({ error: "Administrative role required." }, { status: 403, headers: { "Cache-Control": "no-store" } });
   }
 
