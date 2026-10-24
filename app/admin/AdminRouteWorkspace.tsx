@@ -27,6 +27,7 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
     if (routeOwnsShell || bypassShell) return;
     let active = true;
     async function initialise() {
+      let verifiedAdmin: AdminUser | null = null;
       try {
         const admin = await getAdminSession();
         if (!active) return;
@@ -34,15 +35,23 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
           router.replace("/admin/login?reason=session");
           return;
         }
+        verifiedAdmin = admin;
+        setUser(admin);
         const entries = await Promise.all(PERMISSIONS.map(async (permission) =>
           [permission, await adminHasPermission(permission)] as const
         ));
         if (!active) return;
-        setUser(admin);
         setPermissions(Object.fromEntries(entries) as Access);
         setReady(true);
       } catch {
-        if (active) router.replace("/admin/login?reason=verify");
+        if (!active) return;
+        if (verifiedAdmin) {
+          setUser(verifiedAdmin);
+          setPermissions({});
+          setReady(true);
+        } else {
+          router.replace("/admin/login?reason=verify");
+        }
       }
     }
     void initialise();
