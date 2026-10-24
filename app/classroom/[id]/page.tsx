@@ -156,6 +156,7 @@ export default function LiveClassroomPage({
 
   // Roster
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [isTakingAttendance, setIsTakingAttendance] = useState(false);
   const [reactionFloat, setReactionFloat] = useState<{ id: string; emoji: string }[]>([]);
 
   // Video streams & WebRTC Peer Connection refs
@@ -1508,6 +1509,35 @@ export default function LiveClassroomPage({
     if (recorder && recorder.state !== "inactive") recorder.stop();
   };
 
+  const takeAttendance = async () => {
+    if (!isAssignedTutor || !classDetails?.id) return;
+    const connectedStudentIds = [...new Set(
+      participants.filter((participant) => participant.role !== "host").map((participant) => participant.id)
+    )];
+    if (!connectedStudentIds.length) {
+      toast.info("No connected students to mark present yet.");
+      return;
+    }
+    if (!window.confirm(`Take attendance for ${connectedStudentIds.length} connected student(s) now?`)) return;
+    setIsTakingAttendance(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Please sign in again to take attendance.");
+      const response = await fetch("/api/classroom/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ classId: classDetails.id, action: "mark_present", participantIds: connectedStudentIds }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "Could not save attendance.");
+      toast.success(result.message || `Attendance saved for ${result.markedCount || 0} students.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save attendance.");
+    } finally {
+      setIsTakingAttendance(false);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (classRecordingTimerRef.current) clearInterval(classRecordingTimerRef.current);
@@ -2818,10 +2848,15 @@ export default function LiveClassroomPage({
               )}
             </div>
           )}
-          <div className="hidden sm:flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-2 text-[11px] font-bold text-slate-200" title="Connected participants in this classroom">
+          <div className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-2 text-[11px] font-bold text-slate-200" title="Connected participants in this classroom">
             <span aria-hidden="true">👥</span>
             <span>{participants.filter((participant) => participant.role !== "host").length} students</span>
           </div>
+          {isAssignedTutor && (
+            <button type="button" onClick={takeAttendance} disabled={isTakingAttendance} className="rounded-xl border border-emerald-500/40 bg-emerald-600/15 px-2.5 py-2 text-[11px] font-black text-emerald-200 hover:bg-emerald-600/25 disabled:opacity-50" title="Mark currently connected students present">
+              {isTakingAttendance ? "Saving…" : "✓ Attendance"}
+            </button>
+          )}
 
           {/* Quick Stage / Board Switcher */}
           <button
