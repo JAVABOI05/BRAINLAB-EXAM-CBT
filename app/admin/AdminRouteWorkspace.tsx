@@ -31,7 +31,7 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
         const admin = await getAdminSession();
         if (!active) return;
         if (!admin) {
-          router.replace("/account");
+          router.replace("/admin/login?reason=session");
           return;
         }
         const entries = await Promise.all(PERMISSIONS.map(async (permission) =>
@@ -42,7 +42,7 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
         setPermissions(Object.fromEntries(entries) as Access);
         setReady(true);
       } catch {
-        if (active) router.replace("/account");
+        if (active) router.replace("/admin/login?reason=verify");
       }
     }
     void initialise();
