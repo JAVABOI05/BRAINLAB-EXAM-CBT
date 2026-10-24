@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AdminWorkspaceShell from "./AdminWorkspaceShell";
 import { adminSignOut, getAdminSession, type AdminUser } from "../lib/adminAuth";
@@ -13,7 +13,7 @@ const PERMISSIONS: AdminPermission[] = [
   "community.moderate", "analytics.read", "institution.manage", "finance.billing.manage",
 ];
 
-export default function AdminRouteWorkspace({ children }: { children: React.ReactNode }) {
+export default function AdminRouteWorkspace({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<AdminUser | null>(null);
