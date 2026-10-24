@@ -35,6 +35,10 @@ export interface SmartWhiteboardProps {
   onShareToChat?: (dataUrl: string) => void;
   /** Branding is on by default; platform policy can disable it for the whole classroom. */
   showWatermark?: boolean;
+  /** Optional persisted page snapshot for pre-class lesson preparation. */
+  initialPages?: WhiteboardPage[];
+  initialActivePageIndex?: number;
+  onPagesChange?: (pages: WhiteboardPage[], activePageIndex: number) => void;
 }
 
 export interface SmartWhiteboardHandle {
@@ -83,6 +87,9 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       currentUserId = "user",
       onShareToChat,
       showWatermark = true,
+      initialPages,
+      initialActivePageIndex = 0,
+      onPagesChange,
     },
     ref
   ) => {
@@ -98,10 +105,10 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [strokeWidth, setStrokeWidth] = useState<number>(4);
     const [backgroundMode, setBackgroundMode] = useState<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [pages, setPages] = useState<WhiteboardPage[]>([
-      { id: "page-1", title: "Page 1", elements: [], aspectRatio: "16 / 9" },
-    ]);
-    const [activePageIndex, setActivePageIndex] = useState(0);
+    const [pages, setPages] = useState<WhiteboardPage[]>(
+      initialPages?.length ? initialPages : [{ id: "page-1", title: "Page 1", elements: [], aspectRatio: "16 / 9" }]
+    );
+    const [activePageIndex, setActivePageIndex] = useState(initialActivePageIndex);
     const [pagesHydrated, setPagesHydrated] = useState(false);
     const activePage = pages[activePageIndex] || pages[0];
     const boardAspectRatio = activePage?.aspectRatio || "16 / 9";
@@ -163,6 +170,17 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         setPagesHydrated(true);
       }
     }, [classId]);
+
+    useEffect(() => {
+      if (initialPages?.length && !pagesHydrated) {
+        setPages(initialPages);
+        setActivePageIndex(Math.min(Math.max(0, initialActivePageIndex), initialPages.length - 1));
+      }
+    }, [initialPages, initialActivePageIndex, pagesHydrated]);
+
+    useEffect(() => {
+      onPagesChange?.(pages, activePageIndex);
+    }, [pages, activePageIndex, onPagesChange]);
 
     useEffect(() => {
       if (!pagesHydrated || typeof window === "undefined") return;
