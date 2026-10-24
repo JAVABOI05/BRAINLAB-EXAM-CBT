@@ -28,10 +28,19 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Parse event payload
+    type BachsWebhookData = {
+      id?: string | number;
+      checkout_id?: string | number;
+      reference?: string;
+      amount?: string | number;
+      currency?: string;
+      failure_reason?: string;
+      metadata?: { reference?: string };
+    };
     let event: {
-      type?: unknown;
-      event?: unknown;
-      data?: Record<string, unknown>;
+      type?: string;
+      event?: string;
+      data?: BachsWebhookData;
       created_at?: string;
     };
     try {
