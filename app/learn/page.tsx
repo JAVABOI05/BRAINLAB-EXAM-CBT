@@ -11,6 +11,7 @@ type Subject = {
   slug: string;
   description: string | null;
   icon_url: string | null;
+  topicCount: number;
   lessonCount: number;
   completedCount: number;
 };
@@ -151,6 +152,7 @@ export default function LearnPage() {
           const lessonIds = lessonsBySubject.get(subject.id) ?? [];
           return {
             ...subject,
+            topicCount: (topicRows ?? []).filter((topic) => topic.subject_id === subject.id).length,
             lessonCount: lessonIds.length,
             completedCount: lessonIds.filter((id) => completedIds.has(id)).length,
           };
@@ -356,19 +358,26 @@ export default function LearnPage() {
                   href={`/learn/${subject.slug}`}
                   className="group hover-lift rounded-3xl border border-slate-200 bg-white p-6 shadow-xs transition hover:border-blue-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                 >
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-xl font-black text-blue-900 group-hover:bg-blue-100 transition"
-                    aria-hidden="true"
-                  >
-                    {subject.name.slice(0, 1).toUpperCase()}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 text-xl font-black text-blue-900 ring-1 ring-blue-100 transition group-hover:scale-105" aria-hidden="true">
+                      {subject.icon_url ? (
+                        // Content authors may add a subject icon; use a safe, decorative image.
+                        <img src={subject.icon_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                      ) : (
+                        subject.name.slice(0, 1).toUpperCase()
+                      )}
+                    </div>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                      {subject.topicCount} {subject.topicCount === 1 ? "topic" : "topics"}
+                    </span>
                   </div>
-                  <h3 className="mt-5 text-xl font-extrabold text-slate-950 group-hover:text-blue-800">
+                  <h3 className="mt-4 text-xl font-extrabold tracking-tight text-slate-950 group-hover:text-blue-800">
                     {subject.name}
                   </h3>
                   <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600 line-clamp-2">
-                    {subject.description || "Explore lessons, practical examples, and review key concepts."}
+                    {subject.description || "Explore clear notes, tutor explanations, worked examples and quick knowledge checks."}
                   </p>
-                  <div className="mt-5 rounded-xl bg-slate-50 p-3">
+                  <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50/90 p-3.5">
                     <div className="flex items-center justify-between gap-3 text-xs font-bold text-slate-600">
                       <span>{hasStudentSession ? "Lesson progress" : "Available lessons"}</span>
                       <span>
@@ -395,8 +404,8 @@ export default function LearnPage() {
                       </span>
                     )}
                   </div>
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-blue-800 group-hover:translate-x-1 transition-transform">
-                    Explore subject <span aria-hidden="true">→</span>
+                  <span className="mt-5 flex min-h-11 items-center justify-between gap-2 rounded-xl bg-[#012153] px-4 py-3 text-sm font-extrabold text-white shadow-sm transition group-hover:bg-blue-900">
+                    <span>Open learning space</span><span aria-hidden="true" className="text-lg">→</span>
                   </span>
                 </Link>
               ))}
