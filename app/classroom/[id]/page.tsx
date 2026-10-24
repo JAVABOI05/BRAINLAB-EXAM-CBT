@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { getPlatformConfig } from "../../lib/platformConfig";
 import { useLearnerTheme } from "../../components/LearnerThemeProvider";
 import { toast } from "../../lib/toast";
 import type {
@@ -125,6 +126,7 @@ export default function LiveClassroomPage({
   // Interactive Live Whiteboard & Moderation State
   const smartWhiteboardRef = useRef<SmartWhiteboardHandle | null>(null);
   const [stageMode, setStageMode] = useState<"audio" | "whiteboard">("audio");
+  const [showBoardWatermark, setShowBoardWatermark] = useState(true);
   const [canStudentsDraw, setCanStudentsDraw] = useState(false);
   const [isClassRecording, setIsClassRecording] = useState(false);
   const [isClassRecordingPaused, setIsClassRecordingPaused] = useState(false);
@@ -205,6 +207,7 @@ export default function LiveClassroomPage({
 
         setTokenData(json.data);
         setClassDetails(json.data.classDetails);
+        void getPlatformConfig<boolean>("whiteboard_watermark_enabled", true).then(setShowBoardWatermark);
 
         // Record Join Attendance
         await fetch("/api/classroom/attendance", {
@@ -1751,6 +1754,7 @@ export default function LiveClassroomPage({
             {stageMode === "whiteboard" ? (
               <div className="w-full h-full flex flex-col bg-slate-950 relative select-none">
                 <SmartWhiteboard
+                  showWatermark={showBoardWatermark}
                   ref={smartWhiteboardRef}
                   classId={classId}
                   isHost={isTutorOrModerator}
