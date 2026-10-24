@@ -43,10 +43,12 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let active = true;
     async function initialise() {
+      let verifiedAdmin = false;
       try {
         const admin = await getAdminSession();
         if (!active) return;
         if (!admin) { router.replace("/admin/login?reason=session"); return; }
+        verifiedAdmin = true;
         setUser(admin);
 
         const entries = await Promise.all(PERMISSIONS.map(async (permission) => [
