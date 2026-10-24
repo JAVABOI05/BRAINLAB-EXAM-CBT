@@ -348,6 +348,14 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         }
       };
 
+      const handleRemoteBackgroundChange = ({ payload }: { payload: any }) => {
+        if (payload?.senderId !== currentUserId && ["blackboard", "whiteboard", "grid", "lines"].includes(payload?.backgroundMode)) {
+          setBackgroundMode(payload.backgroundMode);
+          if (payload.backgroundMode === "whiteboard" && ["#06b6d4", "#ffffff"].includes(color.toLowerCase())) setColor("#0f172a");
+          if (payload.backgroundMode !== "whiteboard" && color.toLowerCase() === "#0f172a") setColor("#f8fafc");
+        }
+      };
+
       const handleRemoteLaser = ({ payload }: { payload: any }) => {
         if (payload?.senderId !== currentUserId) {
           if (!payload?.point) {
@@ -386,6 +394,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       channel.on("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
       channel.on("broadcast", { event: "whiteboard_undo" }, handleRemoteUndo);
       channel.on("broadcast", { event: "whiteboard_laser" }, handleRemoteLaser);
+      channel.on("broadcast", { event: "whiteboard_background_change" }, handleRemoteBackgroundChange);
       channel.on("broadcast", { event: "whiteboard_sync_request" }, handleSyncRequest);
       channel.on("broadcast", { event: "whiteboard_sync_response" }, handleSyncResponse);
 
@@ -401,7 +410,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       return () => {
         // channel listeners clean up
       };
-    }, [channel, currentUserId, isHost, elements, backgroundMode]);
+    }, [channel, currentUserId, isHost, elements, backgroundMode, color]);
 
     // Coordinate conversion (CSS pixels relative to canvas)
     const getPointerCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -843,9 +852,21 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           <div className="flex items-center gap-1 shrink-0">
             <select
               value={backgroundMode}
-              onChange={(e) => setBackgroundMode(e.target.value as any)}
-              className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-200 outline-none focus:border-cyan-400"
-              title="Whiteboard background style"
+              disabled={!isHost}
+              onChange={(e) => {
+                const nextMode = e.target.value as "blackboard" | "whiteboard" | "grid" | "lines";
+                setBackgroundMode(nextMode);
+                setColor((current) => nextMode === "whiteboard"
+                  ? (["#06b6d4", "#ffffff"].includes(current.toLowerCase()) ? "#0f172a" : current)
+                  : (current.toLowerCase() === "#0f172a" ? "#f8fafc" : current));
+                channel?.send({
+                  type: "broadcast",
+                  event: "whiteboard_background_change",
+                  payload: { backgroundMode: nextMode, senderId: currentUserId },
+                });
+              }}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-bold text-slate-200 outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+              title={isHost ? "Choose a board style for everyone in the class" : "The tutor controls the board style"}
             >
               <option value="blackboard">🌑 Dark Board</option>
               <option value="whiteboard">⚪ White Dry-Erase</option>
