@@ -639,8 +639,8 @@ export default function TopicContentStudioPage() {
         <section aria-label="Recommended content workflow" className="mb-5 rounded-2xl border border-indigo-100 bg-gradient-to-r from-white via-indigo-50/50 to-blue-50/60 p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-xl">
-              <h2 className="text-sm font-black text-slate-900">A simple path to a great lesson</h2>
-              <p className="mt-1 text-xs leading-5 text-slate-600">Build in small steps. Preview the student experience before publishing so learners see a clear, complete sequence.</p>
+              <h2 className="text-sm font-black text-slate-900">Build your lesson in a few easy steps</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-600">You do not need to fill every field at once. Add one learning block, save it, then continue. Upload a file directly or paste a hosted media link.</p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
@@ -656,6 +656,33 @@ export default function TopicContentStudioPage() {
               ))}
             </div>
           </div>
+        </section>
+
+        <section aria-label="Quick start actions" className="mb-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={openAddContent}
+            className="group flex items-center gap-3 rounded-2xl border border-blue-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-400 hover:shadow-md"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xl">＋</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black text-slate-900">Add learning material</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">Notes, examples, images, audio, video, PDFs or a quick quiz.</span>
+            </span>
+            <span aria-hidden="true" className="text-lg text-blue-700 transition group-hover:translate-x-1">→</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowLessonBuilder(true)}
+            className="group flex items-center gap-3 rounded-2xl border border-violet-200 bg-white p-4 text-left shadow-sm transition hover:border-violet-400 hover:shadow-md"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-xl">✦</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black text-slate-900">Build a lesson with AI</span>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">Start with a draft, review it, and edit it before learners see it.</span>
+            </span>
+            <span aria-hidden="true" className="text-lg text-violet-700 transition group-hover:translate-x-1">→</span>
+          </button>
         </section>
 
         {feedback && (
