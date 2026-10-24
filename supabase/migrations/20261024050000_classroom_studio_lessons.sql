@@ -38,3 +38,5 @@ DROP TRIGGER IF EXISTS classroom_lessons_updated_at ON public.classroom_lessons;
 CREATE TRIGGER classroom_lessons_updated_at
   BEFORE UPDATE ON public.classroom_lessons
   FOR EACH ROW EXECUTE FUNCTION public.set_classroom_lesson_updated_at();
+
+ALTER TABLE public.classroom_lessons ADD COLUMN IF NOT EXISTS live_class_id UUID REFERENCES public.live_classes(id) ON DELETE SET NULL;
