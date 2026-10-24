@@ -32,7 +32,17 @@ export class BachsPaymentProvider implements PaymentProvider {
     const currency = (params.currency || "NGN").toUpperCase();
     const decimalAmount = (params.amountKobo / 100).toFixed(2);
 
-    // If no secret key is configured, operate in safe sandbox simulation mode
+    // Never simulate a checkout in production: a fake URL must not look like a payable order.
+    if (!this.apiKey && process.env.NODE_ENV === "production") {
+      return {
+        ok: false,
+        reference: params.reference,
+        error: "BACHS_API_KEY is required for production payments.",
+        isTestMode: false,
+      };
+    }
+
+    // Local development only: explicit simulation when no secret key is configured.
     if (!this.apiKey) {
       const mockCallback = params.callbackUrl || "/account/subscription/callback";
       const simulationUrl = `${mockCallback}?reference=${encodeURIComponent(
@@ -138,12 +148,19 @@ export class BachsPaymentProvider implements PaymentProvider {
     reference: string,
     providerReference?: string
   ): Promise<PaymentVerifyResult> {
-    // If no API key or in simulation mode
-    if (
-      !this.apiKey ||
-      reference.startsWith("test_sim_") ||
-      reference.includes("simulated")
-    ) {
+    // Simulation is strictly non-production. Missing credentials in production
+    // must fail closed instead of manufacturing a successful verification.
+    if (!this.apiKey) {
+      if (process.env.NODE_ENV === "production") {
+        return {
+          ok: false,
+          reference,
+          status: "failed",
+          amountKobo: 0,
+          error: "BACHS_API_KEY is required for production payment verification.",
+        };
+      }
+
       return {
         ok: true,
         reference,
@@ -152,6 +169,18 @@ export class BachsPaymentProvider implements PaymentProvider {
         currency: "NGN",
         paidAt: new Date().toISOString(),
         channel: "bachs_sandbox_simulation",
+      };
+    }
+
+    // References that explicitly identify a simulated payment can never be
+    // accepted as real payments when production credentials are present.
+    if (reference.startsWith("test_sim_") || reference.includes("simulated")) {
+      return {
+        ok: false,
+        reference,
+        status: "failed",
+        amountKobo: 0,
+        error: "Simulated payment references are not valid for provider verification.",
       };
     }
 
