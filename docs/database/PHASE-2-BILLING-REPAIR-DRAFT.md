@@ -145,7 +145,7 @@ A repository configuration check found:
 
 - `package.json` currently exposes `dev`, `build`, `start`, and `lint` scripts, but no test script.
 - `supabase/config.toml` was not present at the expected path on `main`.
-- No standard `.github/workflows/ci.yml` or `.github/workflows/ci.yaml` was present at those paths.
+- The repository does have `.github/workflows/brainlab-ci.yml` and `.github/workflows/brainlab-upgrade-ci.yml`; these are custom-named workflows rather than `ci.yml`/`ci.yaml`. A branch-filter indentation issue in the upgrade workflow was corrected during this phase.
 - Therefore, this session cannot claim that local Supabase migrations, payment integration tests, or CI have passed. The isolated test harness must be added or established before the migration is considered executable.
 
 ### Next implementation sequence
@@ -168,3 +168,10 @@ The repair branch now contains preliminary fail-closed changes in the applicatio
 **Important limitations:** these are preliminary safeguards, not a completed billing repair. The webhook still performs transaction status update, coupon redemption/counter update, subscription upsert, and audit logging as separate operations. A single atomic/idempotent database fulfillment operation is still required. Existing writes also need error handling and concurrency protection. The verification route's current amount/currency guard is not a substitute for integration tests across the real BACHS response shapes.
 
 No local test environment was available in this session, so these code edits have **not** been validated by lint, build, unit tests, integration tests, or a live BACHS sandbox transaction. Do not merge or deploy yet. Next, run lint/build on the branch, add automated tests with mocked BACHS responses, and redesign fulfillment so the transaction and entitlements are committed atomically and exactly once.
+
+
+### Additional webhook guard and CI status update
+
+- The BACHS webhook now rejects missing/invalid signatures in every environment, not only production. Preview/development must not bypass provider authentication; tests should mock the provider instead.
+- The upgrade CI workflow was corrected to include the repair branch in its push/PR filters. GitHub Actions run [40096849063](https://github.com/JAVABOI05/BRAINLAB-EXAM-CBT/actions/runs/40096849063) was observed in progress on commit `c73a289f2e5b3edb852e939b7f0288695640717e`; it does not include the later signature-guard commit, so the latest changes still require a fresh completed CI run.
+- The workflow has not yet provided a passing validation result. Do not interpret an in-progress run as a pass. Payment unit/integration tests and isolated database migration tests remain outstanding.
