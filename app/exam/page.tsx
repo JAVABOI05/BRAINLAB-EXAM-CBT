@@ -77,7 +77,7 @@ export default function ExamPage() {
   const [mockEnabled, setMockEnabled] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline">("synced");
+  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline" | "error">("synced");
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
 
@@ -122,6 +122,8 @@ export default function ExamPage() {
 
   const submitLockRef = useRef(false);
   const tabSwitchCountRef = useRef(0);
+  const answerSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const answerSaveSequenceRef = useRef(0);
 
   useEffect(() => {
     async function loadPageData() {
@@ -283,18 +285,27 @@ export default function ExamPage() {
       return;
     }
     setSyncStatus("syncing");
-    const timeout = setTimeout(async () => {
-      const saved = await saveProgress(sessionId, sessionToken, answers);
-      if (isError(saved)) {
-        if (saved.error === "time_up") void handleSubmit(true);
-        else if (saved.error === "network") {
-          queueProgress(sessionId, sessionToken, answers);
-          setSyncStatus("offline");
+    const timeout = setTimeout(() => {
+      const saveTask = answerSaveQueueRef.current.then(async () => {
+        const saved = await saveProgress(sessionId, sessionToken, answers);
+        if (isError(saved)) {
+          if (saved.error === "time_up") void handleSubmit(true);
+          else if (saved.error === "network") {
+            queueProgress(sessionId, sessionToken, answers);
+            setSyncStatus("offline");
+          } else {
+            setSyncStatus("error");
+            setError(saved.message || "Your answers could not be confirmed by the server.");
+          }
+          return;
         }
-        return;
-      }
-      setSyncStatus("synced");
-      setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+        setSyncStatus("synced");
+        setError("");
+        if (typeof saved.time_left_seconds === "number" && Number.isFinite(saved.time_left_seconds)) {
+          setTimeLeft((prev) => (Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev));
+        }
+      });
+      answerSaveQueueRef.current = saveTask.then(() => undefined, () => undefined);
     }, 3000);
     return () => clearTimeout(timeout);
   }, [answers, started, sessionId, sessionToken]);
@@ -433,10 +444,60 @@ export default function ExamPage() {
   const handleSelectAnswer = (value: "A" | "B" | "C" | "D") => {
     if (!currentQuestion) return;
 
-    setAnswers((prev) => ({
-      ...prev,
+    const questionIndex = currentIndex;
+    const nextAnswers = {
+      ...answers,
       [String(currentQuestion.id)]: value,
-    }));
+    };
+    const sequence = ++answerSaveSequenceRef.current;
+
+    setAnswers(nextAnswers);
+    try {
+      // Persist locally before any network request so a refresh cannot drop the selection.
+      localStorage.setItem("exam_answers", JSON.stringify(nextAnswers));
+    } catch {
+      // The server save below remains the authoritative confirmation.
+    }
+
+    if (!sessionId || !sessionToken) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      queueProgress(sessionId, sessionToken, nextAnswers);
+      setSyncStatus("offline");
+      return;
+    }
+
+    setSyncStatus("syncing");
+    const saveTask = answerSaveQueueRef.current.then(async () => {
+      const saved = await saveProgress(sessionId, sessionToken, nextAnswers);
+      if (isError(saved)) {
+        if (saved.error === "network") {
+          queueProgress(sessionId, sessionToken, nextAnswers);
+          setSyncStatus("offline");
+        } else {
+          setSyncStatus("error");
+        }
+        setError(saved.message || "Your answer could not be confirmed by the server. You can continue manually and retry saving.");
+        return;
+      }
+
+      setSyncStatus("synced");
+      setError("");
+      if (typeof saved.time_left_seconds === "number" && Number.isFinite(saved.time_left_seconds)) {
+        setTimeLeft((prev) => (
+          Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev
+        ));
+      }
+
+      // Auto-advance only after the server confirms the latest selected answer was saved.
+      // If the learner has navigated elsewhere or changed the answer, do not move them.
+      if (sequence === answerSaveSequenceRef.current) {
+        setCurrentIndex((prev) => (
+          prev === questionIndex ? Math.min(prev + 1, totalQuestions - 1) : prev
+        ));
+      }
+    });
+
+    answerSaveQueueRef.current = saveTask.then(() => undefined, () => undefined);
   };
 
   const toggleFlag = () => {
@@ -685,6 +746,8 @@ export default function ExamPage() {
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
                   syncStatus === "offline"
                     ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    : syncStatus === "error"
+                    ? "bg-red-100 text-red-800 border border-red-300"
                     : syncStatus === "syncing"
                     ? "bg-sky-100 text-sky-800 border border-sky-300 animate-pulse"
                     : "bg-emerald-100 text-emerald-800 border border-emerald-300"
@@ -692,8 +755,10 @@ export default function ExamPage() {
               >
                 {syncStatus === "offline"
                   ? "⚡ Offline (Saved locally)"
+                  : syncStatus === "error"
+                  ? "⚠ Save needs attention"
                   : syncStatus === "syncing"
-                  ? "↻ Syncing..."
+                  ? "↻ Saving answer..."
                   : "✓ Synced"}
               </span>
             </div>
