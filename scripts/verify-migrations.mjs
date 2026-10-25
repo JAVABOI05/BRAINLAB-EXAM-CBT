@@ -6,8 +6,6 @@ const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith(".sql")).sort
 
 console.log(`Found ${files.length} SQL migrations in supabase/migrations:\n`);
 
-let hasError = false;
-
 files.forEach((file, idx) => {
   const filePath = path.join(migrationsDir, file);
   const sql = fs.readFileSync(filePath, "utf8");
