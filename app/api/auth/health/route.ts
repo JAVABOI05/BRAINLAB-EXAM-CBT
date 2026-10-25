@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
   }
 
   const googleClientIdConfigured = Boolean(process.env.GOOGLE_CLIENT_ID);
-  const siteUrlEnv = process.env.NEXT_PUBLIC_SITE_URL || "";
 
   const checks = {
     canonical_domain: {
