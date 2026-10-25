@@ -162,7 +162,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   }
 
   // 2. Load admin users to map staff roles
-  let adminUsersMap = new Map<string, string>();
+  const adminUsersMap = new Map<string, string>();
   try {
     const { data: adminRows } = await supabase.from("admin_users").select("id, role");
     for (const a of adminRows || []) {
