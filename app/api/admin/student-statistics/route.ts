@@ -14,9 +14,6 @@ export async function GET(request: NextRequest) {
 
   // Resolve the role from the database for this verified user. Never trust a role
   // supplied by the browser or a cached local-storage value.
-  const { data: role, error: roleError } = await auth.service.rpc("get_admin_role", {}, {
-    head: false,
-  } as never);
   // RPCs use auth.uid(), so use a user-scoped client carrying the verified bearer.
   const authorization = request.headers.get("authorization") ?? "";
   const token = authorization.replace(/^Bearer\s+/i, "");
@@ -28,9 +25,6 @@ export async function GET(request: NextRequest) {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const roleResult = await userClient.rpc("get_admin_role");
-  if (roleError && role === null) {
-    // Ignore the service-role RPC result; the authenticated RPC below is authoritative.
-  }
   if (roleResult.error || !["super_admin", "platform_admin"].includes(String(roleResult.data))) {
     return noStoreJson({ error: "Only Super Admins and Platform Administrators can view global student statistics." }, 403);
   }
