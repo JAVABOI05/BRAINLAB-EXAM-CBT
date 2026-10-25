@@ -25,6 +25,7 @@ const GROUPS: Group[] = [
     { label: "Access Codes", href: "/admin/codes", description: "Generate and monitor exam access codes", visible: (_u,a) => a["cbt.codes.manage"] === true },
     { label: "Results", href: "/admin/results", description: "Authorised candidate results", visible: (_u,a) => a["cbt.results.read"] === true },
     { label: "Learning Content", href: "/admin/content", description: "Learning resources and content tools", visible: (_u,a) => a["learning.content.manage"] === true },
+    { label: "Tutors & Testimonials", href: "/admin/public-content", description: "Manage tutor bios and approved student stories", visible: (_u,a) => a["learning.content.manage"] === true },
     { label: "Content Intelligence", href: "/admin/content-intelligence", description: "Content coverage and quality", visible: (_u,a) => a["learning.content.manage"] === true },
     { label: "Learning Assessments", href: "/admin/academy-assessments", description: "Topic tests and learning assessments", visible: (_u,a) => a["learning.content.manage"] === true },
     { label: "Schools & Organisations", href: "/admin/schools", description: "Institutional CBT and school access", visible: (u,a) => a["institution.manage"] === true || platformAdmin(u) },
