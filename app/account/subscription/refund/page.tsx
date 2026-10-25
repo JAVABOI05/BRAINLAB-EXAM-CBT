@@ -55,7 +55,7 @@ export default function StudentRefundPage() {
       .eq("status", "success")
       .order("created_at", { ascending: false });
 
-    if (txs) setTransactions(txs as any);
+    if (txs) setTransactions(txs as unknown as Transaction[]);
 
     // Fetch existing refunds
     const { data: rfs } = await supabase
@@ -64,7 +64,7 @@ export default function StudentRefundPage() {
       .eq("user_id", auth.user.id)
       .order("created_at", { ascending: false });
 
-    if (rfs) setRefunds(rfs as any);
+    if (rfs) setRefunds(rfs as unknown as RefundRequest[]);
     setLoading(false);
   }, []);
 
