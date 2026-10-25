@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
 
     let result = posts ?? [];
     if (tag && tag !== "all") {
-      result = result.filter((p: any) =>
-        p.content_tags?.some((ct: any) => ct.official_tags?.name === tag)
+      result = result.filter((p) =>
+        p.content_tags?.some((ct) => ct.official_tags?.name === tag)
       );
     }
 
