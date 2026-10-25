@@ -23,26 +23,33 @@ const subscribeToConnectivity = (callback: () => void) => {
 const getConnectivitySnapshot = () => isOnline();
 const getConnectivityServerSnapshot = () => true;
 
+const subscribeToPendingData = (callback: () => void) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener(SYNC_EVENT_NAME, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SYNC_EVENT_NAME, callback);
+  };
+};
+const getPendingDataSnapshot = () => hasPendingOfflineData();
+const getPendingDataServerSnapshot = () => false;
+
 export default function OfflineSyncManager() {
   const router = useRouter();
   const pathname = usePathname();
   const online = useSyncExternalStore(subscribeToConnectivity, getConnectivitySnapshot, getConnectivityServerSnapshot);
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
-  const [hasPending, setHasPending] = useState(false);
+  const hasPending = useSyncExternalStore(subscribeToPendingData, getPendingDataSnapshot, getPendingDataServerSnapshot);
   const [dismissed, setDismissed] = useState(false);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const checkPending = useCallback(() => {
-    setHasPending(hasPendingOfflineData());
-  }, []);
 
   const triggerSync = useCallback(async () => {
     if (!isOnline()) return;
     setSyncState("syncing");
     setStatusMessage("Syncing queued exam answers with BrainLab server...");
     const res = await syncQueuedExam();
-    checkPending();
     if (res.ok) {
       if (res.type === "submitted") {
         setSyncState("synced");
@@ -67,11 +74,10 @@ export default function OfflineSyncManager() {
     toastTimeoutRef.current = setTimeout(() => {
       setSyncState("idle");
     }, 4500);
-  }, [pathname, router, checkPending]);
+  }, [pathname, router]);
 
   useEffect(() => {
-    // 1. Initial state
-    checkPending();
+    // 1. Connectivity and pending-data state are subscribed external snapshots.
 
     // 2. Register Service Worker in production/client
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -116,7 +122,6 @@ export default function OfflineSyncManager() {
         if (custom.detail.message) {
           setStatusMessage(custom.detail.message);
         }
-        checkPending();
       }
     };
 
@@ -135,7 +140,7 @@ export default function OfflineSyncManager() {
       window.removeEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     };
-  }, [triggerSync, checkPending]);
+  }, [triggerSync]);
 
   // If online, idle, and no pending data, keep UI clean
   if (online && syncState === "idle" && !hasPending) {
