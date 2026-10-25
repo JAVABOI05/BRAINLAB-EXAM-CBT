@@ -32,7 +32,6 @@ export default function StudentRewardsPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const loadRewards = useCallback(async () => {
-    setLoading(true);
     // 1. Fetch available public campaigns
     const { data: camps } = await supabase
       .from("coupon_campaigns")
@@ -51,7 +50,7 @@ export default function StudentRewardsPage() {
         .eq("user_id", auth.user.id)
         .order("redeemed_at", { ascending: false });
 
-      if (reds) setRedemptions(reds as any);
+      if (reds) setRedemptions(reds as unknown as UserRedemption[]);
     }
 
     setLoading(false);
