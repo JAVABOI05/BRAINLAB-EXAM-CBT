@@ -213,7 +213,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
-    const calendarUpdates: Record<string, any> = {};
+    const calendarUpdates: Record<string, unknown> = {};
     if (title) calendarUpdates.title = `Live Class: ${title}`;
     if (description) calendarUpdates.description = description;
     if (scheduled_start_at) calendarUpdates.start_time = scheduled_start_at;
