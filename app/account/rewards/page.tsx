@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
@@ -31,35 +31,39 @@ export default function StudentRewardsPage() {
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const loadRewards = useCallback(async () => {
-    setLoading(true);
-    // 1. Fetch available public campaigns
-    const { data: camps } = await supabase
-      .from("coupon_campaigns")
-      .select("id, code, name, description, discount_type, discount_value, min_spend_kobo, expires_at")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
+  useEffect(() => {
+    let active = true;
 
-    if (camps) setCampaigns(camps as Campaign[]);
+    async function loadRewards() {
+      try {
+        const { data: camps } = await supabase
+          .from("coupon_campaigns")
+          .select("id, code, name, description, discount_type, discount_value, min_spend_kobo, expires_at")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
 
-    // 2. Fetch learner redemptions if signed in
-    const { data: auth } = await supabase.auth.getUser();
-    if (auth.user) {
-      const { data: reds } = await supabase
-        .from("coupon_redemptions")
-        .select("id, discount_applied_kobo, redeemed_at, coupon_campaigns(code, name)")
-        .eq("user_id", auth.user.id)
-        .order("redeemed_at", { ascending: false });
+        if (active && camps) setCampaigns(camps as Campaign[]);
 
-      if (reds) setRedemptions(reds as unknown as UserRedemption[]);
+        const { data: auth } = await supabase.auth.getUser();
+        if (auth.user) {
+          const { data: reds } = await supabase
+            .from("coupon_redemptions")
+            .select("id, discount_applied_kobo, redeemed_at, coupon_campaigns(code, name)")
+            .eq("user_id", auth.user.id)
+            .order("redeemed_at", { ascending: false });
+
+          if (active && reds) setRedemptions(reds as unknown as UserRedemption[]);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     }
 
-    setLoading(false);
+    void loadRewards();
+    return () => {
+      active = false;
+    };
   }, []);
-
-  useEffect(() => {
-    loadRewards();
-  }, [loadRewards]);
 
   function copyToClipboard(code: string) {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
