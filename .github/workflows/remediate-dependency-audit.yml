@@ -1,0 +1,54 @@
+name: Temporary safe dependency audit remediation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/remediate-dependency-audit.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    if: github.event.pull_request.head.ref == 'fix/security-deps-and-lint-baseline' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Regenerate and apply non-breaking security fixes
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          npm audit fix --package-lock-only --ignore-scripts
+      - name: Report remaining audit findings
+        shell: bash
+        run: |
+          npm audit --json > npm-audit.json || true
+          node <<'NODE'
+          const fs = require('node:fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          console.log('FINAL AUDIT COUNTS:', JSON.stringify(audit.metadata?.vulnerabilities ?? {}, null, 2));
+          for (const [name, item] of Object.entries(audit.vulnerabilities ?? {})) {
+            console.log(JSON.stringify({ package: name, severity: item.severity, isDirect: item.isDirect, fixAvailable: item.fixAvailable, range: item.range }));
+          }
+          NODE
+      - name: Commit lockfile remediation
+        shell: bash
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "No additional compatible lockfile fixes were available."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "fix: remediate remaining compatible dependency advisories"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
