@@ -390,7 +390,7 @@ export default function ChallengeArenaPage() {
     return () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
-  }, [activeSession, isFinished, timeLeft > 0]);
+  }, [activeSession, isFinished]);
 
   useEffect(() => {
     if (!activeSession || isFinished || timeLeft !== 0) return;
@@ -425,10 +425,6 @@ export default function ChallengeArenaPage() {
     if (isFinished) return;
     setUserAnswers((prev) => ({ ...prev, [questionId]: option }));
   };
-
-  useEffect(() => {
-    completeChallengeRef.current = handleCompleteChallenge;
-  }, [handleCompleteChallenge]);
 
   const handleCompleteChallenge = useCallback(async () => {
     if (isFinished || submitting) return;
@@ -494,6 +490,10 @@ export default function ChallengeArenaPage() {
     setSubmitting(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [isFinished, submitting, questions, userAnswers, selectedMode, timeLeft, userId, profile]);
+
+  useEffect(() => {
+    completeChallengeRef.current = handleCompleteChallenge;
+  }, [handleCompleteChallenge]);
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
