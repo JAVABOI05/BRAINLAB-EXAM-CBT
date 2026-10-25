@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   isOnline,
@@ -10,10 +10,23 @@ import {
   type SyncState,
 } from "../lib/offlineSync";
 
+const subscribeToConnectivity = (callback: () => void) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+};
+
+const getConnectivitySnapshot = () => isOnline();
+const getConnectivityServerSnapshot = () => true;
+
 export default function OfflineSyncManager() {
   const router = useRouter();
   const pathname = usePathname();
-  const [online, setOnline] = useState(true);
+  const online = useSyncExternalStore(subscribeToConnectivity, getConnectivitySnapshot, getConnectivityServerSnapshot);
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [hasPending, setHasPending] = useState(false);
@@ -58,7 +71,6 @@ export default function OfflineSyncManager() {
 
   useEffect(() => {
     // 1. Initial state
-    setOnline(isOnline());
     checkPending();
 
     // 2. Register Service Worker in production/client
@@ -87,13 +99,11 @@ export default function OfflineSyncManager() {
 
     // 3. Online/offline event handlers
     const handleOnline = () => {
-      setOnline(true);
       setDismissed(false);
       void triggerSync();
     };
 
     const handleOffline = () => {
-      setOnline(false);
       setDismissed(false);
       setSyncState("offline");
       setStatusMessage("You are offline. Answers & formula sheets are safely cached locally.");
