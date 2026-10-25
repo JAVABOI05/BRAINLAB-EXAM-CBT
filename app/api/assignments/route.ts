@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 
       // Fetch submission counts for each assignment
       const assignmentIds = (assignments || []).map((a) => a.id);
-      let submissionCounts: Record<string, { total: number; submitted: number; graded: number }> = {};
+      const submissionCounts: Record<string, { total: number; submitted: number; graded: number }> = {};
 
       if (assignmentIds.length > 0) {
         const { data: subs } = await supabase
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch student's own submissions with audio assets
     const assignmentIds = (assignments || []).map((a) => a.id);
-    let mySubmissions: Record<string, any> = {};
+    const mySubmissions: Record<string, unknown> = {};
 
     if (assignmentIds.length > 0) {
       const { data: subs } = await supabase
@@ -162,10 +162,11 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({ success: true, assignments: studentAssignments });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[api/assignments] Error:", error);
+    const message = error instanceof Error ? error.message : "Failed to load assignments";
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to load assignments" },
+      { success: false, error: message },
       { status: 500 }
     );
   }
@@ -284,10 +285,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, assignment }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[api/assignments] Creation error:", error);
+    const message = error instanceof Error ? error.message : "Failed to create assignment";
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to create assignment" },
+      { success: false, error: message },
       { status: 500 }
     );
   }
