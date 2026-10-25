@@ -4,6 +4,27 @@ import { getLiveClassroomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions } from "@/app/lib/liveClassroom/types";
 
+interface LiveClassDetails {
+  id: string;
+  title: string;
+  description: string | null;
+  tutor_id: string;
+  status: string;
+  class_format: string | null;
+  course_id: string | null;
+  scheduled_start_at: string | null;
+  scheduled_end_at?: string | null;
+  duration_minutes: number | null;
+  student_mic_enabled: boolean;
+  student_camera_enabled: boolean;
+  student_screenshare_enabled: boolean;
+  student_chat_enabled: boolean;
+  is_recording_enabled: boolean;
+  waiting_room_enabled: boolean;
+  provider?: string | null;
+  room_name?: string | null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -24,7 +45,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // 1. Fetch class details or provision demo/interactive session fallback
-    let liveClass: any = null;
+    let liveClass: LiveClassDetails | null = null;
 
     if (classId === "demo-class" || classId === "general-stage") {
       liveClass = {
@@ -192,10 +213,10 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[classroom/token] Error generating token:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to issue live classroom credentials." },
+      { error: error instanceof Error ? error.message : "Failed to issue live classroom credentials." },
       { status: 500 }
     );
   }
