@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -27,6 +28,13 @@ interface TutorAssignment {
   stats: { total: number; submitted: number; graded: number };
 }
 
+interface AudioAsset {
+  id: string;
+  file_url: string;
+  duration_seconds: number;
+  title?: string;
+}
+
 interface StudentSubmission {
   id: string;
   assignment_id: string;
@@ -40,14 +48,27 @@ interface StudentSubmission {
   status: "submitted" | "graded" | "resubmission_requested";
   submitted_at: string;
   graded_at: string | null;
-  audio_asset?: { id: string; file_url: string; duration_seconds: number; title?: string } | any;
-  tutor_audio_asset?: { id: string; file_url: string; duration_seconds: number; title?: string } | any;
+  audio_asset?: AudioAsset | null;
+  tutor_audio_asset?: AudioAsset | null;
   student?: { id: string; full_name?: string; email?: string };
+}
+
+interface RawStudentSubmission extends Omit<StudentSubmission, "audio_asset" | "tutor_audio_asset"> {
+  audio_asset?: AudioAsset | AudioAsset[] | null;
+  tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return fallback;
 }
 
 export default function TutorAssignmentsPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [assignments, setAssignments] = useState<TutorAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
@@ -57,8 +78,8 @@ export default function TutorAssignmentsPage() {
 
   // New Assignment Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newInstructions, setNewInstructions] = useState("");
   const [newCourseId, setNewCourseId] = useState("");
@@ -154,7 +175,7 @@ export default function TutorAssignmentsPage() {
 
         if (error) throw error;
         if (active) {
-          const normalized: StudentSubmission[] = ((data as any[]) || []).map((row) => ({
+          const normalized: StudentSubmission[] = ((data as RawStudentSubmission[] | null) || []).map((row) => ({
             ...row,
             audio_asset: Array.isArray(row.audio_asset) ? row.audio_asset[0] : row.audio_asset,
             tutor_audio_asset: Array.isArray(row.tutor_audio_asset) ? row.tutor_audio_asset[0] : row.tutor_audio_asset,
@@ -226,8 +247,8 @@ export default function TutorAssignmentsPage() {
       setGradingAudioUrl(json.asset.file_url);
       setShowGradingRecorder(false);
       toast.success("Voice feedback note recorded and attached!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to record audio feedback.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to record audio feedback."));
     }
   };
 
@@ -264,8 +285,8 @@ export default function TutorAssignmentsPage() {
       );
 
       toast.success(status === "graded" ? "Grade and feedback saved!" : "Requested student revision.");
-    } catch (err: any) {
-      toast.error(err.message || "Evaluation save failed.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Evaluation save failed."));
     } finally {
       setSavingGrade(false);
     }
@@ -310,8 +331,8 @@ export default function TutorAssignmentsPage() {
       setNewTitle("");
       setNewInstructions("");
       toast.success("Assignment published and added to course calendar!");
-    } catch (err: any) {
-      toast.error(err.message || "Could not publish assignment.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Could not publish assignment."));
     } finally {
       setCreating(false);
     }
