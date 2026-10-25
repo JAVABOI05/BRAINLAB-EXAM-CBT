@@ -67,9 +67,35 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
 
 
 
-  const currentLabel = pathname === "/admin/dashboard"
-    ? "Platform overview"
-    : pathname.split("/").filter(Boolean).pop()?.replaceAll("-", " ") ?? "Workspace";
+  const routeLabels: Record<string, string> = {
+    "/admin/dashboard": "Dashboard overview",
+    "/admin/analytics": "Analytics & reports",
+    "/admin/questions/manage": "Question bank",
+    "/admin/sessions": "Exam sessions",
+    "/admin/codes": "Access codes",
+    "/admin/results": "Results & corrections",
+    "/admin/content": "Learning content",
+    "/admin/public-content": "Tutors & testimonials",
+    "/admin/content-intelligence": "Content intelligence",
+    "/admin/academy-assessments": "Learning assessments",
+    "/admin/schools": "Schools & organisations",
+    "/admin/classroom": "Classrooms",
+    "/admin/moderation": "Community moderation",
+    "/admin/ai": "AI controls & quotas",
+    "/admin/pricing": "Plans & pricing",
+    "/admin/refunds": "Refund queue",
+    "/admin/coupons": "Coupons & campaigns",
+    "/admin/gamification": "Gamification & rewards",
+    "/admin/settings": "Settings",
+    "/admin/config": "Exam configuration",
+    "/admin/academic": "Academic structure",
+    "/admin/communication": "Communication & audio",
+    "/admin/users": "Administrator roles",
+    "/admin/security": "Security & audit",
+    "/admin/audit": "Audit trail",
+  };
+  const currentLabel = routeLabels[pathname] ?? pathname.split("/").filter(Boolean).pop()?.replaceAll("-", " ") ?? "Workspace";
+  const roleLabel = user.role.replaceAll("_", " ");
 
   return <div className={"admin-workspace" + (collapsed ? " is-collapsed" : "")}>
     <aside className={"admin-sidebar" + (mobileOpen ? " is-open" : "")} aria-label="Admin navigation">
@@ -105,7 +131,7 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
         <button className="admin-sidebar-toggle" type="button" onClick={() => setCollapsed((value) => !value)} aria-expanded={!collapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>{collapsed ? "»" : "«"}</button>
         <button className="admin-mobile-menu" type="button" onClick={() => setMobileOpen((open) => !open)} aria-expanded={mobileOpen} aria-label={mobileOpen ? "Close navigation" : "Open navigation"}>{mobileOpen ? "×" : "☰"}</button>
         <div className="admin-topbar-heading"><span>ADMINISTRATION</span><strong>{currentLabel}</strong></div>
-        <div className="admin-topbar-actions"><span className="admin-environment-label">BrainLab Academy</span><AdminNotificationBell /></div>
+        <div className="admin-topbar-actions"><span className="admin-environment-label">BrainLab Academy</span><span className="admin-role-chip" title="Your active administrator role">{roleLabel}</span><AdminNotificationBell /></div>
       </header>
       <main className="admin-workspace-content">{children}</main>
     </div>
