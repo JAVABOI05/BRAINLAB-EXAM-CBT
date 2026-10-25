@@ -37,35 +37,34 @@ export default function UserBadges({
   interactive = true,
   className = "",
 }: UserBadgesProps) {
-  const [badgeList, setBadgeList] = useState<UserBadgeAward[]>(initialBadges || []);
-  const [loading, setLoading] = useState(!initialBadges && !!userId);
+  const [fetchedBadges, setFetchedBadges] = useState<UserBadgeAward[]>([]);
+  const [loadedForUserId, setLoadedForUserId] = useState<string | null>(null);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const badgeList = initialBadges ?? (userId ? fetchedBadges : []);
+  const loading = !initialBadges && !!userId && loadedForUserId !== userId;
 
   useEffect(() => {
-    if (initialBadges) {
-      setBadgeList(initialBadges);
-      setLoading(false);
-      return;
-    }
-
-    if (!userId) {
-      setBadgeList([]);
-      setLoading(false);
-      return;
-    }
-
+    if (initialBadges || !userId) return;
     let active = true;
-    void getUserBadges(userId).then((res) => {
-      if (active) {
-        setBadgeList(res);
-        setLoading(false);
-      }
-    });
+
+    getUserBadges(userId)
+      .then((result) => {
+        if (active) {
+          setFetchedBadges(result);
+          setLoadedForUserId(userId);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setFetchedBadges([]);
+          setLoadedForUserId(userId);
+        }
+      });
 
     return () => {
       active = false;
     };
-  }, [userId, initialBadges]);
+  }, [initialBadges, userId]);
 
   if (loading) {
     return (
