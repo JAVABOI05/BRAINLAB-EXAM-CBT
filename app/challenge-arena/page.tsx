@@ -360,7 +360,8 @@ export default function ChallengeArenaPage() {
   } | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completeChallengeRef = useRef<() => Promise<void>>(async () => {});
 
   // Load user session and gamification stats
   useEffect(() => {
@@ -380,25 +381,24 @@ export default function ChallengeArenaPage() {
     };
   }, []);
 
-  // Timer countdown
+  // Timer countdown. Completion is handled separately after timeLeft reaches zero.
   useEffect(() => {
-    if (activeSession && !isFinished && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            handleCompleteChallenge();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    if (!activeSession || isFinished || timeLeft <= 0) return;
+    timerRef.current = window.setInterval(() => {
+      setTimeLeft((previous) => Math.max(0, previous - 1));
+    }, 1000);
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) window.clearInterval(timerRef.current);
     };
-  }, [activeSession, isFinished]);
+  }, [activeSession, isFinished, timeLeft > 0]);
 
+  useEffect(() => {
+    if (!activeSession || isFinished || timeLeft !== 0) return;
+    const timeoutId = window.setTimeout(() => {
+      void completeChallengeRef.current();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [activeSession, isFinished, timeLeft]);
   const handleStartChallenge = (mode: ChallengeMode) => {
     setSelectedMode(mode);
     // Filter questions based on mode subjects
@@ -425,6 +425,10 @@ export default function ChallengeArenaPage() {
     if (isFinished) return;
     setUserAnswers((prev) => ({ ...prev, [questionId]: option }));
   };
+
+  useEffect(() => {
+    completeChallengeRef.current = handleCompleteChallenge;
+  }, [handleCompleteChallenge]);
 
   const handleCompleteChallenge = useCallback(async () => {
     if (isFinished || submitting) return;
