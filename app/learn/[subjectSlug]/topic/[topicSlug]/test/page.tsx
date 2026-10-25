@@ -203,9 +203,12 @@ export default function TopicTestPage() {
       return;
     }
     const update = () => setTimeLeft(Math.max(0, Math.ceil((new Date(attempt.deadlineAt as string).getTime() - Date.now()) / 1000)));
-    update();
+    const initialUpdate = window.setTimeout(update, 0);
     const interval = window.setInterval(update, 1000);
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearTimeout(initialUpdate);
+      window.clearInterval(interval);
+    };
   }, [attempt, result]);
 
   useEffect(() => {
