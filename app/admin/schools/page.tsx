@@ -181,7 +181,6 @@ export default function AdminSchoolsPage() {
     };
 
     setBatches([newBatch, ...batches]);
-    setActiveBatch(newBatch);
     setActiveTab("batches");
     setGenSchool("");
   };
