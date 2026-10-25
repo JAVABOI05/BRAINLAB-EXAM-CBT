@@ -201,6 +201,7 @@ export async function POST(request: NextRequest) {
         duration_seconds: typeof durationSeconds === "number" ? durationSeconds : 60,
         is_open: true,
         created_at: new Date().toISOString(),
+        closed_at: null,
       };
     }
 
