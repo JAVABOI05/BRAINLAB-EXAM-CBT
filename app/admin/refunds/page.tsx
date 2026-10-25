@@ -51,7 +51,7 @@ export default function AdminRefundsPage() {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setRefunds(data as unknown as RefundRequest[]);
+      setRefunds(data as unknown as RefundRow[]);
     }
     setLoading(false);
   }, []);
