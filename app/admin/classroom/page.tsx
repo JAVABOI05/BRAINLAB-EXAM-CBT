@@ -45,9 +45,17 @@ export default function AdminLiveClassroomControlPage() {
     setIsBroadcasting(true);
     setBroadcastFeedback("");
     try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) {
+        throw new Error("Your session has expired. Please sign in again before broadcasting a classroom alert.");
+      }
+
       const res = await fetch("/api/classroom/broadcast", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           roomId: sessionRoomId.trim() || "live-session",
           title: sessionTitle,
