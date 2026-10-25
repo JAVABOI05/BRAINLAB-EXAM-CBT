@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { toast } from "@/app/lib/toast";
@@ -22,7 +22,6 @@ interface VerifiedCertificate {
 
 export default function CertificateVerificationResultPage() {
   const params = useParams();
-  const router = useRouter();
   const query = decodeURIComponent((params?.id as string) || "");
 
   const [loading, setLoading] = useState(true);
@@ -55,7 +54,7 @@ export default function CertificateVerificationResultPage() {
           setStatus(data.status || "valid");
           setCert(data.certificate as VerifiedCertificate);
         }
-      } catch (err: unknown) {
+      } catch {
         if (active) {
           setStatus("not_found");
           setMessage("An unexpected error occurred during verification.");
