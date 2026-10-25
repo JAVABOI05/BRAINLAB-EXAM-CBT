@@ -97,10 +97,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, submission });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[api/assignments/submit] Error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to submit assignment" },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) || "Failed to submit assignment" },
       { status: 500 }
     );
   }
