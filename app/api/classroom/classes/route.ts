@@ -187,7 +187,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (status) {
       updates.status = status;
       if (status === "live" && !existingClass.actual_start_at) {
@@ -213,7 +213,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
-    const calendarUpdates: Record<string, any> = {};
+    const calendarUpdates: Record<string, unknown> = {};
     if (title) calendarUpdates.title = `Live Class: ${title}`;
     if (description) calendarUpdates.description = description;
     if (scheduled_start_at) calendarUpdates.start_time = scheduled_start_at;
