@@ -162,7 +162,8 @@ export default function LessonViewerPage() {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
-    // Check initial bookmark state
+    // Check initial bookmark state after mount.
+    const timeoutId = window.setTimeout(() => {
     try {
       const stored = localStorage.getItem("learning_bookmarked_lessons");
       if (stored) {
@@ -172,6 +173,8 @@ export default function LessonViewerPage() {
         }
       }
     } catch {}
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [lessonId]);
 
   function toggleBookmark() {
