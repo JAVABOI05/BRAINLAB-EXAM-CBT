@@ -90,7 +90,10 @@ export default function AchievementsPage() {
   }, [router]);
 
   useEffect(() => {
-    void loadData();
+    const timer = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadData]);
 
   // Compute XP progress to next level
