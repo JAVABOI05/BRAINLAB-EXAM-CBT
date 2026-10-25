@@ -5,6 +5,10 @@ import { bachsPaymentProvider } from "../../../lib/payments/bachsProvider";
 
 export const dynamic = "force-dynamic";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
@@ -29,9 +33,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid Bachs signature" }, { status: 401 });
       }
 
-      let event: any;
+      let event: Record<string, unknown>;
       try {
-        event = JSON.parse(rawBody);
+        const parsed: unknown = JSON.parse(rawBody);
+        if (!isRecord(parsed)) throw new Error("Expected an event object");
+        event = parsed;
       } catch {
         return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
       }
@@ -41,9 +47,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      const data = event.data || {};
-      const checkoutId = data.checkout_id || data.id;
-      const reference = data.metadata?.reference || data.reference;
+      const data = isRecord(event.data) ? event.data : {};
+      const metadata = isRecord(data.metadata) ? data.metadata : {};
+      const checkoutId = typeof data.checkout_id === "string"
+        ? data.checkout_id
+        : typeof data.id === "string" || typeof data.id === "number" ? String(data.id) : "";
+      const reference = typeof metadata.reference === "string"
+        ? metadata.reference
+        : typeof data.reference === "string" ? data.reference : "";
 
       if (!reference && !checkoutId) {
         return NextResponse.json({ error: "Missing reference" }, { status: 400 });
@@ -66,7 +77,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true, alreadyProcessed: true });
       }
 
-      const paidAt = event.created_at || new Date().toISOString();
+      const paidAt = typeof event.created_at === "string" ? event.created_at : new Date().toISOString();
 
       await supabase
         .from("payment_transactions")
@@ -111,9 +122,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    let event: any;
+    let event: Record<string, unknown>;
     try {
-      event = JSON.parse(rawBody);
+      const parsed: unknown = JSON.parse(rawBody);
+        if (!isRecord(parsed)) throw new Error("Expected an event object");
+        event = parsed;
     } catch {
       return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
     }
@@ -122,8 +135,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    const data = event.data;
-    const reference = data?.reference;
+    const data = isRecord(event.data) ? event.data : {};
+    const reference = typeof data.reference === "string" ? data.reference : "";
     if (!reference) {
       return NextResponse.json({ error: "Missing reference" }, { status: 400 });
     }
@@ -144,14 +157,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, alreadyProcessed: true });
     }
 
-    const paidAt = data.paid_at || new Date().toISOString();
+    const paidAt = typeof data.paid_at === "string" ? data.paid_at : new Date().toISOString();
 
     await supabase
       .from("payment_transactions")
       .update({
         status: "success",
         paid_at: paidAt,
-        provider_reference: data.id ? String(data.id) : reference,
+        provider_reference: typeof data.id === "string" || typeof data.id === "number" ? String(data.id) : reference,
         updated_at: new Date().toISOString(),
       })
       .eq("id", tx.id);
