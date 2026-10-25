@@ -42,6 +42,10 @@ const STANDARD_BADGES = [
   { id: "badge_community_contributor", name: "Scholarly Peer", desc: "Share verified solution notes in study discussions.", icon: "💬", rarity: "rare", category: "community" },
 ];
 
+function getCurrentTimestamp(): number {
+  return Date.now();
+}
+
 export default function AchievementsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"badges" | "certificates">("badges");
@@ -53,43 +57,55 @@ export default function AchievementsPage() {
   const [userEmail, setUserEmail] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const { data: auth, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !auth.user) {
-      router.replace("/account");
-      return;
-    }
-
-    setUserEmail(auth.user.email || "");
-    const userId = auth.user.id;
-
-    // Load Gamification profile, badges, levels, and certificates in parallel
-    const [gamProfile, badges, allLevels, certsRes] = await Promise.all([
-      getUserGamificationProfile(userId),
-      getUserBadges(userId),
-      getGamificationLevels(),
-      supabase
-        .from("learning_certificates")
-        .select("id,certificate_number,recipient_name,title,issuer_name,score,grade,issued_at,expires_at,revoked_at")
-        .eq("user_id", userId)
-        .order("issued_at", { ascending: false }),
-    ]);
-
-    setProfile(gamProfile);
-    setEarnedBadges(badges);
-    setLevels(allLevels);
-    if (certsRes.data) {
-      setCertificates(certsRes.data as Certificate[]);
-    }
-
-    setLoading(false);
-  }, [router]);
+  const [currentTimestamp, setCurrentTimestamp] = useState<number>(0);
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => setCurrentTimestamp(getCurrentTimestamp()), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadData() {
+      try {
+        const { data: auth, error: authError } = await supabase.auth.getUser();
+        if (!active) return;
+        if (authError || !auth.user) {
+          router.replace("/account");
+          return;
+        }
+
+        setUserEmail(auth.user.email || "");
+        const userId = auth.user.id;
+        const [gamProfile, badges, allLevels, certsRes] = await Promise.all([
+          getUserGamificationProfile(userId),
+          getUserBadges(userId),
+          getGamificationLevels(),
+          supabase
+            .from("learning_certificates")
+            .select("id,certificate_number,recipient_name,title,issuer_name,score,grade,issued_at,expires_at,revoked_at")
+            .eq("user_id", userId)
+            .order("issued_at", { ascending: false }),
+        ]);
+
+        if (!active) return;
+        setProfile(gamProfile);
+        setEarnedBadges(badges);
+        setLevels(allLevels);
+        if (certsRes.data) setCertificates(certsRes.data as Certificate[]);
+      } catch {
+        if (active) router.replace("/account");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
     void loadData();
-  }, [loadData]);
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   // Compute XP progress to next level
   const currentXp = profile?.lifetime_xp || 0;
@@ -332,7 +348,7 @@ export default function AchievementsPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {certificates.map((cert) => {
                     const isRevoked = Boolean(cert.revoked_at);
-                    const isExpired = cert.expires_at ? new Date(cert.expires_at).getTime() <= Date.now() : false;
+                    const isExpired = cert.expires_at ? currentTimestamp > 0 && new Date(cert.expires_at).getTime() <= currentTimestamp : false;
                     const status = isRevoked ? "Revoked" : isExpired ? "Expired" : "Active & Verified";
 
                     return (
