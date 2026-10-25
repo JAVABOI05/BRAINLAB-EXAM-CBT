@@ -24,7 +24,27 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // 1. Fetch class details or provision demo/interactive session fallback
-    let liveClass: { id: string; tutor_id: string; [key: string]: unknown } | null = null;
+    type LiveClass = {
+      id: string;
+      tutor_id: string;
+      title: string;
+      description: string | null;
+      status: string;
+      class_format: string;
+      course_id: string | null;
+      scheduled_start_at: string | null;
+      scheduled_end_at?: string | null;
+      duration_minutes: number;
+      student_mic_enabled: boolean;
+      student_camera_enabled: boolean;
+      student_screenshare_enabled: boolean;
+      student_chat_enabled: boolean;
+      is_recording_enabled: boolean;
+      waiting_room_enabled: boolean;
+      provider?: string | null;
+      room_name?: string | null;
+    };
+    let liveClass: LiveClass | null = null;
 
     if (classId === "demo-class" || classId === "general-stage") {
       liveClass = {
@@ -52,7 +72,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (dbClass) {
-        liveClass = dbClass;
+        liveClass = dbClass as LiveClass;
       } else {
         // Fallback for custom session or teacher-created classroom IDs
         liveClass = {
@@ -73,6 +93,10 @@ export async function POST(request: NextRequest) {
           waiting_room_enabled: false,
         };
       }
+    }
+
+    if (!liveClass) {
+      return NextResponse.json({ error: "Live class not found." }, { status: 404 });
     }
 
     if (liveClass.status === "cancelled") {
