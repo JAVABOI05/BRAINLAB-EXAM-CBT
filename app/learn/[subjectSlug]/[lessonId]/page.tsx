@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type Lesson = {
@@ -159,20 +159,25 @@ export default function LessonViewerPage() {
   const [progressStatus, setProgressStatus] = useState<"signed_out" | "in_progress" | "completed">("signed_out");
   const [progressSaving, setProgressSaving] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
-  const [isBookmarked, setIsBookmarked] = useState(false);
-
-  useEffect(() => {
-    // Check initial bookmark state
+  const subscribeToBookmarks = useCallback((callback: () => void) => {
+    if (typeof window === "undefined") return () => {};
+    window.addEventListener("storage", callback);
+    window.addEventListener("learning-bookmarks-changed", callback);
+    return () => {
+      window.removeEventListener("storage", callback);
+      window.removeEventListener("learning-bookmarks-changed", callback);
+    };
+  }, []);
+  const getBookmarkSnapshot = useCallback(() => {
     try {
       const stored = localStorage.getItem("learning_bookmarked_lessons");
-      if (stored) {
-        const bookmarks: string[] = JSON.parse(stored);
-        if (Array.isArray(bookmarks) && bookmarks.includes(lessonId)) {
-          setIsBookmarked(true);
-        }
-      }
-    } catch {}
+      const bookmarks: unknown = stored ? JSON.parse(stored) : [];
+      return Array.isArray(bookmarks) && bookmarks.includes(lessonId);
+    } catch {
+      return false;
+    }
   }, [lessonId]);
+  const isBookmarked = useSyncExternalStore(subscribeToBookmarks, getBookmarkSnapshot, () => false);
 
   function toggleBookmark() {
     try {
@@ -184,12 +189,11 @@ export default function LessonViewerPage() {
       }
       if (bookmarks.includes(lessonId)) {
         bookmarks = bookmarks.filter((id) => id !== lessonId);
-        setIsBookmarked(false);
       } else {
         bookmarks.push(lessonId);
-        setIsBookmarked(true);
       }
       localStorage.setItem("learning_bookmarked_lessons", JSON.stringify(bookmarks));
+      window.dispatchEvent(new Event("learning-bookmarks-changed"));
     } catch {}
   }
 
