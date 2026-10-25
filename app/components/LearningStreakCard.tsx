@@ -93,7 +93,6 @@ export default function LearningStreakCard({
   const reminderTime = typeof reminderPreferences?.time === "string"
     ? reminderPreferences.time
     : "19:00";
-  const notificationPermission = browserState.permission;
 
   async function handleToggleReminder() {
     if (!reminderEnabled) {
