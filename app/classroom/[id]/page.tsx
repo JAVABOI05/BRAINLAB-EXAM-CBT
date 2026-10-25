@@ -1124,7 +1124,7 @@ export default function LiveClassroomPage({
 
   // 6. Send Emoji Reaction
   const sendReaction = (emoji: string) => {
-    const id = `react_${Date.now()}_${Math.random()}`;
+    const id = `react_${reactionCounterRef.current++}`;
     setReactionFloat((prev) => [...prev, { id, emoji }]);
     setTimeout(() => {
       setReactionFloat((prev) => prev.filter((r) => r.id !== id));
