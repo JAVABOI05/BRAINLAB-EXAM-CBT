@@ -213,7 +213,7 @@ Style: ${teachingStyle || "Direct, encouraging, exam-oriented"}
 Generate a full lesson with Introduction, Clear Explanations, KaTeX formulas where relevant, Worked Examples, Common Pitfalls, and Summary.`;
 
       const raw = await executeAICompletion(systemPrompt, userPrompt);
-      let parsed: any;
+      let parsed: unknown;
       try {
         const clean = raw.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
         parsed = JSON.parse(clean);
@@ -271,10 +271,12 @@ Reference Source Text:
 ${(sourceText || "").slice(0, 8000)}`;
 
       const raw = await executeAICompletion(systemPrompt, userPrompt);
-      let questions: any[] = [];
+      let questions: unknown[] = [];
       try {
         const clean = raw.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
-        questions = JSON.parse(clean);
+        const parsedQuestions: unknown = JSON.parse(clean);
+        if (!Array.isArray(parsedQuestions)) throw new Error("Expected a JSON array of questions");
+        questions = parsedQuestions;
       } catch {
         return NextResponse.json({ ok: false, error: "AI produced invalid question structure. Please retry." }, { status: 500 });
       }
@@ -310,10 +312,11 @@ Content Items to Review:
 ${JSON.stringify(items, null, 2).slice(0, 10000)}`;
 
       const raw = await executeAICompletion(systemPrompt, userPrompt);
-      let findings: any[] = [];
+      let findings: unknown[] = [];
       try {
         const clean = raw.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
-        findings = JSON.parse(clean);
+        const parsedFindings: unknown = JSON.parse(clean);
+        findings = Array.isArray(parsedFindings) ? parsedFindings : [];
       } catch {
         findings = [];
       }
