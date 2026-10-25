@@ -51,7 +51,7 @@ export default function StudentRewardsPage() {
         .eq("user_id", auth.user.id)
         .order("redeemed_at", { ascending: false });
 
-      if (reds) setRedemptions(reds as any);
+      if (reds) setRedemptions(reds as unknown as UserRedemption[]);
     }
 
     setLoading(false);
