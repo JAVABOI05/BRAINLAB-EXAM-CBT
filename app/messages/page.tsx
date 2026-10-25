@@ -187,8 +187,8 @@ export default function MessagesPage() {
         const rawActive: OnlinePeer[] = Array.isArray(json.activeUsers) ? json.activeUsers : [];
 
         // Exclude current user from peer list
-        const otherAll = rawAll.filter((u: any) => u.user_id !== currentUser?.id);
-        const otherActive = rawActive.filter((u: any) => u.user_id !== currentUser?.id);
+        const otherAll = rawAll.filter((user) => user.user_id !== currentUser?.id);
+        const otherActive = rawActive.filter((user) => user.user_id !== currentUser?.id);
 
         setAllPeers(otherAll);
         setOnlinePeers(otherActive);
@@ -376,8 +376,8 @@ export default function MessagesPage() {
       } else {
         toast.error(json.error || "Could not open chat with peer.");
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to start direct message.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to start direct message.");
     }
   };
 
@@ -411,7 +411,7 @@ export default function MessagesPage() {
         localStorage.setItem(`brainlab_friends_${currentUser.id}`, JSON.stringify(updated));
       }
       toast.success(`You connected with ${peer.display_name}! 🤝`);
-    } catch (e: any) {
+    } catch {
       toast.error("Could not send friend request.");
     }
   };
@@ -456,8 +456,8 @@ export default function MessagesPage() {
       } else {
         toast.error(json.error || "Could not complete study group addition.");
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to update study group.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to update study group.");
     } finally {
       setCreatingGroup(false);
     }
