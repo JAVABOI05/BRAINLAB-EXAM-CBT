@@ -1,4 +1,4 @@
-name: Regenerate security lockfile
+name: Regenerate security lockfile and apply safe lint fixes
 
 on:
   pull_request:
@@ -26,15 +26,25 @@ jobs:
           cache: npm
       - name: Regenerate lockfile without lifecycle scripts
         run: npm install --package-lock-only --ignore-scripts
-      - name: Commit lockfile if changed
+      - name: Install exact locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Apply ESLint's safe automatic fixes
         shell: bash
         run: |
-          if git diff --quiet -- package-lock.json; then
-            echo "Lockfile is already synchronized."
+          set +e
+          npx eslint . --fix
+          lint_status=$?
+          echo "ESLint --fix exit status: $lint_status (remaining issues are reported by the required CI workflow)"
+          exit 0
+      - name: Commit lockfile and safe lint fixes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "fix: regenerate lockfile for patched Next.js release"
+          git add -u
+          git commit -m "chore: apply safe ESLint auto-fixes"
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
