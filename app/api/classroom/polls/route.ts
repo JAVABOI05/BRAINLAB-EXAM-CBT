@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, polls: aggregated });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Failed to load polls" },
+      { ok: false, error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Failed to load polls" },
       { status: 500 }
     );
   }
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, poll: createdPoll });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Failed to launch poll" },
+      { ok: false, error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Failed to launch poll" },
       { status: 500 }
     );
   }
@@ -246,7 +246,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true, poll: updatedPoll });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Failed to update poll" },
+      { ok: false, error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Failed to update poll" },
       { status: 500 }
     );
   }
