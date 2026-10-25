@@ -19,7 +19,6 @@ export default function CBTExamPortalPage() {
   const router = useRouter();
 
   const [loadingSession, setLoadingSession] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -76,10 +75,13 @@ export default function CBTExamPortalPage() {
 
         // 2. Read any previously saved candidate info from localStorage
         const savedCandidate = localStorage.getItem("candidate");
-        let parsedSaved: any = null;
+        let parsedSaved: { name?: string; phone?: string; subjects?: string[]; subject?: string } | null = null;
         if (savedCandidate) {
           try {
-            parsedSaved = JSON.parse(savedCandidate);
+            const parsed: unknown = JSON.parse(savedCandidate);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+              parsedSaved = parsed as { name?: string; phone?: string; subjects?: string[]; subject?: string };
+            }
           } catch {
             // ignore
           }
@@ -87,7 +89,6 @@ export default function CBTExamPortalPage() {
 
         if (active) {
           if (user) {
-            setCurrentUser(user);
             const userFullName =
               user.user_metadata?.full_name ||
               user.user_metadata?.name ||
