@@ -60,8 +60,8 @@ export async function GET(request: NextRequest) {
     // Fallback to memory store
     const memList = memoryMessageStore.get(classId) || [];
     return NextResponse.json({ success: true, messages: memList });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to load messages" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to load messages" }, { status: 500 });
   }
 }
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: messageObj });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({ error: error.message || "Failed to post message" }, { status: 500 });
   }
 }
