@@ -106,7 +106,6 @@ export default function TutorAssignmentsPage() {
         return;
       }
       if (!active) return;
-      setCurrentUser(session.user);
 
       try {
         // Fetch tutor assignments
