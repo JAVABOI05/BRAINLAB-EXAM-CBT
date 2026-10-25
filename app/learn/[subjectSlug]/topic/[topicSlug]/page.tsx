@@ -1,10 +1,46 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { recordLearningActivity } from "@/app/lib/gamification";
+
+interface TopicMcqOption {
+  id: string;
+  text: string;
+}
+
+interface TopicMcqFeedback {
+  question_id: string;
+  correct_answer: string;
+  correct: boolean;
+  explanation?: string;
+  distractor_note?: string;
+}
+
+interface TopicMcqQuestion {
+  id: string;
+  question: string;
+  options: TopicMcqOption[];
+}
+
+interface TopicContentData {
+  reading_time_mins?: number;
+  markdown?: string;
+  speaker?: string;
+  url?: string;
+  transcript?: string;
+  provider?: string;
+  instructions?: string;
+  questions?: TopicMcqQuestion[];
+  file_name?: string;
+  category?: string;
+  description?: string;
+  alt_text?: string;
+  caption?: string;
+  [key: string]: unknown;
+}
 
 interface ContentItem {
   id: string;
@@ -12,13 +48,12 @@ interface ContentItem {
   title: string;
   summary?: string;
   order_index: number;
-  metadata: Record<string, any>;
-  data: Record<string, any>;
+  metadata: Record<string, unknown>;
+  data: TopicContentData;
 }
 
 export default function StudentTopicContentPage() {
   const params = useParams();
-  const router = useRouter();
 
   const subjectSlug = decodeURIComponent((params?.subjectSlug as string) || "");
   const topicSlug = decodeURIComponent((params?.topicSlug as string) || "");
@@ -40,7 +75,7 @@ export default function StudentTopicContentPage() {
 
   // In-Class MCQ State (Keyed by item.id)
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, Record<string, string>>>({});
-  const [mcqResults, setMcqResults] = useState<Record<string, { score: number; total: number; percentage: number; feedback: any[] }>>({});
+  const [mcqResults, setMcqResults] = useState<Record<string, { score: number; total: number; percentage: number; feedback: TopicMcqFeedback[] }>>({});
   const [gradingMcq, setGradingMcq] = useState<string | null>(null);
 
   useEffect(() => {
@@ -417,7 +452,7 @@ export default function StudentTopicContentPage() {
 
                       {/* Question List */}
                       <div className="space-y-6">
-                        {(item.data.questions || []).map((q: any, qIdx: number) => {
+                        {(item.data.questions || []).map((q, qIdx: number) => {
                           const picked = mcqAnswers[item.id]?.[q.id];
                           const gradedResult = mcqResults[item.id]?.feedback?.find(
                             (f) => f.question_id === q.id
@@ -429,7 +464,7 @@ export default function StudentTopicContentPage() {
                               <h3 className="mt-1 text-sm font-bold text-slate-900">{q.question}</h3>
 
                               <div className="mt-4 space-y-2">
-                                {q.options.map((opt: any) => {
+                                {q.options.map((opt) => {
                                   const isSelected = picked === opt.id;
                                   let optionStyle = isSelected
                                     ? "border-indigo-600 bg-indigo-50 text-indigo-950 ring-1 ring-indigo-600"
