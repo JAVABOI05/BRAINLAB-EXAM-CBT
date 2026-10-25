@@ -74,8 +74,8 @@ export default function OfflineSyncManager() {
   }, [pathname, router, checkPending]);
 
   useEffect(() => {
-    // 1. Initial state
-    checkPending();
+    // 1. Read pending data after mount to avoid synchronous effect updates
+    const pendingCheckId = window.setTimeout(checkPending, 0);
 
     // 2. Register Service Worker in production/client
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -134,6 +134,7 @@ export default function OfflineSyncManager() {
     }
 
     return () => {
+      window.clearTimeout(pendingCheckId);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
