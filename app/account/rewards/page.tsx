@@ -57,7 +57,10 @@ export default function StudentRewardsPage() {
   }, []);
 
   useEffect(() => {
-    loadRewards();
+    const timer = window.setTimeout(() => {
+      void loadRewards();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadRewards]);
 
   function copyToClipboard(code: string) {
