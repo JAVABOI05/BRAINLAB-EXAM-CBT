@@ -30,6 +30,15 @@ export default function AdminPricingPage() {
   const [editActive, setEditActive] = useState(true);
   const [changeReason, setChangeReason] = useState("");
 
+  async function loadPlansData() {
+    try {
+      const data = await getSubscriptionPlans();
+      setPlans(data);
+    } catch {
+      setError("Could not load plans from central configuration.");
+    }
+  }
+
   useEffect(() => {
     let active = true;
     async function init() {
@@ -48,15 +57,6 @@ export default function AdminPricingPage() {
       active = false;
     };
   }, [router]);
-
-  async function loadPlansData() {
-    try {
-      const data = await getSubscriptionPlans();
-      setPlans(data);
-    } catch {
-      setError("Could not load plans from central configuration.");
-    }
-  }
 
   function openEditModal(plan: SubscriptionPlan) {
     setEditingPlan(plan);
