@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
 
     const messages = await getConversationMessages(conversationId, user.id);
     return NextResponse.json({ success: true, messages });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Request failed" }, { status: 500 });
   }
 }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, message });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Request failed" }, { status: 500 });
   }
 }
