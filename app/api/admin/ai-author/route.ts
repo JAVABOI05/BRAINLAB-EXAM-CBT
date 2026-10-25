@@ -345,7 +345,7 @@ ${JSON.stringify(items, null, 2).slice(0, 10000)}`;
     return NextResponse.json({ ok: false, error: "Invalid mode specified" }, { status: 400 });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "AI Authoring failed" },
+      { ok: false, error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "AI Authoring failed" },
       { status: 500 }
     );
   }
