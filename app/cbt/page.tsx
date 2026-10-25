@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
 import { toast } from "../lib/toast";
+import type { User } from "@supabase/supabase-js";
 
 const CONFIG = {
   whatsappNumber: "2349074310204",
@@ -14,6 +15,13 @@ const CONFIG = {
   revisionMessage:
     "Good day BRAINLAB TUTORIALS, I would like to join your 2 weeks final JAMB revision class. Please can I get more information about the schedule, fee, and how to register?",
 };
+
+interface SavedCandidate {
+  name?: string;
+  phone?: string;
+  subjects?: string[];
+  subject?: string;
+}
 
 export default function CBTExamPortalPage() {
   const router = useRouter();
