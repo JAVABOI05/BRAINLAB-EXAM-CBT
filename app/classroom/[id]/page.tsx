@@ -172,6 +172,7 @@ export default function LiveClassroomPage({
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const attendanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const realtimeChannelRef = useRef<any>(null);
+  const [activeRealtimeChannel, setActiveRealtimeChannel] = useState<any>(null);
   const handleClosePollRef = useRef<(pollId: string) => Promise<void>>(async () => {});
   const handleVoteRef = useRef<(pollId: string, optionId: string) => Promise<void>>(async () => {});
 
@@ -1187,8 +1188,8 @@ export default function LiveClassroomPage({
         body: JSON.stringify({ pollId, selectedOptionId: optionId }),
       });
 
-      if (res.ok && realtimeChannelRef.current) {
-        realtimeChannelRef.current.send({
+      if (res.ok && activeRealtimeChannel) {
+        activeRealtimeChannel.send({
           type: "broadcast",
           event: "poll_vote",
           payload: { pollId, selectedOptionId: optionId },
@@ -1315,8 +1316,8 @@ export default function LiveClassroomPage({
           )
         );
 
-        if (realtimeChannelRef.current) {
-          realtimeChannelRef.current.send({
+        if (activeRealtimeChannel) {
+          activeRealtimeChannel.send({
             type: "broadcast",
             event: "poll_closed",
             payload: { pollId, options: updatedOptions, explanation },
