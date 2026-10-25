@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 
       // Fetch submission counts for each assignment
       const assignmentIds = (assignments || []).map((a) => a.id);
-      let submissionCounts: Record<string, { total: number; submitted: number; graded: number }> = {};
+      const submissionCounts: Record<string, { total: number; submitted: number; graded: number }> = {};
 
       if (assignmentIds.length > 0) {
         const { data: subs } = await supabase
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch student's own submissions with audio assets
     const assignmentIds = (assignments || []).map((a) => a.id);
-    let mySubmissions: Record<string, any> = {};
+    const mySubmissions: Record<string, any> = {};
 
     if (assignmentIds.length > 0) {
       const { data: subs } = await supabase
