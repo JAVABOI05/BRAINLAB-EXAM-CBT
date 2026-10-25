@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
@@ -19,7 +20,7 @@ export default function CBTExamPortalPage() {
   const router = useRouter();
 
   const [loadingSession, setLoadingSession] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -76,10 +77,13 @@ export default function CBTExamPortalPage() {
 
         // 2. Read any previously saved candidate info from localStorage
         const savedCandidate = localStorage.getItem("candidate");
-        let parsedSaved: any = null;
+        let parsedSaved: { name?: string; phone?: string; subjects?: string[]; subject?: string } | null = null;
         if (savedCandidate) {
           try {
-            parsedSaved = JSON.parse(savedCandidate);
+            const parsed: unknown = JSON.parse(savedCandidate);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+              parsedSaved = parsed as { name?: string; phone?: string; subjects?: string[]; subject?: string };
+            }
           } catch {
             // ignore
           }

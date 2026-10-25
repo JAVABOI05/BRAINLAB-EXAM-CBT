@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 import UserBadges from "../../../components/UserBadges";
@@ -21,7 +21,6 @@ interface LeaderboardEntry {
 
 export default function AssessmentLeaderboardPage() {
   const params = useParams();
-  const router = useRouter();
   const assessmentId = params?.id as string;
 
   const [assessmentTitle, setAssessmentTitle] = useState("");
@@ -30,10 +29,8 @@ export default function AssessmentLeaderboardPage() {
   const [error, setError] = useState("");
 
   const loadLeaderboard = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     const { data: auth } = await supabase.auth.getUser();
+    setError("");
     const currentUserId = auth.user?.id;
 
     // Fetch assessment title
@@ -105,7 +102,13 @@ export default function AssessmentLeaderboardPage() {
   }, [assessmentId]);
 
   useEffect(() => {
-    if (assessmentId) loadLeaderboard();
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active && assessmentId) return loadLeaderboard();
+    });
+    return () => {
+      active = false;
+    };
   }, [assessmentId, loadLeaderboard]);
 
   function formatDuration(sec: number) {

@@ -341,7 +341,8 @@ export default function AssessmentRunnerPage() {
                     {/* Options */}
                     <div className="mt-6 space-y-3">
                       {(["A", "B", "C", "D"] as const).map((optKey) => {
-                        const optText = (q as any)[`option_${optKey.toLowerCase()}`];
+                        const optionKey = `option_${optKey.toLowerCase()}` as "option_a" | "option_b" | "option_c" | "option_d";
+                        const optText = q[optionKey];
                         if (!optText) return null;
                         const isChosen = selected === optKey;
 

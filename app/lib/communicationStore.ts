@@ -47,7 +47,7 @@ export interface ChatConversation {
 // ----------------------------------------------------------------------------
 
 export async function recordUserHeartbeat(
-  user: any,
+  user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> },
   options: {
     status?: "online" | "in_class" | "studying" | "away";
     customStatus?: string;
@@ -59,9 +59,9 @@ export async function recordUserHeartbeat(
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
   const status = options.status || "online";
+  const metadataName = user.user_metadata?.full_name ?? user.user_metadata?.name;
   const displayName =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
+    (typeof metadataName === "string" ? metadataName : null) ||
     user.email?.split("@")[0] ||
     "BrainLab Member";
 
@@ -73,7 +73,7 @@ export async function recordUserHeartbeat(
     .maybeSingle();
 
   const role: "admin" | "tutor" | "student" = adminRecord?.role
-    ? ["super_admin", "platform_admin"].includes(adminRecord.role)
+    ? adminRecord.role === "super_admin" || adminRecord.role === "platform_admin"
       ? "admin"
       : "tutor"
     : "student";
@@ -88,7 +88,7 @@ export async function recordUserHeartbeat(
     activity_context:
       options.activityContext ||
       (options.currentClassId ? "In Live Classroom" : "Studying in BrainLab"),
-    avatar_url: user.user_metadata?.avatar_url || null,
+    avatar_url: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
     last_heartbeat_at: now,
   };
 
@@ -139,8 +139,8 @@ export async function recordUserHeartbeat(
     );
 
     return { success: true, timestamp: now };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -150,7 +150,8 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   const nowMs = Date.now();
 
   // 1. Load real registered users from auth.admin
-  let realUsers: any[] = [];
+  type AuthUser = { id: string; email?: string; user_metadata?: Record<string, unknown> };
+  let realUsers: AuthUser[] = [];
   try {
     const { data: authData } = await supabase.auth.admin.listUsers({
       page: 1,
@@ -162,7 +163,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   }
 
   // 2. Load admin users to map staff roles
-  let adminUsersMap = new Map<string, string>();
+  const adminUsersMap = new Map<string, string>();
   try {
     const { data: adminRows } = await supabase.from("admin_users").select("id, role");
     for (const a of adminRows || []) {
@@ -173,7 +174,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   }
 
   // 3. Load presence map from user_presence or exam_config
-  let presenceMap: Record<string, any> = {};
+  let presenceMap: Record<string, { status?: RealPeer["status"]; custom_status?: string | null; last_heartbeat_at?: string; activity_context?: string; display_name?: string }> = {};
 
   try {
     const thresholdDate = new Date(nowMs - thresholdMs).toISOString();
@@ -204,7 +205,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
         .maybeSingle();
 
       if (row && typeof row.config_value === "object" && row.config_value !== null) {
-        presenceMap = row.config_value;
+        presenceMap = row.config_value as typeof presenceMap;
       }
     } catch {
       // ignore
@@ -215,12 +216,13 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   const allPeers: RealPeer[] = realUsers.map((u) => {
     const p = presenceMap[u.id];
     const lastHeartbeat = p?.last_heartbeat_at;
-    const isOnline =
-      Boolean(lastHeartbeat) && nowMs - new Date(lastHeartbeat).getTime() < thresholdMs;
+    const isOnline = lastHeartbeat
+      ? nowMs - new Date(lastHeartbeat).getTime() < thresholdMs
+      : false;
 
     const adminRole = adminUsersMap.get(u.id);
     const role: "admin" | "tutor" | "student" = adminRole
-      ? ["super_admin", "platform_admin"].includes(adminRole)
+      ? adminRole === "super_admin" || adminRole === "platform_admin"
         ? "admin"
         : "tutor"
       : u.user_metadata?.role === "tutor"
@@ -228,8 +230,8 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
       : "student";
 
     const displayName =
-      u.user_metadata?.full_name ||
-      u.user_metadata?.name ||
+      (typeof u.user_metadata?.full_name === "string" ? u.user_metadata.full_name : null) ||
+      (typeof u.user_metadata?.name === "string" ? u.user_metadata.name : null) ||
       p?.display_name ||
       u.email?.split("@")[0] ||
       "Learner";
@@ -246,8 +248,8 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
         : lastHeartbeat
         ? `Last seen ${formatRelativeTime(lastHeartbeat)}`
         : "Registered Candidate",
-      avatar_url: u.user_metadata?.avatar_url || null,
-      last_heartbeat_at: lastHeartbeat || null,
+      avatar_url: typeof u.user_metadata?.avatar_url === "string" ? u.user_metadata.avatar_url : null,
+      last_heartbeat_at: lastHeartbeat || undefined,
       is_self: u.id === currentUserId,
     };
   });
@@ -299,9 +301,14 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
         .order("last_message_at", { ascending: false });
 
       if (!convError && Array.isArray(convs)) {
-        return convs.map((c: any) => {
+        return (convs as unknown as Array<{
+          id: string; type?: ChatConversation["type"]; title?: string | null; created_by: string;
+          created_at: string; last_message_at?: string | null;
+          messages?: { content?: string | null; created_at: string; sender_id: string; message_type: string }[];
+          conversation_participants?: { user_id: string; role: string }[];
+        }>).map((c) => {
           const parts = c.conversation_participants || [];
-          const otherId = parts.find((p: any) => p.user_id !== userId)?.user_id;
+          const otherId = parts.find((p: { user_id: string }) => p.user_id !== userId)?.user_id;
           const other = otherId ? peersById.get(otherId) || null : null;
           const lastMsg = c.messages?.[c.messages.length - 1];
 
@@ -378,14 +385,14 @@ export async function createOrGetDirectChat(
       .eq("user_id", userId);
 
     if (myConvs && myConvs.length > 0) {
-      const cIds = myConvs.map((c: any) => c.conversation_id);
+      const cIds = myConvs.map((c) => c.conversation_id);
       const { data: shared } = await supabase
         .from("conversation_participants")
         .select("conversation_id, conversations!inner(id, type, title, last_message_at)")
         .eq("user_id", recipientId)
         .in("conversation_id", cIds);
 
-      const directMatch = shared?.find((s: any) => s.conversations?.type === "direct");
+      const directMatch = (shared as unknown as Array<{ conversation_id: string; conversations: { type: string } | null }> | null)?.find((s) => s.conversations?.type === "direct");
       if (directMatch) {
         const { data: existing } = await supabase
           .from("conversations")
@@ -576,7 +583,7 @@ export async function getConversationMessages(
       .order("created_at", { ascending: true });
 
     if (!error && Array.isArray(messages)) {
-      return messages.map((m: any) => ({
+      return messages.map((m) => ({
         id: m.id,
         conversation_id: m.conversation_id,
         sender_id: m.sender_id,
@@ -621,7 +628,7 @@ export async function getConversationMessages(
 
 export async function sendChatMessage(
   conversationId: string,
-  sender: any,
+  sender: { id: string; email?: string | null; user_metadata?: Record<string, unknown> },
   payload: {
     content: string;
     messageType?: "text" | "audio_note" | "announcement" | "resource";
@@ -634,9 +641,9 @@ export async function sendChatMessage(
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
   const senderId = sender.id;
+  const senderMetadataName = sender.user_metadata?.full_name ?? sender.user_metadata?.name;
   const senderName =
-    sender.user_metadata?.full_name ||
-    sender.user_metadata?.name ||
+    (typeof senderMetadataName === "string" ? senderMetadataName : null) ||
     sender.email?.split("@")[0] ||
     "BrainLab Member";
 
@@ -787,7 +794,7 @@ export async function toggleMessageReaction(
   return { success: false };
 }
 
-function formatNativeReactions(reactions: any[]): Record<string, string[]> {
+function formatNativeReactions(reactions: { emoji: string; user_id: string }[]): Record<string, string[]> {
   if (!Array.isArray(reactions)) return {};
   const map: Record<string, string[]> = {};
   for (const r of reactions) {

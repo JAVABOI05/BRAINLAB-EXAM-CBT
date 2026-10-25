@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "../lib/supabase";
 
 interface StudyCircle {
   id: string;
@@ -89,18 +88,20 @@ const STUDY_CIRCLES: StudyCircle[] = [
 const LOCAL_JOINED_CIRCLES_KEY = "brainlab_joined_study_circles_v1";
 
 export default function StudyGroupsPage() {
-  const [joinedCircleIds, setJoinedCircleIds] = useState<string[]>(["sprint-circle"]);
+  const [joinedCircleIds, setJoinedCircleIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return ["sprint-circle"];
+    try {
+      const raw = window.localStorage.getItem(LOCAL_JOINED_CIRCLES_KEY);
+      const parsed: unknown = raw ? JSON.parse(raw) : null;
+      return Array.isArray(parsed) && parsed.every((id): id is string => typeof id === "string")
+        ? parsed
+        : ["sprint-circle"];
+    } catch {
+      return ["sprint-circle"];
+    }
+  });
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"circles" | "rules">("circles");
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LOCAL_JOINED_CIRCLES_KEY);
-      if (raw) {
-        setJoinedCircleIds(JSON.parse(raw));
-      }
-    } catch {}
-  }, []);
 
   const handleToggleJoin = (circleId: string) => {
     let next: string[];

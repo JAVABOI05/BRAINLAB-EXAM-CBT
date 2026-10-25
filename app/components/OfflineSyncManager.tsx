@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   isOnline,
@@ -10,26 +10,46 @@ import {
   type SyncState,
 } from "../lib/offlineSync";
 
+const subscribeToConnectivity = (callback: () => void) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+};
+
+const getConnectivitySnapshot = () => isOnline();
+const getConnectivityServerSnapshot = () => true;
+
+const subscribeToPendingData = (callback: () => void) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener(SYNC_EVENT_NAME, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(SYNC_EVENT_NAME, callback);
+  };
+};
+const getPendingDataSnapshot = () => hasPendingOfflineData();
+const getPendingDataServerSnapshot = () => false;
+
 export default function OfflineSyncManager() {
   const router = useRouter();
   const pathname = usePathname();
-  const [online, setOnline] = useState(true);
+  const online = useSyncExternalStore(subscribeToConnectivity, getConnectivitySnapshot, getConnectivityServerSnapshot);
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
-  const [hasPending, setHasPending] = useState(false);
+  const hasPending = useSyncExternalStore(subscribeToPendingData, getPendingDataSnapshot, getPendingDataServerSnapshot);
   const [dismissed, setDismissed] = useState(false);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const checkPending = useCallback(() => {
-    setHasPending(hasPendingOfflineData());
-  }, []);
 
   const triggerSync = useCallback(async () => {
     if (!isOnline()) return;
     setSyncState("syncing");
     setStatusMessage("Syncing queued exam answers with BrainLab server...");
     const res = await syncQueuedExam();
-    checkPending();
     if (res.ok) {
       if (res.type === "submitted") {
         setSyncState("synced");
@@ -54,12 +74,10 @@ export default function OfflineSyncManager() {
     toastTimeoutRef.current = setTimeout(() => {
       setSyncState("idle");
     }, 4500);
-  }, [pathname, router, checkPending]);
+  }, [pathname, router]);
 
   useEffect(() => {
-    // 1. Initial state
-    setOnline(isOnline());
-    checkPending();
+    // 1. Connectivity and pending-data state are subscribed external snapshots.
 
     // 2. Register Service Worker in production/client
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -87,13 +105,11 @@ export default function OfflineSyncManager() {
 
     // 3. Online/offline event handlers
     const handleOnline = () => {
-      setOnline(true);
       setDismissed(false);
       void triggerSync();
     };
 
     const handleOffline = () => {
-      setOnline(false);
       setDismissed(false);
       setSyncState("offline");
       setStatusMessage("You are offline. Answers & formula sheets are safely cached locally.");
@@ -106,7 +122,6 @@ export default function OfflineSyncManager() {
         if (custom.detail.message) {
           setStatusMessage(custom.detail.message);
         }
-        checkPending();
       }
     };
 
@@ -114,18 +129,21 @@ export default function OfflineSyncManager() {
     window.addEventListener("offline", handleOffline);
     window.addEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
 
-    // Initial sync trigger if online with pending data
-    if (isOnline() && hasPendingOfflineData()) {
-      void triggerSync();
-    }
+    // Defer the initial sync until after subscriptions and the first render settle.
+    const initialSyncTimer = window.setTimeout(() => {
+      if (isOnline() && hasPendingOfflineData()) {
+        void triggerSync();
+      }
+    }, 0);
 
     return () => {
+      window.clearTimeout(initialSyncTimer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     };
-  }, [triggerSync, checkPending]);
+  }, [triggerSync]);
 
   // If online, idle, and no pending data, keep UI clean
   if (online && syncState === "idle" && !hasPending) {

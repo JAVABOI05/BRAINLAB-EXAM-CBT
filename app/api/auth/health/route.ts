@@ -21,10 +21,10 @@ export async function GET(request: NextRequest) {
     if (!error) {
       supabaseConnected = true;
     } else {
-      errorMessage = error.message;
+      errorMessage = (error instanceof Error ? error.message : String(error));
     }
-  } catch (err: any) {
-    errorMessage = err?.message || "Could not connect to Supabase database";
+  } catch (err: unknown) {
+    errorMessage = err instanceof Error ? err.message : "Could not connect to Supabase database";
   }
 
   const googleClientIdConfigured = Boolean(process.env.GOOGLE_CLIENT_ID);

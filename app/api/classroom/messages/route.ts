@@ -4,7 +4,8 @@ import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseS
 export const dynamic = "force-dynamic";
 
 // In-memory fallback message registry for dynamic/ad-hoc sessions
-const memoryMessageStore = new Map<string, any[]>();
+type ClassroomMemoryMessage = { id?: string; senderId?: string; senderName?: string; text?: string; timestamp?: string; isHost?: boolean; type?: string; mediaUrl?: string; duration?: number; isPinned?: boolean; metadata?: Record<string, unknown>; [key: string]: unknown };
+const memoryMessageStore = new Map<string, ClassroomMemoryMessage[]>();
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
 
         if (dbMessages && dbMessages.length > 0) {
           const formatted = dbMessages.map((m) => {
-            const meta = (m.metadata as any) || {};
+            const meta = (m.metadata && typeof m.metadata === "object" ? m.metadata : {}) as Record<string, unknown>;
             return {
               id: m.id,
               senderId: m.sender_id,
@@ -60,8 +61,8 @@ export async function GET(request: NextRequest) {
     // Fallback to memory store
     const memList = memoryMessageStore.get(classId) || [];
     return NextResponse.json({ success: true, messages: memList });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to load messages" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) || "Failed to load messages" }, { status: 500 });
   }
 }
 
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: messageObj });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to post message" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) || "Failed to post message" }, { status: 500 });
   }
 }

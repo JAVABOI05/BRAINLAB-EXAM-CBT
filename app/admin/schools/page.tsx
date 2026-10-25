@@ -78,6 +78,22 @@ const INITIAL_INQUIRIES: SchoolInquiry[] = [
   },
 ];
 
+function generateCandidatePins(count: number): string[] {
+  const pins = new Set<string>();
+  const randomValues = new Uint32Array(1);
+
+  while (pins.size < count) {
+    crypto.getRandomValues(randomValues);
+    pins.add(`BL-${100000 + (randomValues[0] % 900000)}`);
+  }
+
+  return Array.from(pins);
+}
+
+function createBatchId(): string {
+  return `BATCH-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
+}
+
 export default function AdminSchoolsPage() {
   const router = useRouter();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -104,17 +120,13 @@ export default function AdminSchoolsPage() {
     else if (inq.studentCount.includes("601+")) parsedCount = 700;
     else if (inq.studentCount.includes("50-100")) parsedCount = 80;
 
-    const generatedPins: string[] = [];
-    for (let i = 0; i < parsedCount; i++) {
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
-      generatedPins.push(`BL-${randomSuffix}`);
-    }
+    const generatedPins = generateCandidatePins(parsedCount);
 
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 45);
 
     const newBatch: MockPinBatch = {
-      batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+      batchId: createBatchId(),
       schoolName: inq.schoolName,
       examType: inq.examType,
       count: parsedCount,
@@ -158,17 +170,13 @@ export default function AdminSchoolsPage() {
       return;
     }
 
-    const generatedPins: string[] = [];
-    for (let i = 0; i < genCount; i++) {
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
-      generatedPins.push(`BL-${randomSuffix}`);
-    }
+    const generatedPins = generateCandidatePins(genCount);
 
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + genExpiryDays);
 
     const newBatch: MockPinBatch = {
-      batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+      batchId: createBatchId(),
       schoolName: genSchool.trim(),
       examType: genExamType,
       count: genCount,
@@ -177,7 +185,7 @@ export default function AdminSchoolsPage() {
       expiryDate: expiryDate.toLocaleDateString(),
     };
 
-    setBatches([newBatch, ...batches]);
+    setBatches((previous) => [newBatch, ...previous]);
     setActiveBatch(newBatch);
     setActiveTab("batches");
     setGenSchool("");
@@ -374,7 +382,7 @@ export default function AdminSchoolsPage() {
 
                     {inq.notes && (
                       <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700 border border-slate-100 italic">
-                        "{inq.notes}"
+                        &quot;{inq.notes}&quot;
                       </div>
                     )}
                   </div>
@@ -537,7 +545,7 @@ export default function AdminSchoolsPage() {
                 <span className="text-4xl">🖨️</span>
                 <h3 className="mt-3 text-sm font-bold text-slate-900">No PIN batches generated yet</h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Switch to the "Bulk PIN Generator" tab to generate computer lab candidate passes.
+                  Switch to the &quot;Bulk PIN Generator&quot; tab to generate computer lab candidate passes.
                 </p>
                 <button
                   type="button"

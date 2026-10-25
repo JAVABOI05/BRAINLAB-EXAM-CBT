@@ -4,6 +4,16 @@ import { bachsPaymentProvider } from "../../../../lib/payments/bachsProvider";
 
 export const dynamic = "force-dynamic";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asString(value: unknown): string | undefined {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
@@ -26,27 +36,31 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Parse event payload
-    let event: any;
+    let event: unknown;
     try {
       event = JSON.parse(rawBody);
     } catch {
       return NextResponse.json({ error: "Malformed JSON payload" }, { status: 400 });
     }
 
+    if (!isRecord(event)) {
+      return NextResponse.json({ error: "Invalid event payload" }, { status: 400 });
+    }
     const eventType = String(event.type || event.event || "").toLowerCase();
 
     // 3. Handle non-payment / unhandled events gracefully
     if (eventType !== "collection.succeeded" && eventType !== "checkout.completed") {
       if (eventType === "collection.failed" || eventType === "checkout.canceled") {
-        const data = event.data || {};
-        const reference = data.metadata?.reference;
+        const data = isRecord(event.data) ? event.data : {};
+        const metadata = isRecord(data.metadata) ? data.metadata : {};
+        const reference = asString(metadata.reference) ?? asString(data.reference);
         if (reference) {
           const supabase = getSupabaseServerClient();
           await supabase
             .from("payment_transactions")
             .update({
               status: "failed",
-              metadata: { failure_event: eventType, failure_reason: data.failure_reason || "Canceled/Failed on Bachs" },
+              metadata: { failure_event: eventType, failure_reason: asString(data.failure_reason) || "Canceled/Failed on Bachs" },
               updated_at: new Date().toISOString(),
             })
             .eq("reference", reference);
@@ -56,10 +70,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Extract event details
-    const data = event.data || {};
-    const checkoutId = data.checkout_id || data.id;
-    const metadata = data.metadata || {};
-    const reference = metadata.reference || data.reference;
+    const data = isRecord(event.data) ? event.data : {};
+    const checkoutId = asString(data.checkout_id) ?? asString(data.id);
+    const metadata = isRecord(data.metadata) ? data.metadata : {};
+    const reference = asString(metadata.reference) ?? asString(data.reference);
 
     if (!reference && !checkoutId) {
       return NextResponse.json({ error: "Missing order reference or checkout_id" }, { status: 400 });
@@ -130,7 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 8. Confirm Payment Success
-    const paidAt = event.created_at || new Date().toISOString();
+    const paidAt = asString(event.created_at) || new Date().toISOString();
 
     await supabase
       .from("payment_transactions")

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, action: "updated" });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
   }
 }

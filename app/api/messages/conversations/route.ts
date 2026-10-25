@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
 
     const conversations = await getUserConversations(user.id);
     return NextResponse.json({ success: true, conversations });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
   }
 }
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Invalid conversation type" }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
   }
 }

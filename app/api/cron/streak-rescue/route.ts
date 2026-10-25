@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       .limit(100);
 
     if (error) {
-      console.warn("Could not query learner_profiles for streaks:", error.message);
+      console.warn("Could not query learner_profiles for streaks:", (error instanceof Error ? error.message : String(error)));
       return NextResponse.json({
         ok: true,
         dispatched: 0,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       checkedCount: (profiles || []).length,
       dispatched: notifiedCount,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Internal error" }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal error" }, { status: 500 });
   }
 }

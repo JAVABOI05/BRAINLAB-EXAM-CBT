@@ -170,9 +170,9 @@ export async function GET(request: NextRequest) {
         issuedAt: new Date().toISOString(),
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { ok: false, error: err.message || "Failed to load skills passport" },
+      { ok: false, error: (err instanceof Error ? err.message : String(err)) || "Failed to load skills passport" },
       { status: 500 }
     );
   }

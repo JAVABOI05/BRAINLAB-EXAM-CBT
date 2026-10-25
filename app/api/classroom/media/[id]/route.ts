@@ -48,7 +48,7 @@ export async function GET(
 
     // If it is a remote URL, redirect to it
     return NextResponse.redirect(asset.file_url);
-  } catch (err: any) {
-    return new NextResponse(err.message || "Server Error", { status: 500 });
+  } catch (err: unknown) {
+    return new NextResponse((err instanceof Error ? err.message : String(err)) || "Server Error", { status: 500 });
   }
 }

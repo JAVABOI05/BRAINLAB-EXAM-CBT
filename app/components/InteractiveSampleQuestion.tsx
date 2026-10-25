@@ -352,13 +352,6 @@ export default function InteractiveSampleQuestion() {
     return questionPool.filter((q) => q.subject.toLowerCase() === activeSubjectFilter.toLowerCase());
   }, [questionPool, activeSubjectFilter]);
 
-  // Reset index and selections on subject change
-  useEffect(() => {
-    setCurrentIndex(0);
-    setSelectedLetter(null);
-    setShowFeedback(false);
-  }, [activeSubjectFilter]);
-
   // Distinct subjects available in the active pool
   const availableSubjects = useMemo(() => {
     const set = new Set<string>();
@@ -424,7 +417,12 @@ export default function InteractiveSampleQuestion() {
         </span>
         <button
           type="button"
-          onClick={() => setActiveSubjectFilter("All")}
+          onClick={() => {
+            setActiveSubjectFilter("All");
+            setCurrentIndex(0);
+            setSelectedLetter(null);
+            setShowFeedback(false);
+          }}
           className={`rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
             activeSubjectFilter === "All"
               ? "bg-[#012153] text-white shadow-xs"
@@ -437,7 +435,12 @@ export default function InteractiveSampleQuestion() {
           <button
             key={subj}
             type="button"
-            onClick={() => setActiveSubjectFilter(subj)}
+            onClick={() => {
+              setActiveSubjectFilter(subj);
+              setCurrentIndex(0);
+              setSelectedLetter(null);
+              setShowFeedback(false);
+            }}
             className={`rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
               activeSubjectFilter.toLowerCase() === subj.toLowerCase()
                 ? "bg-[#012153] text-white shadow-xs"

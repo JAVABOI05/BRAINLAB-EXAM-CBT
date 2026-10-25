@@ -37,27 +37,18 @@ export default function UserBadges({
   interactive = true,
   className = "",
 }: UserBadgesProps) {
-  const [badgeList, setBadgeList] = useState<UserBadgeAward[]>(initialBadges || []);
+  const [fetchedBadges, setFetchedBadges] = useState<UserBadgeAward[]>([]);
+  const badgeList = initialBadges ?? fetchedBadges;
   const [loading, setLoading] = useState(!initialBadges && !!userId);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialBadges) {
-      setBadgeList(initialBadges);
-      setLoading(false);
-      return;
-    }
-
-    if (!userId) {
-      setBadgeList([]);
-      setLoading(false);
-      return;
-    }
+    if (initialBadges || !userId) return;
 
     let active = true;
     void getUserBadges(userId).then((res) => {
       if (active) {
-        setBadgeList(res);
+        setFetchedBadges(res);
         setLoading(false);
       }
     });

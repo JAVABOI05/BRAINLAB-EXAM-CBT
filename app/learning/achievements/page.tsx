@@ -50,6 +50,7 @@ export default function AchievementsPage() {
   const [levels, setLevels] = useState<GamificationLevel[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nowMs, setNowMs] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
@@ -84,11 +85,15 @@ export default function AchievementsPage() {
       setCertificates(certsRes.data as Certificate[]);
     }
 
+    setNowMs(Date.now());
     setLoading(false);
   }, [router]);
 
   useEffect(() => {
-    void loadData();
+    const timer = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadData]);
 
   // Compute XP progress to next level
@@ -332,7 +337,7 @@ export default function AchievementsPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {certificates.map((cert) => {
                     const isRevoked = Boolean(cert.revoked_at);
-                    const isExpired = cert.expires_at ? new Date(cert.expires_at).getTime() <= Date.now() : false;
+                    const isExpired = cert.expires_at ? nowMs !== null && new Date(cert.expires_at).getTime() <= nowMs : false;
                     const status = isRevoked ? "Revoked" : isExpired ? "Expired" : "Active & Verified";
 
                     return (

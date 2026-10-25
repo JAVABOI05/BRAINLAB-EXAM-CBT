@@ -380,24 +380,7 @@ export default function ChallengeArenaPage() {
     };
   }, []);
 
-  // Timer countdown
-  useEffect(() => {
-    if (activeSession && !isFinished && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            handleCompleteChallenge();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [activeSession, isFinished]);
+
 
   const handleStartChallenge = (mode: ChallengeMode) => {
     setSelectedMode(mode);
@@ -490,6 +473,25 @@ export default function ChallengeArenaPage() {
     setSubmitting(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [isFinished, submitting, questions, userAnswers, selectedMode, timeLeft, userId, profile]);
+
+  // Timer countdown. Declared after the completion callback to avoid a temporal-dead-zone reference.
+  useEffect(() => {
+    if (activeSession && !isFinished && timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            void handleCompleteChallenge();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [activeSession, isFinished, timeLeft, handleCompleteChallenge]);
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);

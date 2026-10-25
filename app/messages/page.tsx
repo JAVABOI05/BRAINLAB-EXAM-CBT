@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
@@ -80,7 +81,7 @@ const CURATED_STUDY_CIRCLES = [
 
 export default function MessagesPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -187,8 +188,8 @@ export default function MessagesPage() {
         const rawActive: OnlinePeer[] = Array.isArray(json.activeUsers) ? json.activeUsers : [];
 
         // Exclude current user from peer list
-        const otherAll = rawAll.filter((u: any) => u.user_id !== currentUser?.id);
-        const otherActive = rawActive.filter((u: any) => u.user_id !== currentUser?.id);
+        const otherAll = rawAll.filter((u) => u.user_id !== currentUser?.id);
+        const otherActive = rawActive.filter((u) => u.user_id !== currentUser?.id);
 
         setAllPeers(otherAll);
         setOnlinePeers(otherActive);
@@ -376,8 +377,8 @@ export default function MessagesPage() {
       } else {
         toast.error(json.error || "Could not open chat with peer.");
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to start direct message.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to start direct message.");
     }
   };
 
@@ -411,7 +412,7 @@ export default function MessagesPage() {
         localStorage.setItem(`brainlab_friends_${currentUser.id}`, JSON.stringify(updated));
       }
       toast.success(`You connected with ${peer.display_name}! 🤝`);
-    } catch (e: any) {
+    } catch {
       toast.error("Could not send friend request.");
     }
   };
@@ -456,8 +457,8 @@ export default function MessagesPage() {
       } else {
         toast.error(json.error || "Could not complete study group addition.");
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to update study group.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to update study group.");
     } finally {
       setCreatingGroup(false);
     }

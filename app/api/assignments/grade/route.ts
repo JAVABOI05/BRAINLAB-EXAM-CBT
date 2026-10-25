@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Submission not found." }, { status: 404 });
     }
 
-    const assignment = (submission as any).assignments;
+    const assignment = (submission as unknown as { assignments?: { id: string; title: string; tutor_id: string; max_points: number } | null }).assignments;
 
     // Check tutor authorization
     const { data: adminRole } = await supabase
@@ -116,10 +116,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, submission: updated });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[api/assignments/grade] Error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to grade submission" },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) || "Failed to grade submission" },
       { status: 500 }
     );
   }

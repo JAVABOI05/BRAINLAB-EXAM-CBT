@@ -27,6 +27,16 @@ interface TutorAssignment {
   stats: { total: number; submitted: number; graded: number };
 }
 
+interface AudioAsset {
+  id: string;
+  file_url: string;
+  duration_seconds: number;
+  title?: string;
+}
+
+interface SubjectOption { id: string; name: string; slug: string; }
+interface CourseOption { id: string; title: string; slug: string; }
+
 interface StudentSubmission {
   id: string;
   assignment_id: string;
@@ -40,14 +50,13 @@ interface StudentSubmission {
   status: "submitted" | "graded" | "resubmission_requested";
   submitted_at: string;
   graded_at: string | null;
-  audio_asset?: { id: string; file_url: string; duration_seconds: number; title?: string } | any;
-  tutor_audio_asset?: { id: string; file_url: string; duration_seconds: number; title?: string } | any;
+  audio_asset?: AudioAsset | null;
+  tutor_audio_asset?: AudioAsset | null;
   student?: { id: string; full_name?: string; email?: string };
 }
 
 export default function TutorAssignmentsPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [assignments, setAssignments] = useState<TutorAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
@@ -57,8 +66,8 @@ export default function TutorAssignmentsPage() {
 
   // New Assignment Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newInstructions, setNewInstructions] = useState("");
   const [newCourseId, setNewCourseId] = useState("");
@@ -87,7 +96,6 @@ export default function TutorAssignmentsPage() {
         return;
       }
       if (!active) return;
-      setCurrentUser(session.user);
 
       try {
         // Fetch tutor assignments
@@ -154,7 +162,11 @@ export default function TutorAssignmentsPage() {
 
         if (error) throw error;
         if (active) {
-          const normalized: StudentSubmission[] = ((data as any[]) || []).map((row) => ({
+          type RawSubmission = Omit<StudentSubmission, "audio_asset" | "tutor_audio_asset"> & {
+            audio_asset?: AudioAsset | AudioAsset[] | null;
+            tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
+          };
+          const normalized: StudentSubmission[] = ((data as unknown as RawSubmission[] | null) || []).map((row) => ({
             ...row,
             audio_asset: Array.isArray(row.audio_asset) ? row.audio_asset[0] : row.audio_asset,
             tutor_audio_asset: Array.isArray(row.tutor_audio_asset) ? row.tutor_audio_asset[0] : row.tutor_audio_asset,
@@ -226,8 +238,8 @@ export default function TutorAssignmentsPage() {
       setGradingAudioUrl(json.asset.file_url);
       setShowGradingRecorder(false);
       toast.success("Voice feedback note recorded and attached!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to record audio feedback.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to record audio feedback.");
     }
   };
 
@@ -264,8 +276,8 @@ export default function TutorAssignmentsPage() {
       );
 
       toast.success(status === "graded" ? "Grade and feedback saved!" : "Requested student revision.");
-    } catch (err: any) {
-      toast.error(err.message || "Evaluation save failed.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Evaluation save failed.");
     } finally {
       setSavingGrade(false);
     }
@@ -310,8 +322,8 @@ export default function TutorAssignmentsPage() {
       setNewTitle("");
       setNewInstructions("");
       toast.success("Assignment published and added to course calendar!");
-    } catch (err: any) {
-      toast.error(err.message || "Could not publish assignment.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Could not publish assignment.");
     } finally {
       setCreating(false);
     }
@@ -494,7 +506,7 @@ export default function TutorAssignmentsPage() {
             ) : assignments.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-500">
                 <p className="font-bold">No assignments yet</p>
-                <p className="mt-1">Click "+ Create Assignment" to publish your first homework task.</p>
+                <p className="mt-1">Click &quot;+ Create Assignment&quot; to publish your first homework task.</p>
               </div>
             ) : (
               assignments.map((assign) => {
@@ -610,7 +622,7 @@ export default function TutorAssignmentsPage() {
               {/* Student's Work */}
               <div className="space-y-2">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                  Student's Written Work
+                  Student&apos;s Written Work
                 </h4>
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs leading-relaxed text-slate-800 max-h-48 overflow-y-auto whitespace-pre-wrap">
                   {activeSubmission.text_submission || "No written text submitted."}

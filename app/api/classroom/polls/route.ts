@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     const aggregated = polls.map((poll) => {
       const stats = votesMap.get(poll.id) || { totalVotes: 0, optionCounts: {} };
       const rawOptions = Array.isArray(poll.options) ? poll.options : [];
-      const options = rawOptions.map((opt: any) => ({
+      const options = rawOptions.map((opt: { id: string; text: string; is_correct?: boolean }) => ({
         id: opt.id,
         text: opt.text,
         is_correct: poll.is_open ? undefined : opt.is_correct, // Hide correct answer while poll is live
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, polls: aggregated });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Failed to load polls" },
+      { ok: false, error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Failed to load polls" },
       { status: 500 }
     );
   }
@@ -154,13 +154,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Format options with guaranteed unique string IDs
-    const formattedOptions = options.map((opt: any, index: number) => ({
+    const formattedOptions = options.map((opt: { id?: string; text?: string; is_correct?: boolean }, index: number) => ({
       id: String(opt.id || `opt_${index + 1}`),
       text: String(opt.text || "").trim(),
       is_correct: Boolean(opt.is_correct),
     }));
 
-    let createdPoll: any = null;
+    let createdPoll: { id: string; class_id: string; created_by: string; question: string; options: unknown; explanation: string | null; is_open: boolean; duration_seconds: number | null; created_at: string; closed_at: string | null } | null = null;
 
     try {
       // Close any currently active poll for this class first
@@ -201,13 +201,14 @@ export async function POST(request: NextRequest) {
         duration_seconds: typeof durationSeconds === "number" ? durationSeconds : 60,
         is_open: true,
         created_at: new Date().toISOString(),
+        closed_at: null,
       };
     }
 
     return NextResponse.json({ ok: true, poll: createdPoll });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Failed to launch poll" },
+      { ok: false, error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Failed to launch poll" },
       { status: 500 }
     );
   }
@@ -246,7 +247,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true, poll: updatedPoll });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Failed to update poll" },
+      { ok: false, error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Failed to update poll" },
       { status: 500 }
     );
   }

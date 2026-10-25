@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import AudioPlayer from "../../../components/AudioPlayer";
 import VoiceNoteRecorder from "../../../components/VoiceNoteRecorder";
@@ -38,22 +37,20 @@ export default function SubjectFeedPage({
 }: {
   params: Promise<{ subjectSlug: string }>;
 }) {
-  const router = useRouter();
   const resolvedParams = use(params);
   const subjectSlug = resolvedParams.subjectSlug;
 
-  const [subject, setSubject] = useState<any>(null);
+  const [subject, setSubject] = useState<{ id: string; slug: string; name: string } | null>(null);
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState<string>("all");
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isTutor, setIsTutor] = useState(false);
 
   // New post modal / composer state
   const [showComposer, setShowComposer] = useState(false);
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
-  const [postType, setPostType] = useState("announcement");
+  const [postType] = useState("announcement");
   const [isPinned, setIsPinned] = useState(false);
   const [recordedAudioId, setRecordedAudioId] = useState<string | null>(null);
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
@@ -80,7 +77,6 @@ export default function SubjectFeedPage({
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData.session?.user;
       if (user) {
-        setCurrentUser(user);
         const { data: membership } = await supabase
           .from("learning_subject_memberships")
           .select("id")
