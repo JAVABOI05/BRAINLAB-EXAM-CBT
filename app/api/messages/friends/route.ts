@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       friendId,
       action,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Failed to load friends" }, { status: 500 });
   }
 }
