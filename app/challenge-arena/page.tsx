@@ -360,7 +360,7 @@ export default function ChallengeArenaPage() {
   } | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
   const completeChallengeRef = useRef<() => Promise<void>>(async () => {});
 
   // Load user session and gamification stats
