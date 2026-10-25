@@ -102,7 +102,13 @@ export default function AssessmentLeaderboardPage() {
   }, [assessmentId]);
 
   useEffect(() => {
-    if (assessmentId) loadLeaderboard();
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active && assessmentId) return loadLeaderboard();
+    });
+    return () => {
+      active = false;
+    };
   }, [assessmentId, loadLeaderboard]);
 
   function formatDuration(sec: number) {
