@@ -63,7 +63,7 @@ const FAQ_DATABASE: FAQItem[] = [
     category: "payments",
     categoryLabel: "Payments & Bachs",
     question: "What payment gateways are supported on BrainLab?",
-    answer: "We support both ⚡ Bachs Payment Gateway and 💳 Paystack. You can choose either provider at checkout on our Pricing page. Bachs offers instant checkout sessions, while Paystack supports all Nigerian cards (Mastercard, Visa, Verve), direct bank transfers, and USSD payments.",
+    answer: "BrainLab currently uses BACHS for payment processing. Check the Pricing page for the plans and payment options currently available to your account. If a payment or subscription does not appear correctly, contact BrainLab support before attempting another payment.",
     actionHref: "/pricing",
     actionLabel: "View Subscription Plans",
   },
@@ -72,7 +72,7 @@ const FAQ_DATABASE: FAQItem[] = [
     category: "payments",
     categoryLabel: "Payments & Bachs",
     question: "Is it safe to pay online on BrainLab Academy?",
-    answer: "Yes, 100% safe. All financial transactions are processed on encrypted, PCI-DSS Level 1 certified checkout pages provided directly by Paystack or Bachs. BrainLab never receives, stores, or sees your card number, CVV, or bank account PIN.",
+    answer: "Use the payment flow presented on BrainLab's official website and review the provider's checkout details before confirming. Never share your card PIN, one-time password, or banking password with anyone claiming to be BrainLab support. For a payment concern, contact BrainLab support and do not retry a transaction until its status is clear.",
   },
   {
     id: "pay-receipt",
