@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
@@ -19,6 +20,7 @@ export default function CBTExamPortalPage() {
   const router = useRouter();
 
   const [loadingSession, setLoadingSession] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -89,6 +91,7 @@ export default function CBTExamPortalPage() {
 
         if (active) {
           if (user) {
+            setCurrentUser(user);
             const userFullName =
               user.user_metadata?.full_name ||
               user.user_metadata?.name ||
