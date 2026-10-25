@@ -78,6 +78,22 @@ const INITIAL_INQUIRIES: SchoolInquiry[] = [
   },
 ];
 
+function generateCandidatePins(count: number): string[] {
+  const pins = new Set<string>();
+  const randomValues = new Uint32Array(1);
+
+  while (pins.size < count) {
+    crypto.getRandomValues(randomValues);
+    pins.add(`BL-${100000 + (randomValues[0] % 900000)}`);
+  }
+
+  return Array.from(pins);
+}
+
+function createBatchId(): string {
+  return `BATCH-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
+}
+
 export default function AdminSchoolsPage() {
   const router = useRouter();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -177,7 +193,7 @@ export default function AdminSchoolsPage() {
       expiryDate: expiryDate.toLocaleDateString(),
     };
 
-    setBatches([newBatch, ...batches]);
+    setBatches((previous) => [newBatch, ...previous]);
     setActiveBatch(newBatch);
     setActiveTab("batches");
     setGenSchool("");
