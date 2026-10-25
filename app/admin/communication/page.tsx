@@ -109,8 +109,8 @@ export default function AdminCommunicationControlPage() {
       } else {
         setFeedback("Failed to update some configuration settings.");
       }
-    } catch (err: any) {
-      setFeedback(err.message || "Failed to save.");
+    } catch (err: unknown) {
+      setFeedback(err instanceof Error ? err.message : "Failed to save.");
     } finally {
       setSaving(false);
     }
