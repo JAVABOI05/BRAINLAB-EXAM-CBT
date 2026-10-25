@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { toast } from "../lib/toast";
 
@@ -11,6 +11,17 @@ interface LearningStreakProps {
   compact?: boolean;
 }
 
+const subscribeToLastActiveDate = (callback: () => void) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+};
+
+const getLastActiveDateSnapshot = () =>
+  typeof window === "undefined" ? "" : localStorage.getItem("brainlab_last_active_date") || "";
+
+const getLastActiveDateServerSnapshot = () => "";
+
 export default function LearningStreakCard({
   currentStreak = 0,
   longestStreak = 0,
@@ -19,25 +30,22 @@ export default function LearningStreakCard({
 }: LearningStreakProps) {
   const [streakDays, setStreakDays] = useState(currentStreak);
   const [maxStreak, setMaxStreak] = useState(longestStreak);
-  const [hasPracticedToday, setHasPracticedToday] = useState(false);
+  const localLastActiveDate = useSyncExternalStore(
+    subscribeToLastActiveDate,
+    getLastActiveDateSnapshot,
+    getLastActiveDateServerSnapshot
+  );
+  const todayStr = new Date().toISOString().split("T")[0];
+  const effectiveLastActiveDate = lastActiveDate || localLastActiveDate;
+  const hasPracticedToday = effectiveLastActiveDate
+    ? new Date(effectiveLastActiveDate).toISOString().split("T")[0] === todayStr
+    : false;
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState("19:00");
   const [showReminderSettings, setShowReminderSettings] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
-    // Check if practiced today
-    const todayStr = new Date().toISOString().split("T")[0];
-    if (lastActiveDate) {
-      const activeDateStr = new Date(lastActiveDate).toISOString().split("T")[0];
-      setHasPracticedToday(activeDateStr === todayStr);
-    } else {
-      const localLastActive = localStorage.getItem("brainlab_last_active_date");
-      if (localLastActive === todayStr) {
-        setHasPracticedToday(true);
-      }
-    }
-
     // Load local streak cache if props were 0
     if (currentStreak === 0) {
       const savedStreak = parseInt(localStorage.getItem("brainlab_streak_count") || "0", 10);
@@ -62,7 +70,7 @@ export default function LearningStreakCard({
     if (typeof window !== "undefined" && "Notification" in window) {
       setNotificationPermission(Notification.permission);
     }
-  }, [currentStreak, longestStreak, lastActiveDate]);
+  }, [currentStreak, longestStreak]);
 
   async function handleToggleReminder() {
     if (!reminderEnabled) {
