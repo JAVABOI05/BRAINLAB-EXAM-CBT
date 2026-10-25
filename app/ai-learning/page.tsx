@@ -1,10 +1,20 @@
 import Link from "next/link";
 import AILearningStudio from "./AILearningStudio";
 
-export const metadata = {
-  title: "AI Learning | BrainLab Academy",
-  description: "Plan focused study sessions, explore responsible AI learning support, and move between BrainLab's Learning Hub and correction tools.",
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "AI Learning and Study Support",
+  description:
+    "Plan focused study sessions and explore BrainLab Academy's responsible AI learning guidance, Learning Hub and correction tools.",
   alternates: { canonical: "/ai-learning" },
+  openGraph: {
+    title: "AI Learning and Study Support | BrainLab Academy",
+    description:
+      "Explore guided study planning, responsible AI learning guidance and links to BrainLab's learning tools.",
+    url: "/ai-learning",
+    type: "website",
+  },
 };
 
 const principles = [
