@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { supabase } from "../lib/supabase";
 
 interface StudyCircle {
   id: string;
