@@ -11,6 +11,7 @@ import AdminWorkspaceShell from "../AdminWorkspaceShell";
 type Access = Partial<Record<AdminPermission, boolean>>;
 type Metric = number | null;
 type Metrics = { questions: Metric; results: Metric; codes: Metric };
+type StudentStats = { registeredStudents: number; activeStudents30d: number; newRegistrations30d: number; chart: { date: string; registrations: number; active: number }[]; activityDefinition: string };
 type SettingsMap = { exam_duration: number; calculator_enabled: boolean; leaderboard_enabled: boolean; show_results: boolean; mock_enabled: boolean };
 type SettingRow = { key: string; value: unknown };
 const DEFAULT_SETTINGS: SettingsMap = { exam_duration: 7200, calculator_enabled: true, leaderboard_enabled: false, show_results: false, mock_enabled: true };
@@ -34,6 +35,8 @@ export default function AdminDashboardPage() {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [permissions, setPermissions] = useState<Access>({});
   const [metrics, setMetrics] = useState<Metrics>({ questions: null, results: null, codes: null });
+  const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
+  const [studentStatsError, setStudentStatsError] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [settings, setSettings] = useState<SettingsMap>(DEFAULT_SETTINGS);
@@ -147,6 +150,45 @@ export default function AdminDashboardPage() {
     </section>
 
     {loadError && <div className="admin-workspace-message" role="status">{loadError}</div>}
+
+    {platformAdmin && <section className="admin-student-statistics" aria-labelledby="student-statistics-heading">
+      <div className="admin-panel-heading">
+        <div><h2 id="student-statistics-heading">Student overview</h2><p>Registered student accounts and verified Learning Hub activity.</p></div>
+        <span className="admin-overview-date">Last 30 days</span>
+      </div>
+      {studentStatsError && <p className="admin-workspace-message" role="status">{studentStatsError}</p>}
+      {!studentStats && !studentStatsError && <p className="admin-kpi-note">Loading protected student statistics…</p>}
+      {studentStats && <>
+        <div className="admin-kpi-grid admin-student-kpi-grid">
+          <MetricCard label="Registered students" value={studentStats.registeredStudents} note="Registered accounts excluding administrator profiles" symbol="S" />
+          <MetricCard label="Active students" value={studentStats.activeStudents30d} note="Distinct students with recorded learning activity in 30 days" symbol="A" />
+          <MetricCard label="New registrations" value={studentStats.newRegistrations30d} note="Student accounts created in the last 30 days" symbol="N" />
+        </div>
+        <section className="admin-panel admin-student-chart-panel">
+          <div className="admin-panel-heading"><div><h3>Student activity trend</h3><p>Daily new registrations compared with daily active students.</p></div></div>
+          <div className="admin-student-chart-legend"><span><i className="admin-chart-dot registrations" />New registrations</span><span><i className="admin-chart-dot active" />Daily active students</span></div>
+          <div className="admin-student-chart-scroll">
+            <svg className="admin-student-chart" viewBox="0 0 720 250" role="img" aria-label="Line chart of daily new student registrations and daily active students over the last 30 days">
+              {(() => {
+                const values = studentStats.chart.flatMap((day) => [day.registrations, day.active]);
+                const max = Math.max(1, ...values);
+                const x = (index: number) => 42 + (index / Math.max(1, studentStats.chart.length - 1)) * 650;
+                const y = (value: number) => 205 - (value / max) * 165;
+                const line = (key: "registrations" | "active") => studentStats.chart.map((day, index) => `${index === 0 ? "M" : "L"} ${x(index)} ${y(day[key])}`).join(" ");
+                return <>
+                  {[0, 0.25, 0.5, 0.75, 1].map((ratio) => <g key={ratio}><line x1="42" x2="692" y1={205 - ratio * 165} y2={205 - ratio * 165} className="admin-chart-gridline" /><text x="32" y={209 - ratio * 165} textAnchor="end" className="admin-chart-axis-label">{Math.round(max * ratio)}</text></g>)}
+                  <path d={line("registrations")} className="admin-chart-line registrations" />
+                  <path d={line("active")} className="admin-chart-line active" />
+                  {studentStats.chart.map((day, index) => <g key={day.date}><circle cx={x(index)} cy={y(day.registrations)} r="2.4" className="admin-chart-point registrations" /><circle cx={x(index)} cy={y(day.active)} r="2.4" className="admin-chart-point active" /></g>)}
+                  {[0, 7, 14, 21, 29].filter((index) => index < studentStats.chart.length).map((index) => <text key={index} x={x(index)} y="231" textAnchor="middle" className="admin-chart-axis-label">{studentStats.chart[index].date.slice(5)}</text>)}
+                </>;
+              })()}
+            </svg>
+          </div>
+          <p className="admin-kpi-note">{studentStats.activityDefinition}</p>
+        </section>
+      </>}
+    </section>}
 
     <section className="admin-kpi-grid" aria-label="Current platform metrics">
       {canOpen("cbt.questions.manage") && <MetricCard label="Question bank" value={metrics.questions} note="Questions available in the bank" symbol="Q" />}
