@@ -29,8 +29,6 @@ export default function AssessmentLeaderboardPage() {
   const [error, setError] = useState("");
 
   const loadLeaderboard = useCallback(async () => {
-    setError("");
-
     const { data: auth } = await supabase.auth.getUser();
     const currentUserId = auth.user?.id;
 
