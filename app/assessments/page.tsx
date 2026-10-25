@@ -29,7 +29,7 @@ export default function AssessmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
-  const [now, setNow] = useState<number>(Date.now());
+  const [now, setNow] = useState<number>(0);
 
   useEffect(() => {
     let active = true;
