@@ -93,7 +93,7 @@ export async function recordTopicAttempt(
     if (raw) records = JSON.parse(raw);
   } catch {}
 
-  let existing = records.find(
+  const existing = records.find(
     (r) => r.subject.toLowerCase() === normSubject.toLowerCase() && r.category.toLowerCase() === normCategory.toLowerCase()
   );
 
