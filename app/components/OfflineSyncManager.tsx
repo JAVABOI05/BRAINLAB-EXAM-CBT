@@ -128,13 +128,14 @@ export default function OfflineSyncManager() {
     window.addEventListener("offline", handleOffline);
     window.addEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
 
-    // Initial sync trigger if online with pending data
-    if (isOnline() && hasPendingOfflineData()) {
-      void triggerSync();
-    }
+    // Defer the initial sync until after mount; triggerSync updates UI state.
+    const initialSyncId = window.setTimeout(() => {
+      if (isOnline() && hasPendingOfflineData()) void triggerSync();
+    }, 0);
 
     return () => {
       window.clearTimeout(pendingCheckId);
+      window.clearTimeout(initialSyncId);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
