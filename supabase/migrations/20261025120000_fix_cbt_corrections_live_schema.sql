@@ -41,7 +41,7 @@ begin
       'C', coalesce(q.option_c, ''), 'D', coalesce(q.option_d, '')),
     'optionImages', jsonb_build_object('A', q.option_a_image_url, 'B', q.option_b_image_url,
       'C', q.option_c_image_url, 'D', q.option_d_image_url),
-    'optionImageAlts', jsonb_build_object('A', q.option_a_image_alt, 'B', q.option_a_image_alt,
+    'optionImageAlts', jsonb_build_object('A', q.option_a_image_alt, 'B', q.option_b_image_alt,
       'C', q.option_c_image_alt, 'D', q.option_d_image_alt),
     'questionImageUrl', q.question_image_url,
     'questionImageAlt', q.question_image_alt,
