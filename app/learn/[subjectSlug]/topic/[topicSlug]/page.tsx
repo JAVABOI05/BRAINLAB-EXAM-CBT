@@ -22,6 +22,7 @@ interface McqFeedback {
   correct_answer: string;
   correct: boolean;
   explanation?: string;
+  distractor_note?: string;
 }
 
 interface TopicContentData {
