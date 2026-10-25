@@ -1,4 +1,42 @@
 import { getSupabaseServerClient } from "./supabaseServer";
+import type { User } from "@supabase/supabase-js";
+
+interface PresenceRecord {
+  status?: RealPeer["status"];
+  custom_status?: string | null;
+  last_heartbeat_at?: string | null;
+  activity_context?: string | null;
+  display_name?: string | null;
+}
+
+interface NativeConversationRecord {
+  id: string;
+  type?: ChatConversation["type"];
+  title?: string | null;
+  created_by: string;
+  created_at: string;
+  last_message_at?: string | null;
+  conversation_participants?: Array<{ user_id: string; role: string; last_read_at?: string | null }>;
+  messages?: Array<{ content?: string | null; created_at?: string; sender_id?: string; message_type?: string }>;
+}
+
+interface NativeMessageRecord {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  message_type?: ChatMessage["message_type"];
+  audio_asset_id?: string | null;
+  reply_to_id?: string | null;
+  created_at: string;
+  audio_assets?: { file_url?: string | null; duration_seconds?: number | null } | null;
+  message_reactions?: unknown;
+}
+
+interface SharedConversationParticipant {
+  conversation_id: string;
+  conversations?: { type?: string | null } | null;
+}
 
 export interface RealPeer {
   user_id: string;
@@ -47,7 +85,7 @@ export interface ChatConversation {
 // ----------------------------------------------------------------------------
 
 export async function recordUserHeartbeat(
-  user: any,
+  user: User,
   options: {
     status?: "online" | "in_class" | "studying" | "away";
     customStatus?: string;
@@ -139,8 +177,8 @@ export async function recordUserHeartbeat(
     );
 
     return { success: true, timestamp: now };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to record presence" };
   }
 }
 
@@ -150,7 +188,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   const nowMs = Date.now();
 
   // 1. Load real registered users from auth.admin
-  let realUsers: any[] = [];
+  let realUsers: User[] = [];
   try {
     const { data: authData } = await supabase.auth.admin.listUsers({
       page: 1,
@@ -173,7 +211,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   }
 
   // 3. Load presence map from user_presence or exam_config
-  let presenceMap: Record<string, any> = {};
+  let presenceMap: Record<string, PresenceRecord> = {};
 
   try {
     const thresholdDate = new Date(nowMs - thresholdMs).toISOString();
@@ -204,7 +242,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
         .maybeSingle();
 
       if (row && typeof row.config_value === "object" && row.config_value !== null) {
-        presenceMap = row.config_value;
+        presenceMap = row.config_value as unknown as Record<string, PresenceRecord>;
       }
     } catch {
       // ignore
@@ -299,9 +337,10 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
         .order("last_message_at", { ascending: false });
 
       if (!convError && Array.isArray(convs)) {
-        return convs.map((c: any) => {
+        const nativeConversations = convs as unknown as NativeConversationRecord[];
+        return nativeConversations.map((c) => {
           const parts = c.conversation_participants || [];
-          const otherId = parts.find((p: any) => p.user_id !== userId)?.user_id;
+          const otherId = parts.find((participant) => participant.user_id !== userId)?.user_id;
           const other = otherId ? peersById.get(otherId) || null : null;
           const lastMsg = c.messages?.[c.messages.length - 1];
 
@@ -313,7 +352,11 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
             created_at: c.created_at,
             last_message_at: c.last_message_at || c.created_at,
             last_message_preview: lastMsg?.content || "No messages yet",
-            participants: parts,
+            participants: parts.map((participant) => ({
+              user_id: participant.user_id,
+              role: participant.role,
+              last_read_at: participant.last_read_at ?? undefined,
+            })),
             other_participant: other,
           };
         });
@@ -378,14 +421,15 @@ export async function createOrGetDirectChat(
       .eq("user_id", userId);
 
     if (myConvs && myConvs.length > 0) {
-      const cIds = myConvs.map((c: any) => c.conversation_id);
+      const cIds = (myConvs as unknown as Array<{ conversation_id: string }>).map((conversation) => conversation.conversation_id);
       const { data: shared } = await supabase
         .from("conversation_participants")
         .select("conversation_id, conversations!inner(id, type, title, last_message_at)")
         .eq("user_id", recipientId)
         .in("conversation_id", cIds);
 
-      const directMatch = shared?.find((s: any) => s.conversations?.type === "direct");
+      const sharedRows = (shared ?? []) as unknown as SharedConversationParticipant[];
+      const directMatch = sharedRows.find((participant) => participant.conversations?.type === "direct");
       if (directMatch) {
         const { data: existing } = await supabase
           .from("conversations")
@@ -576,7 +620,8 @@ export async function getConversationMessages(
       .order("created_at", { ascending: true });
 
     if (!error && Array.isArray(messages)) {
-      return messages.map((m: any) => ({
+      const nativeMessages = messages as unknown as NativeMessageRecord[];
+      return nativeMessages.map((m) => ({
         id: m.id,
         conversation_id: m.conversation_id,
         sender_id: m.sender_id,
@@ -621,7 +666,7 @@ export async function getConversationMessages(
 
 export async function sendChatMessage(
   conversationId: string,
-  sender: any,
+  sender: User,
   payload: {
     content: string;
     messageType?: "text" | "audio_note" | "announcement" | "resource";
@@ -787,12 +832,15 @@ export async function toggleMessageReaction(
   return { success: false };
 }
 
-function formatNativeReactions(reactions: any[]): Record<string, string[]> {
+function formatNativeReactions(reactions: unknown): Record<string, string[]> {
   if (!Array.isArray(reactions)) return {};
   const map: Record<string, string[]> = {};
-  for (const r of reactions) {
-    if (!map[r.emoji]) map[r.emoji] = [];
-    map[r.emoji].push(r.user_id);
+  for (const value of reactions) {
+    if (!value || typeof value !== "object") continue;
+    const reaction = value as Record<string, unknown>;
+    if (typeof reaction.emoji !== "string" || typeof reaction.user_id !== "string") continue;
+    if (!map[reaction.emoji]) map[reaction.emoji] = [];
+    map[reaction.emoji].push(reaction.user_id);
   }
   return map;
 }
