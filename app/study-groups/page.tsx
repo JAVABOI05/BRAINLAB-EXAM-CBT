@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
@@ -87,20 +87,49 @@ const STUDY_CIRCLES: StudyCircle[] = [
 ];
 
 const LOCAL_JOINED_CIRCLES_KEY = "brainlab_joined_study_circles_v1";
+const DEFAULT_JOINED_CIRCLES = JSON.stringify(["sprint-circle"]);
+const JOINED_CIRCLES_CHANGE_EVENT = "brainlab:joined-circles-change";
+
+function subscribeJoinedCircles(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(JOINED_CIRCLES_CHANGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(JOINED_CIRCLES_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+function getJoinedCirclesSnapshot(): string {
+  try {
+    return window.localStorage.getItem(LOCAL_JOINED_CIRCLES_KEY) ?? DEFAULT_JOINED_CIRCLES;
+  } catch {
+    return DEFAULT_JOINED_CIRCLES;
+  }
+}
+
+function getServerJoinedCirclesSnapshot(): string {
+  return DEFAULT_JOINED_CIRCLES;
+}
 
 export default function StudyGroupsPage() {
-  const [joinedCircleIds, setJoinedCircleIds] = useState<string[]>(["sprint-circle"]);
+  const joinedCirclesSnapshot = useSyncExternalStore(
+    subscribeJoinedCircles,
+    getJoinedCirclesSnapshot,
+    getServerJoinedCirclesSnapshot,
+  );
+  const joinedCircleIds = useMemo(() => {
+    try {
+      const parsed: unknown = JSON.parse(joinedCirclesSnapshot);
+      return Array.isArray(parsed)
+        ? parsed.filter((id): id is string => typeof id === "string")
+        : ["sprint-circle"];
+    } catch {
+      return ["sprint-circle"];
+    }
+  }, [joinedCirclesSnapshot]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"circles" | "rules">("circles");
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LOCAL_JOINED_CIRCLES_KEY);
-      if (raw) {
-        setJoinedCircleIds(JSON.parse(raw));
-      }
-    } catch {}
-  }, []);
 
   const handleToggleJoin = (circleId: string) => {
     let next: string[];
@@ -109,9 +138,9 @@ export default function StudyGroupsPage() {
     } else {
       next = [...joinedCircleIds, circleId];
     }
-    setJoinedCircleIds(next);
     try {
       localStorage.setItem(LOCAL_JOINED_CIRCLES_KEY, JSON.stringify(next));
+      window.dispatchEvent(new Event(JOINED_CIRCLES_CHANGE_EVENT));
     } catch {}
   };
 
