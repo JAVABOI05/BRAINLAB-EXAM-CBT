@@ -7,7 +7,7 @@ on:
       - feature/brainlab-academy-upgrade
       - feature/learning-hub-foundation
       - fix/learning-hub-assessment-atomicity
-- feature/learner-dashboard-profile-on-learning-hub
+      - feature/learner-dashboard-profile-on-learning-hub
   pull_request:
     branches:
       - main
@@ -69,4 +69,3 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-public-anon-key
           NEXT_PUBLIC_SITE_URL: https://example.com
-
