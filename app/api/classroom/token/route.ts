@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // 1. Fetch class details or provision demo/interactive session fallback
-    let liveClass: any = null;
+    let liveClass: { id: string; tutor_id: string; [key: string]: unknown } | null = null;
 
     if (classId === "demo-class" || classId === "general-stage") {
       liveClass = {
