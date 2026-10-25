@@ -54,7 +54,7 @@ export interface ClassroomSidebarProps {
   activeTab: "chat" | "participants" | "polls" | "resources";
   setActiveTab: (tab: "chat" | "participants" | "polls" | "resources") => void;
   messages: ClassroomMessage[];
-  currentUser: any;
+  currentUser: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null;
   participants: Participant[];
   polls: ClassroomPollItem[];
   activePoll: ClassroomPollItem | null;
@@ -196,7 +196,7 @@ export default function ClassroomSidebar({
       {activeTab === "chat" && (
         <div className="flex-1 flex flex-col overflow-hidden">
           <input
-            ref={imageInputRef as any}
+            ref={imageInputRef}
             type="file"
             accept="image/*"
             className="hidden"
