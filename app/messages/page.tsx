@@ -201,11 +201,13 @@ export default function MessagesPage() {
   };
 
   useEffect(() => {
-    if (currentUser) {
-      void fetchOnlinePeers();
-      const interval = setInterval(() => void fetchOnlinePeers(), 12000);
-      return () => clearInterval(interval);
-    }
+    if (!currentUser) return;
+    const initialFetch = window.setTimeout(() => void fetchOnlinePeers(), 0);
+    const interval = window.setInterval(() => void fetchOnlinePeers(), 12000);
+    return () => {
+      window.clearTimeout(initialFetch);
+      window.clearInterval(interval);
+    };
   }, [currentUser]);
 
   // 3. Load messages for active conversation
