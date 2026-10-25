@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true, success: true, provider: "paystack" });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal webhook error" },
+      { error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Internal webhook error" },
       { status: 500 }
     );
   }
