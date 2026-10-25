@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { getLiveClassroomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
-import type { ParticipantRole, RoomPermissions } from "@/app/lib/liveClassroom/types";
+import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -179,7 +179,11 @@ export async function POST(request: NextRequest) {
     };
 
     // 5. Generate Room Token using Selected Provider
-    const providerType = liveClass.provider || config.provider || "webrtc";
+    const configuredProvider = liveClass.provider || config.provider || "webrtc";
+    const providerTypes: VideoProviderType[] = ["webrtc", "livekit", "agora", "daily"];
+    const providerType: VideoProviderType = providerTypes.includes(configuredProvider as VideoProviderType)
+      ? configuredProvider as VideoProviderType
+      : "webrtc";
     const provider = getVideoProvider(providerType);
 
     const userName =
