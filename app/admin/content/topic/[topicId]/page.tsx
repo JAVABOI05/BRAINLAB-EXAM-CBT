@@ -366,12 +366,13 @@ export default function TopicContentStudioPage() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
+      if (!token) throw new Error("Your session has expired. Please sign in again to use the AI content tools.");
 
       const res = await fetch("/api/admin/ai-author", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           mode: "contextual_edit",
@@ -419,12 +420,13 @@ export default function TopicContentStudioPage() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
+      if (!token) throw new Error("Your session has expired. Please sign in again to use the AI content tools.");
 
       const res = await fetch("/api/admin/ai-author", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           mode: "generate_lesson",
@@ -478,12 +480,13 @@ export default function TopicContentStudioPage() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
+      if (!token) throw new Error("Your session has expired. Please sign in again to use the AI content tools.");
 
       const res = await fetch("/api/admin/ai-author", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           mode: "quality_review",
@@ -517,12 +520,13 @@ export default function TopicContentStudioPage() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
+      if (!token) throw new Error("Your session has expired. Please sign in again to use the AI content tools.");
 
       const res = await fetch("/api/admin/ai-author", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           mode: "generate_mcqs",
