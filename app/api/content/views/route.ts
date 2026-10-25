@@ -68,12 +68,12 @@ export async function GET(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
 
-    const uniqueUsers = new Set((views ?? []).map((v: any) => v.user_id));
+    const uniqueUsers = new Set((views ?? []).map((v) => v.user_id));
     const totalViews = (views ?? []).length;
     const avgDuration =
       totalViews > 0
         ? Math.round(
-            views!.reduce((acc: number, curr: any) => acc + (curr.duration_seconds || 0), 0) / totalViews
+            (views ?? []).reduce((acc, curr) => acc + (curr.duration_seconds || 0), 0) / totalViews
           )
         : 0;
 
