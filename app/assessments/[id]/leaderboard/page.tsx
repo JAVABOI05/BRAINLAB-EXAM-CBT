@@ -30,6 +30,7 @@ export default function AssessmentLeaderboardPage() {
 
   const loadLeaderboard = useCallback(async () => {
     const { data: auth } = await supabase.auth.getUser();
+    setError("");
     const currentUserId = auth.user?.id;
 
     // Fetch assessment title
