@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAdminSession } from "../../lib/adminAuth";
+import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
 import {
   getCommunicationConfig,
@@ -16,9 +16,17 @@ import {
 import { supabase } from "../../lib/supabase";
 import "../admin.css";
 
+interface OfficialTag {
+  id: string;
+  name: string;
+  display_label: string;
+  bg_color: string;
+  color: string;
+}
+
 export default function AdminCommunicationControlPage() {
   const router = useRouter();
-  const [adminUser, setAdminUser] = useState<any>(null);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -45,7 +53,7 @@ export default function AdminCommunicationControlPage() {
     allow_downloads: true,
   });
 
-  const [officialTags, setOfficialTags] = useState<any[]>([]);
+  const [officialTags, setOfficialTags] = useState<OfficialTag[]>([]);
 
   useEffect(() => {
     let active = true;
