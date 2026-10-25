@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 
+interface ContentViewStatsRow {
+  user_id: string;
+  duration_seconds: number | null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -68,12 +73,13 @@ export async function GET(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    const uniqueUsers = new Set((views ?? []).map((v: any) => v.user_id));
-    const totalViews = (views ?? []).length;
+    const viewRows = (views ?? []) as unknown as ContentViewStatsRow[];
+    const uniqueUsers = new Set(viewRows.map((view) => view.user_id));
+    const totalViews = viewRows.length;
     const avgDuration =
       totalViews > 0
         ? Math.round(
-            views!.reduce((acc: number, curr: any) => acc + (curr.duration_seconds || 0), 0) / totalViews
+            viewRows.reduce((acc, view) => acc + (view.duration_seconds || 0), 0) / totalViews
           )
         : 0;
 
