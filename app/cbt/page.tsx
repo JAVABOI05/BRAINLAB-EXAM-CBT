@@ -19,7 +19,7 @@ export default function CBTExamPortalPage() {
   const router = useRouter();
 
   const [loadingSession, setLoadingSession] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
