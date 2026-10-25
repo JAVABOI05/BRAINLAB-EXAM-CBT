@@ -1962,7 +1962,7 @@ export default function LiveClassroomPage({
                                   {canVote ? (
                                     <button
                                       type="button"
-                                      onClick={() => { void handleVoteRef.current(activePoll.id, opt.id); }}
+                                      onClick={() => { void handleVote(activePoll.id, opt.id); }}
                                       className="w-full text-left rounded-2xl border-2 border-slate-700 bg-slate-900/90 hover:border-cyan-400 hover:bg-slate-800/90 p-4 transition-all duration-200 active-press group flex items-start gap-3"
                                     >
                                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 font-mono font-black text-sm border border-cyan-500/40 group-hover:bg-cyan-400 group-hover:text-slate-950 transition">
@@ -2042,7 +2042,7 @@ export default function LiveClassroomPage({
                             <div className="mt-5 flex justify-end">
                               <button
                                 type="button"
-                                onClick={() => { void handleClosePollRef.current(activePoll.id); }}
+                                onClick={() => { void handleClosePoll(activePoll.id); }}
                                 className="rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-black text-white shadow transition"
                               >
                                 End Quiz & Reveal Answers
