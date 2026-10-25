@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
@@ -28,25 +28,36 @@ export default function TutorRecordingsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
 
-  const loadRecordings = useCallback(async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Please sign in again to manage class recordings.");
-      const response = await fetch("/api/recordings", {
-        cache: "no-store",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || "Could not load recordings.");
-      setRecordings((data.recordings || []).filter((item: Recording) => item.canManage));
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Could not load recordings.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  useEffect(() => {
+    let active = true;
 
-  useEffect(() => { void loadRecordings(); }, [loadRecordings]);
+    async function loadRecordings() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error("Please sign in again to manage class recordings.");
+        const response = await fetch("/api/recordings", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "Could not load recordings.");
+        if (active) {
+          setRecordings((data.recordings || []).filter((item: Recording) => item.canManage));
+        }
+      } catch (error) {
+        if (active) {
+          setFeedback(error instanceof Error ? error.message : "Could not load recordings.");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadRecordings();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function toggleVisibility(recording: Recording) {
     setBusyId(recording.id);
