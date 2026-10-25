@@ -76,10 +76,21 @@ export default function CBTExamPortalPage() {
 
         // 2. Read any previously saved candidate info from localStorage
         const savedCandidate = localStorage.getItem("candidate");
-        let parsedSaved: any = null;
+        let parsedSaved: SavedCandidate | null = null;
         if (savedCandidate) {
           try {
-            parsedSaved = JSON.parse(savedCandidate);
+            const parsed: unknown = JSON.parse(savedCandidate);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+              const candidate = parsed as Record<string, unknown>;
+              parsedSaved = {
+                name: typeof candidate.name === "string" ? candidate.name : undefined,
+                phone: typeof candidate.phone === "string" ? candidate.phone : undefined,
+                subjects: Array.isArray(candidate.subjects)
+                  ? candidate.subjects.filter((subject): subject is string => typeof subject === "string")
+                  : undefined,
+                subject: typeof candidate.subject === "string" ? candidate.subject : undefined,
+              };
+            }
           } catch {
             // ignore
           }
