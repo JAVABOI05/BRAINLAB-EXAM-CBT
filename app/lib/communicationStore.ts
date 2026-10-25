@@ -254,7 +254,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
     const p = presenceMap[u.id];
     const lastHeartbeat = p?.last_heartbeat_at;
     const isOnline =
-      Boolean(lastHeartbeat) && nowMs - new Date(lastHeartbeat).getTime() < thresholdMs;
+      typeof lastHeartbeat === "string" && nowMs - new Date(lastHeartbeat).getTime() < thresholdMs;
 
     const adminRole = adminUsersMap.get(u.id);
     const role: "admin" | "tutor" | "student" = adminRole
@@ -274,7 +274,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
 
     return {
       user_id: u.id,
-      display_name: displayName,
+      display_name: String(displayName),
       email: u.email || "",
       role,
       status: isOnline ? (p?.status || "online") : "offline",
@@ -284,8 +284,8 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
         : lastHeartbeat
         ? `Last seen ${formatRelativeTime(lastHeartbeat)}`
         : "Registered Candidate",
-      avatar_url: u.user_metadata?.avatar_url || null,
-      last_heartbeat_at: lastHeartbeat || null,
+      avatar_url: typeof u.user_metadata?.avatar_url === "string" ? u.user_metadata.avatar_url : null,
+      last_heartbeat_at: lastHeartbeat || undefined,
       is_self: u.id === currentUserId,
     };
   });
