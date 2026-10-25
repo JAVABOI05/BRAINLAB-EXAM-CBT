@@ -61,28 +61,6 @@ export default function AdminGamificationPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    async function init() {
-      const session = await getAdminSession();
-      if (!session) {
-        router.replace("/admin/login");
-        return;
-      }
-      if (!active) return;
-      setAdminUser(session);
-
-      await loadAllData();
-      if (active) setLoading(false);
-    }
-
-    void init();
-    return () => {
-      active = false;
-    };
-  }, [router]);
-
   async function loadAllData() {
     setError("");
     try {
@@ -105,6 +83,28 @@ export default function AdminGamificationPage() {
       setError("Could not load gamification management data.");
     }
   }
+
+  useEffect(() => {
+    let active = true;
+
+    async function init() {
+      const session = await getAdminSession();
+      if (!session) {
+        router.replace("/admin/login");
+        return;
+      }
+      if (!active) return;
+      setAdminUser(session);
+
+      await loadAllData();
+      if (active) setLoading(false);
+    }
+
+    void init();
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   async function toggleBadgeActive(badgeId: string, currentStatus: boolean) {
     const nextStatus = !currentStatus;
