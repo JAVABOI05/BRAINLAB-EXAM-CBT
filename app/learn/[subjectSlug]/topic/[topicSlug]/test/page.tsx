@@ -198,10 +198,7 @@ export default function TopicTestPage() {
   }, [attempt, result, answers, saveAnswer]);
 
   useEffect(() => {
-    if (!attempt?.deadlineAt || result) {
-      setTimeLeft(null);
-      return;
-    }
+    if (!attempt?.deadlineAt || result) return;
     const update = () => setTimeLeft(Math.max(0, Math.ceil((new Date(attempt.deadlineAt as string).getTime() - Date.now()) / 1000)));
     const initialUpdate = window.setTimeout(update, 0);
     const interval = window.setInterval(update, 1000);
