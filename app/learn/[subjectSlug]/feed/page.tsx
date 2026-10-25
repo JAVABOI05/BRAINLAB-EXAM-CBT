@@ -50,7 +50,7 @@ export default function SubjectFeedPage({
   const [showComposer, setShowComposer] = useState(false);
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
-  const [postType, setPostType] = useState("announcement");
+  const [postType] = useState("announcement");
   const [isPinned, setIsPinned] = useState(false);
   const [recordedAudioId, setRecordedAudioId] = useState<string | null>(null);
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
