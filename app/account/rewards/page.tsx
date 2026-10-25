@@ -54,6 +54,8 @@ export default function StudentRewardsPage() {
 
           if (active && reds) setRedemptions(reds as unknown as UserRedemption[]);
         }
+      } catch (error) {
+        console.error("Failed to load student rewards:", error);
       } finally {
         if (active) setLoading(false);
       }
