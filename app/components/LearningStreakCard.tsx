@@ -11,16 +11,25 @@ interface LearningStreakProps {
   compact?: boolean;
 }
 
-const subscribeToLastActiveDate = (callback: () => void) => {
+const subscribeToLocalStorage = (callback: () => void) => {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
+  window.addEventListener("brainlab-local-storage", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("brainlab-local-storage", callback);
+  };
 };
 
 const getLastActiveDateSnapshot = () =>
   typeof window === "undefined" ? "" : localStorage.getItem("brainlab_last_active_date") || "";
-
 const getLastActiveDateServerSnapshot = () => "";
+const getStreakCountSnapshot = () =>
+  typeof window === "undefined" ? 0 : Number.parseInt(localStorage.getItem("brainlab_streak_count") || "0", 10) || 0;
+const getStreakCountServerSnapshot = () => 0;
+const getReminderSnapshot = () =>
+  typeof window === "undefined" ? "" : localStorage.getItem("brainlab_streak_reminder") || "";
+const getReminderServerSnapshot = () => "";
 
 export default function LearningStreakCard({
   currentStreak = 0,
@@ -28,77 +37,63 @@ export default function LearningStreakCard({
   lastActiveDate,
   compact = false,
 }: LearningStreakProps) {
-  const [streakDays, setStreakDays] = useState(currentStreak);
-  const [maxStreak, setMaxStreak] = useState(longestStreak);
+  const localStreakCount = useSyncExternalStore(
+    subscribeToLocalStorage,
+    getStreakCountSnapshot,
+    getStreakCountServerSnapshot
+  );
+  const streakDays = currentStreak > 0 ? currentStreak : localStreakCount;
+  const maxStreak = Math.max(longestStreak, streakDays);
   const localLastActiveDate = useSyncExternalStore(
-    subscribeToLastActiveDate,
+    subscribeToLocalStorage,
     getLastActiveDateSnapshot,
     getLastActiveDateServerSnapshot
   );
+  const reminderPreferenceRaw = useSyncExternalStore(
+    subscribeToLocalStorage,
+    getReminderSnapshot,
+    getReminderServerSnapshot
+  );
+  let reminderPreference: { enabled?: boolean; time?: string } = {};
+  try {
+    reminderPreference = reminderPreferenceRaw ? JSON.parse(reminderPreferenceRaw) : {};
+  } catch {
+    reminderPreference = {};
+  }
+  const reminderEnabled = Boolean(reminderPreference.enabled);
+  const reminderTime = typeof reminderPreference.time === "string" ? reminderPreference.time : "19:00";
   const todayStr = new Date().toISOString().split("T")[0];
   const effectiveLastActiveDate = lastActiveDate || localLastActiveDate;
   const hasPracticedToday = effectiveLastActiveDate
     ? new Date(effectiveLastActiveDate).toISOString().split("T")[0] === todayStr
     : false;
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderTime, setReminderTime] = useState("19:00");
   const [showReminderSettings, setShowReminderSettings] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
 
-  useEffect(() => {
-    // Load local streak cache if props were 0
-    if (currentStreak === 0) {
-      const savedStreak = parseInt(localStorage.getItem("brainlab_streak_count") || "0", 10);
-      if (savedStreak > 0) setStreakDays(savedStreak);
-    } else {
-      setStreakDays(currentStreak);
-    }
-
-    if (longestStreak > 0) setMaxStreak(longestStreak);
-
-    // Load reminder preferences
-    try {
-      const savedReminder = localStorage.getItem("brainlab_streak_reminder");
-      if (savedReminder) {
-        const parsed = JSON.parse(savedReminder);
-        setReminderEnabled(Boolean(parsed.enabled));
-        if (parsed.time) setReminderTime(parsed.time);
-      }
-    } catch {}
-
-    // Check notification permission state
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setNotificationPermission(Notification.permission);
-    }
-  }, [currentStreak, longestStreak]);
+  function saveReminderPreference(enabled: boolean, time: string) {
+    localStorage.setItem("brainlab_streak_reminder", JSON.stringify({ enabled, time }));
+    window.dispatchEvent(new Event("brainlab-local-storage"));
+  }
 
   async function handleToggleReminder() {
     if (!reminderEnabled) {
       if (typeof window !== "undefined" && "Notification" in window) {
         if (Notification.permission !== "granted") {
           const perm = await Notification.requestPermission();
-          setNotificationPermission(perm);
           if (perm !== "granted") {
             toast.error("Please allow browser notifications to receive daily streak reminders.");
             return;
           }
         }
       }
-      const newSettings = { enabled: true, time: reminderTime };
-      localStorage.setItem("brainlab_streak_reminder", JSON.stringify(newSettings));
-      setReminderEnabled(true);
+      saveReminderPreference(true, reminderTime);
       toast.success(`Streak reminder set for ${reminderTime} daily! We'll help protect your flame 🔥.`);
     } else {
-      const newSettings = { enabled: false, time: reminderTime };
-      localStorage.setItem("brainlab_streak_reminder", JSON.stringify(newSettings));
-      setReminderEnabled(false);
+      saveReminderPreference(false, reminderTime);
     }
   }
 
   function handleSaveReminderTime(time: string) {
-    setReminderTime(time);
-    const newSettings = { enabled: reminderEnabled, time };
-    localStorage.setItem("brainlab_streak_reminder", JSON.stringify(newSettings));
+    saveReminderPreference(reminderEnabled, time);
   }
 
   // Generate 7-day activity pills for the current week
