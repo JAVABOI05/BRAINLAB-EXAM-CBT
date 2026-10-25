@@ -289,6 +289,7 @@ export default function LiveClassroomPage({
           },
         });
         channelRef.current = channel;
+        setActiveRealtimeChannel(channel);
 
         // A. Listen for incoming live chat messages from all attendees
         channel.on("broadcast", { event: "chat_message" }, ({ payload }) => {
@@ -637,8 +638,8 @@ export default function LiveClassroomPage({
   // Active Poll Countdown Timer
   useEffect(() => {
     if (!activePoll || !activePoll.is_open || !activePoll.duration_seconds || activePoll.duration_seconds <= 0) {
-      setPollCountdown(null);
-      return;
+      const resetTimeout = window.setTimeout(() => setPollCountdown(null), 0);
+      return () => window.clearTimeout(resetTimeout);
     }
 
     const createdTime = new Date(activePoll.created_at).getTime();
@@ -654,7 +655,7 @@ export default function LiveClassroomPage({
         clearInterval(interval);
         // Automatically close poll on tutor client if expired
         if (classDetails?.tutorId === currentUser?.id) {
-          void handleClosePoll(activePoll.id);
+          void handleClosePollRef.current(activePoll.id);
         }
       }
     }, 1000);
@@ -1277,6 +1278,10 @@ export default function LiveClassroomPage({
   };
 
   // 11. Tutor Closes Poll & Reveals Answers
+  useEffect(() => {
+    handleClosePollRef.current = handleClosePoll;
+  });
+
   const handleClosePoll = async (pollId: string) => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -1824,7 +1829,7 @@ export default function LiveClassroomPage({
                   classId={classId}
                   isHost={isTutorOrModerator}
                   canDraw={isTutorOrModerator || canStudentsDraw}
-                  channel={channelRef.current}
+                  channel={activeRealtimeChannel}
                   currentUserName={
                     currentUser?.user_metadata?.full_name ||
                     currentUser?.email?.split("@")[0] ||
