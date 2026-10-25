@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check tracked environment files and public secret variable names
         shell: bash
@@ -46,7 +46,7 @@ jobs:
           echo "Environment-file and public-secret-name checks passed."
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
