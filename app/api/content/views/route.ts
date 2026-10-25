@@ -39,12 +39,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
   }
 }
 
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       .eq("content_type", contentType)
       .eq("content_id", contentId);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
 
     const uniqueUsers = new Set((views ?? []).map((v: any) => v.user_id));
     const totalViews = (views ?? []).length;
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       totalViews,
       averageDurationSeconds: avgDuration,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
   }
 }
