@@ -120,17 +120,13 @@ export default function AdminSchoolsPage() {
     else if (inq.studentCount.includes("601+")) parsedCount = 700;
     else if (inq.studentCount.includes("50-100")) parsedCount = 80;
 
-    const generatedPins: string[] = [];
-    for (let i = 0; i < parsedCount; i++) {
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
-      generatedPins.push(`BL-${randomSuffix}`);
-    }
+    const generatedPins = generateCandidatePins(parsedCount);
 
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 45);
 
     const newBatch: MockPinBatch = {
-      batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+      batchId: createBatchId(),
       schoolName: inq.schoolName,
       examType: inq.examType,
       count: parsedCount,
@@ -174,17 +170,13 @@ export default function AdminSchoolsPage() {
       return;
     }
 
-    const generatedPins: string[] = [];
-    for (let i = 0; i < genCount; i++) {
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
-      generatedPins.push(`BL-${randomSuffix}`);
-    }
+    const generatedPins = generateCandidatePins(genCount);
 
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + genExpiryDays);
 
     const newBatch: MockPinBatch = {
-      batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+      batchId: createBatchId(),
       schoolName: genSchool.trim(),
       examType: genExamType,
       count: genCount,
