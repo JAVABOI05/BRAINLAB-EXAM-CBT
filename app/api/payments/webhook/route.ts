@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid Bachs signature" }, { status: 401 });
       }
 
-      let event: any;
+      let event: unknown;
       try {
         event = JSON.parse(rawBody);
       } catch {
