@@ -23,12 +23,11 @@ export async function GET(request: NextRequest) {
     } else {
       errorMessage = error.message;
     }
-  } catch (err: any) {
-    errorMessage = err?.message || "Could not connect to Supabase database";
+  } catch (err: unknown) {
+    errorMessage = err instanceof Error ? err.message : "Could not connect to Supabase database";
   }
 
   const googleClientIdConfigured = Boolean(process.env.GOOGLE_CLIENT_ID);
-  const siteUrlEnv = process.env.NEXT_PUBLIC_SITE_URL || "";
 
   const checks = {
     canonical_domain: {

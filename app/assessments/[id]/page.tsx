@@ -89,22 +89,7 @@ export default function AssessmentRunnerPage() {
     };
   }, [assessmentId, router]);
 
-  // 2. Timer tick
-  useEffect(() => {
-    if (phase !== "running" || !deadline) return;
 
-    const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((deadline.getTime() - Date.now()) / 1000));
-      setTimeLeftSec(remaining);
-
-      if (remaining <= 0) {
-        clearInterval(interval);
-        void handleAutoSubmit();
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [phase, deadline]);
 
   // 3. Start Assessment
   async function handleStart() {
@@ -194,11 +179,28 @@ export default function AssessmentRunnerPage() {
       setError(e instanceof Error ? e.message : "Submission error.");
       setPhase("running");
     }
-  }, [attemptId, attemptToken, answers]);
+  }, [attemptId, attemptToken, answers, assessmentId]);
 
-  async function handleAutoSubmit() {
+  const handleAutoSubmit = useCallback(async () => {
     await submitAttempt();
-  }
+  }, [submitAttempt]);
+
+  // Timer tick
+  useEffect(() => {
+    if (phase !== "running" || !deadline) return;
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((deadline.getTime() - Date.now()) / 1000));
+      setTimeLeftSec(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        void handleAutoSubmit();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [phase, deadline, handleAutoSubmit]);
 
   function formatTime(seconds: number) {
     const m = Math.floor(seconds / 60);
@@ -341,7 +343,13 @@ export default function AssessmentRunnerPage() {
                     {/* Options */}
                     <div className="mt-6 space-y-3">
                       {(["A", "B", "C", "D"] as const).map((optKey) => {
-                        const optText = (q as any)[`option_${optKey.toLowerCase()}`];
+                        const optionTextByKey: Record<typeof optKey, string> = {
+                          A: q.option_a,
+                          B: q.option_b,
+                          C: q.option_c,
+                          D: q.option_d,
+                        };
+                        const optText = optionTextByKey[optKey];
                         if (!optText) return null;
                         const isChosen = selected === optKey;
 

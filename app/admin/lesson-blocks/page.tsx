@@ -42,13 +42,22 @@ export default function LessonBlocksAdminPage() {
     setLessonId((current) => current || nextLessons[0]?.id || "");
   }, []);
 
-  const loadBlocks = useCallback(async (id: string) => {
-    if (!id) { setBlocks([]); return; }
+  const fetchBlocks = useCallback(async (id: string): Promise<Block[]> => {
+    if (!id) return [];
     const { data, error: blockError } = await supabase.from("learning_lesson_blocks")
       .select("id,lesson_id,block_type,content,order_index").eq("lesson_id", id).order("order_index");
-    if (blockError) { setError("Could not load lesson blocks."); setBlocks([]); return; }
-    setBlocks((data ?? []) as Block[]);
+    if (blockError) throw blockError;
+    return (data ?? []) as Block[];
   }, []);
+
+  const loadBlocks = useCallback(async (id: string) => {
+    try {
+      setBlocks(await fetchBlocks(id));
+    } catch {
+      setError("Could not load lesson blocks.");
+      setBlocks([]);
+    }
+  }, [fetchBlocks]);
 
   useEffect(() => {
     let active = true;
@@ -70,7 +79,22 @@ export default function LessonBlocksAdminPage() {
     return () => { active = false; };
   }, [router, load]);
 
-  useEffect(() => { void loadBlocks(lessonId); }, [lessonId, loadBlocks]);
+  useEffect(() => {
+    let active = true;
+    async function refreshBlocks() {
+      try {
+        const nextBlocks = await fetchBlocks(lessonId);
+        if (active) setBlocks(nextBlocks);
+      } catch {
+        if (active) {
+          setError("Could not load lesson blocks.");
+          setBlocks([]);
+        }
+      }
+    }
+    void refreshBlocks();
+    return () => { active = false; };
+  }, [lessonId, fetchBlocks]);
 
   const lessonLabel = (lesson: Lesson) => {
     const topic = topics.find((x) => x.id === lesson.topic_id);

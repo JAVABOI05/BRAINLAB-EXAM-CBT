@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
 import { toast } from "../lib/toast";
+import type { User } from "@supabase/supabase-js";
 
 const CONFIG = {
   whatsappNumber: "2349074310204",
@@ -15,11 +16,18 @@ const CONFIG = {
     "Good day BRAINLAB TUTORIALS, I would like to join your 2 weeks final JAMB revision class. Please can I get more information about the schedule, fee, and how to register?",
 };
 
+interface SavedCandidate {
+  name?: string;
+  phone?: string;
+  subjects?: string[];
+  subject?: string;
+}
+
 export default function CBTExamPortalPage() {
   const router = useRouter();
 
   const [loadingSession, setLoadingSession] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -76,10 +84,21 @@ export default function CBTExamPortalPage() {
 
         // 2. Read any previously saved candidate info from localStorage
         const savedCandidate = localStorage.getItem("candidate");
-        let parsedSaved: any = null;
+        let parsedSaved: SavedCandidate | null = null;
         if (savedCandidate) {
           try {
-            parsedSaved = JSON.parse(savedCandidate);
+            const parsed: unknown = JSON.parse(savedCandidate);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+              const candidate = parsed as Record<string, unknown>;
+              parsedSaved = {
+                name: typeof candidate.name === "string" ? candidate.name : undefined,
+                phone: typeof candidate.phone === "string" ? candidate.phone : undefined,
+                subjects: Array.isArray(candidate.subjects)
+                  ? candidate.subjects.filter((subject): subject is string => typeof subject === "string")
+                  : undefined,
+                subject: typeof candidate.subject === "string" ? candidate.subject : undefined,
+              };
+            }
           } catch {
             // ignore
           }

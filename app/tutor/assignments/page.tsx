@@ -27,6 +27,13 @@ interface TutorAssignment {
   stats: { total: number; submitted: number; graded: number };
 }
 
+interface AudioAsset {
+  id: string;
+  file_url: string;
+  duration_seconds: number;
+  title?: string;
+}
+
 interface StudentSubmission {
   id: string;
   assignment_id: string;
@@ -40,14 +47,26 @@ interface StudentSubmission {
   status: "submitted" | "graded" | "resubmission_requested";
   submitted_at: string;
   graded_at: string | null;
-  audio_asset?: { id: string; file_url: string; duration_seconds: number; title?: string } | any;
-  tutor_audio_asset?: { id: string; file_url: string; duration_seconds: number; title?: string } | any;
+  audio_asset?: AudioAsset | null;
+  tutor_audio_asset?: AudioAsset | null;
   student?: { id: string; full_name?: string; email?: string };
+}
+
+interface RawStudentSubmission extends Omit<StudentSubmission, "audio_asset" | "tutor_audio_asset"> {
+  audio_asset?: AudioAsset | AudioAsset[] | null;
+  tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return fallback;
 }
 
 export default function TutorAssignmentsPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [assignments, setAssignments] = useState<TutorAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
@@ -57,8 +76,8 @@ export default function TutorAssignmentsPage() {
 
   // New Assignment Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newInstructions, setNewInstructions] = useState("");
   const [newCourseId, setNewCourseId] = useState("");
@@ -87,7 +106,6 @@ export default function TutorAssignmentsPage() {
         return;
       }
       if (!active) return;
-      setCurrentUser(session.user);
 
       try {
         // Fetch tutor assignments
@@ -99,6 +117,7 @@ export default function TutorAssignmentsPage() {
           setAssignments(json.assignments);
           if (json.assignments.length > 0) {
             setSelectedAssignmentId(json.assignments[0].id);
+            setLoadingSubmissions(true);
           }
         }
 
@@ -127,8 +146,6 @@ export default function TutorAssignmentsPage() {
   useEffect(() => {
     if (!selectedAssignmentId) return;
     let active = true;
-    setLoadingSubmissions(true);
-
     async function loadSubs() {
       try {
         const { data, error } = await supabase
@@ -154,7 +171,7 @@ export default function TutorAssignmentsPage() {
 
         if (error) throw error;
         if (active) {
-          const normalized: StudentSubmission[] = ((data as any[]) || []).map((row) => ({
+          const normalized: StudentSubmission[] = ((data as RawStudentSubmission[] | null) || []).map((row) => ({
             ...row,
             audio_asset: Array.isArray(row.audio_asset) ? row.audio_asset[0] : row.audio_asset,
             tutor_audio_asset: Array.isArray(row.tutor_audio_asset) ? row.tutor_audio_asset[0] : row.tutor_audio_asset,
@@ -226,8 +243,8 @@ export default function TutorAssignmentsPage() {
       setGradingAudioUrl(json.asset.file_url);
       setShowGradingRecorder(false);
       toast.success("Voice feedback note recorded and attached!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to record audio feedback.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to record audio feedback."));
     }
   };
 
@@ -264,8 +281,8 @@ export default function TutorAssignmentsPage() {
       );
 
       toast.success(status === "graded" ? "Grade and feedback saved!" : "Requested student revision.");
-    } catch (err: any) {
-      toast.error(err.message || "Evaluation save failed.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Evaluation save failed."));
     } finally {
       setSavingGrade(false);
     }
@@ -310,8 +327,8 @@ export default function TutorAssignmentsPage() {
       setNewTitle("");
       setNewInstructions("");
       toast.success("Assignment published and added to course calendar!");
-    } catch (err: any) {
-      toast.error(err.message || "Could not publish assignment.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Could not publish assignment."));
     } finally {
       setCreating(false);
     }
@@ -494,7 +511,7 @@ export default function TutorAssignmentsPage() {
             ) : assignments.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-500">
                 <p className="font-bold">No assignments yet</p>
-                <p className="mt-1">Click "+ Create Assignment" to publish your first homework task.</p>
+                <p className="mt-1">Click &quot;+ Create Assignment&quot; to publish your first homework task.</p>
               </div>
             ) : (
               assignments.map((assign) => {
@@ -502,7 +519,10 @@ export default function TutorAssignmentsPage() {
                 return (
                   <button
                     key={assign.id}
-                    onClick={() => setSelectedAssignmentId(assign.id)}
+                    onClick={() => {
+                        setLoadingSubmissions(true);
+                        setSelectedAssignmentId(assign.id);
+                      }}
                     className={`w-full text-left p-3.5 rounded-2xl border transition flex flex-col gap-1.5 hover-lift active-press ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/70 shadow-xs"
@@ -610,7 +630,7 @@ export default function TutorAssignmentsPage() {
               {/* Student's Work */}
               <div className="space-y-2">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                  Student's Written Work
+                  Student&apos;s Written Work
                 </h4>
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs leading-relaxed text-slate-800 max-h-48 overflow-y-auto whitespace-pre-wrap">
                   {activeSubmission.text_submission || "No written text submitted."}

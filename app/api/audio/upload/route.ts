@@ -170,8 +170,8 @@ export async function POST(request: NextRequest) {
         file_url: asset.file_url,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[audio/upload] Error:", error);
-    return NextResponse.json({ error: error.message || "Upload failed." }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Upload failed." }, { status: 500 });
   }
 }

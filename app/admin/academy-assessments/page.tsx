@@ -58,14 +58,23 @@ export default function AcademyAssessmentsAdminPage() {
     setSelectedTestId((v) => v || a.data?.[0]?.id || "");
   }, []);
 
-  const loadQuestions = useCallback(async (testId: string) => {
-    if (!testId) { setQuestions([]); return; }
+  const fetchQuestions = useCallback(async (testId: string): Promise<TestQuestion[]> => {
+    if (!testId) return [];
     const { data, error: questionError } = await supabase.from("learning_test_questions")
       .select("id,test_id,prompt,image_url,options,correct_answer,explanation,order_index")
       .eq("test_id", testId).order("order_index").order("created_at");
-    if (questionError) { setError("Could not load questions for this test."); setQuestions([]); return; }
-    setQuestions((data ?? []) as TestQuestion[]);
+    if (questionError) throw questionError;
+    return (data ?? []) as TestQuestion[];
   }, []);
+
+  const loadQuestions = useCallback(async (testId: string) => {
+    try {
+      setQuestions(await fetchQuestions(testId));
+    } catch {
+      setError("Could not load questions for this test.");
+      setQuestions([]);
+    }
+  }, [fetchQuestions]);
 
   useEffect(() => {
     let active = true;
@@ -87,7 +96,22 @@ export default function AcademyAssessmentsAdminPage() {
     return () => { active = false; };
   }, [router, loadAll]);
 
-  useEffect(() => { void loadQuestions(selectedTestId); }, [selectedTestId, loadQuestions]);
+  useEffect(() => {
+    let active = true;
+    async function refreshQuestions() {
+      try {
+        const nextQuestions = await fetchQuestions(selectedTestId);
+        if (active) setQuestions(nextQuestions);
+      } catch {
+        if (active) {
+          setError("Could not load questions for this test.");
+          setQuestions([]);
+        }
+      }
+    }
+    void refreshQuestions();
+    return () => { active = false; };
+  }, [selectedTestId, fetchQuestions]);
 
   async function createTest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

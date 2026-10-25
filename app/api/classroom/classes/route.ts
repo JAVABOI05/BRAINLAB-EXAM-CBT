@@ -20,11 +20,11 @@ export async function GET(request: NextRequest) {
     if (tutorId) query = query.eq("tutor_id", tutorId);
 
     const { data: classes, error } = await query;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
 
     return NextResponse.json({ success: true, classes: classes ?? [] });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
   }
 }
 
@@ -144,8 +144,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, liveClass });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
   }
 }
 
@@ -187,7 +187,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (status) {
       updates.status = status;
       if (status === "live" && !existingClass.actual_start_at) {
@@ -213,7 +213,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
-    const calendarUpdates: Record<string, any> = {};
+    const calendarUpdates: Record<string, unknown> = {};
     if (title) calendarUpdates.title = `Live Class: ${title}`;
     if (description) calendarUpdates.description = description;
     if (scheduled_start_at) calendarUpdates.start_time = scheduled_start_at;
@@ -268,7 +268,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, liveClass: updatedClass });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
   }
 }

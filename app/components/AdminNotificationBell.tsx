@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+
+interface WindowWithWebkitAudioContext extends Window {
+  webkitAudioContext?: typeof AudioContext;
+}
 
 interface NotificationItem {
   id: string;
@@ -16,7 +21,7 @@ interface NotificationItem {
 
 function playChime() {
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext || (window as WindowWithWebkitAudioContext).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
     const osc = ctx.createOscillator();
@@ -42,7 +47,7 @@ export default function AdminNotificationBell() {
 
   // Load initial notifications & subscribe to real-time alerts
   useEffect(() => {
-    let channel: any = null;
+    let channel: RealtimeChannel | null = null;
 
     async function fetchAlerts() {
       const alerts: NotificationItem[] = [];
@@ -101,13 +106,13 @@ export default function AdminNotificationBell() {
         channel = supabase.channel("admin_live_alerts");
 
         channel
-          .on("broadcast", { event: "new_school_inquiry" }, ({ payload }: any) => {
+          .on("broadcast", { event: "new_school_inquiry" }, ({ payload }: { payload: Record<string, unknown> }) => {
             if (payload) {
               const newItem: NotificationItem = {
                 id: `sch-${Date.now()}`,
                 type: "school",
-                title: payload.schoolName || "New School Inquiry",
-                subtitle: `Requested ${payload.studentCount || "custom"} passes for ${payload.examType || "JAMB CBT"} (Ref: ${payload.referenceCode})`,
+                title: typeof payload.schoolName === "string" ? payload.schoolName : "New School Inquiry",
+                subtitle: `Requested ${typeof payload.studentCount === "string" || typeof payload.studentCount === "number" ? payload.studentCount : "custom"} passes for ${typeof payload.examType === "string" ? payload.examType : "JAMB CBT"} (Ref: ${typeof payload.referenceCode === "string" ? payload.referenceCode : "N/A"})`,
                 badge: "School Inquiry",
                 time: "Just now",
                 href: "/admin/schools",
@@ -116,13 +121,13 @@ export default function AdminNotificationBell() {
               playChime();
             }
           })
-          .on("broadcast", { event: "new_refund_request" }, ({ payload }: any) => {
+          .on("broadcast", { event: "new_refund_request" }, ({ payload }: { payload: Record<string, unknown> }) => {
             if (payload) {
               const newItem: NotificationItem = {
                 id: `ref-${Date.now()}`,
                 type: "refund",
                 title: "New Learner Refund Claim",
-                subtitle: payload.reason || "24h Money-back guarantee claim",
+                subtitle: typeof payload.reason === "string" ? payload.reason : "24h Money-back guarantee claim",
                 badge: "Refund Claim",
                 time: "Just now",
                 href: "/admin/refunds",

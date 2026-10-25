@@ -341,7 +341,7 @@ export default function AdminCouponsPage() {
                     <label className="block text-xs font-bold text-slate-700 uppercase">Type</label>
                     <select
                       value={discountType}
-                      onChange={(e) => setDiscountType(e.target.value as any)}
+                      onChange={(e) => setDiscountType(e.target.value === "fixed" ? "fixed" : "percentage")}
                       className="mt-1 w-full rounded-xl border border-slate-300 p-2 text-xs focus:border-blue-500 focus:outline-none"
                     >
                       <option value="percentage">Percentage (%)</option>

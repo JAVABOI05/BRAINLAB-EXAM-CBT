@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
@@ -10,9 +10,24 @@ import { getAuthRedirectUrl } from "../lib/authRedirect";
 
 type Mode = "signin" | "signup";
 
+function subscribeToAccountMode(onChange: () => void) {
+  window.addEventListener("popstate", onChange);
+  return () => window.removeEventListener("popstate", onChange);
+}
+
+function getAccountModeSnapshot(): Mode {
+  return new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "signin";
+}
+
+function getServerAccountModeSnapshot(): Mode {
+  return "signin";
+}
+
 export default function AccountPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("signin");
+  const queryMode = useSyncExternalStore(subscribeToAccountMode, getAccountModeSnapshot, getServerAccountModeSnapshot);
+  const [manualMode, setManualMode] = useState<Mode | null>(null);
+  const mode = manualMode ?? queryMode;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,9 +43,6 @@ export default function AccountPage() {
     if (code || err) {
       window.location.replace(`/auth/callback${window.location.search}${window.location.hash}`);
       return;
-    }
-    if (searchParams.get("mode") === "signup") {
-      setMode("signup");
     }
     let active = true;
     async function redirectIfAlreadySignedIn() {
@@ -107,7 +119,7 @@ export default function AccountPage() {
       await clearOperatorGate();
       await supabase.auth.signOut();
       setMessage("Your account needs email verification before you can continue. Check your inbox for the verification link, then sign in again.");
-      setMode("signin");
+      setManualMode("signin");
       setPassword("");
       return;
     }
@@ -185,7 +197,7 @@ export default function AccountPage() {
           await continueWithSession(data.session);
         } else {
           setMessage("Account request received. Check your email for the verification link, then return here to sign in.");
-          setMode("signin");
+          setManualMode("signin");
           setPassword("");
         }
         return;
@@ -270,8 +282,8 @@ export default function AccountPage() {
 
         <section className="p-6 sm:p-10">
           <div className="flex gap-2 rounded-xl bg-slate-100 p-1">
-            <button type="button" onClick={() => { setMode("signin"); setError(""); setMessage(""); }} className={`min-h-11 flex-1 rounded-lg px-3 text-sm font-bold ${mode === "signin" ? "bg-white text-[#012153] shadow-sm" : "text-slate-600"}`}>Sign in</button>
-            <button type="button" onClick={() => { setMode("signup"); setError(""); setMessage(""); }} className={`min-h-11 flex-1 rounded-lg px-3 text-sm font-bold ${mode === "signup" ? "bg-white text-[#012153] shadow-sm" : "text-slate-600"}`}>Create account</button>
+            <button type="button" onClick={() => { setManualMode("signin"); setError(""); setMessage(""); }} className={`min-h-11 flex-1 rounded-lg px-3 text-sm font-bold ${mode === "signin" ? "bg-white text-[#012153] shadow-sm" : "text-slate-600"}`}>Sign in</button>
+            <button type="button" onClick={() => { setManualMode("signup"); setError(""); setMessage(""); }} className={`min-h-11 flex-1 rounded-lg px-3 text-sm font-bold ${mode === "signup" ? "bg-white text-[#012153] shadow-sm" : "text-slate-600"}`}>Create account</button>
           </div>
 
           <h2 className="mt-7 text-2xl font-extrabold text-slate-950">{mode === "signup" ? "Create your BrainLab account" : "Welcome back"}</h2>

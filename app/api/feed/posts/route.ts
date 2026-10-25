@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { logAdminAction } from "@/app/lib/platformConfig";
 
+interface FeedPost {
+  content_tags?: Array<{ official_tags?: { name?: string | null } | null }> | null;
+  [key: string]: unknown;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -23,16 +28,16 @@ export async function GET(request: NextRequest) {
     const { data: posts, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    let result = posts ?? [];
+    let result = (posts ?? []) as unknown as FeedPost[];
     if (tag && tag !== "all") {
-      result = result.filter((p: any) =>
-        p.content_tags?.some((ct: any) => ct.official_tags?.name === tag)
+      result = result.filter((post) =>
+        post.content_tags?.some((contentTag) => contentTag.official_tags?.name === tag)
       );
     }
 
     return NextResponse.json({ success: true, posts: result });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Request failed" }, { status: 500 });
   }
 }
 
@@ -130,7 +135,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, post });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Request failed" }, { status: 500 });
   }
 }

@@ -3,6 +3,23 @@ import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseS
 
 export const dynamic = "force-dynamic";
 
+interface NormalizedPollOption {
+  id: string;
+  text: string;
+  is_correct?: boolean;
+}
+
+function normalizePollOption(value: unknown, index: number): NormalizedPollOption {
+  const option = value && typeof value === "object"
+    ? value as Record<string, unknown>
+    : {};
+  return {
+    id: typeof option.id === "string" && option.id ? option.id : `opt_${index + 1}`,
+    text: typeof option.text === "string" ? option.text : "",
+    is_correct: typeof option.is_correct === "boolean" ? option.is_correct : undefined,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -65,13 +82,16 @@ export async function GET(request: NextRequest) {
     const aggregated = polls.map((poll) => {
       const stats = votesMap.get(poll.id) || { totalVotes: 0, optionCounts: {} };
       const rawOptions = Array.isArray(poll.options) ? poll.options : [];
-      const options = rawOptions.map((opt: any) => ({
-        id: opt.id,
-        text: opt.text,
-        is_correct: poll.is_open ? undefined : opt.is_correct, // Hide correct answer while poll is live
-        votes: stats.optionCounts[opt.id] || 0,
-        percentage: stats.totalVotes > 0 ? Math.round(((stats.optionCounts[opt.id] || 0) / stats.totalVotes) * 100) : 0,
-      }));
+      const options = rawOptions.map((rawOption: unknown, index: number) => {
+        const option = normalizePollOption(rawOption, index);
+        return {
+          id: option.id,
+          text: option.text,
+          is_correct: poll.is_open ? undefined : option.is_correct, // Hide correct answer while poll is live
+          votes: stats.optionCounts[option.id] || 0,
+          percentage: stats.totalVotes > 0 ? Math.round(((stats.optionCounts[option.id] || 0) / stats.totalVotes) * 100) : 0,
+        };
+      });
 
       return {
         id: poll.id,
@@ -154,13 +174,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Format options with guaranteed unique string IDs
-    const formattedOptions = options.map((opt: any, index: number) => ({
-      id: String(opt.id || `opt_${index + 1}`),
-      text: String(opt.text || "").trim(),
-      is_correct: Boolean(opt.is_correct),
-    }));
+    const formattedOptions = options.map((rawOption: unknown, index: number) => {
+      const option = normalizePollOption(rawOption, index);
+      return {
+        id: option.id,
+        text: option.text.trim(),
+        is_correct: Boolean(option.is_correct),
+      };
+    });
 
-    let createdPoll: any = null;
+    let createdPoll: unknown = null;
 
     try {
       // Close any currently active poll for this class first

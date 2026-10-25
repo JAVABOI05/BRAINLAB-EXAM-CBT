@@ -6,14 +6,50 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { recordLearningActivity } from "@/app/lib/gamification";
 
+interface TopicOption {
+  id: string;
+  text: string;
+}
+
+interface TopicQuestion {
+  id: string;
+  question: string;
+  options: TopicOption[];
+}
+
+interface McqFeedback {
+  question_id: string;
+  correct_answer: string;
+  correct: boolean;
+  explanation?: string;
+  distractor_note?: string;
+}
+
+interface TopicContentData {
+  [key: string]: unknown;
+  reading_time_mins?: number;
+  markdown?: string;
+  speaker?: string;
+  url?: string;
+  transcript?: string;
+  provider?: string;
+  instructions?: string;
+  questions?: TopicQuestion[];
+  file_name?: string;
+  category?: string;
+  description?: string;
+  alt_text?: string;
+  caption?: string;
+}
+
 interface ContentItem {
   id: string;
   content_type: string;
   title: string;
   summary?: string;
   order_index: number;
-  metadata: Record<string, any>;
-  data: Record<string, any>;
+  metadata: Record<string, unknown>;
+  data: TopicContentData;
 }
 
 export default function StudentTopicContentPage() {
@@ -40,7 +76,7 @@ export default function StudentTopicContentPage() {
 
   // In-Class MCQ State (Keyed by item.id)
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, Record<string, string>>>({});
-  const [mcqResults, setMcqResults] = useState<Record<string, { score: number; total: number; percentage: number; feedback: any[] }>>({});
+  const [mcqResults, setMcqResults] = useState<Record<string, { score: number; total: number; percentage: number; feedback: McqFeedback[] }>>({});
   const [gradingMcq, setGradingMcq] = useState<string | null>(null);
 
   useEffect(() => {
@@ -417,7 +453,7 @@ export default function StudentTopicContentPage() {
 
                       {/* Question List */}
                       <div className="space-y-6">
-                        {(item.data.questions || []).map((q: any, qIdx: number) => {
+                        {(item.data.questions || []).map((q, qIdx) => {
                           const picked = mcqAnswers[item.id]?.[q.id];
                           const gradedResult = mcqResults[item.id]?.feedback?.find(
                             (f) => f.question_id === q.id
@@ -429,7 +465,7 @@ export default function StudentTopicContentPage() {
                               <h3 className="mt-1 text-sm font-bold text-slate-900">{q.question}</h3>
 
                               <div className="mt-4 space-y-2">
-                                {q.options.map((opt: any) => {
+                                {q.options.map((opt) => {
                                   const isSelected = picked === opt.id;
                                   let optionStyle = isSelected
                                     ? "border-indigo-600 bg-indigo-50 text-indigo-950 ring-1 ring-indigo-600"

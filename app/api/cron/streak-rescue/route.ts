@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       checkedCount: (profiles || []).length,
       dispatched: notifiedCount,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Internal error" }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal error" }, { status: 500 });
   }
 }
