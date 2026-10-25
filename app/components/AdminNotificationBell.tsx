@@ -106,7 +106,7 @@ export default function AdminNotificationBell() {
         channel = supabase.channel("admin_live_alerts");
 
         channel
-          .on("broadcast", { event: "new_school_inquiry" }, ({ payload }: { payload: unknown }) => {
+          .on("broadcast", { event: "new_school_inquiry" }, ({ payload }) => {
             if (isRecord(payload)) {
               const newItem: NotificationItem = {
                 id: `sch-${Date.now()}`,
@@ -121,7 +121,7 @@ export default function AdminNotificationBell() {
               playChime();
             }
           })
-          .on("broadcast", { event: "new_refund_request" }, ({ payload }: any) => {
+          .on("broadcast", { event: "new_refund_request" }, ({ payload }) => {
             if (payload) {
               const newItem: NotificationItem = {
                 id: `ref-${Date.now()}`,
