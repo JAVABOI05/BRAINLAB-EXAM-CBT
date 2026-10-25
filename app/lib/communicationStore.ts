@@ -216,8 +216,9 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   const allPeers: RealPeer[] = realUsers.map((u) => {
     const p = presenceMap[u.id];
     const lastHeartbeat = p?.last_heartbeat_at;
-    const isOnline =
-      Boolean(lastHeartbeat) && nowMs - new Date(lastHeartbeat).getTime() < thresholdMs;
+    const isOnline = lastHeartbeat
+      ? nowMs - new Date(lastHeartbeat).getTime() < thresholdMs
+      : false;
 
     const adminRole = adminUsersMap.get(u.id);
     const role: "admin" | "tutor" | "student" = adminRole
@@ -300,7 +301,12 @@ export async function getUserConversations(userId: string): Promise<ChatConversa
         .order("last_message_at", { ascending: false });
 
       if (!convError && Array.isArray(convs)) {
-        return convs.map((c) => {
+        return (convs as unknown as Array<{
+          id: string; type?: ChatConversation["type"]; title?: string | null; created_by: string;
+          created_at: string; last_message_at?: string | null;
+          messages?: { content?: string | null; created_at: string; sender_id: string; message_type: string }[];
+          conversation_participants?: { user_id: string; role: string }[];
+        }>).map((c) => {
           const parts = c.conversation_participants || [];
           const otherId = parts.find((p: { user_id: string }) => p.user_id !== userId)?.user_id;
           const other = otherId ? peersById.get(otherId) || null : null;
@@ -386,7 +392,7 @@ export async function createOrGetDirectChat(
         .eq("user_id", recipientId)
         .in("conversation_id", cIds);
 
-      const directMatch = (shared as unknown as Array<{ conversation_id: string; conversations: { type: string } | { type: string }[] | null }> | null)?.find((s) => s.conversations && !Array.isArray(s.conversations) && s.conversations.type === "direct");
+      const directMatch = (shared as unknown as Array<{ conversation_id: string; conversations: { type: string } | null }> | null)?.find((s) => s.conversations?.type === "direct");
       if (directMatch) {
         const { data: existing } = await supabase
           .from("conversations")
