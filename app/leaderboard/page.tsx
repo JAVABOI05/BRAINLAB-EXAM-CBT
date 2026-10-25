@@ -15,8 +15,6 @@ export default function GlobalLeaderboardPage() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-
     void getGamificationLeaderboard(period, 50).then((data) => {
       if (active) {
         setEntries(data);
