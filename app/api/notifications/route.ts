@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
       notifications: notifications ?? [],
       unreadCount,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Request failed" }, { status: 500 });
   }
 }
 
@@ -61,7 +61,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Missing parameter" }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Request failed" }, { status: 500 });
   }
 }
