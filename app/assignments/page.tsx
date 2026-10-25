@@ -48,15 +48,16 @@ function getCurrentTimestamp(): number {
 
 export default function StudentAssignmentsPage() {
   const router = useRouter();
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => setCurrentTimestamp(getCurrentTimestamp()), 0);
-    return () => window.clearTimeout(timeoutId);
-  }, []);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "todo" | "submitted" | "graded" | "revision">("all");
   const [currentTimestamp, setCurrentTimestamp] = useState<number | null>(null);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setCurrentTimestamp(getCurrentTimestamp()), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Submission Form State
