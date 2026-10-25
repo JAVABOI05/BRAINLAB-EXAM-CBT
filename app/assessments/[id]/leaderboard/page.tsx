@@ -103,7 +103,9 @@ export default function AssessmentLeaderboardPage() {
   }, [assessmentId]);
 
   useEffect(() => {
-    if (assessmentId) loadLeaderboard();
+    if (!assessmentId) return;
+    const timeoutId = window.setTimeout(() => void loadLeaderboard(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [assessmentId, loadLeaderboard]);
 
   function formatDuration(sec: number) {
