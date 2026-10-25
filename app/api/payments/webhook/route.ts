@@ -5,6 +5,16 @@ import { bachsPaymentProvider } from "../../../lib/payments/bachsProvider";
 
 export const dynamic = "force-dynamic";
 
+type JsonRecord = Record<string, unknown>;
+
+function isJsonRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asReference(value: unknown): string | undefined {
+  return typeof value === "string" || typeof value === "number" ? String(value) : undefined;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
@@ -29,21 +39,26 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid Bachs signature" }, { status: 401 });
       }
 
-      let event: unknown;
+      let parsedEvent: unknown;
       try {
-        event = JSON.parse(rawBody);
+        parsedEvent = JSON.parse(rawBody);
       } catch {
         return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
       }
+      if (!isJsonRecord(parsedEvent)) {
+        return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+      }
+      const event = parsedEvent;
 
-      const eventType = String(event.type || event.event || "").toLowerCase();
+      const eventType = String(event.type ?? event.event ?? "").toLowerCase();
       if (eventType !== "collection.succeeded" && eventType !== "checkout.completed") {
         return NextResponse.json({ received: true });
       }
 
-      const data = event.data || {};
-      const checkoutId = data.checkout_id || data.id;
-      const reference = data.metadata?.reference || data.reference;
+      const data = isJsonRecord(event.data) ? event.data : {};
+      const metadata = isJsonRecord(data.metadata) ? data.metadata : {};
+      const checkoutId = asReference(data.checkout_id) ?? asReference(data.id);
+      const reference = asReference(metadata.reference) ?? asReference(data.reference);
 
       if (!reference && !checkoutId) {
         return NextResponse.json({ error: "Missing reference" }, { status: 400 });
@@ -66,7 +81,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true, alreadyProcessed: true });
       }
 
-      const paidAt = event.created_at || new Date().toISOString();
+      const paidAt = typeof event.created_at === "string" ? event.created_at : new Date().toISOString();
 
       await supabase
         .from("payment_transactions")
@@ -111,19 +126,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    let event: any;
+    let parsedEvent: unknown;
     try {
-      event = JSON.parse(rawBody);
+      parsedEvent = JSON.parse(rawBody);
     } catch {
       return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
     }
+    if (!isJsonRecord(parsedEvent)) {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
+    const event = parsedEvent;
 
     if (event.event !== "charge.success") {
       return NextResponse.json({ received: true });
     }
 
-    const data = event.data;
-    const reference = data?.reference;
+    const data = isJsonRecord(event.data) ? event.data : {};
+    const reference = asReference(data.reference);
     if (!reference) {
       return NextResponse.json({ error: "Missing reference" }, { status: 400 });
     }
@@ -144,7 +163,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, alreadyProcessed: true });
     }
 
-    const paidAt = data.paid_at || new Date().toISOString();
+    const paidAt = typeof data.paid_at === "string" ? data.paid_at : new Date().toISOString();
 
     await supabase
       .from("payment_transactions")
