@@ -122,7 +122,7 @@ export default function AdminNotificationBell() {
             }
           })
           .on("broadcast", { event: "new_refund_request" }, ({ payload }) => {
-            if (payload) {
+            if (isRecord(payload)) {
               const newItem: NotificationItem = {
                 id: `ref-${Date.now()}`,
                 type: "refund",
