@@ -29,7 +29,6 @@ export default function TutorRecordingsPage() {
   const [feedback, setFeedback] = useState("");
 
   const loadRecordings = useCallback(async () => {
-    setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("Please sign in again to manage class recordings.");
