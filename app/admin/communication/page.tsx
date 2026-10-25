@@ -16,9 +16,17 @@ import {
 import { supabase } from "../../lib/supabase";
 import "../admin.css";
 
+interface OfficialTag {
+  id: string;
+  bg_color: string;
+  color: string;
+  display_label: string;
+  name: string;
+}
+
 export default function AdminCommunicationControlPage() {
   const router = useRouter();
-  const [adminUser, setAdminUser] = useState<any>(null);
+  const [adminUser, setAdminUser] = useState<Awaited<ReturnType<typeof getAdminSession>>>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -45,7 +53,7 @@ export default function AdminCommunicationControlPage() {
     allow_downloads: true,
   });
 
-  const [officialTags, setOfficialTags] = useState<any[]>([]);
+  const [officialTags, setOfficialTags] = useState<OfficialTag[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -74,7 +82,7 @@ export default function AdminCommunicationControlPage() {
       if (active) {
         setCommConfig(comm);
         setAudioConfig(audio);
-        setOfficialTags(tags ?? []);
+        setOfficialTags((tags ?? []) as OfficialTag[]);
         setLoading(false);
       }
     }
@@ -109,8 +117,8 @@ export default function AdminCommunicationControlPage() {
       } else {
         setFeedback("Failed to update some configuration settings.");
       }
-    } catch (err: any) {
-      setFeedback(err.message || "Failed to save.");
+    } catch (err: unknown) {
+      setFeedback(err instanceof Error ? err.message : "Failed to save.");
     } finally {
       setSaving(false);
     }
