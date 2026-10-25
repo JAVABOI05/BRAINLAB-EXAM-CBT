@@ -360,7 +360,7 @@ export default function ChallengeArenaPage() {
   } | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const timerRef = useRef<ReturnType<typeof window.setInterval> | null>(null);
+  const timerRef = useRef<number | null>(null);
   const completeChallengeRef = useRef<() => Promise<void>>(async () => {});
 
   // Load user session and gamification stats
@@ -388,7 +388,7 @@ export default function ChallengeArenaPage() {
       setTimeLeft((previous) => Math.max(0, previous - 1));
     }, 1000);
     return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current);
+      if (timerRef.current !== null) window.clearInterval(timerRef.current);
     };
   }, [activeSession, isFinished]);
 
@@ -429,7 +429,7 @@ export default function ChallengeArenaPage() {
   const handleCompleteChallenge = useCallback(async () => {
     if (isFinished || submitting) return;
     setSubmitting(true);
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current !== null) window.clearInterval(timerRef.current);
 
     let correctCount = 0;
     questions.forEach((q) => {
