@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       notifiedCount: notificationsToInsert.length,
       message: `Live class broadcasted successfully to ${notificationsToInsert.length} active learners!`,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to broadcast" }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to broadcast" }, { status: 500 });
   }
 }
