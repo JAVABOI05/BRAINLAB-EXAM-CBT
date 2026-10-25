@@ -83,9 +83,10 @@ export default function VoiceNoteRecorder({
           return prev + 1;
         });
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorName = err instanceof DOMException ? err.name : "";
       setErrorMessage(
-        err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
+        errorName === "NotAllowedError" || errorName === "PermissionDeniedError"
           ? "Microphone access was denied. Please allow microphone permissions in your browser settings to record voice notes."
           : "Unable to start microphone recording. Check your audio device."
       );
@@ -117,8 +118,8 @@ export default function VoiceNoteRecorder({
     try {
       await onAudioReady(recordedBlob, duration);
       handleDiscard();
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to upload audio.");
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "Failed to upload audio.");
     } finally {
       setIsSubmitting(false);
     }
