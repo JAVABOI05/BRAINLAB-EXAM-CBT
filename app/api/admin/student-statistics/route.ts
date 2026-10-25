@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
     const { data: admins, error: adminsError } = await service.from("admin_profiles").select("user_id");
     if (adminsError || !admins) return noStoreJson({ error: "Could not distinguish student accounts from administrator accounts." }, 503);
     admins.forEach((row: { user_id: string }) => adminIds.add(row.user_id));
+    const { data: legacyAdmins, error: legacyAdminsError } = await service.from("admin_users").select("id");
+    if (legacyAdminsError || !legacyAdmins) return noStoreJson({ error: "Could not verify all administrator accounts." }, 503);
+    legacyAdmins.forEach((row: { id: string }) => adminIds.add(row.id));
 
     const users: AuthUser[] = [];
     for (let page = 1; page <= 1000; page += 1) {
