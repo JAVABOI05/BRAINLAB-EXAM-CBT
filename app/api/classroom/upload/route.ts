@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
       mediaType,
       duration: durationSeconds,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[classroom/upload] Error:", error);
-    return NextResponse.json({ error: error.message || "Upload failed." }, { status: 500 });
+    return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) || "Upload failed." }, { status: 500 });
   }
 }
