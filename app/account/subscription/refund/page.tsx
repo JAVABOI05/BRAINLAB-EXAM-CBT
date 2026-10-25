@@ -27,54 +27,108 @@ interface RefundRequest {
   created_at: string;
 }
 
+function getCurrentTimestamp(): number {
+  return Date.now();
+}
+
 export default function StudentRefundPage() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentTimestamp, setCurrentTimestamp] = useState<number | null>(null);
   const [selectedTxId, setSelectedTxId] = useState<string>("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setCurrentTimestamp(getCurrentTimestamp()), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+
+  const fetchRefundData = useCallback(async () => {
     const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) {
-      setLoading(false);
-      return;
-    }
+    if (!auth.user) return null;
 
-    setUser(auth.user);
-
-    // Fetch transactions
-    const { data: txs } = await supabase
+    const { data: txs, error: txError } = await supabase
       .from("payment_transactions")
       .select("id, reference, plan_id, amount_kobo, paid_at, created_at, status, subscription_plans(name)")
       .eq("user_id", auth.user.id)
       .eq("status", "success")
       .order("created_at", { ascending: false });
+    if (txError) throw txError;
 
-    if (txs) setTransactions(txs as unknown as Transaction[]);
-
-    // Fetch existing refunds
-    const { data: rfs } = await supabase
+    const { data: rfs, error: refundError } = await supabase
       .from("refund_requests")
       .select("id, transaction_id, amount_kobo, reason, status, rejection_reason, created_at")
       .eq("user_id", auth.user.id)
       .order("created_at", { ascending: false });
+    if (refundError) throw refundError;
 
-    if (rfs) setRefunds(rfs as unknown as RefundRequest[]);
-    setLoading(false);
+    return {
+      user: { id: auth.user.id, email: auth.user.email ?? undefined },
+      transactions: (txs ?? []) as unknown as Transaction[],
+      refunds: (rfs ?? []) as unknown as RefundRequest[],
+    };
   }, []);
 
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchRefundData();
+      if (!data) {
+        setUser(null);
+        setTransactions([]);
+        setRefunds([]);
+        return;
+      }
+      setUser(data.user);
+      setTransactions(data.transactions);
+      setRefunds(data.refunds);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to load refund information.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchRefundData]);
+
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let active = true;
+
+    async function initialLoad() {
+      try {
+        const data = await fetchRefundData();
+        if (active && data) {
+          setUser(data.user);
+          setTransactions(data.transactions);
+          setRefunds(data.refunds);
+        }
+      } catch (error) {
+        if (active) {
+          setMessage({
+            type: "error",
+            text: error instanceof Error ? error.message : "Failed to load refund information.",
+          });
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void initialLoad();
+    return () => {
+      active = false;
+    };
+  }, [fetchRefundData]);
 
   function getHoursElapsed(tx: Transaction) {
     const timestamp = new Date(tx.paid_at || tx.created_at).getTime();
-    const now = Date.now();
+    const now = currentTimestamp ?? timestamp;
     return (now - timestamp) / (1000 * 60 * 60);
   }
 
