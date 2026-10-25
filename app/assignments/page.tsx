@@ -146,8 +146,8 @@ export default function StudentAssignmentsPage() {
       setUploadedAudioUrl(json.asset.file_url);
       setShowRecorder(false);
       toast.success("Voice note attached to your submission!");
-    } catch (err: any) {
-      toast.error(err.message || "Could not attach audio note.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Could not attach audio note.");
     }
   };
 
@@ -201,8 +201,8 @@ export default function StudentAssignmentsPage() {
       );
 
       toast.success("Assignment submitted successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Submission failed.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Submission failed.");
     } finally {
       setSubmitting(false);
     }
@@ -321,7 +321,7 @@ export default function StudentAssignmentsPage() {
               ].map((f) => (
                 <button
                   key={f.id}
-                  onClick={() => setStatusFilter(f.id as any)}
+                  onClick={() => setStatusFilter(f.id as typeof statusFilter)}
                   className={`rounded-lg px-2.5 py-1 text-xs font-bold transition active-press ${
                     statusFilter === f.id
                       ? "bg-[#012153] text-white shadow-xs"
