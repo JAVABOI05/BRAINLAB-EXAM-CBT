@@ -279,13 +279,13 @@ export default function ExamPage() {
 
     useEffect(() => {
     if (!started || !sessionId || !sessionToken) return;
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setSyncStatus("offline");
-      queueProgress(sessionId, sessionToken, answers);
-      return;
-    }
-    setSyncStatus("syncing");
     const timeout = setTimeout(() => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setSyncStatus("offline");
+        queueProgress(sessionId, sessionToken, answers);
+        return;
+      }
+      setSyncStatus("syncing");
       const saveTask = answerSaveQueueRef.current.then(async () => {
         const saved = await saveProgress(sessionId, sessionToken, answers);
         if (isError(saved)) {
