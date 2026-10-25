@@ -3,8 +3,22 @@ import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseS
 
 export const dynamic = "force-dynamic";
 
+interface ClassroomMessageRecord {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: string;
+  isHost: boolean;
+  type: string;
+  mediaUrl?: string;
+  duration?: number;
+  isPinned: boolean;
+  createdAt?: string;
+}
+
 // In-memory fallback message registry for dynamic/ad-hoc sessions
-const memoryMessageStore = new Map<string, any[]>();
+const memoryMessageStore = new Map<string, ClassroomMessageRecord[]>();
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +49,9 @@ export async function GET(request: NextRequest) {
 
         if (dbMessages && dbMessages.length > 0) {
           const formatted = dbMessages.map((m) => {
-            const meta = (m.metadata as any) || {};
+            const meta = m.metadata && typeof m.metadata === "object"
+              ? m.metadata as Record<string, unknown>
+              : {};
             return {
               id: m.id,
               senderId: m.sender_id,
