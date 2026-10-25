@@ -148,7 +148,8 @@ export default function LearnerDashboardPage() {
   const [gamification, setGamification] = useState<UserGamificationProfile | null>(null);
 
   useEffect(() => {
-    // Check localStorage for recent CBT attempt summary
+    // Check localStorage for recent CBT attempt summary after mount.
+    const timeoutId = window.setTimeout(() => {
     try {
       const summaryRaw = localStorage.getItem("exam_summary");
       if (summaryRaw) {
@@ -158,6 +159,8 @@ export default function LearnerDashboardPage() {
         }
       }
     } catch {}
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
