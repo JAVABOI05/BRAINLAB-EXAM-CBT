@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
     if (!error) {
       supabaseConnected = true;
     } else {
-      errorMessage = error.message;
+      errorMessage = (error instanceof Error ? error.message : String(error));
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     errorMessage = err?.message || "Could not connect to Supabase database";
   }
 
