@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -68,7 +67,6 @@ function errorMessage(error: unknown, fallback: string): string {
 
 export default function TutorAssignmentsPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [assignments, setAssignments] = useState<TutorAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
