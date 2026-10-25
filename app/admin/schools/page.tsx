@@ -78,6 +78,27 @@ const INITIAL_INQUIRIES: SchoolInquiry[] = [
   },
 ];
 
+function createMockPinBatch(inq: SchoolInquiry, count: number): MockPinBatch {
+  const generatedPins: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
+    generatedPins.push(`BL-${randomSuffix}`);
+  }
+
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + 45);
+
+  return {
+    batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+    schoolName: inq.schoolName,
+    examType: inq.examType,
+    count,
+    pins: generatedPins,
+    createdAt: new Date().toLocaleString(),
+    expiryDate: expiryDate.toLocaleDateString(),
+  };
+}
+
 export default function AdminSchoolsPage() {
   const router = useRouter();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -94,7 +115,6 @@ export default function AdminSchoolsPage() {
   const [genCount, setGenCount] = useState<number>(50);
   const [genExpiryDays, setGenExpiryDays] = useState<number>(30);
   const [batches, setBatches] = useState<MockPinBatch[]>([]);
-  const [activeBatch, setActiveBatch] = useState<MockPinBatch | null>(null);
   const [voucherModalBatch, setVoucherModalBatch] = useState<MockPinBatch | null>(null);
 
   const handleQuickApproveAndGenerate = (inq: SchoolInquiry) => {
@@ -104,24 +124,7 @@ export default function AdminSchoolsPage() {
     else if (inq.studentCount.includes("601+")) parsedCount = 700;
     else if (inq.studentCount.includes("50-100")) parsedCount = 80;
 
-    const generatedPins: string[] = [];
-    for (let i = 0; i < parsedCount; i++) {
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
-      generatedPins.push(`BL-${randomSuffix}`);
-    }
-
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 45);
-
-    const newBatch: MockPinBatch = {
-      batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
-      schoolName: inq.schoolName,
-      examType: inq.examType,
-      count: parsedCount,
-      pins: generatedPins,
-      createdAt: new Date().toLocaleString(),
-      expiryDate: expiryDate.toLocaleDateString(),
-    };
+    const newBatch = createMockPinBatch(inq, parsedCount);
 
     setBatches((prev) => [newBatch, ...prev]);
     setInquiries((prev) =>
