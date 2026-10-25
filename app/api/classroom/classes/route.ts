@@ -20,11 +20,11 @@ export async function GET(request: NextRequest) {
     if (tutorId) query = query.eq("tutor_id", tutorId);
 
     const { data: classes, error } = await query;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
 
     return NextResponse.json({ success: true, classes: classes ?? [] });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
   }
 }
 
@@ -144,8 +144,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, liveClass });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
   }
 }
 
@@ -268,7 +268,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, liveClass: updatedClass });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Request failed" }, { status: 500 });
   }
 }
