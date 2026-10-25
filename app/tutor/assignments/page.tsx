@@ -494,7 +494,7 @@ export default function TutorAssignmentsPage() {
             ) : assignments.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-500">
                 <p className="font-bold">No assignments yet</p>
-                <p className="mt-1">Click "+ Create Assignment" to publish your first homework task.</p>
+                <p className="mt-1">Click &quot;+ Create Assignment&quot; to publish your first homework task.</p>
               </div>
             ) : (
               assignments.map((assign) => {
@@ -610,7 +610,7 @@ export default function TutorAssignmentsPage() {
               {/* Student's Work */}
               <div className="space-y-2">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                  Student's Written Work
+                  Student&apos;s Written Work
                 </h4>
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs leading-relaxed text-slate-800 max-h-48 overflow-y-auto whitespace-pre-wrap">
                   {activeSubmission.text_submission || "No written text submitted."}
