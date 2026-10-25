@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import "./corrections.css";
+import Image from "next/image";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -410,9 +411,15 @@ export default function CorrectionsPage() {
       <div className="corrections-shell">
         <section className="corrections-hero">
           <div className="corrections-hero-inner">
-            <div>
-              <span className="corrections-badge">BrainLab CBT</span>
-              <h1 className="corrections-title">Corrections & Review</h1>
+            <div className="corrections-page-heading">
+              <div className="corrections-brand-row">
+                <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={110} height={94} className="corrections-logo corrections-logo-dark" priority />
+                <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={110} height={94} className="corrections-logo corrections-logo-light" priority />
+                <div>
+                  <span className="corrections-badge">BrainLab CBT</span>
+                  <h1 className="corrections-title">Corrections & Review</h1>
+                </div>
+              </div>
               <p className="corrections-subtitle">
                 Review every answer clearly. Switch by subject, jump to any
                 question, and see which responses were correct, wrong, or
