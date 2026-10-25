@@ -6,7 +6,7 @@
 |---|---:|---:|---:|
 | Comprehension passage | 5 from one passage | 3 | 15 |
 | Cloze passage | 10 from one passage | 2 | 20 |
-| Reading text — *The Life Changer* | 10 | 1 | 10 |
+| Selected reading text — *The Lekki Headmaster* or *The Life Changer* | 10 | 1 | 10 |
 | Sentence Interpretation | 5 | 2 | 10 |
 | Antonyms | 5 | 2 | 10 |
 | Synonyms | 5 | 1 | 5 |
@@ -22,6 +22,7 @@ The active production question bank was inspected read-only. It currently contai
 
 - 500 active English comprehension questions grouped into 25 passage groups; each inspected group has 20 questions and 3 marks per question.
 - 500 active English literature questions categorized as `Literature text - Lekki headmaster`.
+- The paper setting should default to *The Lekki Headmaster* for the 2026 UTME cycle; *The Life Changer* remains available as a separate selectable reading-text pool for older-cycle practice papers.
 - 50 active questions each for Antonyms, Sentence Interpretation, Sentence Completion and Synonyms.
 - 250 active Oral English questions spread across five oral categories.
 - No active question rows categorized or sectioned as Cloze Passage.
@@ -30,11 +31,12 @@ The active production question bank was inspected read-only. It currently contai
 ## Import requirements before applying the migration
 
 1. Import a reviewed cloze passage set with at least 10 active questions tied to one shared, non-empty `passage_id`; use section `objective` and category `Cloze Passage`.
-2. Import at least 10 reviewed questions about the correct prescribed novel *The Life Changer*; use section `literature` and a category containing `Life Changer`.
-3. Verify each question's correct answer, options and source provenance before activation. Do not bulk-retag the existing Lekki Headmaster set.
-4. Run the paper-readiness check for both supported electives (Biology and Mathematics). Each paper must have 60 English + 40 Chemistry + 40 Physics + 40 elective questions.
-5. Run end-to-end grading tests: all-correct English answers = 90/90 raw marks; all-incorrect = 0/90; each section contributes the configured maximum; review/corrections show the same mark snapshot used during grading.
+2. Maintain separate reviewed literature pools: at least 10 active questions categorized for *The Lekki Headmaster* and at least 10 active questions for *The Life Changer*. Use section `literature` and ensure each category clearly identifies its novel. Never combine both novels in one paper.
+3. Select the intended pool through the protected `legacy_exam_blueprint_settings` row (`setting_key = 'utme_english'`, `reading_text_key = 'lekki_headmaster'` or `'life_changer'`). The migration defaults to `lekki_headmaster`; switching it is an intentional exam-template/cycle configuration change.
+4. Verify each question's correct answer, options and source provenance before activation. Do not bulk-retag the existing Lekki Headmaster set.
+5. Run the paper-readiness check for both supported electives (Biology and Mathematics). Each paper must have 60 English + 40 Chemistry + 40 Physics + 40 elective questions.
+6. Run end-to-end grading tests for both reading-text settings: all-correct English answers = 90/90 raw marks; all-incorrect = 0/90; each section contributes the configured maximum; the selected paper contains questions from only the selected novel; review/corrections show the same mark snapshot used during grading.
 
 ## Safety
 
-The migration is deliberately fail-closed: if the required cloze or *Life Changer* pool is missing, paper creation raises a clear error instead of substituting questions from another subject or section. Do not apply it to production until the missing reviewed question sets are imported and the paper-readiness and grading checks pass.
+The migration is deliberately fail-closed: if the required cloze or selected reading-text pool is missing, paper creation raises a clear error instead of substituting questions from another subject or section. Do not apply it to production until the missing reviewed question sets are imported and the paper-readiness and grading checks pass.
