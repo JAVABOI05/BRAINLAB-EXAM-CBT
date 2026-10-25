@@ -51,8 +51,8 @@ interface StudentSubmission {
   status: "submitted" | "graded" | "resubmission_requested";
   submitted_at: string;
   graded_at: string | null;
-  audio_asset?: AudioAsset | AudioAsset[] | null;
-  tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
+  audio_asset?: AudioAsset | null;
+  tutor_audio_asset?: AudioAsset | null;
   student?: { id: string; full_name?: string; email?: string };
 }
 
@@ -165,7 +165,11 @@ export default function TutorAssignmentsPage() {
 
         if (error) throw error;
         if (active) {
-          const normalized: StudentSubmission[] = ((data as unknown as StudentSubmission[] | null) || []).map((row) => ({
+          type RawSubmission = Omit<StudentSubmission, "audio_asset" | "tutor_audio_asset"> & {
+            audio_asset?: AudioAsset | AudioAsset[] | null;
+            tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
+          };
+          const normalized: StudentSubmission[] = ((data as unknown as RawSubmission[] | null) || []).map((row) => ({
             ...row,
             audio_asset: Array.isArray(row.audio_asset) ? row.audio_asset[0] : row.audio_asset,
             tutor_audio_asset: Array.isArray(row.tutor_audio_asset) ? row.tutor_audio_asset[0] : row.tutor_audio_asset,
