@@ -33,7 +33,7 @@ export default function AdminPublicContentPage() {
     if (t.error || s.error) setMessage("Could not load content. Confirm the tutors/testimonials database migration has been applied.");
     setTutors((t.data ?? []) as Tutor[]); setStories((s.data ?? []) as Story[]);
   }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void Promise.resolve().then(() => load()); }, []);
 
   async function saveTutor(e:FormEvent) {
     e.preventDefault(); setBusy(true); setMessage("");
@@ -84,7 +84,7 @@ export default function AdminPublicContentPage() {
         <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={story.is_approved} onChange={e=>setStory({...story,is_approved:e.target.checked})}/> Approve for public display</label>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={story.show_on_homepage} onChange={e=>setStory({...story,show_on_homepage:e.target.checked})}/> Feature on homepage</label>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={story.show_on_pricing} onChange={e=>setStory({...story,show_on_pricing:e.target.checked})}/> Feature on pricing page</label>
-        <p className="text-xs leading-5 text-slate-500">Only use genuine feedback and confirm the student's consent before publishing their name or story.</p>
+        <p className="text-xs leading-5 text-slate-500">Only use genuine feedback and confirm the student&apos;s consent before publishing their name or story.</p>
         <div className="flex gap-2"><button disabled={busy} className="rounded-xl bg-[#0B1536] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{busy?"Saving…":"Save story"}</button><button type="button" onClick={()=>{setStory({...blankStory});setStoryId(null);}} className="rounded-xl border px-4 py-3 text-sm font-bold">Clear</button></div>
       </form>
     </div>}
