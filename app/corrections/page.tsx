@@ -227,7 +227,7 @@ export default function CorrectionsPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [results, setResults] = useState<ResultItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSubject, setActiveSubject] = useState("All");
+  const [activeSubject, setActiveSubject] = useState("");
   const [dataIssue, setDataIssue] = useState("");
 
   useEffect(() => {
@@ -289,6 +289,8 @@ export default function CorrectionsPage() {
         }
 
         setResults(items as ResultItem[]);
+        const firstSubject = (items as ResultItem[]).find((item) => item.subject?.trim())?.subject;
+        if (firstSubject) setActiveSubject(firstSubject);
 
         // Feed Adaptive Learning Engine & Spaced Repetition queue
         (items as ResultItem[]).forEach((resItem) => {
@@ -328,11 +330,11 @@ export default function CorrectionsPage() {
     const uniqueSubjects = Array.from(
       new Set(results.map((item) => item.subject))
     );
-    return ["All", ...uniqueSubjects];
+    return uniqueSubjects;
   }, [results]);
 
   const filteredResults = useMemo(() => {
-    if (activeSubject === "All") return results;
+    if (!activeSubject) return results;
     return results.filter((item) => item.subject === activeSubject);
   }, [results, activeSubject]);
 
@@ -488,7 +490,7 @@ export default function CorrectionsPage() {
             <section className="side-card">
               <h2 className="side-card-title">Subject Navigation</h2>
               <p className="side-card-subtitle">
-                Switch between subjects and review performance quickly.
+                Choose a subject to review its questions and numbering independently.
               </p>
 
               <div className="subject-list">
@@ -531,7 +533,7 @@ export default function CorrectionsPage() {
             <section className="side-card">
               <h2 className="side-card-title">Question Palette</h2>
               <p className="side-card-subtitle">
-                Jump directly to any question from here.
+                Numbers restart for each subject. Select a question to jump to it.
               </p>
 
               <div className="palette-grid">
