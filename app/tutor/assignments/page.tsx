@@ -120,6 +120,7 @@ export default function TutorAssignmentsPage() {
           setAssignments(json.assignments);
           if (json.assignments.length > 0) {
             setSelectedAssignmentId(json.assignments[0].id);
+            setLoadingSubmissions(true);
           }
         }
 
@@ -148,8 +149,6 @@ export default function TutorAssignmentsPage() {
   useEffect(() => {
     if (!selectedAssignmentId) return;
     let active = true;
-    setLoadingSubmissions(true);
-
     async function loadSubs() {
       try {
         const { data, error } = await supabase
@@ -523,7 +522,10 @@ export default function TutorAssignmentsPage() {
                 return (
                   <button
                     key={assign.id}
-                    onClick={() => setSelectedAssignmentId(assign.id)}
+                    onClick={() => {
+                        setLoadingSubmissions(true);
+                        setSelectedAssignmentId(assign.id);
+                      }}
                     className={`w-full text-left p-3.5 rounded-2xl border transition flex flex-col gap-1.5 hover-lift active-press ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/70 shadow-xs"
