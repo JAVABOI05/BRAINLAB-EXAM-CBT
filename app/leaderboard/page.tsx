@@ -15,8 +15,7 @@ export default function GlobalLeaderboardPage() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-
+    // Keep the existing entries visible while the selected period refreshes.
     void getGamificationLeaderboard(period, 50).then((data) => {
       if (active) {
         setEntries(data);
