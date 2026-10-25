@@ -54,7 +54,7 @@ export interface ClassroomSidebarProps {
   activeTab: "chat" | "participants" | "polls" | "resources";
   setActiveTab: (tab: "chat" | "participants" | "polls" | "resources") => void;
   messages: ClassroomMessage[];
-  currentUser: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null;
+  currentUser: { id: string; email?: string; user_metadata?: { full_name?: string; name?: string; [key: string]: unknown } } | null;
   participants: Participant[];
   polls: ClassroomPollItem[];
   activePoll: ClassroomPollItem | null;
