@@ -99,11 +99,12 @@ export default function ExamPage() {
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setSyncStatus("offline");
-    }
+    const initialStatusTimeout = window.setTimeout(() => {
+      if (!navigator.onLine) setSyncStatus("offline");
+    }, 0);
 
     return () => {
+      window.clearTimeout(initialStatusTimeout);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
