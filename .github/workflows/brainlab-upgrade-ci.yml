@@ -7,7 +7,7 @@ on:
       - feature/brainlab-academy-upgrade
       - feature/learning-hub-foundation
       - fix/learning-hub-assessment-atomicity
-- feature/learner-dashboard-profile-on-learning-hub
+      - feature/learner-dashboard-profile-on-learning-hub
   pull_request:
     branches:
       - main
