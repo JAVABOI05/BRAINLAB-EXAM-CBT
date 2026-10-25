@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Parse event payload
-    let event: any;
+    let event: unknown;
     try {
       event = JSON.parse(rawBody);
     } catch {
