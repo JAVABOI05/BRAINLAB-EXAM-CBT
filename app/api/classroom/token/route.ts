@@ -192,10 +192,10 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[classroom/token] Error generating token:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to issue live classroom credentials." },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to issue live classroom credentials." },
       { status: 500 }
     );
   }
