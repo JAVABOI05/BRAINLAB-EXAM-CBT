@@ -1,0 +1,46 @@
+name: Temporary npm audit diagnostic
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/npm-audit-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Print detailed audit findings
+        shell: bash
+        run: |
+          npm audit --json > npm-audit.json || true
+          node <<'NODE'
+          const fs = require('node:fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          console.log('VULNERABILITY COUNTS:', JSON.stringify(audit.metadata?.vulnerabilities ?? {}, null, 2));
+          for (const [name, item] of Object.entries(audit.vulnerabilities ?? {})) {
+            console.log(JSON.stringify({
+              package: name,
+              severity: item.severity,
+              isDirect: item.isDirect,
+              range: item.range,
+              fixAvailable: item.fixAvailable,
+              via: item.via.map(v => typeof v === 'string' ? v : {
+                name: v.name, title: v.title, url: v.url, severity: v.severity,
+                range: v.range, cwe: v.cwe, cvss: v.cvss?.score
+              }),
+              effects: item.effects,
+              nodes: item.nodes
+            }));
+          }
+          NODE
