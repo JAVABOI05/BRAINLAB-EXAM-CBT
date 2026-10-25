@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     const aggregated = polls.map((poll) => {
       const stats = votesMap.get(poll.id) || { totalVotes: 0, optionCounts: {} };
       const rawOptions = Array.isArray(poll.options) ? poll.options : [];
-      const options = rawOptions.map((opt: any) => ({
+      const options = rawOptions.map((opt: { id: string; text: string; is_correct?: boolean }) => ({
         id: opt.id,
         text: opt.text,
         is_correct: poll.is_open ? undefined : opt.is_correct, // Hide correct answer while poll is live
@@ -154,13 +154,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Format options with guaranteed unique string IDs
-    const formattedOptions = options.map((opt: any, index: number) => ({
+    const formattedOptions = options.map((opt: { id?: string; text?: string; is_correct?: boolean }, index: number) => ({
       id: String(opt.id || `opt_${index + 1}`),
       text: String(opt.text || "").trim(),
       is_correct: Boolean(opt.is_correct),
     }));
 
-    let createdPoll: any = null;
+    let createdPoll: { id: string; class_id: string; created_by: string; question: string; options: unknown; explanation: string | null; is_open: boolean; duration_seconds: number | null; created_at: string; closed_at: string | null } | null = null;
 
     try {
       // Close any currently active poll for this class first
