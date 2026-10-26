@@ -1,4 +1,4 @@
-export type OptionKey = "A" | "B" | "C" | "D";
+export type OptionKey = "A" | "B" | "C" | "D" | "E";
 
 export type QuestionType = "objective" | "comprehension" | "literature";
 
@@ -17,7 +17,7 @@ export type Question = {
   passageTitle?: string;
   passageText?: string;
   text: string;
-  options: Record<OptionKey, string>;
+  options: Record<"A" | "B" | "C" | "D", string> & Partial<Record<"E", string>>;
   correctAnswer: OptionKey;
   explanation: string;
   marks: number;
