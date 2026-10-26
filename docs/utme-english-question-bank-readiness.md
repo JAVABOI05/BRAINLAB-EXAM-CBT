@@ -40,3 +40,11 @@ The active production question bank was inspected read-only. It currently contai
 ## Safety
 
 The migration is deliberately fail-closed: if the required cloze or Lekki Headmaster reading-text pool is missing, paper creation raises a clear error instead of substituting questions from another subject or section. Do not apply it to production until the missing reviewed question sets are imported and the paper-readiness and grading checks pass.
+
+
+## Additional integration blockers found during verification (26 October 2026)
+
+7. **Exam-start integration is not implemented yet.** The current `app/api/exam/start/route.ts` selects question IDs directly from `public.questions` and randomizes each subject pool. It does not call `public._build_paper`. Consequently, the migration alone does not guarantee the proposed English section counts or the 60 + 40 + 40 + 40 paper shape. Integrate the builder in a separately reviewed change and preserve the currently supported subject-selection/access-code behavior; do not silently narrow supported subjects to Biology/Mathematics.
+8. **Marking must be session-stable.** `public._finalize_session` currently calls `public._legacy_exam_marks` at submission time. Since that helper reads mutable marking-rule rows, a session started before a rule change could be graded under newer weights. Introduce and test a session-scoped marking snapshot/version before enabling the new rules. Existing sessions must continue to use the scoring policy that applied when they started.
+9. **Required verification remains outstanding.** Test paper construction and scoring in an isolated test database or equivalent disposable local Postgres environment; do not use production as a migration test target. Cover the 60 English question category counts, the 180-question paper, both supported electives, deadline/auto-submit paths, partial and fully correct answers, legacy in-progress sessions, and correction/result consistency.
+10. **Current rollout remains blocked.** No migration application, cloze CSV import, or question activation is authorized by this readiness document. Keep PR #51 as draft until the route integration, session-scoped marking, source/answer review, and tests are complete.
