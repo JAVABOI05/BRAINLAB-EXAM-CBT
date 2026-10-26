@@ -42,13 +42,22 @@ interface Assignment {
   } | null;
 }
 
+function getCurrentTimestamp(): number {
+  return Date.now();
+}
+
 export default function StudentAssignmentsPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<{ id: string; email?: string; user_metadata?: Record<string, unknown> } | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "todo" | "submitted" | "graded" | "revision">("all");
+  const [currentTimestamp, setCurrentTimestamp] = useState<number | null>(null);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setCurrentTimestamp(getCurrentTimestamp()), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Submission Form State
@@ -69,7 +78,6 @@ export default function StudentAssignmentsPage() {
         return;
       }
       if (!active) return;
-      setCurrentUser(session.user);
 
       try {
         const res = await fetch("/api/assignments", {
@@ -230,7 +238,7 @@ export default function StudentAssignmentsPage() {
   const getStatusBadge = (assign: Assignment) => {
     const sub = assign.submission;
     if (!sub) {
-      const isPastDue = assign.due_date && new Date(assign.due_date).getTime() < Date.now();
+      const isPastDue = assign.due_date && currentTimestamp !== null && new Date(assign.due_date).getTime() < currentTimestamp;
       return (
         <span
           className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
@@ -321,7 +329,7 @@ export default function StudentAssignmentsPage() {
               ].map((f) => (
                 <button
                   key={f.id}
-                  onClick={() => setStatusFilter(f.id as "all" | "todo" | "submitted" | "graded" | "revision")}
+                  onClick={() => setStatusFilter(f.id as typeof statusFilter)}
                   className={`rounded-lg px-2.5 py-1 text-xs font-bold transition active-press ${
                     statusFilter === f.id
                       ? "bg-[#012153] text-white shadow-xs"
