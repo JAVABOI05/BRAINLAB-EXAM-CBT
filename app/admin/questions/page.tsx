@@ -472,21 +472,10 @@ export default function AdminQuestionsPage() {
       // Remove optional image keys entirely (not merely null): PostgREST rejects
       // unknown columns even when their values are null.
       const payload = parsedRows.map((row) => {
-        const {
-          question_image_url: _questionImageUrl,
-          question_image_alt: _questionImageAlt,
-          option_a_image_url: _optionAImageUrl,
-          option_a_image_alt: _optionAImageAlt,
-          option_b_image_url: _optionBImageUrl,
-          option_b_image_alt: _optionBImageAlt,
-          option_c_image_url: _optionCImageUrl,
-          option_c_image_alt: _optionCImageAlt,
-          option_d_image_url: _optionDImageUrl,
-          option_d_image_alt: _optionDImageAlt,
-          explanation_image_url: _explanationImageUrl,
-          explanation_image_alt: _explanationImageAlt,
-          ...databaseRow
-        } = row;
+        const databaseRow = { ...row };
+        imageFields.forEach((field) => {
+          delete databaseRow[field];
+        });
         return databaseRow;
       });
 
