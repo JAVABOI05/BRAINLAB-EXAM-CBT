@@ -54,48 +54,124 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Resolve the elective supported by the current UTME blueprint.
-    // The paper builder currently creates English + Chemistry + Physics + Biology/Mathematics.
-    // Older candidate records may still carry the previous default ["English", "Mathematics",
-    // "Physics", "Chemistry"]; do not misread Chemistry as the elective in that case.
-    const suppliedSubjects = Array.isArray(subjects)
-      ? subjects.map((s) => String(s).trim()).filter(Boolean)
-      : [];
-    const allowedElectives = ["Biology", "Mathematics"];
-    const requestedElective = allowedElectives.includes(String(elective).trim())
-      ? String(elective).trim()
-      : allowedElectives.find((name) => suppliedSubjects.some((s) => s.toLowerCase() === name.toLowerCase()))
-        || (preconfiguredSubject && allowedElectives.find((name) => name.toLowerCase() === preconfiguredSubject.toLowerCase()))
-        || "Mathematics";
+    // 2. Preserve the existing subject-selection contract.
+    let selectedSubjects: string[] = [];
 
-    // Keep the session's displayed subjects aligned with the actual paper produced
-    // by _build_paper. Do not advertise subjects whose questions are not in the paper.
-    const selectedSubjects = ["English", "Chemistry", "Physics", requestedElective];
-
-    // 3. Build the paper through the server-side UTME blueprint. It fails closed
-    // when any required English or other subject pool is incomplete.
-
-    const { data: builtPaper, error: buildError } = await supabase.rpc("_build_paper", {
-      p_elective: requestedElective,
-    });
-
-    if (buildError || !Array.isArray(builtPaper) || builtPaper.length !== 180) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "paper_not_ready",
-          message: buildError?.message || "The required examination question pools are not ready. Please contact the administrator.",
-        },
-        { status: 503 }
-      );
+    if (preconfiguredSubject) {
+      selectedSubjects = ["English", preconfiguredSubject];
+    } else if (Array.isArray(subjects) && subjects.length > 0) {
+      const nonEnglish = subjects
+        .map((s) => String(s).trim())
+        .filter((s) => Boolean(s) && !s.toLowerCase().includes("english"));
+      selectedSubjects = ["English", ...nonEnglish.slice(0, 3)];
+    } else if (elective) {
+      selectedSubjects = ["English", "Mathematics", "Physics", String(elective).trim()];
+    } else {
+      selectedSubjects = ["English", "Mathematics", "Physics", "Chemistry"];
     }
 
-    const paperIds = builtPaper.map((id: number | string) => Number(id));
-    if (paperIds.some((id: number) => !Number.isSafeInteger(id) || id <= 0) || new Set(paperIds).size !== 180) {
-      return NextResponse.json(
-        { ok: false, error: "invalid_paper", message: "The examination paper could not be validated. Please contact the administrator." },
-        { status: 503 }
-      );
+    if (selectedSubjects[0]?.toLowerCase() !== "english") {
+      const remaining = selectedSubjects.filter((s) => !s.toLowerCase().includes("english"));
+      selectedSubjects = ["English", ...remaining.slice(0, 3)];
+    }
+
+    const defaultFillers = ["Mathematics", "Physics", "Chemistry", "Biology"];
+    while (selectedSubjects.length < 4) {
+      const nextFiller = defaultFillers.find((f) => !selectedSubjects.includes(f)) || "Mathematics";
+      selectedSubjects.push(nextFiller);
+    }
+    selectedSubjects = selectedSubjects.slice(0, 4);
+
+    // The first UTME English blueprint supports the standard English + Chemistry +
+    // Physics + (Biology or Mathematics) combination. Other existing subject choices
+    // retain the legacy selection path until the builder supports arbitrary electives.
+    const supportedElectives = ["Biology", "Mathematics"];
+    const selectedElective = selectedSubjects.find((s) =>
+      supportedElectives.some((allowed) => allowed.toLowerCase() === s.toLowerCase())
+    );
+    const blueprintEligible =
+      selectedSubjects.length === 4 &&
+      selectedSubjects.some((s) => s.toLowerCase() === "english") &&
+      selectedSubjects.some((s) => s.toLowerCase() === "chemistry") &&
+      selectedSubjects.some((s) => s.toLowerCase() === "physics") &&
+      Boolean(selectedElective);
+
+    let paperIds: number[] = [];
+    let paperBlueprint: string | null = null;
+
+    if (blueprintEligible && selectedElective) {
+      selectedSubjects = ["English", "Chemistry", "Physics", selectedElective];
+      const { data: builtPaper, error: buildError } = await supabase.rpc("_build_paper", {
+        p_elective: selectedElective,
+      });
+
+      if (buildError || !Array.isArray(builtPaper) || builtPaper.length !== 180) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "paper_not_ready",
+            message: buildError?.message || "The required examination question pools are not ready. Please contact the administrator.",
+          },
+          { status: 503 }
+        );
+      }
+
+      paperIds = builtPaper.map((id: number | string) => Number(id));
+      if (paperIds.some((id) => !Number.isSafeInteger(id) || id <= 0) || new Set(paperIds).size !== 180) {
+        return NextResponse.json(
+          { ok: false, error: "invalid_paper", message: "The examination paper could not be validated. Please contact the administrator." },
+          { status: 503 }
+        );
+      }
+      paperBlueprint = "utme_english_v1";
+    } else {
+      // Compatibility path for preconfigured and non-standard subject combinations.
+      // Keep existing subject-selection behavior, but do not silently fill a failed
+      // blueprint paper with unrelated questions.
+      for (const subj of selectedSubjects) {
+        const isEnglish = subj.toLowerCase() === "english";
+        const targetCount = isEnglish ? 60 : 40;
+        const { data: qRows, error: qError } = await supabase
+          .from("questions")
+          .select("id")
+          .eq("is_active", true)
+          .ilike("subject", subj)
+          .limit(250);
+
+        if (qError) {
+          return NextResponse.json(
+            { ok: false, error: "question_pool_error", message: "Could not load one of the selected subject pools. Please try again later." },
+            { status: 503 }
+          );
+        }
+        const shuffled = [...(qRows || [])].sort(() => Math.random() - 0.5).slice(0, targetCount);
+        paperIds.push(...shuffled.map((q) => Number(q.id)));
+      }
+
+      if (paperIds.length < 180) {
+        const needed = 180 - paperIds.length;
+        const { data: fallbackQuestions, error: fallbackError } = await supabase
+          .from("questions")
+          .select("id")
+          .eq("is_active", true)
+          .not("id", "in", `(${paperIds.length ? paperIds.join(",") : "0"})`)
+          .limit(needed);
+
+        if (fallbackError) {
+          return NextResponse.json(
+            { ok: false, error: "question_pool_error", message: "Could not complete the selected question pools. Please try again later." },
+            { status: 503 }
+          );
+        }
+        paperIds.push(...(fallbackQuestions || []).map((q) => Number(q.id)));
+      }
+
+      if (paperIds.length !== 180 || paperIds.some((id) => !Number.isSafeInteger(id) || id <= 0) || new Set(paperIds).size !== 180) {
+        return NextResponse.json(
+          { ok: false, error: "paper_not_ready", message: "There are not enough unique active questions for this subject combination. Please contact the administrator." },
+          { status: 503 }
+        );
+      }
     }
 
     // 4. Create the exam session in public.exam_sessions
@@ -111,6 +187,7 @@ export async function POST(request: NextRequest) {
         access_code: cleanCode || "OPEN-CBT",
         status: "started",
         paper_ids: paperIds,
+        paper_blueprint: paperBlueprint,
         time_left_seconds: durationSeconds,
         duration_seconds: durationSeconds,
         // The server-side save/resume/submit RPCs calculate time from this deadline.
