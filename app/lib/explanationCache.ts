@@ -14,7 +14,7 @@ export function computeQuestionFingerprint(
     .map((k) => `${k}:${(options[k] || "").trim().toLowerCase().replace(/\s+/g, " ")}`)
     .join("|");
   const normAns = (correctAnswer || "").trim().toUpperCase();
-  const raw = `${normText}#${normOptions}#${normAns}`;
+  const raw = `brainlab-explanation-v2#${normText}#${normOptions}#${normAns}`;
   return crypto.createHash("sha256").update(raw).digest("hex").slice(0, 16);
 }
 
@@ -165,7 +165,7 @@ export async function setCachedExplanation(params: {
         fingerprint,
         explanation: params.explanation,
         model: params.model,
-        prompt_version: "v1",
+        prompt_version: "v2",
         verified: true,
         updated_at: now,
       },
@@ -188,7 +188,7 @@ export async function setCachedExplanation(params: {
           question_id: qIdStr,
           subject: params.subject,
           fingerprint,
-          prompt_version: "v1",
+          prompt_version: "v2",
           verified: true,
           cached_at: now,
         },
