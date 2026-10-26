@@ -28,6 +28,9 @@ type QuestionRow = {
   option_d: string | null;
   option_d_image_url: string | null;
   option_d_image_alt: string | null;
+  option_e: string | null;
+  option_e_image_url: string | null;
+  option_e_image_alt: string | null;
   correct_answer: string;
   explanation: string | null;
   explanation_image_url: string | null;
@@ -342,6 +345,11 @@ export default function EditQuestionPage() {
             </div>
 
             <div className="admin-setting-box">
+              <label className="admin-label">Option E (optional)</label>
+              <input className="admin-input" value={question.option_e || ""} onChange={(e) => setQuestion({ ...question, option_e: e.target.value || null })} />
+            </div>
+
+            <div className="admin-setting-box">
               <label className="admin-label">Correct Answer</label>
               <select
                 className="admin-input"
@@ -354,6 +362,7 @@ export default function EditQuestionPage() {
                 <option value="B">B</option>
                 <option value="C">C</option>
                 <option value="D">D</option>
+                {question.option_e?.trim() && <option value="E">E</option>}
               </select>
             </div>
 

@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
       const { data: rawQ } = await supabase
         .from("questions")
         .select(
-          "id, subject, section, category, passage_id, passage_title, passage_text, question, question_image_url, question_image_alt, option_a, option_a_image_url, option_a_image_alt, option_b, option_b_image_url, option_b_image_alt, option_c, option_c_image_url, option_c_image_alt, option_d, option_d_image_url, option_d_image_alt, marks"
+          "id, subject, section, category, passage_id, passage_title, passage_text, question, question_image_url, question_image_alt, option_a, option_a_image_url, option_a_image_alt, option_b, option_b_image_url, option_b_image_alt, option_c, option_c_image_url, option_c_image_alt, option_d, option_d_image_url, option_d_image_alt, option_e, option_e_image_url, option_e_image_alt, marks"
         )
         .in("id", paperIds);
 

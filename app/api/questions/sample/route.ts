@@ -11,7 +11,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("questions")
       .select(
-        "id, subject, section, category, question, option_a, option_b, option_c, option_d, correct_answer, explanation"
+        "id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation"
       )
       .eq("is_active", true)
       .in("subject", ["Mathematics", "English", "Biology", "Chemistry", "Physics"])
@@ -33,8 +33,8 @@ export async function GET() {
       subject: string;
       examContext: string;
       question: string;
-      options: Array<{ letter: "A" | "B" | "C" | "D"; text: string }>;
-      correctLetter: "A" | "B" | "C" | "D";
+      options: Array<{ letter: "A" | "B" | "C" | "D" | "E"; text: string }>;
+      correctLetter: "A" | "B" | "C" | "D" | "E";
       explanation: string;
     }> = [];
 
@@ -52,8 +52,9 @@ export async function GET() {
             { letter: "B", text: q.option_b },
             { letter: "C", text: q.option_c },
             { letter: "D", text: q.option_d },
+            ...(q.option_e ? [{ letter: "E" as const, text: q.option_e }] : []),
           ],
-          correctLetter: q.correct_answer as "A" | "B" | "C" | "D",
+          correctLetter: q.correct_answer as "A" | "B" | "C" | "D" | "E",
           explanation: q.explanation || `Option (${q.correct_answer}) is the verified correct answer under standard curriculum guidelines.`,
         });
       }

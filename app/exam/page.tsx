@@ -706,6 +706,7 @@ export default function ExamPage() {
   const optionB = getOptionValue(currentQuestion.option_b);
   const optionC = getOptionValue(currentQuestion.option_c);
   const optionD = getOptionValue(currentQuestion.option_d);
+  const optionE = getOptionValue(currentQuestion.option_e);
   const currentIsFlagged = Boolean(flagged[String(currentQuestion.id)]);
 
   return (
@@ -872,6 +873,7 @@ export default function ExamPage() {
                 { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
                 { key: "C" as const, value: optionC, imageUrl: currentQuestion.option_c_image_url, imageAlt: currentQuestion.option_c_image_alt },
                 { key: "D" as const, value: optionD, imageUrl: currentQuestion.option_d_image_url, imageAlt: currentQuestion.option_d_image_alt },
+                { key: "E" as const, value: optionE, imageUrl: currentQuestion.option_e_image_url, imageAlt: currentQuestion.option_e_image_alt },
               ]
                 .filter((opt) => Boolean(opt.value?.trim()) || Boolean(safeImageUrl(opt.imageUrl)))
                 .map((option) => (
