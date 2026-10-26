@@ -432,42 +432,74 @@ export default function AdminQuestionsPage() {
   }
 
   // Batch chunking uploader (50 rows per batch)
+  // Single atomic insert: avoid partial 50-row batches that can duplicate on retry.
+  // The current production questions schema does not yet include image columns.
   async function handleBatchUpload() {
     if (parsedRows.length === 0) {
       setMessage({ type: "error", text: "No valid questions found to upload." });
       return;
     }
 
-    const BATCH_SIZE = 50;
-    const totalBatches = Math.ceil(parsedRows.length / BATCH_SIZE);
+    const imageFields: Array<keyof ParsedQuestionRow> = [
+      "question_image_url", "question_image_alt",
+      "option_a_image_url", "option_a_image_alt",
+      "option_b_image_url", "option_b_image_alt",
+      "option_c_image_url", "option_c_image_alt",
+      "option_d_image_url", "option_d_image_alt",
+      "explanation_image_url", "explanation_image_alt",
+    ];
+    const hasImageData = parsedRows.some((row) =>
+      imageFields.some((field) => {
+        const value = row[field];
+        return typeof value === "string" && value.trim().length > 0;
+      })
+    );
+
+    if (hasImageData) {
+      setMessage({
+        type: "error",
+        text: "Upload blocked: this database schema does not yet support question/option image columns. No rows were uploaded. Add and verify the image-column migration before importing image-bearing questions.",
+      });
+      return;
+    }
 
     try {
       setUploading(true);
       setMessage(null);
-      setUploadProgress(0);
+      setUploadProgress(10);
+      setUploadStatus(`Validating ${parsedRows.length} questions before one atomic insert...`);
 
-      let totalInserted = 0;
+      // Remove optional image keys entirely (not merely null): PostgREST rejects
+      // unknown columns even when their values are null.
+      const payload = parsedRows.map((row) => {
+        const {
+          question_image_url: _questionImageUrl,
+          question_image_alt: _questionImageAlt,
+          option_a_image_url: _optionAImageUrl,
+          option_a_image_alt: _optionAImageAlt,
+          option_b_image_url: _optionBImageUrl,
+          option_b_image_alt: _optionBImageAlt,
+          option_c_image_url: _optionCImageUrl,
+          option_c_image_alt: _optionCImageAlt,
+          option_d_image_url: _optionDImageUrl,
+          option_d_image_alt: _optionDImageAlt,
+          explanation_image_url: _explanationImageUrl,
+          explanation_image_alt: _explanationImageAlt,
+          ...databaseRow
+        } = row;
+        return databaseRow;
+      });
 
-      for (let i = 0; i < parsedRows.length; i += BATCH_SIZE) {
-        const chunk = parsedRows.slice(i, i + BATCH_SIZE);
-        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-
-        setUploadStatus(`Uploading batch ${batchNumber} of ${totalBatches} (${i + 1} - ${Math.min(i + BATCH_SIZE, parsedRows.length)})...`);
-
-        const { error } = await supabase.from("questions").insert(chunk);
-
-        if (error) {
-          throw new Error(`Batch ${batchNumber} failed: ${error.message}`);
-        }
-
-        totalInserted += chunk.length;
-        const currentPercent = Math.round((totalInserted / parsedRows.length) * 100);
-        setUploadProgress(currentPercent);
+      setUploadStatus(`Uploading all ${payload.length} questions atomically...`);
+      const { error } = await supabase.from("questions").insert(payload);
+      if (error) {
+        throw new Error(`Upload failed; the database rejected the atomic insert. No partial batches were sent. ${error.message}`);
       }
 
+      setUploadProgress(100);
       setMessage({
         type: "success",
-        text: `Successfully uploaded all ${totalInserted} questions into the BrainLab question bank!`,
+        text: `Successfully uploaded all ${payload.length} questions into the BrainLab question bank.`,
       });
       setParsedRows([]);
       setRawRowsCount(0);
@@ -478,7 +510,7 @@ export default function AdminQuestionsPage() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Upload encountered an unexpected failure.",
+        text: error instanceof Error ? error.message : "Upload failed. Please review the error and retry only after confirming no rows were inserted.",
       });
     } finally {
       setUploading(false);
