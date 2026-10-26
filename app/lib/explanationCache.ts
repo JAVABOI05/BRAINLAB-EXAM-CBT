@@ -71,12 +71,12 @@ export async function getCachedExplanation(
   try {
     const { data, error } = await supabase
       .from("question_explanations")
-      .select("explanation, model, fingerprint, verified, updated_at, created_at")
+      .select("explanation, model, fingerprint, prompt_version, verified, updated_at, created_at")
       .eq("question_id", qIdStr)
       .maybeSingle();
 
     if (!error && data) {
-      if (!fingerprint || data.fingerprint === fingerprint) {
+      if (data.prompt_version === "v2" && (!fingerprint || data.fingerprint === fingerprint)) {
         const res: CachedExplanationResult = {
           explanation: data.explanation,
           model: data.model,
@@ -99,6 +99,7 @@ export async function getCachedExplanation(
       .select("response, model, metadata, created_at")
       .eq("metadata->>question_id", qIdStr)
       .eq("metadata->>cache_type", "standard_question_explanation")
+      .eq("metadata->>prompt_version", "v2")
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -107,7 +108,7 @@ export async function getCachedExplanation(
       const rowMeta = (row.metadata as Record<string, unknown>) || {};
       const rowFingerprint = String(rowMeta.fingerprint || "");
 
-      if (!fingerprint || !rowFingerprint || rowFingerprint === fingerprint) {
+      if (rowMeta.prompt_version === "v2" && (!fingerprint || rowFingerprint === fingerprint)) {
         return {
           explanation: row.response,
           model: row.model,
