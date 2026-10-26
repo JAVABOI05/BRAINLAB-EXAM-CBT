@@ -57,22 +57,30 @@ function buildPrompt(body: JsonRecord, customSystemPrompt?: string): {
   system: string;
   messages: { role: "user" | "assistant"; content: string }[];
 } {
-  const system = customSystemPrompt?.trim() || "You are BrainLab Academy's AI Tutor. Provide clear, direct, and concise pedagogical explanations under 180 words. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean plain text only using simple numbered lists (1., 2.) or regular line breaks. Help students understand the concept and avoid common mistakes without long essays.";
+  const style = safeString(body.style, 40);
+  const styleInstruction =
+    style === "simple"
+      ? "Use very simple language suitable for a beginner. Explain unfamiliar terms. Keep it short, but still solve the exact question and show any necessary arithmetic."
+      : style === "detailed"
+        ? "Give a thorough worked solution. Explain the principle, every meaningful reasoning step, formulas and substitutions, units, and a final check. Explain why each option is right or wrong when useful."
+        : style === "exam_traps"
+          ? "Focus on exam traps and distractors. Identify the likely misconception behind each wrong option and give a reliable way to avoid the trap."
+          : "Give a clear worked explanation tailored to this exact question. Show the reasoning and calculations rather than generic advice.";
 
+  const baseSystem = customSystemPrompt?.trim() || "You are BrainLab Academy's expert exam tutor. Your job is to teach the exact question using the supplied question, options, official answer key, and answer-key note. Do not give generic advice in place of solving the problem. Never invent missing values, formulas, facts, or answer-key details. If the answer key appears inconsistent with the question, state the inconsistency cautiously. Use readable plain text, numbered steps where helpful, and no markdown hashtags or asterisks.";
+  const system = `${baseSystem}\n\nExplanation style requirements: ${styleInstruction}\nFor calculation questions, write the formula, substitute the given values, show the arithmetic and units, then state the answer. Explicitly explain why the official answer is correct. If the candidate answered incorrectly, address their selected option respectfully.`;
 
-  if (body.mode === "explain" || body.mode === "why_wrong") {
+  if (body.mode === "explain" || body.mode === "why_wrong" || body.mode === "distractor_traps") {
     const question = safeQuestion(body.question);
+    const userPrompt =
+      body.mode === "distractor_traps"
+        ? `Analyze the distractors for this exact exam question. State the correct option and why it is correct, then explain the misconception or trap behind each available incorrect option. Do not guess if an option is missing.\n\n${question}`
+        : body.mode === "why_wrong"
+          ? `Explain the reasoning gap between the candidate's selection and the official answer. Compare both options explicitly and show the correct reasoning.\n\n${question}`
+          : `Solve and teach this exact question. Use the official answer key and answer-key note as evidence, show the actual steps/calculation, and explain the correct option. Do not merely tell the learner to look at the formula.\n\n${question}`;
     return {
       system,
-      messages: [
-        {
-          role: "user",
-          content:
-            body.mode === "explain"
-              ? `Please explain this question step-by-step:\n\n${question}`
-              : `Help the candidate understand where the reasoning gap happened between their selection and the correct answer:\n\n${question}`,
-        },
-      ],
+      messages: [{ role: "user", content: userPrompt }],
     };
   }
 
@@ -229,7 +237,7 @@ export async function POST(request: NextRequest) {
     return jsonError(error instanceof Error ? error.message : "Invalid tutor request.", 400);
   }
 
-  const maxTokens = aiConfig?.max_output_tokens || 350;
+  const maxTokens = aiConfig?.max_output_tokens || (body.style === "detailed" ? 700 : 500);
   const upstream = await fetch(
     provider === "gemini"
       ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`
