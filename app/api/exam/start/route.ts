@@ -54,47 +54,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Determine examination subjects (4 subjects: English is always compulsory Subject 1)
-    let selectedSubjects: string[] = [];
+    // 2. Resolve the elective supported by the current UTME blueprint.
+    // The paper builder currently creates English + Chemistry + Physics + Biology/Mathematics.
+    // Older candidate records may still carry the previous default ["English", "Mathematics",
+    // "Physics", "Chemistry"]; do not misread Chemistry as the elective in that case.
+    const suppliedSubjects = Array.isArray(subjects)
+      ? subjects.map((s) => String(s).trim()).filter(Boolean)
+      : [];
+    const allowedElectives = ["Biology", "Mathematics"];
+    const requestedElective = allowedElectives.includes(String(elective).trim())
+      ? String(elective).trim()
+      : allowedElectives.find((name) => suppliedSubjects.some((s) => s.toLowerCase() === name.toLowerCase()))
+        || (preconfiguredSubject && allowedElectives.find((name) => name.toLowerCase() === preconfiguredSubject.toLowerCase()))
+        || "Mathematics";
 
-    if (preconfiguredSubject) {
-      selectedSubjects = ["English", preconfiguredSubject];
-    } else if (Array.isArray(subjects) && subjects.length > 0) {
-      // Candidate chose their subjects
-      const nonEnglish = subjects
-        .map((s) => String(s).trim())
-        .filter((s) => Boolean(s) && !s.toLowerCase().includes("english"));
-      selectedSubjects = ["English", ...nonEnglish.slice(0, 3)];
-    } else if (elective) {
-      selectedSubjects = ["English", "Mathematics", "Physics", elective];
-    } else {
-      selectedSubjects = ["English", "Mathematics", "Physics", "Chemistry"];
-    }
+    // Keep the session's displayed subjects aligned with the actual paper produced
+    // by _build_paper. Do not advertise subjects whose questions are not in the paper.
+    const selectedSubjects = ["English", "Chemistry", "Physics", requestedElective];
 
-    // Ensure English is always the first subject and exactly 4 subjects are present
-    if (selectedSubjects[0]?.toLowerCase() !== "english") {
-      const remaining = selectedSubjects.filter((s) => !s.toLowerCase().includes("english"));
-      selectedSubjects = ["English", ...remaining.slice(0, 3)];
-    }
-
-    // Fallbacks if fewer than 4 subjects were provided
-    const defaultFillers = ["Mathematics", "Physics", "Chemistry", "Biology"];
-    while (selectedSubjects.length < 4) {
-      const nextFiller = defaultFillers.find((f) => !selectedSubjects.includes(f)) || "Mathematics";
-      selectedSubjects.push(nextFiller);
-    }
-
-    // 3. Build the paper through the server-side UTME blueprint.
-    // The blueprint supports Biology or Mathematics as the elective and fails closed
-    // when any required English pool is incomplete. Do not silently substitute
-    // unrelated questions to reach 180.
-    const requestedElective = selectedSubjects[selectedSubjects.length - 1] || "";
-    if (!["Biology", "Mathematics"].includes(requestedElective)) {
-      return NextResponse.json(
-        { ok: false, error: "unsupported_elective", message: "The UTME blueprint currently supports Biology or Mathematics as the elective. Please choose one of these combinations." },
-        { status: 400 }
-      );
-    }
+    // 3. Build the paper through the server-side UTME blueprint. It fails closed
+    // when any required English or other subject pool is incomplete.
 
     const { data: builtPaper, error: buildError } = await supabase.rpc("_build_paper", {
       p_elective: requestedElective,
@@ -151,24 +130,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Query candidate question payload using public._paper_json
+    // 5. Fetch and validate the question payload before returning a usable attempt.
+    // Never treat an RPC error or a partial payload as a successful exam launch.
     const { data: questionsJson, error: paperErr } = await supabase.rpc("_paper_json", {
       p_ids: paperIds,
     });
 
-    let questionsPayload = questionsJson || [];
+    if (paperErr || !Array.isArray(questionsJson) || questionsJson.length !== paperIds.length) {
+      // The session was created but cannot be safely presented. Mark it cancelled so
+      // it cannot be resumed as a broken attempt; never fall back to a partial query.
+      await supabase
+        .from("exam_sessions")
+        .update({ status: "cancelled" })
+        .eq("id", sessionRow.id)
+        .eq("attempt_token", attemptToken);
 
-    if (!questionsJson || questionsJson.length === 0) {
-      // Fallback query directly from questions table
-      const { data: rawQ } = await supabase
-        .from("questions")
-        .select(
-          "id, subject, section, category, passage_id, passage_title, passage_text, question, question_image_url, question_image_alt, option_a, option_a_image_url, option_a_image_alt, option_b, option_b_image_url, option_b_image_alt, option_c, option_c_image_url, option_c_image_alt, option_d, option_d_image_url, option_d_image_alt, option_e, option_e_image_url, option_e_image_alt, marks"
-        )
-        .in("id", paperIds);
-
-      questionsPayload = rawQ || [];
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "paper_payload_failed",
+          message: paperErr?.message || "The examination question payload was incomplete. Please try again later.",
+        },
+        { status: 503 }
+      );
     }
+
+    const questionsPayload = questionsJson;
 
     return NextResponse.json({
       ok: true,
