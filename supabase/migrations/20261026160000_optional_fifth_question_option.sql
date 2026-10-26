@@ -6,14 +6,7 @@ alter table public.questions
   add column if not exists option_e_image_url text,
   add column if not exists option_e_image_alt text;
 
-do $$
-declare c record;
-begin
-  for c in select conname from pg_constraint
-    where conrelid='public.questions'::regclass and contype='c'
-      and pg_get_constraintdef(oid) ilike '%correct_answer%'
-  loop execute format('alter table public.questions drop constraint %I',c.conname); end loop;
-end $$;
+alter table public.questions drop constraint if exists questions_correct_answer_check;
 
 alter table public.questions add constraint questions_correct_answer_option_e_check
   check (upper(trim(correct_answer)) in ('A','B','C','D','E')
