@@ -90,7 +90,7 @@ declare
   v_english bigint[] := '{}';
   v_reading_text_key text;
 begin
-  if p_elective not in ('Biology', 'Mathematics') then
+  if p_elective is null or p_elective not in ('Biology', 'Mathematics') then
     raise exception 'Invalid elective subject: %', p_elective;
   end if;
 
