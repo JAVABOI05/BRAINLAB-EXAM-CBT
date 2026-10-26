@@ -143,7 +143,7 @@ export default function AssessmentRunnerPage() {
   }
 
   // 4. Select answer & autosave
-  function handleSelectOption(option: "A" | "B" | "C" | "D") {
+  function handleSelectOption(option: "A" | "B" | "C" | "D" | "E") {
     const q = questions[currentIndex];
     if (!q) return;
 

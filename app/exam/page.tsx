@@ -359,8 +359,8 @@ export default function ExamPage() {
 
       const key = event.key.toUpperCase();
 
-      if (["A", "B", "C", "D"].includes(key)) {
-        handleSelectAnswer(key as "A" | "B" | "C" | "D");
+      if (["A", "B", "C", "D", "E"].includes(key)) {
+        handleSelectAnswer(key as "A" | "B" | "C" | "D" | "E");
       } else if (key === "N") {
         handleNext();
       } else if (key === "P") {
@@ -441,7 +441,7 @@ export default function ExamPage() {
     finally { setLoading(false); }
   };
 
-  const handleSelectAnswer = (value: "A" | "B" | "C" | "D") => {
+  const handleSelectAnswer = (value: "A" | "B" | "C" | "D" | "E") => {
     if (!currentQuestion) return;
 
     const questionIndex = currentIndex;
