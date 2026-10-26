@@ -8,7 +8,7 @@ import { enqueueMissedQuestion } from "../lib/spacedRepetition";
 import { AiResponseSkeleton } from "../components/SkeletonLoader";
 import { toast } from "../lib/toast";
 
-type OptionKey = "A" | "B" | "C" | "D";
+type OptionKey = "A" | "B" | "C" | "D" | "E";
 
 interface QuestionAITutorProps {
   item: {
@@ -20,6 +20,7 @@ interface QuestionAITutorProps {
       B: string;
       C: string;
       D: string;
+      E?: string;
     };
     correctAnswer: OptionKey;
     userAnswer: OptionKey | null;
