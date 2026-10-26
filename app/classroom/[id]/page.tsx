@@ -171,7 +171,10 @@ export default function LiveClassroomPage({
   const [audioPlaybackBlocked, setAudioPlaybackBlocked] = useState(false);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const attendanceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const channelRef = useRef<any>(null);
+  const realtimeChannelRef = useRef<any>(null);
+  const [activeRealtimeChannel, setActiveRealtimeChannel] = useState<any>(null);
+  const handleClosePollRef = useRef<(pollId: string) => Promise<void>>(async () => {});
+  const handleVoteRef = useRef<(pollId: string, optionId: string) => Promise<void>>(async () => {});
 
   // 1. Authenticate & Obtain Classroom Admission Token & Load Polls
   useEffect(() => {
@@ -288,7 +291,8 @@ export default function LiveClassroomPage({
             presence: { key: user.id },
           },
         });
-        channelRef.current = channel;
+        realtimeChannelRef.current = channel;
+        setActiveRealtimeChannel(channel);
 
         // A. Listen for incoming live chat messages from all attendees
         channel.on("broadcast", { event: "chat_message" }, ({ payload }) => {
@@ -628,7 +632,7 @@ export default function LiveClassroomPage({
     return () => {
       active = false;
       if (attendanceTimerRef.current) clearInterval(attendanceTimerRef.current);
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current);
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
       screenStreamRef.current?.getTracks().forEach((track) => track.stop());
     };
@@ -637,8 +641,8 @@ export default function LiveClassroomPage({
   // Active Poll Countdown Timer
   useEffect(() => {
     if (!activePoll || !activePoll.is_open || !activePoll.duration_seconds || activePoll.duration_seconds <= 0) {
-      setPollCountdown(null);
-      return;
+      const resetTimeout = window.setTimeout(() => setPollCountdown(null), 0);
+      return () => window.clearTimeout(resetTimeout);
     }
 
     const createdTime = new Date(activePoll.created_at).getTime();
@@ -654,7 +658,7 @@ export default function LiveClassroomPage({
         clearInterval(interval);
         // Automatically close poll on tutor client if expired
         if (classDetails?.tutorId === currentUser?.id) {
-          void handleClosePoll(activePoll.id);
+          void handleClosePollRef.current(activePoll.id);
         }
       }
     }, 1000);
@@ -708,7 +712,7 @@ export default function LiveClassroomPage({
 
         setIsAudioEnabled(true);
         // Announce live stream to listening students
-        channelRef.current?.send({
+        realtimeChannelRef.current?.send({
           type: "broadcast",
           event: "webrtc_stream_live",
           payload: { hostId: currentUser?.id },
@@ -721,7 +725,7 @@ export default function LiveClassroomPage({
         setIsAudioEnabled(false);
         const remaining = (localStreamRef.current?.getTracks().length || 0) + (screenStreamRef.current?.getTracks().length || 0);
         if (remaining === 0) {
-          channelRef.current?.send({
+          realtimeChannelRef.current?.send({
             type: "broadcast",
             event: "webrtc_stream_stopped",
             payload: { hostId: currentUser?.id },
@@ -759,7 +763,7 @@ export default function LiveClassroomPage({
         }
         localStreamRef.current = stream;
         setIsVideoEnabled(true);
-        channelRef.current?.send({
+        realtimeChannelRef.current?.send({
           type: "broadcast",
           event: "webrtc_stream_live",
           payload: { hostId: currentUser?.id },
@@ -768,7 +772,7 @@ export default function LiveClassroomPage({
         localStreamRef.current?.getVideoTracks().forEach((track) => track.stop());
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
         setIsVideoEnabled(false);
-        channelRef.current?.send({
+        realtimeChannelRef.current?.send({
           type: "broadcast",
           event: "webrtc_stream_stopped",
           payload: { hostId: currentUser?.id },
@@ -796,14 +800,14 @@ export default function LiveClassroomPage({
         stream.getVideoTracks()[0].onended = () => {
           setIsScreenSharing(false);
           if (localVideoRef.current) localVideoRef.current.srcObject = null;
-          channelRef.current?.send({
+          realtimeChannelRef.current?.send({
             type: "broadcast",
             event: "webrtc_stream_stopped",
             payload: { hostId: currentUser?.id },
           });
         };
         setIsScreenSharing(true);
-        channelRef.current?.send({
+        realtimeChannelRef.current?.send({
           type: "broadcast",
           event: "webrtc_stream_live",
           payload: { hostId: currentUser?.id },
@@ -812,7 +816,7 @@ export default function LiveClassroomPage({
         screenStreamRef.current?.getTracks().forEach((track) => track.stop());
         setIsScreenSharing(false);
         if (localVideoRef.current) localVideoRef.current.srcObject = null;
-        channelRef.current?.send({
+        realtimeChannelRef.current?.send({
           type: "broadcast",
           event: "webrtc_stream_stopped",
           payload: { hostId: currentUser?.id },
@@ -859,7 +863,7 @@ export default function LiveClassroomPage({
       setMessages((prev) => [...prev, savedMsg]);
       if (savedMsg.isHost) setPinnedMessage(savedMsg);
 
-      channelRef.current?.send({
+      realtimeChannelRef.current?.send({
         type: "broadcast",
         event: "chat_message",
         payload: { message: savedMsg },
@@ -873,7 +877,7 @@ export default function LiveClassroomPage({
   const handlePinToBigScreen = (msg: ClassroomMessage) => {
     const pinned = { ...msg, isPinned: true };
     setPinnedMessage(pinned);
-    channelRef.current?.send({
+    realtimeChannelRef.current?.send({
       type: "broadcast",
       event: "pin_message",
       payload: { message: pinned },
@@ -980,7 +984,7 @@ export default function LiveClassroomPage({
             setMessages((prev) => [...prev, savedMsg]);
             if (savedMsg.isHost) setPinnedMessage(savedMsg);
 
-            channelRef.current?.send({
+            realtimeChannelRef.current?.send({
               type: "broadcast",
               event: "chat_message",
               payload: { message: savedMsg },
@@ -1052,7 +1056,7 @@ export default function LiveClassroomPage({
         setMessages((prev) => [...prev, savedMsg]);
         if (savedMsg.isHost) setPinnedMessage(savedMsg);
 
-        channelRef.current?.send({
+        realtimeChannelRef.current?.send({
           type: "broadcast",
           event: "chat_message",
           payload: { message: savedMsg },
@@ -1111,7 +1115,7 @@ export default function LiveClassroomPage({
     setPinnedMessage(newMsg);
     setActiveTab("chat");
     try {
-      channelRef.current?.send({
+      realtimeChannelRef.current?.send({
         type: "broadcast",
         event: "chat_message",
         payload: { message: newMsg },
@@ -1123,7 +1127,7 @@ export default function LiveClassroomPage({
 
   // 6. Send Emoji Reaction
   const sendReaction = (emoji: string) => {
-    const id = `react_${Date.now()}_${Math.random()}`;
+    const id = `react_${crypto.randomUUID()}`;
     setReactionFloat((prev) => [...prev, { id, emoji }]);
     setTimeout(() => {
       setReactionFloat((prev) => prev.filter((r) => r.id !== id));
@@ -1184,8 +1188,8 @@ export default function LiveClassroomPage({
         body: JSON.stringify({ pollId, selectedOptionId: optionId }),
       });
 
-      if (res.ok && channelRef.current) {
-        channelRef.current.send({
+      if (res.ok && activeRealtimeChannel) {
+        activeRealtimeChannel.send({
           type: "broadcast",
           event: "poll_vote",
           payload: { pollId, selectedOptionId: optionId },
@@ -1195,6 +1199,10 @@ export default function LiveClassroomPage({
       console.error("Failed to submit poll vote:", err);
     }
   };
+
+  useEffect(() => {
+    handleVoteRef.current = handleVote;
+  }, [handleVote]);
 
   // 10. Tutor Launches New Poll
   const handleLaunchPoll = async (e: React.FormEvent) => {
@@ -1262,8 +1270,8 @@ export default function LiveClassroomPage({
       setPollQuestion("");
       setPollExplanation("");
 
-      if (channelRef.current) {
-        channelRef.current.send({
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.send({
           type: "broadcast",
           event: "poll_started",
           payload: { poll: newPoll },
@@ -1308,8 +1316,8 @@ export default function LiveClassroomPage({
           )
         );
 
-        if (channelRef.current) {
-          channelRef.current.send({
+        if (activeRealtimeChannel) {
+          activeRealtimeChannel.send({
             type: "broadcast",
             event: "poll_closed",
             payload: { pollId, options: updatedOptions, explanation },
@@ -1320,6 +1328,10 @@ export default function LiveClassroomPage({
       console.error("Failed to close poll:", err);
     }
   };
+
+  useEffect(() => {
+    handleClosePollRef.current = handleClosePoll;
+  }, [handleClosePoll]);
 
   const isTutorOrModerator =
     Boolean(tokenData?.permissions.isModerator) || classDetails?.tutorId === currentUser?.id;
@@ -1336,14 +1348,14 @@ export default function LiveClassroomPage({
     if (updates.allowStudentVoiceNotes !== undefined) setAllowStudentVoiceNotes(updates.allowStudentVoiceNotes);
     if (updates.chatMuted !== undefined) setChatMuted(updates.chatMuted);
 
-    if (channelRef.current) {
-      channelRef.current.send({
+    if (realtimeChannelRef.current) {
+      realtimeChannelRef.current.send({
         type: "broadcast",
         event: "classroom_permission_change",
         payload: updates,
       });
       if (updates.canStudentsDraw !== undefined) {
-        channelRef.current.send({
+        realtimeChannelRef.current.send({
           type: "broadcast",
           event: "whiteboard_toggle_student_draw",
           payload: { allowed: updates.canStudentsDraw },
@@ -1824,7 +1836,7 @@ export default function LiveClassroomPage({
                   classId={classId}
                   isHost={isTutorOrModerator}
                   canDraw={isTutorOrModerator || canStudentsDraw}
-                  channel={channelRef.current}
+                  channel={activeRealtimeChannel}
                   currentUserName={
                     currentUser?.user_metadata?.full_name ||
                     currentUser?.email?.split("@")[0] ||
@@ -1899,7 +1911,7 @@ export default function LiveClassroomPage({
                                 type="button"
                                 onClick={() => {
                                   setPinnedMessage(null);
-                                  channelRef.current?.send({
+                                  realtimeChannelRef.current?.send({
                                     type: "broadcast",
                                     event: "pin_message",
                                     payload: { message: null },
@@ -1951,7 +1963,7 @@ export default function LiveClassroomPage({
                                   {canVote ? (
                                     <button
                                       type="button"
-                                      onClick={() => void handleVote(activePoll.id, opt.id)}
+                                      onClick={() => { void handleVote(activePoll.id, opt.id); }}
                                       className="w-full text-left rounded-2xl border-2 border-slate-700 bg-slate-900/90 hover:border-cyan-400 hover:bg-slate-800/90 p-4 transition-all duration-200 active-press group flex items-start gap-3"
                                     >
                                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 font-mono font-black text-sm border border-cyan-500/40 group-hover:bg-cyan-400 group-hover:text-slate-950 transition">
@@ -2031,7 +2043,7 @@ export default function LiveClassroomPage({
                             <div className="mt-5 flex justify-end">
                               <button
                                 type="button"
-                                onClick={() => void handleClosePoll(activePoll.id)}
+                                onClick={() => { void handleClosePoll(activePoll.id); }}
                                 className="rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-black text-white shadow transition"
                               >
                                 End Quiz & Reveal Answers
