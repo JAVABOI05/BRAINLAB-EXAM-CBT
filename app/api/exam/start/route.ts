@@ -84,52 +84,38 @@ export async function POST(request: NextRequest) {
       selectedSubjects.push(nextFiller);
     }
 
-    // 3. For each selected subject, gather randomized question IDs from public.questions
-    const paperIds: number[] = [];
-
-    for (const subj of selectedSubjects) {
-      // English takes 60 questions in JAMB UTME, each elective takes 40 questions
-      const isEnglish = subj.toLowerCase().includes("english");
-      const targetCount = isEnglish ? 60 : 40;
-
-      const { data: qRows } = await supabase
-        .from("questions")
-        .select("id")
-        .eq("is_active", true)
-        .ilike("subject", isEnglish ? "English" : subj)
-        .limit(250);
-
-      if (qRows && qRows.length > 0) {
-        // Randomly shuffle so candidates do not get identical question sequences
-        const shuffled = [...qRows].sort(() => 0.5 - Math.random()).slice(0, targetCount);
-        for (const q of shuffled) {
-          paperIds.push(q.id);
-        }
-      }
-    }
-
-    // If candidate selected subjects with sparse questions in DB,
-    // fill up remaining questions from active DB questions to maintain full 180 questions
-    if (paperIds.length < 180) {
-      const needed = 180 - paperIds.length;
-      const { data: fallbackQuestions } = await supabase
-        .from("questions")
-        .select("id")
-        .eq("is_active", true)
-        .not("id", "in", `(${paperIds.length > 0 ? paperIds.join(",") : "0"})`)
-        .limit(needed);
-
-      if (fallbackQuestions) {
-        for (const q of fallbackQuestions) {
-          paperIds.push(q.id);
-        }
-      }
-    }
-
-    if (paperIds.length === 0) {
+    // 3. Build the paper through the server-side UTME blueprint.
+    // The blueprint supports Biology or Mathematics as the elective and fails closed
+    // when any required English pool is incomplete. Do not silently substitute
+    // unrelated questions to reach 180.
+    const requestedElective = selectedSubjects[selectedSubjects.length - 1] || "";
+    if (!["Biology", "Mathematics"].includes(requestedElective)) {
       return NextResponse.json(
-        { ok: false, error: "no_questions", message: "No active questions found in the question bank." },
+        { ok: false, error: "unsupported_elective", message: "The UTME blueprint currently supports Biology or Mathematics as the elective. Please choose one of these combinations." },
         { status: 400 }
+      );
+    }
+
+    const { data: builtPaper, error: buildError } = await supabase.rpc("_build_paper", {
+      p_elective: requestedElective,
+    });
+
+    if (buildError || !Array.isArray(builtPaper) || builtPaper.length !== 180) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "paper_not_ready",
+          message: buildError?.message || "The required examination question pools are not ready. Please contact the administrator.",
+        },
+        { status: 503 }
+      );
+    }
+
+    const paperIds = builtPaper.map((id: number | string) => Number(id));
+    if (paperIds.some((id: number) => !Number.isSafeInteger(id) || id <= 0) || new Set(paperIds).size !== 180) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_paper", message: "The examination paper could not be validated. Please contact the administrator." },
+        { status: 503 }
       );
     }
 
