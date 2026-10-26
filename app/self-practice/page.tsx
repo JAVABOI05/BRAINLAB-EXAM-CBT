@@ -70,6 +70,7 @@ export default function SelfPracticePage() {
               B: q.option_b || "",
               C: q.option_c || "",
               D: q.option_d || "",
+              ...(q.option_e?.trim() ? { E: q.option_e } : {}),
             },
             correctAnswer: "A",
             userAnswer: null,

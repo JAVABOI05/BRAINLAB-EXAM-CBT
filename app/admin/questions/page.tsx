@@ -268,7 +268,7 @@ export default function AdminQuestionsPage() {
 
     const letterMatch = str.match(/^(?:OPTION\s*)?\(?([A-E])\)?[\.\:\)]?$/i);
     if (letterMatch) {
-      return letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D";
+      return letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D" | "E";
     }
 
     if (str === "1") return "A";
@@ -563,6 +563,9 @@ export default function AdminQuestionsPage() {
       "option_d_image_alt",
       "explanation_image_url",
       "explanation_image_alt",
+      "option_e",
+      "option_e_image_url",
+      "option_e_image_alt",
     ];
     const sample = [
       [
@@ -624,6 +627,9 @@ export default function AdminQuestionsPage() {
       "option_d_image_alt",
       "explanation_image_url",
       "explanation_image_alt",
+      "option_e",
+      "option_e_image_url",
+      "option_e_image_alt",
     ];
 
     const sampleQuestions = [

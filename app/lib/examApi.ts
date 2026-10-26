@@ -61,7 +61,7 @@ export type ResultItem = {
   subject: string;
   type?: string;
   text: string;
-  options: Record<Option, string>;
+  options: Record<"A" | "B" | "C" | "D", string> & Partial<Record<"E", string>>;
   optionImages?: Partial<Record<Option, string | null>>;
   optionImageAlts?: Partial<Record<Option, string>>;
   questionImageUrl?: string | null;

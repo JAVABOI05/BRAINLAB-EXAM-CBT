@@ -26,6 +26,7 @@ interface QuestionItem {
   option_b: string;
   option_c: string;
   option_d: string;
+  option_e?: string | null;
   question_image_url?: string;
 }
 
@@ -340,8 +341,8 @@ export default function AssessmentRunnerPage() {
 
                     {/* Options */}
                     <div className="mt-6 space-y-3">
-                      {(["A", "B", "C", "D"] as const).map((optKey) => {
-                        const optionKey = `option_${optKey.toLowerCase()}` as "option_a" | "option_b" | "option_c" | "option_d";
+                      {(["A", "B", "C", "D", "E"] as const).map((optKey) => {
+                        const optionKey = `option_${optKey.toLowerCase()}` as "option_a" | "option_b" | "option_c" | "option_d" | "option_e";
                         const optText = q[optionKey];
                         if (!optText) return null;
                         const isChosen = selected === optKey;
