@@ -10,6 +10,7 @@ type Candidate = {
   name: string;
   phone: string;
   subject: string;
+  subjects?: string[];
   code?: string;
 };
 
@@ -87,6 +88,23 @@ export default function ResultPage() {
   const sortedSubjects = [...subjectEntries].sort((a, b) => b[1] - a[1]);
   const bestSubject = sortedSubjects.length > 0 ? sortedSubjects[0] : null;
   const weakSubject = sortedSubjects.length > 1 ? sortedSubjects[sortedSubjects.length - 1] : null;
+
+  const candidateSubjects: string[] = Array.isArray(candidate?.subjects) && candidate.subjects.length > 0
+    ? candidate.subjects
+    : candidate?.subject
+      ? ["English Language", candidate.subject]
+      : ["English Language"];
+
+  const displayRows =
+    subjectEntries.length > 0
+      ? [...subjectEntries].sort((a, b) => {
+          const isEngA = a[0].toLowerCase().includes("english");
+          const isEngB = b[0].toLowerCase().includes("english");
+          if (isEngA && !isEngB) return -1;
+          if (!isEngA && isEngB) return 1;
+          return a[0].localeCompare(b[0]);
+        })
+      : candidateSubjects.map((s) => [s, subjectScores[s] ?? 0] as [string, number]);
 
   // National Percentile Estimate
   const estimatedPercentile = Math.min(99, Math.max(15, Math.round(percentage * 0.98 + (totalScore >= 280 ? 8 : totalScore >= 200 ? 5 : 0))));
@@ -359,8 +377,10 @@ export default function ResultPage() {
               <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200 font-mono">{candidate.phone}</p>
             </div>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Elective Subject</p>
-              <p className="mt-1 text-sm font-semibold text-blue-700 dark:text-sky-300">{candidate.subject}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Examination Combination</p>
+              <p className="mt-1 text-sm font-semibold text-blue-700 dark:text-sky-300">
+                {candidate.subjects?.length ? candidate.subjects.join(", ") : candidate.subject}
+              </p>
             </div>
           </div>
 
@@ -440,97 +460,40 @@ export default function ResultPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {/* English Language */}
-                  <tr>
-                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">English Language (Compulsory)</td>
-                    <td className="py-3 px-4 text-center text-slate-500">100</td>
-                    <td className="py-3 px-4 text-center font-extrabold text-blue-700 dark:text-sky-300">
-                      {subjectScores.English ?? 0}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`rounded-md px-2 py-0.5 font-black text-[11px] ${getGradeInfo(subjectScores.English ?? 0).color}`}>
-                        {getGradeInfo(subjectScores.English ?? 0).grade}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-slate-600 dark:text-slate-400">
-                      {getGradeInfo(subjectScores.English ?? 0).remark}
-                    </td>
-                  </tr>
-
-                  {/* Chemistry */}
-                  <tr>
-                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">Chemistry</td>
-                    <td className="py-3 px-4 text-center text-slate-500">100</td>
-                    <td className="py-3 px-4 text-center font-extrabold text-blue-700 dark:text-sky-300">
-                      {subjectScores.Chemistry ?? 0}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`rounded-md px-2 py-0.5 font-black text-[11px] ${getGradeInfo(subjectScores.Chemistry ?? 0).color}`}>
-                        {getGradeInfo(subjectScores.Chemistry ?? 0).grade}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-slate-600 dark:text-slate-400">
-                      {getGradeInfo(subjectScores.Chemistry ?? 0).remark}
-                    </td>
-                  </tr>
-
-                  {/* Physics */}
-                  <tr>
-                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">Physics</td>
-                    <td className="py-3 px-4 text-center text-slate-500">100</td>
-                    <td className="py-3 px-4 text-center font-extrabold text-blue-700 dark:text-sky-300">
-                      {subjectScores.Physics ?? 0}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`rounded-md px-2 py-0.5 font-black text-[11px] ${getGradeInfo(subjectScores.Physics ?? 0).color}`}>
-                        {getGradeInfo(subjectScores.Physics ?? 0).grade}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-slate-600 dark:text-slate-400">
-                      {getGradeInfo(subjectScores.Physics ?? 0).remark}
-                    </td>
-                  </tr>
-
-                  {/* Elective (Mathematics or Biology) */}
-                  <tr>
-                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                      {candidate.subject} (Elective)
-                    </td>
-                    <td className="py-3 px-4 text-center text-slate-500">100</td>
-                    <td className="py-3 px-4 text-center font-extrabold text-blue-700 dark:text-sky-300">
-                      {candidate.subject === "Biology"
-                        ? subjectScores.Biology ?? 0
-                        : subjectScores.Mathematics ?? 0}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span
-                        className={`rounded-md px-2 py-0.5 font-black text-[11px] ${
-                          getGradeInfo(
-                            candidate.subject === "Biology"
-                              ? subjectScores.Biology ?? 0
-                              : subjectScores.Mathematics ?? 0
-                          ).color
-                        }`}
-                      >
-                        {
-                          getGradeInfo(
-                            candidate.subject === "Biology"
-                              ? subjectScores.Biology ?? 0
-                              : subjectScores.Mathematics ?? 0
-                          ).grade
-                        }
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-slate-600 dark:text-slate-400">
-                      {
-                        getGradeInfo(
-                          candidate.subject === "Biology"
-                            ? subjectScores.Biology ?? 0
-                            : subjectScores.Mathematics ?? 0
-                        ).remark
-                      }
-                    </td>
-                  </tr>
+                  {displayRows.map(([subjName, score]) => {
+                    const isEnglish = subjName.toLowerCase().includes("english");
+                    const gradeInfo = getGradeInfo(score);
+                    return (
+                      <tr key={subjName}>
+                        <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <span>{subjName}</span>
+                            {isEnglish ? (
+                              <span className="text-[9px] font-black uppercase text-blue-600 dark:text-cyan-400 bg-blue-50 dark:bg-blue-950/70 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                                Compulsory
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-medium uppercase text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                Elective
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center text-slate-500">100</td>
+                        <td className="py-3 px-4 text-center font-extrabold text-blue-700 dark:text-sky-300">
+                          {score}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`rounded-md px-2 py-0.5 font-black text-[11px] ${gradeInfo.color}`}>
+                            {gradeInfo.grade}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium text-slate-600 dark:text-slate-400">
+                          {gradeInfo.remark}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

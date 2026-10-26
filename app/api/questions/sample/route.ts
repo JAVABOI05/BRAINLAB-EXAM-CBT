@@ -3,30 +3,31 @@ import { getSupabaseServerClient } from "../../../lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
+// Core high-demand UTME / WAEC examination subjects with English as universal compulsory subject
+const CORE_SUBJECTS = ["English", "Mathematics", "Biology", "Chemistry", "Physics"] as const;
+
 export async function GET() {
   try {
     const supabase = getSupabaseServerClient();
 
-    // Query active questions from verified database subjects
-    const { data, error } = await supabase
-      .from("questions")
-      .select(
-        "id, subject, section, category, question, option_a, option_b, option_c, option_d, correct_answer, explanation"
-      )
-      .eq("is_active", true)
-      .in("subject", ["Mathematics", "English", "Biology", "Chemistry", "Physics"])
-      .limit(150);
+    // Query active questions partitioned by subject in parallel so no subject gets starved by DB insertion order
+    const subjectBatches = await Promise.all(
+      CORE_SUBJECTS.map(async (subj) => {
+        const { data, error } = await supabase
+          .from("questions")
+          .select(
+            "id, subject, section, category, question, option_a, option_b, option_c, option_d, correct_answer, explanation"
+          )
+          .eq("is_active", true)
+          .eq("subject", subj)
+          .limit(15);
 
-    if (error || !data || data.length === 0) {
-      return NextResponse.json({ ok: false, fallback: true });
-    }
-
-    // Group questions by subject
-    const bySubject: Record<string, typeof data> = {};
-    for (const q of data) {
-      if (!bySubject[q.subject]) bySubject[q.subject] = [];
-      bySubject[q.subject].push(q);
-    }
+        if (error || !data) {
+          return { subject: subj, items: [] };
+        }
+        return { subject: subj, items: data };
+      })
+    );
 
     const sampled: Array<{
       id: string;
@@ -38,9 +39,12 @@ export async function GET() {
       explanation: string;
     }> = [];
 
-    for (const [subj, qList] of Object.entries(bySubject)) {
-      // Take up to 5 verified questions per subject for a rich preview experience
-      const shuffled = [...qList].sort(() => 0.5 - Math.random()).slice(0, 5);
+    // Process each subject in prioritized order (English first as universal compulsory subject)
+    for (const batch of subjectBatches) {
+      if (!batch.items || batch.items.length === 0) continue;
+
+      // Randomly pick up to 5 verified questions per subject for a diverse preview pool
+      const shuffled = [...batch.items].sort(() => 0.5 - Math.random()).slice(0, 5);
       for (const q of shuffled) {
         sampled.push({
           id: `db-${q.id}`,
@@ -54,16 +58,23 @@ export async function GET() {
             { letter: "D", text: q.option_d },
           ],
           correctLetter: q.correct_answer as "A" | "B" | "C" | "D",
-          explanation: q.explanation || `Option (${q.correct_answer}) is the verified correct answer under standard curriculum guidelines.`,
+          explanation:
+            q.explanation ||
+            `Option (${q.correct_answer}) is the verified correct answer under standard curriculum guidelines.`,
         });
       }
     }
 
+    if (sampled.length === 0) {
+      return NextResponse.json({ ok: false, fallback: true });
+    }
+
     return NextResponse.json({
       ok: true,
-      questions: sampled.sort(() => 0.5 - Math.random()),
+      questions: sampled,
     });
   } catch {
     return NextResponse.json({ ok: false, fallback: true });
   }
 }
+

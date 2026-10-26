@@ -20,6 +20,70 @@ interface QuestionItem {
 
 // Comprehensive verified pool covering core high-frequency UTME/WAEC topics across 5 subjects
 const VERIFIED_FALLBACK_POOL: QuestionItem[] = [
+  // --- ENGLISH (Universal Compulsory UTME/WAEC Subject) ---
+  {
+    id: "eng-concord-1",
+    subject: "English",
+    examContext: "UTME Lexis & Structure (Concord)",
+    question:
+      "Choose the option that best completes the sentence: 'Neither the principal nor the teachers _______ present at the valedictory service yesterday.'",
+    options: [
+      { letter: "A", text: "were" },
+      { letter: "B", text: "was" },
+      { letter: "C", text: "is" },
+      { letter: "D", text: "are being" },
+    ],
+    correctLetter: "A",
+    explanation:
+      "Under the grammatical rule of proximity with correlative conjunctions ('neither... nor'), the verb agrees with the closer subject. 'Teachers' is plural and the event occurred in the past ('yesterday'), requiring the plural past verb 'were'.",
+  },
+  {
+    id: "eng-antonym-1",
+    subject: "English",
+    examContext: "WAEC Antonyms (Opposites in Meaning)",
+    question:
+      "In the sentence: 'The politician made an ambiguous statement that misled the public', choose the word nearest in meaning to the OPPOSITE of 'ambiguous'.",
+    options: [
+      { letter: "A", text: "Complicated" },
+      { letter: "B", text: "Explicit" },
+      { letter: "C", text: "Dubious" },
+      { letter: "D", text: "Hesitant" },
+    ],
+    correctLetter: "B",
+    explanation:
+      "'Ambiguous' means open to more than one interpretation or vague. Its direct opposite (antonym) is 'explicit' (clear, precise, leaving no room for confusion).",
+  },
+  {
+    id: "eng-prep-1",
+    subject: "English",
+    examContext: "UTME Prepositions & Collocations",
+    question: "Select the correct option to fill the gap: 'After a thorough probe, the bursar was exonerated _______ all fraudulent charges.'",
+    options: [
+      { letter: "A", text: "from" },
+      { letter: "B", text: "of" },
+      { letter: "C", text: "against" },
+      { letter: "D", text: "with" },
+    ],
+    correctLetter: "A",
+    explanation:
+      "The standard English preposition collocated with the verb 'exonerate' is 'from' (to exonerate someone from blame or charges).",
+  },
+  {
+    id: "eng-stress-1",
+    subject: "English",
+    examContext: "JAMB UTME Oral Forms (Stress Patterns)",
+    question: "Which syllable carries the primary stress in the word 'PHOTOGRAPHY'?",
+    options: [
+      { letter: "A", text: "First syllable (PHO-)" },
+      { letter: "B", text: "Second syllable (-TOG-)" },
+      { letter: "C", text: "Third syllable (-RA-)" },
+      { letter: "D", text: "Fourth syllable (-phy)" },
+    ],
+    correctLetter: "B",
+    explanation:
+      "In four-syllable nouns ending with the suffix '-graphy', primary stress naturally falls on the antepenultimate (second) syllable: pho-TOG-ra-phy.",
+  },
+
   // --- MATHEMATICS ---
   {
     id: "math-base-1",
@@ -95,70 +159,6 @@ const VERIFIED_FALLBACK_POOL: QuestionItem[] = [
     correctLetter: "B",
     explanation:
       "First term a = 1/2, common ratio r = (1/4)/(1/2) = 1/2. For |r| < 1, sum to infinity S_∞ = a / (1 - r) = (1/2) / (1 - 1/2) = (1/2) / (1/2) = 1.",
-  },
-
-  // --- ENGLISH LANGUAGE ---
-  {
-    id: "eng-concord-1",
-    subject: "English Language",
-    examContext: "UTME Lexis & Structure (Concord)",
-    question:
-      "Choose the option that best completes the sentence: 'Neither the principal nor the teachers _______ present at the valedictory service yesterday.'",
-    options: [
-      { letter: "A", text: "were" },
-      { letter: "B", text: "was" },
-      { letter: "C", text: "is" },
-      { letter: "D", text: "are being" },
-    ],
-    correctLetter: "A",
-    explanation:
-      "Under the grammatical rule of proximity with correlative conjunctions ('neither... nor'), the verb agrees with the closer subject. 'Teachers' is plural and the event occurred in the past ('yesterday'), requiring the plural past verb 'were'.",
-  },
-  {
-    id: "eng-antonym-1",
-    subject: "English Language",
-    examContext: "WAEC Antonyms (Opposites in Meaning)",
-    question:
-      "In the sentence: 'The politician made an ambiguous statement that misled the public', choose the word nearest in meaning to the OPPOSITE of 'ambiguous'.",
-    options: [
-      { letter: "A", text: "Complicated" },
-      { letter: "B", text: "Explicit" },
-      { letter: "C", text: "Dubious" },
-      { letter: "D", text: "Hesitant" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "'Ambiguous' means open to more than one interpretation or vague. Its direct opposite (antonym) is 'explicit' (clear, precise, leaving no room for confusion).",
-  },
-  {
-    id: "eng-prep-1",
-    subject: "English Language",
-    examContext: "UTME Prepositions & Collocations",
-    question: "Select the correct option to fill the gap: 'After a thorough probe, the bursar was exonerated _______ all fraudulent charges.'",
-    options: [
-      { letter: "A", text: "from" },
-      { letter: "B", text: "of" },
-      { letter: "C", text: "against" },
-      { letter: "D", text: "with" },
-    ],
-    correctLetter: "A",
-    explanation:
-      "The standard English preposition collocated with the verb 'exonerate' is 'from' (to exonerate someone from blame or charges).",
-  },
-  {
-    id: "eng-stress-1",
-    subject: "English Language",
-    examContext: "JAMB UTME Oral Forms (Stress Patterns)",
-    question: "Which syllable carries the primary stress in the word 'PHOTOGRAPHY'?",
-    options: [
-      { letter: "A", text: "First syllable (PHO-)" },
-      { letter: "B", text: "Second syllable (-TOG-)" },
-      { letter: "C", text: "Third syllable (-RA-)" },
-      { letter: "D", text: "Fourth syllable (-phy)" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "In four-syllable nouns ending with the suffix '-graphy', primary stress naturally falls on the antepenultimate (second) syllable: pho-TOG-ra-phy.",
   },
 
   // --- PHYSICS ---
@@ -346,17 +346,35 @@ export default function InteractiveSampleQuestion() {
     };
   }, []);
 
-  // Filter questions by active subject tab
+  // Filter questions by active subject tab (tolerating "English" vs "English Language")
   const filteredQuestions = useMemo(() => {
     if (activeSubjectFilter === "All") return questionPool;
-    return questionPool.filter((q) => q.subject.toLowerCase() === activeSubjectFilter.toLowerCase());
+    const target = activeSubjectFilter.toLowerCase().replace(" language", "").trim();
+    return questionPool.filter(
+      (q) => q.subject.toLowerCase().replace(" language", "").trim() === target
+    );
   }, [questionPool, activeSubjectFilter]);
 
-  // Distinct subjects available in the active pool
+  // Reset index and selections on subject change
+  useEffect(() => {
+    setCurrentIndex(0);
+    setSelectedLetter(null);
+    setShowFeedback(false);
+  }, [activeSubjectFilter]);
+
+  // Distinct subjects available in the active pool, prioritizing English (compulsory) first
   const availableSubjects = useMemo(() => {
+    const SUBJECT_ORDER = ["English", "English Language", "Mathematics", "Biology", "Chemistry", "Physics"];
     const set = new Set<string>();
     questionPool.forEach((q) => set.add(q.subject));
-    return Array.from(set).sort();
+    return Array.from(set).sort((a, b) => {
+      const idxA = SUBJECT_ORDER.indexOf(a);
+      const idxB = SUBJECT_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
   }, [questionPool]);
 
   const currentQuestion = filteredQuestions[currentIndex] || filteredQuestions[0] || VERIFIED_FALLBACK_POOL[0];
