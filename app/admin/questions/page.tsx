@@ -268,7 +268,8 @@ export default function AdminQuestionsPage() {
 
     const letterMatch = str.match(/^(?:OPTION\s*)?\(?([A-E])\)?[\.\:\)]?$/i);
     if (letterMatch) {
-      return letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D" | "E";
+      const letter = letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D" | "E";
+      return letter === "E" && !optE ? null : letter;
     }
 
     if (str === "1") return "A";
