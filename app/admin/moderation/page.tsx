@@ -35,7 +35,7 @@ export default function AdminModerationPage() {
       target: "Physics - Question #14 (Hooke's Law)",
       reporter: "08012345678 (Candidate)",
       note: "Option C calculates spring constant as 250 N/m instead of 200 N/m.",
-      created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+      created_at: "2026-10-25T08:00:00.000Z",
       status: "open",
     },
     {
@@ -44,7 +44,7 @@ export default function AdminModerationPage() {
       target: "Biology - Question #8 (Cell Division)",
       reporter: "09087654321 (Candidate)",
       note: "Diagram for metaphase stage is not rendering on mobile screen.",
-      created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+      created_at: "2026-10-25T05:00:00.000Z",
       status: "open",
     },
     {
@@ -53,7 +53,7 @@ export default function AdminModerationPage() {
       target: "Chemistry - Question #22 (Stoichiometry)",
       reporter: "Tutor Reviewer",
       note: "Typo in chemical equation for combustion of ethane: missing coefficient.",
-      created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+      created_at: "2026-10-24T10:00:00.000Z",
       status: "resolved",
     },
   ]);
