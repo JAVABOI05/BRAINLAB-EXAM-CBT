@@ -189,12 +189,10 @@ as $function$
       'id', q.id, 'subject', q.subject, 'section', q.section, 'category', q.category,
       'passage_id', q.passage_id, 'passage_title', q.passage_title, 'passage_text', q.passage_text,
       'question', q.question,
-      'question_image_url', q.question_image_url,
-      'question_image_alt', q.question_image_alt,
-      'option_a', q.option_a, 'option_a_image_url', q.option_a_image_url, 'option_a_image_alt', q.option_a_image_alt,
-      'option_b', q.option_b, 'option_b_image_url', q.option_b_image_url, 'option_b_image_alt', q.option_b_image_alt,
-      'option_c', q.option_c, 'option_c_image_url', q.option_c_image_url, 'option_c_image_alt', q.option_c_image_alt,
-      'option_d', q.option_d, 'option_d_image_url', q.option_d_image_url, 'option_d_image_alt', q.option_d_image_alt,
+      'option_a', q.option_a,
+      'option_b', q.option_b,
+      'option_c', q.option_c,
+      'option_d', q.option_d,
       'marks', public._legacy_exam_marks(q.id)) order by array_position(p_ids, q.id)), '[]'::jsonb)
   from public.questions q
   where q.id = any (p_ids);
