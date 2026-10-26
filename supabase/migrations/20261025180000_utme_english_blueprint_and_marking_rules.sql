@@ -29,8 +29,8 @@ create table if not exists public.legacy_exam_blueprint_settings (
 alter table public.legacy_exam_blueprint_settings enable row level security;
 revoke all on public.legacy_exam_blueprint_settings from anon, authenticated;
 
--- Default to the current 2026 UTME prescribed text. Change this protected setting
--- when preparing a paper for a different exam cycle; never mix both novels in one paper.
+-- Fix the first rollout to the current 2026 UTME prescribed text. Life Changer support
+-- is intentionally deferred to a future migration and reviewed question-bank release.
 insert into public.legacy_exam_blueprint_settings (setting_key, reading_text_key)
 values ('utme_english', 'lekki_headmaster')
 on conflict (setting_key) do nothing;
