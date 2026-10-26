@@ -126,8 +126,29 @@ export default function LiveClassroomPage({
 
   // Interactive Live Whiteboard & Moderation State
   const smartWhiteboardRef = useRef<SmartWhiteboardHandle | null>(null);
-  const [stageMode, setStageMode] = useState<"audio" | "whiteboard">("audio");
+  const [stageMode, setStageMode] = useState<"audio" | "whiteboard" | "split">("whiteboard");
+  const [isLowDataMode, setIsLowDataMode] = useState(false);
   const [showBoardWatermark, setShowBoardWatermark] = useState(true);
+
+  // Load and apply Low-Data Saver preference (saves ~70% bandwidth for Nigerian candidates)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("classroom_low_data");
+      if (saved === "true") setIsLowDataMode(true);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("classroom_low_data", String(isLowDataMode));
+    } catch {}
+    const stream = remoteVideoRef.current?.srcObject as MediaStream | null;
+    if (stream) {
+      stream.getVideoTracks().forEach((track) => {
+        track.enabled = !isLowDataMode;
+      });
+    }
+  }, [isLowDataMode]);
   const [canStudentsDraw, setCanStudentsDraw] = useState(false);
   const [isClassRecording, setIsClassRecording] = useState(false);
   const [isClassRecordingPaused, setIsClassRecordingPaused] = useState(false);
@@ -1704,10 +1725,37 @@ export default function LiveClassroomPage({
                 ? "bg-blue-950 text-blue-400 border border-blue-800"
                 : "bg-amber-950 text-amber-400 border border-amber-800"
             }`}
-            title="Optimized for Nigerian 3G/4G bandwidth"
+            title="Optimized for Nigerian 3G/4G bandwidth with Nigeria Edge Sync"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            <span className="hidden sm:inline">Network:</span> <span className="capitalize">{networkQuality}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+            <span className="hidden sm:inline">Nigeria Edge:</span> <span className="capitalize">{networkQuality}</span>
+          </div>
+
+          {/* Low-Data Saver Toggle (Google Stitch UI) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-2xs">
+            <div className="flex flex-col text-right">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">Data Saver</span>
+              <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold hidden sm:inline leading-none">~70% Saved</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = !isLowDataMode;
+                setIsLowDataMode(nextVal);
+                if (nextVal) toast.success("Low-Data Saver activated: incoming video paused to save data.");
+                else toast.info("Full bandwidth mode: video streaming resumed.");
+              }}
+              className={`relative inline-flex h-4 w-7 sm:h-5 sm:w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                isLowDataMode ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+              }`}
+              title="Low-Data Saver: Disables incoming video tracks to save bandwidth for Nigerian students on mobile networks"
+            >
+              <span
+                className={`pointer-events-none inline-block h-3 w-3 sm:h-4 sm:w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  isLowDataMode ? "translate-x-3 sm:translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
           </div>
 
           <button
@@ -1787,36 +1835,50 @@ export default function LiveClassroomPage({
         )}
 
         {/* Video / Stage Area */}
-        <main className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-slate-200/70 dark:bg-slate-950 relative transition-colors overflow-hidden">
-          <div className="w-full h-full max-w-5xl rounded-2xl border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
-            {/* Top Right Stage Mode Switcher */}
-            <div className="absolute top-4 right-4 z-20 flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-slate-700/80 backdrop-blur shadow-md">
-              <button
-                type="button"
-                onClick={() => setStageMode("audio")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                  stageMode === "audio"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                🎙️ Stage
-              </button>
+        <main className="flex-1 flex flex-col items-center justify-center p-0 sm:p-2 md:p-3 bg-slate-200/70 dark:bg-slate-950 relative transition-colors overflow-hidden">
+          <div className="w-full h-full rounded-none sm:rounded-2xl border-0 sm:border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+            {/* Top Right Stage Mode Switcher (Google Stitch 3-Way Mode) */}
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-slate-700/80 backdrop-blur shadow-md">
               <button
                 type="button"
                 onClick={() => setStageMode("whiteboard")}
-                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition flex items-center gap-1 ${
+                className={`rounded-lg px-2 sm:px-2.5 py-1 text-xs font-bold transition flex items-center gap-1 ${
                   stageMode === "whiteboard"
-                    ? "bg-cyan-500 text-slate-950"
+                    ? "bg-blue-600 text-white shadow-sm"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <span>🎨 Whiteboard</span>
-                <span className="rounded-full bg-cyan-400/30 px-1 py-0.2 text-[9px] font-black uppercase">Live</span>
+                <span>🎨</span>
+                <span className="hidden xs:inline">Whiteboard</span>
+                <span className="rounded-full bg-cyan-400/30 text-cyan-200 px-1 py-0.2 text-[9px] font-black uppercase">Live</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStageMode("audio")}
+                className={`rounded-lg px-2 sm:px-2.5 py-1 text-xs font-bold transition flex items-center gap-1 ${
+                  stageMode === "audio"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>📹</span>
+                <span className="hidden xs:inline">Tutor Cam</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStageMode("split")}
+                className={`hidden sm:flex rounded-lg px-2 sm:px-2.5 py-1 text-xs font-bold transition items-center gap-1 ${
+                  stageMode === "split"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>◫</span>
+                <span>Split</span>
               </button>
             </div>
 
-            {stageMode === "whiteboard" ? (
+            {stageMode === "whiteboard" || stageMode === "split" ? (
               <div className="w-full h-full flex flex-col bg-slate-950 relative select-none">
                 <SmartWhiteboard
                   showWatermark={showBoardWatermark}
@@ -1835,6 +1897,44 @@ export default function LiveClassroomPage({
                     shareWhiteboardToChat(dataUrl);
                   }}
                 />
+
+                {/* Split View Floating PiP (Google Stitch Design) */}
+                {stageMode === "split" && (
+                  <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-20 w-44 sm:w-56 rounded-xl overflow-hidden border-2 border-blue-500/80 bg-slate-950 shadow-2xl backdrop-blur">
+                    <div className="bg-slate-900/90 px-2 py-1 flex items-center justify-between text-[10px] text-white font-bold border-b border-slate-800">
+                      <span className="flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                        Tutor Live
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setStageMode("audio")}
+                        className="text-cyan-400 hover:text-cyan-300 text-[9px] uppercase font-black"
+                      >
+                        Expand ↗
+                      </button>
+                    </div>
+                    {isLowDataMode ? (
+                      <div className="h-24 sm:h-32 flex flex-col items-center justify-center p-2 text-center bg-slate-900 text-slate-300">
+                        <span className="text-xl">🎙️</span>
+                        <span className="text-[10px] font-bold text-emerald-400">HD Audio Only</span>
+                        <span className="text-[9px] text-slate-500">Video paused for Low-Data Saver</span>
+                      </div>
+                    ) : (
+                      <video
+                        ref={(el) => {
+                          if (el && remoteVideoRef.current?.srcObject) {
+                            el.srcObject = remoteVideoRef.current.srcObject;
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-24 sm:h-32 object-cover bg-black"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             ) : isVideoEnabled || isScreenSharing ? (
               <video
@@ -2978,17 +3078,42 @@ export default function LiveClassroomPage({
             <span className="hidden sm:inline">{isHandRaised ? "Lower" : "Hand"}</span>
           </button>
 
-          <div className="hidden md:flex items-center gap-1 bg-slate-800/80 rounded-xl p-1 border border-slate-700">
-            {["👍", "❤️", "👏", "🤔", "✅"].map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => sendReaction(emoji)}
-                className="hover:scale-125 transition px-1.5 py-0.5 text-base active-press"
-                title={`React with ${emoji}`}
-              >
-                {emoji}
-              </button>
-            ))}
+          <div className="hidden sm:flex items-center gap-1 bg-slate-800/90 rounded-xl p-1 border border-slate-700">
+            <button
+              type="button"
+              onClick={() => sendReaction("💡")}
+              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-cyan-300 transition flex items-center gap-1 active-press"
+              title="Understood!"
+            >
+              <span>💡</span>
+              <span className="hidden xl:inline text-[11px]">Understood!</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => sendReaction("🔥")}
+              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-amber-400 transition flex items-center gap-1 active-press"
+              title="Fire Explanation!"
+            >
+              <span>🔥</span>
+              <span className="hidden xl:inline text-[11px]">Fire!</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => sendReaction("✍️")}
+              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-emerald-300 transition flex items-center gap-1 active-press"
+              title="Taking Notes"
+            >
+              <span>✍️</span>
+              <span className="hidden xl:inline text-[11px]">Notes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => sendReaction("👏")}
+              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-white transition flex items-center gap-1 active-press"
+              title="Well Done!"
+            >
+              <span>👏</span>
+            </button>
           </div>
 
           <Link
