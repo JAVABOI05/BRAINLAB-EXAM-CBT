@@ -24,6 +24,7 @@ export interface CachedExplanationResult {
   cachedAt: string;
   verified: boolean;
   fingerprint: string;
+  promptVersion: "v2";
 }
 
 // In-Memory Fast Cache (TTL: 15 minutes, max 1000 items) for ultra-fast <1ms lookups
@@ -63,7 +64,7 @@ export async function getCachedExplanation(
 
   // 0. Ultra-fast in-memory check
   const inMem = getFromMemoryCache(qIdStr, fingerprint);
-  if (inMem) return inMem;
+  if (inMem?.promptVersion === "v2") return inMem;
 
   const supabase = getSupabaseServerClient();
 
@@ -83,6 +84,7 @@ export async function getCachedExplanation(
           cachedAt: data.updated_at || data.created_at,
           verified: data.verified ?? true,
           fingerprint: data.fingerprint,
+          promptVersion: "v2",
         };
         setToMemoryCache(qIdStr, res);
         return res;
@@ -115,6 +117,7 @@ export async function getCachedExplanation(
           cachedAt: row.created_at,
           verified: Boolean(rowMeta.verified ?? true),
           fingerprint: rowFingerprint,
+          promptVersion: "v2",
         };
       }
     }
