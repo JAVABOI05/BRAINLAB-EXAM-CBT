@@ -99,11 +99,12 @@ export default function ExamPage() {
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setSyncStatus("offline");
-    }
+    const initialStatusTimeout = window.setTimeout(() => {
+      if (!navigator.onLine) setSyncStatus("offline");
+    }, 0);
 
     return () => {
+      window.clearTimeout(initialStatusTimeout);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
@@ -279,13 +280,13 @@ export default function ExamPage() {
 
     useEffect(() => {
     if (!started || !sessionId || !sessionToken) return;
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setSyncStatus("offline");
-      queueProgress(sessionId, sessionToken, answers);
-      return;
-    }
-    setSyncStatus("syncing");
     const timeout = setTimeout(() => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setSyncStatus("offline");
+        queueProgress(sessionId, sessionToken, answers);
+        return;
+      }
+      setSyncStatus("syncing");
       const saveTask = answerSaveQueueRef.current.then(async () => {
         const saved = await saveProgress(sessionId, sessionToken, answers);
         if (isError(saved)) {

@@ -111,7 +111,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
   // Load cached AI explanation on mount: first check localStorage, then Supabase shared cache
   useEffect(() => {
     let active = true;
-
+    const hydrateCachedExplanation = () => {
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -167,8 +167,11 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
         // Shared cache lookup failure handled gracefully
       });
 
+    };
+    const timeoutId = window.setTimeout(hydrateCachedExplanation, 0);
     return () => {
       active = false;
+      window.clearTimeout(timeoutId);
     };
   }, [cacheKey, item.id]);
 

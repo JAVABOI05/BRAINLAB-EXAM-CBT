@@ -34,9 +34,6 @@ interface AudioAsset {
   title?: string;
 }
 
-interface SubjectOption { id: string; name: string; slug: string; }
-interface CourseOption { id: string; title: string; slug: string; }
-
 interface StudentSubmission {
   id: string;
   assignment_id: string;
@@ -55,6 +52,19 @@ interface StudentSubmission {
   student?: { id: string; full_name?: string; email?: string };
 }
 
+interface RawStudentSubmission extends Omit<StudentSubmission, "audio_asset" | "tutor_audio_asset"> {
+  audio_asset?: AudioAsset | AudioAsset[] | null;
+  tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return fallback;
+}
+
 export default function TutorAssignmentsPage() {
   const router = useRouter();
   const [assignments, setAssignments] = useState<TutorAssignment[]>([]);
@@ -66,8 +76,8 @@ export default function TutorAssignmentsPage() {
 
   // New Assignment Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
-  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [subjects, setSubjects] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newInstructions, setNewInstructions] = useState("");
   const [newCourseId, setNewCourseId] = useState("");
@@ -107,6 +117,7 @@ export default function TutorAssignmentsPage() {
           setAssignments(json.assignments);
           if (json.assignments.length > 0) {
             setSelectedAssignmentId(json.assignments[0].id);
+            setLoadingSubmissions(true);
           }
         }
 
@@ -135,8 +146,6 @@ export default function TutorAssignmentsPage() {
   useEffect(() => {
     if (!selectedAssignmentId) return;
     let active = true;
-    setLoadingSubmissions(true);
-
     async function loadSubs() {
       try {
         const { data, error } = await supabase
@@ -162,11 +171,7 @@ export default function TutorAssignmentsPage() {
 
         if (error) throw error;
         if (active) {
-          type RawSubmission = Omit<StudentSubmission, "audio_asset" | "tutor_audio_asset"> & {
-            audio_asset?: AudioAsset | AudioAsset[] | null;
-            tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
-          };
-          const normalized: StudentSubmission[] = ((data as unknown as RawSubmission[] | null) || []).map((row) => ({
+          const normalized: StudentSubmission[] = ((data as RawStudentSubmission[] | null) || []).map((row) => ({
             ...row,
             audio_asset: Array.isArray(row.audio_asset) ? row.audio_asset[0] : row.audio_asset,
             tutor_audio_asset: Array.isArray(row.tutor_audio_asset) ? row.tutor_audio_asset[0] : row.tutor_audio_asset,
@@ -239,7 +244,7 @@ export default function TutorAssignmentsPage() {
       setShowGradingRecorder(false);
       toast.success("Voice feedback note recorded and attached!");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to record audio feedback.");
+      toast.error(errorMessage(err, "Failed to record audio feedback."));
     }
   };
 
@@ -277,7 +282,7 @@ export default function TutorAssignmentsPage() {
 
       toast.success(status === "graded" ? "Grade and feedback saved!" : "Requested student revision.");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Evaluation save failed.");
+      toast.error(errorMessage(err, "Evaluation save failed."));
     } finally {
       setSavingGrade(false);
     }
@@ -323,7 +328,7 @@ export default function TutorAssignmentsPage() {
       setNewInstructions("");
       toast.success("Assignment published and added to course calendar!");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Could not publish assignment.");
+      toast.error(errorMessage(err, "Could not publish assignment."));
     } finally {
       setCreating(false);
     }
@@ -514,7 +519,10 @@ export default function TutorAssignmentsPage() {
                 return (
                   <button
                     key={assign.id}
-                    onClick={() => setSelectedAssignmentId(assign.id)}
+                    onClick={() => {
+                        setLoadingSubmissions(true);
+                        setSelectedAssignmentId(assign.id);
+                      }}
                     className={`w-full text-left p-3.5 rounded-2xl border transition flex flex-col gap-1.5 hover-lift active-press ${
                       isSelected
                         ? "border-blue-500 bg-blue-50/70 shadow-xs"

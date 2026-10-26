@@ -188,8 +188,8 @@ export default function MessagesPage() {
         const rawActive: OnlinePeer[] = Array.isArray(json.activeUsers) ? json.activeUsers : [];
 
         // Exclude current user from peer list
-        const otherAll = rawAll.filter((u) => u.user_id !== currentUser?.id);
-        const otherActive = rawActive.filter((u) => u.user_id !== currentUser?.id);
+        const otherAll = rawAll.filter((user) => user.user_id !== currentUser?.id);
+        const otherActive = rawActive.filter((user) => user.user_id !== currentUser?.id);
 
         setAllPeers(otherAll);
         setOnlinePeers(otherActive);
@@ -202,11 +202,13 @@ export default function MessagesPage() {
   };
 
   useEffect(() => {
-    if (currentUser) {
-      void fetchOnlinePeers();
-      const interval = setInterval(() => void fetchOnlinePeers(), 12000);
-      return () => clearInterval(interval);
-    }
+    if (!currentUser) return;
+    const initialFetch = window.setTimeout(() => void fetchOnlinePeers(), 0);
+    const interval = window.setInterval(() => void fetchOnlinePeers(), 12000);
+    return () => {
+      window.clearTimeout(initialFetch);
+      window.clearInterval(interval);
+    };
   }, [currentUser]);
 
   // 3. Load messages for active conversation
@@ -377,8 +379,8 @@ export default function MessagesPage() {
       } else {
         toast.error(json.error || "Could not open chat with peer.");
       }
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed to start direct message.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to start direct message.");
     }
   };
 
@@ -457,8 +459,8 @@ export default function MessagesPage() {
       } else {
         toast.error(json.error || "Could not complete study group addition.");
       }
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed to update study group.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to update study group.");
     } finally {
       setCreatingGroup(false);
     }
