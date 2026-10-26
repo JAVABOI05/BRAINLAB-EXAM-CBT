@@ -38,7 +38,10 @@ export type ParsedQuestionRow = {
   option_d: string;
   option_d_image_url?: string | null;
   option_d_image_alt?: string | null;
-  correct_answer: "A" | "B" | "C" | "D";
+  option_e?: string | null;
+  option_e_image_url?: string | null;
+  option_e_image_alt?: string | null;
+  correct_answer: "A" | "B" | "C" | "D" | "E";
   explanation: string | null;
   explanation_image_url?: string | null;
   explanation_image_alt?: string | null;
@@ -142,6 +145,8 @@ const HEADER_KEY_ALIASES: Record<string, string> = {
   optiondimageurl: "option_d_image_url",
   optiondimage: "option_d_image_url",
   optiondimagealt: "option_d_image_alt",
+  optione: "option_e", e: "option_e", opt5: "option_e", choicee: "option_e",
+  optioneimageurl: "option_e_image_url", optioneimage: "option_e_image_url", optioneimagealt: "option_e_image_alt",
 
   // correct answer
   correctanswer: "correct_answer",
@@ -251,31 +256,34 @@ export default function AdminQuestionsPage() {
     optA: string | null,
     optB: string | null,
     optC: string | null,
-    optD: string | null
-  ): "A" | "B" | "C" | "D" | null {
+    optD: string | null,
+    optE: string | null
+  ): "A" | "B" | "C" | "D" | "E" | null {
     if (val === null || val === undefined) return null;
     const str = String(val).trim().toUpperCase();
     if (!str) return null;
 
-    if (["A", "B", "C", "D"].includes(str)) {
-      return str as "A" | "B" | "C" | "D";
-    }
+    if (["A", "B", "C", "D"].includes(str)) return str as "A" | "B" | "C" | "D";
+    if (str === "E") return optE ? "E" : null;
 
-    const letterMatch = str.match(/^(?:OPTION\s*)?\(?([A-D])\)?[\.\:\)]?$/i);
+    const letterMatch = str.match(/^(?:OPTION\s*)?\(?([A-E])\)?[\.\:\)]?$/i);
     if (letterMatch) {
-      return letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D";
+      const letter = letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D" | "E";
+      return letter === "E" && !optE ? null : letter;
     }
 
     if (str === "1") return "A";
     if (str === "2") return "B";
     if (str === "3") return "C";
     if (str === "4") return "D";
+    if (str === "5") return optE ? "E" : null;
 
     const cleanStr = String(val).trim().toLowerCase();
     if (optA && cleanStr === optA.trim().toLowerCase()) return "A";
     if (optB && cleanStr === optB.trim().toLowerCase()) return "B";
     if (optC && cleanStr === optC.trim().toLowerCase()) return "C";
     if (optD && cleanStr === optD.trim().toLowerCase()) return "D";
+    if (optE && cleanStr === optE.trim().toLowerCase()) return "E";
 
     return null;
   }
@@ -317,9 +325,10 @@ export default function AdminQuestionsPage() {
       const optionB = normalizeNullable(row.option_b);
       const optionC = normalizeNullable(row.option_c);
       const optionD = normalizeNullable(row.option_d);
+      const optionE = normalizeNullable(row.option_e);
 
       const rawAnswer = row.correct_answer ?? row.answer ?? row.correct;
-      const correctAnswer = normalizeAnswer(rawAnswer, optionA, optionB, optionC, optionD);
+      const correctAnswer = normalizeAnswer(rawAnswer, optionA, optionB, optionC, optionD, optionE);
 
       const rawMarks = row.marks ?? row.mark ?? row.points ?? 1;
       const numMarks = Number(rawMarks);
@@ -346,7 +355,7 @@ export default function AdminQuestionsPage() {
       if (!correctAnswer) {
         nextErrors.push({
           row: rowNo,
-          message: `Invalid or missing Correct Answer (${String(rawAnswer ?? "empty")}). Must be A, B, C, or D.`,
+          message: `Invalid or missing Correct Answer (${String(rawAnswer ?? "empty")}). Must be A, B, C, D, or E (E requires a non-empty Option E).`,
         });
       }
 
@@ -380,6 +389,9 @@ export default function AdminQuestionsPage() {
           option_d: optionD,
           option_d_image_url: normalizeImageUrl(row.option_d_image_url),
           option_d_image_alt: normalizeNullable(row.option_d_image_alt),
+          option_e: optionE,
+          option_e_image_url: normalizeImageUrl(row.option_e_image_url),
+          option_e_image_alt: normalizeNullable(row.option_e_image_alt),
           correct_answer: correctAnswer,
           explanation: normalizeNullable(row.explanation),
           explanation_image_url: normalizeImageUrl(row.explanation_image_url),
@@ -432,42 +444,64 @@ export default function AdminQuestionsPage() {
   }
 
   // Batch chunking uploader (50 rows per batch)
+  // Single atomic insert: avoid partial 50-row batches that can duplicate on retry.
+  // The current production questions schema does not yet include image columns.
   async function handleBatchUpload() {
     if (parsedRows.length === 0) {
       setMessage({ type: "error", text: "No valid questions found to upload." });
       return;
     }
 
-    const BATCH_SIZE = 50;
-    const totalBatches = Math.ceil(parsedRows.length / BATCH_SIZE);
+    const imageFields: Array<keyof ParsedQuestionRow> = [
+      "question_image_url", "question_image_alt",
+      "option_a_image_url", "option_a_image_alt",
+      "option_b_image_url", "option_b_image_alt",
+      "option_c_image_url", "option_c_image_alt",
+      "option_d_image_url", "option_d_image_alt",
+      "option_e_image_url", "option_e_image_alt",
+      "explanation_image_url", "explanation_image_alt",
+    ];
+    const hasImageData = parsedRows.some((row) =>
+      imageFields.some((field) => {
+        const value = row[field];
+        return typeof value === "string" && value.trim().length > 0;
+      })
+    );
+
+    if (hasImageData) {
+      setMessage({
+        type: "error",
+        text: "Upload blocked: this database schema does not yet support question/option image columns. No rows were uploaded. Add and verify the image-column migration before importing image-bearing questions.",
+      });
+      return;
+    }
 
     try {
       setUploading(true);
       setMessage(null);
-      setUploadProgress(0);
+      setUploadProgress(10);
+      setUploadStatus(`Validating ${parsedRows.length} questions before one atomic insert...`);
 
-      let totalInserted = 0;
+      // Remove optional image keys entirely (not merely null): PostgREST rejects
+      // unknown columns even when their values are null.
+      const payload = parsedRows.map((row) => {
+        const databaseRow = { ...row };
+        imageFields.forEach((field) => {
+          delete databaseRow[field];
+        });
+        return databaseRow;
+      });
 
-      for (let i = 0; i < parsedRows.length; i += BATCH_SIZE) {
-        const chunk = parsedRows.slice(i, i + BATCH_SIZE);
-        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-
-        setUploadStatus(`Uploading batch ${batchNumber} of ${totalBatches} (${i + 1} - ${Math.min(i + BATCH_SIZE, parsedRows.length)})...`);
-
-        const { error } = await supabase.from("questions").insert(chunk);
-
-        if (error) {
-          throw new Error(`Batch ${batchNumber} failed: ${error.message}`);
-        }
-
-        totalInserted += chunk.length;
-        const currentPercent = Math.round((totalInserted / parsedRows.length) * 100);
-        setUploadProgress(currentPercent);
+      setUploadStatus(`Uploading all ${payload.length} questions atomically...`);
+      const { error } = await supabase.from("questions").insert(payload);
+      if (error) {
+        throw new Error(`Upload failed; the database rejected the atomic insert. No partial batches were sent. ${error.message}`);
       }
 
+      setUploadProgress(100);
       setMessage({
         type: "success",
-        text: `Successfully uploaded all ${totalInserted} questions into the BrainLab question bank!`,
+        text: `Successfully uploaded all ${payload.length} questions into the BrainLab question bank.`,
       });
       setParsedRows([]);
       setRawRowsCount(0);
@@ -478,7 +512,7 @@ export default function AdminQuestionsPage() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Upload encountered an unexpected failure.",
+        text: error instanceof Error ? error.message : "Upload failed. Please review the error and retry only after confirming no rows were inserted.",
       });
     } finally {
       setUploading(false);
@@ -530,6 +564,9 @@ export default function AdminQuestionsPage() {
       "option_d_image_alt",
       "explanation_image_url",
       "explanation_image_alt",
+      "option_e",
+      "option_e_image_url",
+      "option_e_image_alt",
     ];
     const sample = [
       [
@@ -591,6 +628,9 @@ export default function AdminQuestionsPage() {
       "option_d_image_alt",
       "explanation_image_url",
       "explanation_image_alt",
+      "option_e",
+      "option_e_image_url",
+      "option_e_image_alt",
     ];
 
     const sampleQuestions = [
@@ -1040,6 +1080,7 @@ export default function AdminQuestionsPage() {
                         <div>B: {row.option_b}</div>
                         <div>C: {row.option_c}</div>
                         <div>D: {row.option_d}</div>
+                {row.option_e && <div>E: {row.option_e}</div>}
                       </td>
                       <td>
                         <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-white">

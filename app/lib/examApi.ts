@@ -4,7 +4,7 @@
 import { supabase } from "./supabase";
 import { getExamSettings, getFeatureFlags } from "./platformConfig";
 
-export type Option = "A" | "B" | "C" | "D";
+export type Option = "A" | "B" | "C" | "D" | "E";
 export type ApiError = { ok: false; error: string; message: string };
 export type PublicSettings = {
   mock_enabled: boolean;
@@ -37,6 +37,9 @@ export type PaperQuestion = {
   option_d: string | null;
   option_d_image_url: string | null;
   option_d_image_alt: string | null;
+  option_e?: string | null;
+  option_e_image_url?: string | null;
+  option_e_image_alt?: string | null;
   marks: number;
 };
 export type AttemptPayload = {
@@ -58,7 +61,7 @@ export type ResultItem = {
   subject: string;
   type?: string;
   text: string;
-  options: Record<Option, string>;
+  options: Record<"A" | "B" | "C" | "D", string> & Partial<Record<"E", string>>;
   optionImages?: Partial<Record<Option, string | null>>;
   optionImageAlts?: Partial<Record<Option, string>>;
   questionImageUrl?: string | null;

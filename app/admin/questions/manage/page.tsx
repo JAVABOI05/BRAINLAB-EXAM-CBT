@@ -23,6 +23,7 @@ type QuestionRow = {
   category: string | null;
   question: string;
   correct_answer: string;
+  option_e: string | null;
   marks: number;
   difficulty: string | null;
   is_active: boolean;
@@ -66,7 +67,7 @@ export default function AdminQuestionManagerPage() {
     const { data, error } = await supabase
       .from("questions")
       .select(
-        "id, source_question_id, subject, section, category, question, correct_answer, marks, difficulty, is_active"
+        "id, source_question_id, subject, section, category, question, option_e, correct_answer, marks, difficulty, is_active"
       )
       .order("id", { ascending: false })
       .range(0, 4999);
@@ -179,6 +180,7 @@ export default function AdminQuestionManagerPage() {
       section: q.section,
       category: q.category || "",
       question: q.question,
+      option_e: q.option_e || "",
       correct_answer: q.correct_answer,
       marks: q.marks,
       difficulty: q.difficulty || "medium",

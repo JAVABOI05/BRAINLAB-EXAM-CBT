@@ -54,83 +54,124 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Determine examination subjects (4 subjects: English is always compulsory Subject 1)
+    // 2. Preserve the existing subject-selection contract.
     let selectedSubjects: string[] = [];
 
     if (preconfiguredSubject) {
       selectedSubjects = ["English", preconfiguredSubject];
     } else if (Array.isArray(subjects) && subjects.length > 0) {
-      // Candidate chose their subjects
       const nonEnglish = subjects
         .map((s) => String(s).trim())
         .filter((s) => Boolean(s) && !s.toLowerCase().includes("english"));
       selectedSubjects = ["English", ...nonEnglish.slice(0, 3)];
     } else if (elective) {
-      selectedSubjects = ["English", "Mathematics", "Physics", elective];
+      selectedSubjects = ["English", "Mathematics", "Physics", String(elective).trim()];
     } else {
       selectedSubjects = ["English", "Mathematics", "Physics", "Chemistry"];
     }
 
-    // Ensure English is always the first subject and exactly 4 subjects are present
     if (selectedSubjects[0]?.toLowerCase() !== "english") {
       const remaining = selectedSubjects.filter((s) => !s.toLowerCase().includes("english"));
       selectedSubjects = ["English", ...remaining.slice(0, 3)];
     }
 
-    // Fallbacks if fewer than 4 subjects were provided
     const defaultFillers = ["Mathematics", "Physics", "Chemistry", "Biology"];
     while (selectedSubjects.length < 4) {
       const nextFiller = defaultFillers.find((f) => !selectedSubjects.includes(f)) || "Mathematics";
       selectedSubjects.push(nextFiller);
     }
+    selectedSubjects = selectedSubjects.slice(0, 4);
 
-    // 3. For each selected subject, gather randomized question IDs from public.questions
-    const paperIds: number[] = [];
+    // The first UTME English blueprint supports the standard English + Chemistry +
+    // Physics + (Biology or Mathematics) combination. Other existing subject choices
+    // retain the legacy selection path until the builder supports arbitrary electives.
+    const supportedElectives = ["Biology", "Mathematics"];
+    const selectedElective = selectedSubjects.find((s) =>
+      supportedElectives.some((allowed) => allowed.toLowerCase() === s.toLowerCase())
+    );
+    const blueprintEligible =
+      selectedSubjects.length === 4 &&
+      selectedSubjects.some((s) => s.toLowerCase() === "english") &&
+      selectedSubjects.some((s) => s.toLowerCase() === "chemistry") &&
+      selectedSubjects.some((s) => s.toLowerCase() === "physics") &&
+      Boolean(selectedElective);
 
-    for (const subj of selectedSubjects) {
-      // English takes 60 questions in JAMB UTME, each elective takes 40 questions
-      const isEnglish = subj.toLowerCase().includes("english");
-      const targetCount = isEnglish ? 60 : 40;
+    let paperIds: number[] = [];
+    let paperBlueprint: string | null = null;
 
-      const { data: qRows } = await supabase
-        .from("questions")
-        .select("id")
-        .eq("is_active", true)
-        .ilike("subject", isEnglish ? "English" : subj)
-        .limit(250);
+    if (blueprintEligible && selectedElective) {
+      selectedSubjects = ["English", "Chemistry", "Physics", selectedElective];
+      const { data: builtPaper, error: buildError } = await supabase.rpc("_build_paper", {
+        p_elective: selectedElective,
+      });
 
-      if (qRows && qRows.length > 0) {
-        // Randomly shuffle so candidates do not get identical question sequences
-        const shuffled = [...qRows].sort(() => 0.5 - Math.random()).slice(0, targetCount);
-        for (const q of shuffled) {
-          paperIds.push(q.id);
-        }
+      if (buildError || !Array.isArray(builtPaper) || builtPaper.length !== 180) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "paper_not_ready",
+            message: buildError?.message || "The required examination question pools are not ready. Please contact the administrator.",
+          },
+          { status: 503 }
+        );
       }
-    }
 
-    // If candidate selected subjects with sparse questions in DB,
-    // fill up remaining questions from active DB questions to maintain full 180 questions
-    if (paperIds.length < 180) {
-      const needed = 180 - paperIds.length;
-      const { data: fallbackQuestions } = await supabase
-        .from("questions")
-        .select("id")
-        .eq("is_active", true)
-        .not("id", "in", `(${paperIds.length > 0 ? paperIds.join(",") : "0"})`)
-        .limit(needed);
-
-      if (fallbackQuestions) {
-        for (const q of fallbackQuestions) {
-          paperIds.push(q.id);
-        }
+      paperIds = builtPaper.map((id: number | string) => Number(id));
+      if (paperIds.some((id) => !Number.isSafeInteger(id) || id <= 0) || new Set(paperIds).size !== 180) {
+        return NextResponse.json(
+          { ok: false, error: "invalid_paper", message: "The examination paper could not be validated. Please contact the administrator." },
+          { status: 503 }
+        );
       }
-    }
+      paperBlueprint = "utme_english_v1";
+    } else {
+      // Compatibility path for preconfigured and non-standard subject combinations.
+      // Keep existing subject-selection behavior, but do not silently fill a failed
+      // blueprint paper with unrelated questions.
+      for (const subj of selectedSubjects) {
+        const isEnglish = subj.toLowerCase() === "english";
+        const targetCount = isEnglish ? 60 : 40;
+        const { data: qRows, error: qError } = await supabase
+          .from("questions")
+          .select("id")
+          .eq("is_active", true)
+          .ilike("subject", subj)
+          .limit(250);
 
-    if (paperIds.length === 0) {
-      return NextResponse.json(
-        { ok: false, error: "no_questions", message: "No active questions found in the question bank." },
-        { status: 400 }
-      );
+        if (qError) {
+          return NextResponse.json(
+            { ok: false, error: "question_pool_error", message: "Could not load one of the selected subject pools. Please try again later." },
+            { status: 503 }
+          );
+        }
+        const shuffled = [...(qRows || [])].sort(() => Math.random() - 0.5).slice(0, targetCount);
+        paperIds.push(...shuffled.map((q) => Number(q.id)));
+      }
+
+      if (paperIds.length < 180) {
+        const needed = 180 - paperIds.length;
+        const { data: fallbackQuestions, error: fallbackError } = await supabase
+          .from("questions")
+          .select("id")
+          .eq("is_active", true)
+          .not("id", "in", `(${paperIds.length ? paperIds.join(",") : "0"})`)
+          .limit(needed);
+
+        if (fallbackError) {
+          return NextResponse.json(
+            { ok: false, error: "question_pool_error", message: "Could not complete the selected question pools. Please try again later." },
+            { status: 503 }
+          );
+        }
+        paperIds.push(...(fallbackQuestions || []).map((q) => Number(q.id)));
+      }
+
+      if (paperIds.length !== 180 || paperIds.some((id) => !Number.isSafeInteger(id) || id <= 0) || new Set(paperIds).size !== 180) {
+        return NextResponse.json(
+          { ok: false, error: "paper_not_ready", message: "There are not enough unique active questions for this subject combination. Please contact the administrator." },
+          { status: 503 }
+        );
+      }
     }
 
     // 4. Create the exam session in public.exam_sessions
@@ -146,6 +187,7 @@ export async function POST(request: NextRequest) {
         access_code: cleanCode || "OPEN-CBT",
         status: "started",
         paper_ids: paperIds,
+        paper_blueprint: paperBlueprint,
         time_left_seconds: durationSeconds,
         duration_seconds: durationSeconds,
         // The server-side save/resume/submit RPCs calculate time from this deadline.
@@ -165,24 +207,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Query candidate question payload using public._paper_json
+    // 5. Fetch and validate the question payload before returning a usable attempt.
+    // Never treat an RPC error or a partial payload as a successful exam launch.
     const { data: questionsJson, error: paperErr } = await supabase.rpc("_paper_json", {
       p_ids: paperIds,
     });
 
-    let questionsPayload = questionsJson || [];
+    if (paperErr || !Array.isArray(questionsJson) || questionsJson.length !== paperIds.length) {
+      // The session was created but cannot be safely presented. Mark it cancelled so
+      // it cannot be resumed as a broken attempt; never fall back to a partial query.
+      await supabase
+        .from("exam_sessions")
+        .update({ status: "cancelled" })
+        .eq("id", sessionRow.id)
+        .eq("attempt_token", attemptToken);
 
-    if (!questionsJson || questionsJson.length === 0) {
-      // Fallback query directly from questions table
-      const { data: rawQ } = await supabase
-        .from("questions")
-        .select(
-          "id, subject, section, category, passage_id, passage_title, passage_text, question, question_image_url, question_image_alt, option_a, option_a_image_url, option_a_image_alt, option_b, option_b_image_url, option_b_image_alt, option_c, option_c_image_url, option_c_image_alt, option_d, option_d_image_url, option_d_image_alt, marks"
-        )
-        .in("id", paperIds);
-
-      questionsPayload = rawQ || [];
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "paper_payload_failed",
+          message: paperErr?.message || "The examination question payload was incomplete. Please try again later.",
+        },
+        { status: 503 }
+      );
     }
+
+    const questionsPayload = questionsJson;
 
     return NextResponse.json({
       ok: true,
