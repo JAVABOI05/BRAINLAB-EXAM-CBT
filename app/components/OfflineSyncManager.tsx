@@ -128,10 +128,17 @@ export default function OfflineSyncManager() {
     window.addEventListener("offline", handleOffline);
     window.addEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
 
-    // Sync is triggered by explicit sync events and connectivity changes.
+    // Recover queued submissions after a reload, not only after a future
+    // connectivity event or a manual click.
+    const initialSyncTimer = window.setTimeout(() => {
+      if (isOnline() && hasPendingOfflineData()) {
+        void triggerSync();
+      }
+    }, 0);
 
     return () => {
       window.clearTimeout(pendingCheckId);
+      window.clearTimeout(initialSyncTimer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener(SYNC_EVENT_NAME, handleSyncCustomEvent);
