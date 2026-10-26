@@ -422,7 +422,14 @@ export default function ExamPage() {
     if (!subjects.length) {
       subjects = activeCand.subject ? ["English", activeCand.subject] : ["English", "Mathematics", "Physics", "Chemistry"];
     }
-    const finalElective = subjects[3] || subjects[1] || "Mathematics";
+    // The current UTME paper builder accepts Biology or Mathematics as the elective.
+    // Older candidate records can still have Chemistry in subjects[3]; never send that
+    // default subject as the elective.
+    const finalElective = subjects.find((subject) =>
+      ["Biology", "Mathematics"].includes(String(subject).trim())
+    ) || (activeCand.subject && ["Biology", "Mathematics"].includes(activeCand.subject)
+      ? activeCand.subject
+      : "Mathematics");
 
     if (!mockEnabled) { setError("This exam is currently unavailable."); return; }
     try {
