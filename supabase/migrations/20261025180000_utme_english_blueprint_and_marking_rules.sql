@@ -2,6 +2,15 @@
 -- This first rollout supports The Lekki Headmaster only. Life Changer is deferred.
 -- This migration fails closed until the required Cloze Passage questions are imported and reviewed.
 
+-- Keep this migration safe when migrations are applied in timestamp order: the
+-- optional-E migration has a later timestamp, but the paper JSON function below
+-- already includes E. Add the nullable fields here; the later migration adds
+-- validation constraints and updates the answer/corrections RPCs.
+alter table public.questions
+  add column if not exists option_e text,
+  add column if not exists option_e_image_url text,
+  add column if not exists option_e_image_alt text;
+
 -- Preserve each session's mark weights at the moment its paper is created. Existing
 -- sessions remain NULL and are graded with their original per-question marks. The
 -- blueprint marker prevents UTME-specific weights leaking into legacy/custom papers.
