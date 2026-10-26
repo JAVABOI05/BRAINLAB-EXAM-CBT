@@ -14,22 +14,13 @@ function SubscriptionCallbackContent() {
   const provider = searchParams.get("provider");
 
   const [status, setStatus] = useState<"verifying" | "success" | "cancelled" | "error">(
-    isCancelled ? "cancelled" : "verifying"
+    isCancelled ? "cancelled" : !reference ? "error" : "verifying"
   );
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState(!reference ? "No payment reference was found in the return link." : "");
   const [planId, setPlanId] = useState("");
 
   useEffect(() => {
-    if (isCancelled) {
-      setStatus("cancelled");
-      return;
-    }
-
-    if (!reference) {
-      setStatus("error");
-      setErrorMessage("No payment reference was found in the return link.");
-      return;
-    }
+    if (isCancelled || !reference) return;
 
     let isMounted = true;
     let pollCount = 0;
