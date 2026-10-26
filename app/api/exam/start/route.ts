@@ -184,6 +184,22 @@ export async function POST(request: NextRequest) {
       questionsPayload = rawQ || [];
     }
 
+    // Preserve exact paperIds sequence so subjects are cleanly grouped (English 1..60, Electives 61..180)
+    if (questionsPayload.length > 0) {
+      const idMap = new Map<number, (typeof questionsPayload)[0]>();
+      for (const q of questionsPayload) {
+        idMap.set(Number(q.id), q);
+      }
+      const orderedQuestions: typeof questionsPayload = [];
+      for (const id of paperIds) {
+        const found = idMap.get(id);
+        if (found) orderedQuestions.push(found);
+      }
+      if (orderedQuestions.length > 0) {
+        questionsPayload = orderedQuestions;
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       session_id: sessionRow.id,
