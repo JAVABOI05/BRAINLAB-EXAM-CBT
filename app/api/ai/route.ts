@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
         controller.close();
 
         // Save generated standard explanation to shared cache
-        if (body.mode === "explain" && questionId && accumulatedCleaned.trim()) {
+        if (body.mode === "explain" && (!body.style || body.style === "standard") && questionId && accumulatedCleaned.trim()) {
           void setCachedExplanation({
             questionId,
             subject: safeString(qRecord?.subject, 120) || "General",
