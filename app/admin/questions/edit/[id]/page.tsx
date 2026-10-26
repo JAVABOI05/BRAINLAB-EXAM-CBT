@@ -94,6 +94,7 @@ export default function EditQuestionPage() {
     | "option_b_image_url"
     | "option_c_image_url"
     | "option_d_image_url"
+    | "option_e_image_url"
     | "explanation_image_url";
 
   async function uploadQuestionImage(target: ImageUrlField, file: File) {
@@ -150,11 +151,17 @@ export default function EditQuestionPage() {
       question.option_b_image_url,
       question.option_c_image_url,
       question.option_d_image_url,
+      question.option_e_image_url,
       question.explanation_image_url,
     ].filter((value): value is string => Boolean(value?.trim()));
 
     if (mediaUrls.some((value) => !/^https:\/\//i.test(value.trim()))) {
       setMessage("Image URLs must use HTTPS. Use a secure image URL from approved storage.");
+      return;
+    }
+
+    if (question.correct_answer === "E" && !question.option_e?.trim()) {
+      setMessage("Correct answer E requires a non-empty Option E.");
       return;
     }
 
@@ -183,6 +190,9 @@ export default function EditQuestionPage() {
         option_d: question.option_d,
         option_d_image_url: question.option_d_image_url || null,
         option_d_image_alt: question.option_d_image_alt || null,
+        option_e: question.option_e || null,
+        option_e_image_url: question.option_e_image_url || null,
+        option_e_image_alt: question.option_e_image_alt || null,
         correct_answer: question.correct_answer,
         explanation: question.explanation,
         explanation_image_url: question.explanation_image_url || null,
@@ -424,6 +434,7 @@ export default function EditQuestionPage() {
               ["B", "option_b_image_url", "option_b_image_alt"],
               ["C", "option_c_image_url", "option_c_image_alt"],
               ["D", "option_d_image_url", "option_d_image_alt"],
+              ["E", "option_e_image_url", "option_e_image_alt"],
             ] as const).map(([letter, urlKey, altKey]) => (
               <div className="admin-setting-box" key={letter}>
                 <label className="admin-label">Option {letter} image URL</label>
