@@ -8,6 +8,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const { code = "", name = "", phone = "", elective = "", subjects = [] } = body;
+    // Keep the new UTME blueprint opt-in until its migration and reviewed Cloze Passage
+    // bank are installed. This prevents a feature-branch deployment from breaking
+    // legacy attempts against a database that has not yet received the migration.
+    const useUtmeBlueprint = body.blueprint === "utme_english_v1";
 
     const supabase = getSupabaseServerClient();
 
@@ -90,6 +94,7 @@ export async function POST(request: NextRequest) {
       supportedElectives.some((allowed) => allowed.toLowerCase() === s.toLowerCase())
     );
     const blueprintEligible =
+      useUtmeBlueprint &&
       selectedSubjects.length === 4 &&
       selectedSubjects.some((s) => s.toLowerCase() === "english") &&
       selectedSubjects.some((s) => s.toLowerCase() === "chemistry") &&
@@ -187,7 +192,7 @@ export async function POST(request: NextRequest) {
         access_code: cleanCode || "OPEN-CBT",
         status: "started",
         paper_ids: paperIds,
-        paper_blueprint: paperBlueprint,
+        ...(paperBlueprint ? { paper_blueprint: paperBlueprint } : {}),
         time_left_seconds: durationSeconds,
         duration_seconds: durationSeconds,
         // The server-side save/resume/submit RPCs calculate time from this deadline.
