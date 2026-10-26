@@ -78,22 +78,32 @@ const INITIAL_INQUIRIES: SchoolInquiry[] = [
   },
 ];
 
-function createMockPinBatch(inq: SchoolInquiry, count: number): MockPinBatch {
-  const generatedPins: string[] = [];
-  for (let i = 0; i < count; i++) {
-    const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
-    generatedPins.push(`BL-${randomSuffix}`);
+function generateCandidatePins(count: number): string[] {
+  const pins = new Set<string>();
+  const randomValues = new Uint32Array(1);
+
+  while (pins.size < count) {
+    crypto.getRandomValues(randomValues);
+    pins.add(`BL-${100000 + (randomValues[0] % 900000)}`);
   }
 
+  return Array.from(pins);
+}
+
+function createBatchId(): string {
+  return `BATCH-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
+}
+
+function createMockPinBatch(inq: SchoolInquiry, count: number): MockPinBatch {
   const expiryDate = new Date();
   expiryDate.setDate(expiryDate.getDate() + 45);
 
   return {
-    batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+    batchId: createBatchId(),
     schoolName: inq.schoolName,
     examType: inq.examType,
     count,
-    pins: generatedPins,
+    pins: generateCandidatePins(count),
     createdAt: new Date().toLocaleString(),
     expiryDate: expiryDate.toLocaleDateString(),
   };
@@ -161,21 +171,15 @@ export default function AdminSchoolsPage() {
       return;
     }
 
-    const generatedPins: string[] = [];
-    for (let i = 0; i < genCount; i++) {
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
-      generatedPins.push(`BL-${randomSuffix}`);
-    }
-
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + genExpiryDays);
 
     const newBatch: MockPinBatch = {
-      batchId: `BATCH-${Date.now().toString(36).toUpperCase()}`,
+      batchId: createBatchId(),
       schoolName: genSchool.trim(),
       examType: genExamType,
       count: genCount,
-      pins: generatedPins,
+      pins: generateCandidatePins(genCount),
       createdAt: new Date().toLocaleString(),
       expiryDate: expiryDate.toLocaleDateString(),
     };
