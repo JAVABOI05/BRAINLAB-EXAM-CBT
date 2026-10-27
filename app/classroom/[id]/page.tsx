@@ -3028,6 +3028,7 @@ export default function LiveClassroomPage({
             allowStudentVoiceNotes={allowStudentVoiceNotes}
             chatMuted={chatMuted}
             classId={classId}
+            attachments={classDetails?.attachments || []}
             pendingAdmissions={pendingAdmissions}
             onAdmitStudent={handleAdmitStudent}
             onAdmitAllStudents={handleAdmitAllStudents}
@@ -3081,6 +3082,7 @@ export default function LiveClassroomPage({
               allowStudentVoiceNotes={allowStudentVoiceNotes}
               chatMuted={chatMuted}
               classId={classId}
+              attachments={classDetails?.attachments || []}
               pendingAdmissions={pendingAdmissions}
               onAdmitStudent={handleAdmitStudent}
               onAdmitAllStudents={handleAdmitAllStudents}

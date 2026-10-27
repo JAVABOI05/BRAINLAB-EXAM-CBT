@@ -346,6 +346,20 @@ export async function POST(request: NextRequest) {
       durationSeconds: (config.default_duration_minutes || 60) * 60,
     });
 
+    let attachments: unknown[] = [];
+    try {
+      const { data: lessonRec } = await supabase
+        .from("classroom_lessons")
+        .select("attachments")
+        .eq("live_class_id", liveClass.id)
+        .maybeSingle();
+      if (lessonRec?.attachments && Array.isArray(lessonRec.attachments)) {
+        attachments = lessonRec.attachments;
+      }
+    } catch {
+      // Best-effort lookup; non-blocking
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -363,6 +377,7 @@ export async function POST(request: NextRequest) {
           tutorId: isHost ? user.id : (roomConfig?.active_host_id || liveClass.tutor_id),
           isMasterclass: roomConfig?.class_type === "masterclass",
           classType: roomConfig?.class_type || "open",
+          attachments,
         },
       },
     });

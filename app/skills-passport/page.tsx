@@ -276,7 +276,7 @@ export default function SkillsPassportPage() {
           </div>
           <div>
             <p className="text-blue-300 font-semibold">Study Streak</p>
-            <p className="text-lg font-black text-amber-300 mt-0.5">🔥 {data.streakDays} Days</p>
+            <p className="text-lg font-black text-amber-300 mt-0.5 inline-flex items-center gap-1.5"><svg className="h-4 w-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>{data.streakDays} Days</p>
           </div>
           <div>
             <p className="text-blue-300 font-semibold">Mastery XP</p>
@@ -446,7 +446,7 @@ export default function SkillsPassportPage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 flex flex-wrap items-center justify-between gap-6 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#061a3a] to-blue-700 text-2xl text-cyan-300 shadow-md">
-            🛡️
+            <svg className="h-4 w-4 text-emerald-400 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div>
             <h3 className="text-base font-black text-slate-900">Verifiable Learning Credential</h3>
@@ -462,7 +462,7 @@ export default function SkillsPassportPage() {
             onClick={() => window.print()}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs"
           >
-            🖨️ Print / Save PDF Report
+            <svg className="h-4 w-4 text-slate-600 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print / Save PDF Report
           </button>
           <Link
             href="/account"

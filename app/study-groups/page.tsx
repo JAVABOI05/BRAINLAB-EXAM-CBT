@@ -139,7 +139,7 @@ export default function StudyGroupsPage() {
               <span className="text-blue-700 dark:text-cyan-400">Study Groups &amp; Circles</span>
             </nav>
             <h1 className="text-2xl sm:text-4xl font-black text-slate-950 dark:text-white flex items-center gap-3">
-              <span>👥 Moderated Study Circles</span>
+              <span className="inline-flex items-center gap-2.5"><svg className="h-7 w-7 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Moderated Study Circles</span>
               <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 px-3 py-0.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
                 COHORT LEARNING
               </span>
@@ -154,13 +154,13 @@ export default function StudyGroupsPage() {
               href="/messages"
               className="inline-flex items-center gap-2 rounded-xl bg-[#012153] hover:bg-blue-900 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
             >
-              <span>💬</span> Messages &amp; Chat
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Messages &amp; Chat
             </Link>
             <Link
               href="/classroom/BL-LIVE-101"
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
             >
-              <span>🎥</span> Live Room
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Live Room
             </Link>
           </div>
         </div>
@@ -171,10 +171,10 @@ export default function StudyGroupsPage() {
             {[
               { id: "all", label: "All Study Circles" },
               { id: "joined", label: `My Joined Circles (${joinedCircleIds.length})` },
-              { id: "Medicine", label: "🩺 Medicine" },
-              { id: "Engineering", label: "⚙️ Engineering" },
-              { id: "Law & Arts", label: "⚖️ Law & Arts" },
-              { id: "Commercial", label: "📊 Commercial" },
+              { id: "Medicine", label: "Medicine & Health" },
+              { id: "Engineering", label: "Engineering & Tech" },
+              { id: "Law & Arts", label: "Law, Arts & Hum." },
+              { id: "Commercial", label: "Commercial & Mgmt" },
             ].map((cat) => (
               <button
                 key={cat.id}
@@ -268,7 +268,7 @@ export default function StudyGroupsPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 dark:text-slate-400">Active Members:</span>
                         <span className="font-bold text-slate-900 dark:text-white">
-                          👥 {circle.membersCount + (isJoined ? 1 : 0)} Enrolled Learners
+                          <span className="inline-flex items-center gap-1.5"><svg className="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>{circle.membersCount + (isJoined ? 1 : 0)} Enrolled Learners</span>
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -282,7 +282,7 @@ export default function StudyGroupsPage() {
                           Current Weekly Focus:
                         </span>
                         <span className="font-bold text-slate-900 dark:text-white">
-                          🎯 {circle.weeklyFocus}
+                          <span className="inline-flex items-center gap-1.5"><svg className="h-3.5 w-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>{circle.weeklyFocus}</span>
                         </span>
                       </div>
                     </div>
@@ -318,13 +318,13 @@ export default function StudyGroupsPage() {
                         href="/messages"
                         className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                       >
-                        💬 Chat
+                        <span className="inline-flex items-center gap-1.5"><svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Chat</span>
                       </Link>
                       <Link
                         href="/challenge-arena"
                         className="rounded-xl bg-amber-400 hover:bg-amber-300 px-3 py-2 text-xs font-black text-slate-950 transition active:scale-95"
                       >
-                        ⚡ Squad Sprint
+                        <span className="inline-flex items-center gap-1.5"><svg className="h-3.5 w-3.5 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Squad Sprint</span>
                       </Link>
                     </div>
                   </div>

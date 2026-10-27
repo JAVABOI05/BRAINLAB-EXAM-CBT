@@ -3,6 +3,7 @@
 import React, { RefObject } from "react";
 import Link from "next/link";
 import type { Participant, ClassroomMessage } from "../lib/liveClassroom/types";
+import type { LessonAttachment } from "./ClassroomMaterialImporter";
 
 interface ClassroomPollOption {
   id: string;
@@ -83,6 +84,7 @@ export interface ClassroomSidebarProps {
   allowStudentVoiceNotes?: boolean;
   chatMuted?: boolean;
   classId?: string;
+  attachments?: LessonAttachment[];
   pendingAdmissions?: { studentId: string; studentName: string; studentEmail?: string }[];
   onAdmitStudent?: (studentId: string, allowed?: boolean) => Promise<void>;
   onAdmitAllStudents?: () => Promise<void>;
@@ -131,6 +133,7 @@ export default function ClassroomSidebar({
   allowStudentVoiceNotes = true,
   chatMuted = false,
   classId,
+  attachments = [],
   pendingAdmissions = [],
   onAdmitStudent,
   onAdmitAllStudents,
@@ -780,34 +783,101 @@ export default function ClassroomSidebar({
 
       {/* TAB 4: LESSON RESOURCES */}
       {activeTab === "resources" && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          {/* Section A: Tutor-Attached Course Handouts & Slides */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Attached Study Links
-            </h4>
-            <p className="mt-1 text-xs text-slate-300">
-              Access supplementary lesson materials and CBT practice.
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-black uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                <span>📎</span>
+                <span>Class Handouts &amp; Materials</span>
+              </h4>
+              <span className="text-[10px] font-bold text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                {attachments.length}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Files and outlines prepared by the instructor for this session.
             </p>
+
+            {attachments.length === 0 ? (
+              <div className="mt-3 rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 p-4 text-center">
+                <p className="text-xs text-slate-500">No downloadable handouts attached to this class yet.</p>
+                <p className="text-[11px] text-slate-600 mt-1">
+                  Instructors can upload PDFs, PPT slides, or question banks in Classroom Studio before class starts.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {attachments.map((file) => {
+                  const ext = file.name.split(".").pop()?.toLowerCase();
+                  let icon = "📄";
+                  let badge = "DOC";
+                  if (ext === "pdf") { icon = "📕"; badge = "PDF"; }
+                  else if (ext === "pptx" || ext === "ppt") { icon = "📊"; badge = "PPTX"; }
+                  else if (ext === "docx" || ext === "doc") { icon = "📝"; badge = "DOCX"; }
+                  else if (ext === "csv") { icon = "📑"; badge = "CSV"; }
+
+                  const sizeKb = file.size ? `${(file.size / 1024).toFixed(1)} KB` : "";
+
+                  return (
+                    <div
+                      key={file.id}
+                      className="group flex items-center justify-between gap-3 rounded-xl border border-purple-500/20 bg-purple-950/20 hover:bg-purple-950/40 p-3 transition"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-xl shrink-0">{icon}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-200 truncate group-hover:text-purple-200 transition" title={file.name}>
+                            {file.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                            <span className="font-semibold text-purple-300">{badge}</span>
+                            {sizeKb && <span>• {sizeKb}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={file.name}
+                        className="shrink-0 rounded-lg bg-purple-600 hover:bg-purple-500 px-3 py-1.5 text-xs font-bold text-white transition shadow-xs inline-flex items-center gap-1 active:scale-95"
+                        title={`Download ${file.name}`}
+                      >
+                        <span>📥</span>
+                        <span>Download</span>
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Link
-              href="/learn"
-              target="_blank"
-              className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500"
-            >
-              <p className="text-xs font-bold text-blue-300">📖 Topic Reference Material</p>
-              <p className="text-[11px] text-slate-400 mt-1">Review lesson notes in Learning Hub</p>
-            </Link>
+          {/* Section B: Attached Study Links */}
+          <div className="pt-3 border-t border-slate-800">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+              Attached Study Links
+            </h4>
+            <div className="space-y-2">
+              <Link
+                href="/learn"
+                target="_blank"
+                className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500 transition"
+              >
+                <p className="text-xs font-bold text-blue-300">📖 Topic Reference Material</p>
+                <p className="text-[11px] text-slate-400 mt-1">Review lesson notes in Learning Hub</p>
+              </Link>
 
-            <Link
-              href="/self-practice"
-              target="_blank"
-              className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500"
-            >
-              <p className="text-xs font-bold text-emerald-300">✍️ Self-Practice Assessment</p>
-              <p className="text-[11px] text-slate-400 mt-1">Test your recall of key exam concepts</p>
-            </Link>
+              <Link
+                href="/self-practice"
+                target="_blank"
+                className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500 transition"
+              >
+                <p className="text-xs font-bold text-emerald-300">✍️ Self-Practice Assessment</p>
+                <p className="text-[11px] text-slate-400 mt-1">Test your recall of key exam concepts</p>
+              </Link>
+            </div>
           </div>
         </div>
       )}

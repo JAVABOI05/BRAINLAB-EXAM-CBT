@@ -64,7 +64,7 @@ export default function GlobalLeaderboardPage() {
             <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100/70 px-3 py-1 text-xs font-black uppercase tracking-wider text-amber-900">
-                  🏆 Academic Honor Roll
+                  <svg className="h-3.5 w-3.5 text-amber-700 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>Academic Honor Roll
                 </span>
                 <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-4xl">
                   Global Leaderboard
@@ -78,7 +78,7 @@ export default function GlobalLeaderboardPage() {
                 href="/learning/achievements"
                 className="rounded-xl bg-[#071c43] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-950 flex items-center gap-1"
               >
-                🏅 My Badges &amp; Level →
+                <svg className="h-3.5 w-3.5 text-amber-400 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>My Badges &amp; Level →
               </Link>
             </div>
           </div>
@@ -107,9 +107,7 @@ export default function GlobalLeaderboardPage() {
           {/* Weekly Academic Prize Pool & Challenge Arena Trigger */}
           <div className="mb-8 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 via-cyan-50 to-amber-50 p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-700 to-cyan-500 text-2xl text-white shadow shrink-0">
-                🎁
-              </span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-700 to-cyan-500 text-white shadow shrink-0"><svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg></span>
               <div>
                 <h3 className="text-xs font-black uppercase tracking-wider text-blue-900">
                   Weekly Academic Prize Pool &amp; Streak Multipliers
@@ -123,7 +121,7 @@ export default function GlobalLeaderboardPage() {
               href="/challenge-arena"
               className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-black text-white shadow-sm transition whitespace-nowrap flex items-center gap-1.5"
             >
-              <span>🔥 Play Arena (+2x XP) →</span>
+              <span className="inline-flex items-center gap-1.5"><svg className="h-3.5 w-3.5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>Play Arena (+2x XP) →</span>
             </Link>
           </div>
 
@@ -132,7 +130,7 @@ export default function GlobalLeaderboardPage() {
             <div className="mb-10 grid grid-cols-3 gap-3 text-center sm:gap-6 items-end">
               {/* 2nd Place */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 pt-8 shadow-sm">
-                <span className="text-3xl">🥈</span>
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 shadow-inner border border-slate-200"><svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></div>
                 <span className="mt-1 block text-[11px] font-bold uppercase text-slate-400">2nd Place</span>
                 <p className="mt-2 text-sm font-black text-slate-900 truncate">
                   {formatPublicLearnerName(topThree[1].display_name)}
@@ -148,7 +146,7 @@ export default function GlobalLeaderboardPage() {
 
               {/* 1st Place */}
               <div className="rounded-3xl border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-white p-6 shadow-md -translate-y-3">
-                <span className="text-4xl">👑</span>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-inner border border-amber-300"><svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 14h14v2H5v-2z"/></svg></div>
                 <span className="mt-1 block text-xs font-black uppercase text-amber-900">Champion</span>
                 <p className="mt-2 text-base font-black text-slate-950 truncate">
                   {formatPublicLearnerName(topThree[0].display_name)}
@@ -164,7 +162,7 @@ export default function GlobalLeaderboardPage() {
 
               {/* 3rd Place */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4 pt-6 shadow-sm">
-                <span className="text-3xl">🥉</span>
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-800 shadow-inner border border-amber-200"><svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></div>
                 <span className="mt-1 block text-[11px] font-bold uppercase text-slate-400">3rd Place</span>
                 <p className="mt-2 text-sm font-black text-slate-900 truncate">
                   {formatPublicLearnerName(topThree[2].display_name)}

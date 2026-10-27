@@ -22,8 +22,13 @@ export async function GET(request: NextRequest) {
     if (!data) return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
     return NextResponse.json({ lesson: data });
   }
-  const { data, error } = await supabase.from("classroom_lessons").select("id,title,subject,description,status,updated_at,last_opened_at").eq("tutor_id", user.id).neq("status", "archived").order("updated_at", { ascending: false });
-  if (error) return NextResponse.json({ error: "Unable to load lessons. Apply the Classroom Studio database migration first if the table is missing." }, { status: 500 });
+  const { data, error } = await supabase.from("classroom_lessons").select("id,title,subject,description,status,updated_at,last_opened_at,attachments").eq("tutor_id", user.id).neq("status", "archived").order("updated_at", { ascending: false });
+  if (error) {
+    // Retry without attachments in select if column does not yet exist
+    const fallback = await supabase.from("classroom_lessons").select("id,title,subject,description,status,updated_at,last_opened_at").eq("tutor_id", user.id).neq("status", "archived").order("updated_at", { ascending: false });
+    if (fallback.error) return NextResponse.json({ error: "Unable to load lessons. Apply the Classroom Studio database migration first if the table is missing." }, { status: 500 });
+    return NextResponse.json({ lessons: fallback.data || [] });
+  }
   return NextResponse.json({ lessons: data || [] });
 }
 
@@ -40,12 +45,22 @@ export async function POST(request: NextRequest) {
   const status = body.status === "ready" ? "ready" : "draft";
   const pages = validPages(body.pages) ? body.pages : DEFAULT_PAGES;
   const activePageIndex = Number.isInteger(body.active_page_index) ? Math.min(Math.max(0, body.active_page_index, 0), pages.length - 1) : 0;
-  const payload = { title, subject, description, status, pages, active_page_index: activePageIndex, last_opened_at: new Date().toISOString() };
+  const attachments = Array.isArray(body.attachments) ? body.attachments : [];
+  const payload = { title, subject, description, status, pages, active_page_index: activePageIndex, attachments, last_opened_at: new Date().toISOString() };
   const id = typeof body.id === "string" ? body.id : null;
   const query = supabase.from("classroom_lessons");
-  const result = id
+  let result = id
     ? await query.update(payload).eq("id", id).eq("tutor_id", user.id).select("*").maybeSingle()
     : await query.insert({ ...payload, tutor_id: user.id }).select("*").single();
+
+  // Graceful fallback if attachments column is not yet present on remote DB
+  if (result.error && (result.error.message?.includes("attachments") || result.error.code === "PGRST204")) {
+    const { attachments: _dropped, ...fallbackPayload } = payload;
+    result = id
+      ? await query.update(fallbackPayload).eq("id", id).eq("tutor_id", user.id).select("*").maybeSingle()
+      : await query.insert({ ...fallbackPayload, tutor_id: user.id }).select("*").single();
+  }
+
   if (result.error) return NextResponse.json({ error: "Unable to save this lesson. Check that the Classroom Studio migration has been applied." }, { status: 500 });
   if (!result.data) return NextResponse.json({ error: "Lesson not found or you do not have permission to edit it." }, { status: 404 });
   return NextResponse.json({ lesson: result.data });

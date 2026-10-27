@@ -1,265 +1,490 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Terms of Use & Student Agreement | BrainLab Academy",
-  description:
-    "Official BrainLab Academy Terms of Use. Guidelines governing CBT examination participation, AI tutor acceptable use, subscription billing, anti-cheat integrity, and intellectual property.",
-};
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { toast } from "../lib/toast";
+
+const SECTIONS = [
+  { id: "highlights", label: "Executive Highlights", icon: "⚡" },
+  { id: "acceptance", label: "1. Acceptance & Eligibility", icon: "📋" },
+  { id: "cbt-integrity", label: "2. CBT Integrity & Proctoring", icon: "🛡️" },
+  { id: "ai-fair-use", label: "3. AI Tutor Fair Use", icon: "🤖" },
+  { id: "subscriptions-billing", label: "4. Payments & Subscriptions", icon: "💳" },
+  { id: "intellectual-property", label: "5. Intellectual Property", icon: "⚖️" },
+  { id: "community-conduct", label: "6. Masterclass & Etiquette", icon: "🎓" },
+  { id: "disclaimers", label: "7. Educational Disclaimers", icon: "📜" },
+  { id: "dispute-support", label: "8. Disputes & Support Desk", icon: "💬" },
+];
 
 export default function TermsOfUsePage() {
   const lastUpdated = "October 27, 2026";
+  const [activeSection, setActiveSection] = useState("highlights");
+
+  // Track active section on scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((e) => e.isIntersecting);
+        if (visible) {
+          setActiveSection(visible.target.id);
+        }
+      },
+      { rootMargin: "-80px 0px -60% 0px" }
+    );
+
+    SECTIONS.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleCopyLink = (sectionId: string) => {
+    const url = `${window.location.origin}/terms#${sectionId}`;
+    void navigator.clipboard.writeText(url);
+    toast.success("Section link copied to clipboard");
+  };
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+      setActiveSection(id);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#071328]/80 py-12 sm:py-16">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <nav className="mb-4 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <Link href="/" className="hover:text-blue-700 dark:hover:text-cyan-400">
-                Home
-              </Link>
-              <span>/</span>
-              <span className="text-slate-900 dark:text-slate-200">Legal &amp; Policies</span>
-              <span>/</span>
-              <span className="text-blue-700 dark:text-cyan-400">Terms of Use</span>
-            </nav>
+    <div className="min-h-screen bg-slate-50 dark:bg-[#060e1a] text-slate-900 dark:text-slate-100 transition-colors">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#071328]/90 py-12 sm:py-16">
+        {/* Ambient Gradient Glow */}
+        <div
+          className="pointer-events-none absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl dark:bg-cyan-500/10"
+          aria-hidden="true"
+        />
 
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-900/50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-cyan-300">
-                Platform Rules &amp; Candidate Agreement
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                ⚖️ NDPA 2023 &amp; Fair Testing Standard
-              </span>
-            </div>
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          {/* Breadcrumb */}
+          <nav className="mb-4 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <Link href="/" className="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">
+              Home
+            </Link>
+            <span>/</span>
+            <span>Legal &amp; Governance</span>
+            <span>/</span>
+            <span className="text-blue-600 dark:text-cyan-400">Terms of Use</span>
+          </nav>
 
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950 dark:text-white">
-              BrainLab Terms of Use
-            </h1>
-            <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-              The binding legal agreement governing candidate access to the BrainLab CBT examination engine, Live Masterclasses, AI Study Studio, 1v1 Arena, and subscription learning services.
-            </p>
-            <p className="mt-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Last Revised: <span className="text-slate-800 dark:text-slate-200">{lastUpdated}</span> &bull; Version 3.2 (AI Fair Use &amp; Digital Examination Guidelines)
-            </p>
+          {/* Badges */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 px-3 py-1 text-xs font-bold text-blue-900 dark:text-cyan-300">
+              Platform Rules &amp; Candidate Agreement
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 px-3 py-1 text-xs font-black text-emerald-800 dark:text-emerald-300">
+              ⚖️ Fair Testing Standard
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-700 px-3 py-1 text-xs font-bold text-indigo-900 dark:text-indigo-300">
+              🤖 AI Fair Use Policy
+            </span>
           </div>
-        </section>
 
-        {/* Content Body */}
-        <section className="py-12 sm:py-16">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-12">
-            
-            {/* Essential Rules Card */}
-            <div className="rounded-3xl border border-amber-200/80 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/30 p-6 sm:p-8">
-              <h2 className="text-base sm:text-lg font-bold text-amber-950 dark:text-amber-300 mb-2 flex items-center gap-2">
-                <span>⚖️</span>
-                <span>Key Highlights for Candidates, Parents &amp; Schools</span>
-              </h2>
-              <ul className="mt-3 space-y-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                <li className="flex items-start gap-2.5">
-                  <span className="text-amber-700 dark:text-amber-400 font-bold shrink-0 mt-0.5">&bull;</span>
-                  <span><strong>Independent Prep Portal:</strong> BrainLab is an independent academic preparation academy. We are not officially affiliated with, endorsed by, or an arm of JAMB, WAEC, NECO, or NABTEB. Simulation scores are for academic preparation and diagnostic benchmarking.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-amber-700 dark:text-amber-400 font-bold shrink-0 mt-0.5">&bull;</span>
-                  <span><strong>Zero Tolerance for Exam Tampering:</strong> Attempting to scrape questions, inject scripts, bypass anti-cheat tab warnings, or exploit answer endpoints results in immediate score nullification and access token cancellation.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-amber-700 dark:text-amber-400 font-bold shrink-0 mt-0.5">&bull;</span>
-                  <span><strong>BrainLab AI Tutor Acceptable Use:</strong> AI explanations are provided exclusively for personalized study guidance. Automated query bombing, prompt-injection attacks, or attempting to extract proprietary system prompts is strictly forbidden.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-amber-700 dark:text-amber-400 font-bold shrink-0 mt-0.5">&bull;</span>
-                  <span><strong>Personal Access Licenses:</strong> Access codes and student accounts are strictly for single-user candidate study. Sharing codes publicly or redistributing proprietary explanations violates our intellectual property rights.</span>
-                </li>
-              </ul>
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950 dark:text-white">
+            BrainLab Terms of Use
+          </h1>
+          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+            The legally binding agreement governing candidate access to the BrainLab CBT examination simulator, Live Masterclass Stage, AI Study Studio, 1v1 Arena, and multi-gateway subscription services.
+          </p>
+
+          {/* Metadata bar */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-4 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex flex-wrap items-center gap-4">
+              <span>
+                Effective Date: <strong className="text-slate-800 dark:text-slate-200">{lastUpdated}</strong>
+              </span>
+              <span>&bull;</span>
+              <span>
+                Version: <strong className="text-slate-800 dark:text-slate-200">3.8 (Multi-Gateway &amp; AI Ethics)</strong>
+              </span>
+              <span>&bull;</span>
+              <span>
+                Governing Jurisdiction: <strong className="text-slate-800 dark:text-slate-200">Federal Republic of Nigeria</strong>
+              </span>
             </div>
 
-            {/* Section 1: Agreement & Eligibility */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>1.</span> Acceptance of Terms &amp; Eligibility
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                By creating an account, entering an examination access code, or using BrainLab Academy (including the CBT simulator, Live Masterclass Stage, Challenge Arena, or AI Learning Studio), you agree to comply with and be bound by these Terms of Use and our <Link href="/privacy" className="text-blue-600 dark:text-cyan-400 font-bold underline">Privacy Policy</Link>.
-              </p>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Candidates under 18 years of age affirm that they have obtained permission from a parent, legal guardian, or school administrator to participate in our digital learning programs and assessments.
-              </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+              >
+                🖨️ Print Terms
+              </button>
+              <Link
+                href="/privacy"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-cyan-800 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-cyan-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
+              >
+                🔒 Privacy Notice &rarr;
+              </Link>
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Section 2: CBT Examination Integrity & Anti-Cheat Regulations */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>2.</span> CBT Examination Integrity &amp; Proctoring Rules
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                The BrainLab CBT engine is engineered to accurately benchmark candidate readiness under strict examination standards. You expressly agree to adhere to the following testing regulations:
+      {/* Main Content Layout with Sticky Sidebar */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sticky Table of Contents (Desktop) */}
+          <aside className="hidden lg:block lg:col-span-1">
+            <div className="sticky top-24 space-y-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-4 shadow-sm backdrop-blur">
+              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 pb-1">
+                Agreement Chapters
               </p>
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Strictly Prohibited Testing Activities:</h3>
-                <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside leading-relaxed">
-                  <li><strong>Tab Switching &amp; Window Navigation:</strong> Navigating away from the active examination browser tab triggers anti-cheat telemetry. Repeated violations will result in automatic examination submission and disciplinary flags.</li>
-                  <li><strong>Reverse Engineering &amp; Client Answer Scraping:</strong> You may not inspect network traffic, use developer tools, or deploy automated bots to extract correct answer keys prior to official test completion.</li>
-                  <li><strong>Identity Spoofing:</strong> Supplying false candidate details or having a surrogate sit for an assessment to artificially distort leaderboard scores is strictly prohibited.</li>
-                  <li><strong>Simultaneous Active Attempts:</strong> Only one active examination attempt is permitted per candidate PIN at any given time.</li>
-                </ul>
+              <nav className="space-y-1">
+                {SECTIONS.map(({ id, label, icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => scrollTo(id)}
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-xs font-bold transition ${
+                      activeSection === id
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <span className="text-sm shrink-0">{icon}</span>
+                    <span className="truncate">{label}</span>
+                  </button>
+                ))}
+              </nav>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
+                <p>Have an inquiry?</p>
+                <a
+                  href="https://wa.me/2349074310204"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                >
+                  WhatsApp Helpdesk &rarr;
+                </a>
               </div>
             </div>
+          </aside>
 
-            {/* Section 3: BrainLab AI Tutor Fair Use Policy */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>3.</span> BrainLab AI Tutor &amp; Study Studio Fair Use Policy
-              </h2>
+          {/* Policy Articles */}
+          <main className="lg:col-span-3 space-y-12">
+            {/* Highlights Card */}
+            <article id="highlights" className="scroll-mt-24">
+              <div className="rounded-3xl border border-amber-200/80 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/70 to-amber-100/30 dark:from-amber-950/30 dark:to-slate-900 p-6 sm:p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base sm:text-lg font-black text-amber-950 dark:text-amber-300 flex items-center gap-2">
+                    <span>⚡</span>
+                    <span>Executive Highlights for Candidates &amp; Guardians</span>
+                  </h2>
+                  <button
+                    onClick={() => handleCopyLink("highlights")}
+                    className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+                    title="Copy section link"
+                  >
+                    Copy Link 🔗
+                  </button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">🎯 Independent Prep Academy</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs">
+                      BrainLab is an independent academic preparatory body. We are not officially affiliated with or endorsed by JAMB, WAEC, NECO, or NABTEB. Mock scores serve as diagnostic readiness benchmarks.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">🛡️ Non-Negotiable CBT Integrity</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs">
+                      Tab switching, proxy candidate sitting, automated script injection, and answer scraping are strictly prohibited. Violations trigger automated test disqualification.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">🤖 AI Tutor Educational Use</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs">
+                      BrainLab AI Tutor is engineered solely for syllabus explanations and step-by-step problem derivations. Jailbreaks, prompt bombing, and commercial redistribution are forbidden.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">💳 Transparent Subscriptions</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs">
+                      Payments via Paystack, Flutterwave, Bank Transfer, and Bachs are securely processed. Digital exam banks are activated immediately upon verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            {/* Section 1: Acceptance & Eligibility */}
+            <article id="acceptance" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>1.</span> Acceptance of Terms &amp; Eligibility
+                </h2>
+                <button
+                  onClick={() => handleCopyLink("acceptance")}
+                  className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                >
+                  Copy Link 🔗
+                </button>
+              </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                BrainLab provides AI-assisted tutoring tools (powered by multi-model routing) to help learners understand difficult concepts, unpack syllabus topics, and verify mathematical derivations:
+                By creating a candidate account, inputting an examination access code, or accessing the BrainLab Academy platform (including our CBT simulator, Live Masterclass Stage, Challenge Arena, or AI Study Studio), you enter into a legally binding contract with BrainLab Academy and agree to abide by these Terms of Use and our{" "}
+                <Link href="/privacy" className="text-blue-600 dark:text-cyan-400 font-bold underline">
+                  Privacy Policy &amp; AI Ethics Notice
+                </Link>.
               </p>
-              <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Eligibility Criteria:</h3>
+                <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc list-inside leading-relaxed">
+                  <li><strong>Candidate Age:</strong> Our platform is tailored for secondary school learners, UTME/DE applicants, SSCE candidates, and post-secondary scholars. Candidates under 18 years represent that they have parental, guardian, or institutional consent.</li>
+                  <li><strong>Single-User License:</strong> Each student account and access PIN is designated for individual use. Account sharing or institutional syndication without an institutional tier is a violation of these terms.</li>
+                  <li><strong>Accurate Registration:</strong> You agree to provide authentic contact information (telephone number and elective subjects) to ensure accurate examination scorecard lookup and SMS/WhatsApp notifications.</li>
+                </ul>
+              </div>
+            </article>
+
+            {/* Section 2: CBT Examination Integrity & Anti-Cheat */}
+            <article id="cbt-integrity" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>2.</span> CBT Examination Integrity &amp; Proctoring Rules
+                </h2>
+                <button
+                  onClick={() => handleCopyLink("cbt-integrity")}
+                  className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                >
+                  Copy Link 🔗
+                </button>
+              </div>
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                To guarantee that BrainLab examination simulations provide an honest diagnostic reflection of candidate readiness, our test engine enforces automated academic integrity signals:
+              </p>
+
+              <div className="rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 p-5 space-y-3">
+                <h3 className="text-sm font-bold text-rose-950 dark:text-rose-300">Strictly Prohibited Testing Activities:</h3>
+                <ul className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 space-y-2.5 list-disc list-inside leading-relaxed">
+                  <li><strong>Tab Switching &amp; Window Navigation:</strong> Leaving the active CBT simulator tab logs a blur event. Accumulating 3 or more tab switch warnings triggers automated session finalization and an integrity strike.</li>
+                  <li><strong>Client-Side Answer Scraping:</strong> Real exam answer keys and rationale derivations are never transmitted to candidate browsers prior to submission. Attempting to reverse engineer network packets or tamper with local memory is prohibited.</li>
+                  <li><strong>Surrogate Testing:</strong> Permitting another individual to sit for an assessment on your behalf to artificially inflate competitive standings or leaderboard scores is strictly forbidden.</li>
+                  <li><strong>Simultaneous Concurrent Logins:</strong> Only one active examination attempt is permitted per student profile at any given time. Concurrent access attempts will terminate the previous session.</li>
+                </ul>
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <em>Consequences of Malpractice: Confirmed infractions will result in immediate examination invalidation, revocation of leaderboard rankings, and potential suspension from future scholarship tournaments.</em>
+              </p>
+            </article>
+
+            {/* Section 3: AI Tutor Fair Use */}
+            <article id="ai-fair-use" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>3.</span> BrainLab AI Tutor &amp; Study Studio Fair Use Policy
+                </h2>
+                <button
+                  onClick={() => handleCopyLink("ai-fair-use")}
+                  className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                >
+                  Copy Link 🔗
+                </button>
+              </div>
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                BrainLab equips candidates with state-of-the-art pedagogical AI engines (multi-provider intelligent router) to break down complex topics into digestible derivations:
+              </p>
+
+              <div className="grid gap-4 sm:grid-cols-2 pt-1">
                 <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 p-5 space-y-2">
                   <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
                     <span>✅</span> Permitted Academic Use
                   </h3>
                   <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1.5 list-disc list-inside">
-                    <li>Asking for step-by-step problem derivations</li>
-                    <li>Syllabus concept explanations and revision summaries</li>
-                    <li>Grammar and comprehension analysis for English</li>
-                    <li>Exam timing and revision planning advice</li>
+                    <li>Step-by-step mathematical &amp; scientific derivations</li>
+                    <li>Syllabus topic explanations and key concept summaries</li>
+                    <li>Grammar, vocabulary, and literary text comprehension</li>
+                    <li>Study schedule formulation and revision strategy</li>
                   </ul>
                 </div>
 
                 <div className="rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 p-5 space-y-2">
                   <h3 className="text-sm font-bold text-rose-900 dark:text-rose-300 flex items-center gap-2">
-                    <span>❌</span> Prohibited AI Misuse
+                    <span>❌</span> Prohibited AI Abuse
                   </h3>
                   <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1.5 list-disc list-inside">
-                    <li>Automated scraping or prompt-bombing APIs</li>
-                    <li>Jailbreak attacks attempting to expose system prompts</li>
-                    <li>Generating non-educational or illicit content</li>
-                    <li>Commercial redistribution of AI study outputs</li>
+                    <li>Prompt-injection attacks targeting system instructions</li>
+                    <li>Automated bot scraping or high-frequency API bombardment</li>
+                    <li>Generation of non-educational or defamatory content</li>
+                    <li>Commercial redistribution of BrainLab AI study notes</li>
                   </ul>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-1">
-                <em>Notice: AI-generated explanations are pedagogical aids designed to enhance comprehension. While verified against Nigerian curricula, students should always cross-reference official textbooks and recommended reading lists.</em>
-              </p>
-            </div>
+            </article>
 
             {/* Section 4: Subscriptions, Payments & Access Codes */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>4.</span> Subscriptions, Access Codes &amp; Refund Policy
-              </h2>
+            <article id="subscriptions-billing" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>4.</span> Subscriptions, Payments &amp; Access Codes
+                </h2>
+                <button
+                  onClick={() => handleCopyLink("subscriptions-billing")}
+                  className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                >
+                  Copy Link 🔗
+                </button>
+              </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                Premium features (including unlimited CBT mocks, downloadable formula sheets, live masterclass stages, and AI tutor sessions) require an active paid subscription or authorized access code:
+                Premium access features—including full-syllabus question banks, offline revision mode, downloadable formula sheets, live whiteboard masterclasses, and AI tutor inference credits—are provided via transparent pricing:
               </p>
-              <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2.5 list-disc list-inside leading-relaxed">
-                <li><strong>Transparent Billing:</strong> All prices are displayed in Nigerian Naira (NGN). Payments are processed securely via CBN-certified processors: Paystack or Bachs Gateway.</li>
-                <li><strong>Access Code Redemption:</strong> Codes purchased via physical cards, authorized tutorial centers, or schools are single-use licenses and non-transferable once activated.</li>
-                <li><strong>Digital Content Refund Policy:</strong> Because full examination banks and revision materials are made accessible immediately upon payment confirmation, fees are non-refundable except in confirmed cases of duplicate billing or technical platform unavailability verified by our support desk within 48 hours. See our <Link href="/account/subscription/refund" className="text-blue-600 dark:text-cyan-400 font-bold underline">Official Refund Policy</Link>.</li>
-              </ul>
-            </div>
+
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+                <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2.5 list-disc list-inside leading-relaxed">
+                  <li><strong>Multi-Gateway Payment Security:</strong> BrainLab accepts payments via CBN-licensed payment processors: <strong>Paystack</strong>, <strong>Flutterwave</strong>, direct <strong>Bank Transfer</strong> (GTBank verified account), and <strong>Bachs Gateway</strong>. We never store debit card numbers or bank credentials.</li>
+                  <li><strong>Transparent NGN Pricing:</strong> All subscription rates on our <Link href="/pricing" className="text-blue-600 dark:text-cyan-400 font-bold underline">Pricing Page</Link> are quoted in Nigerian Naira (NGN) inclusive of applicable taxes. No hidden lock-in or recurring automated charges without explicit candidate confirmation.</li>
+                  <li><strong>Access Code Redemption:</strong> Physical scratch cards and institutional vouchers purchased via authorized school coordinators or tutorial centers are single-use activation licenses.</li>
+                  <li><strong>Refund &amp; Cancellation Policy:</strong> Due to immediate digital unlock of intellectual materials, mock banks, and AI derivations upon purchase, subscriptions are generally non-refundable except for double-charging or technical failure preventing platform access within 48 hours. Submit requests via our <Link href="/account/subscription/refund" className="text-blue-600 dark:text-cyan-400 font-bold underline">Refund Portal</Link>.</li>
+                </ul>
+              </div>
+            </article>
 
             {/* Section 5: Intellectual Property */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>5.</span> Intellectual Property Rights
-              </h2>
+            <article id="intellectual-property" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>5.</span> Intellectual Property Rights
+                </h2>
+                <button
+                  onClick={() => handleCopyLink("intellectual-property")}
+                  className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                >
+                  Copy Link 🔗
+                </button>
+              </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                All platform assets—including curated past questions, detailed pedagogical solutions, video masterclasses, lesson audio, software architectures, algorithms, and logos—are the exclusive intellectual property of BrainLab Academy.
+                All platform intellectual assets—including past question curations, pedagogical step-by-step explanations, live masterclass recordings, digital whiteboard notes, interactive question algorithms, brand marks, and software code—are the proprietary intellectual property of BrainLab Academy.
               </p>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Learners are granted a personal, revocable, non-commercial license to use these materials solely for their own individual academic preparation. You may not broadcast, scrape, photocopy, re-sell, or commercially republish BrainLab materials without written authorization.
-              </p>
-            </div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
+                <p>
+                  Candidates receive a limited, revocable, non-exclusive, non-transferable license to consume materials for their individual academic preparation. You may not:
+                </p>
+                <p>&bull; Resell, photocopy, distribute, or bundle BrainLab materials for commercial tutorial services without written authorization.</p>
+                <p>&bull; Scrape question databases using automated crawlers, headless browsers, or machine learning scrapers.</p>
+                <p>&bull; Publicly stream, rebroadcast, or mirror live masterclass audio or video streams.</p>
+              </div>
+            </article>
 
-            {/* Section 6: Live Classroom & Community Conduct */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>6.</span> Live Masterclass &amp; Community Etiquette
-              </h2>
+            {/* Section 6: Live Masterclass & Community Conduct */}
+            <article id="community-conduct" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>6.</span> Live Masterclass Stage &amp; Community Etiquette
+                </h2>
+                <button
+                  onClick={() => handleCopyLink("community-conduct")}
+                  className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                >
+                  Copy Link 🔗
+                </button>
+              </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                BrainLab maintains a supportive, respectful learning community. In live masterclasses, discussion boards, and 1v1 challenge arenas, participants must adhere to our zero-tolerance policy against:
+                BrainLab maintains an encouraging, focused academic environment. Across our Live Masterclass Stages, live tutor chat rooms, and 1v1 Challenge Arenas, students are required to uphold academic decorum:
               </p>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                <p>&bull; Cyberbullying, hate speech, vulgarity, or disruptive trolling</p>
-                <p>&bull; Soliciting or advertising unofficial &ldquo;exam runz&rdquo;, fraudulent question leaks, or commercial services</p>
-                <p>&bull; Sharing inappropriate media, links, or unsolicited direct messages to fellow students</p>
+                <p>&bull; <strong>Respectful Interaction:</strong> Bullying, discriminatory language, sexual harassment, or verbal abuse towards tutors or peers results in instant ejection and permanent account ban.</p>
+                <p>&bull; <strong>Prohibition of &ldquo;Exam Runz&rdquo; &amp; Scams:</strong> Soliciting, advertising, or sharing links regarding examination malpractice (&ldquo;runz&rdquo;, leaked papers, or fraudulent score upgrades) is strictly prohibited.</p>
+                <p>&bull; <strong>Academic Focus:</strong> Classroom chat and audio must remain centered around the subject topic under instruction.</p>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Violators will be instantly ejected from live stages and permanently barred without refund.
-              </p>
-            </div>
+            </article>
 
-            {/* Section 7: Educational Disclaimer */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>7.</span> Official Educational Disclaimer
-              </h2>
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            {/* Section 7: Educational Disclaimers */}
+            <article id="disclaimers" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>7.</span> Educational Disclaimers &amp; Limitation of Liability
+                </h2>
+                <button
+                  onClick={() => handleCopyLink("disclaimers")}
+                  className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                >
+                  Copy Link 🔗
+                </button>
+              </div>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 <p>
-                  BrainLab Academy is an academic tutorial and preparatory platform. We are not officially connected to, endorsed by, or affiliated with the Joint Admissions and Matriculation Board (JAMB), the West African Examinations Council (WAEC), the National Examinations Council (NECO), or NABTEB.
+                  <strong>Non-Affiliation Notice:</strong> BrainLab Academy is an academic tutorial and examination preparation organization. We are not an official branch, subsidiary, or partner of the Joint Admissions and Matriculation Board (JAMB), West African Examinations Council (WAEC), National Examinations Council (NECO), or NABTEB.
                 </p>
                 <p>
-                  While our question banks, timer algorithms, and syllabus coverage closely mirror official examination conditions, scores earned on BrainLab mocks represent preparation benchmarks and do not guarantee equivalent outcomes on official national examinations.
+                  <strong>Benchmarking Nature of Mocks:</strong> While our question banks and timers simulate the authentic timing and cognitive weight of Nigerian standardized examinations, BrainLab scores are pedagogical benchmarks and do not constitute a guarantee of identical results in official national examinations.
+                </p>
+                <p>
+                  <strong>Service Availability:</strong> We strive for 99.9% platform availability. BrainLab shall not be held liable for temporary service interruptions caused by telecommunication network dropouts, national power outages, or cybercafé hardware defects.
                 </p>
               </div>
-            </div>
+            </article>
 
-            {/* Section 8: Support Desk & Contact Inquiries */}
-            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>💬</span>
-                <span>Questions, Disputes &amp; Official Inquiries</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                For inquiries regarding these terms, institutional partnerships, or subscription billing disputes, our academic support team is ready to assist you:
-              </p>
-
-              <div className="grid gap-3 sm:grid-cols-2 pt-1 text-xs">
-                <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Official Support Email</p>
-                  <a href="mailto:support@brainlabacademy.com.ng" className="text-blue-600 dark:text-cyan-400 hover:underline">
-                    support@brainlabacademy.com.ng
-                  </a>
+            {/* Section 8: Disputes & Help Desk */}
+            <article id="dispute-support" className="scroll-mt-24">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>💬</span>
+                    <span>8. Questions, Disputes &amp; Official Inquiries</span>
+                  </h2>
+                  <button
+                    onClick={() => handleCopyLink("dispute-support")}
+                    className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
+                  >
+                    Copy Link 🔗
+                  </button>
                 </div>
-                <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Refund &amp; Billing Inquiries</p>
-                  <Link href="/account/subscription/refund" className="text-blue-600 dark:text-cyan-400 hover:underline">
-                    Visit Refund Desk Portal &rarr;
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  For inquiries regarding these terms, institutional licenses for secondary schools, or billing reconciliations, reach out to our dedicated student helpdesk:
+                </p>
+
+                <div className="grid gap-3 sm:grid-cols-2 pt-1 text-xs">
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                    <p className="font-bold text-slate-800 dark:text-slate-200">Official Support Email</p>
+                    <a href="mailto:support@brainlabacademy.com.ng" className="text-blue-600 dark:text-cyan-400 hover:underline">
+                      support@brainlabacademy.com.ng
+                    </a>
+                  </div>
+                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                    <p className="font-bold text-slate-800 dark:text-slate-200">Refund &amp; Billing Inquiries</p>
+                    <Link href="/account/subscription/refund" className="text-blue-600 dark:text-cyan-400 hover:underline">
+                      Visit Refund Desk Portal &rarr;
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-3 text-xs sm:text-sm">
+                  <a
+                    href="https://wa.me/2349074310204?text=Hello%20BrainLab%20Support,%20I%20have%20an%20inquiry%20regarding%20Terms%20of%20Use."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 font-bold text-white transition active:scale-95 shadow-sm"
+                  >
+                    <span>💬</span> Contact WhatsApp Helpdesk (+234 907 431 0204)
+                  </a>
+                  <Link
+                    href="/contact"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
+                  >
+                    <span>📞</span> Contact Directory
+                  </Link>
+                  <Link
+                    href="/pricing"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
+                  >
+                    <span>💳</span> View Pricing Plans
                   </Link>
                 </div>
               </div>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2 text-xs sm:text-sm">
-                <a
-                  href="https://wa.me/2349074310204?text=Hello%20BrainLab%20Support,%20I%20have%20an%20inquiry%20regarding%20Terms%20of%20Use."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 font-bold text-white transition active:scale-95 shadow-sm"
-                >
-                  <span>💬</span> Contact Support on WhatsApp (+234 907 431 0204)
-                </a>
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
-                >
-                  <span>📞</span> Helpdesk Contact
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
-                >
-                  <span>🔒</span> View Privacy Notice &rarr;
-                </Link>
-              </div>
-            </div>
-
-          </div>
-        </section>
-      </main>
+            </article>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }
