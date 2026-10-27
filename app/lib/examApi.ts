@@ -15,6 +15,8 @@ export type PublicSettings = {
   access_code_required: boolean;
   show_marks_in_exam?: boolean;
   show_topic_in_exam?: boolean;
+  allow_corrections?: boolean;
+  result_notifications?: boolean;
 };
 export type PaperQuestion = {
   id: number;
@@ -133,6 +135,8 @@ export async function getPublicSettings(): Promise<PublicSettings | null> {
       access_code_required: rpcRes?.access_code_required ?? true,
       show_marks_in_exam: examSettings.show_marks_in_exam !== false,
       show_topic_in_exam: examSettings.show_topic_in_exam !== false,
+      allow_corrections: examSettings.allow_corrections !== false,
+      result_notifications: examSettings.result_notifications !== false,
     };
   } catch {
     return {
@@ -144,6 +148,8 @@ export async function getPublicSettings(): Promise<PublicSettings | null> {
       access_code_required: rpcRes?.access_code_required ?? true,
       show_marks_in_exam: true,
       show_topic_in_exam: true,
+      allow_corrections: true,
+      result_notifications: true,
     };
   }
 }

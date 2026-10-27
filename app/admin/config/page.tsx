@@ -98,6 +98,8 @@ export default function AdminConfigPage() {
     show_results_immediately: true,
     show_marks_in_exam: true,
     show_topic_in_exam: true,
+    allow_corrections: true,
+    result_notifications: true,
   });
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
 
@@ -216,6 +218,9 @@ export default function AdminConfigPage() {
         saveConfigRow("exam_arrangement", examArrangement),
         saveConfigRow("access_code_required", accessCodeRequired),
         saveConfigRow("elective_enabled", electiveEnabled),
+        saveConfigRow("show_results", examSettings.show_results_immediately).catch(() => null),
+        saveConfigRow("allow_corrections", examSettings.allow_corrections !== false).catch(() => null),
+        saveConfigRow("result_notifications", examSettings.result_notifications !== false).catch(() => null),
       ]);
       if (adminUser) {
         await Promise.all([
@@ -753,6 +758,42 @@ export default function AdminConfigPage() {
                 className={`mt-3 ${examSettings.show_topic_in_exam !== false ? "admin-btn-primary" : "admin-btn-light"}`}
               >
                 {examSettings.show_topic_in_exam !== false ? "✓ Question Topics Visible" : "✕ Question Topics Switched OFF (Subject Only)"}
+              </button>
+            </div>
+
+            <div className="admin-setting-box flex flex-col justify-between border-2 border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20">
+              <div>
+                <label className="admin-label font-black text-slate-900 dark:text-white">Question Corrections &amp; Explanations</label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Allow or lock candidate access to review question answers, options, and AI Tutor step-by-step solutions post-exam.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setExamSettings((prev) => ({ ...prev, allow_corrections: prev.allow_corrections === false }))
+                }
+                className={`mt-3 ${examSettings.allow_corrections !== false ? "admin-btn-primary" : "admin-btn-light"}`}
+              >
+                {examSettings.allow_corrections !== false ? "✓ Corrections & Explanations ON" : "🔒 Corrections Withheld (Locked by Proctor)"}
+              </button>
+            </div>
+
+            <div className="admin-setting-box flex flex-col justify-between border-2 border-purple-500/30 bg-purple-50/20 dark:bg-purple-950/20">
+              <div>
+                <label className="admin-label font-black text-slate-900 dark:text-white">Candidate Result Notifications</label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Enable or turn off automatic external notification dispatch (SMS, Email, WhatsApp alerts) for finalized results.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setExamSettings((prev) => ({ ...prev, result_notifications: prev.result_notifications === false }))
+                }
+                className={`mt-3 ${examSettings.result_notifications !== false ? "admin-btn-primary" : "admin-btn-light"}`}
+              >
+                {examSettings.result_notifications !== false ? "✓ Result Notifications ON" : "🔕 Result Notifications OFF (Manual Portal Only)"}
               </button>
             </div>
           </div>

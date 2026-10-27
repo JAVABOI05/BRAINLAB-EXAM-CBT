@@ -25,6 +25,12 @@ export default function ClassroomLobbyPage() {
 
         if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
           setIsStaff(true);
+        } else if (user.email) {
+          const { getLiveClassroomConfig } = await import("@/app/lib/platformConfig");
+          const config = await getLiveClassroomConfig();
+          if (config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())) {
+            setIsStaff(true);
+          }
         }
       }
     }
