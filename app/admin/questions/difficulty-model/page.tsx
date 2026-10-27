@@ -548,6 +548,62 @@ export default function DifficultyModelAdminPage() {
           </label>
         </div>
       </div>
+
+      {/* SECTION 4: Empirical Psychometric Difficulty Analytics (Section 14) */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-base">📊</span>
+              <h3 className="text-base font-bold text-white">
+                Empirical Psychometric Difficulty Analytics (Section 14 Roadmap)
+              </h3>
+            </div>
+            <p className="text-xs text-neutral-400 mt-1">
+              Item Facility Index (p-value) derived from student performance data. Maintained strictly separate from author classifications.
+            </p>
+          </div>
+          <span className="self-start sm:self-auto px-2.5 py-1 bg-purple-950/70 text-purple-300 border border-purple-500/40 rounded-lg text-xs font-mono font-bold">
+            p = Correct / Total Attempts
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="bg-neutral-950/70 border border-neutral-800 rounded-xl p-4">
+            <span className="text-emerald-400 font-bold uppercase tracking-wider block mb-1">
+              Empirically Easy (p ≥ 0.70)
+            </span>
+            <p className="text-neutral-400 text-[11px]">
+              70% or more students answered correctly. Question is readily mastered across student cohorts.
+            </p>
+          </div>
+          <div className="bg-neutral-950/70 border border-neutral-800 rounded-xl p-4">
+            <span className="text-amber-400 font-bold uppercase tracking-wider block mb-1">
+              Empirically Medium (0.35 ≤ p &lt; 0.70)
+            </span>
+            <p className="text-neutral-400 text-[11px]">
+              Standard discrimination zone. Distinguishes between prepared and unprepared candidates effectively.
+            </p>
+          </div>
+          <div className="bg-neutral-950/70 border border-neutral-800 rounded-xl p-4">
+            <span className="text-rose-400 font-bold uppercase tracking-wider block mb-1">
+              Empirically Hard (p &lt; 0.35)
+            </span>
+            <p className="text-neutral-400 text-[11px]">
+              Fewer than 35% answered correctly. Highly challenging or reveals common misconceptions.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-blue-950/40 border border-blue-500/30 rounded-xl text-xs text-blue-300 space-y-1">
+          <p className="font-semibold flex items-center gap-1.5">
+            <span>ℹ️</span> Decoupled Integrity Principle:
+          </p>
+          <p className="text-blue-200/90 text-[11px] leading-relaxed">
+            Per Section 14, empirical difficulty estimates never overwrite or modify the author&apos;s Easy, Medium, or Hard question-bank tags. They serve as a second-order diagnostic layer to flag difficulty drift, calibrate blueprints, and ensure psychometric validity without disrupting existing question banks.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import { getTopicMasteryRecords, recordTopicAttempt, type TopicMastery } from "../lib/adaptiveEngine";
 import { enqueueMissedQuestion } from "../lib/spacedRepetition";
 import { streamAiTutor } from "../lib/aiTutor";
+import DifficultySlider from "../components/DifficultySlider";
+import type { DifficultyAllocationResult } from "../lib/difficultyEngine";
 
 type CatalogSubject = { name: string; question_count: number; categories: string[] };
 type PracticeAttempt = { attempt_id: string; attempt_token: string; deadline_at: string | null; questions: PaperQuestion[]; answers: Record<string, Option> };
@@ -43,6 +45,7 @@ export default function SelfPracticePage() {
   const [pendingSaves, setPendingSaves] = useState(0);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [difficultyAllocation, setDifficultyAllocation] = useState<DifficultyAllocationResult | null>(null);
   const [retryReference, setRetryReference] = useState<Record<string, ResultItem> | null>(null);
   const [topicMasteryList, setTopicMasteryList] = useState<TopicMastery[]>([]);
   const [activeHints, setActiveHints] = useState<Record<string, string>>({});
@@ -153,7 +156,7 @@ export default function SelfPracticePage() {
         answers: {},
       };
       setAttempt(next); setAnswers({}); setResult(null); setSecondsLeft(next.deadline_at ? Math.max(0,Math.ceil((new Date(next.deadline_at).getTime()-Date.now())/1000)) : null);
-      setMessage(`Practice started with ${next.questions.length} unique questions. Your answer key remains protected until submission.`);
+      setMessage(`Practice started with ${next.questions.length} questions (Target Difficulty Score: ${difficultyAllocation ? difficultyAllocation.targetScore.toFixed(1) : "50.0"}/100). Your answer key remains protected until submission.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
     setWorking(false);
@@ -299,6 +302,12 @@ export default function SelfPracticePage() {
         <h2 className="text-xl font-semibold text-slate-900">Configure your practice</h2>
         <fieldset className="mt-5"><legend className="font-medium text-slate-800">Subjects</legend><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{catalog.map((subject) => <label key={subject.name} className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 hover:border-indigo-300"><input className="mt-1" type="checkbox" checked={selectedSubjects.includes(subject.name)} onChange={(e) => setSelectedSubjects((old) => e.target.checked ? [...old, subject.name] : old.filter((x) => x !== subject.name))} /><span><strong className="block">{subject.name}</strong><span className="text-sm text-slate-500">{subject.question_count} active questions</span></span></label>)}</div></fieldset>
         <div className="mt-6 grid gap-5 sm:grid-cols-2"><div><label className="mb-2 block font-medium" htmlFor="question-count">Number of questions</label><input id="question-count" className="w-full rounded-lg border border-slate-300 p-3" type="number" min={1} max={maxQuestions} value={questionCount} onChange={(e) => setQuestionCount(Math.max(1,Math.min(maxQuestions,Number(e.target.value)||1)))} required /><p className="mt-1 text-sm text-slate-500">The server enforces your limit even if a browser value is changed.</p></div><div><label className="mb-2 block font-medium" htmlFor="duration">Time limit</label><select id="duration" className="w-full rounded-lg border border-slate-300 p-3" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))}><option value={0}>Untimed</option><option value={15}>15 minutes</option><option value={30}>30 minutes</option><option value={60}>1 hour</option><option value={120}>2 hours</option><option value={240}>4 hours</option></select></div></div>
+        <div className="mt-6 border-t border-slate-200 pt-6">
+          <DifficultySlider
+            totalQuestions={questionCount}
+            onChange={setDifficultyAllocation}
+          />
+        </div>
         <div className="mt-6 flex flex-wrap items-center gap-3"><button className="rounded-xl bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50" disabled={working || !selectedSubjects.length}>{working ? "Preparing questions…" : "Start Self Practice"}</button><button type="button" className="rounded-xl border border-slate-300 px-5 py-3 font-medium" onClick={() => router.push("/cbt")}>Back to CBT</button></div>
       </form>}
 

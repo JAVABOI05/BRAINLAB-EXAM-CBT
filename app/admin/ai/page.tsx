@@ -137,6 +137,11 @@ export default function AdminAIPage() {
     setMessage("");
 
     const updated: AIPlatformConfig = {
+      ...(config || {
+        routing_strategy: "auto_strength",
+        pinned_model_id: geminiModel.trim(),
+        model_pool: [],
+      }),
       provider,
       gemini_model: geminiModel.trim(),
       groq_model: groqModel.trim(),

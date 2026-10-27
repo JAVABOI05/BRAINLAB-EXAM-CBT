@@ -20,7 +20,7 @@ function notFound() {
  * session is separately required before the API issues the operator gate
  * cookie. Database RLS remains the final authorization boundary.
  */
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const entryPath = process.env.BRAINLAB_PRIVATE_ENTRY_PATH ?? "";
   const entryToken = process.env.BRAINLAB_PRIVATE_ENTRY_TOKEN ?? "";

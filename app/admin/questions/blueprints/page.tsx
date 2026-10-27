@@ -7,6 +7,7 @@ import { adminHasPermission } from "../../../lib/adminRoles";
 import { OFFICIAL_UTME_ENGLISH_BLUEPRINT, OFFICIAL_STANDARD_SUBJECT_BLUEPRINT } from "../../../lib/examEngine/blueprints";
 import { ExamBlueprint, SectionConfig } from "../../../lib/examEngine/types";
 import { supabase } from "../../../lib/supabase";
+import DifficultySlider from "../../../components/DifficultySlider";
 import "../../admin.css";
 
 export default function BlueprintsAdminPage() {
@@ -328,6 +329,24 @@ export default function BlueprintsAdminPage() {
               </table>
             </div>
           </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">English Language Difficulty Composition (60 Questions)</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Proportion of Easy, Medium, and Hard questions selected across the 60 questions of the official UTME English Language paper.
+                </p>
+              </div>
+              <span className="self-start sm:self-auto px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold font-mono">
+                Compulsory UTME Slot 1: 60 Qs · 90 Raw
+              </span>
+            </div>
+            <DifficultySlider
+              totalQuestions={60}
+              value={50}
+            />
+          </div>
         </div>
       )}
 
@@ -362,6 +381,24 @@ export default function BlueprintsAdminPage() {
               <p>• Internal storage preserves raw 77.5 marks and precise percentage.</p>
               <p>• Student-facing whole-number display rounds upward to 78.</p>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Difficulty Model Calibration (40 Questions)</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Proportion of Easy, Medium, and Hard questions selected using continuous interpolation and largest-remainder rounding.
+                </p>
+              </div>
+              <span className="self-start sm:self-auto px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold font-mono">
+                Standard UTME Elective: 40 Qs
+              </span>
+            </div>
+            <DifficultySlider
+              totalQuestions={40}
+              value={50}
+            />
           </div>
         </div>
       )}

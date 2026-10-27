@@ -64,10 +64,40 @@ export interface AcademicConfig {
   available_subjects: string[];
 }
 
+export type AIModelStrength =
+  | "reasoning_stem"   // Complex math, physics, chemistry, analytical reasoning
+  | "speed_drill"       // Rapid practice drills, fast definitions, flashcards
+  | "general"          // Standard English, government, literature, biology
+  | "failover";        // Fallback / backup model
+
+export type AIRoutingStrategy =
+  | "auto_strength"    // Automatically routes based on subject & task complexity + live availability
+  | "load_balance"     // Shuffles / round-robins across all healthy models with quota headroom
+  | "priority_failover"// Strict priority order (Priority 1 -> Priority 2 -> Priority 3)
+  | "admin_pinned";    // Locks to a specific model designated by Super Admin
+
+export interface AIModelDefinition {
+  id: string;
+  name: string;
+  provider: "gemini" | "groq";
+  modelIdentifier: string;
+  strength: AIModelStrength;
+  priority: number;
+  enabled: boolean;
+  maxTokens: number;
+  dailyQuotaLimit: number;
+  notes?: string;
+  addedAt: string;
+  addedBy?: string;
+}
+
 export interface AIPlatformConfig {
   provider: "gemini" | "groq";
   gemini_model: string;
   groq_model: string;
+  routing_strategy?: AIRoutingStrategy;
+  pinned_model_id?: string;
+  model_pool?: AIModelDefinition[];
   daily_free_quota: number;
   monthly_premium_quota: number;
   max_output_tokens: number;
@@ -260,10 +290,55 @@ const DEFAULT_ACADEMIC_CONFIG: AcademicConfig = {
   available_subjects: ["English", "Chemistry", "Physics", "Biology", "Mathematics", "Economics", "Government", "Literature"],
 };
 
+export const DEFAULT_MODEL_POOL: AIModelDefinition[] = [
+  {
+    id: "gemini-3-flash-preview",
+    name: "Google Gemini 3 Flash (High-Reasoning & STEM)",
+    provider: "gemini",
+    modelIdentifier: "gemini-3-flash-preview",
+    strength: "reasoning_stem",
+    priority: 1,
+    enabled: true,
+    maxTokens: 350,
+    dailyQuotaLimit: 1500,
+    notes: "Primary reasoning model for mathematics, chemistry equations, and step-by-step problem breakdowns.",
+    addedAt: "2026-10-27T00:00:00.000Z",
+  },
+  {
+    id: "qwen-3.8-27b",
+    name: "Groq Qwen 27B (Ultra-Fast Inference & Drills)",
+    provider: "groq",
+    modelIdentifier: "qwen/qwen3.8-27b",
+    strength: "speed_drill",
+    priority: 2,
+    enabled: true,
+    maxTokens: 350,
+    dailyQuotaLimit: 1000,
+    notes: "Sub-200ms ultra-low latency model for high-frequency practice drills and immediate answer hints.",
+    addedAt: "2026-10-27T00:00:00.000Z",
+  },
+  {
+    id: "gemini-3.8-flash",
+    name: "Google Gemini 3.8 Flash (General Studies & Verbal)",
+    provider: "gemini",
+    modelIdentifier: "gemini-3.8-flash",
+    strength: "general",
+    priority: 3,
+    enabled: true,
+    maxTokens: 350,
+    dailyQuotaLimit: 1500,
+    notes: "Well-rounded model for English, literature, and general mock assessments.",
+    addedAt: "2026-10-27T00:00:00.000Z",
+  },
+];
+
 const DEFAULT_AI_CONFIG: AIPlatformConfig = {
   provider: "gemini",
   gemini_model: "gemini-3-flash-preview",
   groq_model: "qwen/qwen3.8-27b",
+  routing_strategy: "auto_strength",
+  pinned_model_id: "gemini-3-flash-preview",
+  model_pool: DEFAULT_MODEL_POOL,
   daily_free_quota: 10,
   monthly_premium_quota: 500,
   max_output_tokens: 350,
@@ -729,7 +804,14 @@ export async function saveAcademicConfig(
 // AI Platform Config
 // ----------------------------------------------------------------------------
 export async function getAIPlatformConfig(): Promise<AIPlatformConfig> {
-  return await getPlatformConfig<AIPlatformConfig>("ai_platform_config", DEFAULT_AI_CONFIG);
+  const config = await getPlatformConfig<AIPlatformConfig>("ai_platform_config", DEFAULT_AI_CONFIG);
+  if (!config.model_pool || !Array.isArray(config.model_pool) || config.model_pool.length === 0) {
+    config.model_pool = DEFAULT_MODEL_POOL;
+  }
+  if (!config.routing_strategy) {
+    config.routing_strategy = "auto_strength";
+  }
+  return config;
 }
 
 export async function saveAIPlatformConfig(

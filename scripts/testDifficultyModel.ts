@@ -10,6 +10,12 @@ import {
   DEFAULT_REFERENCE_DISTRIBUTIONS,
   GenericEngineQuestion,
 } from "../app/lib/difficultyEngine";
+import {
+  calculateFacilityIndex,
+  deriveEmpiricalBand,
+  computeItemPsychometrics,
+  summarizeSubjectPsychometrics,
+} from "../app/lib/psychometrics";
 
 let passCount = 0;
 let failCount = 0;
@@ -200,6 +206,35 @@ assert(audit.configuration_version === 1, "Audit contains config version");
 assert(audit.slider_position === 50, "Audit contains slider position");
 assert(audit.target_counts.easy === 9, "Audit contains target Easy count 9");
 assert(audit.selected_question_ids.length === 30, "Audit contains selected question IDs");
+
+// 11. Section 14 Roadmap: Empirical Psychometric Difficulty
+const pEasy = calculateFacilityIndex(85, 100);
+assert(pEasy === 0.85, "p = 85/100 is 0.85");
+assert(deriveEmpiricalBand(pEasy) === "easy", "p=0.85 is empirically easy");
+
+const pHard = calculateFacilityIndex(20, 100);
+assert(pHard === 0.20, "p = 20/100 is 0.20");
+assert(deriveEmpiricalBand(pHard) === "hard", "p=0.20 is empirically hard");
+
+const pMed = calculateFacilityIndex(50, 100);
+assert(deriveEmpiricalBand(pMed) === "medium", "p=0.50 is empirically medium");
+
+// Test decoupled psychometrics record & drift detection
+const psychItem = computeItemPsychometrics({
+  questionId: 101,
+  subject: "Physics",
+  bankClassification: "easy", // Author classified as easy
+  totalAttempts: 120,
+  correctAttempts: 30, // But only 25% passed -> empirically hard!
+  highScorersCorrect: 20,
+  lowScorersCorrect: 5,
+  cohortSampleSize: 32,
+});
+assert(psychItem.bank_classification === "easy", "Static bank classification remains preserved");
+assert(psychItem.empirical_band === "hard", "Empirical band derived from p=0.25");
+assert(psychItem.drift_detected === true, "Difficulty drift detected between bank and empirical reality");
+assert(psychItem.sample_size_confidence === "high", "Sample size confidence is high (120 attempts)");
+assert(psychItem.discrimination_index !== undefined && psychItem.discrimination_index > 0, "Discrimination index calculated");
 
 console.log(`\n=== TEST RESULTS: ${passCount} PASSED, ${failCount} FAILED ===`);
 if (failCount > 0) {
