@@ -1,303 +1,629 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy & AI Ethics | BrainLab Academy",
-  description:
-    "Official BrainLab Academy Privacy Policy & AI Ethics Statement. Learn about our AES-256 encrypted backend, NDPA 2023 compliance, candidate privacy safeguards, zero student AI training guarantee, and anti-tamper CBT proctoring.",
-};
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { toast } from "../lib/toast";
+
+const SECTIONS = [
+  { id: "core-commitments", label: "Core Security Commitments", icon: "🛡️" },
+  { id: "ai-ethics", label: "AI Tutor & Inference Ethics", icon: "🤖" },
+  { id: "cryptographic-backend", label: "Cryptographic Architecture", icon: "🔐" },
+  { id: "cbt-integrity", label: "CBT Anti-Cheat & Telemetry", icon: "⏱️" },
+  { id: "data-collected", label: "Data Collected & Minimization", icon: "📋" },
+  { id: "candidate-rights", label: "Your Rights (NDPA 2023)", icon: "⚖️" },
+  { id: "terminal-safety", label: "Cybercafé Terminal Safety", icon: "🧹" },
+  { id: "dpo-contact", label: "DPO & Compliance Inquiries", icon: "💬" },
+];
 
 export default function PrivacyPolicyPage() {
   const lastUpdated = "October 27, 2026";
+  const [activeSection, setActiveSection] = useState("core-commitments");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Track active section on scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((e) => e.isIntersecting);
+        if (visible) {
+          setActiveSection(visible.target.id);
+        }
+      },
+      { rootMargin: "-80px 0px -60% 0px" }
+    );
+
+    SECTIONS.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleCopyLink = (sectionId: string) => {
+    const url = `${window.location.origin}/privacy#${sectionId}`;
+    void navigator.clipboard.writeText(url);
+    toast.success("Section link copied to clipboard!");
+  };
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#060d19] text-slate-900 dark:text-slate-100 transition-colors selection:bg-indigo-500 selection:text-white">
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#071328]/80 py-12 sm:py-16">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <nav className="mb-4 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <Link href="/" className="hover:text-blue-700 dark:hover:text-cyan-400">
+        {/* Modern Executive Hero */}
+        <section className="relative overflow-hidden border-b border-slate-200/80 dark:border-slate-800 bg-linear-to-b from-white via-slate-50/50 to-slate-100/30 dark:from-[#0b172a] dark:via-[#071120] dark:to-[#050a14] py-14 sm:py-20">
+          {/* Ambient Lighting Gradients */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-96 w-[700px] rounded-full bg-linear-to-tr from-indigo-500/15 via-sky-400/10 to-emerald-400/10 blur-3xl dark:from-indigo-600/20 dark:via-cyan-500/15 dark:to-emerald-500/15"
+          />
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Breadcrumb Navigation */}
+            <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <Link href="/" className="hover:text-indigo-600 dark:hover:text-cyan-400 transition">
                 Home
               </Link>
-              <span>/</span>
-              <span className="text-slate-900 dark:text-slate-200">Legal &amp; Security</span>
-              <span>/</span>
-              <span className="text-blue-700 dark:text-cyan-400">Privacy Notice &amp; AI Ethics</span>
+              <span className="opacity-40">/</span>
+              <span className="text-slate-700 dark:text-slate-300">Legal &amp; Trust Center</span>
+              <span className="opacity-40">/</span>
+              <span className="text-indigo-600 dark:text-cyan-400 font-bold">Privacy Notice &amp; AI Ethics</span>
             </nav>
 
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                NDPA 2023 Compliant &bull; AES-256 Encrypted
+            <div className="flex flex-wrap items-center gap-2.5 mb-5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                NDPA 2023 Compliant
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-700 px-3 py-1 text-xs font-black uppercase tracking-wider text-blue-800 dark:text-cyan-300">
-                🤖 Zero Student AI Model Training
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/25 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-indigo-800 dark:text-indigo-300 shadow-2xs">
+                🔐 AES-256-GCM Encrypted
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/10 border border-sky-500/25 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-sky-800 dark:text-cyan-300 shadow-2xs">
+                🤖 Zero Student Model Training
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950 dark:text-white">
-              Data Privacy, AI Ethics &amp; Security Policy
-            </h1>
-            <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-              BrainLab Academy is dedicated to uncompromising learner data protection, application-level cryptographic security, transparent AI ethics, and student confidentiality across all digital CBT assessments and interactive learning hubs.
-            </p>
-            <p className="mt-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Effective Date: <span className="text-slate-800 dark:text-slate-200">{lastUpdated}</span> &bull; Version 3.5 (NDPA 2023 &amp; Multi-Provider AI Architecture)
-            </p>
-          </div>
-        </section>
-
-        {/* Content Body */}
-        <section className="py-12 sm:py-16">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-12">
-            
-            {/* Quick Guarantees Card */}
-            <div className="rounded-3xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 p-6 sm:p-8">
-              <h2 className="text-base sm:text-lg font-bold text-blue-950 dark:text-cyan-300 mb-2 flex items-center gap-2">
-                <span>🛡️</span>
-                <span>Our Core Privacy &amp; Data Security Commitments</span>
-              </h2>
-              <ul className="mt-3 space-y-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                <li className="flex items-start gap-2.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <span><strong>Zero Student Training for AI Models:</strong> Student queries, practice responses, and tutoring interactions are strictly ephemeral. We NEVER use candidate submissions to train, fine-tune, or commercialize external artificial intelligence models.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <span><strong>Application-Level AES-256-GCM Encryption:</strong> Sensitive candidate identification records, phone numbers, and session tokens are encrypted with military-grade Galois/Counter Mode authenticated ciphers before database commitment.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <span><strong>Zero Client-Side Answer Leakage:</strong> Real exam answer keys and pedagogical solutions are never transmitted to candidate browsers during active testing. Scores are strictly computed server-side upon verified submission.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <span><strong>Automated Cybercafé Memory Shredding:</strong> On exam completion or logout, candidate session tokens cached in browser memory are overwritten with pseudo-random noise and shredded to protect candidates on shared school or cybercafé terminals.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <span><strong>PCI-DSS Level 1 Billing Privacy:</strong> BrainLab never collects, retains, or views credit/debit card numbers. All billing is processed via CBN-licensed payment gateways (Paystack and Bachs Gateway).</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Section 1: AI Tutor & Machine Learning Ethics */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span>🤖</span>
-                <span>1. BrainLab AI Tutor &amp; Learning Studio Ethics</span>
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                BrainLab integrates advanced artificial intelligence to provide instant pedagogical feedback, step-by-step math derivations, and personalized study guidance. We hold our AI systems to strict ethical standards:
-              </p>
-
-              <div className="grid gap-4 sm:grid-cols-2 pt-2">
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>🔒</span> Student Anonymization at Gateway
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    When you ask a question or request an AI explanation, your request is stripped of all personally identifiable information (such as your full name, phone number, email, or school affiliation) before dispatching to our intelligent inference routers.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>🚫</span> No Model Training on Candidate Data
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Under enterprise API terms with our foundation model partners (including Google Gemini, Groq, Anthropic Claude, and OpenAI), student inputs are strictly processed ephemerally and are exempt from data harvesting or model training pipelines.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>🎯</span> Curriculum Alignment &amp; Anti-Bias
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    AI tutor prompts are calibrated specifically to Nigerian educational curricula (NERDC, JAMB, WAEC, NECO). Mathematical derivations and grammatical rules undergo deterministic checking to safeguard against misleading hallucinations.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>🛡️</span> Uniform Student Anonymity
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Learners interact uniformly with &ldquo;BrainLab AI Tutor&rdquo;. Behind the scenes, our smart router selects optimal models based on cognitive strength and uptime while keeping candidate data insulated.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Encrypted Backend Architecture */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span>🔐</span>
-                <span>2. Multi-Layered Cryptographic Backend</span>
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                Rather than relying solely on perimeter HTTPS, BrainLab enforces multi-tiered application-level encryption (ALE) to ensure total confidentiality even in the event of direct database export:
-              </p>
-
-              <div className="grid gap-4 sm:grid-cols-2 pt-2">
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>🗝️</span> AES-256-GCM at Rest
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Personal telephone numbers, exam access credentials, and audit telemetry are transformed into authenticated ciphertext (<code className="font-mono text-xs">enc:v1:iv:tag:data</code>) before database insertion, rendering stored records unreadable without server environment keys.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>🔍</span> HMAC-SHA256 Blind Indexing
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Candidate result lookups utilize cryptographic HMAC-SHA256 blind indices. The system verifies candidate identities without decrypting the broader database or storing raw telephone numbers in searchable indexes.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3: CBT Examination Integrity & Anti-Cheat Telemetry */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span>⏱️</span>
-                <span>3. CBT Integrity &amp; Non-Invasive Anti-Cheat Signals</span>
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                To guarantee academic authenticity across scholarship trials, mock examinations, and live 1v1 arenas, our CBT simulator monitors non-invasive integrity telemetry during active testing sessions:
-              </p>
-              <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-2.5 list-disc list-inside leading-relaxed">
-                <li><strong>Window Blur / Tab Switch Counting:</strong> Monitors when a candidate leaves the active examination tab. Sessions exceeding threshold warnings are flagged for academic review or auto-submitted.</li>
-                <li><strong>Cryptographic Local Protection:</strong> In-progress answers are obfuscated in browser memory so malicious extensions cannot extract or modify active responses.</li>
-                <li><strong>Immutable Attempt Snapshots:</strong> Once a test is initiated, question order and candidate choices are frozen in an immutable server snapshot to prevent retroactive question swapping.</li>
-                <li><strong>No Invasive Surveillance:</strong> BrainLab does NOT install root certificates, record background audio, or access candidate files outside of explicitly granted classroom permissions.</li>
-              </ul>
-            </div>
-
-            {/* Section 4: Information We Collect */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span>📋</span>
-                <span>4. Categories of Information Collected</span>
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                We adhere strictly to the principle of <strong>Data Minimization</strong> under the Nigeria Data Protection Act (NDPA 2023):
-              </p>
-
-              <div className="grid gap-4 sm:grid-cols-2 pt-2">
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Candidate Examination Records
-                  </h3>
-                  <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1.5 list-disc list-inside">
-                    <li>Full Name and Contact Number (encrypted at rest)</li>
-                    <li>Chosen 4-Subject Combination (e.g. English, Math, Physics, Chemistry)</li>
-                    <li>Single-use session authorization PINs</li>
-                    <li>Time spent per question, pace diagnostics, and aggregate percentile rank</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Public Display Safeguards
-                  </h3>
-                  <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1.5 list-disc list-inside">
-                    <li><strong>Masked Honor Rolls:</strong> Public leaderboards display masked identifiers (e.g. <code className="font-mono text-xs">Chukwudi O. &bull; Lagos</code>) rather than telephone numbers or full emails.</li>
-                    <li><strong>Digitally Signed QR Slips:</strong> Result slips include an HMAC-SHA256 signature to verify authenticity against forgery.</li>
-                    <li><strong>Zero Ad Brokering:</strong> Candidate data is never rented, bartered, or sold to third-party advertising brokers.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 5: Nigeria Data Protection Act (NDPA 2023) Candidate Rights */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span>⚖️</span>
-                <span>5. Candidate Rights Under NDPA 2023</span>
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                Every candidate, parent, and institutional sponsor enjoys statutory rights regarding their personal academic information:
-              </p>
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-3 text-xs sm:text-sm">
-                <p><strong>&bull; Right to Access:</strong> Retrieve historical scorecards, topic diagnostics, and AI tutor transcripts at any time via your verified student portal.</p>
-                <p><strong>&bull; Right to Rectification:</strong> Request correction of inaccurate names, school affiliations, or subject combinations.</p>
-                <p><strong>&bull; Right to Erasure (&ldquo;Right to be Forgotten&rdquo;):</strong> Request full deletion of personal identification and active test telemetry from our databases upon program completion.</p>
-                <p><strong>&bull; Right to Data Portability:</strong> Export verified examination performance summaries in standardized digital format.</p>
-                <p><strong>&bull; Right to Contest Automated Decisions:</strong> Request human academic review of any automated anti-cheat flag or scoring discrepancy.</p>
-              </div>
-            </div>
-
-            {/* Section 6: Cookies, Local Storage & Cybercafé Protection */}
-            <div className="space-y-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span>🍪</span>
-                <span>6. Cookies, Local Storage &amp; Cybercafé Terminal Safety</span>
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-                We use strictly essential session cookies and local storage tokens to maintain your authentication state and protect active examination progress in case of unexpected network disconnects.
-              </p>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                To protect candidates using shared cybercafé or school library computers, our memory shredder actively zeroes out session credentials upon clicking &ldquo;Submit Exam&rdquo; or &ldquo;Sign Out&rdquo;. We do not use intrusive third-party cross-site advertising cookies.
+            <div className="max-w-3xl">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 dark:text-white leading-[1.1]">
+                Data Privacy, AI Ethics &amp; <span className="bg-linear-to-r from-indigo-600 via-sky-600 to-emerald-600 bg-clip-text text-transparent">Cryptographic Security</span>
+              </h1>
+              <p className="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                BrainLab Academy enforces application-level cryptographic security, ephemeral AI inference isolation, and strict student confidentiality across all digital CBT assessments, live classrooms, and institutional mock examinations.
               </p>
             </div>
 
-            {/* Section 7: Official DPO & Support Desk */}
-            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>🛡️</span>
-                <span>Contact BrainLab Data Protection Officer (DPO)</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                If you have inquiries regarding cryptographic backend measures, student data deletion requests, or institutional compliance, reach out to our dedicated privacy desk:
-              </p>
-              
-              <div className="grid gap-3 sm:grid-cols-2 pt-1 text-xs">
-                <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Official DPO Email</p>
-                  <a href="mailto:dpo@brainlabacademy.com.ng" className="text-blue-600 dark:text-cyan-400 hover:underline">
-                    dpo@brainlabacademy.com.ng
-                  </a>
-                </div>
-                <div className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <p className="font-bold text-slate-800 dark:text-slate-200">General CBT Support Desk</p>
-                  <a href="mailto:support@brainlabacademy.com.ng" className="text-blue-600 dark:text-cyan-400 hover:underline">
-                    support@brainlabacademy.com.ng
-                  </a>
-                </div>
+            {/* Quick Actions & Meta Bar */}
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200/80 dark:border-slate-800/80 pt-6 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-3">
+                <span>
+                  Effective: <strong className="text-slate-800 dark:text-slate-200">{lastUpdated}</strong>
+                </span>
+                <span className="opacity-40">&bull;</span>
+                <span>
+                  Version: <strong className="text-slate-800 dark:text-slate-200">v3.5 (NDPA 2023 Architecture)</strong>
+                </span>
+                <span className="opacity-40">&bull;</span>
+                <span>
+                  Audited by: <strong className="text-slate-800 dark:text-slate-200">BrainLab Information Security Desk</strong>
+                </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 pt-2 text-xs sm:text-sm">
-                <a
-                  href="https://wa.me/2349074310204?text=Hello%20BrainLab%20DPO,%20I%20have%20an%20inquiry%20regarding%20data%20privacy%20and%20encryption."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 font-bold text-white transition active:scale-95 shadow-sm"
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-1.5 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition active:scale-95"
                 >
-                  <span>💬</span> Official WhatsApp DPO Desk (+234 907 431 0204)
-                </a>
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
-                >
-                  <span>📞</span> Help &amp; Support Portal
-                </Link>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>Print Document</span>
+                </button>
                 <Link
                   href="/terms"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-3.5 py-1.5 font-bold text-white shadow-2xs transition active:scale-95"
                 >
-                  <span>📄</span> View Terms of Use &rarr;
+                  <span>Terms of Use &rarr;</span>
                 </Link>
               </div>
             </div>
-
           </div>
         </section>
+
+        {/* Main Content Layout with Sticky Sidebar */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="lg:grid lg:grid-cols-12 lg:gap-12 items-start">
+            
+            {/* Sticky Table of Contents (Desktop) */}
+            <aside className="hidden lg:block lg:col-span-4 sticky top-24 space-y-6">
+              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Document Sections
+                  </h3>
+                  <span className="text-[10px] font-bold text-indigo-600 dark:text-cyan-400">8 Chapters</span>
+                </div>
+
+                <nav className="mt-4 space-y-1">
+                  {SECTIONS.map((sec) => {
+                    const isActive = activeSection === sec.id;
+                    return (
+                      <button
+                        key={sec.id}
+                        type="button"
+                        onClick={() => scrollTo(sec.id)}
+                        className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-left transition ${
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-cyan-300 font-extrabold shadow-2xs"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <span>{sec.icon}</span>
+                          <span className="truncate">{sec.label}</span>
+                        </span>
+                        {isActive && <span className="text-indigo-600 dark:text-cyan-400 text-sm">&bull;</span>}
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                  <div className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-3.5 text-xs space-y-2">
+                    <p className="font-bold text-slate-800 dark:text-slate-200">Need specific compliance assistance?</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Our institutional compliance desk supports schools, scholarship bodies, and parent inquiries.
+                    </p>
+                    <a
+                      href="mailto:dpo@brainlabacademy.com.ng"
+                      className="inline-flex items-center gap-1 font-bold text-indigo-600 dark:text-cyan-400 hover:underline text-[11px]"
+                    >
+                      <span>Email Data Protection Officer &rarr;</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* Document Content Column */}
+            <div className="lg:col-span-8 space-y-12">
+              
+              {/* Trust & Architectural Pillar Cards */}
+              <div id="core-commitments" className="scroll-mt-24 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/80 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                    Chapter 1: Security Commitments
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("core-commitments")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    title="Copy direct link"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                  Core Privacy &amp; Data Security Commitments
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  BrainLab Academy is built on zero-knowledge candidate isolation principles. We treat student performance records as confidential assets protected under federal Nigerian privacy statutes.
+                </p>
+
+                <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                  {/* Card 1 */}
+                  <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
+                    <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 flex items-center justify-center text-lg mb-4 text-indigo-600 dark:text-indigo-400">
+                      🚫
+                    </div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Zero Student Model Training</h3>
+                    <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Your tutoring prompts, math solutions, and essay submissions are strictly ephemeral. We <strong>never</strong> use student queries to train, fine-tune, or commercialize third-party AI models.
+                    </p>
+                  </div>
+
+                  {/* Card 2 */}
+                  <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
+                    <div className="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 flex items-center justify-center text-lg mb-4 text-emerald-600 dark:text-emerald-400">
+                      🔐
+                    </div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Application-Level AES-256-GCM</h3>
+                    <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Candidate telephone numbers and access tokens are transformed into authenticated ciphertext prior to database storage, rendering data unreadable even in raw database snapshots.
+                    </p>
+                  </div>
+
+                  {/* Card 3 */}
+                  <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
+                    <div className="h-10 w-10 rounded-2xl bg-sky-50 dark:bg-sky-950/80 flex items-center justify-center text-lg mb-4 text-sky-600 dark:text-cyan-400">
+                      ⚡
+                    </div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Zero Client Answer Leakage</h3>
+                    <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Official examination answer keys and step-by-step solutions are never sent to candidate browsers during active testing. Scores are strictly computed server-side upon verified submission.
+                    </p>
+                  </div>
+
+                  {/* Card 4 */}
+                  <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
+                    <div className="h-10 w-10 rounded-2xl bg-amber-50 dark:bg-amber-950/80 flex items-center justify-center text-lg mb-4 text-amber-600 dark:text-amber-400">
+                      🧹
+                    </div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Cybercafé Memory Shredder</h3>
+                    <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      On test completion or sign-out, session tokens in browser RAM and local cache are overwritten with pseudo-random cryptographic noise to protect students on shared school computers.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: AI Tutor Ethics */}
+              <div id="ai-ethics" className="scroll-mt-24 space-y-4 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-blue-50 dark:bg-blue-950/80 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-300">
+                    Chapter 2: Artificial Intelligence
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("ai-ethics")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
+                  <span>🤖</span>
+                  <span>BrainLab AI Tutor &amp; Learning Studio Ethics</span>
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  BrainLab integrates autonomous multi-model intelligence to provide instant pedagogical coaching, syllabus alignment, and step-by-step math derivations. We adhere to clear ethical guardrails:
+                </p>
+
+                <div className="space-y-3 pt-2">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-5">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>🔒</span> Student Anonymization at Gateway
+                    </h4>
+                    <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Before any query leaves BrainLab for model inference, our gateway sanitizes the payload, stripping candidate names, phone numbers, email addresses, and school IDs. The foundation model only receives the academic prompt.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-5">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>🇳🇬</span> National Curriculum Alignment &amp; Anti-Bias
+                    </h4>
+                    <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      AI tutor prompts are calibrated specifically to Nigerian examination blueprints (NERDC, JAMB UTME, WAEC SSCE, and NECO). Deterministic checkers verify mathematical constants and grammatical conventions to prevent misleading hallucinations.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-5">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>🛡️</span> Uniform Student Anonymity
+                    </h4>
+                    <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Students interact uniformly with the &ldquo;BrainLab AI Tutor&rdquo;. Behind the scenes, our smart router dynamically selects optimal models (Gemini, Qwen, or Llama) based on cognitive task strength while keeping candidate identities insulated.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Cryptographic Backend */}
+              <div id="cryptographic-backend" className="scroll-mt-24 space-y-4 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/80 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                    Chapter 3: Cryptography
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("cryptographic-backend")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
+                  <span>🔐</span>
+                  <span>Multi-Layered Cryptographic Backend</span>
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Rather than relying solely on perimeter TLS/HTTPS, BrainLab implements multi-tier application-level encryption (ALE) to ensure confidentiality even under catastrophic database compromise:
+                </p>
+
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-900 p-6 text-slate-200 font-mono text-xs space-y-4">
+                  <div className="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-2">
+                    <span>DATABASE CIPHER SPECIFICATION</span>
+                    <span className="text-emerald-400 font-bold">ACTIVE &bull; ENFORCED</span>
+                  </div>
+                  <div className="space-y-2">
+                    <p><span className="text-indigo-400">Cipher Algorithm:</span> AES-256-GCM (Galois/Counter Mode with 128-bit Auth Tag)</p>
+                    <p><span className="text-indigo-400">Key Derivation:</span> PBKDF2 with SHA-512 &bull; 100,000 Iterations</p>
+                    <p><span className="text-indigo-400">Candidate Lookup:</span> HMAC-SHA256 Blind Indexing (Zero Cleartext Search Index)</p>
+                    <p><span className="text-indigo-400">Payload Format:</span> <code className="bg-slate-800 px-2 py-0.5 rounded text-cyan-300">enc:v1:iv:tag:ciphertext</code></p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: CBT Integrity */}
+              <div id="cbt-integrity" className="scroll-mt-24 space-y-4 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-amber-50 dark:bg-amber-950/80 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                    Chapter 4: Proctoring &amp; Anti-Cheat
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("cbt-integrity")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
+                  <span>⏱️</span>
+                  <span>CBT Integrity &amp; Non-Invasive Anti-Cheat Signals</span>
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  To guarantee authentic score benchmarking during scholarship contests and official mock exams, the CBT engine monitors non-invasive integrity signals:
+                </p>
+
+                <div className="grid gap-3 sm:grid-cols-2 pt-2 text-xs sm:text-sm">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <p className="font-bold text-slate-900 dark:text-white">Tab Switch &amp; Blur Telemetry</p>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs">
+                      Detects when a candidate departs the active examination browser tab. Excessive away intervals prompt automatic disciplinary submission.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <p className="font-bold text-slate-900 dark:text-white">Immutable Attempt Snapshots</p>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs">
+                      Once initiated, question sequences and option layouts are frozen in server-side snapshots, preventing post-facto answer manipulation.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <p className="font-bold text-slate-900 dark:text-white">In-Memory Obfuscation</p>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs">
+                      Answers stored in browser cache are scrambled to prevent rogue browser extensions from sniffing or altering responses.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <p className="font-bold text-slate-900 dark:text-white">Zero Surveillance Spyware</p>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs">
+                      BrainLab never installs kernel extensions, captures background audio without consent, or inspects files outside the browser session.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 5: Data Collected */}
+              <div id="data-collected" className="scroll-mt-24 space-y-4 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-purple-50 dark:bg-purple-950/80 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                    Chapter 5: Data Minimization
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("data-collected")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
+                  <span>📋</span>
+                  <span>Categories of Information Collected</span>
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Under the principle of <strong>Data Minimization</strong> (NDPA 2023), we only collect information indispensable to score computation and candidate profile authentication:
+                </p>
+
+                <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424]">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
+                      <tr>
+                        <th className="p-4">Data Element</th>
+                        <th className="p-4">Purpose</th>
+                        <th className="p-4">Protection Standard</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+                      <tr>
+                        <td className="p-4 font-bold">Full Name &amp; Phone Number</td>
+                        <td className="p-4">Candidate scorecard lookup &amp; certificate issuance</td>
+                        <td className="p-4 text-emerald-600 dark:text-emerald-400 font-bold">AES-256-GCM Authenticated</td>
+                      </tr>
+                      <tr>
+                        <td className="p-4 font-bold">4-Subject UTME Choice</td>
+                        <td className="p-4">Assessment generation &amp; psychometric weighting</td>
+                        <td className="p-4 text-slate-500">Restricted Academic Schema</td>
+                      </tr>
+                      <tr>
+                        <td className="p-4 font-bold">Billing &amp; Card Details</td>
+                        <td className="p-4">Plan subscription processing</td>
+                        <td className="p-4 text-emerald-600 dark:text-emerald-400 font-bold">Zero Storage (PCI-DSS Gateways)</td>
+                      </tr>
+                      <tr>
+                        <td className="p-4 font-bold">Honor Roll Display Name</td>
+                        <td className="p-4">National leaderboard recognition</td>
+                        <td className="p-4 text-sky-600 dark:text-cyan-400 font-bold">Masked (e.g. Chukwudi O. • Lagos)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 6: Candidate Rights */}
+              <div id="candidate-rights" className="scroll-mt-24 space-y-4 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-rose-50 dark:bg-rose-950/80 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                    Chapter 6: Legal Rights
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("candidate-rights")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
+                  <span>⚖️</span>
+                  <span>Candidate Rights Under NDPA 2023</span>
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Every candidate, parent, and institutional sponsor enjoys statutory rights guaranteed under the Nigeria Data Protection Act:
+                </p>
+
+                <div className="grid gap-3 sm:grid-cols-2 pt-1 text-xs sm:text-sm">
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>👁️</span> Right of Access &amp; Portability
+                    </h4>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
+                      Retrieve historical scorecards, topic diagnostics, and AI tutor transcripts at any time via your student dashboard.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>✏️</span> Right to Rectification
+                    </h4>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
+                      Update or correct inaccurate student names, school affiliations, or subject combinations directly through support.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>🗑️</span> Right to Erasure (&ldquo;Forgotten&rdquo;)
+                    </h4>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
+                      Request permanent deletion of your phone number, name, and telemetry records upon completing your exam session.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
+                    <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>⚖️</span> Right to Contest Scoring
+                    </h4>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
+                      Request human academic review of any automated anti-cheat flag, scoring dispute, or question questionability.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 7: Cybercafé Safety */}
+              <div id="terminal-safety" className="scroll-mt-24 space-y-4 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Chapter 7: Terminal Protection
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("terminal-safety")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
+                  <span>🧹</span>
+                  <span>Cybercafé &amp; Shared School Terminal Safety</span>
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Many Nigerian candidates access CBT preparatory platforms via commercial cybercafés or shared school laboratory terminals. BrainLab implements specialized client protections:
+                </p>
+
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                  <p>
+                    &bull; <strong>Volatile Session Expiration:</strong> When a test concludes or you click &ldquo;Sign Out&rdquo;, active session tokens are actively shredded with pseudo-random cryptographic bytes.
+                  </p>
+                  <p>
+                    &bull; <strong>Zero Intrusive Third-Party Ad Trackers:</strong> BrainLab does not embed behavioral advertising pixels, cross-site trackers, or commercial data brokers.
+                  </p>
+                </div>
+              </div>
+
+              {/* Section 8: DPO Contact */}
+              <div id="dpo-contact" className="scroll-mt-24 space-y-4 pt-6 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/80 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                    Chapter 8: Official Contact
+                  </span>
+                  <button
+                    onClick={() => handleCopyLink("dpo-contact")}
+                    className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    🔗 Copy link
+                  </button>
+                </div>
+
+                <div className="rounded-3xl border border-emerald-200 dark:border-emerald-900/60 bg-linear-to-b from-emerald-50/60 to-white dark:from-emerald-950/30 dark:to-[#0a1424] p-6 sm:p-8 shadow-sm">
+                  <h3 className="text-xl font-black text-slate-950 dark:text-white flex items-center gap-2">
+                    <span>🛡️</span>
+                    <span>BrainLab Data Protection Officer (DPO)</span>
+                  </h3>
+                  <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    For statutory erasure requests, cryptographic audits, or institutional compliance verification under NDPA 2023, contact our designated privacy officer:
+                  </p>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 text-xs">
+                    <div className="p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 bg-white dark:bg-slate-900/80">
+                      <p className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[10px]">
+                        Official DPO Email
+                      </p>
+                      <a
+                        href="mailto:dpo@brainlabacademy.com.ng"
+                        className="mt-1 block font-mono font-bold text-indigo-600 dark:text-cyan-400 hover:underline"
+                      >
+                        dpo@brainlabacademy.com.ng
+                      </a>
+                    </div>
+                    <div className="p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 bg-white dark:bg-slate-900/80">
+                      <p className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[10px]">
+                        General Academic Support
+                      </p>
+                      <a
+                        href="mailto:support@brainlabacademy.com.ng"
+                        className="mt-1 block font-mono font-bold text-indigo-600 dark:text-cyan-400 hover:underline"
+                      >
+                        support@brainlabacademy.com.ng
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <a
+                      href="https://wa.me/2349074310204?text=Hello%20BrainLab%20DPO,%20I%20have%20an%20inquiry%20regarding%20data%20privacy%20and%20encryption."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition active:scale-95"
+                    >
+                      <span>💬</span> WhatsApp DPO Desk (+234 907 431 0204)
+                    </a>
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95"
+                    >
+                      <span>📞</span> Helpdesk Contact
+                    </Link>
+                    <Link
+                      href="/account/subscription/refund"
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95"
+                    >
+                      <span>🛡️</span> Refund Desk &rarr;
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -187,7 +187,7 @@ export default function PricingPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="text-center">
             <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-indigo-900">
-              ⚡ Transparent Monthly Subscriptions
+              <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>Transparent Monthly Subscriptions</span></span>
             </span>
             <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
               Invest in your knowledge. <span className="text-indigo-700">Own your score.</span>
@@ -197,15 +197,15 @@ export default function PricingPage() {
             </p>
 
             <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-900 shadow-xs">
-              <span>🔒 Active &amp; Verified Subscriptions · Instant Activation via Paystack, Cards &amp; Bank Transfer</span>
+              <span className="flex items-center gap-1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg><span>Active &amp; Verified Subscriptions</span> · Instant Activation via Paystack, Cards &amp; Bank Transfer</span>
             </div>
 
             <div className="mt-4 flex justify-center gap-4 text-xs font-bold text-indigo-700">
               <Link href="/account/rewards" className="hover:underline">
-                🎁 View Student Promo Codes →
+                <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12" /><rect width="20" height="5" x="2" y="7" /><line x1="12" x2="12" y1="22" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></svg><span>View Student Promo Codes</span><span aria-hidden="true">→</span></span>
               </Link>
               <Link href="/account/subscription/refund" className="hover:underline">
-                🛡️ 24-Hour Refund Portal →
+                <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></svg><span>24-Hour Refund Portal</span><span aria-hidden="true">→</span></span>
               </Link>
             </div>
           </div>
@@ -390,7 +390,7 @@ export default function PricingPage() {
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black text-slate-900">💳 Paystack</span>
+                        <span className="text-xs font-black text-slate-900 flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" x2="22" y1="10" y2="10" /></svg><span>Paystack</span></span>
                         <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[8px] font-bold text-blue-800">
                           Recommended
                         </span>
@@ -411,7 +411,7 @@ export default function PricingPage() {
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black text-slate-900">🦋 Flutterwave</span>
+                        <span className="text-xs font-black text-slate-900 flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg><span>Flutterwave</span></span>
                       </div>
                       <span className="mt-0.5 text-[10px] text-slate-500 font-medium">
                         Cards &amp; Mobile Money
@@ -428,7 +428,7 @@ export default function PricingPage() {
                           : "border-slate-200 bg-white hover:bg-slate-50"
                       }`}
                     >
-                      <span className="text-xs font-black text-slate-900">🏦 Bank Transfer</span>
+                      <span className="text-xs font-black text-slate-900 flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="22" y2="22" /><line x1="6" x2="6" y1="18" y2="11" /><line x1="10" x2="10" y1="18" y2="11" /><line x1="14" x2="14" y1="18" y2="11" /><line x1="18" x2="18" y1="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg><span>Bank Transfer</span></span>
                       <span className="mt-0.5 text-[10px] text-slate-500 font-medium">
                         Direct Account Transfer
                       </span>

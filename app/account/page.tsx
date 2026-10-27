@@ -77,7 +77,9 @@ export default function AccountPage() {
       }
 
       await clearOperatorGate();
-      if (active) router.replace("/dashboard");
+      const redirectTarget = searchParams.get("redirect");
+      const safeTarget = redirectTarget && redirectTarget.startsWith("/") && !redirectTarget.startsWith("//") ? redirectTarget : "/dashboard";
+      if (active) router.replace(safeTarget);
     }
     void redirectIfAlreadySignedIn().catch(() => {
       // Keep the form available if session restoration temporarily fails.
@@ -142,7 +144,9 @@ export default function AccountPage() {
     }
 
     await clearOperatorGate();
-    router.replace("/dashboard");
+    const redirectParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("redirect") : null;
+    const safeTarget = redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//") ? redirectParam : "/dashboard";
+    router.replace(safeTarget);
   }
 
   async function submitCredentials() {
@@ -260,11 +264,11 @@ export default function AccountPage() {
             Your personal gateway to CBT practice, Learning Hub modules, live video masterclasses, AI study tools, and community messaging.
           </p>
           <div className="mt-8 space-y-3 text-sm text-blue-100">
-            <p>✓ A personal account for your learning journey</p>
-            <p>✓ Email sign-in and 1-tap Google sign-in</p>
-            <p>✓ Live Interactive Classrooms &amp; Session Recordings</p>
-            <p>✓ Timed CBT exam simulations with offline protection</p>
-            <p>✓ Secure account recovery</p>
+            <p className="flex items-center gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/30 text-cyan-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg></span><span>A personal account for your learning journey</span></p>
+            <p className="flex items-center gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/30 text-cyan-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg></span><span>Email sign-in and 1-tap Google sign-in</span></p>
+            <p className="flex items-center gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/30 text-cyan-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg></span><span>Live Interactive Classrooms &amp; Session Recordings</span></p>
+            <p className="flex items-center gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/30 text-cyan-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg></span><span>Timed CBT exam simulations with offline protection</span></p>
+            <p className="flex items-center gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/30 text-cyan-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg></span><span>Secure account recovery</span></p>
           </div>
         </section>
 

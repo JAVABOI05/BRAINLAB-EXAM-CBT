@@ -56,6 +56,8 @@ export type WhiteboardPage = {
   title: string;
   elements: WhiteboardElement[];
   aspectRatio: BoardAspectRatio;
+  backgroundImage?: string;
+  backgroundMode?: "blackboard" | "whiteboard" | "grid" | "lines";
 };
 
 const PRESET_COLORS = [
@@ -141,6 +143,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [redoStack, setRedoStack] = useState<WhiteboardElement[]>([]);
     const elementsRef = useRef<WhiteboardElement[]>([]);
     const backgroundModeRef = useRef<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
+    const imageCacheRef = useRef<Record<string, HTMLImageElement>>({});
 
     useEffect(() => {
       elementsRef.current = elements;
@@ -222,12 +225,31 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
         redrawCanvas();
       }
-    }, [elements, backgroundMode]);
+    }, [elements, backgroundMode, activePage]);
 
-    // Draw background (blackboard, whiteboard, math grid, ruled lines)
+    // Draw background (blackboard, whiteboard, math grid, ruled lines, or imported slide image)
     const renderBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       ctx.save();
-      if (backgroundMode === "whiteboard") {
+      const currentBgMode = activePage?.backgroundMode || backgroundMode;
+      const currentBgImage = activePage?.backgroundImage;
+
+      if (currentBgImage) {
+        ctx.fillStyle = "#070b14";
+        ctx.fillRect(0, 0, width, height);
+
+        const cached = imageCacheRef.current[currentBgImage];
+        if (cached && cached.complete && cached.naturalWidth > 0) {
+          ctx.drawImage(cached, 0, 0, width, height);
+        } else {
+          const img = new Image();
+          img.src = currentBgImage;
+          img.onload = () => {
+            imageCacheRef.current[currentBgImage] = img;
+            redrawCanvas();
+          };
+          imageCacheRef.current[currentBgImage] = img;
+        }
+      } else if (currentBgMode === "whiteboard") {
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, width, height);
 
@@ -235,7 +257,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.strokeStyle = "#e2e8f0";
         ctx.lineWidth = 2;
         ctx.strokeRect(1, 1, width - 2, height - 2);
-      } else if (backgroundMode === "grid") {
+      } else if (currentBgMode === "grid") {
         ctx.fillStyle = "#090d16";
         ctx.fillRect(0, 0, width, height);
 
@@ -267,7 +289,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.moveTo(0, midY);
         ctx.lineTo(width, midY);
         ctx.stroke();
-      } else if (backgroundMode === "lines") {
+      } else if (currentBgMode === "lines") {
         ctx.fillStyle = "#0b0f19";
         ctx.fillRect(0, 0, width, height);
 
@@ -408,7 +430,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       if (activeElementRef.current) {
         drawElement(ctx, activeElementRef.current, dpr, dpr);
       }
-    }, [elements, backgroundMode]);
+    }, [elements, backgroundMode, activePage]);
 
     useEffect(() => {
       redrawCanvas();

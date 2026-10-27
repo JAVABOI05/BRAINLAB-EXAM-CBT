@@ -11,19 +11,23 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const classId = (formData.get("classId") as string) || "live-session";
-    const mediaType = (formData.get("mediaType") as string) || "audio"; // "audio" | "image"
+    const mediaType = (formData.get("mediaType") as string) || "audio"; // "audio" | "image" | "document"
     const durationSeconds = parseFloat((formData.get("duration") as string) || "0");
 
     if (!file) {
       return NextResponse.json({ error: "No media file provided." }, { status: 400 });
     }
 
-    // Limit to 8MB
-    if (file.size > 8 * 1024 * 1024) {
-      return NextResponse.json({ error: "File exceeds 8MB limit." }, { status: 400 });
+    // Limit to 25MB for presentation decks/documents, 10MB for audio/images
+    const maxSizeBytes = mediaType === "document" ? 25 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      return NextResponse.json(
+        { error: `File exceeds limit of ${Math.round(maxSizeBytes / (1024 * 1024))}MB.` },
+        { status: 400 }
+      );
     }
 
-    const mimeType = file.type || (mediaType === "audio" ? "audio/webm" : "image/jpeg");
+    const mimeType = file.type || (mediaType === "audio" ? "audio/webm" : mediaType === "image" ? "image/jpeg" : "application/octet-stream");
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const base64Data = `data:${mimeType};base64,${buffer.toString("base64")}`;
@@ -63,6 +67,8 @@ export async function POST(request: NextRequest) {
       success: true,
       assetId,
       url: `/api/classroom/media/${assetId}`,
+      fileName: file.name,
+      fileSize: file.size,
       mediaType,
       duration: durationSeconds,
     });

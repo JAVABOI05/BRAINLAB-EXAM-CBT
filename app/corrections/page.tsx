@@ -180,7 +180,13 @@ function CorrectionStudyCoach({
           onClick={() => void generatePlan()}
           className="min-h-11 rounded-xl bg-[#061a3a] px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-[#123566] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? "Building Plan…" : "✨ Build My Revision Plan →"}
+          {busy ? "Building Plan…" : (
+                <span className="flex items-center gap-1.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>
+                  <span>Build My Revision Plan</span>
+                  <span aria-hidden="true">→</span>
+                </span>
+              )}
         </button>
       </div>
       {error && (
@@ -206,7 +212,17 @@ function CorrectionStudyCoach({
                   : "bg-[#061a3a] text-white hover:bg-[#123566]"
               }`}
             >
-              {savedPlan ? "✓ Saved to Learner Dashboard" : "💾 Save Plan to Dashboard"}
+              {savedPlan ? (
+                  <span className="flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                    <span>Saved to Learner Dashboard</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+                    <span>Save Plan to Dashboard</span>
+                  </span>
+                )}
             </button>
             <a
               href="/dashboard"
@@ -569,7 +585,7 @@ export default function CorrectionsPage() {
         {dataIssue && (
           <div role="alert" className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900 shadow-sm">
             <div className="flex items-start gap-3">
-              <span className="text-xl">⚠️</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg></span>
               <div>
                 <h2 className="text-base font-bold">Preview Notice</h2>
                 <p className="mt-1 text-sm leading-6 text-amber-800">{dataIssue}</p>
@@ -623,8 +639,8 @@ export default function CorrectionsPage() {
                       </div>
 
                       <div className="subject-meta">
-                        <span>✔ {stats.correct}</span>
-                        <span>✖ {stats.wrong}</span>
+                        <span className="flex items-center gap-1 font-bold"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg><span>{stats.correct}</span></span>
+                        <span className="flex items-center gap-1 font-bold"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg><span>{stats.wrong}</span></span>
                         <span>• {stats.unanswered}</span>
                       </div>
                     </button>
