@@ -54,12 +54,12 @@ const PATHWAYS = [
   },
   {
     number: "02",
-    title: "Subject Syllabus & Revision Notes",
-    badge: "Curriculum Hub",
+    title: "Official Syllabus & Curriculum Hub",
+    badge: "Official Syllabus",
     description:
-      "Study structured secondary school syllabus notes, fundamental formulas, worked examples, and topic checkpoint questions covering Science, Arts, and Commercial subjects.",
-    action: "Browse Syllabus Notes",
-    href: "/learn",
+      "Review official JAMB UTME syllabus modules, subtopic breakdowns, specific learning objectives, and recommended reading texts across Science, Commercial, and Art disciplines.",
+    action: "View Official Syllabus",
+    href: "/syllabus",
   },
   {
     number: "03",

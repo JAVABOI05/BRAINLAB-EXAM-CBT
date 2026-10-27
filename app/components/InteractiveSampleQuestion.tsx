@@ -1,32 +1,29 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 interface SampleOption {
-  letter: "A" | "B" | "C" | "D" | "E";
+  letter: "A" | "B" | "C" | "D";
   text: string;
 }
 
 interface QuestionItem {
   id: string;
-  subject: string;
-  examContext: string;
+  topicContext: string;
   question: string;
   options: SampleOption[];
-  correctLetter: "A" | "B" | "C" | "D" | "E";
+  correctLetter: "A" | "B" | "C" | "D";
   explanation: string;
+  ruleTitle: string;
 }
 
-// Comprehensive verified pool covering core high-frequency UTME/WAEC topics across 5 subjects
-const VERIFIED_FALLBACK_POOL: QuestionItem[] = [
-  // --- ENGLISH (Universal Compulsory UTME/WAEC Subject) ---
+// 10 Universal Non-Passage JAMB UTME Use of English Questions
+const UNIVERSAL_ENGLISH_POOL: QuestionItem[] = [
   {
     id: "eng-concord-1",
-    subject: "English",
-    examContext: "UTME Lexis & Structure (Concord)",
-    question:
-      "Choose the option that best completes the sentence: 'Neither the principal nor the teachers _______ present at the valedictory service yesterday.'",
+    topicContext: "Lexis & Structure (Proximity Concord)",
+    question: "Choose the option that best completes the sentence: 'Neither the principal nor the teachers _______ present at the valedictory service yesterday.'",
     options: [
       { letter: "A", text: "were" },
       { letter: "B", text: "was" },
@@ -34,15 +31,13 @@ const VERIFIED_FALLBACK_POOL: QuestionItem[] = [
       { letter: "D", text: "are being" },
     ],
     correctLetter: "A",
-    explanation:
-      "Under the grammatical rule of proximity with correlative conjunctions ('neither... nor'), the verb agrees with the closer subject. 'Teachers' is plural and the event occurred in the past ('yesterday'), requiring the plural past verb 'were'.",
+    ruleTitle: "Rule of Proximity",
+    explanation: "Under the grammatical rule of proximity with correlative conjunctions ('neither... nor'), the finite verb agrees in number and tense with the subject nearest to it. 'Teachers' is plural and the event occurred in the past ('yesterday'), requiring the plural past verb 'were'.",
   },
   {
     id: "eng-antonym-1",
-    subject: "English",
-    examContext: "WAEC Antonyms (Opposites in Meaning)",
-    question:
-      "In the sentence: 'The politician made an ambiguous statement that misled the public', choose the word nearest in meaning to the OPPOSITE of 'ambiguous'.",
+    topicContext: "Vocabulary (Antonyms / Opposites)",
+    question: "In the sentence: 'The politician made an ambiguous statement that misled the public', choose the word nearest in meaning to the OPPOSITE of 'ambiguous'.",
     options: [
       { letter: "A", text: "Complicated" },
       { letter: "B", text: "Explicit" },
@@ -50,13 +45,12 @@ const VERIFIED_FALLBACK_POOL: QuestionItem[] = [
       { letter: "D", text: "Hesitant" },
     ],
     correctLetter: "B",
-    explanation:
-      "'Ambiguous' means open to more than one interpretation or vague. Its direct opposite (antonym) is 'explicit' (clear, precise, leaving no room for confusion).",
+    ruleTitle: "Antonym Context",
+    explanation: "'Ambiguous' means open to more than one interpretation or vague. Its direct antonym is 'explicit', which means stated clearly and in detail, leaving no room for doubt.",
   },
   {
     id: "eng-prep-1",
-    subject: "English",
-    examContext: "UTME Prepositions & Collocations",
+    topicContext: "Prepositions & Dependent Collocations",
     question: "Select the correct option to fill the gap: 'After a thorough probe, the bursar was exonerated _______ all fraudulent charges.'",
     options: [
       { letter: "A", text: "from" },
@@ -65,13 +59,54 @@ const VERIFIED_FALLBACK_POOL: QuestionItem[] = [
       { letter: "D", text: "with" },
     ],
     correctLetter: "A",
-    explanation:
-      "The standard English preposition collocated with the verb 'exonerate' is 'from' (to exonerate someone from blame or charges).",
+    ruleTitle: "Dependent Preposition",
+    explanation: "The standard English dependent preposition collocated with the verb 'exonerate' is 'from' (to exonerate someone from blame or charges).",
+  },
+  {
+    id: "eng-tag-1",
+    topicContext: "Grammar (Question Tags)",
+    question: "Choose the correct question tag: 'You seldom visit your grandparents during vacations, _______?'",
+    options: [
+      { letter: "A", text: "don't you" },
+      { letter: "B", text: "do you" },
+      { letter: "C", text: "aren't you" },
+      { letter: "D", text: "didn't you" },
+    ],
+    correctLetter: "B",
+    ruleTitle: "Negative Adverbial Tag",
+    explanation: "Adverbs such as 'seldom', 'rarely', 'hardly', and 'scarcely' make the statement grammatically negative. Negative statements require an affirmative question tag with the auxiliary 'do': 'do you?'.",
+  },
+  {
+    id: "eng-synonym-1",
+    topicContext: "Vocabulary (Synonyms / Nearest in Meaning)",
+    question: "In the sentence: 'The defense attorney presented a plausible explanation for the client's absence', choose the word NEAREST IN MEANING to 'plausible'.",
+    options: [
+      { letter: "A", text: "Believable" },
+      { letter: "B", text: "Complicated" },
+      { letter: "C", text: "False" },
+      { letter: "D", text: "Unacceptable" },
+    ],
+    correctLetter: "A",
+    ruleTitle: "Synonym Context",
+    explanation: "'Plausible' describes an argument, explanation, or statement that seems reasonable, credible, or believable.",
+  },
+  {
+    id: "eng-subjunctive-1",
+    topicContext: "Advanced Syntax (Mandative Subjunctive)",
+    question: "Select the option that best completes the sentence: 'The disciplinary committee recommended that the suspended student _______ before resumption.'",
+    options: [
+      { letter: "A", text: "apologizes" },
+      { letter: "B", text: "apologize" },
+      { letter: "C", text: "apologized" },
+      { letter: "D", text: "should have apologized" },
+    ],
+    correctLetter: "B",
+    ruleTitle: "Mandative Subjunctive",
+    explanation: "Verbs of recommendation, demand, or insistence (demand, recommend, insist that...) take the mandative subjunctive mood, which requires the bare base infinitive ('apologize') regardless of the third-person singular subject.",
   },
   {
     id: "eng-stress-1",
-    subject: "English",
-    examContext: "JAMB UTME Oral Forms (Stress Patterns)",
+    topicContext: "Oral Forms (Primary Syllabic Stress)",
     question: "Which syllable carries the primary stress in the word 'PHOTOGRAPHY'?",
     options: [
       { letter: "A", text: "First syllable (PHO-)" },
@@ -80,601 +115,234 @@ const VERIFIED_FALLBACK_POOL: QuestionItem[] = [
       { letter: "D", text: "Fourth syllable (-phy)" },
     ],
     correctLetter: "B",
-    explanation:
-      "In four-syllable nouns ending with the suffix '-graphy', primary stress naturally falls on the antepenultimate (second) syllable: pho-TOG-ra-phy.",
+    ruleTitle: "Suffix Stress Pattern",
+    explanation: "In polysyllabic words ending with the suffix '-graphy', primary stress consistently falls on the antepenultimate (third from the end) syllable: pho-TOG-ra-phy.",
   },
-
-  // --- MATHEMATICS ---
   {
-    id: "math-base-1",
-    subject: "Mathematics",
-    examContext: "JAMB UTME / WAEC Number Bases",
-    question: "Convert the decimal number 117₁₀ to a base 3 numeral.",
+    id: "eng-idiom-1",
+    topicContext: "Idiomatic Expressions",
+    question: "Interpret the idiom: 'When the crisis worsened, the director decided to bite the bullet.' This means the director decided to _______.",
     options: [
-      { letter: "A", text: "11100₃" },
-      { letter: "B", text: "11010₃" },
-      { letter: "C", text: "10110₃" },
-      { letter: "D", text: "11200₃" },
+      { letter: "A", text: "resign from office immediately" },
+      { letter: "B", text: "face an inevitable, difficult situation with courage" },
+      { letter: "C", text: "engage in a violent argument" },
+      { letter: "D", text: "blame his subordinates for the problem" },
+    ],
+    correctLetter: "B",
+    ruleTitle: "Idiomatic Meaning",
+    explanation: "To 'bite the bullet' is a recognized idiom meaning to accept an inevitable, painful, or difficult situation with determination and fortitude.",
+  },
+  {
+    id: "eng-concord-2",
+    topicContext: "Lexis & Structure (Parenthetical Concord)",
+    question: "Select the best option: 'The governor, accompanied by his commissioners, _______ arriving at the summit shortly.'",
+    options: [
+      { letter: "A", text: "is" },
+      { letter: "B", text: "are" },
+      { letter: "C", text: "were" },
+      { letter: "D", text: "have been" },
     ],
     correctLetter: "A",
-    explanation:
-      "Successive division by 3: 117 ÷ 3 = 39 rem 0; 39 ÷ 3 = 13 rem 0; 13 ÷ 3 = 4 rem 1; 4 ÷ 3 = 1 rem 1; 1 ÷ 3 = 0 rem 1. Reading remainders from bottom to top gives 11100₃. Verification: (1×81) + (1×27) + (1×9) + (0×3) + 0 = 81 + 27 + 9 = 117.",
+    ruleTitle: "Parenthetical Phrase Rule",
+    explanation: "Parenthetical expressions introduced by 'accompanied by', 'as well as', 'together with', or 'in addition to' do not alter the number of the actual subject. 'The governor' is singular, so the singular verb 'is' is correct.",
   },
   {
-    id: "math-log-1",
-    subject: "Mathematics",
-    examContext: "JAMB UTME / WAEC Logarithms",
-    question: "If log₁₀(x) + log₁₀(x - 3) = 1, find the positive value of x.",
+    id: "eng-vowel-1",
+    topicContext: "Oral Forms (Vowel Sound Identification)",
+    question: "Identify the word that contains the SAME vowel sound as the one represented in the underlined letters in 'pl<u>ea</u>se' /i:/:",
     options: [
-      { letter: "A", text: "2" },
-      { letter: "B", text: "5" },
-      { letter: "C", text: "10" },
-      { letter: "D", text: "3" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "Using the product rule: log₁₀[x(x - 3)] = 1 ⟹ x(x - 3) = 10¹ = 10. Expanding gives x² - 3x - 10 = 0. Factoring: (x - 5)(x + 2) = 0. Since the logarithm of a non-positive number is undefined, x must be positive, hence x = 5.",
-  },
-  {
-    id: "math-quad-1",
-    subject: "Mathematics",
-    examContext: "JAMB UTME Quadratic Equations",
-    question: "If 2x² - 8x + 6 = 0, find the roots of the equation.",
-    options: [
-      { letter: "A", text: "x = 1 or x = 3" },
-      { letter: "B", text: "x = -1 or x = -3" },
-      { letter: "C", text: "x = 2 or x = 4" },
-      { letter: "D", text: "x = 0 or x = 3" },
+      { letter: "A", text: "Key" },
+      { letter: "B", text: "Great" },
+      { letter: "C", text: "Plait" },
+      { letter: "D", text: "Bread" },
     ],
     correctLetter: "A",
-    explanation:
-      "Dividing through by 2 gives x² - 4x + 3 = 0. Factoring yields (x - 1)(x - 3) = 0, which gives x = 1 or x = 3.",
-  },
-  {
-    id: "math-trig-1",
-    subject: "Mathematics",
-    examContext: "WAEC / UTME Trigonometry",
-    question: "If tan θ = 3/4 and θ is an acute angle, evaluate cos θ.",
-    options: [
-      { letter: "A", text: "3/5" },
-      { letter: "B", text: "4/5" },
-      { letter: "C", text: "5/4" },
-      { letter: "D", text: "4/3" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "In a right-angled triangle, opposite = 3 and adjacent = 4. By Pythagoras' theorem, hypotenuse = √(3² + 4²) = √25 = 5. Therefore, cos θ = adjacent / hypotenuse = 4/5.",
-  },
-  {
-    id: "math-series-1",
-    subject: "Mathematics",
-    examContext: "JAMB UTME Sequences & Series",
-    question: "Find the sum to infinity of the geometric progression: 1/2, 1/4, 1/8, ...",
-    options: [
-      { letter: "A", text: "1/2" },
-      { letter: "B", text: "1" },
-      { letter: "C", text: "2" },
-      { letter: "D", text: "3/4" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "First term a = 1/2, common ratio r = (1/4)/(1/2) = 1/2. For |r| < 1, sum to infinity S_∞ = a / (1 - r) = (1/2) / (1 - 1/2) = (1/2) / (1/2) = 1.",
-  },
-
-  // --- PHYSICS ---
-  {
-    id: "phy-ke-1",
-    subject: "Physics",
-    examContext: "JAMB UTME Mechanics & Work",
-    question: "A body of mass 4 kg moves with a uniform velocity of 15 m/s. What is its kinetic energy?",
-    options: [
-      { letter: "A", text: "60 J" },
-      { letter: "B", text: "300 J" },
-      { letter: "C", text: "450 J" },
-      { letter: "D", text: "900 J" },
-    ],
-    correctLetter: "C",
-    explanation:
-      "Kinetic energy K.E. = ½mv². Substituting m = 4 kg and v = 15 m/s: K.E. = ½ × 4 × (15)² = 2 × 225 = 450 Joules.",
-  },
-  {
-    id: "phy-kin-1",
-    subject: "Physics",
-    examContext: "WAEC SSCE Kinematics",
-    question: "A car accelerates uniformly from rest at 2.5 m/s² for 8 seconds. What is the final velocity attained?",
-    options: [
-      { letter: "A", text: "10 m/s" },
-      { letter: "B", text: "16 m/s" },
-      { letter: "C", text: "20 m/s" },
-      { letter: "D", text: "25 m/s" },
-    ],
-    correctLetter: "C",
-    explanation:
-      "Using the first equation of motion v = u + at, with initial velocity u = 0, acceleration a = 2.5 m/s², and time t = 8 s: v = 0 + (2.5)(8) = 20 m/s.",
-  },
-  {
-    id: "phy-optics-1",
-    subject: "Physics",
-    examContext: "JAMB UTME Geometrical Optics",
-    question: "Light travels from dense glass (n = 1.5) toward an air boundary. What is the critical angle for total internal reflection?",
-    options: [
-      { letter: "A", text: "41.8°" },
-      { letter: "B", text: "48.6°" },
-      { letter: "C", text: "30.0°" },
-      { letter: "D", text: "60.0°" },
-    ],
-    correctLetter: "A",
-    explanation:
-      "The critical angle C satisfies sin C = 1/n = 1/1.5 = 0.6667. Taking the arcsine: C = sin⁻¹(0.6667) ≈ 41.8°.",
-  },
-  {
-    id: "phy-circ-1",
-    subject: "Physics",
-    examContext: "WAEC SSCE Current Electricity",
-    question: "Three 6 Ω resistors are connected in parallel. What is the equivalent resistance of the network?",
-    options: [
-      { letter: "A", text: "18 Ω" },
-      { letter: "B", text: "2 Ω" },
-      { letter: "C", text: "3 Ω" },
-      { letter: "D", text: "0.5 Ω" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "For parallel identical resistors, R_eq = R / N = 6 Ω / 3 = 2 Ω. Alternatively: 1/R_eq = 1/6 + 1/6 + 1/6 = 3/6 = 1/2 ⟹ R_eq = 2 Ω.",
-  },
-
-  // --- CHEMISTRY ---
-  {
-    id: "chem-elec-1",
-    subject: "Chemistry",
-    examContext: "JAMB UTME / WAEC Electrolysis",
-    question: "Which gas is liberated at the cathode during the electrolysis of dilute tetraoxosulphate(VI) acid using platinum electrodes?",
-    options: [
-      { letter: "A", text: "Oxygen" },
-      { letter: "B", text: "Hydrogen" },
-      { letter: "C", text: "Sulphur(IV) oxide" },
-      { letter: "D", text: "Chlorine" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "In the electrolysis of dilute H₂SO₄, hydrogen ions (H⁺) migrate to the negative cathode where they are reduced by gaining electrons: 2H⁺ + 2e⁻ → H₂ (gas).",
-  },
-  {
-    id: "chem-bond-1",
-    subject: "Chemistry",
-    examContext: "WAEC SSCE Chemical Bonding",
-    question: "Which of the following compounds exhibits predominantly electrovalent (ionic) bonding?",
-    options: [
-      { letter: "A", text: "Methane (CH₄)" },
-      { letter: "B", text: "Sodium Chloride (NaCl)" },
-      { letter: "C", text: "Water (H₂O)" },
-      { letter: "D", text: "Carbon Dioxide (CO₂)" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "NaCl is formed by complete valence electron transfer from metallic sodium to non-metallic chlorine, forming a crystal lattice held by strong ionic electrostatic attractions.",
-  },
-  {
-    id: "chem-stoich-1",
-    subject: "Chemistry",
-    examContext: "JAMB UTME Stoichiometry & Gases",
-    question: "What volume of oxygen at s.t.p. is required for complete combustion of 4.4 g of propane (C₃H₈)? [C=12, H=1, Molar volume = 22.4 dm³]",
-    options: [
-      { letter: "A", text: "11.2 dm³" },
-      { letter: "B", text: "2.24 dm³" },
-      { letter: "C", text: "5.6 dm³" },
-      { letter: "D", text: "22.4 dm³" },
-    ],
-    correctLetter: "A",
-    explanation:
-      "Reaction: C₃H₈ + 5O₂ → 3CO₂ + 4H₂O. Moles of C₃H₈ = 4.4 / 44 = 0.1 mol. From mole ratio, moles of O₂ required = 5 × 0.1 = 0.5 mol. Volume at s.t.p. = 0.5 × 22.4 dm³ = 11.2 dm³.",
-  },
-
-  // --- BIOLOGY ---
-  {
-    id: "bio-cell-1",
-    subject: "Biology",
-    examContext: "JAMB UTME / WAEC Cell Biology",
-    question: "Which cellular organelle is primarily responsible for synthesizing adenosine triphosphate (ATP) during aerobic cellular respiration?",
-    options: [
-      { letter: "A", text: "Ribosome" },
-      { letter: "B", text: "Mitochondrion" },
-      { letter: "C", text: "Endoplasmic reticulum" },
-      { letter: "D", text: "Golgi apparatus" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "Mitochondria are the respiratory powerhouses of eukaryotic cells. The Krebs cycle and electron transport phosphorylation occur within them, generating cellular ATP.",
-  },
-  {
-    id: "bio-gen-1",
-    subject: "Biology",
-    examContext: "JAMB UTME Genetics & Heredity",
-    question: "In Mendelian monohybrid inheritance, what is the phenotypic ratio in the F₂ generation of a cross between two heterozygous parents?",
-    options: [
-      { letter: "A", text: "1:2:1" },
-      { letter: "B", text: "3:1" },
-      { letter: "C", text: "9:3:3:1" },
-      { letter: "D", text: "2:1" },
-    ],
-    correctLetter: "B",
-    explanation:
-      "Crossing two heterozygous individuals (Aa × Aa) yields genotypes 1 AA : 2 Aa : 1 aa. Because dominant allele A masks recessive a, the observable phenotypic ratio is 3 dominant : 1 recessive.",
-  },
-  {
-    id: "bio-blood-1",
-    subject: "Biology",
-    examContext: "WAEC SSCE Human Genetics",
-    question: "A heterozygous blood group A father marries a heterozygous blood group B mother. What blood groups can appear in their offspring?",
-    options: [
-      { letter: "A", text: "A, B, AB, and O" },
-      { letter: "B", text: "AB only" },
-      { letter: "C", text: "A and B only" },
-      { letter: "D", text: "AB and O only" },
-    ],
-    correctLetter: "A",
-    explanation:
-      "Father genotype I^A i and mother genotype I^B i cross to yield: I^A I^B (AB), I^A i (A), I^B i (B), and i i (O). All four ABO blood types are possible.",
+    ruleTitle: "Long Vowel /i:/",
+    explanation: "'Please' contains the long front close vowel /i:/. Among the options, 'Key' /ki:/ shares this exact sound, whereas 'Great' has /eɪ/, 'Plait' has /æ/, and 'Bread' has /e/.",
   },
 ];
 
 export default function InteractiveSampleQuestion() {
-  const [questionPool, setQuestionPool] = useState<QuestionItem[]>(VERIFIED_FALLBACK_POOL);
-  const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("All");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedLetter, setSelectedLetter] = useState<"A" | "B" | "C" | "D" | "E" | null>(null);
+  const [selectedLetter, setSelectedLetter] = useState<"A" | "B" | "C" | "D" | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
 
-  // Fetch verified active questions from database, cleanly falling back to comprehensive pool
-  useEffect(() => {
-    let active = true;
-    fetch("/api/questions/sample")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!active) return;
-        if (data.ok && Array.isArray(data.questions) && data.questions.length >= 5) {
-          setQuestionPool(data.questions);
-        }
-      })
-      .catch(() => {
-        // Safe fallback to our verified pool
-      });
+  const currentQuestion = UNIVERSAL_ENGLISH_POOL[currentIndex] || UNIVERSAL_ENGLISH_POOL[0];
 
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Filter questions by active subject tab (tolerating "English" vs "English Language")
-  const filteredQuestions = useMemo(() => {
-    if (activeSubjectFilter === "All") return questionPool;
-    const target = activeSubjectFilter.toLowerCase().replace(" language", "").trim();
-    return questionPool.filter(
-      (q) => q.subject.toLowerCase().replace(" language", "").trim() === target
-    );
-  }, [questionPool, activeSubjectFilter]);
-
-  // Reset index and selections on subject change
-  useEffect(() => {
-    setCurrentIndex(0);
-    setSelectedLetter(null);
-    setShowFeedback(false);
-  }, [activeSubjectFilter]);
-
-  // Distinct subjects available in the active pool, prioritizing English (compulsory) first
-  const availableSubjects = useMemo(() => {
-    const SUBJECT_ORDER = ["English", "English Language", "Mathematics", "Biology", "Chemistry", "Physics"];
-    const set = new Set<string>();
-    questionPool.forEach((q) => set.add(q.subject));
-    return Array.from(set).sort((a, b) => {
-      const idxA = SUBJECT_ORDER.indexOf(a);
-      const idxB = SUBJECT_ORDER.indexOf(b);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return a.localeCompare(b);
-    });
-  }, [questionPool]);
-
-  const currentQuestion = filteredQuestions[currentIndex] || filteredQuestions[0] || null;
-
-  const handleSelect = (letter: "A" | "B" | "C" | "D" | "E") => {
+  const handleSelect = (letter: "A" | "B" | "C" | "D") => {
     setSelectedLetter(letter);
     setShowFeedback(true);
   };
 
-  const handleReset = () => {
-    setSelectedLetter(null);
-    setShowFeedback(false);
-  };
-
   const handleNext = () => {
-    if (filteredQuestions.length <= 1) return;
     setIsShuffling(true);
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % filteredQuestions.length);
+      setCurrentIndex((prev) => (prev + 1) % UNIVERSAL_ENGLISH_POOL.length);
       setSelectedLetter(null);
       setShowFeedback(false);
       setIsShuffling(false);
-    }, 120);
+    }, 100);
   };
 
   const handlePrevious = () => {
-    if (filteredQuestions.length <= 1) return;
     setIsShuffling(true);
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev - 1 + filteredQuestions.length) % filteredQuestions.length);
+      setCurrentIndex((prev) => (prev - 1 + UNIVERSAL_ENGLISH_POOL.length) % UNIVERSAL_ENGLISH_POOL.length);
       setSelectedLetter(null);
       setShowFeedback(false);
       setIsShuffling(false);
-    }, 120);
+    }, 100);
   };
 
   const handleShuffle = () => {
-    if (filteredQuestions.length <= 1) return;
     setIsShuffling(true);
-    const poolWithoutCurrent = filteredQuestions.map((_, i) => i).filter((i) => i !== currentIndex);
+    const poolWithoutCurrent = UNIVERSAL_ENGLISH_POOL.map((_, i) => i).filter((i) => i !== currentIndex);
     const randomIdx = poolWithoutCurrent[Math.floor(Math.random() * poolWithoutCurrent.length)];
     setTimeout(() => {
-      setCurrentIndex(randomIdx !== undefined ? randomIdx : (currentIndex + 1) % filteredQuestions.length);
+      setCurrentIndex(randomIdx !== undefined ? randomIdx : (currentIndex + 1) % UNIVERSAL_ENGLISH_POOL.length);
       setSelectedLetter(null);
       setShowFeedback(false);
       setIsShuffling(false);
-    }, 120);
+    }, 100);
   };
 
-  const isCorrect = currentQuestion ? selectedLetter === currentQuestion.correctLetter : false;
+  const isCorrect = selectedLetter === currentQuestion.correctLetter;
 
   return (
-    <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xl shadow-blue-950/5 dark:border-slate-800 dark:bg-slate-900 transition-colors">
-      {/* Subject Filter Selector Pills & Simulated Exam Timer (Stitch Design) */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1">
-            Subject:
+    <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xl shadow-blue-950/5 transition-colors">
+      {/* Universal Subject Header */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-100 text-blue-900 text-xs font-black">
+            ENG
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubjectFilter("All");
-              setCurrentIndex(0);
-              setSelectedLetter(null);
-              setShowFeedback(false);
-            }}
-            className={`rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
-              activeSubjectFilter === "All"
-                ? "bg-[#012153] text-white shadow-xs"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-            }`}
-          >
-            All Subjects ({questionPool.length})
-          </button>
-          {availableSubjects.map((subj) => (
-            <button
-              key={subj}
-              type="button"
-              onClick={() => {
-                setActiveSubjectFilter(subj);
-                setCurrentIndex(0);
-                setSelectedLetter(null);
-                setShowFeedback(false);
-              }}
-              className={`rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
-                activeSubjectFilter.toLowerCase() === subj.toLowerCase()
-                  ? "bg-[#012153] text-white shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-              }`}
-            >
-              {subj}
-            </button>
-          ))}
+          <div>
+            <p className="text-xs font-black text-slate-900">
+              Universal Compulsory Subject · Use of English
+            </p>
+            <p className="text-[10px] text-slate-500">
+              {currentQuestion.topicContext}
+            </p>
+          </div>
         </div>
 
-        {/* Live Timer Badge (Stitch CBT Card) */}
-        <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-[11px] font-black text-emerald-800 dark:text-emerald-300 font-mono tracking-wider">
-            1:48:20
-          </span>
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
+          <span>Question {currentIndex + 1} of {UNIVERSAL_ENGLISH_POOL.length}</span>
         </div>
       </div>
-      
 
-      {/* Question Header & Stepper Controls */}
-      {!currentQuestion ? (
-        <div className="py-12 text-center">
-          <p className="text-base font-bold text-slate-800 dark:text-slate-100">
-            No sample questions currently available for {activeSubjectFilter}.
+      {/* Question Body */}
+      <div className={`transition-opacity duration-150 ${isShuffling ? "opacity-40" : "opacity-100"}`}>
+        <p className="text-sm sm:text-base font-semibold leading-relaxed text-slate-900">
+          {currentQuestion.question}
+        </p>
+
+        {/* Options Grid */}
+        <div className="mt-4 space-y-2">
+          {currentQuestion.options.map((option) => {
+            const isSelected = selectedLetter === option.letter;
+            const isAnswerLetter = option.letter === currentQuestion.correctLetter;
+
+            let buttonStyle = "border-slate-200 bg-slate-50/70 text-slate-800 hover:border-blue-300 hover:bg-blue-50/40";
+            let badgeStyle = "bg-white text-slate-700 border-slate-200";
+
+            if (showFeedback) {
+              if (isAnswerLetter) {
+                buttonStyle = "border-emerald-500 bg-emerald-50/80 text-emerald-950 font-bold ring-1 ring-emerald-400";
+                badgeStyle = "bg-emerald-600 text-white border-emerald-600";
+              } else if (isSelected && !isCorrect) {
+                buttonStyle = "border-rose-400 bg-rose-50/80 text-rose-950 ring-1 ring-rose-400";
+                badgeStyle = "bg-rose-600 text-white border-rose-600";
+              } else {
+                buttonStyle = "border-slate-200 bg-slate-50/30 text-slate-400 opacity-60";
+              }
+            } else if (isSelected) {
+              buttonStyle = "border-blue-600 bg-blue-50 text-blue-950 font-bold ring-1 ring-blue-500";
+              badgeStyle = "bg-blue-600 text-white border-blue-600";
+            }
+
+            return (
+              <button
+                key={option.letter}
+                type="button"
+                onClick={() => handleSelect(option.letter)}
+                className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left text-xs sm:text-sm transition-all duration-150 active:scale-[0.99] ${buttonStyle}`}
+              >
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-xs font-black ${badgeStyle}`}
+                >
+                  {option.letter}
+                </span>
+                <span className="flex-1">{option.text}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Instant Feedback & Worked Rule Explanation */}
+      {showFeedback && (
+        <div
+          className={`mt-4 rounded-2xl border p-4 text-xs transition-all ${
+            isCorrect
+              ? "border-emerald-200 bg-emerald-50/90 text-emerald-950"
+              : "border-amber-200 bg-amber-50/90 text-amber-950"
+          }`}
+        >
+          <div className="flex items-center justify-between font-black">
+            <span className="flex items-center gap-1.5">
+              {isCorrect ? (
+                <>
+                  <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Correct Answer: Option {currentQuestion.correctLetter}</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>Incorrect. Correct Option is {currentQuestion.correctLetter}</span>
+                </>
+              )}
+            </span>
+            <span className="text-[10px] uppercase tracking-wider text-slate-500">
+              {currentQuestion.ruleTitle}
+            </span>
+          </div>
+
+          <p className="mt-2 text-slate-700 leading-relaxed">
+            {currentQuestion.explanation}
           </p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Questions for this subject are being prepared or updated by the academy tutors.
-          </p>
+        </div>
+      )}
+
+      {/* Sandbox Navigation Controls */}
+      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+        <button
+          type="button"
+          onClick={handlePrevious}
+          className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition"
+        >
+          ← Previous
+        </button>
+
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setActiveSubjectFilter("All")}
-            className="mt-4 rounded-xl bg-[#012153] hover:bg-blue-900 px-4 py-2 text-xs font-bold text-white transition shadow-sm active:scale-95"
+            onClick={handleShuffle}
+            className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition"
+            title="Random question"
           >
-            Show All Subjects
+            Shuffle
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            className="rounded-xl bg-[#012153] hover:bg-blue-900 px-3.5 py-1.5 text-xs font-black text-white shadow-xs transition"
+          >
+            Next Question →
           </button>
         </div>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="flex items-center gap-2">
-              <span className="rounded-md bg-blue-100 dark:bg-blue-900/40 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-blue-900 dark:text-cyan-300">
-                {currentQuestion.subject}
-              </span>
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                {currentQuestion.examContext}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                Question {currentIndex + 1} of {filteredQuestions.length}
-              </span>
-
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={handlePrevious}
-                  disabled={isShuffling || filteredQuestions.length <= 1}
-                  aria-label="Previous question"
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-40"
-                >
-                  ←
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={isShuffling || filteredQuestions.length <= 1}
-                  aria-label="Next question"
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-40"
-                >
-                  →
-                </button>
-                <button
-                  type="button"
-                  onClick={handleShuffle}
-                  title="Shuffle question"
-                  disabled={isShuffling || filteredQuestions.length <= 1}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-blue-700 dark:text-cyan-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 disabled:opacity-40"
-                >
-                  <span aria-hidden="true" className={isShuffling ? "animate-spin" : ""}>🔀</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Question Stem (Stitch Clean Box) */}
-          <div className="mt-4 bg-slate-50/90 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-            <p
-              className={`text-base font-extrabold leading-snug text-slate-900 dark:text-white sm:text-lg transition-opacity duration-150 ${
-                isShuffling ? "opacity-30" : "opacity-100"
-              }`}
-            >
-              {currentQuestion.question}
-            </p>
-            <span className="mt-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Standard UTME Multiple Choice • 1.5 Marks
-            </span>
-          </div>
-
-          {/* Interactive Options Grid (Google Stitch Signature Tiles) */}
-          <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-            {currentQuestion.options.map((opt) => {
-              const isSelected = selectedLetter === opt.letter;
-              const isAnswer = opt.letter === currentQuestion.correctLetter;
-
-              let btnClass = "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800";
-              let badgeClass = "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200";
-
-              if (showFeedback) {
-                if (isAnswer) {
-                  btnClass = "border-emerald-500 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200 font-extrabold ring-2 ring-emerald-500/40 shadow-sm";
-                  badgeClass = "bg-emerald-600 text-white";
-                } else if (isSelected && !isAnswer) {
-                  btnClass = "border-rose-400 bg-rose-50 text-rose-950 dark:border-rose-500 dark:bg-rose-950/40 dark:text-rose-200 font-extrabold ring-1 ring-rose-400";
-                  badgeClass = "bg-rose-600 text-white";
-                } else {
-                  btnClass = "border-slate-200 bg-slate-50/20 text-slate-400 dark:border-slate-800 dark:text-slate-600 opacity-60";
-                }
-              } else if (isSelected) {
-                btnClass = "border-blue-600 bg-blue-50/80 text-blue-950 dark:border-cyan-400 dark:bg-blue-950/40 dark:text-cyan-200 ring-2 ring-blue-500/30";
-                badgeClass = "bg-blue-600 text-white";
-              }
-
-              return (
-                <button
-                  key={opt.letter}
-                  type="button"
-                  disabled={showFeedback}
-                  onClick={() => handleSelect(opt.letter)}
-                  className={`flex items-center justify-between gap-3 rounded-2xl border p-3.5 text-left text-xs sm:text-sm font-semibold transition active:scale-98 shadow-xs group ${btnClass}`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-xs shadow-2xs transition-colors group-hover:scale-105 ${badgeClass}`}>
-                      {opt.letter}
-                    </span>
-                    <span className="flex-1 min-w-0 leading-normal">{opt.text}</span>
-                  </div>
-                  <div className="shrink-0 flex items-center justify-center">
-                    {showFeedback && isAnswer && (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-xs">✓</span>
-                    )}
-                    {showFeedback && isSelected && !isAnswer && (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-black shadow-xs">✕</span>
-                    )}
-                    {!showFeedback && isSelected && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold">●</span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* CBT Footer Action Ribbon (Google Stitch Design) */}
-          <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              Autosaved to device memory
-            </span>
-            <Link
-              href="/cbt"
-              className="inline-flex items-center gap-1 font-bold text-blue-700 dark:text-cyan-400 hover:text-blue-900 dark:hover:text-cyan-300"
-            >
-              Open Full CBT Simulator →
-            </Link>
-          </div>
-
-          {/* Answer Explanation & Feedback Card */}
-          {showFeedback && (
-            <div
-              className={`mt-5 rounded-2xl border p-4.5 transition animate-in fade-in duration-200 ${
-                isCorrect
-                  ? "border-emerald-200 bg-emerald-50/70 dark:border-emerald-800/60 dark:bg-emerald-950/30"
-                  : "border-amber-200 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/30"
-              }`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5 border-black/5 dark:border-white/5">
-                <span
-                  className={`text-xs font-black uppercase tracking-wider ${
-                    isCorrect ? "text-emerald-800 dark:text-emerald-300" : "text-amber-800 dark:text-amber-300"
-                  }`}
-                >
-                  {isCorrect ? "✓ Well Done! Correct Answer" : `Incorrect · Correct: Option (${currentQuestion.correctLetter})`}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline"
-                >
-                  Try Again
-                </button>
-              </div>
-
-              <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-normal">
-                {currentQuestion.explanation}
-              </p>
-
-              <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-black/5 dark:border-white/5">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                  Exam tip: Practise full timed sessions to build speed and accuracy.
-                </span>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#012153] hover:bg-blue-900 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95"
-                >
-                  Launch CBT Exam →
-                </Link>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      </div>
     </div>
   );
 }

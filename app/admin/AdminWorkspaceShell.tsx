@@ -311,6 +311,7 @@ const GROUPS: Group[] = [
       { id: "codes", label: "Access Codes", href: "/admin/codes", description: "Generate and monitor exam access codes", icon: "codes", visible: (_u, a) => a["cbt.codes.manage"] === true },
       { id: "results", label: "Results", href: "/admin/results", description: "Authorised candidate results", icon: "results", visible: (_u, a) => a["cbt.results.read"] === true },
       { id: "content", label: "Learning Content", href: "/admin/content", description: "Learning resources and content tools", icon: "content", visible: (_u, a) => a["learning.content.manage"] === true },
+  { id: "syllabus", label: "Syllabus & Curriculum", href: "/admin/syllabus", description: "Manage official syllabus topics, subtopics and objectives", icon: "academic", visible: (u, a) => a["learning.content.manage"] === true || platformAdmin(u) },
       { id: "public-content", label: "Tutors & Testimonials", href: "/admin/public-content", description: "Manage tutor bios and approved student stories", icon: "public-content", visible: (_u, a) => a["learning.content.manage"] === true },
       { id: "content-intelligence", label: "Content Intelligence", href: "/admin/content-intelligence", description: "Content coverage and quality", icon: "content-intelligence", visible: (_u, a) => a["learning.content.manage"] === true },
       { id: "assessments", label: "Learning Assessments", href: "/admin/academy-assessments", description: "Topic tests and learning assessments", icon: "assessments", visible: (_u, a) => a["learning.content.manage"] === true },

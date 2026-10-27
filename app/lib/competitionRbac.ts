@@ -2,8 +2,9 @@
 // ROLE-BASED ACCESS CONTROL (RBAC) & PERMISSION ENGINE
 // Enforces granular permissions, scope boundaries, separation of duties, and audit logging.
 
+import type { NextRequest } from "next/server";
 import { supabase } from "./supabase";
-import { getSupabaseServerClient } from "./supabaseServer";
+import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "./supabaseServer";
 
 export type CompetitionRole =
   | "super_admin"

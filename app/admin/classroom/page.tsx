@@ -14,6 +14,7 @@ import {
   type LiveClassroomConfig,
 } from "../../lib/platformConfig";
 import { getAllVideoProvidersStatus } from "../../lib/liveClassroom/provider";
+import { DEFAULT_JAMB_SYLLABUS } from "../../lib/curriculumData";
 import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import "../admin.css";
 
@@ -38,6 +39,10 @@ export default function AdminLiveClassroomControlPage() {
   const [isCopied, setIsCopied] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastFeedback, setBroadcastFeedback] = useState("");
+
+  // Curriculum integration states
+  const [curriculumSubjectSlug, setCurriculumSubjectSlug] = useState<string>("");
+  const [curriculumTopicId, setCurriculumTopicId] = useState<string>("");
 
   const handleWhatsAppShare = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://brainlabexam-cbt.vercel.app";
@@ -523,6 +528,104 @@ export default function AdminLiveClassroomControlPage() {
                 {broadcastFeedback}
               </div>
             )}
+
+            {/* Quick Curriculum Selector */}
+            <div className="mt-5 rounded-2xl border border-blue-500/30 bg-blue-950/40 p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-cyan-300">
+                  Select From Official Curriculum
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  Auto-fill title, topic, and subtopics directly from the syllabus
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-400">
+                    Curriculum Subject
+                  </label>
+                  <select
+                    value={curriculumSubjectSlug}
+                    onChange={(e) => {
+                      const slug = e.target.value;
+                      setCurriculumSubjectSlug(slug);
+                      setCurriculumTopicId("");
+                      const subj = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === slug);
+                      if (subj && subj.topics.length > 0) {
+                        const top = subj.topics[0];
+                        setCurriculumTopicId(top.id);
+                        setSessionTitle(`JAMB UTME ${subj.name}: ${top.title}`);
+                        setSessionTopic(top.subtopics.slice(0, 3).join(", "));
+                      }
+                    }}
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    <option value="">-- Choose Curriculum Subject --</option>
+                    {DEFAULT_JAMB_SYLLABUS.map((subj) => (
+                      <option key={subj.slug} value={subj.slug}>
+                        {subj.name} ({subj.topics.length} topics)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-400">
+                    Syllabus Topic
+                  </label>
+                  <select
+                    value={curriculumTopicId}
+                    disabled={!curriculumSubjectSlug}
+                    onChange={(e) => {
+                      const topId = e.target.value;
+                      setCurriculumTopicId(topId);
+                      const subj = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === curriculumSubjectSlug);
+                      const top = subj?.topics.find((t) => t.id === topId);
+                      if (subj && top) {
+                        setSessionTitle(`JAMB UTME ${subj.name}: ${top.title}`);
+                        setSessionTopic(top.subtopics.slice(0, 3).join(", "));
+                      }
+                    }}
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 disabled:opacity-50"
+                  >
+                    <option value="">-- Choose Syllabus Topic --</option>
+                    {DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === curriculumSubjectSlug)?.topics.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.order_index}. {t.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Quick Subtopic Focus Tags */}
+              {curriculumTopicId && (
+                <div className="pt-1">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                    Click subtopic to append to session focus:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === curriculumSubjectSlug)
+                      ?.topics.find((t) => t.id === curriculumTopicId)
+                      ?.subtopics.map((st, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            if (!sessionTopic.includes(st)) {
+                              setSessionTopic((prev) => (prev ? `${prev} • ${st}` : st));
+                            }
+                          }}
+                          className="rounded-lg border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/60 px-2.5 py-1 text-[11px] text-cyan-300 transition"
+                        >
+                          + {st}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>

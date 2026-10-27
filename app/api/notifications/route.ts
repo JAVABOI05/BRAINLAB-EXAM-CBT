@@ -67,3 +67,49 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { title, message, type = "billing", link_url = "/pricing" } = body;
+
+    if (!title || !message) {
+      return NextResponse.json({ error: "Title and message are required" }, { status: 400 });
+    }
+
+    // CHECK constraint on notifications.type: ('class', 'assignment', 'announcement', 'message', 'system', 'billing', 'quiz')
+    const validTypes = ["class", "assignment", "announcement", "message", "system", "billing", "quiz"];
+    const safeType = validTypes.includes(type) ? type : "billing";
+
+    const supabase = getSupabaseServerClient();
+    const { data: newNotification, error } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: user.id,
+        title: String(title).slice(0, 150),
+        message: String(message).slice(0, 1000),
+        type: safeType,
+        link_url: typeof link_url === "string" ? link_url : "/pricing",
+        is_read: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      notification: newNotification,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Unexpected server error";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

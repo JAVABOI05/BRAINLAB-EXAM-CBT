@@ -196,10 +196,15 @@ export default function LearnPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
+              href="/syllabus" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-400/40 bg-cyan-500/20 hover:bg-cyan-500/30 px-5 py-3.5 text-sm font-bold text-cyan-200 transition active:scale-95">
+              <svg className="h-4 w-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+              <span>Official Syllabus</span>
+            </Link>
+            <Link
               href="/classroom/BL-LIVE-101"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 hover:bg-emerald-300 px-6 py-3.5 text-sm font-black text-slate-950 shadow-lg shadow-emerald-950/20 transition active:scale-95"
             >
-              <span>🎥</span> Enter Live Stage
+              <span>Enter Live Stage</span>
             </Link>
             <button
               onClick={() => setActiveTab("timetable")}
@@ -209,13 +214,13 @@ export default function LearnPage() {
                   : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
               }`}
             >
-              <span>📅</span> Timetable
+              <span>Timetable</span>
             </button>
             <Link
               href="/recordings"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-3.5 text-sm font-bold text-white transition active:scale-95"
             >
-              <span>📼</span> Recordings
+              <span>Recordings</span>
             </Link>
           </div>
         </div>

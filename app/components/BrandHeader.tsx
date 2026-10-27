@@ -11,11 +11,11 @@ import UserBadges from "./UserBadges";
 
 const NAV_LINKS = [
   { href: "/cbt", label: "CBT Practice" },
+  { href: "/syllabus", label: "Syllabus" },
   { href: "/learn", label: "Curriculum" },
   { href: "/classroom", label: "Live Classes", badge: "Live" },
   { href: "/challenge-arena", label: "1v1 Arena" },
-  { href: "/ai-learning", label: "AI Studio" },
-  { href: "/pricing", label: "Plans" },
+  { href: "/resources", label: "Resources", badge: "Formulas" },
 ];
 
 function displayName(user: User) {
@@ -33,6 +33,7 @@ export default function BrandHeader() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [checkingSession, setCheckingSession] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -48,6 +49,46 @@ export default function BrandHeader() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchUnread = async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (!token) return;
+        const res = await fetch("/api/notifications", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && typeof data.unreadCount === "number") {
+            setUnreadCount(data.unreadCount);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    void fetchUnread();
+
+    const handleNewNotification = () => {
+      void fetchUnread();
+    };
+
+    window.addEventListener("brainlab:notification-received", handleNewNotification);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("brainlab:notification-received", handleNewNotification);
+    };
+  }, [user]);
 
   // Listen to auth state
   useEffect(() => {
@@ -218,6 +259,11 @@ export default function BrandHeader() {
                   <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                   <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                 </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white shadow-xs animate-pulse">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Link>
 
               {/* Quick Admin Portal Pill if Administrator */}
@@ -310,9 +356,14 @@ export default function BrandHeader() {
                       <Link
                         href="/pricing"
                         onClick={closeAllMenus}
-                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                        className="flex items-center justify-between rounded-xl px-2.5 py-2 font-bold text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition"
                       >
-                        <span>⚡</span> Subscription &amp; Plans
+                        <span className="flex items-center gap-2">
+                          <span>⚡</span> Plans &amp; Upgrades
+                        </span>
+                        <span className="rounded-md bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 text-[9px] font-black uppercase text-purple-800 dark:text-purple-200">
+                          Pro
+                        </span>
                       </Link>
                     </div>
 
@@ -425,14 +476,22 @@ export default function BrandHeader() {
                   >
                     Dashboard →
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => void signOut()}
-                    className="flex items-center justify-center rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                  <Link
+                    href="/pricing"
+                    onClick={closeAllMenus}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 text-purple-900 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300 py-2.5 text-xs font-bold"
                   >
-                    Sign Out
-                  </button>
+                    <span>⚡</span>
+                    <span>Pro &amp; Plans</span>
+                  </Link>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  className="flex w-full items-center justify-center rounded-xl border border-slate-200 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  Sign Out
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">

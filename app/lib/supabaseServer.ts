@@ -38,7 +38,37 @@ export async function getUserFromRequest(
 ): Promise<User | null> {
   const authorization = request.headers.get("authorization");
   const match = authorization?.match(/^Bearer\s+(.+)$/i);
-  const token = match?.[1];
+  let token = match?.[1];
+
+  if (!token) {
+    try {
+      const allCookies = request.cookies.getAll();
+      for (const c of allCookies) {
+        if (c.name.includes("auth-token") || c.name.startsWith("sb-")) {
+          try {
+            const parsed = JSON.parse(c.value);
+            if (Array.isArray(parsed) && parsed[0]) {
+              token = parsed[0];
+              break;
+            } else if (typeof parsed === "string") {
+              token = parsed;
+              break;
+            } else if (parsed?.access_token) {
+              token = parsed.access_token;
+              break;
+            }
+          } catch {
+            if (c.value && c.value.length > 20) {
+              token = c.value;
+              break;
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore cookie parse error
+    }
+  }
 
   if (!token) return null;
 

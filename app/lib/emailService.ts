@@ -21,6 +21,8 @@
  * 3. DMARC: TXT _dmarc -> "v=DMARC1; p=none; rua=mailto:admin@brainlab.edu.ng"
  */
 
+import { getCommunicationServicesConfig } from "./platformConfig";
+
 export interface SendEmailPayload {
   to: string | string[];
   subject: string;
@@ -81,7 +83,16 @@ const DEFAULT_REPLY_TO = "support@brainlab.edu.ng";
  * Zero external npm package dependencies, 100% Next.js 16 & React 19 compatible.
  */
 export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
+  let apiKey = process.env.RESEND_API_KEY;
+  let sender = DEFAULT_SENDER;
+  let replyTo = DEFAULT_REPLY_TO;
+
+  try {
+    const config = await getCommunicationServicesConfig();
+    if (config?.resend?.api_key) apiKey = config.resend.api_key;
+    if (config?.resend?.from_email) sender = config.resend.from_email;
+    if (config?.resend?.reply_to) replyTo = config.resend.reply_to;
+  } catch {}
 
   // Graceful simulation fallback when no API key is configured
   if (!apiKey || apiKey.trim() === "") {
@@ -107,12 +118,12 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: DEFAULT_SENDER,
+        from: sender,
         to: recipients,
         subject: payload.subject,
         html: payload.html,
         text: payload.text,
-        reply_to: payload.replyTo || DEFAULT_REPLY_TO,
+        reply_to: payload.replyTo || replyTo,
         tags: payload.tags,
       }),
     });

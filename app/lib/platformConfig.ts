@@ -1351,3 +1351,133 @@ export async function saveMaintenanceModeConfig(
     reason || `Updated CBT maintenance mode (${config.cbt_maintenance_enabled ? "MAINTENANCE ON" : "NORMAL OPERATIONS"})`
   );
 }
+
+
+// ============================================================================
+// COMMUNICATION & EMAIL PROVIDERS CONFIGURATION (RESEND, ZOHO, CLOUDFLARE, TERMII)
+// ============================================================================
+
+export interface CommunicationServicesConfig {
+  active_email_provider: "resend" | "zoho" | "smtp";
+  resend: {
+    enabled: boolean;
+    api_key: string;
+    from_email: string;
+    system_from_email: string;
+    reply_to: string;
+  };
+  zoho: {
+    enabled: boolean;
+    smtp_host: string;
+    smtp_port: number;
+    smtp_user: string;
+    smtp_pass: string;
+    from_email: string;
+    use_tls: boolean;
+  };
+  cloudflare: {
+    enabled: boolean;
+    api_token: string;
+    account_id: string;
+    zone_id: string;
+    turnstile_site_key: string;
+    turnstile_secret_key: string;
+    email_routing_domain: string;
+  };
+  termii: {
+    enabled: boolean;
+    api_key: string;
+    sender_id: string;
+    channel: "generic" | "dnd" | "whatsapp";
+  };
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export const DEFAULT_COMMUNICATION_SERVICES_CONFIG: CommunicationServicesConfig = {
+  active_email_provider: "resend",
+  resend: {
+    enabled: true,
+    api_key: process.env.RESEND_API_KEY || "",
+    from_email: process.env.RESEND_FROM_EMAIL || "BrainLab Academy <support@brainlab.edu.ng>",
+    system_from_email: process.env.SYSTEM_FROM_EMAIL || "BrainLab Academy <results@brainlabacademy.com.ng>",
+    reply_to: "support@brainlab.edu.ng",
+  },
+  zoho: {
+    enabled: false,
+    smtp_host: "smtppro.zoho.com",
+    smtp_port: 465,
+    smtp_user: "",
+    smtp_pass: "",
+    from_email: "support@brainlab.edu.ng",
+    use_tls: true,
+  },
+  cloudflare: {
+    enabled: false,
+    api_token: process.env.CLOUDFLARE_API_TOKEN || "",
+    account_id: process.env.CLOUDFLARE_ACCOUNT_ID || "",
+    zone_id: "",
+    turnstile_site_key: process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY || "",
+    turnstile_secret_key: process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || "",
+    email_routing_domain: "brainlab.edu.ng",
+  },
+  termii: {
+    enabled: true,
+    api_key: process.env.TERMII_API_KEY || "",
+    sender_id: process.env.TERMII_SENDER_ID || "BrainLab",
+    channel: "generic",
+  },
+};
+
+export async function getCommunicationServicesConfig(): Promise<CommunicationServicesConfig> {
+  const config = await getPlatformConfig<CommunicationServicesConfig>(
+    "communication_services_config",
+    DEFAULT_COMMUNICATION_SERVICES_CONFIG
+  );
+  return {
+    ...DEFAULT_COMMUNICATION_SERVICES_CONFIG,
+    ...config,
+    resend: {
+      ...DEFAULT_COMMUNICATION_SERVICES_CONFIG.resend,
+      ...(config?.resend || {}),
+      api_key: config?.resend?.api_key || process.env.RESEND_API_KEY || "",
+      from_email: config?.resend?.from_email || process.env.RESEND_FROM_EMAIL || DEFAULT_COMMUNICATION_SERVICES_CONFIG.resend.from_email,
+      system_from_email: config?.resend?.system_from_email || process.env.SYSTEM_FROM_EMAIL || DEFAULT_COMMUNICATION_SERVICES_CONFIG.resend.system_from_email,
+    },
+    zoho: {
+      ...DEFAULT_COMMUNICATION_SERVICES_CONFIG.zoho,
+      ...(config?.zoho || {}),
+    },
+    cloudflare: {
+      ...DEFAULT_COMMUNICATION_SERVICES_CONFIG.cloudflare,
+      ...(config?.cloudflare || {}),
+      api_token: config?.cloudflare?.api_token || process.env.CLOUDFLARE_API_TOKEN || "",
+      account_id: config?.cloudflare?.account_id || process.env.CLOUDFLARE_ACCOUNT_ID || "",
+      turnstile_site_key: config?.cloudflare?.turnstile_site_key || process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY || "",
+      turnstile_secret_key: config?.cloudflare?.turnstile_secret_key || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || "",
+    },
+    termii: {
+      ...DEFAULT_COMMUNICATION_SERVICES_CONFIG.termii,
+      ...(config?.termii || {}),
+      api_key: config?.termii?.api_key || process.env.TERMII_API_KEY || "",
+      sender_id: config?.termii?.sender_id || process.env.TERMII_SENDER_ID || "BrainLab",
+    },
+  };
+}
+
+export async function saveCommunicationServicesConfig(
+  config: CommunicationServicesConfig,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  return await setPlatformConfig(
+    "communication_services_config",
+    {
+      ...config,
+      updated_at: new Date().toISOString(),
+      updated_by: adminUser.email,
+    },
+    adminUser,
+    reason || `Updated communication services & email provider settings (Active: ${config.active_email_provider})`
+  );
+}
