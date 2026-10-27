@@ -143,10 +143,11 @@ export class PaystackPaymentProvider implements PaymentProvider {
   }
 
   verifyWebhookSignature(rawBody: string, signature: string, _headers?: Record<string, string | null | undefined>): boolean {
-    if (!this.secretKey) return false;
+    const secret = this.webhookSecret || this.secretKey;
+    if (!secret) return false;
     try {
       const hash = crypto
-        .createHmac("sha512", this.secretKey)
+        .createHmac("sha512", secret)
         .update(rawBody)
         .digest("hex");
       return hash === signature;
