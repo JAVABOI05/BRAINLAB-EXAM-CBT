@@ -1447,6 +1447,33 @@ export default function MessagesPage() {
                       <span>✓</span> Unblock {activeConv.title}
                     </button>
                   </div>
+                ) : isMessageRequestPending ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center">
+                    <p className="text-xs font-bold text-amber-900">
+                      Accept the message request above to reply to {activeConv.title}.
+                    </p>
+                    <div className="mt-2.5 flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (otherPeerId) {
+                            void handleAddFriend({ user_id: otherPeerId, display_name: activeConv.title });
+                            toast.success(`Accepted message request from ${activeConv.title}!`);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition active-press"
+                      >
+                        <span>✓</span> Accept Request
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => otherPeerId && void handleToggleBlock(otherPeerId, activeConv.title)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-rose-200 px-4 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-50 transition active-press"
+                      >
+                        <span>🚫</span> Block
+                      </button>
+                    </div>
+                  </div>
                 ) : isRecordingVoice ? (
                   <div className="flex justify-center">
                     <VoiceNoteRecorder
