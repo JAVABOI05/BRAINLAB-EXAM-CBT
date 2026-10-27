@@ -160,53 +160,74 @@ export default function ClassroomSidebar({
       )}
 
       {/* Nav Tabs */}
-      <div className="flex border-b border-slate-800 bg-slate-950 text-xs font-bold shrink-0">
+      <div className="flex border-b border-slate-800 bg-slate-950/90 text-xs font-bold shrink-0 p-1 gap-1">
         <button
           type="button"
           onClick={() => setActiveTab("chat")}
-          className={`flex-1 py-3 text-center border-b-2 transition ${
+          className={`flex-1 py-2 rounded-xl text-center transition flex items-center justify-center gap-1.5 ${
             activeTab === "chat"
-              ? "border-blue-500 text-white bg-slate-900"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "bg-slate-800 text-white shadow-xs border border-slate-700/80 font-extrabold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
           }`}
         >
-          Chat ({messages.length})
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+          </svg>
+          <span>Chat</span>
+          <span className="text-[10px] opacity-75 font-mono">({messages.length})</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("polls")}
-          className={`flex-1 py-3 text-center border-b-2 transition relative ${
+          className={`flex-1 py-2 rounded-xl text-center transition relative flex items-center justify-center gap-1.5 ${
             activeTab === "polls"
-              ? "border-blue-500 text-white bg-slate-900"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "bg-slate-800 text-white shadow-xs border border-slate-700/80 font-extrabold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
           }`}
         >
-          Polls {polls.length > 0 && `(${polls.length})`}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M18 20V10" />
+            <path d="M12 20V4" />
+            <path d="M6 20v-6" />
+          </svg>
+          <span>Polls</span>
+          {polls.length > 0 && <span className="text-[10px] opacity-75 font-mono">({polls.length})</span>}
           {activePoll?.is_open && (
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
           )}
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("participants")}
-          className={`flex-1 py-3 text-center border-b-2 transition ${
+          className={`flex-1 py-2 rounded-xl text-center transition flex items-center justify-center gap-1.5 ${
             activeTab === "participants"
-              ? "border-blue-500 text-white bg-slate-900"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "bg-slate-800 text-white shadow-xs border border-slate-700/80 font-extrabold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
           }`}
         >
-          People ({participants.length})
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span>People</span>
+          <span className="text-[10px] opacity-75 font-mono">({participants.length})</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("resources")}
-          className={`flex-1 py-3 text-center border-b-2 transition ${
+          className={`flex-1 py-2 rounded-xl text-center transition flex items-center justify-center gap-1.5 ${
             activeTab === "resources"
-              ? "border-blue-500 text-white bg-slate-900"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "bg-slate-800 text-white shadow-xs border border-slate-700/80 font-extrabold"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
           }`}
         >
-          Links
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          <span>Links</span>
         </button>
       </div>
 

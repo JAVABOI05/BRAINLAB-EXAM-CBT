@@ -2228,7 +2228,15 @@ export default function LiveClassroomPage({
             className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-1 shadow-2xs"
             title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
           >
-            <span>{resolvedTheme === "dark" ? "☀️" : "🌙"}</span>
+            {resolvedTheme === "dark" ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+              </svg>
+            )}
             <span className="hidden md:inline">{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
           </button>
 
@@ -2304,7 +2312,7 @@ export default function LiveClassroomPage({
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <span>🎨</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m18 2 4 4-12 12H6v-4L18 2Z" /></svg>
                 <span className="hidden xs:inline">Whiteboard</span>
                 <span className="rounded-full bg-cyan-400/30 text-cyan-200 px-1 py-0.2 text-[9px] font-black uppercase">Live</span>
               </button>
@@ -2317,7 +2325,7 @@ export default function LiveClassroomPage({
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <span>📹</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z" /><rect width="14" height="12" x="2" y="6" rx="2" /></svg>
                 <span className="hidden xs:inline">Tutor Cam</span>
               </button>
               <button
@@ -3400,7 +3408,20 @@ export default function LiveClassroomPage({
             title={isAudioEnabled ? "Turn microphone off" : "Turn microphone on"}
             aria-label={isAudioEnabled ? "Turn microphone off" : "Turn microphone on"}
           >
-            <span>{isAudioEnabled ? "🎙️" : "🔇"}</span>
+            {isAudioEnabled ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="2" x2="22" y1="2" y2="22" />
+                <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2" />
+                <path d="M5 10v2a7 7 0 0 0 12 5" />
+                <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33" />
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12" /><line x1="12" x2="12" y1="19" y2="22" />
+              </svg>
+            )}
             <span>{isAudioEnabled ? "Mic On" : "Mic Off"}</span>
           </button>
 
@@ -3411,7 +3432,17 @@ export default function LiveClassroomPage({
             }`}
             title={isVideoEnabled ? "Stop Camera" : "Start Camera"}
           >
-            <span>{isVideoEnabled ? "📹" : "📷"}</span>
+            {isVideoEnabled ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m22 8-6 4 6 4V8Z" />
+                <rect width="14" height="12" x="2" y="6" rx="2" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+            )}
             <span className="hidden xs:inline">{isVideoEnabled ? "Cam Off" : "Cam"}</span>
           </button>
 
@@ -3422,7 +3453,12 @@ export default function LiveClassroomPage({
             }`}
             title="Share Screen"
           >
-            🖥️ {isScreenSharing ? "Stop Share" : "Share"}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect width="20" height="14" x="2" y="3" rx="2" />
+              <line x1="8" x2="16" y1="21" y2="21" />
+              <line x1="12" x2="12" y1="17" y2="21" />
+            </svg>
+            <span>{isScreenSharing ? "Stop Share" : "Share Screen"}</span>
           </button>
 
           {isAssignedTutor && classDetails?.isRecording && (
@@ -3459,7 +3495,7 @@ export default function LiveClassroomPage({
             </div>
           )}
           <div className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-2 text-[11px] font-bold text-slate-200" title="Connected participants in this classroom">
-            <span aria-hidden="true">👥</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
             <span>{participants.filter((participant) => participant.role !== "host").length} students</span>
           </div>
           {isAssignedTutor && (
@@ -3479,7 +3515,21 @@ export default function LiveClassroomPage({
             }`}
             title={stageMode === "whiteboard" ? "Switch to Video Stage" : "Switch to Smart Whiteboard"}
           >
-            <span>{stageMode === "whiteboard" ? "🎙️ Stage" : "🎨 Board"}</span>
+            {stageMode === "whiteboard" ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m22 8-6 4 6 4V8Z" /><rect width="14" height="12" x="2" y="6" rx="2" />
+                </svg>
+                <span>Stage</span>
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m18 2 4 4-12 12H6v-4L18 2Z" />
+                </svg>
+                <span>Board</span>
+              </>
+            )}
           </button>
         </div>
 
@@ -3514,7 +3564,7 @@ export default function LiveClassroomPage({
                 className="hidden sm:flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition active-press"
                 title="Classroom Permissions & Moderation"
               >
-                <span>⚙️ Mod</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg><span>Mod</span>
               </button>
               <button
                 onClick={() => {
@@ -3524,7 +3574,7 @@ export default function LiveClassroomPage({
                 className="hidden sm:flex items-center gap-1.5 rounded-xl border border-cyan-500/50 bg-cyan-500/20 px-3 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/30 transition active-press"
                 title="Launch instant live poll or quiz checkpoint"
               >
-                <span>🎯 Poll</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg><span>Poll</span>
               </button>
             </>
           )}
@@ -3538,7 +3588,7 @@ export default function LiveClassroomPage({
             }`}
             title={isHandRaised ? "Lower Hand" : "Raise Hand"}
           >
-            <span>✋</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5" /><path d="M14 10V4a2 2 0 0 0-4 0v6" /><path d="M10 10.5V6a2 2 0 0 0-4 0v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg>
             <span className="hidden sm:inline">{isHandRaised ? "Lower" : "Hand"}</span>
           </button>
 
