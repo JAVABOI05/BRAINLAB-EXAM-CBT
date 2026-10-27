@@ -16,6 +16,9 @@ type Conversation = {
   title: string;
   last_message_at: string;
   messages?: { content: string; created_at: string; sender_id: string; message_type: string }[];
+  status?: "pending" | "accepted" | "declined";
+  request_by?: string;
+  participants?: { user_id: string; role?: string; invite_status?: "pending" | "accepted" | "declined" }[];
 };
 
 type Message = {
@@ -415,6 +418,115 @@ export default function MessagesPage() {
       toast.success(`You connected with ${peer.display_name}! 🤝`);
     } catch {
       toast.error("Could not send friend request.");
+    }
+  };
+
+
+  // 8c. Accept or Decline Message Request
+  const handleAcceptConversation = async (convId: string) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ conversationId: convId, action: "accept" }),
+      });
+      if (res.ok) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, status: "accepted" } : c))
+        );
+        toast.success("Message request accepted! You can now chat.");
+      } else {
+        toast.error("Could not accept request.");
+      }
+    } catch {
+      toast.error("Could not accept request.");
+    }
+  };
+
+  const handleDeclineConversation = async (convId: string) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ conversationId: convId, action: "decline" }),
+      });
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== convId));
+        setActiveConvId(null);
+        toast.info("Message request declined.");
+      } else {
+        toast.error("Could not decline request.");
+      }
+    } catch {
+      toast.error("Could not decline request.");
+    }
+  };
+
+  // 8d. Accept or Decline Group Invite
+  const handleAcceptGroupInvite = async (convId: string) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ conversationId: convId, action: "accept_group" }),
+      });
+      if (res.ok) {
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id !== convId) return c;
+            return {
+              ...c,
+              participants: (c.participants || []).map((p: { user_id: string; role?: string; invite_status?: "pending" | "accepted" | "declined" }) =>
+                p.user_id === currentUser?.id ? { ...p, invite_status: "accepted" as const } : p
+              ),
+            };
+          })
+        );
+        toast.success("Joined study circle! Welcome to the group. 👥");
+      } else {
+        toast.error("Could not accept group invitation.");
+      }
+    } catch {
+      toast.error("Could not accept group invitation.");
+    }
+  };
+
+  const handleDeclineGroupInvite = async (convId: string) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ conversationId: convId, action: "decline_group" }),
+      });
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== convId));
+        setActiveConvId(null);
+        toast.info("Group invitation declined.");
+      } else {
+        toast.error("Could not decline group invite.");
+      }
+    } catch {
+      toast.error("Could not decline group invite.");
     }
   };
 

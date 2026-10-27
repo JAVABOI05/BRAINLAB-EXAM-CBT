@@ -8,6 +8,7 @@ import { queueExamSubmission, queueProgress } from "../lib/offlineSync";
 import FloatingCalculator from "../components/FloatingCalculator";
 import { cleanQuestionText } from "../lib/cleanText";
 import { recordLearningActivity } from "../lib/gamification";
+import { securePurgeExamSession } from "../lib/clientCrypto";
 
 type QuestionRow = PaperQuestion;
 
@@ -212,6 +213,7 @@ export default function ExamPage() {
   }, [router]);
 
   function clearAttemptStorage() {
+    securePurgeExamSession();
     ["examQuestions", "exam_answers", "exam_flagged", "exam_current_index", "exam_time_left", "exam_session_id", "exam_token", "exam_tab_switch_count"].forEach((key) => localStorage.removeItem(key));
   }
 

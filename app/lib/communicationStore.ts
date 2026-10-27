@@ -37,9 +37,16 @@ export interface ChatConversation {
   created_at: string;
   last_message_at: string;
   last_message_preview?: string;
-  participants: { user_id: string; role: string; last_read_at?: string }[];
+  participants: {
+    user_id: string;
+    role: string;
+    last_read_at?: string;
+    invite_status?: "pending" | "accepted" | "declined";
+  }[];
   other_participant?: RealPeer | null;
   unread_count?: number;
+  status?: "pending" | "accepted" | "declined";
+  request_by?: string;
 }
 
 // ----------------------------------------------------------------------------
