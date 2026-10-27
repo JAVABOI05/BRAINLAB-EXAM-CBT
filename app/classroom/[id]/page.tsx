@@ -79,6 +79,16 @@ export default function LiveClassroomPage({
   const [classDetails, setClassDetails] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  // Masterclass & Admission State
+  const [requiresCode, setRequiresCode] = useState(false);
+  const [enteredCode, setEnteredCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [pendingApproval, setPendingApproval] = useState(false);
+  const [requiresHost, setRequiresHost] = useState(false);
+  const [pendingAdmissions, setPendingAdmissions] = useState<
+    { studentId: string; studentName: string; studentEmail?: string; requestedAt: string }[]
+  >([]);
+
   // Classroom media controls
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
@@ -198,7 +208,7 @@ export default function LiveClassroomPage({
   useEffect(() => {
     let active = true;
 
-    async function initClassroom() {
+    async function initClassroom(codeOverride?: string) {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const session = sessionData.session;
@@ -217,11 +227,66 @@ export default function LiveClassroomPage({
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ classId }),
+          body: JSON.stringify({ classId, entryCode: codeOverride ?? enteredCode }),
         });
 
         const json = await res.json();
         if (!active) return;
+
+        if (json.requiresCode) {
+          setRequiresCode(true);
+          setCodeError(json.error || "Please enter the masterclass access code.");
+          if (json.classDetails) setClassDetails(json.classDetails);
+          setLoading(false);
+          return;
+        }
+
+        if (json.requiresHost) {
+          setRequiresHost(true);
+          if (json.classDetails) setClassDetails(json.classDetails);
+          setError(json.error);
+          setLoading(false);
+          return;
+        }
+
+        if (json.pendingApproval) {
+          setPendingApproval(true);
+          if (json.classDetails) setClassDetails(json.classDetails);
+          setLoading(false);
+
+          // Connect to waiting channel to request permission from tutor and wait for approval
+          const waitChannel = supabase.channel(`classroom:${classId}`, {
+            config: { broadcast: { self: false } },
+          });
+          channelRef.current = waitChannel;
+
+          setTimeout(() => {
+            waitChannel.send({
+              type: "broadcast",
+              event: "request_admission",
+              payload: {
+                studentId: user.id,
+                studentName: user.user_metadata?.full_name || user.email || "Learner",
+                studentEmail: user.email,
+                requestedAt: new Date().toISOString(),
+              },
+            });
+          }, 1000);
+
+          waitChannel.on("broadcast", { event: "student_admitted" }, ({ payload }) => {
+            if (payload?.studentId === user.id && payload?.allowed) {
+              toast.success("Tutor granted permission! Entering Masterclass…");
+              setPendingApproval(false);
+              setLoading(true);
+              void initClassroom(codeOverride ?? enteredCode);
+            } else if (payload?.studentId === user.id && payload?.allowed === false) {
+              setError("The instructor has declined your admission request to this Masterclass.");
+            }
+          });
+
+          waitChannel.subscribe();
+          return;
+        }
 
         if (!res.ok) {
           setError(json.error || "Unable to enter classroom.");
@@ -229,6 +294,9 @@ export default function LiveClassroomPage({
           return;
         }
 
+        setRequiresCode(false);
+        setPendingApproval(false);
+        setRequiresHost(false);
         setTokenData(json.data);
         setClassDetails(json.data.classDetails);
         void getPlatformConfig<boolean>("whiteboard_watermark_enabled", true).then(setShowBoardWatermark);
@@ -366,6 +434,17 @@ export default function LiveClassroomPage({
         channel.on("broadcast", { event: "board_access_request" }, ({ payload }) => {
           if (payload?.userId && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
             toast.info(`🎨 ${payload.userName || "Student"} requested permission to draw on the board.`);
+          }
+        });
+
+        // Listen for Masterclass student admission requests
+        channel.on("broadcast", { event: "request_admission" }, ({ payload }) => {
+          if (payload?.studentId && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
+            setPendingAdmissions((prev) => {
+              if (prev.some((p) => p.studentId === payload.studentId)) return prev;
+              return [...prev, payload];
+            });
+            toast.info(`🛡️ Masterclass Request: ${payload.studentName || "A learner"} is waiting for admission.`);
           }
         });
 
@@ -1316,6 +1395,77 @@ export default function LiveClassroomPage({
     }
   };
 
+  // Masterclass Permission & Admission Handlers
+  const handleAdmitStudent = async (studentId: string, allowed = true) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return;
+
+      await fetch("/api/classroom/admit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          classId,
+          studentId,
+          action: allowed ? "grant" : "deny",
+        }),
+      });
+
+      channelRef.current?.send({
+        type: "broadcast",
+        event: "student_admitted",
+        payload: { studentId, allowed },
+      });
+
+      setPendingAdmissions((prev) => prev.filter((p) => p.studentId !== studentId));
+      if (allowed) {
+        toast.success("Permission granted! Student admitted to the masterclass.");
+      } else {
+        toast.info("Admission request declined.");
+      }
+    } catch {
+      toast.error("Failed to update admission status.");
+    }
+  };
+
+  const handleAdmitAllStudents = async () => {
+    if (pendingAdmissions.length === 0) return;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return;
+      const ids = pendingAdmissions.map((p) => p.studentId);
+
+      await fetch("/api/classroom/admit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          classId,
+          action: "grant_all",
+          studentIds: ids,
+        }),
+      });
+
+      ids.forEach((studentId) => {
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "student_admitted",
+          payload: { studentId, allowed: true },
+        });
+      });
+
+      setPendingAdmissions([]);
+      toast.success(`Granted admission to all ${ids.length} learners!`);
+    } catch {
+      toast.error("Failed to admit learners.");
+    }
+  };
+
   // 10. Tutor Launches New Poll
   const handleLaunchPoll = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1469,6 +1619,60 @@ export default function LiveClassroomPage({
           payload: { allowed: updates.canStudentsDraw },
         });
       }
+    }
+  };
+
+  const handleAdmitStudent = async (studentId: string, allowed = true) => {
+    try {
+      const res = await fetch("/api/classroom/admit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId,
+          studentId,
+          action: allowed ? "grant" : "deny",
+        }),
+      });
+      if (res.ok) {
+        setPendingAdmissions((prev) => prev.filter((p) => p.studentId !== studentId));
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "student_admitted",
+          payload: { studentId, allowed },
+        });
+        toast.success(allowed ? "Student admitted to Masterclass!" : "Admission request declined.");
+      }
+    } catch {
+      toast.error("Could not process admission.");
+    }
+  };
+
+  const handleAdmitAllStudents = async () => {
+    const studentIds = pendingAdmissions.map((p) => p.studentId);
+    if (studentIds.length === 0) return;
+    try {
+      const res = await fetch("/api/classroom/admit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId,
+          action: "grant_all",
+          studentIds,
+        }),
+      });
+      if (res.ok) {
+        setPendingAdmissions([]);
+        studentIds.forEach((studentId) => {
+          channelRef.current?.send({
+            type: "broadcast",
+            event: "student_admitted",
+            payload: { studentId, allowed: true },
+          });
+        });
+        toast.success(`All ${studentIds.length} learners admitted to Masterclass! 🛡️`);
+      }
+    } catch {
+      toast.error("Could not process batch admission.");
     }
   };
 
@@ -2590,6 +2794,9 @@ export default function LiveClassroomPage({
             allowStudentMedia={allowStudentMedia}
             allowStudentVoiceNotes={allowStudentVoiceNotes}
             chatMuted={chatMuted}
+            pendingAdmissions={pendingAdmissions}
+            onAdmitStudent={handleAdmitStudent}
+            onAdmitAllStudents={handleAdmitAllStudents}
           />
         </aside>
       </div>
@@ -2639,6 +2846,9 @@ export default function LiveClassroomPage({
               allowStudentMedia={allowStudentMedia}
               allowStudentVoiceNotes={allowStudentVoiceNotes}
               chatMuted={chatMuted}
+              pendingAdmissions={pendingAdmissions}
+              onAdmitStudent={handleAdmitStudent}
+              onAdmitAllStudents={handleAdmitAllStudents}
             />
           </div>
         </div>
