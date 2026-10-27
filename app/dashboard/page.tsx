@@ -442,8 +442,11 @@ export default function LearnerDashboardPage() {
         {/* Live Classroom Quick Launch Bar */}
         <div className="rounded-3xl border border-blue-600/30 bg-gradient-to-r from-[#012153] via-blue-900 to-indigo-950 p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-300 text-lg">
-              🎥
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shadow-inner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m22 8-6 4 6 4V8Z" />
+                <rect width="14" height="12" x="2" y="6" rx="2" />
+              </svg>
             </span>
             <div>
               <div className="flex items-center gap-2">
@@ -486,46 +489,79 @@ export default function LearnerDashboardPage() {
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Lessons Completed</span>
-              <p className="mt-2 text-3xl font-black text-slate-900">
+            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-blue-300 hover:shadow-sm hover-lift">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Lessons Completed</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                    <path d="M6 6h10" />
+                    <path d="M6 10h10" />
+                  </svg>
+                </span>
+              </div>
+              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
                 {stats.lessonsCompleted > 0 ? stats.lessonsCompleted : "0"}
               </p>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] font-medium text-slate-500">
                 {stats.lessonsCompleted > 0 ? "Saved across devices" : "Start in Learning Hub"}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Questions</span>
-              <p className="mt-2 text-3xl font-black text-slate-900">
+            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-sky-300 hover:shadow-sm hover-lift">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Questions</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m9 11 3 3L22 4" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  </svg>
+                </span>
+              </div>
+              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
                 {stats.questionsPracticed > 0 ? stats.questionsPracticed : "0"}
               </p>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] font-medium text-slate-500">
                 {stats.questionsPracticed > 0 ? "Attempted & reviewed" : "CBT & Self Practice"}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Revision Checklist</span>
-              <p className="mt-2 text-3xl font-black text-slate-900">
+            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-emerald-300 hover:shadow-sm hover-lift">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Revision Checklist</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                </span>
+              </div>
+              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
                 {stats.revisionTasksTotal > 0
                   ? `${stats.revisionTasksCompleted}/${stats.revisionTasksTotal}`
                   : "—"}
               </p>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] font-medium text-slate-500">
                 {stats.revisionTasksTotal > 0
                   ? `${Math.round((stats.revisionTasksCompleted / stats.revisionTasksTotal) * 100)}% checklist complete`
                   : "Plan not yet created"}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 hover-lift">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Limit</span>
-              <p className="mt-2 text-3xl font-black text-slate-900">
+            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-purple-300 hover:shadow-sm hover-lift">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Limit</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-700">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                </span>
+              </div>
+              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
                 {stats.maxQuestions}
               </p>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] font-medium text-slate-500">
                 Questions / practice paper
               </p>
             </div>
@@ -539,7 +575,7 @@ export default function LearnerDashboardPage() {
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-indigo-100 pb-4">
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-indigo-900">
-                  <span>📊</span> Exam Readiness Intelligence
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg><span>Exam Readiness Intelligence</span>
                 </span>
                 <h2 className="mt-2 text-xl font-black text-slate-950">
                   Estimated National Examination Standing
@@ -576,7 +612,7 @@ export default function LearnerDashboardPage() {
                       href="/self-practice"
                       className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3 py-1.5 text-xs font-bold text-red-950 hover:bg-red-100 transition"
                     >
-                      <span className="text-red-600 font-black">🔴</span>
+                      <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-pulse" aria-hidden="true" />
                       <span>{topic.subject}: {topic.category}</span>
                       <span className="text-[10px] text-red-700 bg-white/80 px-1.5 py-0.5 rounded">
                         {Math.round(topic.mastery * 100)}% mastery
@@ -596,7 +632,7 @@ export default function LearnerDashboardPage() {
           <div className="rounded-3xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-indigo-50/60 p-6 shadow-sm flex flex-col justify-between">
             <div>
               <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-purple-900">
-                <span>🧠</span> Daily Retention
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a4 4 0 0 0-4 4c0 .8.2 1.5.7 2.1L8 10a4 4 0 0 0 4 4 4 4 0 0 0 4-4l-.7-1.9c.5-.6.7-1.3.7-2.1a4 4 0 0 0-4-4Z" /><path d="M12 14v8" /><path d="M9 18h6" /></svg><span>Daily Retention</span>
               </div>
               <h3 className="mt-2 text-lg font-black text-slate-900">10-Minute Spaced Review</h3>
               <p className="mt-1 text-xs text-slate-600 leading-relaxed">
@@ -864,12 +900,18 @@ export default function LearnerDashboardPage() {
             </h2>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 hover-lift">
-              <span className="text-2xl" aria-hidden="true">✓</span>
-              <h3 className="mt-2 text-base font-bold text-slate-950">Self Practice</h3>
-              <p className="mt-1.5 text-xs leading-5 text-slate-600">
-                Choose your subjects and question count, practise with unique random questions.
-              </p>
+            <article className="group rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 to-white p-5 transition duration-200 hover:border-indigo-300 hover:shadow-md hover-lift flex flex-col justify-between">
+              <div>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                <h3 className="mt-3 text-base font-black text-slate-950">Self Practice</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                  Choose your subjects and question count, practise with unique random questions.
+                </p>
+              </div>
               <Link
                 href="/self-practice"
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 active-press hover-lift"
@@ -878,12 +920,20 @@ export default function LearnerDashboardPage() {
               </Link>
             </article>
 
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 hover-lift">
-              <span className="text-2xl" aria-hidden="true">🎯</span>
-              <h3 className="mt-2 text-base font-bold text-slate-950">Quizzes & Contests</h3>
-              <p className="mt-1.5 text-xs leading-5 text-slate-600">
-                Participate in published organisation quizzes and competition assessments.
-              </p>
+            <article className="group rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/60 to-white p-5 transition duration-200 hover:border-amber-300 hover:shadow-md hover-lift flex flex-col justify-between">
+              <div>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="6" />
+                    <circle cx="12" cy="12" r="2" />
+                  </svg>
+                </span>
+                <h3 className="mt-3 text-base font-black text-slate-950">Quizzes &amp; Contests</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                  Participate in published organisation quizzes and competition assessments.
+                </p>
+              </div>
               <Link
                 href="/assessments"
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition active-press"
@@ -892,12 +942,21 @@ export default function LearnerDashboardPage() {
               </Link>
             </article>
 
-            <article className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5 hover-lift">
-              <span className="text-2xl" aria-hidden="true">📅</span>
-              <h3 className="mt-2 text-base font-bold text-slate-950">Revision Planner</h3>
-              <p className="mt-1.5 text-xs leading-5 text-slate-600">
-                Set a study goal, add topics and track your revision checklist. Saved to your account across devices.
-              </p>
+            <article className="group rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/70 to-white p-5 transition duration-200 hover:border-blue-300 hover:shadow-md hover-lift flex flex-col justify-between">
+              <div>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                    <line x1="16" x2="16" y1="2" y2="6" />
+                    <line x1="8" x2="8" y1="2" y2="6" />
+                    <line x1="3" x2="21" y1="10" y2="10" />
+                  </svg>
+                </span>
+                <h3 className="mt-3 text-base font-black text-slate-950">Revision Planner</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                  Set a study goal, add topics and track your revision checklist. Saved to your account across devices.
+                </p>
+              </div>
               <Link
                 href="/learning/revision"
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 active-press hover-lift"
@@ -906,12 +965,20 @@ export default function LearnerDashboardPage() {
               </Link>
             </article>
 
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 hover-lift">
-              <span className="text-2xl" aria-hidden="true">🔑</span>
-              <h3 className="mt-2 text-base font-bold text-slate-950">My Access & Code</h3>
-              <p className="mt-1.5 text-xs leading-5 text-slate-600">
-                View your active membership, allowed question limits, and redeem access codes.
-              </p>
+            <article className="group rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 to-white p-5 transition duration-200 hover:border-emerald-300 hover:shadow-md hover-lift flex flex-col justify-between">
+              <div>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/30">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="7.5" cy="15.5" r="5.5" />
+                    <path d="m21 2-9.6 9.6" />
+                    <path d="m15.5 7.5 3 3L22 7l-3-3" />
+                  </svg>
+                </span>
+                <h3 className="mt-3 text-base font-black text-slate-950">My Access &amp; Code</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                  View your active membership, allowed question limits, and redeem access codes.
+                </p>
+              </div>
               <Link
                 href="/account/access"
                 className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition active-press"

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import UserBadges from "./UserBadges";
 import { useLearnerTheme } from "./LearnerThemeProvider";
@@ -27,6 +27,7 @@ function displayName(user: User) {
 
 export default function BrandHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const { resolvedTheme } = useLearnerTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -133,16 +134,25 @@ export default function BrandHeader() {
               : "hidden xl:flex xl:items-center xl:gap-0"
           }
         >
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={closeMenu}
-              className="rounded-xl px-3.5 py-2.5 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-[#012153] dark:text-slate-200 dark:hover:bg-slate-800/80 dark:hover:text-cyan-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 xl:py-2"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) => {
+            const isActive =
+              pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href + "/"));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={closeMenu}
+                className={
+                  "rounded-xl px-3.5 py-2 text-sm font-bold transition-all duration-150 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 " +
+                  (isActive
+                    ? "bg-blue-50 text-[#012153] dark:bg-blue-950/70 dark:text-cyan-300 font-extrabold border border-blue-200/60 dark:border-blue-800/60 shadow-xs"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-[#012153] dark:text-slate-200 dark:hover:bg-slate-800/80 dark:hover:text-cyan-300")
+                }
+              >
+                {link.label}
+              </Link>
+            );
+          })}
 
           {checkingSession ? (
             <span
@@ -156,27 +166,40 @@ export default function BrandHeader() {
               <Link
                 href="/dashboard"
                 onClick={closeMenu}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#012153] hover:bg-blue-900 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#012153] to-blue-800 hover:from-blue-950 hover:to-blue-900 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
               >
-                <span aria-hidden="true">⌂</span> My learning
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect width="7" height="9" x="3" y="3" rx="1.5" />
+                  <rect width="7" height="5" x="14" y="3" rx="1.5" />
+                  <rect width="7" height="9" x="14" y="12" rx="1.5" />
+                  <rect width="7" height="5" x="3" y="16" rx="1.5" />
+                </svg>
+                <span>My learning</span>
               </Link>
 
               <Link
                 href="/messages"
                 onClick={closeMenu}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                 title="Private & Group Messages"
               >
-                💬 <span className="xl:hidden ml-1.5">Messages</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+                </svg>
+                <span className="xl:hidden">Messages</span>
               </Link>
 
               <Link
                 href="/notifications"
                 onClick={closeMenu}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                 title="Notifications"
               >
-                🔔 <span className="xl:hidden ml-1.5">Notifications</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+                <span className="xl:hidden">Notifications</span>
               </Link>
 
               <Link
