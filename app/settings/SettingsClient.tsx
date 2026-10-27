@@ -7,6 +7,13 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getAuthRedirectUrl } from "../lib/authRedirect";
 import { useLearnerTheme, type AppearancePreference } from "../components/LearnerThemeProvider";
+import {
+  isNotificationSupported,
+  getDeviceNotificationPermission,
+  requestDeviceNotificationPermission,
+  sendWelcomeTestAlert,
+  type DevicePermissionStatus,
+} from "../lib/clientNotifications";
 
 const appearanceChoices: { value: AppearancePreference; title: string; description: string; icon: string }[] = [
   { value: "light", title: "Light", description: "A bright, clear learning space.", icon: "☀" },
@@ -61,6 +68,8 @@ export default function LearnerSettingsClient() {
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifSuccess, setNotifSuccess] = useState("");
   const [notifError, setNotifError] = useState("");
+  const [devicePerm, setDevicePerm] = useState<DevicePermissionStatus>("default");
+  const [testingAlert, setTestingAlert] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -78,6 +87,11 @@ export default function LearnerSettingsClient() {
       setRequireGroupApproval(meta.require_group_approval !== false);
       setReadReceipts(meta.read_receipts !== false);
       setLoading(false);
+
+      // Check device notification permission
+      if (isNotificationSupported()) {
+        setDevicePerm(getDeviceNotificationPermission());
+      }
 
       // Load notification preferences
       fetch("/api/notifications/preferences")
@@ -520,6 +534,75 @@ export default function LearnerSettingsClient() {
                 ? "All non-critical notifications paused"
                 : "Active Subscriber — Receiving selected channels"}
             </span>
+          </div>
+
+          {/* Device Push Notifications Status & Activation Card */}
+          <div className="mt-5 rounded-2xl border border-purple-200 bg-purple-50/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-lg text-white shadow-sm">
+                📲
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-slate-900">Device Push Notifications</h3>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                      devicePerm === "granted"
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                        : devicePerm === "denied"
+                        ? "bg-rose-100 text-rose-800 border border-rose-300"
+                        : "bg-amber-100 text-amber-800 border border-amber-300"
+                    }`}
+                  >
+                    {devicePerm === "granted"
+                      ? "Allowed"
+                      : devicePerm === "denied"
+                      ? "Blocked in Browser"
+                      : "Not Yet Allowed"}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-slate-600 leading-relaxed max-w-lg">
+                  {devicePerm === "granted"
+                    ? "This device is registered to receive instant alerts when tutors start live classes and when your daily practice streak is at risk."
+                    : devicePerm === "denied"
+                    ? "Notifications were blocked in your browser. Click the lock/site icon beside the URL bar to set Notifications to 'Allow'."
+                    : "Allow notifications on this device to get ring alerts for live masterclasses and timed revision streak reminders."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {devicePerm === "granted" ? (
+                <button
+                  type="button"
+                  disabled={testingAlert}
+                  onClick={async () => {
+                    setTestingAlert(true);
+                    await sendWelcomeTestAlert();
+                    setTimeout(() => setTestingAlert(false), 1500);
+                  }}
+                  className="rounded-xl border border-purple-300 bg-white hover:bg-purple-100 px-3.5 py-2 text-xs font-bold text-purple-900 shadow-xs transition active:scale-95 disabled:opacity-50 inline-flex items-center gap-1.5"
+                >
+                  <span>⚡</span>
+                  <span>{testingAlert ? "Sending…" : "Test Device Alert"}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const { granted, status } = await requestDeviceNotificationPermission();
+                    setDevicePerm(status);
+                    if (granted) {
+                      await sendWelcomeTestAlert();
+                    }
+                  }}
+                  className="rounded-xl bg-purple-700 hover:bg-purple-600 px-4 py-2 text-xs font-black text-white shadow-sm transition active:scale-95 inline-flex items-center gap-1.5"
+                >
+                  <span>🔔</span>
+                  <span>Enable on this Device</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Channels Grid */}

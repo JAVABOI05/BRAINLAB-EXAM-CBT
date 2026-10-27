@@ -20,7 +20,14 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
   const [permissions, setPermissions] = useState<Access>({});
   const [ready, setReady] = useState(false);
 
-  const routeOwnsShell = pathname === "/admin/dashboard" || pathname === "/admin/settings";
+  const routeOwnsShell =
+    pathname === "/admin/dashboard" ||
+    pathname === "/admin/settings" ||
+    pathname === "/admin/payment-gateways" ||
+    pathname === "/admin/announcements" ||
+    pathname === "/admin/candidates" ||
+    pathname === "/admin/operations" ||
+    pathname === "/admin/data-export";
   const bypassShell = pathname === "/admin/login" || pathname === "/admin";
 
   useEffect(() => {

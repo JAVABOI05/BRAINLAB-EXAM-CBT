@@ -144,3 +144,64 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
+
+
+// Push notification event: triggers device notification when alert is broadcasted
+self.addEventListener("push", (event) => {
+  let payload = {
+    title: "BrainLab Academy",
+    body: "You have a new update regarding your classes or exam practice.",
+    url: "/dashboard",
+  };
+
+  try {
+    if (event.data) {
+      payload = event.data.json();
+    }
+  } catch {
+    if (event.data) {
+      payload.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: payload.body,
+    icon: "/icon-192.png",
+    badge: "/favicon-32x32.png",
+    vibrate: [150, 50, 150],
+    data: {
+      url: payload.url || "/dashboard",
+    },
+    actions: [
+      { action: "open", title: "View Now" },
+      { action: "dismiss", title: "Dismiss" },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(payload.title, options));
+});
+
+// Notification click event: navigates to target room or dashboard
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  if (event.action === "dismiss") return;
+
+  const targetUrl = event.notification.data?.url || "/dashboard";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          return client.focus().then(() => {
+            if ("navigate" in client) {
+              return client.navigate(targetUrl);
+            }
+          });
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

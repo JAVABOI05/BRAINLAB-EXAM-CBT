@@ -6,6 +6,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import TierGateModal from "@/app/components/TierGateModal";
+import DeviceNotificationPrompt from "@/app/components/DeviceNotificationPrompt";
+import {
+  requestDeviceNotificationPermission,
+  sendDeviceNotification,
+} from "@/app/lib/clientNotifications";
 import {
   getStudentSubscriptionAndEntitlements,
   isCurrentUserAdmin,
@@ -194,13 +199,30 @@ export default function ClassroomLobbyPage() {
                 UTME, SSCE &amp; JAMB live revision class with synchronized whiteboard, low-bandwidth voice notes, and instant quizzes.
               </p>
             </div>
-            <div className="mt-5">
+            <div className="mt-5 flex flex-col sm:flex-row gap-2">
               <Link
                 href="/classroom/BL-LIVE-101"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95"
+                className="flex-1 inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95 text-center"
               >
-                Enter Main Stage (BL-LIVE-101) →
+                Enter Main Stage →
               </Link>
+              <button
+                type="button"
+                onClick={async () => {
+                  const { granted } = await requestDeviceNotificationPermission();
+                  if (granted) {
+                    await sendDeviceNotification("🔔 Live Classroom Alerts Active!", {
+                      body: "You'll be alerted with a ring notification as soon as your tutor goes live on stage.",
+                      url: "/classroom/BL-LIVE-101",
+                    });
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-950/40 hover:bg-blue-900/60 px-3.5 py-2.5 text-xs font-bold text-blue-200 transition"
+                title="Get a phone/browser notification when tutor starts live class"
+              >
+                <span>🔔</span>
+                <span>Get Alerts</span>
+              </button>
             </div>
           </div>
 
@@ -254,6 +276,7 @@ export default function ClassroomLobbyPage() {
           requiredTierName="Premium Study"
           currentPlanName={subscriptionInfo?.planName || "Free Learner"}
         />
+        <DeviceNotificationPrompt />
       </main>
     </div>
   );

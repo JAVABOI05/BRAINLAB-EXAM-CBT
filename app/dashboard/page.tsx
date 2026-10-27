@@ -13,6 +13,7 @@ import LearningStreakCard from "../components/LearningStreakCard";
 import { getUserGamificationProfile, type UserGamificationProfile } from "../lib/gamification";
 import { CardSkeleton, StatsSkeleton } from "../components/SkeletonLoader";
 import ActivePresenceBar from "../components/ActivePresenceBar";
+import DeviceNotificationPrompt from "../components/DeviceNotificationPrompt";
 
 type LearnerStats = {
   lessonsCompleted: number;
@@ -1067,6 +1068,7 @@ export default function LearnerDashboardPage() {
           </div>
         </footer>
       </div>
+      <DeviceNotificationPrompt />
     </main>
   );
 }

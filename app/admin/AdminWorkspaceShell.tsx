@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import type { AdminPermission } from "../lib/adminRoles";
 import type { AdminUser } from "../lib/adminAuth";
 import AdminNotificationBell from "@/app/components/AdminNotificationBell";
@@ -349,15 +349,23 @@ const GROUPS: Group[] = [
   },
 ];
 
+const AdminShellContext = createContext<boolean>(false);
+
 type Props = { user: AdminUser; permissions: Access; onLogout: () => void; children: ReactNode };
 
 export default function AdminWorkspaceShell({ user, permissions, onLogout, children }: Props) {
+  const isInsideShell = useContext(AdminShellContext);
   const pathname = usePathname();
   const searchInputId = useId();
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+
+  // Prevent duplicate rendering if already nested inside an AdminWorkspaceShell
+  if (isInsideShell) {
+    return <>{children}</>;
+  }
 
   // Restore collapsed preferences from localStorage
   useEffect(() => {
@@ -462,7 +470,8 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
   const roleLabel = user.role.replaceAll("_", " ");
 
   return (
-    <div className={"admin-workspace" + (collapsed ? " is-collapsed" : "")}>
+    <AdminShellContext.Provider value={true}>
+      <div className={"admin-workspace" + (collapsed ? " is-collapsed" : "")}>
       <aside className={"admin-sidebar" + (mobileOpen ? " is-open" : "")} aria-label="Admin navigation">
         {/* Brand Header */}
         <div className="admin-brand-row">
@@ -721,5 +730,6 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
         <main className="admin-workspace-content">{children}</main>
       </div>
     </div>
+    </AdminShellContext.Provider>
   );
 }
