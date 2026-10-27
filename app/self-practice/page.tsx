@@ -193,7 +193,7 @@ export default function SelfPracticePage() {
           subject: q.subject,
           type: q.section,
           text: q.question,
-          options: ref ? ref.options : { A: q.option_a || "", B: q.option_b || "", C: q.option_c || "", D: q.option_d || "" },
+          options: ref ? ref.options : { A: q.option_a || "", B: q.option_b || "", C: q.option_c || "", D: q.option_d || "", E: q.option_e || "" },
           correctAnswer: ref ? ref.correctAnswer : ("A" as Option),
           explanation: ref ? ref.explanation : "",
           userAnswer,

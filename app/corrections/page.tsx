@@ -24,16 +24,17 @@ type ResultItem = {
     B: string;
     C: string;
     D: string;
+    E?: string;
   };
-  optionImages?: Partial<Record<"A" | "B" | "C" | "D", string | null>>;
-  optionImageAlts?: Partial<Record<"A" | "B" | "C" | "D", string>>;
+  optionImages?: Partial<Record<"A" | "B" | "C" | "D" | "E", string | null>>;
+  optionImageAlts?: Partial<Record<"A" | "B" | "C" | "D" | "E", string>>;
   questionImageUrl?: string | null;
   questionImageAlt?: string;
-  correctAnswer: "A" | "B" | "C" | "D";
+  correctAnswer: "A" | "B" | "C" | "D" | "E";
   explanation: string;
   explanationImageUrl?: string | null;
   explanationImageAlt?: string;
-  userAnswer: "A" | "B" | "C" | "D" | null;
+  userAnswer: "A" | "B" | "C" | "D" | "E" | null;
   isCorrect: boolean;
   flagged?: boolean;
   marks?: number;
@@ -383,7 +384,7 @@ export default function CorrectionsPage() {
   };
 
   const getOptionClass = (
-    optionKey: "A" | "B" | "C" | "D",
+    optionKey: "A" | "B" | "C" | "D" | "E",
     item: ResultItem
   ) => {
     const isCorrect = item.correctAnswer === optionKey;
@@ -640,7 +641,9 @@ export default function CorrectionsPage() {
 
                     <div className="question-body">
                       <div className="options-list">
-                        {(["A", "B", "C", "D"] as const).map((key) => (
+                        {(["A", "B", "C", "D", "E"] as const)
+                          .filter((key) => Boolean(item.options[key]?.trim()) || Boolean(safeImageUrl(item.optionImages?.[key])))
+                          .map((key) => (
                           <div
                             key={key}
                             className={`option-box ${getOptionClass(key, item)}`}

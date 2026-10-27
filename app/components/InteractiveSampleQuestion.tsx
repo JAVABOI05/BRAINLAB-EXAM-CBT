@@ -427,48 +427,59 @@ export default function InteractiveSampleQuestion() {
   const isCorrect = selectedLetter === currentQuestion.correctLetter;
 
   return (
-    <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-xl shadow-blue-950/5 sm:p-8 dark:border-slate-800 dark:bg-slate-900 transition-colors">
-      {/* Subject Filter Selector Pills */}
-      <div className="mb-4 flex flex-wrap items-center gap-1.5 pb-2">
-        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1">
-          Subject:
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveSubjectFilter("All");
-            setCurrentIndex(0);
-            setSelectedLetter(null);
-            setShowFeedback(false);
-          }}
-          className={`rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
-            activeSubjectFilter === "All"
-              ? "bg-[#012153] text-white shadow-xs"
-              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-          }`}
-        >
-          All Subjects ({questionPool.length})
-        </button>
-        {availableSubjects.map((subj) => (
+    <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xl shadow-blue-950/5 dark:border-slate-800 dark:bg-slate-900 transition-colors">
+      {/* Subject Filter Selector Pills & Simulated Exam Timer (Stitch Design) */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1">
+            Subject:
+          </span>
           <button
-            key={subj}
             type="button"
             onClick={() => {
-              setActiveSubjectFilter(subj);
+              setActiveSubjectFilter("All");
               setCurrentIndex(0);
               setSelectedLetter(null);
               setShowFeedback(false);
             }}
             className={`rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
-              activeSubjectFilter.toLowerCase() === subj.toLowerCase()
+              activeSubjectFilter === "All"
                 ? "bg-[#012153] text-white shadow-xs"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
-            {subj}
+            All Subjects ({questionPool.length})
           </button>
-        ))}
+          {availableSubjects.map((subj) => (
+            <button
+              key={subj}
+              type="button"
+              onClick={() => {
+                setActiveSubjectFilter(subj);
+                setCurrentIndex(0);
+                setSelectedLetter(null);
+                setShowFeedback(false);
+              }}
+              className={`rounded-full px-3 py-1 text-xs font-bold transition active:scale-95 ${
+                activeSubjectFilter.toLowerCase() === subj.toLowerCase()
+                  ? "bg-[#012153] text-white shadow-xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              {subj}
+            </button>
+          ))}
+        </div>
+
+        {/* Live Timer Badge (Stitch CBT Card) */}
+        <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 border border-emerald-200/80 dark:border-emerald-800 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+          <span className="text-[11px] font-black text-emerald-800 dark:text-emerald-300 font-mono tracking-wider">
+            1:48:20
+          </span>
+        </div>
       </div>
+      
 
       {/* Question Header & Stepper Controls */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -518,8 +529,8 @@ export default function InteractiveSampleQuestion() {
         </div>
       </div>
 
-      {/* Question Stem */}
-      <div className="mt-5">
+      {/* Question Stem (Stitch Clean Box) */}
+      <div className="mt-4 bg-slate-50/90 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
         <p
           className={`text-base font-extrabold leading-snug text-slate-900 dark:text-white sm:text-lg transition-opacity duration-150 ${
             isShuffling ? "opacity-30" : "opacity-100"
@@ -527,24 +538,33 @@ export default function InteractiveSampleQuestion() {
         >
           {currentQuestion.question}
         </p>
+        <span className="mt-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Standard UTME Multiple Choice • 1.5 Marks
+        </span>
       </div>
 
-      {/* Interactive Options Grid */}
-      <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+      {/* Interactive Options Grid (Google Stitch Signature Tiles) */}
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
         {currentQuestion.options.map((opt) => {
           const isSelected = selectedLetter === opt.letter;
           const isAnswer = opt.letter === currentQuestion.correctLetter;
 
-          let btnClass = "border-slate-200 bg-slate-50/50 hover:bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-200 dark:hover:bg-slate-800";
+          let btnClass = "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800";
+          let badgeClass = "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200";
 
           if (showFeedback) {
             if (isAnswer) {
-              btnClass = "border-emerald-500 bg-emerald-50 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-200 font-extrabold ring-1 ring-emerald-500";
+              btnClass = "border-emerald-500 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200 font-extrabold ring-2 ring-emerald-500/40 shadow-sm";
+              badgeClass = "bg-emerald-600 text-white";
             } else if (isSelected && !isAnswer) {
-              btnClass = "border-red-400 bg-red-50 text-red-950 dark:border-red-500 dark:bg-red-950/40 dark:text-red-200 font-extrabold";
+              btnClass = "border-rose-400 bg-rose-50 text-rose-950 dark:border-rose-500 dark:bg-rose-950/40 dark:text-rose-200 font-extrabold ring-1 ring-rose-400";
+              badgeClass = "bg-rose-600 text-white";
             } else {
               btnClass = "border-slate-200 bg-slate-50/20 text-slate-400 dark:border-slate-800 dark:text-slate-600 opacity-60";
             }
+          } else if (isSelected) {
+            btnClass = "border-blue-600 bg-blue-50/80 text-blue-950 dark:border-cyan-400 dark:bg-blue-950/40 dark:text-cyan-200 ring-2 ring-blue-500/30";
+            badgeClass = "bg-blue-600 text-white";
           }
 
           return (
@@ -553,21 +573,42 @@ export default function InteractiveSampleQuestion() {
               type="button"
               disabled={showFeedback}
               onClick={() => handleSelect(opt.letter)}
-              className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left text-xs sm:text-sm font-semibold transition active:scale-98 ${btnClass}`}
+              className={`flex items-center justify-between gap-3 rounded-2xl border p-3.5 text-left text-xs sm:text-sm font-semibold transition active:scale-98 shadow-xs group ${btnClass}`}
             >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white dark:bg-slate-700 font-black text-slate-700 dark:text-slate-200 text-xs shadow-2xs">
-                {opt.letter}
-              </span>
-              <span className="flex-1 min-w-0">{opt.text}</span>
-              {showFeedback && isAnswer && (
-                <span className="text-emerald-600 dark:text-emerald-400 font-black">✓</span>
-              )}
-              {showFeedback && isSelected && !isAnswer && (
-                <span className="text-red-500 font-black">✗</span>
-              )}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-xs shadow-2xs transition-colors group-hover:scale-105 ${badgeClass}`}>
+                  {opt.letter}
+                </span>
+                <span className="flex-1 min-w-0 leading-normal">{opt.text}</span>
+              </div>
+              <div className="shrink-0 flex items-center justify-center">
+                {showFeedback && isAnswer && (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-xs">✓</span>
+                )}
+                {showFeedback && isSelected && !isAnswer && (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-black shadow-xs">✕</span>
+                )}
+                {!showFeedback && isSelected && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold">●</span>
+                )}
+              </div>
             </button>
           );
         })}
+      </div>
+
+      {/* CBT Footer Action Ribbon (Google Stitch Design) */}
+      <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+        <span className="flex items-center gap-1.5 font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          Autosaved to device memory
+        </span>
+        <Link
+          href="/cbt"
+          className="inline-flex items-center gap-1 font-bold text-blue-700 dark:text-cyan-400 hover:text-blue-900 dark:hover:text-cyan-300"
+        >
+          Open Full CBT Simulator →
+        </Link>
       </div>
 
       {/* Answer Explanation & Feedback Card */}

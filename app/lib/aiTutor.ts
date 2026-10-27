@@ -1,13 +1,13 @@
 import { supabase } from "./supabase";
 
-export type AiOptionKey = "A" | "B" | "C" | "D";
+export type AiOptionKey = "A" | "B" | "C" | "D" | "E";
 
 export type AiQuestionContext = {
   id?: string | number;
   subject: string;
   type?: string;
   text: string;
-  options: { [key in AiOptionKey]: string };
+  options: { A: string; B: string; C: string; D: string; E?: string; };
   correctAnswer: AiOptionKey;
   explanation?: string;
   userAnswer: AiOptionKey | null;

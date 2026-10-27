@@ -38,7 +38,10 @@ export type ParsedQuestionRow = {
   option_d: string;
   option_d_image_url?: string | null;
   option_d_image_alt?: string | null;
-  correct_answer: "A" | "B" | "C" | "D";
+  correct_answer: "A" | "B" | "C" | "D" | "E";
+  option_e?: string | null;
+  option_e_image_url?: string | null;
+  option_e_image_alt?: string | null;
   explanation: string | null;
   explanation_image_url?: string | null;
   explanation_image_alt?: string | null;
@@ -251,31 +254,34 @@ export default function AdminQuestionsPage() {
     optA: string | null,
     optB: string | null,
     optC: string | null,
-    optD: string | null
-  ): "A" | "B" | "C" | "D" | null {
+    optD: string | null,
+    optE?: string | null
+  ): "A" | "B" | "C" | "D" | "E" | null {
     if (val === null || val === undefined) return null;
     const str = String(val).trim().toUpperCase();
     if (!str) return null;
 
-    if (["A", "B", "C", "D"].includes(str)) {
-      return str as "A" | "B" | "C" | "D";
+    if (["A", "B", "C", "D", "E"].includes(str)) {
+      return str as "A" | "B" | "C" | "D" | "E";
     }
 
-    const letterMatch = str.match(/^(?:OPTION\s*)?\(?([A-D])\)?[\.\:\)]?$/i);
+    const letterMatch = str.match(/^(?:OPTION\s*)?\(?([A-E])\)?[\.\:\)]?$/i);
     if (letterMatch) {
-      return letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D";
+      return letterMatch[1].toUpperCase() as "A" | "B" | "C" | "D" | "E";
     }
 
     if (str === "1") return "A";
     if (str === "2") return "B";
     if (str === "3") return "C";
     if (str === "4") return "D";
+    if (str === "5") return "E";
 
     const cleanStr = String(val).trim().toLowerCase();
     if (optA && cleanStr === optA.trim().toLowerCase()) return "A";
     if (optB && cleanStr === optB.trim().toLowerCase()) return "B";
     if (optC && cleanStr === optC.trim().toLowerCase()) return "C";
     if (optD && cleanStr === optD.trim().toLowerCase()) return "D";
+    if (optE && cleanStr === optE.trim().toLowerCase()) return "E";
 
     return null;
   }
@@ -317,9 +323,10 @@ export default function AdminQuestionsPage() {
       const optionB = normalizeNullable(row.option_b);
       const optionC = normalizeNullable(row.option_c);
       const optionD = normalizeNullable(row.option_d);
+      const optionE = normalizeNullable(row.option_e);
 
       const rawAnswer = row.correct_answer ?? row.answer ?? row.correct;
-      const correctAnswer = normalizeAnswer(rawAnswer, optionA, optionB, optionC, optionD);
+      const correctAnswer = normalizeAnswer(rawAnswer, optionA, optionB, optionC, optionD, optionE);
 
       const rawMarks = row.marks ?? row.mark ?? row.points ?? 1;
       const numMarks = Number(rawMarks);
@@ -346,7 +353,7 @@ export default function AdminQuestionsPage() {
       if (!correctAnswer) {
         nextErrors.push({
           row: rowNo,
-          message: `Invalid or missing Correct Answer (${String(rawAnswer ?? "empty")}). Must be A, B, C, or D.`,
+          message: `Invalid or missing Correct Answer (${String(rawAnswer ?? "empty")}). Must be A, B, C, D${optionE ? ", or E" : ""}. Cannot point to an empty option.`,
         });
       }
 

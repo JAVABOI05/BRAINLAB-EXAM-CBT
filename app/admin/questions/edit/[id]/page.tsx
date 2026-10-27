@@ -28,6 +28,9 @@ type QuestionRow = {
   option_d: string | null;
   option_d_image_url: string | null;
   option_d_image_alt: string | null;
+  option_e?: string | null;
+  option_e_image_url?: string | null;
+  option_e_image_alt?: string | null;
   correct_answer: string;
   explanation: string | null;
   explanation_image_url: string | null;
@@ -91,6 +94,7 @@ export default function EditQuestionPage() {
     | "option_b_image_url"
     | "option_c_image_url"
     | "option_d_image_url"
+    | "option_e_image_url"
     | "explanation_image_url";
 
   async function uploadQuestionImage(target: ImageUrlField, file: File) {
@@ -147,6 +151,7 @@ export default function EditQuestionPage() {
       question.option_b_image_url,
       question.option_c_image_url,
       question.option_d_image_url,
+      question.option_e_image_url,
       question.explanation_image_url,
     ].filter((value): value is string => Boolean(value?.trim()));
 

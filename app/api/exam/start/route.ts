@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "../../../lib/supabaseServer";
 import crypto from "crypto";
+import { generateExamPaper, freezeAttemptSnapshot } from "../../../lib/examEngine";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,6 @@ export async function POST(request: NextRequest) {
     if (preconfiguredSubject) {
       selectedSubjects = ["English", preconfiguredSubject];
     } else if (Array.isArray(subjects) && subjects.length > 0) {
-      // Candidate chose their subjects
       const nonEnglish = subjects
         .map((s) => String(s).trim())
         .filter((s) => Boolean(s) && !s.toLowerCase().includes("english"));
@@ -71,62 +71,45 @@ export async function POST(request: NextRequest) {
       selectedSubjects = ["English", "Mathematics", "Physics", "Chemistry"];
     }
 
-    // Ensure English is always the first subject and exactly 4 subjects are present
     if (selectedSubjects[0]?.toLowerCase() !== "english") {
       const remaining = selectedSubjects.filter((s) => !s.toLowerCase().includes("english"));
       selectedSubjects = ["English", ...remaining.slice(0, 3)];
     }
 
-    // Fallbacks if fewer than 4 subjects were provided
     const defaultFillers = ["Mathematics", "Physics", "Chemistry", "Biology"];
     while (selectedSubjects.length < 4) {
       const nextFiller = defaultFillers.find((f) => !selectedSubjects.includes(f)) || "Mathematics";
       selectedSubjects.push(nextFiller);
     }
 
-    // 3. For each selected subject, gather randomized question IDs from public.questions
-    const paperIds: number[] = [];
+    // 3. Generate exam paper using Master CBT Examination Engine
+    // (Multi-stage English 60-question blueprint + 3 Electives 40 each, passage groups, high-yield quotas, topic coverage)
+    const attemptToken = crypto.randomUUID();
+    const durationSeconds = 7200; // 2 hours
+    const provisionalSessionId = crypto.randomUUID();
 
-    for (const subj of selectedSubjects) {
-      // English takes 60 questions in JAMB UTME, each elective takes 40 questions
-      const isEnglish = subj.toLowerCase().includes("english");
-      const targetCount = isEnglish ? 60 : 40;
+    const generated = await generateExamPaper({
+      sessionId: provisionalSessionId,
+      token: attemptToken,
+      subjects: selectedSubjects,
+      durationSeconds,
+    });
 
-      const { data: qRows } = await supabase
+    let paperIds = generated.paperIds;
+
+    // Fallback safeguard if bank had temporary network or query issue
+    if (!paperIds || paperIds.length === 0) {
+      const { data: fallbackQ } = await supabase
         .from("questions")
         .select("id")
         .eq("is_active", true)
-        .ilike("subject", isEnglish ? "English" : subj)
-        .limit(250);
-
-      if (qRows && qRows.length > 0) {
-        // Randomly shuffle so candidates do not get identical question sequences
-        const shuffled = [...qRows].sort(() => 0.5 - Math.random()).slice(0, targetCount);
-        for (const q of shuffled) {
-          paperIds.push(q.id);
-        }
+        .limit(180);
+      if (fallbackQ && fallbackQ.length > 0) {
+        paperIds = fallbackQ.map((q) => q.id);
       }
     }
 
-    // If candidate selected subjects with sparse questions in DB,
-    // fill up remaining questions from active DB questions to maintain full 180 questions
-    if (paperIds.length < 180) {
-      const needed = 180 - paperIds.length;
-      const { data: fallbackQuestions } = await supabase
-        .from("questions")
-        .select("id")
-        .eq("is_active", true)
-        .not("id", "in", `(${paperIds.length > 0 ? paperIds.join(",") : "0"})`)
-        .limit(needed);
-
-      if (fallbackQuestions) {
-        for (const q of fallbackQuestions) {
-          paperIds.push(q.id);
-        }
-      }
-    }
-
-    if (paperIds.length === 0) {
+    if (!paperIds || paperIds.length === 0) {
       return NextResponse.json(
         { ok: false, error: "no_questions", message: "No active questions found in the question bank." },
         { status: 400 }
@@ -134,9 +117,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Create the exam session in public.exam_sessions
-    const attemptToken = crypto.randomUUID();
-    const durationSeconds = 7200; // 2 hours
-
     const { data: sessionRow, error: sessionErr } = await supabase
       .from("exam_sessions")
       .insert({
@@ -148,8 +128,6 @@ export async function POST(request: NextRequest) {
         paper_ids: paperIds,
         time_left_seconds: durationSeconds,
         duration_seconds: durationSeconds,
-        // The server-side save/resume/submit RPCs calculate time from this deadline.
-        // Without it, save_progress can return a null remaining time and the UI may auto-submit.
         deadline_at: new Date(Date.now() + durationSeconds * 1000).toISOString(),
         attempt_token: attemptToken,
         is_master_code: isMasterCode,
@@ -165,38 +143,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Query candidate question payload using public._paper_json
-    const { data: questionsJson, error: paperErr } = await supabase.rpc("_paper_json", {
-      p_ids: paperIds,
-    });
-
-    let questionsPayload = questionsJson || [];
-
-    if (!questionsJson || questionsJson.length === 0) {
-      // Fallback query directly from questions table
-      const { data: rawQ } = await supabase
-        .from("questions")
-        .select(
-          "id, subject, section, category, passage_id, passage_title, passage_text, question, question_image_url, question_image_alt, option_a, option_a_image_url, option_a_image_alt, option_b, option_b_image_url, option_b_image_alt, option_c, option_c_image_url, option_c_image_alt, option_d, option_d_image_url, option_d_image_alt, marks"
-        )
-        .in("id", paperIds);
-
-      questionsPayload = rawQ || [];
+    // 5. Freeze immutable attempt snapshot using actual session ID
+    if (generated.snapshot?.questions_snapshot) {
+      void freezeAttemptSnapshot(
+        sessionRow.id,
+        generated.snapshot.blueprint_id || "jamb_utme_full_mock",
+        generated.snapshot.blueprint_version || 1,
+        paperIds,
+        selectedSubjects,
+        generated.snapshot.questions_snapshot,
+        "english_90_to_100"
+      );
     }
 
-    // Preserve exact paperIds sequence so subjects are cleanly grouped (English 1..60, Electives 61..180)
-    if (questionsPayload.length > 0) {
-      const idMap = new Map<number, (typeof questionsPayload)[0]>();
-      for (const q of questionsPayload) {
-        idMap.set(Number(q.id), q);
-      }
-      const orderedQuestions: typeof questionsPayload = [];
-      for (const id of paperIds) {
-        const found = idMap.get(id);
-        if (found) orderedQuestions.push(found);
-      }
-      if (orderedQuestions.length > 0) {
-        questionsPayload = orderedQuestions;
+    // 6. Use clientQuestions from engine (already includes option_e, stripped of correct_answer/explanation)
+    let questionsPayload = generated.clientQuestions || [];
+
+    if (!questionsPayload || questionsPayload.length === 0) {
+      // Fallback query via _paper_json RPC or questions table
+      const { data: questionsJson } = await supabase.rpc("_paper_json", {
+        p_ids: paperIds,
+      });
+
+      if (questionsJson && questionsJson.length > 0) {
+        questionsPayload = questionsJson;
+      } else {
+        const { data: rawQ } = await supabase
+          .from("questions")
+          .select(
+            "id, subject, section, category, passage_id, passage_title, passage_text, question, question_image_url, question_image_alt, option_a, option_a_image_url, option_a_image_alt, option_b, option_b_image_url, option_b_image_alt, option_c, option_c_image_url, option_c_image_alt, option_d, option_d_image_url, option_d_image_alt, option_e, option_e_image_url, option_e_image_alt, marks"
+          )
+          .in("id", paperIds);
+        questionsPayload = (rawQ || []) as typeof questionsPayload;
       }
     }
 

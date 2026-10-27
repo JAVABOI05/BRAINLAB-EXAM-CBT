@@ -1,4 +1,4 @@
-import "server-only";
+// Server-side Supabase client for Route Handlers and Server actions
 
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
