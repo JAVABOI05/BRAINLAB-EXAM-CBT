@@ -686,7 +686,7 @@ export async function getAIMonitoringData(options?: { probeLive?: boolean }): Pr
   }
 
   // Live Gateway Probes
-  const probeCache: Record<string, { available?: boolean; latencyMs?: number; error?: string; models?: string[]; [key: string]: unknown }> = {};
+  const probeCache: Record<string, { status: "operational" | "warning" | "error"; statusMessage?: string; latencyMs: number | null; headers: Record<string, string>; limitRequests: number | null; remainingRequests: number | null; resetRequests: string | null; limitTokens: number | null; remainingTokens: number | null; resetTokens: string | null }> = {};
   let availableGroqModels: string[] = [];
 
   if (probeLive) {
