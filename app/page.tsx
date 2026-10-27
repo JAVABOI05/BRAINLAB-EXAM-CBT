@@ -4,9 +4,9 @@ import HomePageClient from "./HomePageClient";
 // Declare homepage metadata at the route level so crawlers receive an explicit
 // description instead of relying only on inherited root-layout metadata.
 export const metadata: Metadata = {
-  title: "BrainLab Academy | JAMB, WAEC & NECO CBT Practice",
+  title: "BrainLab Academy | JAMB UTME CBT Practice & Syllabus Revision",
   description:
-    "Prepare for JAMB UTME, WAEC and NECO with CBT exam practice, syllabus-aligned lessons, AI-supported revision and a connected learning experience built for Nigerian students.",
+    "Prepare for JAMB UTME with authentic timed CBT exam simulations, curriculum-aligned topic notes, instant diagnostic scoring, and low-data offline protection built for Nigerian candidates.",
   alternates: {
     canonical: "/",
   },

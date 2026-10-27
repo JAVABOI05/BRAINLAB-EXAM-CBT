@@ -18,7 +18,7 @@ const CONTACT_INFO = {
 const SOCIAL_CHANNELS = [
   {
     name: "WhatsApp Channel",
-    handle: "15,000+ Students",
+    handle: "Official Channel",
     url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
     color: "group-hover:border-emerald-500 group-hover:text-emerald-500",
     badge: "Active Channel",
@@ -189,7 +189,7 @@ export default function ContactPage() {
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900/80 px-4 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-slate-800 transition active:scale-95"
                   >
-                    <span>Join 15k+ WhatsApp Community</span> ↗
+                    <span>Join WhatsApp Community Channel</span> ↗
                   </a>
                 </div>
               </div>

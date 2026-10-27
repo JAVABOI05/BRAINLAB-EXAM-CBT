@@ -272,7 +272,7 @@ export default function BrandFooter() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
-                Join our 15,000+ candidate revision circles, daily UTME challenge drills, and instant announcements:
+                Join our active candidate revision circles, daily UTME challenge drills, and instant announcements:
               </p>
 
               {/* High-visibility pill grid with branded platform styling */}
