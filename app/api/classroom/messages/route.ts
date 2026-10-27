@@ -20,15 +20,21 @@ type ClassroomMemoryMessage = {
   [key: string]: unknown;
 };
 
-const memoryMessageStore = new Map<string, ClassroomMemoryMessage[]>();
+const globalMessages = globalThis as unknown as {
+  _classroomMemoryStore?: Map<string, ClassroomMemoryMessage[]>;
+};
+if (!globalMessages._classroomMemoryStore) {
+  globalMessages._classroomMemoryStore = new Map<string, ClassroomMemoryMessage[]>();
+}
+const memoryMessageStore = globalMessages._classroomMemoryStore;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function sanitizeSenderName(name?: string | null): string {
   if (!name) return "Learner";
   if (name.includes("@")) {
-    const handle = name.split("@")[0];
-    return handle.charAt(0).toUpperCase() + handle.slice(1);
+    const handle = name.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
+    return handle ? handle.charAt(0).toUpperCase() + handle.slice(1) : "Scholar";
   }
   return name;
 }

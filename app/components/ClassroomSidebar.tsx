@@ -136,7 +136,7 @@ export default function ClassroomSidebar({
   onAdmitAllStudents,
 }: ClassroomSidebarProps) {
   const currentUserName =
-    currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Me";
+    currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || "Me";
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden text-slate-100">
