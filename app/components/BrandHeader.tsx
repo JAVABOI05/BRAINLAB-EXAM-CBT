@@ -220,6 +220,18 @@ export default function BrandHeader() {
                 </svg>
               </Link>
 
+              {/* Quick Admin Portal Pill if Administrator */}
+              {isAdmin && (
+                <Link
+                  href="/admin/dashboard"
+                  className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500 hover:to-orange-500 hover:text-slate-950 px-3 py-1.5 text-xs font-black text-amber-600 dark:text-amber-300 transition shadow-sm active:scale-95"
+                  title="Open Administrator Portal"
+                >
+                  <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>Admin Portal</span>
+                </Link>
+              )}
+
               {/* Primary "My Learning" Quick Pill */}
               <Link
                 href="/dashboard"
@@ -271,6 +283,16 @@ export default function BrandHeader() {
                     </div>
 
                     <div className="py-1">
+                      {isAdmin && (
+                        <Link
+                          href="/admin/dashboard"
+                          onClick={closeAllMenus}
+                          className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500 hover:text-slate-950 transition mb-1"
+                        >
+                          <svg className="h-4 w-4 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                          <span>Admin Portal Command</span>
+                        </Link>
+                      )}
                       <Link
                         href="/profile"
                         onClick={closeAllMenus}
@@ -383,6 +405,17 @@ export default function BrandHeader() {
                     <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
                   </div>
                 </div>
+
+                {isAdmin && (
+                  <Link
+                    href="/admin/dashboard"
+                    onClick={closeAllMenus}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 py-2.5 text-xs font-black text-amber-700 dark:text-amber-300 shadow-xs mb-2 active:scale-95 transition"
+                  >
+                    <svg className="h-4 w-4 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Open Admin Portal →</span>
+                  </Link>
+                )}
 
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <Link

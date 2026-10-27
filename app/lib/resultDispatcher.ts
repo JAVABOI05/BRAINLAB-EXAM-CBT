@@ -1,5 +1,6 @@
 import { getSupabaseServerClient } from "./supabaseServer";
 import { getExamSettings } from "./platformConfig";
+import { isChannelSubscribed, generateUnsubscribeToken } from "./notificationPreferences";
 
 export interface DispatchRecipient {
   resultId: string;
@@ -97,6 +98,8 @@ export async function sendResultEmail(
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.SYSTEM_FROM_EMAIL || "BrainLab Academy <results@brainlabacademy.com.ng>";
   const verifyUrl = `https://www.brainlabacademy.com.ng/verify/${resultId}`;
+  const unsubToken = generateUnsubscribeToken(email);
+  const unsubUrl = `https://www.brainlabacademy.com.ng/unsubscribe?email=${encodeURIComponent(email)}&token=${unsubToken}`;
 
   const subjectTableRows = Object.entries(subjectScores || {})
     .map(
@@ -144,7 +147,11 @@ export async function sendResultEmail(
       </div>
       
       <p style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 36px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
-        BrainLab Academy Digital CBT Directorate &bull; Strict Proctoring Standards &bull; Ref: ${resultId.substring(0, 16)}
+        BrainLab Academy Digital CBT Directorate &bull; Strict Proctoring Standards &bull; Ref: ${resultId.substring(0, 16)}<br>
+        <span style="display:inline-block; margin-top:8px;">
+          <a href="${unsubUrl}" style="color: #64748b; text-decoration: underline;">Unsubscribe from exam result emails</a> &bull; 
+          <a href="https://www.brainlabacademy.com.ng/settings" style="color: #64748b; text-decoration: underline;">Manage Preferences</a>
+        </span>
       </p>
     </div>
   `;
@@ -249,57 +256,77 @@ export async function dispatchReleasedResults(
 
     // 2. SMS Notification
     if (channels.includes("sms") && recipient.phone) {
-      const smsRes = await sendResultSMS(
-        recipient.phone,
-        recipient.name,
-        recipient.score,
-        recipient.total,
-        recipient.resultId
-      );
-      if (smsRes.success) {
+      const isSmsSubscribed = await isChannelSubscribed(recipient.email, "sms_alerts");
+      if (!isSmsSubscribed) {
         summary.results.push({
           recipientId: recipient.resultId,
           channel: "sms",
-          status: "sent",
-          messageId: smsRes.messageId,
+          status: "skipped",
+          error: "Candidate unsubscribed from SMS notifications",
         });
-        sentAtLeastOne = true;
       } else {
-        summary.results.push({
-          recipientId: recipient.resultId,
-          channel: "sms",
-          status: "failed",
-          error: smsRes.error,
-        });
+        const smsRes = await sendResultSMS(
+          recipient.phone,
+          recipient.name,
+          recipient.score,
+          recipient.total,
+          recipient.resultId
+        );
+        if (smsRes.success) {
+          summary.results.push({
+            recipientId: recipient.resultId,
+            channel: "sms",
+            status: "sent",
+            messageId: smsRes.messageId,
+          });
+          sentAtLeastOne = true;
+        } else {
+          summary.results.push({
+            recipientId: recipient.resultId,
+            channel: "sms",
+            status: "failed",
+            error: smsRes.error,
+          });
+        }
       }
     }
 
     // 3. Email Notification (if email provided)
     if (channels.includes("email") && recipient.email) {
-      const emailRes = await sendResultEmail(
-        recipient.email,
-        recipient.name,
-        recipient.score,
-        recipient.total,
-        recipient.subject,
-        recipient.subjectScores,
-        recipient.resultId
-      );
-      if (emailRes.success) {
+      const isEmailSubscribed = await isChannelSubscribed(recipient.email, "exam_results");
+      if (!isEmailSubscribed) {
         summary.results.push({
           recipientId: recipient.resultId,
           channel: "email",
-          status: "sent",
-          messageId: emailRes.messageId,
+          status: "skipped",
+          error: "Candidate unsubscribed from exam result emails",
         });
-        sentAtLeastOne = true;
       } else {
-        summary.results.push({
-          recipientId: recipient.resultId,
-          channel: "email",
-          status: "failed",
-          error: emailRes.error,
-        });
+        const emailRes = await sendResultEmail(
+          recipient.email,
+          recipient.name,
+          recipient.score,
+          recipient.total,
+          recipient.subject,
+          recipient.subjectScores,
+          recipient.resultId
+        );
+        if (emailRes.success) {
+          summary.results.push({
+            recipientId: recipient.resultId,
+            channel: "email",
+            status: "sent",
+            messageId: emailRes.messageId,
+          });
+          sentAtLeastOne = true;
+        } else {
+          summary.results.push({
+            recipientId: recipient.resultId,
+            channel: "email",
+            status: "failed",
+            error: emailRes.error,
+          });
+        }
       }
     }
 
