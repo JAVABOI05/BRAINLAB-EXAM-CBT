@@ -47,7 +47,7 @@ export default function ClassroomSchedulePage() {
   const [classes, setClasses] = useState<LiveClass[]>([]);
   const [userId, setUserId] = useState("");
   const [role, setRole] = useState("");
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
   const [message, setMessage] = useState("");
@@ -70,10 +70,12 @@ export default function ClassroomSchedulePage() {
   }, []);
 
   useEffect(() => {
+    const initialTimer = window.setTimeout(() => setNow(Date.now()), 0);
     void load();
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     const refresh = window.setInterval(() => void load(), 30000);
     return () => {
+      window.clearTimeout(initialTimer);
       window.clearInterval(timer);
       window.clearInterval(refresh);
     };
