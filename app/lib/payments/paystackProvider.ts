@@ -1,15 +1,25 @@
 import crypto from "crypto";
 import type { PaymentProvider, PaymentInitParams, PaymentInitResult, PaymentVerifyResult } from "./types";
 
+export interface PaystackConfigOptions {
+  secretKey?: string;
+  publicKey?: string;
+  webhookSecret?: string;
+  isLive?: boolean;
+}
+
 export class PaystackPaymentProvider implements PaymentProvider {
   name = "paystack";
   private secretKey: string;
+  private publicKey: string;
+  private webhookSecret: string;
   isLive: boolean;
 
-  constructor() {
-    // Strict guardrail: Live payments are explicitly disabled unless PAYMENT_LIVE_ENABLED is true
-    this.isLive = process.env.PAYMENT_LIVE_ENABLED === "true";
-    this.secretKey = process.env.PAYSTACK_SECRET_KEY || "";
+  constructor(options?: PaystackConfigOptions) {
+    this.isLive = options?.isLive !== undefined ? options.isLive : process.env.PAYMENT_LIVE_ENABLED === "true";
+    this.secretKey = options?.secretKey || process.env.PAYSTACK_SECRET_KEY || "";
+    this.publicKey = options?.publicKey || process.env.PAYSTACK_PUBLIC_KEY || "";
+    this.webhookSecret = options?.webhookSecret || process.env.PAYSTACK_SECRET_KEY || "";
   }
 
   async initializePayment(params: PaymentInitParams): Promise<PaymentInitResult> {

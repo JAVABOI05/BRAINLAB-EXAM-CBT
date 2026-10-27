@@ -983,3 +983,98 @@ export async function saveDifficultyConfig(
 
   return { success: ok, error: ok ? undefined : "Failed to persist configuration to platform database." };
 }
+
+// ----------------------------------------------------------------------------
+// Payment Gateways & Dynamic API Key Configuration
+// ----------------------------------------------------------------------------
+export interface GatewayProviderConfig {
+  enabled: boolean;
+  test_mode: boolean;
+  public_key?: string;
+  secret_key?: string;
+  webhook_secret?: string;
+  api_key?: string;
+  encryption_key?: string;
+  contract_code?: string;
+}
+
+export interface BankTransferConfig {
+  enabled: boolean;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  instructions?: string;
+}
+
+export interface PaymentGatewaysConfig {
+  active_provider: "paystack" | "flutterwave" | "bachs" | "bank_transfer";
+  allow_candidate_choice: boolean;
+  providers: {
+    paystack: GatewayProviderConfig;
+    flutterwave: GatewayProviderConfig;
+    bachs: GatewayProviderConfig;
+    bank_transfer: BankTransferConfig;
+  };
+}
+
+export const DEFAULT_PAYMENT_GATEWAYS_CONFIG: PaymentGatewaysConfig = {
+  active_provider: "paystack",
+  allow_candidate_choice: true,
+  providers: {
+    paystack: {
+      enabled: true,
+      test_mode: process.env.PAYMENT_LIVE_ENABLED !== "true",
+      public_key: process.env.PAYSTACK_PUBLIC_KEY || "",
+      secret_key: process.env.PAYSTACK_SECRET_KEY || "",
+      webhook_secret: process.env.PAYSTACK_SECRET_KEY || "",
+    },
+    flutterwave: {
+      enabled: false,
+      test_mode: true,
+      public_key: process.env.FLUTTERWAVE_PUBLIC_KEY || "",
+      secret_key: process.env.FLUTTERWAVE_SECRET_KEY || "",
+      webhook_secret: process.env.FLUTTERWAVE_SECRET_HASH || "",
+    },
+    bachs: {
+      enabled: true,
+      test_mode: process.env.BACHS_ENVIRONMENT !== "production",
+      api_key: process.env.BACHS_API_KEY || "",
+      webhook_secret: process.env.BACHS_WEBHOOK_SECRET || "",
+    },
+    bank_transfer: {
+      enabled: true,
+      bank_name: "Guaranty Trust Bank (GTBank)",
+      account_number: "0123456789",
+      account_name: "BrainLab Educational Technologies Ltd",
+      instructions: "Transfer the exact amount to the account above and retain your transaction receipt for automated or manual verification.",
+    },
+  },
+};
+
+export async function getPaymentGatewaysConfig(): Promise<PaymentGatewaysConfig> {
+  const config = await getPlatformConfig<PaymentGatewaysConfig>(
+    "payment_gateways_config",
+    DEFAULT_PAYMENT_GATEWAYS_CONFIG
+  );
+  return {
+    ...DEFAULT_PAYMENT_GATEWAYS_CONFIG,
+    ...config,
+    providers: {
+      ...DEFAULT_PAYMENT_GATEWAYS_CONFIG.providers,
+      ...(config.providers || {}),
+    },
+  };
+}
+
+export async function savePaymentGatewaysConfig(
+  config: PaymentGatewaysConfig,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  return await setPlatformConfig(
+    "payment_gateways_config",
+    config,
+    adminUser,
+    reason || `Updated payment gateway settings (Active: ${config.active_provider})`
+  );
+}

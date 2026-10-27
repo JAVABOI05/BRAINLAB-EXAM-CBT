@@ -494,7 +494,7 @@ The JSON must follow this exact schema:
         const preferredProvider = aiConfig?.provider === "gemini" && geminiKey ? "gemini" : groqKey ? "groq" : "gemini";
 
         if (preferredProvider === "groq" && groqKey) {
-          const model = aiConfig?.groq_model || process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+          const model = aiConfig?.groq_model || process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
           const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -517,7 +517,7 @@ The JSON must follow this exact schema:
             rawOutput = data.choices?.[0]?.message?.content?.trim() || "";
           }
         } else if (geminiKey) {
-          const model = aiConfig?.gemini_model || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+          const model = aiConfig?.gemini_model || process.env.GEMINI_MODEL || "gemini-3-flash-preview";
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
           const res = await fetch(endpoint, {
             method: "POST",

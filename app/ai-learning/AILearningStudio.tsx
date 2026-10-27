@@ -184,7 +184,7 @@ export default function AILearningStudio() {
           </div>
           {aiModel && (
             <span className="text-xs font-semibold text-slate-500">
-              Powered by {aiModel}
+              Powered by BrainLab AI
             </span>
           )}
         </div>
@@ -294,8 +294,8 @@ export default function AILearningStudio() {
         </article>
         <article className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
           <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-900">AI Tutor Active</p>
-          <h3 className="mt-2 text-lg font-extrabold text-slate-950">Google AI Studio Connected</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-700">The tutor service is live with Gemini 3.8 Flash. Interactions adhere to exam integrity and responsible study guidelines.</p>
+          <h3 className="mt-2 text-lg font-extrabold text-slate-950">BrainLab AI Engine Connected</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-700">The tutor service is live with BrainLab AI Tutor. Interactions adhere to exam integrity and responsible study guidelines.</p>
           <Link className="mt-4 inline-flex font-bold text-emerald-950 underline underline-offset-2" href="/ai-learning">Try a study prompt ↑</Link>
         </article>
       </div>

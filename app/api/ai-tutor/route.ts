@@ -246,34 +246,36 @@ export async function POST(request: NextRequest) {
   // Execution with Dual-Provider Fallback
   // ============================================================================
   let answer: string;
-  let provider = "groq";
+  let provider = "BrainLab AI Tutor";
+  let modelUsed = "BrainLab AI Tutor";
 
   try {
-    answer = await askGroq(message);
-    provider = "groq";
-  } catch {
+    const smartRes = await executeSmartAICompletion({
+      userMessage: message,
+      context: { mode: "chat" },
+      userId: authData.user.id,
+    });
+    answer = smartRes.text;
+    modelUsed = smartRes.modelIdentifier;
+    provider = smartRes.provider || "BrainLab AI Tutor";
+  } catch (err) {
+    console.error("[ai-tutor] Smart execution failed, trying direct providers:", err);
     try {
-      answer = await askGemini(message);
-      provider = "gemini";
+      answer = await askGroq(message);
+      provider = "groq";
+      modelUsed = "groq-direct";
     } catch {
-      const hasGroq = Boolean(process.env.GROQ_API_KEY);
-      const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-      if (!hasGroq && !hasGemini)
-        return jsonError(
-          "The AI Tutor is not configured yet. Add provider keys to the server environment.",
-          503
-        );
-      if (!hasGroq)
-        return jsonError(
-          "The primary AI provider is not configured and the fallback could not respond. Check the server provider settings.",
-          503
-        );
-      return jsonError(
-        "The AI Tutor could not respond right now. Please try again shortly.",
-        502
-      );
+      try {
+        answer = await askGemini(message);
+        provider = "gemini";
+        modelUsed = "gemini-direct";
+      } catch {
+        return jsonError("The AI Tutor could not respond right now. Please try again shortly.", 502);
+      }
     }
   }
+
+  if (!answer) return jsonError("No answer generated.", 502);
 
   // ============================================================================
   // Persist Audit Record to ai_generations
@@ -283,7 +285,7 @@ export async function POST(request: NextRequest) {
       user_id: authData.user.id,
       prompt: message,
       response: answer,
-      model: provider,
+      model: modelUsed,
       metadata: {
         provider,
         quota_limit: quotaLimit,

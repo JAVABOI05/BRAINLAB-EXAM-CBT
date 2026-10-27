@@ -6,6 +6,12 @@ import type {
   PaymentVerifyResult,
 } from "./types";
 
+export interface BachsConfigOptions {
+  apiKey?: string;
+  webhookSecret?: string;
+  isLive?: boolean;
+}
+
 export class BachsPaymentProvider implements PaymentProvider {
   name = "bachs";
   private apiKey: string;
@@ -13,13 +19,17 @@ export class BachsPaymentProvider implements PaymentProvider {
   isLive: boolean;
   private baseUrl: string;
 
-  constructor() {
-    this.apiKey = process.env.BACHS_API_KEY || "";
-    this.webhookSecret = process.env.BACHS_WEBHOOK_SECRET || "";
+  constructor(options?: BachsConfigOptions) {
+    this.apiKey = options?.apiKey || process.env.BACHS_API_KEY || "";
+    this.webhookSecret = options?.webhookSecret || process.env.BACHS_WEBHOOK_SECRET || "";
 
     const env =
-      process.env.BACHS_ENVIRONMENT ||
-      (this.apiKey.startsWith("sk_live_") ? "production" : "sandbox");
+      options?.isLive !== undefined
+        ? options.isLive
+          ? "production"
+          : "sandbox"
+        : process.env.BACHS_ENVIRONMENT ||
+          (this.apiKey.startsWith("sk_live_") ? "production" : "sandbox");
 
     this.isLive = env === "production";
     this.baseUrl = this.isLive

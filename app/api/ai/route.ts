@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
             "Content-Type": "text/plain; charset=utf-8",
             "Cache-Control": "no-cache, no-transform",
             "X-BrainLab-Cached": "true",
-            "X-BrainLab-Model": cached.model,
+            "X-BrainLab-Model": "BrainLab AI Tutor",
           },
         }
       );

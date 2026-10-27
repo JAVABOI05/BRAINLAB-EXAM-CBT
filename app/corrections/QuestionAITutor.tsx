@@ -476,7 +476,7 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
               ? (isOpen ? "Hide AI Tutor Explanation" : (isCached ? "View Saved AI Breakdown" : "View AI Tutor Explanation"))
               : (loading ? "Generating AI Breakdown..." : "Ask AI Tutor to Explain This")}
           </span>
-          <span className="ai-badge-pill">{model || "Gemini 3 Flash"}</span>
+          <span className="ai-badge-pill">BrainLab AI Tutor</span>
           <span className="ai-chevron" aria-hidden="true">{isOpen ? "▲" : "▼"}</span>
         </button>
 
@@ -486,7 +486,7 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
             onClick={() => void fetchAIExplanation(undefined, true)}
             disabled={loading}
             className="ai-tutor-refresh-btn"
-            title="Regenerate explanation with Gemini and update saved cache"
+            title="Regenerate explanation and update saved cache"
           >
             {loading ? "Refreshing..." : "↻ Refresh"}
           </button>

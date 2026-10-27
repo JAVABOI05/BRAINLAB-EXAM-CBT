@@ -102,6 +102,10 @@ export default function LiveClassroomPage({
 
   // Chat & Polls
   const [messages, setMessages] = useState<ClassroomMessage[]>([]);
+  const messagesRef = useRef<ClassroomMessage[]>([]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
   const [chatInput, setChatInput] = useState("");
   const [polls, setPolls] = useState<ClassroomPollItem[]>([]);
   const [activePoll, setActivePoll] = useState<ClassroomPollItem | null>(null);
@@ -399,6 +403,33 @@ export default function LiveClassroomPage({
             if (payload.message.senderId !== user.id) {
               setUnreadMessagesCount((prev) => prev + 1);
             }
+          }
+        });
+
+        // Chat History Synchronization: When someone joins, replay chat history from attendees
+        channel.on("broadcast", { event: "request_chat_history" }, ({ payload }) => {
+          if (payload?.requesterId && payload.requesterId !== user.id && messagesRef.current.length > 0) {
+            channel.send({
+              type: "broadcast",
+              event: "chat_history_response",
+              payload: {
+                targetId: payload.requesterId,
+                messages: messagesRef.current,
+              },
+            });
+          }
+        });
+
+        channel.on("broadcast", { event: "chat_history_response" }, ({ payload }) => {
+          if (payload?.targetId === user.id && Array.isArray(payload?.messages) && payload.messages.length > 0) {
+            setMessages((prev) => {
+              const existingIds = new Set(prev.map((m) => m.id));
+              const missing = payload.messages.filter((m: ClassroomMessage) => !existingIds.has(m.id));
+              if (missing.length === 0) return prev;
+              const combined = [...prev, ...missing];
+              combined.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+              return combined;
+            });
           }
         });
 
@@ -721,6 +752,12 @@ export default function LiveClassroomPage({
                 event: "webrtc_check_active_stream",
                 payload: { studentId: user.id },
               });
+              // Replay chat history from all participants already in session
+              channel.send({
+                type: "broadcast",
+                event: "request_chat_history",
+                payload: { requesterId: user.id },
+              });
             }
           });
 
@@ -1015,12 +1052,28 @@ export default function LiveClassroomPage({
     });
   };
 
-  // 5b. Voice Note Recording & Media Handlers (Real Server Upload)
+  // 5b. Voice Note Recording & Media Handlers (Cross-browser WebM / MP4 / AAC with universal streaming)
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
+
+      // Detect highest fidelity supported audio mime across Safari, Chrome, Edge & Firefox
+      const mimeCandidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/aac",
+        "audio/ogg;codecs=opus",
+      ];
+      const supportedMime =
+        mimeCandidates.find(
+          (m) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m)
+        ) || "";
+
+      const recorder = supportedMime
+        ? new MediaRecorder(stream, { mimeType: supportedMime })
+        : new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (e) => {
@@ -1033,7 +1086,7 @@ export default function LiveClassroomPage({
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      recorder.start();
+      recorder.start(250);
       setIsRecordingAudio(true);
       setRecordingDuration(0);
 
@@ -1064,24 +1117,19 @@ export default function LiveClassroomPage({
     if (recorder && recorder.state !== "inactive") {
       recorder.onstop = async () => {
         if (send && audioChunksRef.current.length > 0 && currentUser) {
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const actualMime = recorder.mimeType || "audio/webm";
+          const audioBlob = new Blob(audioChunksRef.current, { type: actualMime });
+          const fileExtension =
+            actualMime.includes("mp4") || actualMime.includes("aac") ? "mp4" : "webm";
 
-          // 1. Upload audio to real endpoint
+          // 1. Upload audio to streaming endpoint
           const formData = new FormData();
-          formData.append("file", audioBlob, `voice_${Date.now()}.webm`);
+          formData.append("file", audioBlob, `voice_${Date.now()}.${fileExtension}`);
           formData.append("classId", classId);
           formData.append("mediaType", "audio");
           formData.append("duration", String(Math.max(1, duration)));
 
-          // Convert audio blob to universal base64 so all devices/recipients can play it immediately
-          const base64Data: string = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve((reader.result as string) || "");
-            reader.onerror = () => resolve("");
-            reader.readAsDataURL(audioBlob);
-          });
-
-          let uploadedUrl = base64Data;
+          let uploadedUrl = "";
           try {
             const { data: sessionData } = await supabase.auth.getSession();
             const token = sessionData.session?.access_token;
@@ -1099,6 +1147,16 @@ export default function LiveClassroomPage({
             }
           } catch (e) {
             console.warn("Audio upload fallback:", e);
+          }
+
+          if (!uploadedUrl) {
+            // Fallback: convert to base64 only if server upload failed
+            uploadedUrl = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve((reader.result as string) || "");
+              reader.onerror = () => resolve("");
+              reader.readAsDataURL(audioBlob);
+            });
           }
 
           const safeSender =
