@@ -110,7 +110,19 @@ export function isError(value: unknown): value is ApiError {
 export async function getPublicSettings(): Promise<PublicSettings | null> {
   try {
     const res = await call<PublicSettings>("get_public_settings");
-    if (!isError(res) && res) return res;
+    // Older RPC deployments may omit feature flags. Only trust this response
+    // when the calculator flag is explicitly present as a boolean.
+    if (
+      !isError(res) &&
+      res &&
+      typeof res.calculator_enabled === "boolean" &&
+      typeof res.mock_enabled === "boolean"
+    ) {
+      return {
+        ...res,
+        calculator_enabled: res.calculator_enabled,
+      };
+    }
   } catch {}
   try {
     const [examSettings, flags] = await Promise.all([getExamSettings(), getFeatureFlags()]);
