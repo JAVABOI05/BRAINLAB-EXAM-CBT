@@ -2,6 +2,7 @@ import {
   getAIPlatformConfig,
   type AIModelDefinition,
   type AIPlatformConfig,
+  type AIProvider,
 } from "./platformConfig";
 import { recordAIGeneration } from "./aiUsageTracker";
 
@@ -16,7 +17,7 @@ export interface ModelExecutionResult {
   text: string;
   modelId: string;
   modelIdentifier: string;
-  provider: "gemini" | "groq";
+  provider: AIProvider;
   shuffled: boolean;
   latencyMs: number;
 }
@@ -34,6 +35,53 @@ const STEM_SUBJECTS = new Set([
 ]);
 
 /**
+ * Resolves API key for a given provider from environment variables or stored platform config.
+ */
+export function resolveProviderApiKey(provider: AIProvider, config?: AIPlatformConfig | null): string {
+  switch (provider) {
+    case "openai":
+      return (
+        process.env.OPENAI_API_KEY ||
+        process.env.OPENAIAPIKEY ||
+        config?.provider_keys?.openai ||
+        ""
+      );
+    case "anthropic":
+      return (
+        process.env.ANTHROPIC_API_KEY ||
+        process.env.ANTHROPICAPIKEY ||
+        process.env.CLAUDE_API_KEY ||
+        config?.provider_keys?.anthropic ||
+        ""
+      );
+    case "gemini":
+      return (
+        process.env.GEMINI_API_KEY ||
+        process.env.GEMINIAPIKEY ||
+        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+        config?.provider_keys?.gemini ||
+        ""
+      );
+    case "groq":
+      return (
+        process.env.GROQ_API_KEY ||
+        process.env.GROQAPIKEY ||
+        config?.provider_keys?.groq ||
+        ""
+      );
+    case "openrouter":
+      return (
+        process.env.OPENROUTER_API_KEY ||
+        process.env.OPENROUTERAPIKEY ||
+        config?.provider_keys?.openrouter ||
+        ""
+      );
+    default:
+      return "";
+  }
+}
+
+/**
  * Returns an ordered array of candidate models based on configured routing strategy,
  * model strengths, server API key availability, and failover priorities.
  */
@@ -43,20 +91,21 @@ export async function getOrderedCandidateModels(
   const config = await getAIPlatformConfig();
   const strategy = config.routing_strategy || "auto_strength";
 
-  const groqKey = process.env.GROQ_API_KEY || process.env.GROQAPIKEY;
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINIAPIKEY;
-
-  // Filter pool to enabled models that have active server credentials
+  // Filter pool to enabled models that have active credentials available
   const pool = (config.model_pool || []).filter((model) => {
     if (!model.enabled) return false;
-    if (model.provider === "gemini" && !geminiKey) return false;
-    if (model.provider === "groq" && !groqKey) return false;
-    return true;
+    const key = resolveProviderApiKey(model.provider, config);
+    return Boolean(key);
   });
 
   if (pool.length === 0) {
-    // Ultimate emergency fallbacks from environment
+    // Emergency fallbacks from environment
     const emergency: AIModelDefinition[] = [];
+    const geminiKey = resolveProviderApiKey("gemini", config);
+    const groqKey = resolveProviderApiKey("groq", config);
+    const openaiKey = resolveProviderApiKey("openai", config);
+    const anthropicKey = resolveProviderApiKey("anthropic", config);
+
     if (geminiKey) {
       emergency.push({
         id: "emergency-gemini",
@@ -82,6 +131,34 @@ export async function getOrderedCandidateModels(
         enabled: true,
         maxTokens: 350,
         dailyQuotaLimit: 1000,
+        addedAt: new Date().toISOString(),
+      });
+    }
+    if (openaiKey) {
+      emergency.push({
+        id: "emergency-openai",
+        name: "OpenAI GPT-4o Mini (Emergency)",
+        provider: "openai",
+        modelIdentifier: "gpt-4o-mini",
+        strength: "general",
+        priority: 3,
+        enabled: true,
+        maxTokens: 350,
+        dailyQuotaLimit: 5000,
+        addedAt: new Date().toISOString(),
+      });
+    }
+    if (anthropicKey) {
+      emergency.push({
+        id: "emergency-anthropic",
+        name: "Anthropic Claude 3.5 Sonnet (Emergency)",
+        provider: "anthropic",
+        modelIdentifier: "claude-3-5-sonnet-20241022",
+        strength: "reasoning_stem",
+        priority: 4,
+        enabled: true,
+        maxTokens: 350,
+        dailyQuotaLimit: 5000,
         addedAt: new Date().toISOString(),
       });
     }
@@ -119,10 +196,14 @@ export async function getOrderedCandidateModels(
 
     if (isSTEM) {
       if (model.strength === "reasoning_stem") score += 60;
-      if (model.provider === "gemini") score += 20; // Gemini excels in formulas and multi-step derivations
+      if (model.modelIdentifier.includes("opus") || model.modelIdentifier.includes("o1") || model.modelIdentifier.includes("gemini")) {
+        score += 25; // Claude Opus, OpenAI o1, Gemini excel in deep proofs and formulas
+      }
     } else if (isFastMode) {
       if (model.strength === "speed_drill") score += 60;
-      if (model.provider === "groq") score += 30; // Groq excels at sub-200ms latency
+      if (model.provider === "groq" || model.modelIdentifier.includes("mini") || model.modelIdentifier.includes("haiku")) {
+        score += 30; // Groq, Haiku, GPT-4o-mini excel in sub-300ms speed
+      }
     } else {
       if (model.strength === "general") score += 40;
     }
@@ -219,9 +300,140 @@ async function callGeminiAPI(
 }
 
 /**
+ * Direct call to OpenAI API (Supports GPT-4o, GPT-4o-mini, o1, o3-mini)
+ */
+async function callOpenAIAPI(
+  model: AIModelDefinition,
+  systemPrompt: string,
+  userMessage: string,
+  apiKey: string,
+  maxTokens?: number
+): Promise<string> {
+  const isReasoning =
+    model.modelIdentifier.startsWith("o1") ||
+    model.modelIdentifier.startsWith("o3") ||
+    model.modelIdentifier.includes("reasoning");
+
+  const body: Record<string, unknown> = {
+    model: model.modelIdentifier,
+    messages: [
+      { role: isReasoning ? "user" : "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ],
+  };
+
+  if (isReasoning) {
+    body.max_completion_tokens = maxTokens || model.maxTokens || 800;
+  } else {
+    body.temperature = 0.3;
+    body.max_tokens = maxTokens || model.maxTokens || 350;
+  }
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(25_000),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`OpenAI HTTP ${res.status}: ${errText.slice(0, 180)}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content?.trim();
+  if (!content) throw new Error("Empty response from OpenAI.");
+  return content;
+}
+
+/**
+ * Direct call to Anthropic Claude API (Supports Claude 3 Opus, 3.5 Sonnet, 3.7 Sonnet, Haiku)
+ */
+async function callAnthropicAPI(
+  model: AIModelDefinition,
+  systemPrompt: string,
+  userMessage: string,
+  apiKey: string,
+  maxTokens?: number
+): Promise<string> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: model.modelIdentifier,
+      max_tokens: maxTokens || model.maxTokens || 450,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMessage }],
+    }),
+    signal: AbortSignal.timeout(25_000),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Anthropic Claude HTTP ${res.status}: ${errText.slice(0, 180)}`);
+  }
+
+  const data = await res.json();
+  const content = data.content?.[0]?.text?.trim();
+  if (!content) throw new Error("Empty response from Anthropic Claude.");
+  return content;
+}
+
+/**
+ * Direct call to OpenRouter API (Access to 200+ models under single key)
+ */
+async function callOpenRouterAPI(
+  model: AIModelDefinition,
+  systemPrompt: string,
+  userMessage: string,
+  apiKey: string,
+  maxTokens?: number
+): Promise<string> {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://brainlabacademy.com.ng",
+      "X-Title": "BrainLab Academy AI Tutor",
+    },
+    body: JSON.stringify({
+      model: model.modelIdentifier,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      temperature: 0.3,
+      max_tokens: maxTokens || model.maxTokens || 350,
+    }),
+    signal: AbortSignal.timeout(25_000),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`OpenRouter HTTP ${res.status}: ${errText.slice(0, 180)}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content?.trim();
+  if (!content) throw new Error("Empty response from OpenRouter.");
+  return content;
+}
+
+/**
  * Executes an AI completion using intelligent automatic shuffling and failover.
- * Tries the best-matched model first, and transparently shuffles to the next healthy model
- * if 429 quota exhaustion or errors occur.
+ * Supports Google Gemini, Groq, OpenAI, Anthropic Claude, and OpenRouter seamlessly.
  */
 export async function executeSmartAICompletion(params: {
   userMessage: string;
@@ -230,9 +442,6 @@ export async function executeSmartAICompletion(params: {
   userId?: string | null;
   maxTokens?: number;
 }): Promise<ModelExecutionResult> {
-  const groqKey = process.env.GROQ_API_KEY || process.env.GROQAPIKEY || "";
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINIAPIKEY || "";
-
   const config = await getAIPlatformConfig();
   const systemPrompt =
     params.systemPrompt ||
@@ -242,7 +451,9 @@ export async function executeSmartAICompletion(params: {
   const { candidates, strategy } = await getOrderedCandidateModels(params.context);
 
   if (candidates.length === 0) {
-    throw new Error("No AI models are available or configured with server keys.");
+    throw new Error(
+      "No active AI providers or models are configured with valid API keys. Configure credentials in the Admin Portal."
+    );
   }
 
   let lastError: Error | null = null;
@@ -250,13 +461,30 @@ export async function executeSmartAICompletion(params: {
 
   for (const model of candidates) {
     attempts += 1;
+    const apiKey = resolveProviderApiKey(model.provider, config);
+    if (!apiKey) continue;
+
     const start = Date.now();
     try {
       let text = "";
-      if (model.provider === "groq") {
-        text = await callGroqAPI(model, systemPrompt, params.userMessage, groqKey, params.maxTokens);
-      } else {
-        text = await callGeminiAPI(model, systemPrompt, params.userMessage, geminiKey, params.maxTokens);
+      switch (model.provider) {
+        case "groq":
+          text = await callGroqAPI(model, systemPrompt, params.userMessage, apiKey, params.maxTokens);
+          break;
+        case "gemini":
+          text = await callGeminiAPI(model, systemPrompt, params.userMessage, apiKey, params.maxTokens);
+          break;
+        case "openai":
+          text = await callOpenAIAPI(model, systemPrompt, params.userMessage, apiKey, params.maxTokens);
+          break;
+        case "anthropic":
+          text = await callAnthropicAPI(model, systemPrompt, params.userMessage, apiKey, params.maxTokens);
+          break;
+        case "openrouter":
+          text = await callOpenRouterAPI(model, systemPrompt, params.userMessage, apiKey, params.maxTokens);
+          break;
+        default:
+          throw new Error(`Unsupported provider: ${model.provider}`);
       }
 
       const latencyMs = Date.now() - start;
@@ -298,5 +526,7 @@ export async function executeSmartAICompletion(params: {
     }
   }
 
-  throw new Error(`All AI models in the pool were unreachable. Last error: ${lastError?.message || "unknown"}`);
+  throw new Error(
+    `All available AI models in the pool were unreachable. Last error: ${lastError?.message || "unknown"}`
+  );
 }

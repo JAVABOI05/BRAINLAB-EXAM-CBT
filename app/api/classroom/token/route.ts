@@ -155,6 +155,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 4b. Subscription Tier & Feature Entitlement Verification
+      const { getStudentSubscriptionAndEntitlements } = await import("@/app/lib/subscriptionEntitlements");
+      const studentTier = await getStudentSubscriptionAndEntitlements(user.id);
+
+      if (!studentTier.entitlements.classroom_access) {
+        return NextResponse.json(
+          {
+            error: `Live Academic Classrooms require an active Premium Study, Plus, or Pro subscription. You are currently on the ${studentTier.planName} tier.`,
+            requiresSubscription: true,
+            currentPlan: studentTier.planName,
+            requiredTier: "Premium Study",
+            classDetails: {
+              id: liveClass.id,
+              title: roomConfig?.title || liveClass.title,
+            },
+          },
+          { status: 403 }
+        );
+      }
+
       // 5. Masterclass vs Open Class Admission Verification
       const isMasterclass =
         roomConfig?.class_type === "masterclass" ||

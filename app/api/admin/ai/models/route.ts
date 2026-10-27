@@ -121,8 +121,9 @@ export async function POST(request: NextRequest) {
     if (!name || typeof name !== "string" || !name.trim()) {
       return NextResponse.json({ error: "Model name is required." }, { status: 400 });
     }
-    if (provider !== "gemini" && provider !== "groq") {
-      return NextResponse.json({ error: "Provider must be 'gemini' or 'groq'." }, { status: 400 });
+    const validProviders = ["gemini", "groq", "openai", "anthropic", "openrouter"];
+    if (!validProviders.includes(provider)) {
+      return NextResponse.json({ error: "Provider must be 'gemini', 'groq', 'openai', 'anthropic', or 'openrouter'." }, { status: 400 });
     }
     if (!modelIdentifier || typeof modelIdentifier !== "string" || !modelIdentifier.trim()) {
       return NextResponse.json({ error: "Model identifier is required." }, { status: 400 });
@@ -277,6 +278,18 @@ export async function PATCH(request: NextRequest) {
         }
       }
       config.model_pool = pool;
+    }
+
+    // Update custom provider API keys (Super Admin Credentials Vault)
+    if (body.provider_keys && typeof body.provider_keys === "object") {
+      config.provider_keys = {
+        ...(config.provider_keys || {}),
+        ...(typeof body.provider_keys.openai === "string" ? { openai: body.provider_keys.openai.trim() } : {}),
+        ...(typeof body.provider_keys.anthropic === "string" ? { anthropic: body.provider_keys.anthropic.trim() } : {}),
+        ...(typeof body.provider_keys.openrouter === "string" ? { openrouter: body.provider_keys.openrouter.trim() } : {}),
+        ...(typeof body.provider_keys.gemini === "string" ? { gemini: body.provider_keys.gemini.trim() } : {}),
+        ...(typeof body.provider_keys.groq === "string" ? { groq: body.provider_keys.groq.trim() } : {}),
+      };
     }
 
     const ok = await saveAIPlatformConfig(config, auth.user);

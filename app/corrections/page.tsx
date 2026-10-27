@@ -264,6 +264,20 @@ export default function CorrectionsPage() {
         return;
       }
 
+      // Check Subscription Entitlements for Corrections & Step-by-Step Explanations
+      const { getStudentSubscriptionAndEntitlements } = await import("../lib/subscriptionEntitlements");
+      const tierInfo = await getStudentSubscriptionAndEntitlements();
+      if (!tierInfo.entitlements.cbt_corrections) {
+        setLockNotice({
+          title: "Detailed Explanations Require Subscription Upgrade",
+          message: `Your current plan (${tierInfo.planName}) provides candidate score summaries. Full step-by-step question solutions, answer keys, and AI tutor explanations are unlocked on Premium Study, Plus, and Pro tiers.`,
+          actionLabel: "Upgrade Plan for Explanations →",
+          actionHref: "/pricing",
+        });
+        setLoading(false);
+        return;
+      }
+
       const savedSummary = localStorage.getItem("exam_summary");
       const savedCandidate = localStorage.getItem("candidate");
 

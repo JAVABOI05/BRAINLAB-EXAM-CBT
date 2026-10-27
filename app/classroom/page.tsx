@@ -4,12 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
+import TierGateModal from "@/app/components/TierGateModal";
+import {
+  getStudentSubscriptionAndEntitlements,
+  type StudentEntitlementsResult,
+} from "@/app/lib/subscriptionEntitlements";
 
 export default function ClassroomLobbyPage() {
   const router = useRouter();
   const [classCode, setClassCode] = useState("BL-LIVE-101");
   const [isStaff, setIsStaff] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<StudentEntitlementsResult | null>(null);
+  const [showTierModal, setShowTierModal] = useState(false);
 
   useEffect(() => {
     async function checkRole() {
@@ -32,6 +39,12 @@ export default function ClassroomLobbyPage() {
             setIsStaff(true);
           }
         }
+
+        const tier = await getStudentSubscriptionAndEntitlements(user.id);
+        setSubscriptionInfo(tier);
+      } else {
+        const tier = await getStudentSubscriptionAndEntitlements();
+        setSubscriptionInfo(tier);
       }
     }
     void checkRole();
@@ -39,6 +52,10 @@ export default function ClassroomLobbyPage() {
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isStaff && subscriptionInfo && !subscriptionInfo.entitlements.classroom_access) {
+      setShowTierModal(true);
+      return;
+    }
     const code = classCode.trim().toUpperCase() || "BL-LIVE-101";
     router.push(`/classroom/${encodeURIComponent(code)}`);
   };
@@ -131,12 +148,22 @@ export default function ClassroomLobbyPage() {
               </p>
             </div>
             <div className="mt-5">
-              <Link
-                href="/classroom/BL-LIVE-101"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow transition"
-              >
-                Enter Main Stage (BL-LIVE-101) →
-              </Link>
+              {!isStaff && subscriptionInfo && !subscriptionInfo.entitlements.classroom_access ? (
+                <button
+                  type="button"
+                  onClick={() => setShowTierModal(true)}
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow transition"
+                >
+                  🔒 Unlock Main Stage (Requires Premium) →
+                </button>
+              ) : (
+                <Link
+                  href="/classroom/BL-LIVE-101"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow transition"
+                >
+                  Enter Main Stage (BL-LIVE-101) →
+                </Link>
+              )}
             </div>
           </div>
 
@@ -176,10 +203,20 @@ export default function ClassroomLobbyPage() {
             </span>
           ) : (
             <span className="ml-1 inline-flex items-center gap-1 rounded bg-blue-500/20 text-blue-300 px-1.5 py-0.5 font-bold text-[10px]">
-              🎓 Student Mode
+              🎓 Student Mode · Tier: {subscriptionInfo?.planName || "Free"}
             </span>
           )}
         </div>
+
+        {/* Tier Entitlement Gate Modal */}
+        <TierGateModal
+          isOpen={showTierModal}
+          onClose={() => setShowTierModal(false)}
+          featureTitle="Live Academic Classrooms"
+          featureDescription="Real-time interactive tutor sessions with synchronized live whiteboard, math formulas, instant classroom polls, and direct question broadcast are included with Premium Study, Plus, and Pro tiers."
+          requiredTierName="Premium Study"
+          currentPlanName={subscriptionInfo?.planName || "Free Learner"}
+        />
       </main>
     </div>
   );

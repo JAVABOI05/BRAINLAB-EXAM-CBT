@@ -11,8 +11,9 @@ import {
   type AIModelDefinition,
   type AIRoutingStrategy,
   type AIModelStrength,
+  type AIProvider,
 } from "../../lib/platformConfig";
-import type { AIMonitoringPayload, ModelUsageSummary } from "../../lib/aiUsageTracker";
+import type { AIMonitoringPayload, ModelUsageSummary, ProviderKeyInfo } from "../../lib/aiUsageTracker";
 import "../admin.css";
 
 export default function AdminAIPage() {
@@ -28,7 +29,7 @@ export default function AdminAIPage() {
   const [monitoring, setMonitoring] = useState<AIMonitoringPayload | null>(null);
   const [probing, setProbing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [activeTab, setActiveTab] = useState<"monitor" | "pool" | "config" | "headers" | "activity">("monitor");
+  const [activeTab, setActiveTab] = useState<"monitor" | "pool" | "keys" | "config" | "headers" | "activity">("monitor");
 
   // Real-time Ticking Clocks
   const [utcCountdown, setUtcCountdown] = useState({ hours: 0, minutes: 0, seconds: 0, formatted: "00h 00m 00s" });
@@ -42,13 +43,20 @@ export default function AdminAIPage() {
 
   // New Model Form State
   const [newModelName, setNewModelName] = useState("");
-  const [newModelProvider, setNewModelProvider] = useState<"gemini" | "groq">("gemini");
+  const [newModelProvider, setNewModelProvider] = useState<AIProvider>("openai");
   const [newModelIdentifier, setNewModelIdentifier] = useState("");
-  const [newModelStrength, setNewModelStrength] = useState<AIModelStrength>("general");
+  const [newModelStrength, setNewModelStrength] = useState<AIModelStrength>("reasoning_stem");
   const [newModelPriority, setNewModelPriority] = useState(1);
-  const [newModelQuota, setNewModelQuota] = useState(1500);
+  const [newModelQuota, setNewModelQuota] = useState(5000);
   const [newModelMaxTokens, setNewModelMaxTokens] = useState(350);
   const [newModelNotes, setNewModelNotes] = useState("");
+
+  // Provider Keys Vault State (Super Admin)
+  const [openaiKeyInput, setOpenaiKeyInput] = useState("");
+  const [anthropicKeyInput, setAnthropicKeyInput] = useState("");
+  const [openrouterKeyInput, setOpenrouterKeyInput] = useState("");
+  const [geminiKeyInput, setGeminiKeyInput] = useState("");
+  const [groqKeyInput, setGroqKeyInput] = useState("");
 
   // Standard Quota Config Form State
   const [dailyFreeQuota, setDailyFreeQuota] = useState(10);
@@ -311,6 +319,57 @@ export default function AdminAIPage() {
     }
   }
 
+  // Save Provider Keys Vault (Super Admin Only)
+  async function handleSaveKeysVault(e: React.FormEvent) {
+    e.preventDefault();
+    if (!isSuperAdmin) {
+      setError("Only the Super Admin can update AI provider API credentials.");
+      return;
+    }
+
+    setWorking(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const auth = await (await import("../../lib/supabase")).supabase.auth.getSession();
+      const token = auth.data.session?.access_token || "";
+
+      const keysPayload: Record<string, string> = {};
+      if (openaiKeyInput.trim()) keysPayload.openai = openaiKeyInput.trim();
+      if (anthropicKeyInput.trim()) keysPayload.anthropic = anthropicKeyInput.trim();
+      if (openrouterKeyInput.trim()) keysPayload.openrouter = openrouterKeyInput.trim();
+      if (geminiKeyInput.trim()) keysPayload.gemini = geminiKeyInput.trim();
+      if (groqKeyInput.trim()) keysPayload.groq = groqKeyInput.trim();
+
+      const res = await fetch("/api/admin/ai/models", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          provider_keys: keysPayload,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save API credentials.");
+
+      setMessage("AI Provider API credentials saved and encrypted in platform vault!");
+      setOpenaiKeyInput("");
+      setAnthropicKeyInput("");
+      setOpenrouterKeyInput("");
+      setGeminiKeyInput("");
+      setGroqKeyInput("");
+      void fetchTelemetry(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save credentials.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
   // Save General Quota Config
   async function handleSaveGeneralConfig(e: React.FormEvent) {
     e.preventDefault();
@@ -367,11 +426,11 @@ export default function AdminAIPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-indigo-900/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-indigo-700 mb-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Live AI Gateway &amp; Quota Telemetry
+                Live Multi-Provider AI Gateway &amp; Telemetry
               </div>
               <h1 className="admin-title">AI Models Fleet, Dynamic Shuffling &amp; Quota Engine</h1>
               <p className="admin-subtitle">
-                Monitor real-time consumption, provider quotas, daily UTC reset countdowns, and automatic model shuffling.
+                Monitor real-time consumption, provider quotas, daily UTC reset countdowns, and automatic model shuffling across Google Gemini, Groq, OpenAI, and Anthropic Claude.
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 {admin && (
@@ -381,11 +440,11 @@ export default function AdminAIPage() {
                 )}
                 {isSuperAdmin ? (
                   <span className="rounded-md bg-purple-100 px-2.5 py-0.5 text-xs font-black text-purple-900 border border-purple-200">
-                    👑 Super Admin: Model Pool &amp; Shuffling Management Unlocked
+                    👑 Super Admin: Multi-Provider Pool &amp; Shuffling Management Unlocked
                   </span>
                 ) : (
                   <span className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600 border border-slate-200">
-                    🔒 Model Add/Delete &amp; Shuffling rules restricted to Super Admin
+                    🔒 Model Add/Delete &amp; Credentials restricted to Super Admin
                   </span>
                 )}
                 <span className="rounded-md bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
@@ -400,7 +459,7 @@ export default function AdminAIPage() {
                 onClick={() => void fetchTelemetry(true)}
                 disabled={probing}
                 className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-black text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50 transition"
-                title="Pings Gemini & Groq APIs to measure latency and refresh live rate-limit headers"
+                title="Pings all active AI APIs to measure latency and refresh live rate-limit headers"
               >
                 {probing ? (
                   <>
@@ -497,6 +556,18 @@ export default function AdminAIPage() {
             }`}
           >
             🔀 Model Shuffling &amp; Fleet Pool ({modelPool.length})
+            {isSuperAdmin && <span className="ml-1.5 rounded bg-purple-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase text-purple-200">Super Admin</span>}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("keys")}
+            className={`rounded-xl px-4 py-2 text-xs font-black transition ${
+              activeTab === "keys"
+                ? "bg-[#061a3a] text-white shadow-sm"
+                : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            🔑 Provider Keys &amp; Credentials Vault
             {isSuperAdmin && <span className="ml-1.5 rounded bg-purple-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase text-purple-200">Super Admin</span>}
           </button>
           <button
@@ -727,7 +798,7 @@ export default function AdminAIPage() {
                       Smart Strength Routing (Recommended)
                     </strong>
                     <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                      Math &amp; STEM route to high-reasoning models; quick drills route to sub-200ms models; auto-shuffles if 429 occurs.
+                      Math &amp; STEM route to high-reasoning models (Claude Opus, Gemini 3, OpenAI o1); fast drills route to sub-200ms models; auto-shuffles if 429 occurs.
                     </p>
                   </div>
                   <span className="mt-3 inline-block text-[10px] font-bold text-indigo-700">
@@ -760,7 +831,7 @@ export default function AdminAIPage() {
                       Dynamic Load Balancing
                     </strong>
                     <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                      Shuffles student traffic evenly across all enabled healthy models to maximize aggregate throughput and avoid quota exhaustion.
+                      Shuffles student traffic evenly across all enabled healthy models to maximize aggregate throughput and prevent burning any single model&apos;s quota.
                     </p>
                   </div>
                   <span className="mt-3 inline-block text-[10px] font-bold text-indigo-700">
@@ -854,7 +925,7 @@ export default function AdminAIPage() {
                     Active AI Model Fleet ({modelPool.length} Models in Pool)
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Configure strengths, priority ranking, and enable/disable individual models.
+                    Configure strengths, priority ranking, and enable/disable individual models across all supported providers.
                   </p>
                 </div>
                 <div className="text-xs text-slate-500">
@@ -867,7 +938,8 @@ export default function AdminAIPage() {
                   <thead>
                     <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                       <th className="pb-2">Status</th>
-                      <th className="pb-2">Model Name &amp; Provider</th>
+                      <th className="pb-2">Model Name</th>
+                      <th className="pb-2">Provider</th>
                       <th className="pb-2">API Identifier</th>
                       <th className="pb-2">Strength Specialization</th>
                       <th className="pb-2">Priority</th>
@@ -893,9 +965,11 @@ export default function AdminAIPage() {
 
                         <td className="py-3">
                           <strong className="block text-slate-900 text-xs">{model.name}</strong>
-                          <span className="text-[10px] text-slate-500 font-mono uppercase">
-                            Provider: {model.provider}
-                          </span>
+                          {model.notes && <span className="text-[10px] text-slate-400 block">{model.notes}</span>}
+                        </td>
+
+                        <td className="py-3">
+                          <ProviderBadge provider={model.provider} />
                         </td>
 
                         <td className="py-3 font-mono text-xs text-indigo-700 font-bold">
@@ -949,7 +1023,246 @@ export default function AdminAIPage() {
           </div>
         )}
 
-        {/* TAB 3: PLATFORM SETTINGS */}
+        {/* TAB 3: PROVIDER KEYS & CREDENTIALS VAULT (SUPER ADMIN) */}
+        {activeTab === "keys" && (
+          <div className="space-y-6">
+            <section className="admin-card p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-black text-slate-900">AI Provider Credentials &amp; API Keys Vault</h2>
+                    {isSuperAdmin ? (
+                      <span className="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-black text-purple-900">
+                        SUPER ADMIN VAULT
+                      </span>
+                    ) : (
+                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-600">
+                        LOCKED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Configure your API keys for OpenAI, Anthropic Claude, Google Gemini, Groq, or OpenRouter. Keys can be set in environment variables or securely stored here.
+                  </p>
+                </div>
+              </div>
+
+              {/* Provider Keys Status Cards Grid */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {/* 1. Google Gemini */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900">Google AI Studio</span>
+                    {monitoring?.providerKeys.gemini.configured ? (
+                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+                        ● ACTIVE ({monitoring.providerKeys.gemini.keySource.toUpperCase()})
+                      </span>
+                    ) : (
+                      <span className="rounded bg-rose-100 px-2 py-0.5 text-[10px] font-black text-rose-800">
+                        MISSING
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Powers Gemini 3 Flash, Gemini 3.8 Flash, and Gemini 1.5 Pro.
+                  </p>
+                  {monitoring?.providerKeys.gemini.maskedKey && (
+                    <span className="block font-mono text-[11px] text-slate-700 bg-white p-1 rounded border border-slate-200">
+                      Key: {monitoring.providerKeys.gemini.maskedKey}
+                    </span>
+                  )}
+                </div>
+
+                {/* 2. Groq LPU */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900">Groq High-Speed LPU</span>
+                    {monitoring?.providerKeys.groq.configured ? (
+                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+                        ● ACTIVE ({monitoring.providerKeys.groq.keySource.toUpperCase()})
+                      </span>
+                    ) : (
+                      <span className="rounded bg-rose-100 px-2 py-0.5 text-[10px] font-black text-rose-800">
+                        MISSING
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Powers sub-200ms Qwen 27B, Llama 3.3, and fast practice drills.
+                  </p>
+                  {monitoring?.providerKeys.groq.maskedKey && (
+                    <span className="block font-mono text-[11px] text-slate-700 bg-white p-1 rounded border border-slate-200">
+                      Key: {monitoring.providerKeys.groq.maskedKey}
+                    </span>
+                  )}
+                </div>
+
+                {/* 3. OpenAI */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900">OpenAI</span>
+                    {monitoring?.providerKeys.openai.configured ? (
+                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+                        ● ACTIVE ({monitoring.providerKeys.openai.keySource.toUpperCase()})
+                      </span>
+                    ) : (
+                      <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                        NOT CONFIGURED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Powers GPT-4o, GPT-4o-mini, o1, and o3-mini models.
+                  </p>
+                  {monitoring?.providerKeys.openai.maskedKey && (
+                    <span className="block font-mono text-[11px] text-slate-700 bg-white p-1 rounded border border-slate-200">
+                      Key: {monitoring.providerKeys.openai.maskedKey}
+                    </span>
+                  )}
+                </div>
+
+                {/* 4. Anthropic Claude */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900">Anthropic Claude</span>
+                    {monitoring?.providerKeys.anthropic.configured ? (
+                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+                        ● ACTIVE ({monitoring.providerKeys.anthropic.keySource.toUpperCase()})
+                      </span>
+                    ) : (
+                      <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                        NOT CONFIGURED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Powers Claude 3 Opus, Claude 3.5 Sonnet, and Claude 3.5 Haiku.
+                  </p>
+                  {monitoring?.providerKeys.anthropic.maskedKey && (
+                    <span className="block font-mono text-[11px] text-slate-700 bg-white p-1 rounded border border-slate-200">
+                      Key: {monitoring.providerKeys.anthropic.maskedKey}
+                    </span>
+                  )}
+                </div>
+
+                {/* 5. OpenRouter */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900">OpenRouter (Unified)</span>
+                    {monitoring?.providerKeys.openrouter.configured ? (
+                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+                        ● ACTIVE ({monitoring.providerKeys.openrouter.keySource.toUpperCase()})
+                      </span>
+                    ) : (
+                      <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                        NOT CONFIGURED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Single API key that grants access to 200+ models (Claude, GPT, DeepSeek, Llama).
+                  </p>
+                  {monitoring?.providerKeys.openrouter.maskedKey && (
+                    <span className="block font-mono text-[11px] text-slate-700 bg-white p-1 rounded border border-slate-200">
+                      Key: {monitoring.providerKeys.openrouter.maskedKey}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Super Admin Input Form */}
+              {isSuperAdmin && (
+                <form onSubmit={handleSaveKeysVault} className="space-y-4 pt-4 border-t border-slate-200">
+                  <h3 className="text-sm font-black text-slate-950 uppercase tracking-wider">
+                    Add or Update Provider API Keys
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    When you purchase API keys from OpenAI, Anthropic, or OpenRouter, paste them here. They will be encrypted and saved for your application.
+                  </p>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        OpenAI API Key (sk-...)
+                      </label>
+                      <input
+                        type="password"
+                        value={openaiKeyInput}
+                        onChange={(e) => setOpenaiKeyInput(e.target.value)}
+                        placeholder="sk-proj-..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        Anthropic Claude API Key (sk-ant-...)
+                      </label>
+                      <input
+                        type="password"
+                        value={anthropicKeyInput}
+                        onChange={(e) => setAnthropicKeyInput(e.target.value)}
+                        placeholder="sk-ant-api03-..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        OpenRouter API Key (sk-or-...)
+                      </label>
+                      <input
+                        type="password"
+                        value={openrouterKeyInput}
+                        onChange={(e) => setOpenrouterKeyInput(e.target.value)}
+                        placeholder="sk-or-v1-..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        Google Gemini API Key
+                      </label>
+                      <input
+                        type="password"
+                        value={geminiKeyInput}
+                        onChange={(e) => setGeminiKeyInput(e.target.value)}
+                        placeholder="AQ.Ab8..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        Groq API Key (gsk_...)
+                      </label>
+                      <input
+                        type="password"
+                        value={groqKeyInput}
+                        onChange={(e) => setGroqKeyInput(e.target.value)}
+                        placeholder="gsk_..."
+                        className="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      disabled={working}
+                      className="rounded-xl bg-[#061a3a] px-6 py-2.5 text-xs font-black text-white hover:bg-[#123566] disabled:opacity-50 transition shadow"
+                    >
+                      {working ? "Saving Keys..." : "Save Provider Credentials to Vault"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* TAB 4: PLATFORM SETTINGS */}
         {activeTab === "config" && (
           <form onSubmit={handleSaveGeneralConfig} className="space-y-6">
             <section className="admin-section admin-card">
@@ -1032,13 +1345,13 @@ export default function AdminAIPage() {
           </form>
         )}
 
-        {/* TAB 4: RAW RATE-LIMIT HEADERS INSPECTOR */}
+        {/* TAB 5: RAW RATE-LIMIT HEADERS INSPECTOR */}
         {activeTab === "headers" && (
           <section className="admin-card p-5 space-y-6">
             <div>
               <h2 className="text-base font-black text-slate-900">Provider Live HTTP Response Headers Inspector</h2>
               <p className="text-xs text-slate-500">
-                Shows the exact rate-limit and reset headers returned by the upstream AI providers during the latest probe.
+                Shows the exact rate-limit and reset headers returned by upstream AI providers during the latest probe.
               </p>
             </div>
 
@@ -1091,7 +1404,7 @@ export default function AdminAIPage() {
           </section>
         )}
 
-        {/* TAB 5: RECENT GENERATIONS ACTIVITY STREAM */}
+        {/* TAB 6: RECENT GENERATIONS ACTIVITY STREAM */}
         {activeTab === "activity" && (
           <section className="admin-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
@@ -1112,6 +1425,7 @@ export default function AdminAIPage() {
                   <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                     <th className="pb-2">Time</th>
                     <th className="pb-2">Model</th>
+                    <th className="pb-2">Provider</th>
                     <th className="pb-2">Prompt Preview</th>
                     <th className="pb-2">Response Preview</th>
                     <th className="pb-2">Est. Tokens</th>
@@ -1128,6 +1442,9 @@ export default function AdminAIPage() {
                         <span className="inline-block rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-800">
                           {gen.model}
                         </span>
+                      </td>
+                      <td className="py-2.5">
+                        <ProviderBadge provider={gen.provider as AIProvider} />
                       </td>
                       <td className="py-2.5 text-slate-800 max-w-xs truncate" title={gen.promptSnippet}>
                         {gen.promptSnippet || "—"}
@@ -1165,7 +1482,7 @@ export default function AdminAIPage() {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <h3 className="text-base font-black text-slate-950">Add AI Model to Fleet Pool</h3>
-                <p className="text-xs text-slate-500">Super Admin configuration: model will participate in shuffling and failover.</p>
+                <p className="text-xs text-slate-500">Super Admin: Choose provider, model ID, strength, and priority rank.</p>
               </div>
               <button
                 type="button"
@@ -1183,7 +1500,7 @@ export default function AdminAIPage() {
                   type="text"
                   value={newModelName}
                   onChange={(e) => setNewModelName(e.target.value)}
-                  placeholder="e.g. Google Gemini 3.8 Flash (Preview)"
+                  placeholder="e.g. Anthropic Claude 3 Opus (Top Reasoning)"
                   className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
                   required
                 />
@@ -1191,14 +1508,25 @@ export default function AdminAIPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1">Provider</label>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">AI Provider</label>
                   <select
                     value={newModelProvider}
-                    onChange={(e) => setNewModelProvider(e.target.value as "gemini" | "groq")}
-                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
+                    onChange={(e) => {
+                      const p = e.target.value as AIProvider;
+                      setNewModelProvider(p);
+                      if (p === "openai") setNewModelIdentifier("gpt-4o");
+                      else if (p === "anthropic") setNewModelIdentifier("claude-3-opus-20240229");
+                      else if (p === "gemini") setNewModelIdentifier("gemini-3-flash-preview");
+                      else if (p === "groq") setNewModelIdentifier("qwen/qwen3.8-27b");
+                      else if (p === "openrouter") setNewModelIdentifier("anthropic/claude-3-opus");
+                    }}
+                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900 font-bold"
                   >
+                    <option value="openai">OpenAI (GPT-4o, o1, o3)</option>
+                    <option value="anthropic">Anthropic Claude (Opus, Sonnet, Haiku)</option>
                     <option value="gemini">Google Gemini</option>
                     <option value="groq">Groq LPU</option>
+                    <option value="openrouter">OpenRouter (Unified 200+ Models)</option>
                   </select>
                 </div>
 
@@ -1223,25 +1551,102 @@ export default function AdminAIPage() {
                   type="text"
                   value={newModelIdentifier}
                   onChange={(e) => setNewModelIdentifier(e.target.value)}
-                  placeholder="e.g. gemini-3.8-flash, qwen/qwen3.8-27b, openai/gpt-oss-120b"
+                  placeholder="e.g. claude-3-opus-20240229, gpt-4o, o1, gemini-3.8-flash"
                   className="w-full rounded-xl border border-slate-300 p-2.5 font-mono text-xs text-slate-900"
                   required
                 />
-                {newModelProvider === "groq" && monitoring?.availableGroqModels && monitoring.availableGroqModels.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    <span className="text-[10px] text-slate-500">Suggestions:</span>
-                    {monitoring.availableGroqModels.slice(0, 5).map((m) => (
+                
+                {/* One-click suggestions chips */}
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  <span className="text-[10px] text-slate-500">Popular presets:</span>
+                  {newModelProvider === "anthropic" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("claude-3-opus-20240229"); setNewModelName("Anthropic Claude 3 Opus"); setNewModelStrength("reasoning_stem"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-indigo-700 hover:bg-indigo-100"
+                      >
+                        claude-3-opus
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("claude-3-5-sonnet-20241022"); setNewModelName("Anthropic Claude 3.5 Sonnet"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-200"
+                      >
+                        claude-3-5-sonnet
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("claude-3-5-haiku-20241022"); setNewModelName("Anthropic Claude 3.5 Haiku"); setNewModelStrength("speed_drill"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-200"
+                      >
+                        claude-3-5-haiku
+                      </button>
+                    </>
+                  )}
+                  {newModelProvider === "openai" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("gpt-4o"); setNewModelName("OpenAI GPT-4o"); setNewModelStrength("general"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-indigo-700 hover:bg-indigo-100"
+                      >
+                        gpt-4o
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("gpt-4o-mini"); setNewModelName("OpenAI GPT-4o Mini"); setNewModelStrength("speed_drill"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-200"
+                      >
+                        gpt-4o-mini
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("o3-mini"); setNewModelName("OpenAI o3-mini (Reasoning)"); setNewModelStrength("reasoning_stem"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-200"
+                      >
+                        o3-mini
+                      </button>
+                    </>
+                  )}
+                  {newModelProvider === "openrouter" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("anthropic/claude-3-opus"); setNewModelName("Claude 3 Opus (via OpenRouter)"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-indigo-700 hover:bg-indigo-100"
+                      >
+                        anthropic/claude-3-opus
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("openai/gpt-4o"); setNewModelName("GPT-4o (via OpenRouter)"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-200"
+                      >
+                        openai/gpt-4o
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setNewModelIdentifier("deepseek/deepseek-r1"); setNewModelName("DeepSeek R1 (via OpenRouter)"); }}
+                        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-200"
+                      >
+                        deepseek/deepseek-r1
+                      </button>
+                    </>
+                  )}
+                  {newModelProvider === "groq" && monitoring?.availableGroqModels && (
+                    monitoring.availableGroqModels.slice(0, 4).map((m) => (
                       <button
                         key={m}
                         type="button"
-                        onClick={() => setNewModelIdentifier(m)}
+                        onClick={() => { setNewModelIdentifier(m); setNewModelName(`Groq ${m}`); }}
                         className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-700 hover:bg-indigo-100"
                       >
                         {m}
                       </button>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -1266,7 +1671,7 @@ export default function AdminAIPage() {
                     min={100}
                     max={100000}
                     value={newModelQuota}
-                    onChange={(e) => setNewModelQuota(Number(e.target.value) || 1000)}
+                    onChange={(e) => setNewModelQuota(Number(e.target.value) || 5000)}
                     className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
                     required
                   />
@@ -1278,7 +1683,7 @@ export default function AdminAIPage() {
                   <input
                     type="number"
                     min={150}
-                    max={2000}
+                    max={4000}
                     value={newModelMaxTokens}
                     onChange={(e) => setNewModelMaxTokens(Number(e.target.value) || 350)}
                     className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
@@ -1294,7 +1699,7 @@ export default function AdminAIPage() {
                   type="text"
                   value={newModelNotes}
                   onChange={(e) => setNewModelNotes(e.target.value)}
-                  placeholder="e.g. Mid-size model released June 2026 for high-yield questions."
+                  placeholder="e.g. Flagship Claude model for advanced mathematics and chemistry."
                   className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
                 />
               </div>
@@ -1321,6 +1726,48 @@ export default function AdminAIPage() {
       )}
     </main>
   );
+}
+
+// Subcomponent: Provider Badge
+function ProviderBadge({ provider }: { provider?: AIProvider }) {
+  switch (provider) {
+    case "openai":
+      return (
+        <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-900">
+          OpenAI
+        </span>
+      );
+    case "anthropic":
+      return (
+        <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-900">
+          Anthropic
+        </span>
+      );
+    case "gemini":
+      return (
+        <span className="inline-flex items-center gap-1 rounded bg-indigo-100 px-2 py-0.5 text-[10px] font-black text-indigo-900">
+          Gemini
+        </span>
+      );
+    case "groq":
+      return (
+        <span className="inline-flex items-center gap-1 rounded bg-orange-100 px-2 py-0.5 text-[10px] font-black text-orange-900">
+          Groq
+        </span>
+      );
+    case "openrouter":
+      return (
+        <span className="inline-flex items-center gap-1 rounded bg-purple-100 px-2 py-0.5 text-[10px] font-black text-purple-900">
+          OpenRouter
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+          {provider || "AI"}
+        </span>
+      );
+  }
 }
 
 // Subcomponent: Strength Badge
@@ -1421,10 +1868,11 @@ function ModelCard({
             >
               ● {model.status}
             </span>
+            <ProviderBadge provider={model.provider} />
             <StrengthBadge strength={model.strength} />
           </div>
           <span className="text-xs font-mono text-slate-500 block mt-0.5">
-            Model ID: {model.modelId}
+            Model ID: {model.modelId} ({model.modelId !== model.notes && model.notes ? model.notes : model.provider})
           </span>
         </div>
 
@@ -1513,7 +1961,7 @@ function ModelCard({
           </span>
         </div>
 
-        {/* Dynamic Header Reported Reset (Groq) */}
+        {/* Dynamic Header Reported Reset */}
         {model.providerReportedResetRequests && (
           <div className="border-t border-indigo-200/50 pt-1.5 flex items-center justify-between text-[11px] text-indigo-900">
             <span>Provider Header Reset (x-ratelimit):</span>
@@ -1526,7 +1974,7 @@ function ModelCard({
 
       {/* Footer Notes & Probe Action */}
       <div className="mt-4 flex items-center justify-between pt-2 border-t border-slate-100">
-        <p className="text-[11px] text-slate-500 max-w-xs">{model.notes}</p>
+        <p className="text-[11px] text-slate-500 max-w-xs">{model.notes || model.statusMessage}</p>
         <button
           type="button"
           onClick={onProbe}
@@ -1542,16 +1990,22 @@ function ModelCard({
 function getHeaderDescription(header: string): string {
   switch (header.toLowerCase()) {
     case "x-ratelimit-limit-requests":
+    case "anthropic-ratelimit-requests-limit":
       return "Maximum allowed requests in the active daily quota cycle.";
     case "x-ratelimit-remaining-requests":
+    case "anthropic-ratelimit-requests-remaining":
       return "Number of remaining requests available before throttling.";
     case "x-ratelimit-reset-requests":
+    case "anthropic-ratelimit-requests-reset":
       return "Exact duration until the request quota counter resets.";
     case "x-ratelimit-limit-tokens":
+    case "anthropic-ratelimit-tokens-limit":
       return "Tokens allowed per minute (TPM) limit.";
     case "x-ratelimit-remaining-tokens":
+    case "anthropic-ratelimit-tokens-remaining":
       return "Tokens remaining in the current 1-minute window.";
     case "x-ratelimit-reset-tokens":
+    case "anthropic-ratelimit-tokens-reset":
       return "Duration until tokens window rolls over.";
     case "retry-after":
       return "Seconds to wait before resending after a 429 response.";

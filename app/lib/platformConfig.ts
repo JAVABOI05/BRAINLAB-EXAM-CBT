@@ -5,6 +5,23 @@ import {
   validateProportionsSum,
 } from "./difficultyEngine";
 
+export interface PlanEntitlements {
+  cbt_access: boolean; // CBT Mock and examination portal access
+  cbt_unlimited: boolean; // true = unlimited attempts, false = limited by daily quota
+  cbt_daily_limit: number; // Max mock attempts per day if not unlimited (0 = unlimited)
+  cbt_corrections: boolean; // Access to post-exam step-by-step corrections & explanations
+  offline_saving: boolean; // Ability to cache questions and practice offline
+  ai_tutor_enabled: boolean; // AI study buddy & hint assistance
+  ai_monthly_quota: number; // Monthly AI query allowance (999999 = unlimited)
+  ai_voice_tutor: boolean; // AI voice note read aloud & pronunciation
+  classroom_access: boolean; // Access to live masterclasses & audio/video classrooms
+  competitions_included: boolean; // Access to live 1v1 arena & school competitions
+  advanced_analytics: boolean; // Detailed topic psychometrics & weakness diagnostics
+  certificates_issued: boolean; // Verified digital certificates upon score threshold
+  calculator_type: "none" | "standard" | "scientific"; // Allowed exam calculator type
+  vip_support: boolean; // 24/7 priority resolution and tutor direct dispatch
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -14,7 +31,7 @@ export interface SubscriptionPlan {
   currency: string;
   interval: "monthly" | "yearly";
   features: string[];
-  entitlements: Record<string, unknown>;
+  entitlements: PlanEntitlements;
   is_active: boolean;
   display_order: number;
 }
@@ -76,10 +93,12 @@ export type AIRoutingStrategy =
   | "priority_failover"// Strict priority order (Priority 1 -> Priority 2 -> Priority 3)
   | "admin_pinned";    // Locks to a specific model designated by Super Admin
 
+export type AIProvider = "gemini" | "groq" | "openai" | "anthropic" | "openrouter";
+
 export interface AIModelDefinition {
   id: string;
   name: string;
-  provider: "gemini" | "groq";
+  provider: AIProvider;
   modelIdentifier: string;
   strength: AIModelStrength;
   priority: number;
@@ -92,9 +111,19 @@ export interface AIModelDefinition {
 }
 
 export interface AIPlatformConfig {
-  provider: "gemini" | "groq";
+  provider: "gemini" | "groq" | "openai" | "anthropic" | "openrouter";
   gemini_model: string;
   groq_model: string;
+  openai_model?: string;
+  anthropic_model?: string;
+  openrouter_model?: string;
+  provider_keys?: {
+    openai?: string;
+    anthropic?: string;
+    openrouter?: string;
+    gemini?: string;
+    groq?: string;
+  };
   routing_strategy?: AIRoutingStrategy;
   pinned_model_id?: string;
   model_pool?: AIModelDefinition[];
@@ -202,6 +231,79 @@ export interface AuditLogEntry {
   created_at?: string;
 }
 
+export const DEFAULT_FREE_ENTITLEMENTS: PlanEntitlements = {
+  cbt_access: true,
+  cbt_unlimited: false,
+  cbt_daily_limit: 1,
+  cbt_corrections: false,
+  offline_saving: true,
+  ai_tutor_enabled: true,
+  ai_monthly_quota: 50,
+  ai_voice_tutor: false,
+  classroom_access: false,
+  competitions_included: false,
+  advanced_analytics: false,
+  certificates_issued: false,
+  calculator_type: "standard",
+  vip_support: false,
+};
+
+export function normalizePlanEntitlements(
+  raw?: Partial<PlanEntitlements> | Record<string, unknown>,
+  isFreeTier: boolean = false
+): PlanEntitlements {
+  const base: PlanEntitlements = isFreeTier
+    ? DEFAULT_FREE_ENTITLEMENTS
+    : {
+        cbt_access: true,
+        cbt_unlimited: true,
+        cbt_daily_limit: 0,
+        cbt_corrections: true,
+        offline_saving: true,
+        ai_tutor_enabled: true,
+        ai_monthly_quota: 500,
+        ai_voice_tutor: true,
+        classroom_access: true,
+        competitions_included: true,
+        advanced_analytics: true,
+        certificates_issued: false,
+        calculator_type: "scientific",
+        vip_support: false,
+      };
+
+  if (!raw || typeof raw !== "object") return { ...base };
+
+  const rawObj = raw as Record<string, unknown>;
+  const rawCalc = rawObj.calculator_type;
+  const calcType: "none" | "standard" | "scientific" =
+    rawCalc === "none" || rawCalc === "standard" || rawCalc === "scientific" ? rawCalc : base.calculator_type;
+
+  return {
+    cbt_access: typeof rawObj.cbt_access === "boolean" ? rawObj.cbt_access : base.cbt_access,
+    cbt_unlimited: typeof rawObj.cbt_unlimited === "boolean" ? rawObj.cbt_unlimited : base.cbt_unlimited,
+    cbt_daily_limit: typeof rawObj.cbt_daily_limit === "number" ? rawObj.cbt_daily_limit : base.cbt_daily_limit,
+    cbt_corrections: typeof rawObj.cbt_corrections === "boolean" ? rawObj.cbt_corrections : base.cbt_corrections,
+    offline_saving: typeof rawObj.offline_saving === "boolean" ? rawObj.offline_saving : base.offline_saving,
+    ai_tutor_enabled: typeof rawObj.ai_tutor_enabled === "boolean" ? rawObj.ai_tutor_enabled : base.ai_tutor_enabled,
+    ai_monthly_quota:
+      typeof rawObj.ai_monthly_quota === "number"
+        ? rawObj.ai_monthly_quota
+        : typeof rawObj.ai_daily_quota === "number"
+        ? (rawObj.ai_daily_quota as number) * 30
+        : base.ai_monthly_quota,
+    ai_voice_tutor: typeof rawObj.ai_voice_tutor === "boolean" ? rawObj.ai_voice_tutor : base.ai_voice_tutor,
+    classroom_access: typeof rawObj.classroom_access === "boolean" ? rawObj.classroom_access : base.classroom_access,
+    competitions_included:
+      typeof rawObj.competitions_included === "boolean" ? rawObj.competitions_included : base.competitions_included,
+    advanced_analytics:
+      typeof rawObj.advanced_analytics === "boolean" ? rawObj.advanced_analytics : base.advanced_analytics,
+    certificates_issued:
+      typeof rawObj.certificates_issued === "boolean" ? rawObj.certificates_issued : base.certificates_issued,
+    calculator_type: calcType,
+    vip_support: typeof rawObj.vip_support === "boolean" ? rawObj.vip_support : base.vip_support,
+  };
+}
+
 // Default initial fallbacks for graceful resilience
 const DEFAULT_PLANS: SubscriptionPlan[] = [
   {
@@ -212,8 +314,14 @@ const DEFAULT_PLANS: SubscriptionPlan[] = [
     price_naira: 0,
     currency: "NGN",
     interval: "monthly",
-    features: ["Full CBT examination portal", "Standard Self Practice", "10 AI Tutor queries per day", "Public leaderboards"],
-    entitlements: { cbt_unlimited: true, ai_daily_quota: 10, offline_saving: true },
+    features: [
+      "1 CBT mock test per day",
+      "Standard Self Practice questions",
+      "50 AI Tutor study hints per month",
+      "Standard Exam Calculator",
+      "Offline study saving",
+    ],
+    entitlements: DEFAULT_FREE_ENTITLEMENTS,
     is_active: true,
     display_order: 1,
   },
@@ -225,8 +333,32 @@ const DEFAULT_PLANS: SubscriptionPlan[] = [
     price_naira: 1500,
     currency: "NGN",
     interval: "monthly",
-    features: ["Everything in Free", "500 AI Tutor explanations per month", "Topic weakness auto-retry loop", "Detailed subject analytics", "Priority email support"],
-    entitlements: { cbt_unlimited: true, ai_monthly_quota: 500, competitions_included: true, advanced_analytics: true },
+    features: [
+      "Unlimited CBT mock examinations",
+      "Step-by-step post-exam corrections & answers",
+      "500 AI Tutor explanations per month",
+      "AI Voice audio pronunciations & summaries",
+      "Full Live Masterclass & Classroom access",
+      "Competition Arena & 1v1 challenges",
+      "In-depth topic psychometrics & analytics",
+      "Scientific Exam Calculator",
+    ],
+    entitlements: {
+      cbt_access: true,
+      cbt_unlimited: true,
+      cbt_daily_limit: 0,
+      cbt_corrections: true,
+      offline_saving: true,
+      ai_tutor_enabled: true,
+      ai_monthly_quota: 500,
+      ai_voice_tutor: true,
+      classroom_access: true,
+      competitions_included: true,
+      advanced_analytics: true,
+      certificates_issued: false,
+      calculator_type: "scientific",
+      vip_support: false,
+    },
     is_active: true,
     display_order: 2,
   },
@@ -238,8 +370,29 @@ const DEFAULT_PLANS: SubscriptionPlan[] = [
     price_naira: 3000,
     currency: "NGN",
     interval: "monthly",
-    features: ["Everything in Premium", "1,500 AI Tutor explanations per month", "Official Competition & Quiz access", "Verified Digital Certificates", "Personalized study planner sync"],
-    entitlements: { cbt_unlimited: true, ai_monthly_quota: 1500, competitions_included: true, certificates_issued: true },
+    features: [
+      "Everything in Premium Study",
+      "1,500 AI Tutor explanations per month",
+      "Official National School Competitions & Quizzes",
+      "Verified Digital Certificates of Achievement",
+      "Live Academic Masterclass Priority Entry",
+    ],
+    entitlements: {
+      cbt_access: true,
+      cbt_unlimited: true,
+      cbt_daily_limit: 0,
+      cbt_corrections: true,
+      offline_saving: true,
+      ai_tutor_enabled: true,
+      ai_monthly_quota: 1500,
+      ai_voice_tutor: true,
+      classroom_access: true,
+      competitions_included: true,
+      advanced_analytics: true,
+      certificates_issued: true,
+      calculator_type: "scientific",
+      vip_support: false,
+    },
     is_active: true,
     display_order: 3,
   },
@@ -251,8 +404,29 @@ const DEFAULT_PLANS: SubscriptionPlan[] = [
     price_naira: 5000,
     currency: "NGN",
     interval: "monthly",
-    features: ["Everything in Plus", "Unlimited AI study missions", "All national & school competitions included", "Lifetime verified credential portfolio", "VIP 24/7 priority support"],
-    entitlements: { cbt_unlimited: true, ai_unlimited: true, competitions_included: true, certificates_issued: true, vip_support: true },
+    features: [
+      "Everything in BrainLab Plus",
+      "Unlimited AI Tutor coaching & hints",
+      "All National, State & School Competitions included",
+      "Lifetime verified credential portfolio",
+      "VIP 24/7 priority support & dispute escalations",
+    ],
+    entitlements: {
+      cbt_access: true,
+      cbt_unlimited: true,
+      cbt_daily_limit: 0,
+      cbt_corrections: true,
+      offline_saving: true,
+      ai_tutor_enabled: true,
+      ai_monthly_quota: 999999,
+      ai_voice_tutor: true,
+      classroom_access: true,
+      competitions_included: true,
+      advanced_analytics: true,
+      certificates_issued: true,
+      calculator_type: "scientific",
+      vip_support: true,
+    },
     is_active: true,
     display_order: 4,
   },
@@ -545,7 +719,12 @@ export async function setPlatformConfig<T>(
 // ----------------------------------------------------------------------------
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const plans = await getPlatformConfig<SubscriptionPlan[]>("subscription_plans", DEFAULT_PLANS);
-  return plans.sort((a, b) => a.display_order - b.display_order);
+  return plans
+    .map((p) => ({
+      ...p,
+      entitlements: normalizePlanEntitlements(p.entitlements, p.id === "free"),
+    }))
+    .sort((a, b) => a.display_order - b.display_order);
 }
 
 export async function saveSubscriptionPlan(
