@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const { user, supabase } = auth;
     const body = await request.json();
     const email = String(body.email || "").trim().toLowerCase();
-    const subjectIds = Array.isArray(body.subject_ids) ? [...new Set(body.subject_ids.map(String))] : [];
+    const subjectIds: string[] = Array.isArray(body.subject_ids) ? [...new Set((body.subject_ids as unknown[]).map((id) => String(id)))] : [];
     const fullName = String(body.full_name || "").trim();
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -63,9 +63,9 @@ export async function POST(request: NextRequest) {
     await logAdminAction({
       admin_id: user.id,
       admin_email: user.email || "super-admin",
-      entity_type: "tutor",
+      entity_type: "classroom",
       entity_id: tutorId,
-      action: "created_and_assigned",
+      action: "created",
       new_value: { email, subject_ids: subjectIds },
       change_reason: "Super Admin invited tutor and assigned subjects",
     });
@@ -109,7 +109,7 @@ export async function PATCH(request: NextRequest) {
       admin_email: user.email || "super-admin",
       entity_type: "tutor",
       entity_id: tutorId,
-      action: "subjects_updated",
+      action: "updated",
       new_value: { subject_ids: subjectIds },
       change_reason: "Super Admin updated tutor subject assignments",
     });
