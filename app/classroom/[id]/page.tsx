@@ -1299,21 +1299,30 @@ export default function LiveClassroomPage({
       return;
     }
     if (currentlyPlayingAudioId === msgId) {
-      audioPlayerRef.current?.pause();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
       setCurrentlyPlayingAudioId(null);
     } else {
       if (audioPlayerRef.current) {
         audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
       }
       try {
-        const audio = new Audio(url);
+        const audio = new Audio();
         audioPlayerRef.current = audio;
-        audio.onended = () => setCurrentlyPlayingAudioId(null);
+        audio.preload = "auto";
+        audio.src = url;
+
+        audio.onended = () => {
+          setCurrentlyPlayingAudioId(null);
+        };
         audio.onerror = (e) => {
           console.warn("Audio playback error:", e);
           setCurrentlyPlayingAudioId(null);
           toast.error("Could not play voice note. Format may not be supported by your device.");
         };
+
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromise

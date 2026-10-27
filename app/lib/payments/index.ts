@@ -1,13 +1,70 @@
 import type { PaymentProvider } from "./types";
-import { paystackPaymentProvider } from "./paystackProvider";
-import { bachsPaymentProvider } from "./bachsProvider";
+import { PaystackPaymentProvider, paystackPaymentProvider } from "./paystackProvider";
+import { FlutterwavePaymentProvider, flutterwavePaymentProvider } from "./flutterwaveProvider";
+import { BachsPaymentProvider, bachsPaymentProvider } from "./bachsProvider";
+import { getPaymentGatewaysConfig, type PaymentGatewaysConfig } from "../platformConfig";
 
 export * from "./types";
-export { paystackPaymentProvider } from "./paystackProvider";
-export { bachsPaymentProvider } from "./bachsProvider";
+export { paystackPaymentProvider, PaystackPaymentProvider } from "./paystackProvider";
+export { flutterwavePaymentProvider, FlutterwavePaymentProvider } from "./flutterwaveProvider";
+export { bachsPaymentProvider, BachsPaymentProvider } from "./bachsProvider";
 
-export function getPaymentProvider(providerName?: string | null): PaymentProvider {
+/**
+ * Creates an instance of the requested payment provider using dynamic configuration
+ * from the database (or environment variable fallbacks).
+ */
+export function createPaymentProviderFromConfig(
+  providerName: "paystack" | "flutterwave" | "bachs",
+  config?: PaymentGatewaysConfig
+): PaymentProvider {
+  if (providerName === "flutterwave") {
+    const flwConf = config?.providers.flutterwave;
+    return new FlutterwavePaymentProvider({
+      publicKey: flwConf?.public_key,
+      secretKey: flwConf?.secret_key,
+      webhookSecret: flwConf?.webhook_secret,
+      isLive: flwConf?.test_mode === false,
+    });
+  }
+
+  if (providerName === "bachs") {
+    const bachsConf = config?.providers.bachs;
+    return new BachsPaymentProvider({
+      apiKey: bachsConf?.api_key,
+      webhookSecret: bachsConf?.webhook_secret,
+      isLive: bachsConf?.test_mode === false,
+    });
+  }
+
+  // Default: Paystack
+  const psConf = config?.providers.paystack;
+  return new PaystackPaymentProvider({
+    publicKey: psConf?.public_key,
+    secretKey: psConf?.secret_key,
+    webhookSecret: psConf?.webhook_secret,
+    isLive: psConf?.test_mode === false,
+  });
+}
+
+/**
+ * Synchronous resolver for backwards compatibility (uses environment variables or pre-instantiated singletons)
+ */
+export function getPaymentProvider(
+  providerName?: string | null,
+  customConfig?: PaymentGatewaysConfig
+): PaymentProvider {
+  if (customConfig) {
+    const chosen = (providerName || customConfig.active_provider || "paystack").toLowerCase();
+    if (chosen === "flutterwave") return createPaymentProviderFromConfig("flutterwave", customConfig);
+    if (chosen === "bachs") return createPaymentProviderFromConfig("bachs", customConfig);
+    return createPaymentProviderFromConfig("paystack", customConfig);
+  }
+
   const normalized = (providerName || "").trim().toLowerCase();
+
+  if (normalized === "flutterwave") {
+    return flutterwavePaymentProvider;
+  }
 
   if (normalized === "bachs") {
     return bachsPaymentProvider;
@@ -17,23 +74,43 @@ export function getPaymentProvider(providerName?: string | null): PaymentProvide
     return paystackPaymentProvider;
   }
 
-  // Fallback to configured default or active provider
+  // Check env default
   const defaultProvider = process.env.DEFAULT_PAYMENT_PROVIDER?.toLowerCase();
-  if (defaultProvider === "bachs") {
-    return bachsPaymentProvider;
-  }
+  if (defaultProvider === "flutterwave") return flutterwavePaymentProvider;
+  if (defaultProvider === "bachs") return bachsPaymentProvider;
+  if (defaultProvider === "paystack") return paystackPaymentProvider;
 
-  if (defaultProvider === "paystack") {
-    return paystackPaymentProvider;
-  }
-
-  // If Bachs key is provided and Paystack is not, default to Bachs
+  // Fallback: If Bachs key is provided and Paystack is not
   if (process.env.BACHS_API_KEY && !process.env.PAYSTACK_SECRET_KEY) {
     return bachsPaymentProvider;
   }
 
-  // Default standard provider
   return paystackPaymentProvider;
+}
+
+/**
+ * Asynchronously resolves the authoritative payment provider dynamically
+ * reading the administrator's configuration from the database.
+ */
+export async function resolveActivePaymentProvider(
+  requestedProvider?: string | null
+): Promise<PaymentProvider> {
+  try {
+    const config = await getPaymentGatewaysConfig();
+    const target = (requestedProvider || config.active_provider || "paystack").toLowerCase();
+    if (target === "flutterwave" && config.providers.flutterwave.enabled) {
+      return createPaymentProviderFromConfig("flutterwave", config);
+    }
+    if (target === "bachs" && config.providers.bachs.enabled) {
+      return createPaymentProviderFromConfig("bachs", config);
+    }
+    if (target === "paystack" && config.providers.paystack.enabled) {
+      return createPaymentProviderFromConfig("paystack", config);
+    }
+    return createPaymentProviderFromConfig("paystack", config);
+  } catch {
+    return getPaymentProvider(requestedProvider);
+  }
 }
 
 // Global default payment provider export for backwards-compatibility

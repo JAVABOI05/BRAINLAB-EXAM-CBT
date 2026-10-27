@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "../../../lib/supabaseServer";
-import { getPaymentProvider } from "../../../lib/payments";
+import { getPaymentProvider, resolveActivePaymentProvider } from "../../../lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ async function handleVerification(reference: string) {
     }
 
     // 3. Verify with Payment Gateway
-    const provider = getPaymentProvider(tx.provider);
+    const provider = await resolveActivePaymentProvider(tx.provider);
     const verifyResult = await provider.verifyPayment(reference, tx.provider_reference);
 
     if (!verifyResult.ok || verifyResult.status !== "success") {

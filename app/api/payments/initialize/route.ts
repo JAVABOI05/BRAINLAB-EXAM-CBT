@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
-import { getPaymentProvider } from "../../../lib/payments";
+import { getPaymentProvider, resolveActivePaymentProvider } from "../../../lib/payments";
 import { getSubscriptionPlans, validateCoupon } from "../../../lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Resolve selected payment provider (Bachs or Paystack)
-    const selectedProvider = getPaymentProvider(provider);
+    const selectedProvider = await resolveActivePaymentProvider(provider);
     const reference = `BL_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     // 5. Create pending transaction record
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       reference,
       planId: plan.id,
       userId: user.id,
-      provider: selectedProvider.name as "bachs" | "paystack",
+      provider: selectedProvider.name as any,
       couponCode: couponCode || undefined,
       callbackUrl: callbackUrl || defaultCallback,
       metadata: {
