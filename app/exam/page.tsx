@@ -1062,7 +1062,7 @@ export default function ExamPage() {
         </div>
       )}
 
-      {calculatorEnabled && started && (
+      {calculatorEnabled && (
         <button
           type="button"
           onClick={() => setShowCalculator((prev) => !prev)}
