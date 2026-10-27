@@ -254,13 +254,25 @@ export default function CBTExamPortalPage() {
               onClick={() => setShowLeaderboard(!showLeaderboard)}
               className="rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition"
             >
-              {showLeaderboard ? "Hide Leaderboard" : "🏆 View Leaderboard"}
+              {showLeaderboard ? (
+                "Hide Leaderboard"
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                    <path d="M4 22h16" />
+                    <path d="M10 14.66V17c0 .55-.45 1-1 1H7v2h10v-2h-2c-.55 0-1-.45-1-1v-2.34c3.27-.4 5-2.46 5-5.66V4H6v5c0 3.2 1.73 5.26 5 5.66Z" />
+                  </svg>
+                  <span>View Leaderboard</span>
+                </span>
+              )}
             </button>
             <Link
               href="/instructions"
               className="rounded-2xl border border-blue-600 bg-blue-50 dark:bg-blue-950/40 px-4 py-2.5 text-xs font-bold text-blue-700 dark:text-cyan-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition"
             >
-              📖 Exam Rules
+              <span className="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" /><path d="M6 6h10" /><path d="M6 10h10" /></svg><span>Exam Rules</span></span>
             </Link>
           </div>
         </div>
@@ -324,28 +336,28 @@ export default function CBTExamPortalPage() {
                   onClick={() => handleApplyPreset(["English", "Mathematics", "Physics", "Chemistry"])}
                   className="rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2.5 py-1 text-[11px] font-bold text-blue-800 dark:text-blue-300 hover:bg-blue-100 transition active:scale-95"
                 >
-                  🧪 Science (Eng, Mth, Phy, Chm)
+                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" /><path d="M8.5 2h7" /><path d="M7 16h10" /></svg><span>Science (Eng, Mth, Phy, Chm)</span></span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApplyPreset(["English", "Biology", "Physics", "Chemistry"])}
                   className="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 transition active:scale-95"
                 >
-                  🩺 Medical (Eng, Bio, Phy, Chm)
+                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg><span>Medical (Eng, Bio, Phy, Chm)</span></span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApplyPreset(["English", "Mathematics", "Economics", "Commerce"])}
                   className="rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition active:scale-95"
                 >
-                  📊 Commercial
+                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg><span>Commercial</span></span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApplyPreset(["English", "Literature in English", "Government", "Christian Religious Studies"])}
                   className="rounded-lg bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-2.5 py-1 text-[11px] font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-100 transition active:scale-95"
                 >
-                  ⚖️ Arts / Law
+                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10" /><path d="M12 3v18" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></svg><span>Arts / Law</span></span>
                 </button>
               </div>
 
@@ -358,7 +370,7 @@ export default function CBTExamPortalPage() {
                       Subject 1 (Compulsory)
                     </span>
                     <span className="rounded-full bg-blue-200/60 dark:bg-blue-900/80 px-2 py-0.5 text-[9px] font-black text-blue-900 dark:text-cyan-300">
-                      🔒 All Candidates
+                      <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg><span>All Candidates</span></span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-lg border border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-black text-blue-950 dark:text-white">
@@ -401,7 +413,7 @@ export default function CBTExamPortalPage() {
               disabled={starting || (!currentUser && (!name.trim() || !phone.trim()))}
               className="mt-4 w-full rounded-xl bg-[#012153] hover:bg-blue-900 py-3.5 text-center text-sm font-extrabold text-white shadow-lg transition active-press disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              <span>{starting ? "Verifying…" : "🚀 Proceed to Examination Instructions"}</span>
+              <span>{starting ? "Verifying…" : "Proceed to Examination Instructions"}</span><span aria-hidden="true">→</span>
             </button>
 
             {/* Check Results Action */}
@@ -425,7 +437,7 @@ export default function CBTExamPortalPage() {
             <div className="mt-6 space-y-4">
               <div className="rounded-2xl border border-blue-100 dark:border-blue-950/60 bg-blue-50/50 dark:bg-blue-950/20 p-4">
                 <span className="text-xs font-bold text-blue-900 dark:text-cyan-300">
-                  🔑 Need a CBT Access Code?
+                  <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" /></svg><span>Need a CBT Access Code?</span></span>
                 </span>
                 <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Examination tokens allow you to unlock timed mock trials, comprehensive grading, and step-by-step corrections.
@@ -450,7 +462,7 @@ export default function CBTExamPortalPage() {
 
               <div className="rounded-2xl border border-emerald-100 dark:border-emerald-950/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
                 <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300">
-                  🎯 Revision Masterclass
+                  <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg><span>Revision Masterclass</span></span>
                 </span>
                 <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Join BrainLab Academy intensive revision webinars covering past question trends and high-frequency examination topics.

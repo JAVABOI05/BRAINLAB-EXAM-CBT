@@ -514,7 +514,7 @@ export default function ChallengeArenaPage() {
                 <span className="text-slate-900 dark:text-slate-200">Challenge Arena</span>
               </nav>
               <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-950 dark:text-white flex items-center gap-2.5">
-                <span>⚡ Challenge Arena</span>
+                <span className="flex items-center gap-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>Challenge Arena</span></span>
                 <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 px-3 py-0.5 text-xs font-black text-amber-800 dark:text-amber-300">
                   DAILY SPRINT &amp; XP
                 </span>
@@ -526,15 +526,13 @@ export default function ChallengeArenaPage() {
                 href="/learning/achievements"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-amber-900 dark:text-amber-200 shadow-sm transition hover:bg-amber-100 dark:hover:bg-amber-900/40"
               >
-                <span>🔥</span>
-                <span>Streak &amp; Badges</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg><span>Streak &amp; Badges</span>
               </Link>
               <Link
                 href="/cbt"
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-900"
               >
-                <span>📝</span>
-                <span>Full CBT Exam</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><polyline points="10 9 9 9 8 9" /></svg><span>Full CBT Exam</span>
               </Link>
             </div>
           </div>
@@ -557,7 +555,7 @@ export default function ChallengeArenaPage() {
             <section className="relative overflow-hidden rounded-3xl border border-blue-600/30 bg-gradient-to-r from-[#00112b] via-[#012153] to-indigo-950 p-6 sm:p-8 text-white shadow-xl">
               <div className="relative z-10 max-w-2xl space-y-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 px-3 py-1 text-xs font-black tracking-wide text-amber-300 uppercase">
-                  ⚡ 5-Minute Daily Challenge
+                  <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>5-Minute Daily Challenge</span></span>
                 </span>
                 <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
                   Ignite Your Learning Flame Today
@@ -570,7 +568,7 @@ export default function ChallengeArenaPage() {
                     onClick={() => handleStartChallenge(CHALLENGE_MODES[0])}
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-amber-400 hover:bg-amber-300 px-6 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-all duration-150 active:scale-95"
                   >
-                    <span>⚡ Start Daily 5-Min Blitz</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>Start Daily 5-Min Blitz</span>
                     <span className="text-xs bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-extrabold">
                       2× XP
                     </span>
@@ -590,7 +588,7 @@ export default function ChallengeArenaPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                    🎯 Practice Challenge Modes
+                    <span className="flex items-center gap-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg><span>Practice Challenge Modes</span></span>
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                     Target specific disciplines in rapid 10-question micro-quizzes.
@@ -665,8 +663,7 @@ export default function ChallengeArenaPage() {
                       : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                   }`}
                 >
-                  <span>⏱️</span>
-                  <span>{formatTime(timeLeft)}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg><span className="tabular-nums">{formatTime(timeLeft)}</span>
                 </div>
 
                 <button
