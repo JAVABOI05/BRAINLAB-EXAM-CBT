@@ -8,6 +8,24 @@ import {
   type LeaderboardEntry,
 } from "../lib/gamification";
 
+
+function formatPublicLearnerName(name: string): string {
+  if (!name) return "Anonymous Learner";
+  const clean = name.trim();
+  if (clean.includes("@")) {
+    const [u, d] = clean.split("@");
+    return `${u.slice(0, 2)}***@${d}`;
+  }
+  if (/^[0-9+() -]{7,16}$/.test(clean)) {
+    return `${clean.slice(0, 4)}****${clean.slice(-3)}`;
+  }
+  const parts = clean.split(/\s+/);
+  if (parts.length > 1) {
+    return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+  }
+  return clean;
+}
+
 export default function GlobalLeaderboardPage() {
   const [period, setPeriod] = useState<"all_time" | "monthly" | "weekly">("all_time");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -117,7 +135,7 @@ export default function GlobalLeaderboardPage() {
                 <span className="text-3xl">🥈</span>
                 <span className="mt-1 block text-[11px] font-bold uppercase text-slate-400">2nd Place</span>
                 <p className="mt-2 text-sm font-black text-slate-900 truncate">
-                  {topThree[1].display_name}
+                  {formatPublicLearnerName(topThree[1].display_name)}
                 </p>
                 <div className="mt-1 flex justify-center">
                   <UserBadges userId={topThree[1].user_id} size="xs" maxVisible={2} />
@@ -133,7 +151,7 @@ export default function GlobalLeaderboardPage() {
                 <span className="text-4xl">👑</span>
                 <span className="mt-1 block text-xs font-black uppercase text-amber-900">Champion</span>
                 <p className="mt-2 text-base font-black text-slate-950 truncate">
-                  {topThree[0].display_name}
+                  {formatPublicLearnerName(topThree[0].display_name)}
                 </p>
                 <div className="mt-1 flex justify-center">
                   <UserBadges userId={topThree[0].user_id} size="sm" maxVisible={3} />
@@ -149,7 +167,7 @@ export default function GlobalLeaderboardPage() {
                 <span className="text-3xl">🥉</span>
                 <span className="mt-1 block text-[11px] font-bold uppercase text-slate-400">3rd Place</span>
                 <p className="mt-2 text-sm font-black text-slate-900 truncate">
-                  {topThree[2].display_name}
+                  {formatPublicLearnerName(topThree[2].display_name)}
                 </p>
                 <div className="mt-1 flex justify-center">
                   <UserBadges userId={topThree[2].user_id} size="xs" maxVisible={2} />
@@ -224,7 +242,7 @@ export default function GlobalLeaderboardPage() {
                                     : "font-semibold"
                                 }`}
                               >
-                                {entry.display_name}
+                                {entry.is_caller ? entry.display_name : formatPublicLearnerName(entry.display_name)}
                               </span>
                               {entry.is_caller && (
                                 <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-black text-amber-900">

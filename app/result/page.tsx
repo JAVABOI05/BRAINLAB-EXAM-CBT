@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getPublicSettings, isError, lookupResult as fetchLookup } from "../lib/examApi";
+import VerificationQRCode from "../components/VerificationQRCode";
 
 type Candidate = {
   name: string;
@@ -501,16 +502,24 @@ export default function ResultPage() {
 
           {/* Official Verification Footer & Signature Strip */}
           <div className="mt-10 border-t-2 border-dashed border-slate-200 pt-6 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-500">
-            <div>
-              <p className="font-bold text-slate-800 dark:text-slate-200">
-                Official BrainLab Digital Verification Code
-              </p>
-              <p className="mt-0.5 font-mono text-[11px]">
-                https://www.brainlabacademy.com.ng/verify/{summary?.result_id || "mock-result"}
-              </p>
-              <p className="mt-1 text-[10px]">
-                Issued by BrainLab Academy Examination Directorate under strict CBT proctoring standards.
-              </p>
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+              <VerificationQRCode
+                url={`https://www.brainlabacademy.com.ng/verify/${summary?.result_id || "mock-result"}`}
+                size={80}
+                label="Scan to Verify"
+                className="shrink-0"
+              />
+              <div>
+                <p className="font-bold text-slate-800 dark:text-slate-200">
+                  Official BrainLab Digital Verification Code
+                </p>
+                <p className="mt-0.5 font-mono text-[11px] text-blue-700 dark:text-sky-400">
+                  https://www.brainlabacademy.com.ng/verify/{summary?.result_id || "mock-result"}
+                </p>
+                <p className="mt-1 text-[10px] text-slate-400">
+                  Issued by BrainLab Academy Examination Directorate under strict CBT proctoring standards. Tamper-evident verification slip.
+                </p>
+              </div>
             </div>
 
             <div className="text-center sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200 dark:border-slate-800">
