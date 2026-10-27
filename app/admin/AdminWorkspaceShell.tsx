@@ -72,6 +72,7 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
 
   const routeLabels: Record<string, string> = {
     "/admin/dashboard": "Dashboard overview",
+    "/admin/operations": "Institutional CBT Operations",
     "/admin/analytics": "Analytics & reports",
     "/admin/questions/manage": "Question bank",
     "/admin/questions/blueprints": "Examination blueprints",

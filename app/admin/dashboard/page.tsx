@@ -190,6 +190,21 @@ export default function AdminDashboardPage() {
       </>}
     </section>}
 
+        {/* Featured: Institutional CBT Operations Command Center */}
+    <div style={{ marginTop: 16, marginBottom: 16, padding: "18px 22px", borderRadius: 16, background: "linear-gradient(135deg, #012153 0%, #040E21 100%)", color: "white", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, boxShadow: "0 10px 25px -5px rgba(1, 33, 83, 0.2)" }}>
+      <div>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "3px 10px", borderRadius: 9999, background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#34D399", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10B981" }} />
+          National CBT Operations Command
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: "white" }}>Institutional Operations & CBT Administration</h2>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#94A3B8" }}>Real-time test session proctoring, Nigerian edge telemetry, PIN batch issuance, and syllabus health audit.</p>
+      </div>
+      <Link href="/admin/operations" style={{ padding: "10px 20px", borderRadius: 12, background: "#2563EB", color: "white", fontWeight: 700, fontSize: 13, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, transition: "background 0.2s" }}>
+        Launch Command Center →
+      </Link>
+    </div>
+
     <section className="admin-kpi-grid" aria-label="Current platform metrics">
       {canOpen("cbt.questions.manage") && <MetricCard label="Question bank" value={metrics.questions} note="Questions available in the bank" symbol="Q" />}
       {canOpen("cbt.results.read") && <MetricCard label="Exam results" value={metrics.results} note="Result records accessible to your role" symbol="R" />}
@@ -200,6 +215,7 @@ export default function AdminDashboardPage() {
       <section className="admin-panel">
         <div className="admin-panel-heading"><div><h2>Quick access</h2><p>Jump directly into your permitted workflows.</p></div></div>
         <div className="admin-action-list">
+          <Link className="admin-action-link" href="/admin/operations"><strong>Institutional CBT Operations</strong><span>Monitor live proctored sessions, issue PIN batches, and audit syllabus health.</span></Link>
           {canOpen("cbt.questions.manage") && <Link className="admin-action-link" href="/admin/questions/manage"><strong>Question Bank</strong><span>Manage question records and maintenance tasks.</span></Link>}
           {canOpen("cbt.codes.manage") && <Link className="admin-action-link" href="/admin/codes"><strong>Access Codes</strong><span>Create and review exam access codes.</span></Link>}
           {canOpen("cbt.results.read") && <Link className="admin-action-link" href="/admin/results"><strong>Results & Corrections</strong><span>Review candidate performance within your permissions.</span></Link>}
