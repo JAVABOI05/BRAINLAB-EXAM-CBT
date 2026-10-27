@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       eventDetails = { scheduled_start_at: start.toISOString(), scheduled_end_at: end.toISOString() };
     } else if (action === "assign_tutors") {
       if (role !== "super_admin") return NextResponse.json({ error: "Only the Super Admin can change class tutor assignments." }, { status: 403 });
-      const tutorIds = Array.isArray(body.tutor_ids) ? [...new Set(body.tutor_ids.map(String))] : [];
+      const tutorIds: string[] = Array.isArray(body.tutor_ids) ? [...new Set((body.tutor_ids as unknown[]).map((id) => String(id)))] : [];
       if (!tutorIds.includes(liveClass.tutor_id)) {
         return NextResponse.json({ error: "The lead tutor must remain assigned as the class owner." }, { status: 400 });
       }
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       admin_email: user.email || "classroom-user",
       entity_type: "classroom",
       entity_id: classId,
-      action: eventType,
+      action: "updated",
       new_value: { action, ...eventDetails },
       change_reason: `Live classroom lifecycle action: ${action}`,
     });
