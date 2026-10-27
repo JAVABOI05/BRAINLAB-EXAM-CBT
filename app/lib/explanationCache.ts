@@ -158,6 +158,7 @@ export async function setCachedExplanation(params: {
     cachedAt: now,
     verified: true,
     fingerprint,
+    promptVersion: "v2",
   });
 
   // 1. Save to `question_explanations` if table exists
