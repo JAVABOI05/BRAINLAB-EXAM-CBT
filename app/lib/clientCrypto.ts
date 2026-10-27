@@ -77,8 +77,9 @@ export function getSecureItem<T>(key: string, fallback: T): T {
 }
 
 /**
- * Cryptographically shreds and purges all active exam storage artifacts.
- * Prevents examination answer residue from persisting on shared cybercafé/school computers.
+ * Cryptographically shreds and purges active exam questions & attempt tokens.
+ * NOTE: Candidate profile ('candidate') and exam result summary ('exam_summary')
+ * are intentionally preserved so the candidate can view and print their official result slip.
  */
 export function securePurgeExamSession(): void {
   if (typeof window === "undefined") return;
@@ -93,11 +94,8 @@ export function securePurgeExamSession(): void {
     "exam_session_id",
     "exam_token",
     "exam_tab_switch_count",
-    "candidate",
-    "access_code",
     `${STORAGE_KEY_PREFIX}exam_answers`,
     `${STORAGE_KEY_PREFIX}exam_flagged`,
-    `${STORAGE_KEY_PREFIX}candidate`,
   ];
 
   examKeys.forEach((k) => {

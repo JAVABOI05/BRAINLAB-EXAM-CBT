@@ -60,18 +60,36 @@ export default function ResultPage() {
       setCodeRequired(settings ? settings.access_code_required : true);
       const savedCandidate = localStorage.getItem("candidate");
       const savedSummary = localStorage.getItem("exam_summary");
-      if (!savedCandidate || !savedSummary) {
+      if (!savedSummary) {
         setLookupMode(true);
         return;
       }
       try {
-        setCandidate(JSON.parse(savedCandidate) as Candidate);
         const parsedSummary = JSON.parse(savedSummary) as Summary;
         if (parsedSummary.show_results !== true) {
           setLookupMode(true);
           return;
         }
         setSummary(parsedSummary);
+        if (savedCandidate) {
+          try {
+            setCandidate(JSON.parse(savedCandidate) as Candidate);
+          } catch {
+            setCandidate({
+              name: "Verified Candidate",
+              phone: "080-BrainLab",
+              subject: "JAMB UTME Simulation",
+              subjects: Object.keys(parsedSummary.subject_scores || {}),
+            });
+          }
+        } else {
+          setCandidate({
+            name: "Verified Candidate",
+            phone: "080-BrainLab",
+            subject: "JAMB UTME Simulation",
+            subjects: Object.keys(parsedSummary.subject_scores || {}),
+          });
+        }
       } catch {
         setLookupMode(true);
       }

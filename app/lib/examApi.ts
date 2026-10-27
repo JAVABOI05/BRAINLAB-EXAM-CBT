@@ -13,6 +13,8 @@ export type PublicSettings = {
   leaderboard_enabled: boolean;
   exam_duration: number;
   access_code_required: boolean;
+  show_marks_in_exam?: boolean;
+  show_topic_in_exam?: boolean;
 };
 export type PaperQuestion = {
   id: number;
@@ -114,28 +116,34 @@ export function isError(value: unknown): value is ApiError {
 }
 
 export async function getPublicSettings(): Promise<PublicSettings | null> {
+  let rpcRes: Partial<PublicSettings> | null = null;
   try {
     const res = await call<PublicSettings>("get_public_settings");
-    if (!isError(res) && res) return res;
+    if (!isError(res) && res) rpcRes = res;
   } catch {}
+
   try {
     const [examSettings, flags] = await Promise.all([getExamSettings(), getFeatureFlags()]);
     return {
-      mock_enabled: flags.mock_exams,
-      calculator_enabled: flags.calculator_enabled,
-      show_results: examSettings.show_results_immediately,
-      leaderboard_enabled: flags.public_leaderboard,
-      exam_duration: examSettings.exam_duration_seconds,
-      access_code_required: true,
+      mock_enabled: rpcRes?.mock_enabled ?? flags.mock_exams,
+      calculator_enabled: rpcRes?.calculator_enabled ?? flags.calculator_enabled,
+      show_results: rpcRes?.show_results ?? examSettings.show_results_immediately,
+      leaderboard_enabled: rpcRes?.leaderboard_enabled ?? flags.public_leaderboard,
+      exam_duration: (rpcRes?.exam_duration && rpcRes.exam_duration > 0) ? rpcRes.exam_duration : examSettings.exam_duration_seconds,
+      access_code_required: rpcRes?.access_code_required ?? true,
+      show_marks_in_exam: examSettings.show_marks_in_exam !== false,
+      show_topic_in_exam: examSettings.show_topic_in_exam !== false,
     };
   } catch {
     return {
-      mock_enabled: true,
-      calculator_enabled: true,
-      show_results: true,
-      leaderboard_enabled: true,
-      exam_duration: 7200,
-      access_code_required: true,
+      mock_enabled: rpcRes?.mock_enabled ?? true,
+      calculator_enabled: rpcRes?.calculator_enabled ?? true,
+      show_results: rpcRes?.show_results ?? true,
+      leaderboard_enabled: rpcRes?.leaderboard_enabled ?? true,
+      exam_duration: (rpcRes?.exam_duration && rpcRes.exam_duration > 0) ? rpcRes.exam_duration : 7200,
+      access_code_required: rpcRes?.access_code_required ?? true,
+      show_marks_in_exam: true,
+      show_topic_in_exam: true,
     };
   }
 }
@@ -189,7 +197,29 @@ export async function submitExam(
   answers: Record<string, Option>,
   auto: boolean,
   flagged: Record<string, boolean>
-) {
+): Promise<FinishedPayload | ApiError> {
+  // 1. Fast server route handler first (server-to-server low latency + recovery)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const res = await fetch("/api/exam/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, token, answers, auto, flagged }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === "object" && data.ok) {
+        return data as FinishedPayload;
+      }
+    }
+  } catch (e) {
+    console.warn("[examApi] /api/exam/submit failed or timed out, falling back to direct RPC:", e);
+  }
+
+  // 2. Direct Supabase RPC fallback
   return call<FinishedPayload>("submit_exam", { p_session: sessionId, p_token: token, p_answers: answers, p_auto: auto, p_flagged: flagged });
 }
 

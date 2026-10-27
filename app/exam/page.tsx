@@ -80,6 +80,8 @@ export default function ExamPage() {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "offline" | "error">("synced");
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showMarksInExam, setShowMarksInExam] = useState(true);
+  const [showTopicInExam, setShowTopicInExam] = useState(true);
 
 
   // Track network connectivity and auto-retry sync when online
@@ -140,6 +142,8 @@ export default function ExamPage() {
       const duration = settings.exam_duration > 0 ? settings.exam_duration : DEFAULT_EXAM_DURATION;
       setExamDuration(duration); setTimeLeft(duration);
       setCalculatorEnabled(settings.calculator_enabled); setMockEnabled(settings.mock_enabled);
+      setShowMarksInExam(settings.show_marks_in_exam !== false);
+      setShowTopicInExam(settings.show_topic_in_exam !== false);
       if (!settings.mock_enabled) { router.push("/access"); return; }
       if (settings.access_code_required && !localStorage.getItem("access_code")) { router.push("/access"); return; }
 
@@ -553,6 +557,7 @@ export default function ExamPage() {
     }
     submitLockRef.current = true;
     setLoading(true);
+    setShowSubmitModal(false);
     setError("");
     const res = await submitExam(sessionId, sessionToken, answers, autoSubmitted, flagged);
     if (isError(res)) {
@@ -661,7 +666,8 @@ export default function ExamPage() {
                           )}
                         </div>
                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {isEng ? "60 Questions (100 Marks)" : "40 Questions (100 Marks)"}
+                          {isEng ? "60 Questions" : "40 Questions"}
+                          {showMarksInExam ? " (100 Marks)" : ""}
                         </span>
                       </div>
                       <span className="text-xs font-bold text-slate-400 font-mono">Slot {idx + 1}</span>
@@ -671,7 +677,7 @@ export default function ExamPage() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 dark:border-slate-800 pt-3 text-xs font-bold text-slate-700 dark:text-slate-300">
-                <span>Total: 180 Questions · 400 Marks</span>
+                <span>Total: 180 Questions{showMarksInExam ? " · 400 Marks" : ""}</span>
                 <span>Time Allowed: {formatTime(examDuration)}</span>
               </div>
             </div>
@@ -827,8 +833,18 @@ export default function ExamPage() {
                 Question {currentIndex + 1} of {totalQuestions}
               </p>
               <p className="exam-question-meta">
-                {currentQuestion.subject} • {currentQuestion.section}
-                {currentQuestion.category ? ` • ${currentQuestion.category}` : ""}
+                {currentQuestion.subject}
+                {showTopicInExam && (
+                  <>
+                    {currentQuestion.section && currentQuestion.section !== "general" ? ` • ${currentQuestion.section}` : ""}
+                    {currentQuestion.topic ? ` • ${currentQuestion.topic}` : currentQuestion.category ? ` • ${currentQuestion.category}` : ""}
+                  </>
+                )}
+                {showMarksInExam && (
+                  <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-cyan-300">
+                    {currentQuestion.marks || 1} {currentQuestion.marks === 1 ? "Mark" : "Marks"}
+                  </span>
+                )}
               </p>
             </div>
 
@@ -992,6 +1008,24 @@ export default function ExamPage() {
           </div>
         </div>
       </div>
+
+      
+      {/* Full-screen Submitting Overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 text-white text-center animate-fade-in">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600/30 border border-blue-400 text-3xl animate-bounce mb-4">
+            ⏳
+          </div>
+          <h3 className="text-xl font-black">Submitting Your Examination...</h3>
+          <p className="mt-2 text-sm text-slate-300 max-w-sm">
+            Please wait while BrainLab securely records your answers, grades your paper, and prepares your verified result slip.
+          </p>
+          <div className="mt-4 flex items-center gap-2 text-xs text-emerald-400 font-bold">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>Do not close or refresh this window</span>
+          </div>
+        </div>
+      )}
 
       {/* Submission Confirmation Modal */}
       {showSubmitModal && (
