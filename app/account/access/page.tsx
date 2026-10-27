@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -147,12 +147,14 @@ export default function MyAccessPage() {
                 Review your active learning permissions, allowed question quotas, and redeem access codes.
               </p>
             </div>
-            <Link
-              href="/dashboard"
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/account/subscription/refund" className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-2 text-xs font-bold text-blue-900 hover:bg-blue-100">📄 Billing & Receipts</Link>
+              <Link href="/dashboard"
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
             >
               ← Back to Dashboard
             </Link>
+            </div>
           </div>
         </header>
 

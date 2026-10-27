@@ -323,6 +323,7 @@ const GROUPS: Group[] = [
     items: [
       { id: "ai", label: "AI Controls & Quotas", href: "/admin/ai", description: "AI provider configuration and quotas", icon: "ai", visible: (u) => platformAdmin(u) },
       { id: "pricing", label: "Plans & Pricing", href: "/admin/pricing", description: "Subscription plans and entitlements", icon: "pricing", visible: (u, a) => a["finance.billing.manage"] === true || platformAdmin(u) },
+      { id: "payment-gateways", label: "Payment Gateways", href: "/admin/payment-gateways", description: "Configure Paystack, Flutterwave, Bachs & API keys", icon: "pricing", visible: (u, a) => a["finance.billing.manage"] === true || platformAdmin(u) },
       { id: "refunds", label: "Refund Queue", href: "/admin/refunds", description: "Review refund requests", icon: "refunds", visible: (u, a) => a["finance.billing.manage"] === true || platformAdmin(u) },
       { id: "coupons", label: "Coupons & Campaigns", href: "/admin/coupons", description: "Promotional offers and campaigns", icon: "coupons", visible: (u, a) => a["finance.billing.manage"] === true || platformAdmin(u) },
       { id: "gamification", label: "Gamification & Rewards", href: "/admin/gamification", description: "Badges, XP and rewards configuration", icon: "gamification", visible: (u, a) => a["learning.content.manage"] === true || platformAdmin(u) },

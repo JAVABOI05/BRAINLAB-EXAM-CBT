@@ -151,6 +151,17 @@ function SubscriptionCallbackContent() {
             </div>
           </div>
 
+          {reference && (
+            <div className="mt-4">
+              <Link
+                href={`/account/receipt/${encodeURIComponent(reference)}`}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-300 bg-white px-5 py-2.5 text-xs font-bold text-blue-900 shadow-sm transition hover:bg-blue-50 active:scale-95"
+              >
+                📄 Download Official Payment Receipt (PDF)
+              </Link>
+            </div>
+          )}
+
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/dashboard"

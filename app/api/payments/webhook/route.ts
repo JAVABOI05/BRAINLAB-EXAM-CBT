@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "../../../lib/supabaseServer";
-import { paystackPaymentProvider } from "../../../lib/payments/paystackProvider";
-import { bachsPaymentProvider } from "../../../lib/payments/bachsProvider";
+import { getPaymentGatewaysConfig } from "../../../lib/platformConfig";
+import {
+  createPaymentProviderFromConfig,
+  paystackPaymentProvider,
+  bachsPaymentProvider,
+  flutterwavePaymentProvider,
+} from "../../../lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +28,33 @@ export async function POST(request: NextRequest) {
       request.headers.get("x-bachs-signature-v2") ||
       request.headers.get("x-bachs-signature");
     const paystackSig = request.headers.get("x-paystack-signature");
+    const flwSig =
+      request.headers.get("verif-hash") ||
+      request.headers.get("x-flutterwave-signature");
+
+    // Load dynamic gateway configuration from database (falls back gracefully)
+    const config = await getPaymentGatewaysConfig().catch(() => undefined);
+    const activeBachs = config ? createPaymentProviderFromConfig("bachs", config) : bachsPaymentProvider;
+    const activePaystack = config ? createPaymentProviderFromConfig("paystack", config) : paystackPaymentProvider;
+    const activeFlutterwave = config ? createPaymentProviderFromConfig("flutterwave", config) : flutterwavePaymentProvider;
+
+    let parsedEvent: unknown;
+    try {
+      parsedEvent = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
+    if (!isJsonRecord(parsedEvent)) {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
+    const event = parsedEvent;
 
     // ------------------------------------------------------------------------
-    // 1. If Bachs Webhook Header Detected, Process as Bachs
+    // 1. BACHS WEBHOOK HANDLING
     // ------------------------------------------------------------------------
     if (bachsSig) {
       const timestamp = request.headers.get("x-bachs-timestamp") || "";
-      const isValid = bachsPaymentProvider.verifyWebhookSignature(rawBody, bachsSig, {
+      const isValid = activeBachs.verifyWebhookSignature(rawBody, bachsSig, {
         "x-bachs-timestamp": timestamp,
         "x-bachs-signature-v2": request.headers.get("x-bachs-signature-v2"),
         "x-bachs-signature": request.headers.get("x-bachs-signature"),
@@ -38,17 +63,6 @@ export async function POST(request: NextRequest) {
       if (!isValid && process.env.NODE_ENV === "production") {
         return NextResponse.json({ error: "Invalid Bachs signature" }, { status: 401 });
       }
-
-      let parsedEvent: unknown;
-      try {
-        parsedEvent = JSON.parse(rawBody);
-      } catch {
-        return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
-      }
-      if (!isJsonRecord(parsedEvent)) {
-        return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
-      }
-      const event = parsedEvent;
 
       const eventType = String(event.type ?? event.event ?? "").toLowerCase();
       if (eventType !== "collection.succeeded" && eventType !== "checkout.completed") {
@@ -89,9 +103,23 @@ export async function POST(request: NextRequest) {
           status: "success",
           paid_at: paidAt,
           provider_reference: checkoutId || tx.provider_reference,
+          provider: "bachs",
           updated_at: new Date().toISOString(),
         })
         .eq("id", tx.id);
+
+      if (tx.coupon_id && tx.user_id) {
+        await supabase.from("coupon_redemptions").upsert(
+          {
+            coupon_id: tx.coupon_id,
+            user_id: tx.user_id,
+            transaction_id: tx.id,
+            discount_applied_kobo: tx.discount_kobo,
+            redeemed_at: paidAt,
+          },
+          { onConflict: "coupon_id,user_id" }
+        );
+      }
 
       if (tx.user_id && tx.plan_id) {
         const planInterval = tx.subscription_plans?.interval || "monthly";
@@ -113,29 +141,141 @@ export async function POST(request: NextRequest) {
           },
           { onConflict: "user_id" }
         );
+
+        await supabase.from("configuration_audit_logs").insert({
+          admin_email: "bachs-webhook@brainlabacademy.com.ng",
+          entity_type: "plan",
+          entity_id: tx.plan_id,
+          action: "updated",
+          new_value: {
+            event: "webhook_charge_success",
+            transaction_id: tx.id,
+            reference: tx.reference,
+            amount_kobo: tx.amount_kobo,
+          },
+          change_reason: `Automated Bachs webhook activation for ${tx.reference}`,
+        });
       }
 
       return NextResponse.json({ received: true, success: true, provider: "bachs" });
     }
 
     // ------------------------------------------------------------------------
-    // 2. Paystack Webhook Handling (Existing Flow Preserved)
+    // 2. FLUTTERWAVE WEBHOOK HANDLING
     // ------------------------------------------------------------------------
-    const isValid = paystackPaymentProvider.verifyWebhookSignature(rawBody, paystackSig || "");
+    if (flwSig || event.event === "charge.completed" || (isJsonRecord(event.data) && event.data.flw_ref)) {
+      const isValid = activeFlutterwave.verifyWebhookSignature(rawBody, flwSig || "", {
+        "verif-hash": flwSig,
+      });
+
+      if (!isValid && process.env.NODE_ENV === "production") {
+        return NextResponse.json({ error: "Invalid Flutterwave signature" }, { status: 401 });
+      }
+
+      const eventType = String(event.event ?? "").toLowerCase();
+      const data = isJsonRecord(event.data) ? event.data : {};
+      const dataStatus = String(data.status ?? "").toLowerCase();
+
+      if (eventType !== "charge.completed" && dataStatus !== "successful") {
+        return NextResponse.json({ received: true });
+      }
+
+      const txRef = asReference(data.tx_ref) ?? asReference(data.reference);
+      const flwRef = asReference(data.flw_ref) ?? asReference(data.id);
+
+      if (!txRef && !flwRef) {
+        return NextResponse.json({ error: "Missing Flutterwave transaction reference" }, { status: 400 });
+      }
+
+      const supabase = getSupabaseServerClient();
+      let query = supabase.from("payment_transactions").select("*, subscription_plans(*)");
+      if (txRef) {
+        query = query.eq("reference", txRef);
+      } else {
+        query = query.eq("provider_reference", flwRef);
+      }
+
+      const { data: tx, error: txError } = await query.maybeSingle();
+      if (txError || !tx) {
+        return NextResponse.json({ received: true, unhandled: true });
+      }
+
+      if (tx.status === "success") {
+        return NextResponse.json({ received: true, alreadyProcessed: true });
+      }
+
+      const paidAt = typeof data.created_at === "string" ? data.created_at : new Date().toISOString();
+
+      await supabase
+        .from("payment_transactions")
+        .update({
+          status: "success",
+          paid_at: paidAt,
+          provider_reference: flwRef || tx.provider_reference,
+          provider: "flutterwave",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", tx.id);
+
+      if (tx.coupon_id && tx.user_id) {
+        await supabase.from("coupon_redemptions").upsert(
+          {
+            coupon_id: tx.coupon_id,
+            user_id: tx.user_id,
+            transaction_id: tx.id,
+            discount_applied_kobo: tx.discount_kobo,
+            redeemed_at: paidAt,
+          },
+          { onConflict: "coupon_id,user_id" }
+        );
+      }
+
+      if (tx.user_id && tx.plan_id) {
+        const planInterval = tx.subscription_plans?.interval || "monthly";
+        const periodEnd = new Date();
+        periodEnd.setDate(periodEnd.getDate() + (planInterval === "yearly" ? 365 : 30));
+
+        await supabase.from("user_subscriptions").upsert(
+          {
+            user_id: tx.user_id,
+            plan_id: tx.plan_id,
+            status: "active",
+            current_period_start: paidAt,
+            current_period_end: periodEnd.toISOString(),
+            payment_provider: "flutterwave",
+            price_paid_kobo: tx.amount_kobo,
+            currency: tx.currency,
+            provider_subscription_id: tx.reference,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+        await supabase.from("configuration_audit_logs").insert({
+          admin_email: "flutterwave-webhook@brainlabacademy.com.ng",
+          entity_type: "plan",
+          entity_id: tx.plan_id,
+          action: "updated",
+          new_value: {
+            event: "webhook_charge_success",
+            transaction_id: tx.id,
+            reference: tx.reference,
+            amount_kobo: tx.amount_kobo,
+          },
+          change_reason: `Automated Flutterwave webhook activation for ${tx.reference}`,
+        });
+      }
+
+      return NextResponse.json({ received: true, success: true, provider: "flutterwave" });
+    }
+
+    // ------------------------------------------------------------------------
+    // 3. PAYSTACK WEBHOOK HANDLING
+    // ------------------------------------------------------------------------
+    const isValid = activePaystack.verifyWebhookSignature(rawBody, paystackSig || "");
     if (!isValid && process.env.NODE_ENV === "production") {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
-
-    let parsedEvent: unknown;
-    try {
-      parsedEvent = JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
-    }
-    if (!isJsonRecord(parsedEvent)) {
-      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
-    }
-    const event = parsedEvent;
 
     if (event.event !== "charge.success") {
       return NextResponse.json({ received: true });
@@ -148,12 +288,11 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
-
     const { data: tx, error: txError } = await supabase
       .from("payment_transactions")
       .select("*, subscription_plans(*)")
       .eq("reference", reference)
-      .single();
+      .maybeSingle();
 
     if (txError || !tx) {
       return NextResponse.json({ received: true, unhandled: true });
@@ -171,6 +310,7 @@ export async function POST(request: NextRequest) {
         status: "success",
         paid_at: paidAt,
         provider_reference: data.id ? String(data.id) : reference,
+        provider: "paystack",
         updated_at: new Date().toISOString(),
       })
       .eq("id", tx.id);
@@ -220,14 +360,14 @@ export async function POST(request: NextRequest) {
           reference,
           amount_kobo: tx.amount_kobo,
         },
-        change_reason: `Automated webhook activation for ${reference}`,
+        change_reason: `Automated Paystack webhook activation for ${reference}`,
       });
     }
 
     return NextResponse.json({ received: true, success: true, provider: "paystack" });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? (err instanceof Error ? err.message : String(err)) : "Internal webhook error" },
+      { error: err instanceof Error ? err.message : "Internal webhook error" },
       { status: 500 }
     );
   }
