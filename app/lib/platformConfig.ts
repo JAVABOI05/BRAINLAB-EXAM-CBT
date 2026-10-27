@@ -1257,3 +1257,85 @@ export async function savePaymentGatewaysConfig(
     reason || `Updated payment gateway settings (Active: ${config.active_provider})`
   );
 }
+
+// ============================================================================
+// ANNOUNCEMENTS & CBT MAINTENANCE MODE
+// ============================================================================
+
+export interface AnnouncementConfig {
+  enabled: boolean;
+  message: string;
+  severity: "info" | "warning" | "urgent" | "success";
+  dismissible: boolean;
+  target_audience: "all" | "students" | "unsubscribed";
+  link_url?: string;
+  link_label?: string;
+  updated_at?: string;
+}
+
+export const DEFAULT_ANNOUNCEMENT_CONFIG: AnnouncementConfig = {
+  enabled: false,
+  message: "Welcome to BrainLab Academy. Prepare for JAMB UTME & WAEC with timed mock tests and AI tutoring.",
+  severity: "info",
+  dismissible: true,
+  target_audience: "all",
+  link_url: "/pricing",
+  link_label: "View Plans",
+};
+
+export interface MaintenanceModeConfig {
+  cbt_maintenance_enabled: boolean;
+  message: string;
+  estimated_resumption?: string;
+  allow_admin_bypass: boolean;
+  updated_at?: string;
+}
+
+export const DEFAULT_MAINTENANCE_MODE_CONFIG: MaintenanceModeConfig = {
+  cbt_maintenance_enabled: false,
+  message: "The CBT Testing Engine is undergoing routine scheduled maintenance to update question blueprints. We will resume shortly.",
+  estimated_resumption: "Within 30 minutes",
+  allow_admin_bypass: true,
+};
+
+export async function getAnnouncementConfig(): Promise<AnnouncementConfig> {
+  const config = await getPlatformConfig<AnnouncementConfig>(
+    "announcement_config",
+    DEFAULT_ANNOUNCEMENT_CONFIG
+  );
+  return { ...DEFAULT_ANNOUNCEMENT_CONFIG, ...config };
+}
+
+export async function saveAnnouncementConfig(
+  config: AnnouncementConfig,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  return await setPlatformConfig(
+    "announcement_config",
+    { ...config, updated_at: new Date().toISOString() },
+    adminUser,
+    reason || `Updated site-wide announcement banner (${config.enabled ? "Active" : "Disabled"})`
+  );
+}
+
+export async function getMaintenanceModeConfig(): Promise<MaintenanceModeConfig> {
+  const config = await getPlatformConfig<MaintenanceModeConfig>(
+    "maintenance_mode_config",
+    DEFAULT_MAINTENANCE_MODE_CONFIG
+  );
+  return { ...DEFAULT_MAINTENANCE_MODE_CONFIG, ...config };
+}
+
+export async function saveMaintenanceModeConfig(
+  config: MaintenanceModeConfig,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<boolean> {
+  return await setPlatformConfig(
+    "maintenance_mode_config",
+    { ...config, updated_at: new Date().toISOString() },
+    adminUser,
+    reason || `Updated CBT maintenance mode (${config.cbt_maintenance_enabled ? "MAINTENANCE ON" : "NORMAL OPERATIONS"})`
+  );
+}

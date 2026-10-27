@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -292,6 +292,7 @@ const GROUPS: Group[] = [
     label: "Overview",
     items: [
       { id: "dashboard", label: "Dashboard", href: "/admin/dashboard", description: "Platform overview and quick actions", icon: "dashboard", visible: always },
+      { id: "candidates", label: "Candidate Directory", href: "/admin/candidates", description: "Search, inspect, and manage student accounts & tiers", icon: "roles", visible: (u, a) => a["institution.manage"] === true || platformAdmin(u) || a["finance.billing.manage"] === true },
       { id: "analytics", label: "Analytics & Reports", href: "/admin/analytics", description: "Permitted aggregate reporting", icon: "analytics", visible: (_u, a) => a["analytics.read"] === true },
     ],
   },
@@ -305,6 +306,7 @@ const GROUPS: Group[] = [
       { id: "high-yield", label: "High-Yield Topics", href: "/admin/questions/high-yield", description: "Syllabus topic quotas and shortage alerts", icon: "high-yield", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "duplicates", label: "Duplicate Questions", href: "/admin/questions/duplicates", description: "Intelligent duplicate detection and safe archival", icon: "duplicates", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "sessions", label: "Exam Sessions", href: "/admin/sessions", description: "Authorised exam-session activity", icon: "sessions", visible: (_u, a) => a["cbt.sessions.read"] === true },
+      { id: "operations", label: "Live Invigilator", href: "/admin/operations", description: "Live CBT monitoring, session unlock & timer extension", icon: "sessions", visible: (_u, a) => a["cbt.sessions.read"] === true || platformAdmin(_u) },
       { id: "codes", label: "Access Codes", href: "/admin/codes", description: "Generate and monitor exam access codes", icon: "codes", visible: (_u, a) => a["cbt.codes.manage"] === true },
       { id: "results", label: "Results", href: "/admin/results", description: "Authorised candidate results", icon: "results", visible: (_u, a) => a["cbt.results.read"] === true },
       { id: "content", label: "Learning Content", href: "/admin/content", description: "Learning resources and content tools", icon: "content", visible: (_u, a) => a["learning.content.manage"] === true },
@@ -340,6 +342,8 @@ const GROUPS: Group[] = [
       { id: "roles", label: "Administrator Roles", href: "/admin/users", description: "Assign and review admin roles", icon: "roles", visible: (u) => u.role === "super_admin" },
       { id: "security", label: "Security & Access", href: "/admin/security", description: "Security workspace and access review", icon: "security", visible: (u, a) => platformAdmin(u) || a["audit.logs.read"] === true },
       { id: "audit", label: "Audit Trail", href: "/admin/audit", description: "Administrative change history", icon: "audit", visible: (u, a) => platformAdmin(u) || a["audit.logs.read"] === true },
+      { id: "announcements", label: "Announcements & Maintenance", href: "/admin/announcements", description: "Site-wide broadcast banner and CBT maintenance mode", icon: "communication", visible: (u, a) => platformAdmin(u) || a["cbt.config.manage"] === true },
+      { id: "data-export", label: "Data Export & Backups", href: "/admin/data-export", description: "Export candidates, results, payments and questions to CSV", icon: "content", visible: (u, a) => platformAdmin(u) || a["finance.billing.manage"] === true || a["cbt.config.manage"] === true },
     ],
   },
 ];

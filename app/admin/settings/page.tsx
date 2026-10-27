@@ -25,6 +25,7 @@ const SETTINGS: { heading: string; links: SettingLink[] }[] = [
   ]},
   { heading: "Finance & business", links: [
     { title: "Plans & Pricing", description: "Review plans, entitlements and existing pricing controls.", href: "/admin/pricing", allowed: (u,a) => platformAdmin(u) || a["finance.billing.manage"] === true },
+    { title: "Payment Gateways", description: "Configure Paystack, Flutterwave, Bachs & API keys dynamically.", href: "/admin/payment-gateways", allowed: (u,a) => platformAdmin(u) || a["finance.billing.manage"] === true },
     { title: "Coupons & Campaigns", description: "Manage existing promotional campaign tools.", href: "/admin/coupons", allowed: (u,a) => platformAdmin(u) || a["finance.billing.manage"] === true },
     { title: "Refund Queue", description: "Review refund requests using the existing workflow.", href: "/admin/refunds", allowed: (u,a) => platformAdmin(u) || a["finance.billing.manage"] === true },
     { title: "Schools & Organisations", description: "Open institutional access and school management.", href: "/admin/schools", allowed: (u,a) => platformAdmin(u) || a["institution.manage"] === true },
@@ -33,6 +34,9 @@ const SETTINGS: { heading: string; links: SettingLink[] }[] = [
     { title: "Administrator Roles", description: "Review role assignment tools (super administrators only).", href: "/admin/users", allowed: (u) => u.role === "super_admin" },
     { title: "Security Workspace", description: "Review security controls and administrator session checks.", href: "/admin/security", allowed: (u,a) => platformAdmin(u) || a["audit.logs.read"] === true },
     { title: "Audit Trail", description: "Review the administrative change history.", href: "/admin/audit", allowed: (u,a) => platformAdmin(u) || a["audit.logs.read"] === true },
+    { title: "Announcements & Maintenance", description: "Publish site-wide announcements and toggle CBT maintenance mode.", href: "/admin/announcements", allowed: (u,a) => platformAdmin(u) || a["cbt.config.manage"] === true },
+    { title: "Data Export & Backups", description: "Export student directory, results, question bank, and financial ledger to CSV.", href: "/admin/data-export", allowed: (u,a) => platformAdmin(u) || a["finance.billing.manage"] === true },
+    { title: "Candidate Directory & CRM", description: "Search students, inspect exam attempts, and manage subscription access.", href: "/admin/candidates", allowed: (u,a) => platformAdmin(u) || a["institution.manage"] === true },
   ]},
 ];
 

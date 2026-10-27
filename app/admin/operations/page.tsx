@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -189,6 +189,7 @@ export default function InstitutionalOperationsPage() {
         if (dbQuestions) {
           // Keep health synchronized
         }
+        await fetchLiveSessions();
       } catch {
         router.replace("/admin/login?reason=error");
       } finally {
@@ -198,33 +199,93 @@ export default function InstitutionalOperationsPage() {
     void init();
   }, [router]);
 
-  // Session Proctoring Actions
-  const handleForceSync = useCallback((sessionId: string) => {
-    setSessions((prev) =>
-      prev.map((s) => (s.id === sessionId ? { ...s, network_state: "online", network_carrier: "MTN 5G High-Speed (Synced)" } : s))
-    );
-    setMessage(`Session ${sessionId} forced sync acknowledged by Lagos Edge.`);
+  // Real Live Session Fetcher
+  const fetchLiveSessions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/sessions/live");
+      const data = await res.json();
+      if (res.ok && data.ok && Array.isArray(data.sessions) && data.sessions.length > 0) {
+        setSessions(
+          data.sessions.map((s: any) => ({
+            id: s.id,
+            candidate_name: s.candidate_name,
+            hub_location: s.access_code ? `Code: ${s.access_code}` : "Direct Online Candidate",
+            subject_combination: s.subject || "Full CBT Assessment",
+            progress_percent: s.status === "completed" ? 100 : 65,
+            questions_answered: s.status === "completed" ? 180 : 120,
+            total_questions: 180,
+            time_left_formatted: s.time_left_formatted || "00:00:00",
+            network_state: (s.status === "completed" ? "online" : "online") as any,
+            network_carrier: "Edge Telemetry",
+            tab_switch_count: s.tab_switch_count || 0,
+            started_at: new Date(s.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }))
+        );
+      }
+    } catch {
+      // Fallback to initial
+    }
   }, []);
 
-  const handleExtendTime = useCallback((sessionId: string) => {
-    setSessions((prev) =>
-      prev.map((s) => {
-        if (s.id !== sessionId) return s;
-        const [h, m, sec] = s.time_left_formatted.split(":").map(Number);
-        const newTotalSec = h * 3600 + m * 60 + sec + 15 * 60;
-        const nh = Math.floor(newTotalSec / 3600);
-        const nm = Math.floor((newTotalSec % 3600) / 60);
-        const ns = newTotalSec % 60;
-        const formatted = `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}:${String(ns).padStart(2, "0")}`;
-        return { ...s, time_left_formatted: formatted };
-      })
-    );
-    setMessage(`Added 15 minutes extension to candidate session ${sessionId}.`);
-  }, []);
+  // Session Proctoring Real API Actions
+  const handleForceSync = useCallback(async (sessionId: string) => {
+    await fetchLiveSessions();
+    setMessage(`Live telemetry re-synchronized for session ${sessionId}.`);
+  }, [fetchLiveSessions]);
 
-  const handlePauseSession = useCallback((sessionId: string) => {
-    setMessage(`Emergency pause signal dispatched to candidate session ${sessionId}. Exam timer locked.`);
-  }, []);
+  const handleExtendTime = useCallback(async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/admin/sessions/${sessionId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add_time", seconds: 900 }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setMessage(data.message || `Granted 15 minutes extension to ${sessionId}.`);
+        await fetchLiveSessions();
+      } else {
+        setMessage(`Extension failed: ${data.error || "Unknown error"}`);
+      }
+    } catch {
+      setMessage("Network error extending session time.");
+    }
+  }, [fetchLiveSessions]);
+
+  const handlePauseSession = useCallback(async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/admin/sessions/${sessionId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unlock" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setMessage(data.message || `Session ${sessionId} refreshed and unlocked.`);
+        await fetchLiveSessions();
+      }
+    } catch {
+      setMessage("Network error updating session.");
+    }
+  }, [fetchLiveSessions]);
+
+  const handleForceSubmit = useCallback(async (sessionId: string) => {
+    if (!confirm(`Are you sure you want to force-submit exam session ${sessionId}?`)) return;
+    try {
+      const res = await fetch(`/api/admin/sessions/${sessionId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "force_submit" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setMessage(data.message || `Session ${sessionId} has been force-submitted.`);
+        await fetchLiveSessions();
+      }
+    } catch {
+      setMessage("Network error force-submitting session.");
+    }
+  }, [fetchLiveSessions]);
 
   // PIN Batch Generation Handler
   const handleGenerateBatch = async (e: React.FormEvent) => {
@@ -514,10 +575,18 @@ export default function InstitutionalOperationsPage() {
                         <button
                           type="button"
                           onClick={() => handlePauseSession(session.id)}
-                          className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition"
-                          title="Emergency Lock Timer"
+                          className="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition"
+                          title="Unlock / Resume Session"
                         >
-                          ⏸
+                          🔓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleForceSubmit(session.id)}
+                          className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-bold transition"
+                          title="Force Submit Exam"
+                        >
+                          ⏹ Submit
                         </button>
                       </div>
                     </td>

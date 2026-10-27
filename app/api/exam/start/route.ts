@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "../../../lib/supabaseServer";
 import crypto from "crypto";
 import { generateExamPaper, freezeAttemptSnapshot } from "../../../lib/examEngine";
+import { getMaintenanceModeConfig } from "../../../lib/platformConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,19 @@ export async function POST(request: NextRequest) {
     const { code = "", name = "", phone = "", elective = "", subjects = [] } = body;
 
     const supabase = getSupabaseServerClient();
+
+    const maintenance = await getMaintenanceModeConfig().catch(() => null);
+    if (maintenance?.cbt_maintenance_enabled) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "cbt_maintenance",
+          message: maintenance.message || "CBT examination engine is undergoing scheduled maintenance.",
+          estimated_resumption: maintenance.estimated_resumption,
+        },
+        { status: 503 }
+      );
+    }
 
     const cleanCode = String(code || "").trim().toUpperCase();
     const cleanName = String(name || "").trim() || "Candidate";

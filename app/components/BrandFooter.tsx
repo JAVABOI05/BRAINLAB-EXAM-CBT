@@ -11,7 +11,7 @@ import {
 } from "../lib/platformConfig";
 
 /* -------------------------------------------------------------------------
-   Crisp Vector SVG Icons (Zero bloat, accessible, high contrast)
+   Crisp Vector SVG Icons (Accessible, zero external bloat)
 ------------------------------------------------------------------------- */
 function MailIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -119,7 +119,7 @@ export default function BrandFooter() {
   }, []);
 
   // Filter out any social links that are disabled, empty, or placeholder '#'
-  const rawLinks = (config.social_links && config.social_links.length > 0) ? config.social_links : OFFICIAL_SOCIAL_FALLBACKS;
+  const rawLinks = config.social_links && config.social_links.length > 0 ? config.social_links : OFFICIAL_SOCIAL_FALLBACKS;
   const activeSocialLinks = rawLinks.filter(
     (item) =>
       item.enabled &&
@@ -141,12 +141,12 @@ export default function BrandFooter() {
         BrainLab Academy Footer
       </h2>
 
-      {/* Main Spacious 4-Column Layout */}
-      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-10">
+      {/* Main Simplified 4-Column Grid */}
+      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-14">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           
-          {/* Column 1: Brand Introduction & Dual Official Support/Academy Channels (lg:col-span-4) */}
-          <div className="lg:col-span-4">
+          {/* Column 1: Brand & Contact Info (lg:col-span-5) */}
+          <div className="lg:col-span-5 space-y-4">
             <Link
               href="/"
               className="group inline-flex items-center gap-3 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400"
@@ -155,85 +155,72 @@ export default function BrandFooter() {
               <Image
                 src="/brainlab-mark.png"
                 alt="BrainLab Emblem"
-                width={48}
-                height={42}
-                className="h-11 w-auto drop-shadow-md transition-transform group-hover:scale-105"
+                width={44}
+                height={38}
+                className="h-10 w-auto drop-shadow-md transition-transform group-hover:scale-105"
                 priority={false}
               />
               <div className="flex flex-col justify-center leading-none">
-                <span className="text-2xl font-black tracking-tight text-white">
+                <span className="text-xl font-black tracking-tight text-white">
                   BrainLab <span className="text-cyan-400">Academy</span>
                 </span>
-                <span className="text-[11px] font-semibold tracking-wider text-slate-400 mt-1">
-                  Learn Smarter · Practise with Purpose
+                <span className="text-[10px] font-bold tracking-wider text-slate-400 mt-1 uppercase">
+                  Excellence in CBT &amp; Learning
                 </span>
               </div>
             </Link>
 
-            <p className="mt-3 text-sm font-semibold text-slate-100">
-              {config.brand_tagline}
+            <p className="text-xs leading-relaxed text-slate-400 max-w-sm">
+              Nigeria&apos;s premier online CBT examination prep, live academic masterclasses, and AI study tutor for UTME, SSCE, and competitive examinations.
             </p>
 
-            <p className="mt-2 text-xs leading-5 text-slate-400">
-              {config.brand_description}
-            </p>
-
-            {/* Clear, Non-repetitive Contact Channels */}
-            <div className="mt-5 space-y-2 text-xs text-slate-300">
-              {/* CBT & Technical Support Email */}
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 text-blue-400 shrink-0">
+            {/* Direct Official Contact Pills */}
+            <div className="pt-2 space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-slate-300">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-500/10 text-blue-400 shrink-0">
                   <MailIcon className="h-3.5 w-3.5" />
                 </span>
-                <div>
-                  <span className="text-[11px] text-slate-400 block">CBT Support:</span>
-                  <a
-                    href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
-                    className="font-medium text-slate-200 transition-colors hover:text-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
-                  >
-                    {supportEmail}
-                  </a>
-                </div>
+                <span className="text-slate-400 text-[11px]">CBT Support:</span>
+                <a
+                  href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
+                  className="font-medium text-slate-200 hover:text-cyan-300 transition-colors"
+                >
+                  {supportEmail}
+                </a>
               </div>
 
-              {/* Academy & Admissions Office Email */}
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 text-indigo-400 shrink-0">
+              <div className="flex items-center gap-2 text-slate-300">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-400 shrink-0">
                   <AcademicCapIcon className="h-3.5 w-3.5" />
                 </span>
-                <div>
-                  <span className="text-[11px] text-slate-400 block">Academy Office:</span>
-                  <a
-                    href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20and%20Partnership%20Inquiry`}
-                    className="font-medium text-slate-200 transition-colors hover:text-indigo-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
-                  >
-                    {academyEmail}
-                  </a>
-                </div>
+                <span className="text-slate-400 text-[11px]">Office:</span>
+                <a
+                  href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20and%20Partnership%20Inquiry`}
+                  className="font-medium text-slate-200 hover:text-indigo-300 transition-colors"
+                >
+                  {academyEmail}
+                </a>
               </div>
 
-              {/* Direct Support Line */}
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 text-emerald-400 shrink-0">
+              <div className="flex items-center gap-2 text-slate-300">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400 shrink-0">
                   <PhoneIcon className="h-3.5 w-3.5" />
                 </span>
-                <div>
-                  <span className="text-[11px] text-slate-400 block">Phone Line:</span>
-                  <a
-                    href={`tel:${supportPhone.replace(/\s+/g, "")}`}
-                    className="font-medium text-slate-200 transition-colors hover:text-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
-                  >
-                    {supportPhone}
-                  </a>
-                </div>
+                <span className="text-slate-400 text-[11px]">Phone / WhatsApp:</span>
+                <a
+                  href={`tel:${supportPhone.replace(/\s+/g, "")}`}
+                  className="font-medium text-slate-200 hover:text-emerald-300 transition-colors"
+                >
+                  {supportPhone}
+                </a>
               </div>
             </div>
 
-            {/* Single Focused Primary CTA */}
-            <div className="mt-5">
+            {/* Focused Action Button */}
+            <div className="pt-2">
               <a
                 href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95"
                 title={`Email ${supportEmail}`}
               >
                 <MailIcon className="h-3.5 w-3.5" />
@@ -242,147 +229,102 @@ export default function BrandFooter() {
             </div>
           </div>
 
-          {/* Column 2: CBT Practice & Exam Suite (lg:col-span-2) */}
-          <div className="lg:col-span-2">
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white">
+          {/* Column 2: CBT & Practice (lg:col-span-2) */}
+          <div className="lg:col-span-2 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">
               CBT Practice
             </h3>
-            <ul className="mt-4 space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/login">
+                <Link className="hover:text-white transition-colors" href="/cbt">
                   JAMB UTME CBT
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/access">
+                <Link className="hover:text-white transition-colors" href="/access">
                   Enter Access Code
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/self-practice">
+                <Link className="hover:text-white transition-colors" href="/self-practice">
                   Self-Paced Practice
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/assessments">
-                  Quizzes &amp; Competitions
+                <Link className="hover:text-white transition-colors" href="/challenge-arena">
+                  1v1 Challenge Arena
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/leaderboard">
+                <Link className="hover:text-white transition-colors" href="/leaderboard">
                   National Leaderboard
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/schools">
-                  For Schools &amp; Centres
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Learning Hub & Classes (lg:col-span-3) */}
-          <div className="lg:col-span-3">
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white">
+          {/* Column 3: Learning & Masterclasses (lg:col-span-3) */}
+          <div className="lg:col-span-3 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">
               Learning Hub
             </h3>
-            <ul className="mt-4 space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/learn">
+                <Link className="hover:text-white transition-colors" href="/learn">
                   Subject Curriculum
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/learn?tab=timetable">
-                  Timetable &amp; Schedule
+                <Link className="hover:text-white transition-colors" href="/classroom">
+                  Live Masterclass Stage
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/learn?tab=live">
-                  Live Classroom Stage
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/recordings">
-                  Class Recordings
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/ai-learning">
+                <Link className="hover:text-white transition-colors" href="/ai-learning">
                   AI Study Studio
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/challenge-arena">
-                  Challenge Arena (Daily Sprints)
+                <Link className="hover:text-white transition-colors" href="/learn?tab=timetable">
+                  Revision Timetable
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/resources">
-                  Formula Sheets &amp; Resources
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/learning-dna">
-                  Learning DNA Diagnostic
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/study-groups">
-                  Study Circles &amp; Groups
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/community">
-                  Community &amp; Discussions
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/skills-passport">
-                  Study Report &amp; Badges
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/learning/achievements">
-                  Achievements &amp; Streaks
+                <Link className="hover:text-white transition-colors" href="/resources">
+                  Formula Sheets &amp; Notes
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Support & Trust (lg:col-span-3) */}
-          <div className="lg:col-span-3">
-            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-white">
+          {/* Column 4: Support & Trust (lg:col-span-2) */}
+          <div className="lg:col-span-2 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">
               Support &amp; Trust
             </h3>
-            <ul className="mt-4 space-y-2 text-xs">
+            <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/support">
+                <Link className="hover:text-white transition-colors" href="/support">
                   Help Centre &amp; FAQs
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/contact">
-                  Contact Directory
+                <Link className="hover:text-white transition-colors" href="/pricing">
+                  Plans &amp; Pricing
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/about">
-                  About Our Academy
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/pricing">
-                  Practice Plans &amp; Pricing
-                </Link>
-              </li>
-              <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/verify">
+                <Link className="hover:text-white transition-colors" href="/verify">
                   Verify Certificate
                 </Link>
               </li>
               <li>
-                <Link className="text-slate-300 transition-colors hover:text-white" href="/account/subscription/refund">
+                <Link className="hover:text-white transition-colors" href="/about">
+                  About Our Academy
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white transition-colors" href="/account/subscription/refund">
                   Refund Policy
                 </Link>
               </li>
@@ -392,40 +334,31 @@ export default function BrandFooter() {
         </div>
       </div>
 
-      {/* Clean Sub-Footer Bar */}
+      {/* Simplified Bottom Bar */}
       <div className="border-t border-slate-800/80 bg-[#000814]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-xs text-slate-400 sm:px-8 md:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-4 text-xs text-slate-400 sm:px-8 sm:flex-row">
           
-          {/* Copyright Notice */}
-          <div className="text-center sm:text-left">
+          {/* Copyright */}
+          <div>
             <span>&copy; {currentYear} {config.copyright_notice}</span>
           </div>
 
           {/* Essential Legal Links */}
-          <div className="flex items-center gap-4 text-xs text-slate-400">
-            <Link
-              href="/privacy"
-              className="transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
-            >
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <Link href="/privacy" className="hover:text-white transition-colors">
               Privacy Notice
             </Link>
             <span className="text-slate-700" aria-hidden="true">&bull;</span>
-            <Link
-              href="/terms"
-              className="transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
-            >
+            <Link href="/terms" className="hover:text-white transition-colors">
               Terms of Use
             </Link>
             <span className="text-slate-700" aria-hidden="true">&bull;</span>
-            <Link
-              href="/account/subscription/refund"
-              className="transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
-            >
-              Refund Policy
+            <Link href="/account/subscription/refund" className="hover:text-white transition-colors">
+              Refunds
             </Link>
           </div>
 
-          {/* Social Media Link Pills */}
+          {/* Clean Social Media Icons */}
           {activeSocialLinks.length > 0 && (
             <div className="flex items-center gap-2" aria-label="Social media channels">
               {activeSocialLinks.map((social) => {
@@ -437,7 +370,7 @@ export default function BrandFooter() {
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-400 transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-400 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
                     aria-label={`BrainLab Academy on ${social.name}`}
                     title={social.name}
                   >

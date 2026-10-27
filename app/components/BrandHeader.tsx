@@ -2,19 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import UserBadges from "./UserBadges";
-import { useLearnerTheme } from "./LearnerThemeProvider";
 
-const links = [
-  { href: "/cbt", label: "CBT Practice" },
-  { href: "/learn", label: "Learning Hub" },
-  { href: "/challenge-arena", label: "Challenge Arena" },
-  { href: "/ai-learning", label: "AI Learning" },
-  { href: "/support", label: "Help" },
+const NAV_LINKS = [
+  { href: "/cbt", label: "CBT Practice", badge: "Mock" },
+  { href: "/learn", label: "Curriculum" },
+  { href: "/classroom", label: "Live Classes", badge: "Live" },
+  { href: "/challenge-arena", label: "1v1 Arena" },
+  { href: "/ai-learning", label: "AI Studio" },
+  { href: "/pricing", label: "Plans" },
 ];
 
 function displayName(user: User) {
@@ -28,12 +28,26 @@ function displayName(user: User) {
 export default function BrandHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { resolvedTheme } = useLearnerTheme();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Listen to auth state
   useEffect(() => {
     let active = true;
     void supabase.auth
@@ -49,6 +63,7 @@ export default function BrandHeader() {
           setCheckingSession(false);
         }
       });
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -57,6 +72,7 @@ export default function BrandHeader() {
         setCheckingSession(false);
       }
     });
+
     return () => {
       active = false;
       subscription.unsubscribe();
@@ -75,180 +91,318 @@ export default function BrandHeader() {
     }
     await supabase.auth.signOut();
     setUser(null);
-    setMenuOpen(false);
+    setUserDropdownOpen(false);
+    setMobileMenuOpen(false);
     router.replace("/");
     router.refresh();
     setSigningOut(false);
   }
 
-  const closeMenu = () => setMenuOpen(false);
+  const closeAllMenus = () => {
+    setMobileMenuOpen(false);
+    setUserDropdownOpen(false);
+  };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 text-slate-900 shadow-[0_3px_18px_rgba(15,23,42,0.035)] backdrop-blur-xl dark:border-slate-800 dark:bg-[#071328]/95 dark:text-slate-100 dark:shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors duration-200">
-      <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-7 lg:px-10">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 text-slate-900 shadow-[0_2px_14px_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-slate-800/80 dark:bg-[#071328]/85 dark:text-slate-100 dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-colors">
+      <div className="mx-auto flex min-h-[68px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        
+        {/* Brand Logo & Emblem */}
         <Link
           href="/"
-          onClick={closeMenu}
-          className="group flex shrink-0 items-center gap-2.5 sm:gap-3 rounded-xl transition-transform hover:scale-[1.02] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+          onClick={closeAllMenus}
+          className="group flex shrink-0 items-center gap-2.5 rounded-xl transition-transform hover:scale-[1.02] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
           aria-label="BrainLab Academy home"
         >
-          <Image
-            src="/brainlab-mark.png"
-            alt="BrainLab Emblem"
-            width={48}
-            height={42}
-            priority
-            className="h-11 sm:h-12 w-auto drop-shadow-xs transition-transform group-hover:scale-105"
-          />
+          <div className="relative flex items-center justify-center">
+            <Image
+              src="/brainlab-mark.png"
+              alt="BrainLab Emblem"
+              width={42}
+              height={38}
+              priority
+              className="h-9 sm:h-10 w-auto drop-shadow-sm transition-transform group-hover:scale-105"
+            />
+          </div>
           <div className="flex flex-col justify-center leading-none">
-            <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            <span className="text-xl font-black tracking-tight text-slate-950 dark:text-white">
               BrainLab
             </span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold tracking-[0.24em] uppercase text-blue-700 dark:text-cyan-400 mt-1">
+            <span className="text-[10px] font-black tracking-[0.2em] uppercase text-blue-700 dark:text-cyan-400 mt-0.5">
               ACADEMY
             </span>
           </div>
         </Link>
 
-        {/* Mobile menu toggle */}
-        <button
-          type="button"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 text-base font-bold transition-all duration-150 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 xl:hidden"
-          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={menuOpen}
-          aria-controls="brainlab-main-nav"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <span aria-hidden="true" className="text-xl">
-            {menuOpen ? "×" : "☰"}
-          </span>
-        </button>
-
-        {/* Navigation links */}
+        {/* Center Desktop Navigation Pills */}
         <nav
-          id="brainlab-main-nav"
           aria-label="Main navigation"
-          className={
-            menuOpen
-              ? "absolute left-0 right-0 top-[72px] flex max-h-[calc(100dvh-72px)] flex-col gap-1 overflow-y-auto border-b border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-[#071328] dark:text-slate-100 p-4 shadow-2xl xl:static xl:max-h-none xl:flex-row xl:items-center xl:gap-0 xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
-              : "hidden xl:flex xl:items-center xl:gap-0"
-          }
+          className="hidden md:flex items-center gap-1 rounded-2xl border border-slate-200/60 bg-slate-50/60 p-1 dark:border-slate-800 dark:bg-slate-900/60"
         >
-          {links.map((link) => {
+          {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href + "/"));
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={closeMenu}
-                className={
-                  "rounded-xl px-3.5 py-2 text-sm font-bold transition-all duration-150 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-700 " +
-                  (isActive
-                    ? "bg-blue-50 text-[#012153] dark:bg-blue-950/70 dark:text-cyan-300 font-extrabold border border-blue-200/60 dark:border-blue-800/60 shadow-xs"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-[#012153] dark:text-slate-200 dark:hover:bg-slate-800/80 dark:hover:text-cyan-300")
-                }
+                className={`relative flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-150 ${
+                  isActive
+                    ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
+                    : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                }`}
               >
-                {link.label}
+                <span>{link.label}</span>
+                {link.badge && (
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider ${
+                      link.badge === "Live"
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 animate-pulse"
+                        : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-cyan-300"
+                    }`}
+                  >
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
+        </nav>
 
+        {/* Right Desktop Actions */}
+        <div className="hidden md:flex items-center gap-2.5">
           {checkingSession ? (
-            <span
-              className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400 px-4 py-2 text-sm xl:ml-2 xl:mt-0"
-              aria-live="polite"
-            >
-              <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" /> Checking account…
-            </span>
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-slate-700">
+              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-blue-600" />
+              <span>Verifying session…</span>
+            </div>
           ) : user ? (
-            <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 xl:ml-3 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0">
-              <Link
-                href="/dashboard"
-                onClick={closeMenu}
-                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#012153] to-blue-800 hover:from-blue-950 hover:to-blue-900 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect width="7" height="9" x="3" y="3" rx="1.5" />
-                  <rect width="7" height="5" x="14" y="3" rx="1.5" />
-                  <rect width="7" height="9" x="14" y="12" rx="1.5" />
-                  <rect width="7" height="5" x="3" y="16" rx="1.5" />
-                </svg>
-                <span>My learning</span>
-              </Link>
-
+            <div className="flex items-center gap-2">
+              {/* Quick Messages Icon */}
               <Link
                 href="/messages"
-                onClick={closeMenu}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-                title="Private & Group Messages"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+                title="Messages"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
                 </svg>
-                <span className="xl:hidden">Messages</span>
               </Link>
 
+              {/* Quick Notifications Icon */}
               <Link
                 href="/notifications"
-                onClick={closeMenu}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
                 title="Notifications"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                   <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                 </svg>
-                <span className="xl:hidden">Notifications</span>
               </Link>
 
+              {/* Primary "My Learning" Quick Pill */}
               <Link
-                href="/profile"
-                onClick={closeMenu}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white text-slate-800 hover:border-blue-200 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-700 px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95"
-                title={user.email ?? "Your profile"}
+                href="/dashboard"
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 px-3.5 py-2 text-xs font-black text-white shadow-xs transition hover:shadow-sm active:scale-95"
               >
-                {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
-                  <img
-                    src={user.user_metadata.avatar_url ?? user.user_metadata.picture}
-                    alt=""
-                    referrerPolicy="no-referrer"
-                    className="h-7 w-7 rounded-full object-cover"
-                  />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-extrabold text-blue-950"
-                  >
-                    {displayName(user).charAt(0).toUpperCase()}
-                  </span>
-                )}
-                <span className="max-w-[140px] truncate">{displayName(user)}</span>
-                <UserBadges userId={user.id} maxVisible={2} size="xs" />
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="7" height="9" x="3" y="3" rx="1.5" />
+                  <rect width="7" height="5" x="14" y="3" rx="1.5" />
+                  <rect width="7" height="9" x="14" y="12" rx="1.5" />
+                  <rect width="7" height="5" x="3" y="16" rx="1.5" />
+                </svg>
+                <span>Dashboard</span>
               </Link>
 
-              <button
-                type="button"
-                onClick={() => void signOut()}
-                disabled={signingOut}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150 active:scale-95 disabled:opacity-60 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              >
-                {signingOut ? "Signing out…" : "Sign out"}
-              </button>
+              {/* User Dropdown Pill */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white p-1.5 pr-2.5 text-xs font-bold text-slate-800 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition active:scale-95"
+                >
+                  {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                    <img
+                      src={user.user_metadata.avatar_url ?? user.user_metadata.picture}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      className="h-6 w-6 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-100 text-[11px] font-black text-blue-900 dark:bg-blue-900 dark:text-cyan-200">
+                      {displayName(user).charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="max-w-[100px] truncate">{displayName(user)}</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-slate-400 transition-transform ${userDropdownOpen ? "rotate-180" : ""}`}>
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu Overlay */}
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
+                    <div className="border-b border-slate-100 p-2.5 dark:border-slate-800">
+                      <p className="font-extrabold text-slate-950 dark:text-white truncate">{displayName(user)}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                      <div className="mt-1.5">
+                        <UserBadges userId={user.id} maxVisible={2} size="xs" />
+                      </div>
+                    </div>
+
+                    <div className="py-1">
+                      <Link
+                        href="/profile"
+                        onClick={closeAllMenus}
+                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                      >
+                        <span>👤</span> Profile &amp; Bio
+                      </Link>
+                      <Link
+                        href="/skills-passport"
+                        onClick={closeAllMenus}
+                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                      >
+                        <span>🏅</span> Performance &amp; Badges
+                      </Link>
+                      <Link
+                        href="/pricing"
+                        onClick={closeAllMenus}
+                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                      >
+                        <span>⚡</span> Subscription &amp; Plans
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-1 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => void signOut()}
+                        disabled={signingOut}
+                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                      >
+                        <span>🚪</span>
+                        <span>{signingOut ? "Signing out…" : "Sign Out"}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 xl:ml-3 xl:mt-0 xl:flex-row xl:items-center xl:border-0 xl:pt-0">
+            /* Logged-out state */
+            <div className="flex items-center gap-2">
               <Link
                 href="/account"
-                onClick={closeMenu}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-900 px-5 py-2 text-sm font-extrabold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                className="rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 transition"
               >
-                Sign In / Register
+                Sign In
+              </Link>
+              <Link
+                href="/account"
+                className="rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 px-4 py-2 text-xs font-extrabold text-white shadow-xs transition hover:shadow-sm active:scale-95"
+              >
+                Get Started Free →
               </Link>
             </div>
           )}
-        </nav>
+        </div>
+
+        {/* Mobile Hamburger Toggle Button */}
+        <button
+          type="button"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 md:hidden transition active:scale-95"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          <span className="text-lg leading-none">{mobileMenuOpen ? "✕" : "☰"}</span>
+        </button>
       </div>
+
+      {/* Modern Mobile Slide-Down Drawer */}
+      {mobileMenuOpen && (
+        <div className="border-b border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-[#071328] md:hidden animate-in fade-in duration-150">
+          <div className="space-y-1">
+            {NAV_LINKS.map((link) => {
+              const isActive =
+                pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href + "/"));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeAllMenus}
+                  className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold ${
+                    isActive
+                      ? "bg-blue-50 text-blue-900 font-extrabold dark:bg-blue-950/80 dark:text-cyan-300"
+                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <span>{link.label}</span>
+                  {link.badge && (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black uppercase text-blue-800 dark:bg-blue-900 dark:text-cyan-300">
+                      {link.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* User actions on mobile */}
+          <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
+            {checkingSession ? (
+              <span className="text-xs text-slate-400">Verifying session…</span>
+            ) : user ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-1">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-xs font-black text-blue-900 dark:bg-blue-900 dark:text-cyan-200">
+                    {displayName(user).charAt(0).toUpperCase()}
+                  </span>
+                  <div className="truncate text-xs">
+                    <p className="font-extrabold text-slate-900 dark:text-white truncate">{displayName(user)}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Link
+                    href="/dashboard"
+                    onClick={closeAllMenus}
+                    className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
+                  >
+                    Dashboard →
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => void signOut()}
+                    className="flex items-center justify-center rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/account"
+                  onClick={closeAllMenus}
+                  className="flex items-center justify-center rounded-xl border border-slate-300 py-2.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/account"
+                  onClick={closeAllMenus}
+                  className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white"
+                >
+                  Get Started →
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

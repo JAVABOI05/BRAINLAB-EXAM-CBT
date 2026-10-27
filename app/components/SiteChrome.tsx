@@ -7,6 +7,7 @@ import BrandHeader from "./BrandHeader";
 import GlobalLearnerToolbar from "./GlobalLearnerToolbar";
 import ToastContainer from "./Toast";
 import OfflineSyncManager from "./OfflineSyncManager";
+import GlobalAnnouncementBanner from "./GlobalAnnouncementBanner";
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
@@ -36,6 +37,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <ToastContainer />
       <OfflineSyncManager />
       {!hidePublicChrome && <GlobalLearnerToolbar />}
+      {!hidePublicChrome && <GlobalAnnouncementBanner />}
       {!hidePublicChrome && <BrandHeader />}
       {children}
       {!hidePublicChrome && !isMessages && <BrandFooter />}
