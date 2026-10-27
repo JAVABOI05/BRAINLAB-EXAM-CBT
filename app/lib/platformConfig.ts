@@ -543,7 +543,8 @@ export async function deleteSubscriptionPlan(
 // Feature Flags
 // ----------------------------------------------------------------------------
 export async function getFeatureFlags(): Promise<FeatureFlags> {
-  return await getPlatformConfig<FeatureFlags>("platform_feature_flags", DEFAULT_FEATURE_FLAGS);
+  const flags = await getPlatformConfig<FeatureFlags>("platform_feature_flags", DEFAULT_FEATURE_FLAGS);
+  return { ...DEFAULT_FEATURE_FLAGS, ...flags };
 }
 
 export async function setFeatureFlag(

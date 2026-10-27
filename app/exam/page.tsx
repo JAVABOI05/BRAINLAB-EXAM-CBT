@@ -160,7 +160,7 @@ export default function ExamPage() {
       if (!settings) { setError("Could not load exam settings. Check your connection and refresh the page."); return; }
       const duration = settings.exam_duration > 0 ? settings.exam_duration : DEFAULT_EXAM_DURATION;
       setExamDuration(duration); setTimeLeft(duration);
-      setCalculatorEnabled(settings.calculator_enabled); setMockEnabled(settings.mock_enabled);
+      setCalculatorEnabled(settings?.calculator_enabled !== false); setMockEnabled(settings.mock_enabled);
       setShowMarksInExam(settings.show_marks_in_exam !== false);
       setShowTopicInExam(settings.show_topic_in_exam !== false);
       if (!settings.mock_enabled) { router.push("/access"); return; }
@@ -722,7 +722,15 @@ export default function ExamPage() {
               disabled={loading}
               className="w-full rounded-2xl bg-[#012153] hover:bg-[#071c43] px-6 py-4 text-base font-black text-white shadow-lg transition-all duration-150 hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:transform-none"
             >
-              {loading ? "Initializing Examination Paper..." : "🚀 Launch CBT Exam Now"}
+              {loading ? "Initializing Examination Paper..." : (
+              <span className="flex items-center gap-2">
+                <span>Launch CBT Exam Now</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </span>
+            )}
             </button>
 
             {error && <p className="mt-4 text-red-600 font-semibold text-center">{error}</p>}
@@ -756,7 +764,7 @@ export default function ExamPage() {
     <main className="exam-shell">
       {resumedNotice && (
         <div className="bg-emerald-700 px-4 py-2.5 text-center text-xs font-semibold text-white shadow-sm flex items-center justify-center gap-2">
-          <span>🔄 {resumedNotice}</span>
+          <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 16h5v5" /></svg><span>{resumedNotice}</span></span>
           <button
             type="button"
             onClick={() => setResumedNotice(null)}
@@ -797,13 +805,43 @@ export default function ExamPage() {
                     : "bg-emerald-100 text-emerald-800 border border-emerald-300"
                 }`}
               >
-                {syncStatus === "offline"
-                  ? "⚡ Offline (Saved locally)"
-                  : syncStatus === "error"
-                  ? "⚠ Save needs attention"
-                  : syncStatus === "syncing"
-                  ? "↻ Saving answer..."
-                  : "✓ Synced"}
+                {syncStatus === "offline" ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+                      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+                      <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+                      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                      <line x1="12" y1="20" x2="12.01" y2="20" />
+                    </svg>
+                    <span>Offline (Saved locally)</span>
+                  </>
+                ) : syncStatus === "error" ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>Save needs attention</span>
+                  </>
+                ) : syncStatus === "syncing" ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" aria-hidden="true">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    <span>Saving answer...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Synced</span>
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -818,10 +856,16 @@ export default function ExamPage() {
 
             {calculatorEnabled && (
               <button
+                type="button"
                 onClick={() => setShowCalculator((prev) => !prev)}
-                className="exam-calc-btn hover:opacity-90 active:scale-95 transition-all"
+                className={`exam-calc-btn flex items-center gap-1.5 transition-all active:scale-95 ${
+                  showCalculator ? "ring-2 ring-sky-400 bg-slate-800" : "hover:opacity-90"
+                }`}
+                title="Toggle On-Screen Calculator"
+                aria-label="Toggle Calculator"
               >
-                Calculator
+                <span>🧮</span>
+                <span>{showCalculator ? "Hide Calculator" : "Calculator"}</span>
               </button>
             )}
 
@@ -891,7 +935,7 @@ export default function ExamPage() {
                 className="lg:hidden w-full mb-5 flex items-center justify-between rounded-2xl border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/60 p-3.5 text-left text-xs font-bold text-sky-900 dark:text-sky-200 shadow-xs active:scale-[0.99] transition hover:bg-sky-100"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-xl">📖</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600/10 text-blue-700 dark:text-cyan-400"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" /></svg></span>
                   <div>
                     <p className="font-black text-blue-900 dark:text-cyan-300 text-sm">
                       {currentQuestion.passage_title || "View Reading Passage"}
@@ -923,10 +967,10 @@ export default function ExamPage() {
                       <div className="flex items-center gap-2">
                         <span className="rounded-md bg-blue-700 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
                           {currentQuestion.section === "reading_text"
-                            ? "📖 UTME Novel"
+                            ? "UTME Novel"
                             : currentQuestion.section === "cloze"
-                            ? "🧩 Cloze Passage"
-                            : "📜 Comprehension"}
+                            ? "Cloze Passage"
+                            : "Comprehension"}
                         </span>
                         {currentPassageCluster.length > 0 && (
                           <span className="rounded-md bg-sky-200 dark:bg-sky-900 px-2 py-0.5 text-[10px] font-bold text-sky-900 dark:text-sky-200">
@@ -1029,7 +1073,7 @@ export default function ExamPage() {
                           onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
                           className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 px-3 py-1 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
                         >
-                          <span>🔍 Click diagram to enlarge</span>
+                          <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg><span>Click diagram to enlarge</span></span>
                         </button>
                       </div>
                     )}
@@ -1094,7 +1138,7 @@ export default function ExamPage() {
                           : "border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
                       }`}
                     >
-                      {currentIsFlagged ? "⚐ Unflag" : "⚐ Flag"}
+                      <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill={currentIsFlagged ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg><span>{currentIsFlagged ? "Unflag" : "Flag"}</span></span>
                     </button>
 
                     <button
@@ -1128,7 +1172,7 @@ export default function ExamPage() {
                         onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
                         className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 px-3 py-1 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
                       >
-                        <span>🔍 Click diagram to enlarge</span>
+                        <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg><span>Click diagram to enlarge</span></span>
                       </button>
                     </div>
                   )}
@@ -1193,7 +1237,7 @@ export default function ExamPage() {
                         : "border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
                     }`}
                   >
-                    {currentIsFlagged ? "⚐ Unflag" : "⚐ Flag"}
+                    <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill={currentIsFlagged ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></svg><span>{currentIsFlagged ? "Unflag" : "Flag"}</span></span>
                   </button>
 
                   <button
@@ -1284,7 +1328,7 @@ export default function ExamPage() {
           <div className="w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-cyan-300 text-2xl font-black">
-                📝
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="m9 15 2 2 4-4" /></svg>
               </span>
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Submit Your CBT Exam?</h3>
@@ -1309,7 +1353,7 @@ export default function ExamPage() {
               </div>
               {questions.length - Object.keys(answers).length > 0 && (
                 <div className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 rounded-xl p-2.5 border border-amber-200 dark:border-amber-800 mt-2">
-                  ⚠️ You still have <strong>{questions.length - Object.keys(answers).length} unanswered</strong> question{questions.length - Object.keys(answers).length === 1 ? "" : "s"}.
+                  <span className="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg><span>You still have <strong>{questions.length - Object.keys(answers).length} unanswered</strong></span></span> question{questions.length - Object.keys(answers).length === 1 ? "" : "s"}.
                 </div>
               )}
             </div>
@@ -1349,6 +1393,35 @@ export default function ExamPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Floating Calculator Quick-Access Trigger Button */}
+      {calculatorEnabled && (
+        <button
+          type="button"
+          onClick={() => setShowCalculator((prev) => !prev)}
+          className={`fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-xs sm:text-sm font-bold shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95 ${
+            showCalculator
+              ? "bg-sky-600 text-white ring-4 ring-sky-300/40"
+              : "bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700 hover:bg-slate-800"
+          }`}
+          title="Toggle On-Screen Calculator"
+          aria-label="Toggle On-Screen Calculator"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect width="16" height="20" x="4" y="2" rx="2" />
+            <line x1="8" x2="16" y1="6" y2="6" />
+            <line x1="16" x2="16" y1="14" y2="18" />
+            <path d="M16 10h.01" />
+            <path d="M12 10h.01" />
+            <path d="M8 10h.01" />
+            <path d="M12 14h.01" />
+            <path d="M8 14h.01" />
+            <path d="M12 18h.01" />
+            <path d="M8 18h.01" />
+          </svg>
+          <span className="hidden sm:inline">{showCalculator ? "Hide Calculator" : "Calculator"}</span>
+        </button>
       )}
 
       {calculatorEnabled && (
@@ -1460,7 +1533,7 @@ export default function ExamPage() {
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <span className="text-lg">🔬</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-cyan-300"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg></span>
                 <span className="text-sm font-extrabold text-slate-900 dark:text-white">
                   High-Resolution Examination Diagram
                 </span>
