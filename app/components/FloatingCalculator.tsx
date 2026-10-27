@@ -68,7 +68,7 @@ export default function FloatingCalculator({
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = calcRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -79,7 +79,7 @@ export default function FloatingCalculator({
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging) return;
 
     setPosition({
@@ -88,7 +88,7 @@ export default function FloatingCalculator({
     });
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = () => {
     setDragging(false);
   };
 
