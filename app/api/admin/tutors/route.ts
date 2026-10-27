@@ -83,7 +83,7 @@ export async function PATCH(request: NextRequest) {
     const { user, supabase } = auth;
     const body = await request.json();
     const tutorId = String(body.tutor_id || "");
-    const subjectIds = Array.isArray(body.subject_ids) ? [...new Set(body.subject_ids.map(String))] : [];
+    const subjectIds: string[] = Array.isArray(body.subject_ids) ? [...new Set((body.subject_ids as unknown[]).map((id) => String(id)))] : [];
     if (!tutorId || subjectIds.length === 0) {
       return NextResponse.json({ error: "tutor_id and at least one subject_id are required." }, { status: 400 });
     }
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest) {
     await logAdminAction({
       admin_id: user.id,
       admin_email: user.email || "super-admin",
-      entity_type: "tutor",
+      entity_type: "classroom",
       entity_id: tutorId,
       action: "updated",
       new_value: { subject_ids: subjectIds },
