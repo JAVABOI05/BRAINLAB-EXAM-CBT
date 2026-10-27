@@ -43,10 +43,6 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const isAuthorized =
-      adminRole &&
-      ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminRole.role);
-
     const body = await request.json();
     const requestedSubjectId = body.subject_id ? String(body.subject_id) : null;
     const requestedTutorId = body.tutor_id ? String(body.tutor_id) : user.id;
