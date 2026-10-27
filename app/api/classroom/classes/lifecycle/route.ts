@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       eventType = "rescheduled";
       eventDetails = { scheduled_start_at: start.toISOString(), scheduled_end_at: end.toISOString() };
     } else if (action === "assign_tutors") {
-      if (!isAdmin) return NextResponse.json({ error: "Only an administrator can change class tutor assignments." }, { status: 403 });
+      if (role !== "super_admin") return NextResponse.json({ error: "Only the Super Admin can change class tutor assignments." }, { status: 403 });
       const tutorIds = Array.isArray(body.tutor_ids) ? [...new Set(body.tutor_ids.map(String))] : [];
       if (!tutorIds.includes(liveClass.tutor_id)) {
         return NextResponse.json({ error: "The lead tutor must remain assigned as the class owner." }, { status: 400 });
