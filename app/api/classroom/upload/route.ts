@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { storeClassroomMedia } from "@/app/lib/classroomMediaStore";
+import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -23,16 +25,22 @@ export async function POST(request: NextRequest) {
 
     const mimeType = file.type || (mediaType === "audio" ? "audio/webm" : "image/jpeg");
     const arrayBuffer = await file.arrayBuffer();
-    const base64Data = `data:${mimeType};base64,${Buffer.from(arrayBuffer).toString("base64")}`;
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Data = `data:${mimeType};base64,${buffer.toString("base64")}`;
+    const assetId = crypto.randomUUID();
+
+    // 1. Immediately store in fast in-memory media cache
+    storeClassroomMedia(assetId, buffer, mimeType, durationSeconds, file.name);
 
     const supabase = getSupabaseServerClient();
     const userId = user?.id || "guest_learner";
 
+    // 2. Also persist in database if table available
     try {
-      // Store in audio_assets table (holds binary payloads with mime_type)
-      const { data: asset, error: insertError } = await supabase
+      await supabase
         .from("audio_assets")
         .insert({
+          id: assetId,
           user_id: user ? user.id : undefined,
           asset_type: mediaType === "audio" ? "tutor_voice_note" : "lesson_audio",
           title: file.name || `Classroom ${mediaType} ${new Date().toLocaleTimeString()}`,
@@ -46,32 +54,23 @@ export async function POST(request: NextRequest) {
             original_filename: file.name,
             uploader_id: userId,
           },
-        })
-        .select("id")
-        .maybeSingle();
-
-      if (asset && !insertError) {
-        return NextResponse.json({
-          success: true,
-          assetId: asset.id,
-          url: `/api/classroom/media/${asset.id}`,
-          mediaType,
-          duration: durationSeconds,
         });
-      }
     } catch {
-      // ignore insert error and use base64Data fallback
+      // Ignore database insert issues; in-memory store serves immediately
     }
 
-    // Fallback: return universal base64 data URI so all clients can play it directly
     return NextResponse.json({
       success: true,
-      url: base64Data,
+      assetId,
+      url: `/api/classroom/media/${assetId}`,
       mediaType,
       duration: durationSeconds,
     });
   } catch (error: unknown) {
     console.error("[classroom/upload] Error:", error);
-    return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) || "Upload failed." }, { status: 500 });
+    return NextResponse.json(
+      { error: (error instanceof Error ? error.message : String(error)) || "Upload failed." },
+      { status: 500 }
+    );
   }
 }
