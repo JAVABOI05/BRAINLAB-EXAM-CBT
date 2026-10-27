@@ -242,7 +242,7 @@ export const DEFAULT_FREE_ENTITLEMENTS: PlanEntitlements = {
   ai_tutor_enabled: true,
   ai_monthly_quota: 50,
   ai_voice_tutor: false,
-  classroom_access: false,
+  classroom_access: true,
   competitions_included: false,
   advanced_analytics: false,
   certificates_issued: false,
@@ -307,7 +307,7 @@ export function normalizePlanEntitlements(
 }
 
 // Default initial fallbacks for graceful resilience
-const DEFAULT_PLANS: SubscriptionPlan[] = [
+export const DEFAULT_PLANS: SubscriptionPlan[] = [
   {
     id: "free",
     name: "Free Learner",

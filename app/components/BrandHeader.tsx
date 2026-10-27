@@ -9,7 +9,7 @@ import { supabase } from "../lib/supabase";
 import UserBadges from "./UserBadges";
 
 const NAV_LINKS = [
-  { href: "/cbt", label: "CBT Practice", badge: "Mock" },
+  { href: "/cbt", label: "CBT Practice" },
   { href: "/learn", label: "Curriculum" },
   { href: "/classroom", label: "Live Classes", badge: "Live" },
   { href: "/challenge-arena", label: "1v1 Arena" },
@@ -400,6 +400,52 @@ export default function BrandHeader() {
                 </Link>
               </div>
             )}
+
+            {/* Quick Community Channels */}
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+              <span className="font-semibold text-slate-400">Official Channels:</span>
+              <div className="flex items-center gap-2.5">
+                <a
+                  href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-500 hover:text-emerald-400 font-bold"
+                  title="WhatsApp Channel"
+                >
+                  WhatsApp
+                </a>
+                <span className="text-slate-300 dark:text-slate-700">&bull;</span>
+                <a
+                  href="https://www.instagram.com/brain_labacademy?dlrf=NGJzcmFnaGcwZHV4"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-pink-500 hover:text-pink-400 font-bold"
+                  title="Instagram"
+                >
+                  Instagram
+                </a>
+                <span className="text-slate-300 dark:text-slate-700">&bull;</span>
+                <a
+                  href="https://www.tiktok.com/@brainlabacademy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-500 hover:text-cyan-400 font-bold"
+                  title="TikTok"
+                >
+                  TikTok
+                </a>
+                <span className="text-slate-300 dark:text-slate-700">&bull;</span>
+                <a
+                  href="https://youtube.com/@thebrainlabhub?si=z4sAVuNmJUdPom_u"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-red-500 hover:text-red-400 font-bold"
+                  title="YouTube"
+                >
+                  YouTube
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}

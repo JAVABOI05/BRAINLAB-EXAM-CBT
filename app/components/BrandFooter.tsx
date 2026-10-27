@@ -37,6 +37,14 @@ function AcademicCapIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+function WhatsAppIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.09 2.53.73 2.99.69.45-.04 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.11-.23-.17-.48-.29z" />
+    </svg>
+  );
+}
+
 function XIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -77,28 +85,65 @@ function TikTokIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+function LinkedInIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+    </svg>
+  );
+}
+
 const OFFICIAL_SOCIAL_FALLBACKS: SocialLinkConfig[] = [
-  { platform: "x", name: "X (Twitter)", url: "https://x.com/The_brainlabhub", enabled: true },
+  { platform: "whatsapp", name: "WhatsApp Channel", url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m", enabled: true },
   { platform: "instagram", name: "Instagram", url: "https://www.instagram.com/brain_labacademy?dlrf=NGJzcmFnaGcwZHV4", enabled: true },
-  { platform: "facebook", name: "Facebook", url: "https://www.facebook.com/profile.php?id=61595669640028", enabled: true },
-  { platform: "youtube", name: "YouTube", url: "https://youtube.com/@thebrainlabhub?si=z4sAVuNmJUdPom_u", enabled: true },
   { platform: "tiktok", name: "TikTok", url: "https://www.tiktok.com/@brainlabacademy", enabled: true },
+  { platform: "youtube", name: "YouTube", url: "https://youtube.com/@thebrainlabhub?si=z4sAVuNmJUdPom_u", enabled: true },
+  { platform: "x", name: "X (Twitter)", url: "https://x.com/The_brainlabhub", enabled: true },
+  { platform: "facebook", name: "Facebook", url: "https://www.facebook.com/profile.php?id=61595669640028", enabled: true },
 ];
 
-function renderSocialIcon(platform: SocialLinkConfig["platform"]) {
+function renderSocialIcon(platform: SocialLinkConfig["platform"], className = "h-4 w-4") {
   switch (platform) {
+    case "whatsapp":
+      return <WhatsAppIcon className={className} />;
     case "x":
-      return <XIcon className="h-4 w-4" />;
+      return <XIcon className={className} />;
     case "instagram":
-      return <InstagramIcon className="h-4 w-4" />;
+      return <InstagramIcon className={className} />;
     case "facebook":
-      return <FacebookIcon className="h-4 w-4" />;
+      return <FacebookIcon className={className} />;
     case "youtube":
-      return <YouTubeIcon className="h-4 w-4" />;
+      return <YouTubeIcon className={className} />;
     case "tiktok":
-      return <TikTokIcon className="h-4 w-4" />;
+      return <TikTokIcon className={className} />;
+    case "linkedin":
+      return <LinkedInIcon className={className} />;
     default:
       return null;
+  }
+}
+
+/**
+ * Returns stylish brand-specific color styles for prominent pills & badges
+ */
+function getPlatformPillStyle(platform: SocialLinkConfig["platform"]) {
+  switch (platform) {
+    case "whatsapp":
+      return "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-600 hover:border-emerald-400 hover:text-white shadow-emerald-950/30";
+    case "instagram":
+      return "border-pink-500/40 bg-pink-950/40 text-pink-300 hover:bg-gradient-to-r hover:from-purple-600 hover:via-pink-600 hover:to-amber-500 hover:border-pink-400 hover:text-white shadow-pink-950/30";
+    case "tiktok":
+      return "border-cyan-500/40 bg-slate-900 text-cyan-300 hover:bg-black hover:border-cyan-400 hover:text-white shadow-cyan-950/30";
+    case "youtube":
+      return "border-red-500/40 bg-red-950/40 text-red-300 hover:bg-red-600 hover:border-red-400 hover:text-white shadow-red-950/30";
+    case "facebook":
+      return "border-blue-500/40 bg-blue-950/40 text-blue-300 hover:bg-blue-600 hover:border-blue-400 hover:text-white shadow-blue-950/30";
+    case "x":
+      return "border-slate-700 bg-slate-900 text-slate-200 hover:bg-white hover:border-white hover:text-black shadow-slate-950/30";
+    case "linkedin":
+      return "border-sky-500/40 bg-sky-950/40 text-sky-300 hover:bg-sky-600 hover:border-sky-400 hover:text-white shadow-sky-950/30";
+    default:
+      return "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white";
   }
 }
 
@@ -141,12 +186,12 @@ export default function BrandFooter() {
         BrainLab Academy Footer
       </h2>
 
-      {/* Main Simplified 4-Column Grid */}
+      {/* Main 4-Column Grid */}
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-14">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           
-          {/* Column 1: Brand & Contact Info (lg:col-span-5) */}
-          <div className="lg:col-span-5 space-y-4">
+          {/* Column 1: Brand, Official Contact & Prominent Community Socials (lg:col-span-5) */}
+          <div className="lg:col-span-5 space-y-5">
             <Link
               href="/"
               className="group inline-flex items-center gap-3 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400"
@@ -175,7 +220,7 @@ export default function BrandFooter() {
             </p>
 
             {/* Direct Official Contact Pills */}
-            <div className="pt-2 space-y-2 text-xs">
+            <div className="space-y-2 text-xs">
               <div className="flex items-center gap-2 text-slate-300">
                 <span className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-500/10 text-blue-400 shrink-0">
                   <MailIcon className="h-3.5 w-3.5" />
@@ -193,7 +238,7 @@ export default function BrandFooter() {
                 <span className="flex h-5 w-5 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-400 shrink-0">
                   <AcademicCapIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-400 text-[11px]">Office:</span>
+                <span className="text-slate-400 text-[11px]">Office Desk:</span>
                 <a
                   href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20and%20Partnership%20Inquiry`}
                   className="font-medium text-slate-200 hover:text-indigo-300 transition-colors"
@@ -206,9 +251,11 @@ export default function BrandFooter() {
                 <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400 shrink-0">
                   <PhoneIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-400 text-[11px]">Phone / WhatsApp:</span>
+                <span className="text-slate-400 text-[11px]">WhatsApp &amp; Call:</span>
                 <a
-                  href={`tel:${supportPhone.replace(/\s+/g, "")}`}
+                  href={`https://wa.me/2349074310204?text=Hello%20BrainLab%20Academy,%20I%20need%20inquiry%20regarding%20CBT%20and%20classes.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="font-medium text-slate-200 hover:text-emerald-300 transition-colors"
                 >
                   {supportPhone}
@@ -216,15 +263,52 @@ export default function BrandFooter() {
               </div>
             </div>
 
-            {/* Focused Action Button */}
-            <div className="pt-2">
+            {/* PROMINENT OFFICIAL SOCIAL CHANNELS SECTION */}
+            <div className="pt-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  Connect &amp; Follow Official Channels
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Join our 15,000+ candidate revision circles, daily UTME challenge drills, and instant announcements:
+              </p>
+
+              {/* High-visibility pill grid with branded platform styling */}
+              <div className="flex flex-wrap items-center gap-2" aria-label="Official Social Media Links">
+                {activeSocialLinks.map((social) => {
+                  const icon = renderSocialIcon(social.platform, "h-4 w-4 shrink-0");
+                  if (!icon) return null;
+                  const pillStyle = getPlatformPillStyle(social.platform);
+
+                  return (
+                    <a
+                      key={social.platform}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 ${pillStyle}`}
+                      aria-label={`Follow BrainLab Academy on ${social.name}`}
+                      title={social.name}
+                    >
+                      {icon}
+                      <span>{social.name}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Action Button */}
+            <div className="pt-1">
               <a
                 href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95"
                 title={`Email ${supportEmail}`}
               >
                 <MailIcon className="h-3.5 w-3.5" />
-                <span>Open CBT support</span>
+                <span>Open CBT Helpdesk</span>
               </a>
             </div>
           </div>
@@ -324,6 +408,16 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
+                <Link className="hover:text-white transition-colors" href="/privacy">
+                  Privacy Notice
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white transition-colors" href="/terms">
+                  Terms of Use
+                </Link>
+              </li>
+              <li>
                 <Link className="hover:text-white transition-colors" href="/account/subscription/refund">
                   Refund Policy
                 </Link>
@@ -334,43 +428,53 @@ export default function BrandFooter() {
         </div>
       </div>
 
-      {/* Simplified Bottom Bar */}
+      {/* Modern High-Clarity Bottom Bar */}
       <div className="border-t border-slate-800/80 bg-[#000814]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-4 text-xs text-slate-400 sm:px-8 sm:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-xs text-slate-400 sm:px-8 sm:flex-row">
           
-          {/* Copyright */}
-          <div>
+          {/* Copyright & Accreditations */}
+          <div className="text-center sm:text-left">
             <span>&copy; {currentYear} {config.copyright_notice}</span>
+            <span className="hidden sm:inline text-slate-700 mx-2">&bull;</span>
+            <span className="block sm:inline text-slate-500 text-[11px] mt-0.5 sm:mt-0">
+              Lagos, Nigeria &bull; NDPA 2023 Compliant
+            </span>
           </div>
 
           {/* Essential Legal Links */}
-          <div className="flex items-center gap-3 text-xs text-slate-400">
-            <Link href="/privacy" className="hover:text-white transition-colors">
+          <div className="flex items-center gap-3 text-xs text-slate-300 font-medium">
+            <Link href="/privacy" className="hover:text-cyan-400 transition-colors">
               Privacy Notice
             </Link>
             <span className="text-slate-700" aria-hidden="true">&bull;</span>
-            <Link href="/terms" className="hover:text-white transition-colors">
+            <Link href="/terms" className="hover:text-cyan-400 transition-colors">
               Terms of Use
             </Link>
             <span className="text-slate-700" aria-hidden="true">&bull;</span>
-            <Link href="/account/subscription/refund" className="hover:text-white transition-colors">
-              Refunds
+            <Link href="/account/subscription/refund" className="hover:text-cyan-400 transition-colors">
+              Refund Policy
+            </Link>
+            <span className="text-slate-700" aria-hidden="true">&bull;</span>
+            <Link href="/contact" className="hover:text-cyan-400 transition-colors">
+              Contact Desk
             </Link>
           </div>
 
-          {/* Clean Social Media Icons */}
+          {/* Quick Circular Social Icons */}
           {activeSocialLinks.length > 0 && (
-            <div className="flex items-center gap-2" aria-label="Social media channels">
+            <div className="flex items-center gap-2" aria-label="Social media quick links">
               {activeSocialLinks.map((social) => {
-                const icon = renderSocialIcon(social.platform);
+                const icon = renderSocialIcon(social.platform, "h-4 w-4");
                 if (!icon) return null;
+                const pillStyle = getPlatformPillStyle(social.platform);
+
                 return (
                   <a
                     key={social.platform}
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-400 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl border text-slate-300 transition-all duration-200 hover:scale-110 active:scale-95 ${pillStyle}`}
                     aria-label={`BrainLab Academy on ${social.name}`}
                     title={social.name}
                   >

@@ -2,21 +2,27 @@ import type { PaymentProvider } from "./types";
 import { PaystackPaymentProvider, paystackPaymentProvider } from "./paystackProvider";
 import { FlutterwavePaymentProvider, flutterwavePaymentProvider } from "./flutterwaveProvider";
 import { BachsPaymentProvider, bachsPaymentProvider } from "./bachsProvider";
+import { BankTransferPaymentProvider, bankTransferPaymentProvider } from "./bankTransferProvider";
 import { getPaymentGatewaysConfig, type PaymentGatewaysConfig } from "../platformConfig";
 
 export * from "./types";
 export { paystackPaymentProvider, PaystackPaymentProvider } from "./paystackProvider";
 export { flutterwavePaymentProvider, FlutterwavePaymentProvider } from "./flutterwaveProvider";
 export { bachsPaymentProvider, BachsPaymentProvider } from "./bachsProvider";
+export { bankTransferPaymentProvider, BankTransferPaymentProvider } from "./bankTransferProvider";
 
 /**
  * Creates an instance of the requested payment provider using dynamic configuration
  * from the database (or environment variable fallbacks).
  */
 export function createPaymentProviderFromConfig(
-  providerName: "paystack" | "flutterwave" | "bachs",
+  providerName: "paystack" | "flutterwave" | "bachs" | "bank_transfer",
   config?: PaymentGatewaysConfig
 ): PaymentProvider {
+  if (providerName === "bank_transfer") {
+    return bankTransferPaymentProvider;
+  }
+
   if (providerName === "flutterwave") {
     const flwConf = config?.providers.flutterwave;
     return new FlutterwavePaymentProvider({
@@ -55,12 +61,17 @@ export function getPaymentProvider(
 ): PaymentProvider {
   if (customConfig) {
     const chosen = (providerName || customConfig.active_provider || "paystack").toLowerCase();
+    if (chosen === "bank_transfer") return bankTransferPaymentProvider;
     if (chosen === "flutterwave") return createPaymentProviderFromConfig("flutterwave", customConfig);
     if (chosen === "bachs") return createPaymentProviderFromConfig("bachs", customConfig);
     return createPaymentProviderFromConfig("paystack", customConfig);
   }
 
   const normalized = (providerName || "").trim().toLowerCase();
+
+  if (normalized === "bank_transfer") {
+    return bankTransferPaymentProvider;
+  }
 
   if (normalized === "flutterwave") {
     return flutterwavePaymentProvider;
@@ -76,6 +87,7 @@ export function getPaymentProvider(
 
   // Check env default
   const defaultProvider = process.env.DEFAULT_PAYMENT_PROVIDER?.toLowerCase();
+  if (defaultProvider === "bank_transfer") return bankTransferPaymentProvider;
   if (defaultProvider === "flutterwave") return flutterwavePaymentProvider;
   if (defaultProvider === "bachs") return bachsPaymentProvider;
   if (defaultProvider === "paystack") return paystackPaymentProvider;
@@ -98,6 +110,9 @@ export async function resolveActivePaymentProvider(
   try {
     const config = await getPaymentGatewaysConfig();
     const target = (requestedProvider || config.active_provider || "paystack").toLowerCase();
+    if (target === "bank_transfer" && config.providers.bank_transfer?.enabled !== false) {
+      return bankTransferPaymentProvider;
+    }
     if (target === "flutterwave" && config.providers.flutterwave.enabled) {
       return createPaymentProviderFromConfig("flutterwave", config);
     }

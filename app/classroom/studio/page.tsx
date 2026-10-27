@@ -117,9 +117,45 @@ export default function ClassroomStudioPage() {
   if (busy) return <main className="min-h-screen bg-slate-950 p-8 text-white">{message}</main>;
 
   return <main className="min-h-screen bg-slate-950 text-white">
-    <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#071127]/95 px-4 py-3 backdrop-blur sm:px-8">
-      <div><Link href="/dashboard" className="text-xs font-bold text-blue-300">← Dashboard</Link><h1 className="mt-1 text-xl font-black sm:text-2xl">BrainLab Classroom Studio</h1><p className="text-xs text-slate-400">Prepare, save, and reuse lessons before you go live.</p></div>
-      <div className="flex flex-wrap gap-2"><button onClick={() => void saveLesson("draft")} disabled={saving || !showStudioBoard} className="rounded-xl border border-slate-600 px-4 py-2 text-sm font-bold disabled:opacity-40">Save Draft</button><button onClick={() => void saveLesson("ready")} disabled={saving || !showStudioBoard} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold hover:bg-blue-500 disabled:opacity-40">Save & Prepare</button><button onClick={() => void startLive()} disabled={saving || !showStudioBoard} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-black hover:bg-rose-500 disabled:opacity-40">Go Live</button></div>
+    <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-[#071127]/90 px-4 py-3.5 backdrop-blur-md sm:px-8">
+      <div className="flex items-center gap-3">
+        <Link href="/classroom" className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-blue-300 hover:bg-white/10 transition" title="Back to Classroom Lobby">
+          ←
+        </Link>
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-black text-white sm:text-xl">Classroom Studio</h1>
+            <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300">
+              Instructor Studio
+            </span>
+          </div>
+          <p className="text-xs text-slate-400">Prepare, write derivations, and autosave before students join.</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => void saveLesson("draft")}
+          disabled={saving || !showStudioBoard}
+          className="rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:opacity-40 transition"
+        >
+          Save Draft
+        </button>
+        <button
+          onClick={() => void saveLesson("ready")}
+          disabled={saving || !showStudioBoard}
+          className="rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40 shadow-xs transition"
+        >
+          Save &amp; Prepare
+        </button>
+        <button
+          onClick={() => void startLive()}
+          disabled={saving || !showStudioBoard}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 px-4 py-2 text-xs font-black text-white disabled:opacity-40 shadow-sm transition active:scale-95"
+        >
+          <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+          <span>Go Live</span>
+        </button>
+      </div>
     </header>
     <div className="mx-auto grid max-w-[1600px] gap-5 p-4 sm:p-8 lg:grid-cols-[300px_minmax(0,1fr)]">
       <aside className="space-y-4">

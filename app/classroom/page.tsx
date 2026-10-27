@@ -53,10 +53,6 @@ export default function ClassroomLobbyPage() {
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isStaff && subscriptionInfo && !subscriptionInfo.entitlements.classroom_access) {
-      setShowTierModal(true);
-      return;
-    }
     const code = classCode.trim().toUpperCase() || "BL-LIVE-101";
     router.push(`/classroom/${encodeURIComponent(code)}`);
   };
@@ -188,22 +184,12 @@ export default function ClassroomLobbyPage() {
               </p>
             </div>
             <div className="mt-5">
-              {!isStaff && subscriptionInfo && !subscriptionInfo.entitlements.classroom_access ? (
-                <button
-                  type="button"
-                  onClick={() => setShowTierModal(true)}
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow transition"
-                >
-                  🔒 Unlock Main Stage (Requires Premium) →
-                </button>
-              ) : (
-                <Link
-                  href="/classroom/BL-LIVE-101"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow transition"
-                >
-                  Enter Main Stage (BL-LIVE-101) →
-                </Link>
-              )}
+              <Link
+                href="/classroom/BL-LIVE-101"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95"
+              >
+                Enter Main Stage (BL-LIVE-101) →
+              </Link>
             </div>
           </div>
 

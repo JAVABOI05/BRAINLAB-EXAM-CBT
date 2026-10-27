@@ -21,6 +21,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
+    const normalizedClassId = String(classId).trim().toUpperCase();
+    const isOpenStage =
+      normalizedClassId === "BL-LIVE-101" ||
+      normalizedClassId === "DEMO-CLASS" ||
+      normalizedClassId === "GENERAL-STAGE";
+
     const supabase = getSupabaseServerClient();
     const config = await getLiveClassroomConfig();
 
@@ -66,10 +72,10 @@ export async function POST(request: NextRequest) {
     };
     let liveClass: LiveClass | null = null;
 
-    if (classId === "demo-class" || classId === "general-stage" || classId === "BL-LIVE-101") {
+    if (isOpenStage) {
       liveClass = {
         id: classId,
-        title: classId === "BL-LIVE-101" ? "BrainLab Live Academic Stage (BL-LIVE-101)" : "BrainLab Live Masterclass & Interactive Stage",
+        title: normalizedClassId === "BL-LIVE-101" ? "BrainLab Live Academic Stage (BL-LIVE-101)" : "BrainLab Live Masterclass & Interactive Stage",
         description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
         tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
         status: "live",
@@ -133,8 +139,8 @@ export async function POST(request: NextRequest) {
     // 4. Student Host Restriction: Students are never allowed to enter as host or start the class
     if (!isHost) {
       const isRoomActive =
-        (classId === "BL-LIVE-101" && (roomConfig?.is_active ?? true)) ||
-        roomConfig?.is_active === true ||
+        isOpenStage ||
+        (roomConfig?.is_active ?? true) ||
         liveClass.status === "live";
 
       if (!isRoomActive) {
@@ -155,24 +161,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 4b. Subscription Tier & Feature Entitlement Verification
-      const { getStudentSubscriptionAndEntitlements } = await import("@/app/lib/subscriptionEntitlements");
-      const studentTier = await getStudentSubscriptionAndEntitlements(user.id);
+      // 4b. Subscription Tier & Feature Entitlement Verification (Open stages like BL-LIVE-101 are free for all learners)
+      if (!isOpenStage) {
+        const { getStudentSubscriptionAndEntitlements } = await import("@/app/lib/subscriptionEntitlements");
+        const studentTier = await getStudentSubscriptionAndEntitlements(user.id);
 
-      if (!studentTier.entitlements.classroom_access) {
-        return NextResponse.json(
-          {
-            error: `Live Academic Classrooms require an active Premium Study, Plus, or Pro subscription. You are currently on the ${studentTier.planName} tier.`,
-            requiresSubscription: true,
-            currentPlan: studentTier.planName,
-            requiredTier: "Premium Study",
-            classDetails: {
-              id: liveClass.id,
-              title: roomConfig?.title || liveClass.title,
+        if (!studentTier.entitlements.classroom_access) {
+          return NextResponse.json(
+            {
+              error: `Live Academic Classrooms require an active Premium Study, Plus, or Pro subscription. You are currently on the ${studentTier.planName} tier.`,
+              requiresSubscription: true,
+              currentPlan: studentTier.planName,
+              requiredTier: "Premium Study",
+              classDetails: {
+                id: liveClass.id,
+                title: roomConfig?.title || liveClass.title,
+              },
             },
-          },
-          { status: 403 }
-        );
+            { status: 403 }
+          );
+        }
       }
 
       // 5. Masterclass vs Open Class Admission Verification
