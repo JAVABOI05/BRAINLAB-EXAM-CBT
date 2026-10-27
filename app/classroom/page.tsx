@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
@@ -62,22 +63,61 @@ export default function ClassroomLobbyPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-500 selection:text-white">
-      {/* Top Navbar */}
-      <header className="border-b border-slate-800 bg-slate-900/90 px-4 py-3 backdrop-blur">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      {/* Modernized Top Navbar */}
+      <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 px-4 sm:px-6 py-3 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-lg font-black tracking-tight text-blue-400 hover:text-blue-300">
-              BrainLab
+            <Link href="/" className="group flex items-center gap-2.5 transition active:scale-95" aria-label="Home">
+              <Image
+                src="/brainlab-mark.png"
+                alt="BrainLab Emblem"
+                width={36}
+                height={32}
+                priority
+                className="h-8 w-auto drop-shadow-sm group-hover:scale-105 transition-transform"
+              />
+              <div className="flex flex-col justify-center leading-none">
+                <span className="text-base sm:text-lg font-black tracking-tight text-white">BrainLab</span>
+                <span className="text-[9px] font-black tracking-[0.2em] uppercase text-cyan-400">ACADEMY</span>
+              </div>
             </Link>
-            <span className="text-slate-600">/</span>
-            <span className="text-sm font-bold text-slate-300">Live Academic Classrooms</span>
+            <span className="text-slate-700 hidden sm:inline" aria-hidden="true">/</span>
+            <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-bold text-blue-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Live Classrooms</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/cbt"
+              className="hidden md:inline-flex rounded-xl px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 transition"
+            >
+              CBT Practice
+            </Link>
+            <Link
+              href="/learn"
+              className="hidden md:inline-flex rounded-xl px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 transition"
+            >
+              Curriculum
+            </Link>
+            <Link
+              href="/pricing"
+              className="hidden md:inline-flex rounded-xl px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 transition"
+            >
+              Plans
+            </Link>
             <Link
               href="/dashboard"
-              className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95"
             >
-              Back to Dashboard
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="7" height="9" x="3" y="3" rx="1.5" />
+                <rect width="7" height="5" x="14" y="3" rx="1.5" />
+                <rect width="7" height="9" x="14" y="12" rx="1.5" />
+                <rect width="7" height="5" x="3" y="16" rx="1.5" />
+              </svg>
+              <span>Dashboard</span>
             </Link>
           </div>
         </div>

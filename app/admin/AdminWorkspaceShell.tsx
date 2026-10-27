@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -641,46 +641,48 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
       {/* Main Content Workspace */}
       <div className="admin-workspace-main">
         <header className="admin-topbar">
-          <button
-            className="admin-sidebar-toggle"
-            type="button"
-            onClick={toggleSidebar}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-            title={collapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect width="18" height="18" x="3" y="3" rx="2" />
-              <path d="M9 3v18" />
-              {collapsed ? <path d="m14 9 3 3-3 3" /> : <path d="m17 9-3 3 3 3" />}
-            </svg>
-          </button>
-
-          <button
-            className="admin-mobile-menu"
-            type="button"
-            onClick={() => setMobileOpen((open) => !open)}
-            aria-expanded={mobileOpen}
-            aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-          >
-            {mobileOpen ? "×" : "☰"}
-          </button>
-
-          <div className="admin-topbar-breadcrumb">
-            <Link href="/admin/dashboard" className="admin-breadcrumb-home" aria-label="Dashboard">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <button
+              className="admin-sidebar-toggle"
+              type="button"
+              onClick={toggleSidebar}
+              aria-expanded={!collapsed}
+              aria-label={collapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+              title={collapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M9 3v18" />
+                {collapsed ? <path d="m14 9 3 3-3 3" /> : <path d="m17 9-3 3 3 3" />}
               </svg>
-            </Link>
-            <span className="admin-breadcrumb-separator" aria-hidden="true">/</span>
-            <span className="admin-breadcrumb-parent">Administration</span>
-            <span className="admin-breadcrumb-separator" aria-hidden="true">/</span>
-            <strong className="admin-breadcrumb-current">{currentLabel}</strong>
+            </button>
+
+            <button
+              className="admin-mobile-menu"
+              type="button"
+              onClick={() => setMobileOpen((open) => !open)}
+              aria-expanded={mobileOpen}
+              aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+            >
+              {mobileOpen ? "×" : "☰"}
+            </button>
+
+            <div className="admin-topbar-breadcrumb">
+              <Link href="/admin/dashboard" className="admin-breadcrumb-home" aria-label="Dashboard">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </Link>
+              <span className="admin-breadcrumb-separator" aria-hidden="true">/</span>
+              <span className="admin-breadcrumb-parent">Administration</span>
+              <span className="admin-breadcrumb-separator" aria-hidden="true">/</span>
+              <strong className="admin-breadcrumb-current truncate max-w-[140px] sm:max-w-xs">{currentLabel}</strong>
+            </div>
           </div>
 
           <div className="admin-topbar-actions">
-            <div className="admin-cloud-indicator" title="All CBT cloud microservices operational">
+            <div className="admin-cloud-indicator hidden lg:inline-flex" title="All CBT cloud microservices operational">
               <span className="admin-status-dot is-online" />
               <span>Cloud Online</span>
             </div>
@@ -695,6 +697,7 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
             </Link>
 
             <span className="admin-role-chip" title="Your active administrator role">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1" />
               {roleLabel}
             </span>
             <AdminNotificationBell />
