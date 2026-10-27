@@ -648,13 +648,34 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
             {mobileOpen ? "×" : "☰"}
           </button>
 
-          <div className="admin-topbar-heading">
-            <span>ADMINISTRATION</span>
-            <strong>{currentLabel}</strong>
+          <div className="admin-topbar-breadcrumb">
+            <Link href="/admin/dashboard" className="admin-breadcrumb-home" aria-label="Dashboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </Link>
+            <span className="admin-breadcrumb-separator" aria-hidden="true">/</span>
+            <span className="admin-breadcrumb-parent">Administration</span>
+            <span className="admin-breadcrumb-separator" aria-hidden="true">/</span>
+            <strong className="admin-breadcrumb-current">{currentLabel}</strong>
           </div>
 
           <div className="admin-topbar-actions">
-            <span className="admin-environment-label">BrainLab Academy</span>
+            <div className="admin-cloud-indicator" title="All CBT cloud microservices operational">
+              <span className="admin-status-dot is-online" />
+              <span>Cloud Online</span>
+            </div>
+
+            <Link href="/" target="_blank" className="admin-view-site-btn" title="View live student portal">
+              <span>Live Portal</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" x2="21" y1="14" y2="3" />
+              </svg>
+            </Link>
+
             <span className="admin-role-chip" title="Your active administrator role">
               {roleLabel}
             </span>

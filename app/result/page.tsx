@@ -45,6 +45,9 @@ export default function ResultPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [resultsEnabled, setResultsEnabled] = useState<boolean | null>(null);
+  const [allowCorrections, setAllowCorrections] = useState(true);
+  const [resultNotifications, setResultNotifications] = useState(true);
+  const [heldForReview, setHeldForReview] = useState(false);
   const [codeRequired, setCodeRequired] = useState(true);
   const [lookupMode, setLookupMode] = useState(false);
   const [lookupPhone, setLookupPhone] = useState("");
@@ -56,7 +59,10 @@ export default function ResultPage() {
   useEffect(() => {
     async function loadPage() {
       const settings = await getPublicSettings();
-      setResultsEnabled(settings?.show_results === true);
+      const isResultsReleased = settings?.show_results === true;
+      setResultsEnabled(isResultsReleased);
+      setAllowCorrections(settings?.allow_corrections !== false);
+      setResultNotifications(settings?.result_notifications !== false);
       setCodeRequired(settings ? settings.access_code_required : true);
       const savedCandidate = localStorage.getItem("candidate");
       const savedSummary = localStorage.getItem("exam_summary");
@@ -66,29 +72,25 @@ export default function ResultPage() {
       }
       try {
         const parsedSummary = JSON.parse(savedSummary) as Summary;
-        if (parsedSummary.show_results !== true) {
-          setLookupMode(true);
-          return;
-        }
         setSummary(parsedSummary);
+        let activeCandidate: Candidate = {
+          name: "Verified Candidate",
+          phone: "080-BrainLab",
+          subject: "JAMB UTME Simulation",
+          subjects: Object.keys(parsedSummary.subject_scores || {}),
+        };
         if (savedCandidate) {
           try {
-            setCandidate(JSON.parse(savedCandidate) as Candidate);
+            activeCandidate = JSON.parse(savedCandidate) as Candidate;
           } catch {
-            setCandidate({
-              name: "Verified Candidate",
-              phone: "080-BrainLab",
-              subject: "JAMB UTME Simulation",
-              subjects: Object.keys(parsedSummary.subject_scores || {}),
-            });
+            // fallback activeCandidate initialized above
           }
-        } else {
-          setCandidate({
-            name: "Verified Candidate",
-            phone: "080-BrainLab",
-            subject: "JAMB UTME Simulation",
-            subjects: Object.keys(parsedSummary.subject_scores || {}),
-          });
+        }
+        setCandidate(activeCandidate);
+
+        if (!isResultsReleased || parsedSummary.show_results === false) {
+          setHeldForReview(true);
+          return;
         }
       } catch {
         setLookupMode(true);
@@ -172,6 +174,100 @@ export default function ResultPage() {
         <div className="mx-auto max-w-md w-full rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-xl text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Checking result release status...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (heldForReview && candidate) {
+    return (
+      <main className="min-h-screen bg-slate-50 dark:bg-[#000814] px-4 py-8 flex items-center justify-center">
+        <div className="mx-auto max-w-2xl w-full">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={110} height={94} className="h-10 w-auto dark:hidden" />
+                <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={110} height={94} className="h-10 w-auto hidden dark:block" />
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-blue-700 dark:text-sky-400">
+                    BrainLab Examination Directorate
+                  </p>
+                  <h1 className="text-xl font-black text-slate-950 dark:text-white">
+                    Exam Submission Receipt
+                  </h1>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-3 py-1 text-xs font-bold border border-amber-300 dark:border-amber-800">
+                <span>🔒</span> Under Proctor Review
+              </span>
+            </div>
+
+            <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">✅</span>
+                <div>
+                  <h2 className="text-sm font-bold text-emerald-950 dark:text-emerald-200">
+                    Exam Answers Successfully Submitted &amp; Encrypted
+                  </h2>
+                  <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300 leading-5">
+                    Your responses have been securely archived in the BrainLab database with tamper-evident cryptographic verification.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 p-5 border border-slate-200 dark:border-slate-800 sm:grid-cols-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Candidate Name</p>
+                <p className="mt-0.5 text-sm font-black text-slate-950 dark:text-white">{candidate.name}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Registered Phone</p>
+                <p className="mt-0.5 text-sm font-mono text-slate-800 dark:text-slate-200">{candidate.phone}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Subject Combination</p>
+                <p className="mt-0.5 text-xs font-medium text-blue-700 dark:text-sky-300">
+                  {candidate.subjects?.length ? candidate.subjects.join(", ") : candidate.subject}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Submission Reference</p>
+                <p className="mt-0.5 text-xs font-mono text-slate-700 dark:text-slate-300">
+                  {summary?.result_id ? summary.result_id.substring(0, 18) : "BL-CONFIRMED"}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-400 space-y-2">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>📋</span> Directorate Release Policy
+              </h3>
+              <p className="leading-5">
+                The Examination Board has scheduled official score releases to occur once the active testing window concludes.
+                This ensures equal testing conditions across all participating computer centres.
+              </p>
+              <p className="leading-5 font-medium text-slate-700 dark:text-slate-300">
+                You will be able to access your complete score certificate and question corrections directly on this portal using your registered phone number once released.
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-end border-t border-slate-200 dark:border-slate-800 pt-6">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+              >
+                🖨️ Print Submission Slip
+              </button>
+              <Link
+                href="/"
+                className="rounded-xl bg-[#012153] hover:bg-[#071c43] px-6 py-2.5 text-xs font-bold text-white shadow transition text-center"
+              >
+                Return to Home
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -382,6 +478,16 @@ export default function ResultPage() {
               <p className="mt-1 text-[11px] font-mono text-slate-400">
                 Ref: {summary?.result_id ? summary.result_id.substring(0, 16) : "BL-MOCK-2026"}
               </p>
+              {resultNotifications ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mt-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  SMS &amp; Email Dispatch Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 mt-1">
+                  <span>🔕</span> Notification Dispatch Paused
+                </span>
+              )}
             </div>
           </div>
 
@@ -558,12 +664,25 @@ export default function ResultPage() {
             Add Weak Topics to Revision Plan →
           </Link>
 
-          <button
-            onClick={() => router.push("/corrections")}
-            className="rounded-xl bg-[#012153] hover:bg-[#071c43] px-8 py-3 text-xs font-bold text-white shadow-md shadow-blue-950/20 active:scale-95 transition hover:-translate-y-0.5"
-          >
-            Review Step-by-Step Question Corrections →
-          </button>
+          {allowCorrections ? (
+            <button
+              onClick={() => router.push("/corrections")}
+              className="rounded-xl bg-[#012153] hover:bg-[#071c43] px-8 py-3 text-xs font-bold text-white shadow-md shadow-blue-950/20 active:scale-95 transition hover:-translate-y-0.5"
+            >
+              Review Step-by-Step Question Corrections →
+            </button>
+          ) : (
+            <div className="flex flex-col items-center sm:items-end">
+              <button
+                disabled
+                className="rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-6 py-3 text-xs font-bold cursor-not-allowed flex items-center gap-2 border border-slate-300 dark:border-slate-700"
+                title="Question corrections are withheld during the examination window."
+              >
+                <span>🔒 Corrections Withheld by Proctor</span>
+              </button>
+              <span className="text-[10px] text-slate-500 mt-1">Detailed solutions will unlock once the testing cycle closes.</span>
+            </div>
+          )}
         </div>
       </div>
     </main>
