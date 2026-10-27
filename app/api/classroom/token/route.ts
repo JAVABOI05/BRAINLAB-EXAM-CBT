@@ -320,7 +320,7 @@ export async function POST(request: NextRequest) {
     const providerType: VideoProviderType = providerTypes.includes(configuredProvider as VideoProviderType)
       ? configuredProvider as VideoProviderType
       : "webrtc";
-    const provider = getVideoProvider(providerType);
+    const provider = getVideoProvider(providerType, config.provider_credentials);
 
     const userName =
       user.user_metadata?.full_name ||

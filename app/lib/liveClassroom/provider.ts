@@ -3,6 +3,7 @@ import type {
   VideoProviderType,
   LiveRoomTokenRequest,
   LiveRoomTokenResponse,
+  LiveServicesCredentials,
 } from "./types";
 
 export interface IVideoProvider {
@@ -17,6 +18,8 @@ export interface IVideoProvider {
 // ----------------------------------------------------------------------------
 export class StandardWebRTCProvider implements IVideoProvider {
   name: VideoProviderType = "webrtc";
+
+  constructor(protected credentials?: LiveServicesCredentials) {}
 
   isConfigured(): boolean {
     return true; // Always operational using browser standard WebRTC
@@ -39,6 +42,7 @@ export class StandardWebRTCProvider implements IVideoProvider {
       userName: request.userName,
       role: request.role,
       permissions: request.permissions,
+      iceServers: this.credentials?.webrtc_ice_servers || "default",
       expiresAt,
     });
 
@@ -66,19 +70,29 @@ export class StandardWebRTCProvider implements IVideoProvider {
 export class LiveKitProvider implements IVideoProvider {
   name: VideoProviderType = "livekit";
 
+  constructor(protected credentials?: LiveServicesCredentials) {}
+
+  private get apiKey(): string {
+    return this.credentials?.livekit_api_key?.trim() || process.env.LIVEKIT_API_KEY || "";
+  }
+
+  private get apiSecret(): string {
+    return this.credentials?.livekit_api_secret?.trim() || process.env.LIVEKIT_API_SECRET || "";
+  }
+
+  private get serverUrl(): string {
+    return this.credentials?.livekit_url?.trim() || process.env.LIVEKIT_URL || "";
+  }
+
   isConfigured(): boolean {
-    return Boolean(
-      process.env.LIVEKIT_API_KEY &&
-      process.env.LIVEKIT_API_SECRET &&
-      process.env.LIVEKIT_URL
-    );
+    return Boolean(this.apiKey && this.apiSecret && this.serverUrl);
   }
 
   getMissingConfigRequirements(): string[] {
     const missing: string[] = [];
-    if (!process.env.LIVEKIT_API_KEY) missing.push("LIVEKIT_API_KEY");
-    if (!process.env.LIVEKIT_API_SECRET) missing.push("LIVEKIT_API_SECRET");
-    if (!process.env.LIVEKIT_URL) missing.push("LIVEKIT_URL");
+    if (!this.apiKey) missing.push("LIVEKIT_API_KEY");
+    if (!this.apiSecret) missing.push("LIVEKIT_API_SECRET");
+    if (!this.serverUrl) missing.push("LIVEKIT_URL");
     return missing;
   }
 
@@ -89,7 +103,7 @@ export class LiveKitProvider implements IVideoProvider {
 
     if (!this.isConfigured()) {
       throw new Error(
-        `LiveKit is selected but missing configuration: ${this.getMissingConfigRequirements().join(", ")}. Please configure environment variables or use the standard WebRTC provider.`
+        `LiveKit is selected but missing configuration: ${this.getMissingConfigRequirements().join(", ")}. Please configure in Super Admin settings or environment variables.`
       );
     }
 
@@ -98,7 +112,7 @@ export class LiveKitProvider implements IVideoProvider {
     const payload = {
       sub: request.userId,
       name: request.userName,
-      iss: process.env.LIVEKIT_API_KEY,
+      iss: this.apiKey,
       exp: Math.floor(Date.now() / 1000) + (request.durationSeconds || 7200),
       video: {
         room: request.roomName,
@@ -113,7 +127,7 @@ export class LiveKitProvider implements IVideoProvider {
     const b64Header = Buffer.from(JSON.stringify(header)).toString("base64url");
     const b64Payload = Buffer.from(JSON.stringify(payload)).toString("base64url");
     const signature = crypto
-      .createHmac("sha256", process.env.LIVEKIT_API_SECRET!)
+      .createHmac("sha256", this.apiSecret)
       .update(`${b64Header}.${b64Payload}`)
       .digest("base64url");
 
@@ -122,7 +136,7 @@ export class LiveKitProvider implements IVideoProvider {
     return {
       token,
       provider: "livekit",
-      serverUrl: process.env.LIVEKIT_URL,
+      serverUrl: this.serverUrl,
       roomName: request.roomName,
       expiresAt,
       identity: request.userId,
@@ -137,16 +151,24 @@ export class LiveKitProvider implements IVideoProvider {
 export class AgoraProvider implements IVideoProvider {
   name: VideoProviderType = "agora";
 
+  constructor(protected credentials?: LiveServicesCredentials) {}
+
+  private get appId(): string {
+    return this.credentials?.agora_app_id?.trim() || process.env.AGORA_APP_ID || "";
+  }
+
+  private get appCert(): string {
+    return this.credentials?.agora_app_certificate?.trim() || process.env.AGORA_APP_CERTIFICATE || "";
+  }
+
   isConfigured(): boolean {
-    return Boolean(
-      process.env.AGORA_APP_ID && process.env.AGORA_APP_CERTIFICATE
-    );
+    return Boolean(this.appId && this.appCert);
   }
 
   getMissingConfigRequirements(): string[] {
     const missing: string[] = [];
-    if (!process.env.AGORA_APP_ID) missing.push("AGORA_APP_ID");
-    if (!process.env.AGORA_APP_CERTIFICATE) missing.push("AGORA_APP_CERTIFICATE");
+    if (!this.appId) missing.push("AGORA_APP_ID");
+    if (!this.appCert) missing.push("AGORA_APP_CERTIFICATE");
     return missing;
   }
 
@@ -157,12 +179,12 @@ export class AgoraProvider implements IVideoProvider {
 
     if (!this.isConfigured()) {
       throw new Error(
-        `Agora is selected but missing configuration: ${this.getMissingConfigRequirements().join(", ")}. Please configure environment variables or use the standard WebRTC provider.`
+        `Agora is selected but missing configuration: ${this.getMissingConfigRequirements().join(", ")}. Please configure in Super Admin settings or environment variables.`
       );
     }
 
-    const appId = process.env.AGORA_APP_ID!;
-    const appCert = process.env.AGORA_APP_CERTIFICATE!;
+    const appId = this.appId;
+    const appCert = this.appCert;
     const token = crypto
       .createHmac("sha256", appCert)
       .update(`${appId}:${request.roomName}:${request.userId}:${expiresAt}`)
@@ -186,14 +208,24 @@ export class AgoraProvider implements IVideoProvider {
 export class DailyProvider implements IVideoProvider {
   name: VideoProviderType = "daily";
 
+  constructor(protected credentials?: LiveServicesCredentials) {}
+
+  private get apiKey(): string {
+    return this.credentials?.daily_api_key?.trim() || process.env.DAILY_API_KEY || "";
+  }
+
+  private get domain(): string {
+    return this.credentials?.daily_domain?.trim() || process.env.DAILY_DOMAIN || "";
+  }
+
   isConfigured(): boolean {
-    return Boolean(process.env.DAILY_API_KEY && process.env.DAILY_DOMAIN);
+    return Boolean(this.apiKey && this.domain);
   }
 
   getMissingConfigRequirements(): string[] {
     const missing: string[] = [];
-    if (!process.env.DAILY_API_KEY) missing.push("DAILY_API_KEY");
-    if (!process.env.DAILY_DOMAIN) missing.push("DAILY_DOMAIN");
+    if (!this.apiKey) missing.push("DAILY_API_KEY");
+    if (!this.domain) missing.push("DAILY_DOMAIN");
     return missing;
   }
 
@@ -204,19 +236,19 @@ export class DailyProvider implements IVideoProvider {
 
     if (!this.isConfigured()) {
       throw new Error(
-        `Daily.co is selected but missing configuration: ${this.getMissingConfigRequirements().join(", ")}. Please configure environment variables or use the standard WebRTC provider.`
+        `Daily.co is selected but missing configuration: ${this.getMissingConfigRequirements().join(", ")}. Please configure in Super Admin settings or environment variables.`
       );
     }
 
     const token = crypto
-      .createHmac("sha256", process.env.DAILY_API_KEY!)
-      .update(`${process.env.DAILY_DOMAIN}:${request.roomName}:${request.userId}`)
+      .createHmac("sha256", this.apiKey)
+      .update(`${this.domain}:${request.roomName}:${request.userId}`)
       .digest("hex");
 
     return {
       token,
       provider: "daily",
-      serverUrl: `https://${process.env.DAILY_DOMAIN}.daily.co/${request.roomName}`,
+      serverUrl: `https://${this.domain}.daily.co/${request.roomName}`,
       roomName: request.roomName,
       expiresAt,
       identity: request.userId,
@@ -228,26 +260,29 @@ export class DailyProvider implements IVideoProvider {
 // ----------------------------------------------------------------------------
 // Provider Factory & Inspection
 // ----------------------------------------------------------------------------
-export function getVideoProvider(providerType?: VideoProviderType): IVideoProvider {
+export function getVideoProvider(
+  providerType?: VideoProviderType,
+  credentials?: LiveServicesCredentials
+): IVideoProvider {
   switch (providerType) {
     case "livekit":
-      return new LiveKitProvider();
+      return new LiveKitProvider(credentials);
     case "agora":
-      return new AgoraProvider();
+      return new AgoraProvider(credentials);
     case "daily":
-      return new DailyProvider();
+      return new DailyProvider(credentials);
     case "webrtc":
     default:
-      return new StandardWebRTCProvider();
+      return new StandardWebRTCProvider(credentials);
   }
 }
 
-export function getAllVideoProvidersStatus() {
+export function getAllVideoProvidersStatus(credentials?: LiveServicesCredentials) {
   const providers: IVideoProvider[] = [
-    new StandardWebRTCProvider(),
-    new LiveKitProvider(),
-    new AgoraProvider(),
-    new DailyProvider(),
+    new StandardWebRTCProvider(credentials),
+    new LiveKitProvider(credentials),
+    new AgoraProvider(credentials),
+    new DailyProvider(credentials),
   ];
 
   return providers.map((p) => ({

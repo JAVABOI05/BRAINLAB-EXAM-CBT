@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import type { LiveServicesCredentials } from "./liveClassroom/types";
 import {
   AdministratorDifficultyConfig,
   DEFAULT_ADMIN_DIFFICULTY_CONFIG,
@@ -181,6 +182,7 @@ export interface MasterclassRoomConfig {
 
 export interface LiveClassroomConfig {
   provider: "webrtc" | "livekit" | "agora" | "daily";
+  provider_credentials?: LiveServicesCredentials;
   max_capacity_default: number;
   default_duration_minutes: number;
   student_mic_default: boolean;
@@ -584,6 +586,16 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
 
 const DEFAULT_CLASSROOM_CONFIG: LiveClassroomConfig = {
   provider: "webrtc",
+  provider_credentials: {
+    livekit_url: "",
+    livekit_api_key: "",
+    livekit_api_secret: "",
+    agora_app_id: "",
+    agora_app_certificate: "",
+    daily_api_key: "",
+    daily_domain: "",
+    webrtc_ice_servers: "",
+  },
   max_capacity_default: 100,
   default_duration_minutes: 60,
   student_mic_default: true,

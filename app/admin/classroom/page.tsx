@@ -99,6 +99,26 @@ export default function AdminLiveClassroomControlPage() {
   const [whiteboardWatermarkEnabled, setWhiteboardWatermarkEnabled] = useState(true);
   const [savingWatermark, setSavingWatermark] = useState(false);
 
+  // Live Services Super Admin State
+  const [selectedServiceTab, setSelectedServiceTab] = useState<"webrtc" | "livekit" | "agora" | "daily">("livekit");
+  const [liveServicesCreds, setLiveServicesCreds] = useState({
+    livekit_url: "",
+    livekit_api_key: "",
+    livekit_api_secret: "",
+    agora_app_id: "",
+    agora_app_certificate: "",
+    daily_domain: "",
+    daily_api_key: "",
+    webrtc_ice_servers: "",
+  });
+  const [hasLivekitSecret, setHasLivekitSecret] = useState(false);
+  const [hasAgoraCert, setHasAgoraCert] = useState(false);
+  const [hasDailyKey, setHasDailyKey] = useState(false);
+  const [testingService, setTestingService] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; tokenPreview?: string; serverUrl?: string } | null>(null);
+  const [savingService, setSavingService] = useState(false);
+  const [serviceFeedback, setServiceFeedback] = useState("");
+
   useEffect(() => {
     let active = true;
     async function init() {
@@ -129,7 +149,59 @@ export default function AdminLiveClassroomControlPage() {
           if (typeof existingRoom.require_permission === "boolean") setSessionRequirePermission(existingRoom.require_permission);
         }
         setWhiteboardWatermarkEnabled(await getPlatformConfig<boolean>("whiteboard_watermark_enabled", true));
-        setProviderStatuses(getAllVideoProvidersStatus());
+        setProviderStatuses(getAllVideoProvidersStatus(currentConfig.provider_credentials));
+        if (currentConfig.provider) {
+          setSelectedServiceTab(currentConfig.provider);
+        }
+        if (currentConfig.provider_credentials) {
+          const pc = currentConfig.provider_credentials;
+          setLiveServicesCreds({
+            livekit_url: pc.livekit_url || "",
+            livekit_api_key: pc.livekit_api_key || "",
+            livekit_api_secret: "",
+            agora_app_id: pc.agora_app_id || "",
+            agora_app_certificate: "",
+            daily_domain: pc.daily_domain || "",
+            daily_api_key: "",
+            webrtc_ice_servers: pc.webrtc_ice_servers || "",
+          });
+          setHasLivekitSecret(Boolean(pc.livekit_api_secret));
+          setHasAgoraCert(Boolean(pc.agora_app_certificate));
+          setHasDailyKey(Boolean(pc.daily_api_key));
+        }
+
+        // Load superadmin live service config via API
+        if (admin.role === "super_admin") {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+              const res = await fetch("/api/admin/live-services", {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+              });
+              const lsData = await res.json();
+              if (res.ok && lsData.success) {
+                if (lsData.credentials) {
+                  setLiveServicesCreds((prev) => ({
+                    ...prev,
+                    livekit_url: lsData.credentials.livekit_url || prev.livekit_url,
+                    livekit_api_key: lsData.credentials.livekit_api_key || prev.livekit_api_key,
+                    agora_app_id: lsData.credentials.agora_app_id || prev.agora_app_id,
+                    daily_domain: lsData.credentials.daily_domain || prev.daily_domain,
+                    webrtc_ice_servers: lsData.credentials.webrtc_ice_servers || prev.webrtc_ice_servers,
+                  }));
+                  setHasLivekitSecret(Boolean(lsData.credentials.has_livekit_secret));
+                  setHasAgoraCert(Boolean(lsData.credentials.has_agora_certificate));
+                  setHasDailyKey(Boolean(lsData.credentials.has_daily_api_key));
+                }
+                if (lsData.statuses) {
+                  setProviderStatuses(lsData.statuses);
+                }
+              }
+            }
+          } catch {
+            // Silently fallback to platformConfig
+          }
+        }
         setLoading(false);
       }
     }

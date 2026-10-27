@@ -1,5 +1,16 @@
 export type VideoProviderType = "webrtc" | "livekit" | "agora" | "daily";
 
+export interface LiveServicesCredentials {
+  livekit_url?: string;
+  livekit_api_key?: string;
+  livekit_api_secret?: string;
+  agora_app_id?: string;
+  agora_app_certificate?: string;
+  daily_api_key?: string;
+  daily_domain?: string;
+  webrtc_ice_servers?: string;
+}
+
 export type ParticipantRole = "host" | "speaker" | "listener";
 
 export interface RoomPermissions {
