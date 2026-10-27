@@ -40,6 +40,28 @@ export default function LearnerSettingsClient() {
   const [privacySuccess, setPrivacySuccess] = useState("");
   const [privacyError, setPrivacyError] = useState("");
 
+  // Notification Preferences State
+  const [notifPrefs, setNotifPrefs] = useState<{
+    exam_results: boolean;
+    classroom_alerts: boolean;
+    streak_reminders: boolean;
+    assignments: boolean;
+    marketing_announcements: boolean;
+    sms_alerts: boolean;
+    unsubscribed_all: boolean;
+  }>({
+    exam_results: true,
+    classroom_alerts: true,
+    streak_reminders: true,
+    assignments: true,
+    marketing_announcements: true,
+    sms_alerts: true,
+    unsubscribed_all: false,
+  });
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifSuccess, setNotifSuccess] = useState("");
+  const [notifError, setNotifError] = useState("");
+
   useEffect(() => {
     let active = true;
     void supabase.auth.getUser().then(({ data, error }) => {
@@ -56,6 +78,16 @@ export default function LearnerSettingsClient() {
       setRequireGroupApproval(meta.require_group_approval !== false);
       setReadReceipts(meta.read_receipts !== false);
       setLoading(false);
+
+      // Load notification preferences
+      fetch("/api/notifications/preferences")
+        .then((r) => r.json())
+        .then((prefData) => {
+          if (active && prefData.success && prefData.preferences) {
+            setNotifPrefs(prefData.preferences);
+          }
+        })
+        .catch(() => {});
 
       // Load blocked users
       fetch("/api/messages/block")
@@ -136,6 +168,78 @@ export default function LearnerSettingsClient() {
       setPrivacyError("Network error while saving privacy settings. Please try again.");
     } finally {
       setPrivacySaving(false);
+    }
+  }
+
+  async function toggleNotifChannel(channel: keyof typeof notifPrefs) {
+    if (!user) return;
+    const nextVal = !notifPrefs[channel];
+    const nextPrefs = { ...notifPrefs, [channel]: nextVal, unsubscribed_all: false };
+    setNotifPrefs(nextPrefs);
+    setNotifSaving(true);
+    setNotifSuccess("");
+    setNotifError("");
+
+    try {
+      const res = await fetch("/api/notifications/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextPrefs),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNotifPrefs(data.preferences);
+        setNotifSuccess("✓ Notification preference updated.");
+      } else {
+        setNotifError(data.error || "Could not update preference.");
+      }
+    } catch {
+      setNotifError("Network error while updating notification preference.");
+    } finally {
+      setNotifSaving(false);
+    }
+  }
+
+  async function toggleUnsubscribeAll() {
+    if (!user) return;
+    const isUnsub = !notifPrefs.unsubscribed_all;
+    setNotifSaving(true);
+    setNotifSuccess("");
+    setNotifError("");
+
+    try {
+      const payload = isUnsub
+        ? { unsubscribed_all: true }
+        : {
+            unsubscribed_all: false,
+            exam_results: true,
+            classroom_alerts: true,
+            streak_reminders: true,
+            assignments: true,
+            marketing_announcements: true,
+            sms_alerts: true,
+          };
+
+      const res = await fetch("/api/notifications/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNotifPrefs(data.preferences);
+        setNotifSuccess(
+          isUnsub
+            ? "✓ You have unsubscribed from all notifications."
+            : "✓ You have resubscribed to BrainLab notifications."
+        );
+      } else {
+        setNotifError(data.error || "Could not update subscription status.");
+      }
+    } catch {
+      setNotifError("Network error while updating subscription.");
+    } finally {
+      setNotifSaving(false);
     }
   }
 
@@ -362,6 +466,242 @@ export default function LearnerSettingsClient() {
               </ul>
             )}
           </div>
+        </section>
+
+        {/* 2c. Notification Subscriptions & Channels */}
+        <section aria-labelledby="notifications-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-2xl text-purple-900">
+                🔔
+              </span>
+              <div>
+                <h2 id="notifications-heading" className="text-xl font-extrabold text-slate-900">
+                  Notification Subscriptions
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  Manage email, SMS, and in-app alerts. You can pause all non-essential messages or toggle individual channels.
+                </p>
+              </div>
+            </div>
+
+            <div className="shrink-0">
+              {notifPrefs.unsubscribed_all ? (
+                <button
+                  type="button"
+                  disabled={notifSaving}
+                  onClick={toggleUnsubscribeAll}
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-black text-white transition active:scale-95 disabled:opacity-60 shadow-sm"
+                >
+                  {notifSaving ? "Updating…" : "✓ Resubscribe to All"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={notifSaving}
+                  onClick={toggleUnsubscribeAll}
+                  className="rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 px-4 py-2.5 text-xs font-black text-rose-800 transition active:scale-95 disabled:opacity-60"
+                >
+                  {notifSaving ? "Updating…" : "Unsubscribe from All"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Current Status Pill */}
+          <div className="mt-4 flex items-center gap-2">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                notifPrefs.unsubscribed_all ? "bg-rose-500" : "bg-emerald-500"
+              }`}
+            />
+            <span className="text-xs font-bold text-slate-700">
+              {notifPrefs.unsubscribed_all
+                ? "All non-critical notifications paused"
+                : "Active Subscriber — Receiving selected channels"}
+            </span>
+          </div>
+
+          {/* Channels Grid */}
+          <div className="mt-6 space-y-4 divide-y divide-slate-100">
+            {/* Exam Results */}
+            <div className="pt-4 first:pt-0 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🎓</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Exam &amp; Mock Results</p>
+                  <p className="text-xs text-slate-500">
+                    Instant alerts when mock exam results, aggregate scores, and official verification slips are released.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={notifSaving}
+                onClick={() => toggleNotifChannel("exam_results")}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  notifPrefs.exam_results && !notifPrefs.unsubscribed_all ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    notifPrefs.exam_results && !notifPrefs.unsubscribed_all ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Live Classroom */}
+            <div className="pt-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">📹</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Live Classroom &amp; Masterclasses</p>
+                  <p className="text-xs text-slate-500">
+                    Alerts when tutors go live, whiteboard stages open, or new masterclasses are scheduled.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={notifSaving}
+                onClick={() => toggleNotifChannel("classroom_alerts")}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  notifPrefs.classroom_alerts && !notifPrefs.unsubscribed_all ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    notifPrefs.classroom_alerts && !notifPrefs.unsubscribed_all ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Streaks & Daily Practice */}
+            <div className="pt-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🔥</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Daily Revision Streaks</p>
+                  <p className="text-xs text-slate-500">
+                    Spaced repetition reminders and streak rescue notices to maintain your UTME/SSCE daily study momentum.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={notifSaving}
+                onClick={() => toggleNotifChannel("streak_reminders")}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  notifPrefs.streak_reminders && !notifPrefs.unsubscribed_all ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    notifPrefs.streak_reminders && !notifPrefs.unsubscribed_all ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Assignments & Homework */}
+            <div className="pt-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">📝</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Assignments &amp; Homework Feedback</p>
+                  <p className="text-xs text-slate-500">
+                    Notifications when tutors grade submitted assignments or provide individualized corrections.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={notifSaving}
+                onClick={() => toggleNotifChannel("assignments")}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  notifPrefs.assignments && !notifPrefs.unsubscribed_all ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    notifPrefs.assignments && !notifPrefs.unsubscribed_all ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Platform Announcements */}
+            <div className="pt-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">📢</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Announcements &amp; Exam Updates</p>
+                  <p className="text-xs text-slate-500">
+                    National mock test announcements, JAMB exam dates, and BrainLab curriculum updates.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={notifSaving}
+                onClick={() => toggleNotifChannel("marketing_announcements")}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  notifPrefs.marketing_announcements && !notifPrefs.unsubscribed_all ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    notifPrefs.marketing_announcements && !notifPrefs.unsubscribed_all ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* SMS Alerts */}
+            <div className="pt-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">📱</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">SMS Notifications</p>
+                  <p className="text-xs text-slate-500">
+                    Direct SMS text messages for exam access codes and emergency scheduling alerts.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={notifSaving}
+                onClick={() => toggleNotifChannel("sms_alerts")}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  notifPrefs.sms_alerts && !notifPrefs.unsubscribed_all ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                    notifPrefs.sms_alerts && !notifPrefs.unsubscribed_all ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Feedback Messages */}
+          {notifSuccess && (
+            <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">
+              {notifSuccess}
+            </p>
+          )}
+          {notifError && (
+            <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-800">
+              ⚠ {notifError}
+            </p>
+          )}
+
+          <p className="mt-4 text-[11px] text-slate-500">
+            Note: Security-critical dispatches (e.g., password reset emails and payment verification receipts) cannot be disabled to protect your account.
+          </p>
         </section>
 
         {/* 3. Profile & Identity Overview */}

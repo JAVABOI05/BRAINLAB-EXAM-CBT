@@ -135,6 +135,14 @@ export default function NotificationsPage() {
             </button>
           )}
           <Link
+            href="/settings#notifications-heading"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 text-xs font-bold text-purple-800 transition"
+            title="Manage email, SMS, and in-app subscriptions"
+          >
+            <span>⚙️</span>
+            <span>Preferences</span>
+          </Link>
+          <Link
             href="/dashboard"
             className="rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-900 transition active-press hover-lift"
           >
@@ -227,6 +235,21 @@ export default function NotificationsPage() {
             </div>
           ))
         )}
+      </div>
+
+      {/* Subscription Preferences Banner */}
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div>
+          <span className="font-bold text-slate-900">Email &amp; SMS Subscription Controls:</span>{" "}
+          Control which exam alerts, daily streak reminders, or live class notifications you receive, or unsubscribe from all non-critical messages at any time.
+        </div>
+        <Link
+          href="/settings#notifications-heading"
+          className="shrink-0 font-bold text-blue-700 hover:text-blue-900 underline flex items-center gap-1"
+        >
+          <span>Manage Subscriptions</span>
+          <span>&rarr;</span>
+        </Link>
       </div>
     </main>
   );

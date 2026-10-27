@@ -190,6 +190,11 @@ function wrapEmailTemplate(title: string, bodyContent: string): string {
                 Official correspondence from <strong>BrainLab Academy</strong>.<br>
                 For learner support, reach us at <a href="mailto:support@brainlab.edu.ng" style="color:#0284c7;text-decoration:none;font-weight:600;">support@brainlab.edu.ng</a> or via WhatsApp.
               </p>
+              <p style="margin:8px 0 8px 0;font-size:11px;color:#94a3b8;line-height:1.6;">
+                You are receiving this communication regarding your candidate account.<br>
+                <a href="https://brainlabacademy.com.ng/unsubscribe" style="color:#64748b;text-decoration:underline;">Unsubscribe from notifications</a> &bull; 
+                <a href="https://brainlabacademy.com.ng/settings" style="color:#64748b;text-decoration:underline;">Notification Preferences</a>
+              </p>
               <p style="margin:0;font-size:11px;color:#94a3b8;">
                 &copy; ${year} BrainLab Academy. All rights reserved. Lagos, Nigeria.
               </p>

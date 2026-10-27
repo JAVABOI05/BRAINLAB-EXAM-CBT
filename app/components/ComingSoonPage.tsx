@@ -39,10 +39,11 @@ export default function ComingSoonPage({
         return;
       }
       if (requiresAdmin) {
-        const { data: isAdmin, error: permissionError } = await supabase.rpc("is_admin");
+        const { data: adminRole } = await supabase.rpc("get_admin_role");
+        const isAdmin = typeof adminRole === "string" && adminRole.length > 0;
         if (!active) return;
-        if (permissionError || isAdmin !== true) {
-          router.replace("/account");
+        if (!isAdmin) {
+          router.replace("/admin/login");
           return;
         }
       }
