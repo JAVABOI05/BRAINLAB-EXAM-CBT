@@ -33,6 +33,9 @@ export default function LearnerSettingsClient() {
   const [hideEmail, setHideEmail] = useState(true);
   const [requireMessageRequest, setRequireMessageRequest] = useState(true);
   const [requireGroupApproval, setRequireGroupApproval] = useState(true);
+  const [readReceipts, setReadReceipts] = useState(true);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
   const [privacySaving, setPrivacySaving] = useState(false);
   const [privacySuccess, setPrivacySuccess] = useState("");
   const [privacyError, setPrivacyError] = useState("");
@@ -51,7 +54,18 @@ export default function LearnerSettingsClient() {
       setHideEmail(meta.hide_email !== false);
       setRequireMessageRequest(meta.require_message_request !== false);
       setRequireGroupApproval(meta.require_group_approval !== false);
+      setReadReceipts(meta.read_receipts !== false);
       setLoading(false);
+
+      // Load blocked users
+      fetch("/api/messages/block")
+        .then((r) => r.json())
+        .then((blockData) => {
+          if (active && blockData.success && Array.isArray(blockData.blockedUsers)) {
+            setBlockedUsers(blockData.blockedUsers);
+          }
+        })
+        .catch(() => {});
     }).catch(() => {
       if (active) router.replace("/account");
     });
@@ -94,6 +108,7 @@ export default function LearnerSettingsClient() {
         hide_email: hideEmail,
         require_message_request: requireMessageRequest,
         require_group_approval: requireGroupApproval,
+        read_receipts: readReceipts,
       };
 
       const { data, error } = await supabase.auth.updateUser({
@@ -240,6 +255,21 @@ export default function LearnerSettingsClient() {
                   </p>
                 </div>
               </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={readReceipts}
+                  onChange={(e) => setReadReceipts(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-bold text-slate-900">Read receipts (blue ticks)</span>
+                  <p className="text-xs text-slate-500">
+                    Show blue checkmarks (✓✓) when messages are read. If turned off, other learners will only see grey delivered ticks (✓✓), and you will not see blue ticks on sent messages.
+                  </p>
+                </div>
+              </label>
             </div>
 
             <div className="pt-2">
@@ -263,6 +293,64 @@ export default function LearnerSettingsClient() {
               </p>
             )}
           </form>
+        </section>
+
+        {/* 2b. Blocked Learners Management */}
+        <section aria-labelledby="blocked-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 id="blocked-heading" className="text-xl font-extrabold text-slate-900">
+                Blocked Learners
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Learners you have blocked cannot message you or add you to study circles.
+              </p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+              {blockedUsers.length} blocked
+            </span>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {blockedUsers.length === 0 ? (
+              <p className="text-xs font-semibold text-slate-500 italic py-2">
+                You have not blocked any learners.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-slate-50/50">
+                {blockedUsers.map((blockedId) => (
+                  <li key={blockedId} className="flex items-center justify-between p-3 text-xs">
+                    <span className="font-mono text-slate-600 truncate max-w-[200px] sm:max-w-xs">
+                      {blockedId}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={unblockingId === blockedId}
+                      onClick={async () => {
+                        setUnblockingId(blockedId);
+                        try {
+                          const res = await fetch("/api/messages/block", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ targetUserId: blockedId, action: "unblock" }),
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            setBlockedUsers((prev) => prev.filter((id) => id !== blockedId));
+                          }
+                        } finally {
+                          setUnblockingId(null);
+                        }
+                      }}
+                      className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+                    >
+                      {unblockingId === blockedId ? "Unblocking…" : "Unblock"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </section>
 
         {/* 3. Profile & Identity Overview */}

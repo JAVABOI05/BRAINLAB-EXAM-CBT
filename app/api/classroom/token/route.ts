@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { getLiveClassroomConfig } from "@/app/lib/platformConfig";
+import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
 
@@ -15,15 +15,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { classId } = body;
+    const { classId, entryCode } = body;
 
     if (!classId) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
     const supabase = getSupabaseServerClient();
+    const config = await getLiveClassroomConfig();
 
-    // Check staff/admin status early so students are not given host permissions
+    // 1. Check if user is staff/tutor/admin
     let isStaff = false;
     const { data: adminRole } = await supabase
       .from("admin_user_roles")
@@ -35,7 +36,14 @@ export async function POST(request: NextRequest) {
       isStaff = true;
     }
 
-    // 1. Fetch class details or provision session fallback
+    const isAllowedTutorByEmail = Boolean(
+      user.email &&
+      config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())
+    );
+
+    const isAuthorizedTutor = isStaff || isAllowedTutorByEmail;
+
+    // 2. Fetch class details or provision session fallback
     type LiveClass = {
       id: string;
       tutor_id: string;
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest) {
         id: classId,
         title: classId === "BL-LIVE-101" ? "BrainLab Live Academic Stage (BL-LIVE-101)" : "BrainLab Live Masterclass & Interactive Stage",
         description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-        tutor_id: isStaff ? user.id : "brainlab-official-host",
+        tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
         status: "live",
         class_format: "interactive",
         course_id: null,
@@ -86,13 +94,12 @@ export async function POST(request: NextRequest) {
       if (dbClass) {
         liveClass = dbClass as LiveClass;
       } else {
-        // Fallback for custom session or teacher-created classroom IDs
         liveClass = {
           id: classId,
           title: `BrainLab Live Class Session (${classId.slice(0, 10)})`,
           description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-          tutor_id: isStaff ? user.id : "brainlab-official-host",
-          status: "live",
+          tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
+          status: "scheduled",
           class_format: "interactive",
           course_id: null,
           scheduled_start_at: new Date().toISOString(),
@@ -118,13 +125,122 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Determine User Role & Admin status
-    const isTutor = liveClass.tutor_id === user.id;
-    const isAdmin = isStaff;
+    // 3. Check Room Configuration from Platform Config
+    const roomConfig = config.room_configs?.[classId];
+    const isTutor = isAuthorizedTutor || liveClass.tutor_id === user.id;
+    const isHost = isTutor;
 
-    // 3. Enforce Enrollment & Entitlement Verification
+    // 4. Student Host Restriction: Students are never allowed to enter as host or start the class
+    if (!isHost) {
+      const isRoomActive =
+        (classId === "BL-LIVE-101" && (roomConfig?.is_active ?? true)) ||
+        roomConfig?.is_active === true ||
+        liveClass.status === "live";
+
+      if (!isRoomActive) {
+        return NextResponse.json(
+          {
+            error: "This live class has not been started yet. Only authorized tutors or administrators can launch this classroom. Please wait for your instructor to begin.",
+            requiresHost: true,
+            notStarted: true,
+            classDetails: {
+              id: liveClass.id,
+              title: roomConfig?.title || liveClass.title,
+              description: liveClass.description,
+              status: "waiting_for_host",
+              tutorId: liveClass.tutor_id,
+            },
+          },
+          { status: 403 }
+        );
+      }
+
+      // 5. Masterclass vs Open Class Admission Verification
+      const isMasterclass =
+        roomConfig?.class_type === "masterclass" ||
+        Boolean(roomConfig?.entry_code) ||
+        Boolean(roomConfig?.require_permission);
+
+      if (isMasterclass) {
+        // A. Code Entry verification (if configured on this masterclass)
+        if (roomConfig?.entry_code && roomConfig.entry_code.trim()) {
+          const submittedCode = String(entryCode || "").trim().toUpperCase();
+          const expectedCode = roomConfig.entry_code.trim().toUpperCase();
+
+          if (!submittedCode) {
+            return NextResponse.json(
+              {
+                error: "This is a BrainLab Masterclass. A valid access code is required to enter.",
+                requiresCode: true,
+                isMasterclass: true,
+                classDetails: {
+                  id: liveClass.id,
+                  title: roomConfig?.title || liveClass.title,
+                  description: liveClass.description,
+                  requiresPermission: Boolean(roomConfig?.require_permission),
+                },
+              },
+              { status: 403 }
+            );
+          }
+
+          if (submittedCode !== expectedCode) {
+            return NextResponse.json(
+              {
+                error: "Invalid masterclass entry code. Please check your code and try again.",
+                requiresCode: true,
+                isMasterclass: true,
+              },
+              { status: 403 }
+            );
+          }
+        }
+
+        // B. Permission Granting / Host Approval verification
+        if (roomConfig?.require_permission) {
+          const isAdmitted = Boolean(roomConfig.admitted_students?.includes(user.id));
+          if (!isAdmitted) {
+            return NextResponse.json(
+              {
+                success: true,
+                pendingApproval: true,
+                isMasterclass: true,
+                message: "Waiting for tutor permission to enter this Masterclass. Your admission request has been sent to the host.",
+                classDetails: {
+                  id: liveClass.id,
+                  title: roomConfig?.title || liveClass.title,
+                  description: liveClass.description,
+                  tutorId: roomConfig?.active_host_id || liveClass.tutor_id,
+                  requiresPermission: true,
+                },
+              },
+              { status: 200 }
+            );
+          }
+        }
+      }
+    } else {
+      // Host / Tutor auto-activation: mark room active if needed
+      if (roomConfig && !roomConfig.is_active) {
+        const updatedRooms = { ...config.room_configs };
+        updatedRooms[classId] = {
+          ...roomConfig,
+          is_active: true,
+          active_host_id: user.id,
+          active_host_name: user.user_metadata?.full_name || user.email || "Tutor",
+          started_at: new Date().toISOString(),
+        };
+        void saveLiveClassroomConfig(
+          { room_configs: updatedRooms },
+          { id: user.id, email: user.email || "tutor@brainlabacademy.com.ng" },
+          `Tutor launched live stage for class ${classId}`
+        );
+      }
+    }
+
+    // 6. Enforce Enrollment & Entitlement Verification (if class has a bound course)
     let isEnrolled = false;
-    if (isTutor || isAdmin) {
+    if (isHost) {
       isEnrolled = true;
     } else if (liveClass.course_id) {
       const { data: enrollment } = await supabase
@@ -164,10 +280,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Determine Participant Permissions based on Class Format & Role
-    const config = await getLiveClassroomConfig();
-    const isHost = isTutor || isAdmin;
-
+    // 7. Determine Participant Permissions based on Class Format & Role
     let role: ParticipantRole = isHost ? "host" : "listener";
     if (!isHost && liveClass.class_format === "interactive") {
       role = "speaker";
@@ -181,7 +294,7 @@ export async function POST(request: NextRequest) {
       canChat: liveClass.student_chat_enabled && config.student_chat_default,
     };
 
-    // 5. Generate Room Token using Selected Provider
+    // 8. Generate Room Token using Selected Provider
     const configuredProvider = liveClass.provider || config.provider || "webrtc";
     const providerTypes: VideoProviderType[] = ["webrtc", "livekit", "agora", "daily"];
     const providerType: VideoProviderType = providerTypes.includes(configuredProvider as VideoProviderType)
@@ -193,7 +306,7 @@ export async function POST(request: NextRequest) {
       user.user_metadata?.full_name ||
       user.user_metadata?.name ||
       user.email?.split("@")[0] ||
-      "Learner";
+      (isHost ? "Instructor" : "Learner");
 
     const tokenResponse = await provider.generateRoomToken({
       roomId: liveClass.id,
@@ -211,15 +324,17 @@ export async function POST(request: NextRequest) {
         ...tokenResponse,
         classDetails: {
           id: liveClass.id,
-          title: liveClass.title,
+          title: roomConfig?.title || liveClass.title,
           description: liveClass.description,
           status: liveClass.status,
           scheduled_start_at: liveClass.scheduled_start_at,
           scheduled_end_at: liveClass.scheduled_end_at,
           format: liveClass.class_format,
           isRecording: liveClass.is_recording_enabled,
-          waitingRoom: liveClass.waiting_room_enabled,
-          tutorId: liveClass.tutor_id,
+          waitingRoom: Boolean(roomConfig?.require_permission || liveClass.waiting_room_enabled),
+          tutorId: isHost ? user.id : (roomConfig?.active_host_id || liveClass.tutor_id),
+          isMasterclass: roomConfig?.class_type === "masterclass",
+          classType: roomConfig?.class_type || "open",
         },
       },
     });

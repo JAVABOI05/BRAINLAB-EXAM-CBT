@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "../lib/toast";
+import { getPublicSettings } from "../lib/examApi";
 
 type Candidate = {
   name: string;
@@ -18,6 +19,15 @@ export default function InstructionsPage() {
   const router = useRouter();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [agreed, setAgreed] = useState(false);
+  const [showMarksInExam, setShowMarksInExam] = useState(true);
+
+  useEffect(() => {
+    void getPublicSettings().then((settings) => {
+      if (settings) {
+        setShowMarksInExam(settings.show_marks_in_exam !== false);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("candidate");
@@ -116,7 +126,7 @@ export default function InstructionsPage() {
               ))}
             </div>
             <p className="mt-3 text-xs font-bold text-blue-700 dark:text-cyan-400">
-              Total: ~180 Questions · 400 Marks · 2 Hours Allowed
+              Total: ~180 Questions{showMarksInExam ? " · 400 Marks" : ""} · 2 Hours Allowed
             </p>
           </div>
         </div>

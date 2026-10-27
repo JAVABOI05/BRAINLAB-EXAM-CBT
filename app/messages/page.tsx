@@ -33,6 +33,8 @@ type Message = {
     title?: string;
   };
   message_reactions?: { id: string; reaction: string; user_id: string }[];
+  delivery_status?: "sent" | "delivered" | "read";
+  read_at?: string | null;
 };
 
 type OnlinePeer = {
@@ -108,6 +110,9 @@ export default function MessagesPage() {
   // Friends state (persisted locally)
   const [friendsList, setFriendsList] = useState<string[]>([]);
 
+  // Blocked users state
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+
   // Study Group invite modal state
   const [selectedPeerForGroup, setSelectedPeerForGroup] = useState<OnlinePeer | null>(null);
   const [customGroupName, setCustomGroupName] = useState("");
@@ -139,6 +144,19 @@ export default function MessagesPage() {
         }
       } catch (e) {
         console.warn("Could not load friends cache:", e);
+      }
+
+      // Load blocked users from server
+      try {
+        const blockRes = await fetch("/api/messages/block", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const blockJson = await blockRes.json();
+        if (active && blockJson.success && Array.isArray(blockJson.blockedUsers)) {
+          setBlockedUsers(blockJson.blockedUsers);
+        }
+      } catch (e) {
+        console.warn("Could not load blocked users:", e);
       }
 
       try {
@@ -421,6 +439,38 @@ export default function MessagesPage() {
     }
   };
 
+  // 8b-2. Block or Unblock Learner
+  const handleToggleBlock = async (targetUserId: string, targetName: string) => {
+    const isCurrentlyBlocked = blockedUsers.includes(targetUserId);
+    const action = isCurrentlyBlocked ? "unblock" : "block";
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+    try {
+      const res = await fetch("/api/messages/block", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({ targetUserId, action }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (action === "block") {
+          setBlockedUsers((prev) => [...prev, targetUserId]);
+          toast.info(`${targetName} has been blocked.`);
+        } else {
+          setBlockedUsers((prev) => prev.filter((id) => id !== targetUserId));
+          toast.success(`${targetName} has been unblocked.`);
+        }
+      } else {
+        toast.error(data.error || "Could not update block status.");
+      }
+    } catch {
+      toast.error("Network error while updating block status.");
+    }
+  };
+
 
   // 8c. Accept or Decline Message Request
   const handleAcceptConversation = async (convId: string) => {
@@ -652,6 +702,11 @@ export default function MessagesPage() {
   };
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
+  const otherPeerId =
+    activeConv?.type === "direct"
+      ? activeConv.participants?.find((p) => p.user_id !== currentUser?.id)?.user_id
+      : null;
+  const isPeerBlocked = otherPeerId ? blockedUsers.includes(otherPeerId) : false;
 
   const filteredConversations = useMemo(() => {
     let list = conversations;
@@ -1140,6 +1195,21 @@ export default function MessagesPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {activeConv.type === "direct" && otherPeerId && (
+                    <button
+                      type="button"
+                      onClick={() => void handleToggleBlock(otherPeerId, activeConv.title)}
+                      className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold transition active-press ${
+                        isPeerBlocked
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100"
+                          : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
+                      }`}
+                      title={isPeerBlocked ? "Unblock this learner" : "Block this learner"}
+                    >
+                      <span>{isPeerBlocked ? "✓" : "🚫"}</span>
+                      <span>{isPeerBlocked ? "Unblock" : "Block"}</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setActiveTab("peers");
@@ -1229,7 +1299,26 @@ export default function MessagesPage() {
                                 minute: "2-digit",
                               })}
                             </span>
-                            {isMe && <span>✓✓</span>}
+                            {isMe && (
+                              <span
+                                className={
+                                  msg.delivery_status === "read"
+                                    ? "font-extrabold text-cyan-300 drop-shadow-xs"
+                                    : msg.delivery_status === "delivered"
+                                    ? "text-blue-200 font-semibold"
+                                    : "text-blue-300/80 font-normal"
+                                }
+                                title={
+                                  msg.delivery_status === "read"
+                                    ? "Read (Seen)"
+                                    : msg.delivery_status === "delivered"
+                                    ? "Delivered"
+                                    : "Sent"
+                                }
+                              >
+                                {msg.delivery_status === "sent" ? "✓" : "✓✓"}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1297,7 +1386,20 @@ export default function MessagesPage() {
                   </div>
                 )}
 
-                {isRecordingVoice ? (
+                {isPeerBlocked ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center">
+                    <p className="text-xs font-bold text-rose-900">
+                      You have blocked {activeConv.title}. You cannot send or receive messages from this learner.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => otherPeerId && void handleToggleBlock(otherPeerId, activeConv.title)}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition active-press"
+                    >
+                      <span>✓</span> Unblock {activeConv.title}
+                    </button>
+                  </div>
+                ) : isRecordingVoice ? (
                   <div className="flex justify-center">
                     <VoiceNoteRecorder
                       onAudioReady={handleSendVoiceNote}

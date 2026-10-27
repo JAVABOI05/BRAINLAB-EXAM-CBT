@@ -96,6 +96,8 @@ export default function AdminConfigPage() {
     randomize_questions: true,
     randomize_options: true,
     show_results_immediately: true,
+    show_marks_in_exam: true,
+    show_topic_in_exam: true,
   });
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
 
@@ -715,6 +717,42 @@ export default function AdminConfigPage() {
                 className={examSettings.randomize_questions ? "admin-btn-primary" : "admin-btn-light"}
               >
                 {examSettings.randomize_questions ? "✓ Question Shuffling ON" : "Fixed Question Order"}
+              </button>
+            </div>
+
+            <div className="admin-setting-box flex flex-col justify-between border-2 border-blue-500/30 bg-blue-50/20 dark:bg-blue-950/20">
+              <div>
+                <label className="admin-label font-black text-slate-900 dark:text-white">Exam Marks Display</label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Show or switch off marks (e.g. 100 Marks, 400 Marks Total, per-question marks) in candidate exam screen.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setExamSettings((prev) => ({ ...prev, show_marks_in_exam: prev.show_marks_in_exam === false }))
+                }
+                className={`mt-3 ${examSettings.show_marks_in_exam !== false ? "admin-btn-primary" : "admin-btn-light"}`}
+              >
+                {examSettings.show_marks_in_exam !== false ? "✓ Marks Visible in Exam" : "✕ Marks Switched OFF (Hidden)"}
+              </button>
+            </div>
+
+            <div className="admin-setting-box flex flex-col justify-between border-2 border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-950/20">
+              <div>
+                <label className="admin-label font-black text-slate-900 dark:text-white">Question Topic Display</label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Show or switch off question topic &amp; category tags (e.g. Organic Chemistry, Calculus) during CBT testing.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setExamSettings((prev) => ({ ...prev, show_topic_in_exam: prev.show_topic_in_exam === false }))
+                }
+                className={`mt-3 ${examSettings.show_topic_in_exam !== false ? "admin-btn-primary" : "admin-btn-light"}`}
+              >
+                {examSettings.show_topic_in_exam !== false ? "✓ Question Topics Visible" : "✕ Question Topics Switched OFF (Subject Only)"}
               </button>
             </div>
           </div>

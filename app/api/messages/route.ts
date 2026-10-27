@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "conversationId is required" }, { status: 400 });
     }
 
-    const messages = await getConversationMessages(conversationId, user.id);
+    const messages = await getConversationMessages(conversationId, user.id, user);
     return NextResponse.json({ success: true, messages });
   } catch (err: unknown) {
     return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });

@@ -33,6 +33,8 @@ export interface ExamSettings {
   randomize_questions: boolean;
   randomize_options: boolean;
   show_results_immediately: boolean;
+  show_marks_in_exam?: boolean; // toggle visibility of marks in CBT exam interface
+  show_topic_in_exam?: boolean; // toggle visibility of question topic in CBT exam interface
 }
 
 export interface CouponCampaign {
@@ -98,6 +100,19 @@ export interface FooterConfig {
   accreditation_statement: string;
 }
 
+export interface MasterclassRoomConfig {
+  class_type: "open" | "masterclass";
+  entry_code?: string;
+  require_permission?: boolean;
+  is_active?: boolean;
+  active_host_id?: string;
+  active_host_name?: string;
+  title?: string;
+  topic?: string;
+  started_at?: string;
+  admitted_students?: string[];
+}
+
 export interface LiveClassroomConfig {
   provider: "webrtc" | "livekit" | "agora" | "daily";
   max_capacity_default: number;
@@ -111,6 +126,8 @@ export interface LiveClassroomConfig {
   attendance_threshold_percent: number;
   waiting_room_default: boolean;
   formats_enabled: ("interactive" | "broadcast" | "hybrid")[];
+  allowed_tutor_emails?: string[];
+  room_configs?: Record<string, MasterclassRoomConfig>;
 }
 
 export interface CommunicationConfig {
@@ -223,6 +240,8 @@ const DEFAULT_EXAM_SETTINGS: ExamSettings = {
   randomize_questions: true,
   randomize_options: true,
   show_results_immediately: true,
+  show_marks_in_exam: true,
+  show_topic_in_exam: true,
 };
 
 const DEFAULT_ACADEMIC_CONFIG: AcademicConfig = {
@@ -318,6 +337,15 @@ const DEFAULT_CLASSROOM_CONFIG: LiveClassroomConfig = {
   attendance_threshold_percent: 60,
   waiting_room_default: false,
   formats_enabled: ["interactive", "broadcast", "hybrid"],
+  allowed_tutor_emails: [],
+  room_configs: {
+    "BL-LIVE-101": {
+      class_type: "open",
+      require_permission: false,
+      is_active: true,
+      title: "BrainLab Live Academic Stage (BL-LIVE-101)",
+    },
+  },
 };
 
 const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {

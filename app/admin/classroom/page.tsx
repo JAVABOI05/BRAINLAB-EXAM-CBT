@@ -29,6 +29,12 @@ export default function AdminLiveClassroomControlPage() {
   const [sessionTopic, setSessionTopic] = useState("Mathematics & Physics Speed Strategies");
   const [sessionRoomId, setSessionRoomId] = useState("BL-LIVE-101");
   const [sessionFormat, setSessionFormat] = useState<"interactive" | "quiz" | "broadcast">("interactive");
+  const [sessionClassType, setSessionClassType] = useState<"open" | "masterclass">("open");
+  const [sessionEntryCode, setSessionEntryCode] = useState("BL-MASTER-2026");
+  const [sessionRequirePermission, setSessionRequirePermission] = useState(true);
+  const [allowedTutorsList, setAllowedTutorsList] = useState<string[]>([]);
+  const [newTutorEmail, setNewTutorEmail] = useState("");
+  const [savingTutors, setSavingTutors] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastFeedback, setBroadcastFeedback] = useState("");
@@ -113,6 +119,15 @@ export default function AdminLiveClassroomControlPage() {
       const currentConfig = await getLiveClassroomConfig();
       if (active) {
         setConfig(currentConfig);
+        if (currentConfig.allowed_tutor_emails) {
+          setAllowedTutorsList(currentConfig.allowed_tutor_emails);
+        }
+        const existingRoom = currentConfig.room_configs?.["BL-LIVE-101"];
+        if (existingRoom) {
+          setSessionClassType(existingRoom.class_type || "open");
+          if (existingRoom.entry_code) setSessionEntryCode(existingRoom.entry_code);
+          if (typeof existingRoom.require_permission === "boolean") setSessionRequirePermission(existingRoom.require_permission);
+        }
         setWhiteboardWatermarkEnabled(await getPlatformConfig<boolean>("whiteboard_watermark_enabled", true));
         setProviderStatuses(getAllVideoProvidersStatus());
         setLoading(false);
@@ -144,6 +159,78 @@ export default function AdminLiveClassroomControlPage() {
       setFeedback(error?.message || "Could not save the watermark policy.");
     } finally {
       setSavingWatermark(false);
+    }
+  };
+
+  const handleLaunchStage = async () => {
+    if (!adminUser) return;
+    try {
+      const roomSlug = sessionRoomId.trim() || "BL-LIVE-101";
+      const currentConfig = await getLiveClassroomConfig();
+      const updatedRooms = { ...(currentConfig.room_configs || {}) };
+      updatedRooms[roomSlug] = {
+        class_type: sessionClassType,
+        entry_code: sessionClassType === "masterclass" ? sessionEntryCode.trim().toUpperCase() : undefined,
+        require_permission: sessionClassType === "masterclass" ? sessionRequirePermission : false,
+        is_active: true,
+        title: sessionTitle,
+        topic: sessionTopic,
+        started_at: new Date().toISOString(),
+        active_host_id: adminUser.id,
+        active_host_name: adminUser.email,
+        admitted_students: updatedRooms[roomSlug]?.admitted_students || [],
+      };
+      await saveLiveClassroomConfig(
+        { room_configs: updatedRooms },
+        { id: adminUser.id, email: adminUser.email },
+        `Admin configured live session ${roomSlug} as ${sessionClassType}`
+      );
+      router.push(`/classroom/${roomSlug}`);
+    } catch {
+      router.push(`/classroom/${sessionRoomId.trim() || "BL-LIVE-101"}`);
+    }
+  };
+
+  const handleAddAllowedTutor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminUser || !newTutorEmail.trim()) return;
+    const email = newTutorEmail.trim().toLowerCase();
+    if (allowedTutorsList.includes(email)) return;
+    const updated = [...allowedTutorsList, email];
+    setSavingTutors(true);
+    try {
+      const current = await getLiveClassroomConfig();
+      await saveLiveClassroomConfig(
+        { allowed_tutor_emails: updated },
+        { id: adminUser.id, email: adminUser.email },
+        `Added allowed tutor ${email}`
+      );
+      setAllowedTutorsList(updated);
+      setNewTutorEmail("");
+      setFeedback(`Authorized ${email} to start and host live classrooms.`);
+    } catch (err: any) {
+      setFeedback(err.message || "Failed to add tutor.");
+    } finally {
+      setSavingTutors(false);
+    }
+  };
+
+  const handleRemoveAllowedTutor = async (emailToRemove: string) => {
+    if (!adminUser) return;
+    const updated = allowedTutorsList.filter((e) => e !== emailToRemove);
+    setSavingTutors(true);
+    try {
+      await saveLiveClassroomConfig(
+        { allowed_tutor_emails: updated },
+        { id: adminUser.id, email: adminUser.email },
+        `Removed allowed tutor ${emailToRemove}`
+      );
+      setAllowedTutorsList(updated);
+      setFeedback(`Removed ${emailToRemove} from authorized tutors.`);
+    } catch (err: any) {
+      setFeedback(err.message || "Failed to remove tutor.");
+    } finally {
+      setSavingTutors(false);
     }
   };
 
@@ -262,7 +349,7 @@ export default function AdminLiveClassroomControlPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => router.push(`/classroom/${sessionRoomId.trim() || "live-session"}`)}
+                  onClick={handleLaunchStage}
                   className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-2"
                 >
                   <span>🚀 Launch Live Stage →</span>
@@ -333,12 +420,174 @@ export default function AdminLiveClassroomControlPage() {
               </div>
             </div>
 
+            {/* Masterclass vs Open Class Controls */}
+            <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/60 p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">Classroom Access Mode</span>
+                  <p className="text-xs text-slate-300">
+                    Choose whether this is a general open class or a protected masterclass.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSessionClassType("open")}
+                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                      sessionClassType === "open"
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400"
+                        : "bg-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    🌍 Open Class (No Code)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSessionClassType("masterclass")}
+                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                      sessionClassType === "masterclass"
+                        ? "bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-2 ring-amber-400"
+                        : "bg-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    👑 Masterclass (Restricted)
+                  </button>
+                </div>
+              </div>
+
+              {sessionClassType === "masterclass" && (
+                <div className="mt-3 pt-3 border-t border-white/10 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300">
+                      Masterclass Access Code (Optional)
+                    </label>
+                    <div className="mt-1 flex gap-2">
+                      <input
+                        type="text"
+                        value={sessionEntryCode}
+                        onChange={(e) => setSessionEntryCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. BL-MASTER-2026"
+                        className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-amber-300 placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setSessionEntryCode(`MC-${Math.floor(1000 + Math.random() * 9000)}`)}
+                        className="rounded-xl border border-amber-500/40 bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-900/60"
+                        title="Generate random 4-digit code"
+                      >
+                        🎲 Code
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-400">
+                      Learners must enter this exact code to enter the masterclass.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col justify-center">
+                    <label className="flex items-start gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sessionRequirePermission}
+                        onChange={(e) => setSessionRequirePermission(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded accent-amber-500"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-white">Require Tutor Permission (Waiting Room)</span>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
+                          Students wait in waiting room until host clicks &quot;Admit / Grant Permission&quot;.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="mt-4 flex flex-wrap items-center gap-3 pt-3 border-t border-white/10 text-xs text-slate-300">
               <span className="font-bold text-slate-400">Classroom Features Active:</span>
               <span className="inline-flex items-center gap-1 text-emerald-400">✓ Audio &amp; Voice Notes</span>
               <span className="inline-flex items-center gap-1 text-cyan-400">✓ Multimedia Diagram Sharing</span>
               <span className="inline-flex items-center gap-1 text-amber-400">✓ In-Chat Quizzes &amp; Polls</span>
               <span className="inline-flex items-center gap-1 text-blue-300">✓ Nigerian 3G/4G Bandwidth Optimized</span>
+            </div>
+          </section>
+
+          {/* Authorized Tutors & Host Permission Management Section */}
+          <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-blue-800">
+                  🛡️ Tutor Access &amp; Host Authorization
+                </span>
+                <h2 className="mt-1 text-xl font-black text-slate-950">
+                  Authorized Instructors &amp; Classroom Hosts
+                </h2>
+                <p className="mt-1 text-xs text-slate-600 max-w-2xl">
+                  Enforce that only tutors and instructors explicitly authorized by administration can launch or enter live classrooms as host. Students are strictly prevented from hosting or entering unstarted sessions.
+                </p>
+              </div>
+            </div>
+
+            {/* Default Role Hosts Notice */}
+            <div className="mt-4 rounded-2xl bg-slate-50 border border-slate-200/80 p-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">System Roles with Default Host Access</h4>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                <span className="rounded-lg bg-emerald-100 text-emerald-800 px-2.5 py-1 font-bold">✓ Super Administrators</span>
+                <span className="rounded-lg bg-emerald-100 text-emerald-800 px-2.5 py-1 font-bold">✓ Platform Administrators</span>
+                <span className="rounded-lg bg-emerald-100 text-emerald-800 px-2.5 py-1 font-bold">✓ CBT Administrators</span>
+                <span className="rounded-lg bg-emerald-100 text-emerald-800 px-2.5 py-1 font-bold">✓ Teachers &amp; Assigned Instructors</span>
+              </div>
+            </div>
+
+            {/* Custom Authorized Tutor Emails */}
+            <div className="mt-5 space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                Custom Authorized Tutor Emails
+              </h4>
+
+              {allowedTutorsList.length === 0 ? (
+                <p className="text-xs text-slate-500 italic">
+                  No custom tutor email overrides set. Default administrators and teachers have host permissions.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {allowedTutorsList.map((email) => (
+                    <div
+                      key={email}
+                      className="inline-flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-3 py-1.5 text-xs font-bold text-blue-900"
+                    >
+                      <span>👨‍🏫 {email}</span>
+                      <button
+                        type="button"
+                        onClick={() => void handleRemoveAllowedTutor(email)}
+                        className="text-red-500 hover:text-red-700 ml-1 font-black"
+                        title="Revoke host authorization"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Tutor Form */}
+              <form onSubmit={handleAddAllowedTutor} className="mt-3 flex max-w-md gap-2">
+                <input
+                  type="email"
+                  value={newTutorEmail}
+                  onChange={(e) => setNewTutorEmail(e.target.value)}
+                  placeholder="e.g. instructor@brainlabacademy.com.ng"
+                  className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={savingTutors || !newTutorEmail.trim()}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition"
+                >
+                  {savingTutors ? "Saving…" : "+ Authorize Tutor"}
+                </button>
+              </form>
             </div>
           </section>
 

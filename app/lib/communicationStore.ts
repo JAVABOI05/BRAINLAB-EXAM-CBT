@@ -26,6 +26,8 @@ export interface ChatMessage {
   reply_to_id?: string | null;
   created_at: string;
   reactions?: Record<string, string[]>; // emoji -> array of user_ids
+  delivery_status?: "sent" | "delivered" | "read";
+  read_at?: string | null;
 }
 
 export interface ChatConversation {
@@ -575,11 +577,32 @@ export async function createGroupChat(
 
 export async function getConversationMessages(
   conversationId: string,
-  userId: string
+  userId: string,
+  readerUser?: { id: string; user_metadata?: Record<string, unknown> }
 ): Promise<ChatMessage[]> {
   const supabase = getSupabaseServerClient();
   const { allPeers } = await getRealPeersAndPresence(userId);
   const peersById = new Map<string, RealPeer>(allPeers.map((p) => [p.user_id, p]));
+  const now = new Date().toISOString();
+
+  // Check reader's read receipts privacy setting
+  let readerAllowsReadReceipts = true;
+  if (readerUser?.user_metadata && typeof readerUser.user_metadata.read_receipts === "boolean") {
+    readerAllowsReadReceipts = readerUser.user_metadata.read_receipts;
+  } else {
+    try {
+      const { data: privacyRow } = await supabase
+        .from("exam_config")
+        .select("config_value")
+        .eq("config_key", `privacy_settings_${userId}`)
+        .maybeSingle();
+      if (privacyRow && typeof privacyRow.config_value === "object" && privacyRow.config_value && (privacyRow.config_value as Record<string, unknown>).read_receipts === false) {
+        readerAllowsReadReceipts = false;
+      }
+    } catch {
+      // default true
+    }
+  }
 
   // Try native table first
   try {
@@ -590,20 +613,28 @@ export async function getConversationMessages(
       .order("created_at", { ascending: true });
 
     if (!error && Array.isArray(messages)) {
-      return messages.map((m) => ({
-        id: m.id,
-        conversation_id: m.conversation_id,
-        sender_id: m.sender_id,
-        sender_name: peersById.get(m.sender_id)?.display_name || "Classmate",
-        content: m.content,
-        message_type: m.message_type || "text",
-        audio_asset_id: m.audio_asset_id,
-        audio_url: m.audio_assets?.file_url || null,
-        duration_seconds: m.audio_assets?.duration_seconds || 0,
-        reply_to_id: m.reply_to_id,
-        created_at: m.created_at,
-        reactions: formatNativeReactions(m.message_reactions),
-      }));
+      return messages.map((m) => {
+        let status = (m.delivery_status as "sent" | "delivered" | "read") || "delivered";
+        if (m.sender_id !== userId) {
+          status = readerAllowsReadReceipts ? "read" : "delivered";
+        }
+        return {
+          id: m.id,
+          conversation_id: m.conversation_id,
+          sender_id: m.sender_id,
+          sender_name: peersById.get(m.sender_id)?.display_name || "Classmate",
+          content: m.content,
+          message_type: m.message_type || "text",
+          audio_asset_id: m.audio_asset_id,
+          audio_url: m.audio_assets?.file_url || null,
+          duration_seconds: m.audio_assets?.duration_seconds || 0,
+          reply_to_id: m.reply_to_id,
+          created_at: m.created_at,
+          reactions: formatNativeReactions(m.message_reactions),
+          delivery_status: status,
+          read_at: m.read_at || (status === "read" ? now : null),
+        };
+      });
     }
   } catch {
     // Proceed to fallback
@@ -623,7 +654,35 @@ export async function getConversationMessages(
         : {};
 
     const rawList = messagesMap[conversationId] || [];
-    return rawList.map((m) => ({
+    let hasUpdates = false;
+
+    const updatedList = rawList.map((m) => {
+      let status = m.delivery_status || "sent";
+      if (m.sender_id !== userId) {
+        // Current user is viewing messages sent by peer
+        const targetStatus: "sent" | "delivered" | "read" = readerAllowsReadReceipts ? "read" : "delivered";
+        if (status !== targetStatus) {
+          status = targetStatus;
+          hasUpdates = true;
+          return { ...m, delivery_status: status, read_at: targetStatus === "read" ? now : m.read_at };
+        }
+      }
+      return { ...m, delivery_status: status };
+    });
+
+    if (hasUpdates) {
+      messagesMap[conversationId] = updatedList;
+      void supabase.from("exam_config").upsert(
+        {
+          config_key: "platform_chat_messages",
+          config_value: messagesMap,
+          updated_at: now,
+        },
+        { onConflict: "config_key" }
+      );
+    }
+
+    return updatedList.map((m) => ({
       ...m,
       sender_name: peersById.get(m.sender_id)?.display_name || m.sender_name || "Learner",
     }));
@@ -654,6 +713,66 @@ export async function sendChatMessage(
     sender.email?.split("@")[0] ||
     "BrainLab Member";
 
+  // Check if sender or recipient is blocked in direct chat
+  let initialStatus: "sent" | "delivered" | "read" = "sent";
+  try {
+    const { data: convRow } = await supabase
+      .from("exam_config")
+      .select("config_value")
+      .eq("config_key", "platform_chat_conversations")
+      .maybeSingle();
+
+    const convsMap: Record<string, ChatConversation> =
+      convRow && typeof convRow.config_value === "object" && convRow.config_value !== null
+        ? (convRow.config_value as Record<string, ChatConversation>)
+        : {};
+
+    const activeConv = convsMap[conversationId];
+    if (activeConv && activeConv.type === "direct") {
+      const otherPart = activeConv.participants.find((p) => p.user_id !== senderId);
+      if (otherPart) {
+        // 1. Has recipient blocked sender?
+        const { data: blockedRow } = await supabase
+          .from("exam_config")
+          .select("config_value")
+          .eq("config_key", `blocked_users_${otherPart.user_id}`)
+          .maybeSingle();
+
+        const blockedList: string[] = Array.isArray(blockedRow?.config_value) ? blockedRow.config_value : [];
+        if (blockedList.includes(senderId)) {
+          throw new Error("You cannot send messages to this learner.");
+        }
+
+        // 2. Has sender blocked recipient?
+        const { data: myBlockedRow } = await supabase
+          .from("exam_config")
+          .select("config_value")
+          .eq("config_key", `blocked_users_${senderId}`)
+          .maybeSingle();
+
+        const myBlockedList: string[] = Array.isArray(myBlockedRow?.config_value) ? myBlockedRow.config_value : [];
+        if (myBlockedList.includes(otherPart.user_id)) {
+          throw new Error("You have blocked this learner. Unblock them first to send messages.");
+        }
+
+        // Check if recipient is online for immediate delivery tick (2 grey ticks)
+        const { allPeers } = await getRealPeersAndPresence(senderId);
+        const recipientPeer = allPeers.find((p) => p.user_id === otherPart.user_id);
+        if (recipientPeer && recipientPeer.status !== "offline") {
+          initialStatus = "delivered";
+        }
+      }
+    }
+  } catch (blockErr) {
+    if (
+      blockErr instanceof Error &&
+      (blockErr.message.includes("cannot send messages") ||
+        blockErr.message.includes("blocked this learner"))
+    ) {
+      throw blockErr;
+    }
+  }
+
   const newMsgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const message: ChatMessage = {
     id: newMsgId,
@@ -668,6 +787,7 @@ export async function sendChatMessage(
     reply_to_id: payload.replyToId || null,
     created_at: now,
     reactions: {},
+    delivery_status: initialStatus,
   };
 
   // Try native table first
