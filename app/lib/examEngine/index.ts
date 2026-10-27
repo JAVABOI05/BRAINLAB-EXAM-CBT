@@ -19,6 +19,7 @@ export * from "./highYieldManager";
 export * from "./duplicateDetector";
 export * from "./englishSelector";
 export * from "./subjectSelector";
+export * from "../difficultyEngine";
 
 export type GeneratePaperResult = {
   success: boolean;

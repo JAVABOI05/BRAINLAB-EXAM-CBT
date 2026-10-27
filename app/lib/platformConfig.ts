@@ -1,4 +1,9 @@
 import { supabase } from "./supabase";
+import {
+  AdministratorDifficultyConfig,
+  DEFAULT_ADMIN_DIFFICULTY_CONFIG,
+  validateProportionsSum,
+} from "./difficultyEngine";
 
 export interface SubscriptionPlan {
   id: string;
@@ -842,4 +847,56 @@ export async function saveFooterConfig(
   reason?: string
 ): Promise<boolean> {
   return await setPlatformConfig("website_footer", config, adminUser, reason || "Updated website footer and official channels");
+}
+
+// ----------------------------------------------------------------------------
+// Section 11: Formal Difficulty Model Configuration
+// ----------------------------------------------------------------------------
+export async function getDifficultyConfig(): Promise<AdministratorDifficultyConfig> {
+  return await getPlatformConfig<AdministratorDifficultyConfig>(
+    "formal_difficulty_config",
+    DEFAULT_ADMIN_DIFFICULTY_CONFIG
+  );
+}
+
+export async function saveDifficultyConfig(
+  config: AdministratorDifficultyConfig,
+  adminUser: { id: string; email: string },
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  // Section 11: Configuration changes must be validated before publication
+  const { reference_distributions } = config;
+  if (!reference_distributions) {
+    return { success: false, error: "Reference distributions are required." };
+  }
+
+  if (!validateProportionsSum(reference_distributions.low)) {
+    return { success: false, error: "Low reference distribution (Easy + Medium + Hard) must sum to exactly 100%." };
+  }
+  if (!validateProportionsSum(reference_distributions.medium)) {
+    return { success: false, error: "Medium reference distribution (Easy + Medium + Hard) must sum to exactly 100%." };
+  }
+  if (!validateProportionsSum(reference_distributions.high)) {
+    return { success: false, error: "High reference distribution (Easy + Medium + Hard) must sum to exactly 100%." };
+  }
+
+  if (config.default_slider_position < 0 || config.default_slider_position > 100) {
+    return { success: false, error: "Default slider position must be between 0 and 100." };
+  }
+
+  const updatedConfig: AdministratorDifficultyConfig = {
+    ...config,
+    version: (config.version || 1) + 1,
+    updated_at: new Date().toISOString(),
+    updated_by: adminUser.email,
+  };
+
+  const ok = await setPlatformConfig(
+    "formal_difficulty_config",
+    updatedConfig,
+    adminUser,
+    reason || `Updated CBT Formal Difficulty Model (version ${updatedConfig.version})`
+  );
+
+  return { success: ok, error: ok ? undefined : "Failed to persist configuration to platform database." };
 }

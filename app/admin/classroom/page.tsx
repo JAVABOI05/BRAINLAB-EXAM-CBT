@@ -347,6 +347,15 @@ export default function AdminLiveClassroomControlPage() {
                 >
                   <span>{isCopied ? "✅ Link Copied!" : "📋 Copy Link"}</span>
                 </button>
+                <a
+                  href={`/api/classroom/attendance?classId=${sessionRoomId || "BL-LIVE-101"}&format=csv`}
+                  download={`attendance-${sessionRoomId || "BL-LIVE-101"}.csv`}
+                  className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/60 px-4 py-2.5 text-xs font-bold text-emerald-300 transition flex items-center gap-1.5 active-press"
+                  title="Download verified attendance report CSV"
+                >
+                  <span>📥</span>
+                  <span>Export Attendance CSV</span>
+                </a>
                 <button
                   type="button"
                   onClick={handleLaunchStage}

@@ -12,6 +12,9 @@ export const ADMIN_ROLES = [
   "content_reviewer",
   "finance_admin",
   "read_only_auditor",
+  "competition_admin",
+  "competition_moderator",
+  "competition_host",
 ] as const;
 
 export type AdminRole = (typeof ADMIN_ROLES)[number];
@@ -75,6 +78,21 @@ export const ADMIN_ROLE_DETAILS: Record<
     summary: "Approved audit and aggregate reporting without write access.",
     level: 11,
   },
+  competition_admin: {
+    label: "Competition Administrator",
+    summary: "Manages assigned competitions, question banks, registrations, and rewards within authorization limits.",
+    level: 12,
+  },
+  competition_moderator: {
+    label: "Competition Moderator",
+    summary: "Operational moderation of public quizzes, reported misconduct, and flagged questions.",
+    level: 13,
+  },
+  competition_host: {
+    label: "Tutor / Competition Host",
+    summary: "Creates and manages hosted quizzes, questions in owned banks, and private participant challenges.",
+    level: 14,
+  },
 };
 
 export const ADMIN_PERMISSION_KEYS = [
@@ -110,6 +128,36 @@ export const ADMIN_PERMISSION_KEYS = [
   "finance.billing.manage",
   "audit.logs.read",
   "audit.logs.write",
+  // Competition Arena permissions
+  "competition.view",
+  "competition.create",
+  "competition.edit_own",
+  "competition.edit_assigned",
+  "competition.publish",
+  "competition.schedule",
+  "competition.cancel",
+  "competition.manage_participants",
+  "competition.view_results",
+  "competition.publish_results",
+  "competition.correct_results",
+  "competition.disqualify_participant",
+  "competition.manage_rounds",
+  "competition.manage_rewards",
+  "competition.approve_rewards",
+  "question_bank.create",
+  "question_bank.view",
+  "question_bank.edit_own",
+  "question_bank.edit_assigned",
+  "question_bank.delete_own",
+  "question_bank.delete_assigned",
+  "question_bank.import_csv",
+  "question_bank.export",
+  "question_bank.publish",
+  "question_bank.moderate",
+  "question_builder.use",
+  "question_bank.link_main_bank",
+  "competition.manage_roles",
+  "competition.view_audit_logs",
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSION_KEYS)[number];

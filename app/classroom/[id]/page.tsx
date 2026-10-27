@@ -2936,6 +2936,7 @@ export default function LiveClassroomPage({
             allowStudentMedia={allowStudentMedia}
             allowStudentVoiceNotes={allowStudentVoiceNotes}
             chatMuted={chatMuted}
+            classId={classId}
             pendingAdmissions={pendingAdmissions}
             onAdmitStudent={handleAdmitStudent}
             onAdmitAllStudents={handleAdmitAllStudents}
@@ -2988,6 +2989,7 @@ export default function LiveClassroomPage({
               allowStudentMedia={allowStudentMedia}
               allowStudentVoiceNotes={allowStudentVoiceNotes}
               chatMuted={chatMuted}
+              classId={classId}
               pendingAdmissions={pendingAdmissions}
               onAdmitStudent={handleAdmitStudent}
               onAdmitAllStudents={handleAdmitAllStudents}

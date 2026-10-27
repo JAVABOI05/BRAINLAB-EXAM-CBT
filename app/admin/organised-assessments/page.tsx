@@ -6,6 +6,8 @@ import { supabase } from "../../lib/supabase";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
 import "../admin.css";
+import DifficultySlider from "../../components/DifficultySlider";
+import type { DifficultyAllocationResult } from "../../lib/difficultyEngine";
 
 type Organisation = { id: string; name: string; status: string };
 type Subject = { name: string; question_count: number; categories: string[] };
@@ -34,6 +36,7 @@ export default function OrganisedAssessmentsAdminPage() {
   const [saving,setSaving] = useState(false);
   const [error,setError] = useState("");
   const [message,setMessage] = useState("");
+  const [difficultyAllocation, setDifficultyAllocation] = useState<DifficultyAllocationResult | null>(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -72,6 +75,10 @@ export default function OrganisedAssessmentsAdminPage() {
     if(kind==="organisation_quiz" && !organisationId){setError("Choose an organisation for an organisation quiz.");return;}
     if(!selectedSubjects.length){setError("Choose at least one question-bank subject.");return;}
     if(endsAt && startsAt && new Date(endsAt)<=new Date(startsAt)){setError("End time must be later than start time.");return;}
+    if(difficultyAllocation && difficultyAllocation.policyApplied === "strict" && !difficultyAllocation.ok){
+      setError(difficultyAllocation.errorMessage || "Strict difficulty distribution requirements cannot be satisfied.");
+      return;
+    }
     setSaving(true);
     try {
       const {data:auth,error:authError}=await supabase.auth.getUser();
@@ -120,6 +127,12 @@ export default function OrganisedAssessmentsAdminPage() {
         <fieldset className="mt-4"><legend className="admin-label">Question subjects</legend><div className="grid grid-cols-2 gap-2">{subjects.map((s)=><label key={s.name} className="flex gap-2 rounded border p-2 text-sm"><input type="checkbox" checked={selectedSubjects.includes(s.name)} onChange={(e)=>setSelectedSubjects((old)=>e.target.checked?[...old,s.name]:old.filter((x)=>x!==s.name))}/><span>{s.name} ({s.question_count})</span></label>)}</div></fieldset>
         <label className="admin-label">Categories (optional, comma separated)</label><input className="admin-input" value={categories} onChange={(e)=>setCategories(e.target.value)} placeholder="e.g. algebra, geometry"/>
         <label className="admin-label">Question count</label><input className="admin-input" type="number" min={1} max={500} value={questionCount} onChange={(e)=>setQuestionCount(Number(e.target.value)||1)}/>
+        <div className="mt-4 mb-2">
+          <DifficultySlider
+            totalQuestions={Math.min(500, Math.max(1, questionCount))}
+            onChange={setDifficultyAllocation}
+          />
+        </div>
         <label className="admin-label">Duration (minutes; 0 = untimed)</label><input className="admin-input" type="number" min={0} max={480} value={durationMinutes} onChange={(e)=>setDurationMinutes(Number(e.target.value)||0)}/>
         <label className="admin-label">Maximum attempts</label><input className="admin-input" type="number" min={1} max={100} value={maxAttempts} onChange={(e)=>setMaxAttempts(Number(e.target.value)||1)}/>
         <label className="admin-label">Start time (optional)</label><input className="admin-input" type="datetime-local" value={startsAt} onChange={(e)=>setStartsAt(e.target.value)}/>

@@ -3,6 +3,112 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { getLiveClassroomConfig, logAdminAction } from "@/app/lib/platformConfig";
 
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const classId = searchParams.get("classId");
+    const format = searchParams.get("format");
+
+    if (!classId) {
+      return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
+    }
+
+    const supabase = getSupabaseServerClient();
+    const config = await getLiveClassroomConfig();
+
+    // 1. Check if user is staff/tutor/admin or student checking own status
+    const { data: adminRole } = await supabase
+      .from("admin_user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const isAuthorizedStaff =
+      (adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role)) ||
+      (user.email && config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase()));
+
+    // 2. Fetch attendance records from database
+    const { data: records, error } = await supabase
+      .from("class_attendance_records")
+      .select("*")
+      .eq("class_id", classId)
+      .order("join_time", { ascending: true });
+
+    let attendanceList: Array<any> = records || [];
+
+    // 3. Fallback: Check exam_config if table returned empty
+    if (attendanceList.length === 0) {
+      const { data: row } = await supabase
+        .from("exam_config")
+        .select("config_value")
+        .eq("config_key", `classroom_attendance_${classId}`)
+        .maybeSingle();
+
+      if (row && Array.isArray(row.config_value)) {
+        attendanceList = row.config_value;
+      }
+    }
+
+    // Filter to own records if not staff
+    if (!isAuthorizedStaff) {
+      attendanceList = attendanceList.filter((r) => r.user_id === user.id);
+    }
+
+    // 4. Return CSV export if format=csv
+    if (format === "csv") {
+      if (!isAuthorizedStaff) {
+        return NextResponse.json({ error: "Only instructors and administrators can export classroom attendance reports." }, { status: 403 });
+      }
+
+      const threshold = config.attendance_threshold_percent || 60;
+      const csvHeader = "Learner Name,Email / User ID,Role,Join Time,Leave Time,Duration (Mins),Attendance %,Status,Accredited (>=60%)\n";
+      const csvRows = attendanceList.map((r) => {
+        const name = (r.student_name || r.name || "Learner").replace(/"/g, '""');
+        const email = (r.student_email || r.user_id || "N/A").replace(/"/g, '""');
+        const role = r.role || "student";
+        const join = r.join_time ? new Date(r.join_time).toLocaleString() : "N/A";
+        const leave = r.leave_time ? new Date(r.leave_time).toLocaleString() : "In Session";
+        const mins = r.duration_seconds ? Math.round(r.duration_seconds / 60) : 0;
+        const pct = r.attendance_percentage ?? (mins >= 30 ? 100 : Math.round((mins / 45) * 100));
+        const status = r.attendance_status || (pct >= threshold ? "present" : "partial");
+        const accredited = pct >= threshold ? "YES" : "NO";
+        return `"${name}","${email}","${role}","${join}","${leave}",${mins},${pct}%,"${status}","${accredited}"`;
+      });
+
+      return new NextResponse(csvHeader + csvRows.join("\n"), {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="attendance-${classId}.csv"`,
+        },
+      });
+    }
+
+    const threshold = config.attendance_threshold_percent || 60;
+    const qualifiedCount = attendanceList.filter((r) => (r.attendance_percentage ?? 0) >= threshold).length;
+
+    return NextResponse.json({
+      success: true,
+      classId,
+      totalAttendees: attendanceList.length,
+      qualifiedAttendees: qualifiedCount,
+      thresholdPercent: threshold,
+      records: attendanceList,
+    });
+  } catch (err: unknown) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);

@@ -82,6 +82,7 @@ export interface ClassroomSidebarProps {
   allowStudentMedia?: boolean;
   allowStudentVoiceNotes?: boolean;
   chatMuted?: boolean;
+  classId?: string;
   pendingAdmissions?: { studentId: string; studentName: string; studentEmail?: string }[];
   onAdmitStudent?: (studentId: string, allowed?: boolean) => Promise<void>;
   onAdmitAllStudents?: () => Promise<void>;
@@ -129,6 +130,7 @@ export default function ClassroomSidebar({
   allowStudentMedia = false,
   allowStudentVoiceNotes = true,
   chatMuted = false,
+  classId,
   pendingAdmissions = [],
   onAdmitStudent,
   onAdmitAllStudents,
@@ -736,6 +738,21 @@ export default function ClassroomSidebar({
                 )}
               </div>
             </div>
+
+            {/* Attendance CSV Export (for instructors and moderators) */}
+            {isTutorOrModerator && (
+              <div className="pt-2 border-t border-slate-800">
+                <a
+                  href={`/api/classroom/attendance?classId=${classId || "BL-LIVE-101"}&format=csv`}
+                  download={`attendance-${classId || "classroom"}.csv`}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/50 py-2.5 px-3 text-xs font-bold text-emerald-300 transition active-press"
+                  title="Download verified attendance CSV log with timestamps and accreditation qualification"
+                >
+                  <span>📥</span>
+                  <span>Export Attendance CSV</span>
+                </a>
+              </div>
+            )}
           </div>
         );
       })()}

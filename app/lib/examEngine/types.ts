@@ -1,5 +1,11 @@
 // Master Types for BrainLab CBT Examination & Marking Engine
 
+import type {
+  ShortagePolicy,
+  buildDifficultyAuditPayload,
+  DifficultyAllocationResult,
+} from "../difficultyEngine";
+
 export type OptionLetter = "A" | "B" | "C" | "D" | "E";
 
 export type ExamConversionFormula = "direct" | "english_90_to_100";
@@ -39,6 +45,8 @@ export type ExamBlueprint = {
   sections_config: SectionConfig[];
   reading_text_config?: ReadingTextConfig;
   topic_coverage_rule?: TopicCoverageRule;
+  difficulty_slider?: number; // 0 to 100
+  difficulty_shortage_policy?: ShortagePolicy;
   is_active: boolean;
   version: number;
   created_at?: string;
@@ -125,6 +133,7 @@ export type AttemptSnapshot = {
     >;
     question_marks: Record<number, number>;
   };
+  difficulty_audit?: ReturnType<typeof buildDifficultyAuditPayload>;
   created_at: string;
 };
 

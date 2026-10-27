@@ -10,13 +10,13 @@ import {
   type UserGamificationProfile,
 } from "../lib/gamification";
 
-type OptionKey = "A" | "B" | "C" | "D";
+type OptionKey = "A" | "B" | "C" | "D" | "E";
 
 interface ChallengeQuestion {
   id: string;
   subject: string;
   question: string;
-  options: Record<OptionKey, string>;
+  options: Record<string, string>;
   correctAnswer: OptionKey;
   explanation: string;
 }
@@ -709,7 +709,7 @@ export default function ChallengeArenaPage() {
 
                 {/* Options List */}
                 <div className="space-y-3">
-                  {(["A", "B", "C", "D"] as OptionKey[]).map((optKey) => {
+                  {(Object.keys(questions[currentIndex].options).sort() as OptionKey[]).map((optKey) => {
                     const isSelected = userAnswers[questions[currentIndex].id] === optKey;
                     return (
                       <button
@@ -895,7 +895,7 @@ export default function ChallengeArenaPage() {
                       </h4>
 
                       <div className="grid gap-2 sm:grid-cols-2 pt-2">
-                        {(["A", "B", "C", "D"] as OptionKey[]).map((opt) => {
+                        {(Object.keys(q.options).sort() as OptionKey[]).map((opt) => {
                           const isKeyCorrect = opt === q.correctAnswer;
                           const isStudentSelected = opt === studentAnswer;
                           return (

@@ -212,6 +212,16 @@ function NavIcon({ name }: { name: string }) {
           <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
         </svg>
       );
+    case "competition":
+      return (
+        <svg {...common}>
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+          <path d="M4 22h16" />
+          <path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34" />
+          <path d="M6 4h12v7a6 6 0 0 1-12 0V4Z" />
+        </svg>
+      );
     case "settings":
       return (
         <svg {...common}>
@@ -290,6 +300,7 @@ const GROUPS: Group[] = [
     label: "Academy & Content",
     items: [
       { id: "questions", label: "Question Bank", href: "/admin/questions/manage", description: "Questions and question-bank maintenance", icon: "questions", visible: (_u, a) => a["cbt.questions.manage"] === true },
+      { id: "difficulty-model", label: "Difficulty Model", href: "/admin/questions/difficulty-model", description: "Formal difficulty slider, interpolation & shortage policies", icon: "config", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "blueprints", label: "Exam Blueprints", href: "/admin/questions/blueprints", description: "UTME English & subject blueprints and quotas", icon: "blueprints", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "high-yield", label: "High-Yield Topics", href: "/admin/questions/high-yield", description: "Syllabus topic quotas and shortage alerts", icon: "high-yield", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "duplicates", label: "Duplicate Questions", href: "/admin/questions/duplicates", description: "Intelligent duplicate detection and safe archival", icon: "duplicates", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
@@ -303,6 +314,7 @@ const GROUPS: Group[] = [
       { id: "schools", label: "Schools & Organisations", href: "/admin/schools", description: "Institutional CBT and school access", icon: "schools", visible: (u, a) => a["institution.manage"] === true || platformAdmin(u) },
       { id: "classes", label: "Classes", href: "/admin/classroom", description: "Classroom governance and rules", icon: "classes", visible: (u, a) => a["institution.manage"] === true || a["learning.content.manage"] === true || platformAdmin(u) },
       { id: "moderation", label: "Community Moderation", href: "/admin/moderation", description: "Community safety and moderation", icon: "moderation", visible: (_u, a) => a["community.moderate"] === true },
+      { id: "competitions", label: "Competition Arena", href: "/admin/competitions", description: "RBAC, dedicated question banks, battles & moderation", icon: "competition", visible: (u, a) => u.role === "super_admin" || u.role === "platform_admin" || u.role === "competition_admin" || u.role === "competition_moderator" || u.role === "competition_host" || a["competition.view"] === true },
     ],
   },
   {
@@ -415,6 +427,7 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
     "/admin/questions/blueprints": "Examination Blueprints",
     "/admin/questions/high-yield": "High-Yield Topics",
     "/admin/questions/duplicates": "Duplicate Questions",
+    "/admin/competitions": "Competition Arena & Question Banks",
     "/admin/sessions": "Exam Sessions",
     "/admin/codes": "Access Codes",
     "/admin/results": "Results & Corrections",

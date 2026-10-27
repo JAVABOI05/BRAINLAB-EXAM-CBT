@@ -54,6 +54,22 @@ function formatTime(totalSeconds: number) {
     .join(":");
 }
 
+function highlightPassageText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase() ? (
+      <mark key={i} className="bg-amber-300 dark:bg-amber-400 text-slate-950 font-bold px-0.5 rounded">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
+
 export default function ExamPage() {
   const router = useRouter();
 
@@ -82,6 +98,9 @@ export default function ExamPage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showMarksInExam, setShowMarksInExam] = useState(true);
   const [showTopicInExam, setShowTopicInExam] = useState(true);
+  const [passageFontSize, setPassageFontSize] = useState<number>(15);
+  const [passageSearchQuery, setPassageSearchQuery] = useState<string>("");
+  const [mobilePassageOpen, setMobilePassageOpen] = useState<boolean>(false);
 
 
   // Track network connectivity and auto-retry sync when online
@@ -419,6 +438,22 @@ export default function ExamPage() {
       .map((q, index) => ({ ...q, originalIndex: index }))
       .filter((q) => q.subject === currentSubject);
   }, [questions, currentSubject]);
+
+  const currentPassageCluster = useMemo(() => {
+    if (!currentQuestion?.passage_text) return [];
+    return currentSubjectQuestions.filter(
+      (q) =>
+        (q.passage_id && q.passage_id === currentQuestion.passage_id) ||
+        (q.passage_title && q.passage_title === currentQuestion.passage_title) ||
+        (q.passage_text && q.passage_text === currentQuestion.passage_text)
+    );
+  }, [currentSubjectQuestions, currentQuestion]);
+
+  const passageQuestionNumber = useMemo(() => {
+    if (currentPassageCluster.length === 0) return 0;
+    const idx = currentPassageCluster.findIndex((q) => q.id === currentQuestion?.id);
+    return idx >= 0 ? idx + 1 : 1;
+  }, [currentPassageCluster, currentQuestion]);
 
   const handleStartExam = async (overrideCandidate?: Candidate) => {
     const activeCand = overrideCandidate || candidate;
@@ -848,113 +883,329 @@ export default function ExamPage() {
               </p>
             </div>
 
-            {currentQuestion.section === "comprehension" &&
-              currentQuestion.passage_text && (
-                <div className="exam-passage mb-6">
-                  {currentQuestion.passage_title && (
-                    <h2 className="exam-passage-title">
-                      {currentQuestion.passage_title}
-                    </h2>
-                  )}
-                  <p className="exam-passage-text">{currentQuestion.passage_text}</p>
+            {/* Mobile Passage Button (for Comprehension, Cloze & Reading Texts) */}
+            {currentQuestion.passage_text && (
+              <button
+                type="button"
+                onClick={() => setMobilePassageOpen(true)}
+                className="lg:hidden w-full mb-5 flex items-center justify-between rounded-2xl border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/60 p-3.5 text-left text-xs font-bold text-sky-900 dark:text-sky-200 shadow-xs active:scale-[0.99] transition hover:bg-sky-100"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">📖</span>
+                  <div>
+                    <p className="font-black text-blue-900 dark:text-cyan-300 text-sm">
+                      {currentQuestion.passage_title || "View Reading Passage"}
+                    </p>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                      {currentQuestion.section === "reading_text"
+                        ? "Novel: The Lekki Headmaster"
+                        : currentQuestion.section === "cloze"
+                        ? "Cloze Passage"
+                        : "Reading Comprehension"}
+                      {currentPassageCluster.length > 0 && ` • Question ${passageQuestionNumber} of ${currentPassageCluster.length}`}
+                    </p>
+                  </div>
                 </div>
-              )}
+                <span className="rounded-xl bg-blue-700 hover:bg-blue-800 px-3 py-1.5 text-xs font-bold text-white shadow-xs">
+                  Read Passage →
+                </span>
+              </button>
+            )}
 
-            <div className="exam-soft-card mb-6 p-5">
-              <p className="exam-question-text">
-                {currentIndex + 1}. {cleanQuestionText(currentQuestion.question)}
-              </p>
-              {safeImageUrl(currentQuestion.question_image_url) && (
-                <div className="relative mt-4 inline-block group max-w-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={safeImageUrl(currentQuestion.question_image_url)!}
-                    alt={currentQuestion.question_image_alt?.trim() || "Question illustration diagram"}
-                    loading="lazy"
-                    onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
-                    className="block max-h-96 w-auto max-w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 object-contain shadow-sm cursor-zoom-in transition hover:opacity-95"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 px-3 py-1 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
-                  >
-                    <span>🔍 Click diagram to enlarge</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Split Screen Layout when Passage is Present */}
+            {currentQuestion.passage_text ? (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column: Dedicated Passage Desk */}
+                <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col rounded-2xl border border-sky-200 dark:border-sky-900 bg-sky-50/70 dark:bg-sky-950/40 p-5 h-[calc(100vh-250px)] max-h-[750px] overflow-hidden sticky top-24 shadow-xs">
+                  {/* Passage Desk Header */}
+                  <div className="border-b border-sky-200 dark:border-sky-800/80 pb-3 mb-3 shrink-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-md bg-blue-700 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                          {currentQuestion.section === "reading_text"
+                            ? "📖 UTME Novel"
+                            : currentQuestion.section === "cloze"
+                            ? "🧩 Cloze Passage"
+                            : "📜 Comprehension"}
+                        </span>
+                        {currentPassageCluster.length > 0 && (
+                          <span className="rounded-md bg-sky-200 dark:bg-sky-900 px-2 py-0.5 text-[10px] font-bold text-sky-900 dark:text-sky-200">
+                            Q{passageQuestionNumber} of {currentPassageCluster.length} on this passage
+                          </span>
+                        )}
+                      </div>
 
-            <div className="space-y-3">
-              {[
-                { key: "A" as const, value: optionA, imageUrl: currentQuestion.option_a_image_url, imageAlt: currentQuestion.option_a_image_alt },
-                { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
-                { key: "C" as const, value: optionC, imageUrl: currentQuestion.option_c_image_url, imageAlt: currentQuestion.option_c_image_alt },
-                { key: "D" as const, value: optionD, imageUrl: currentQuestion.option_d_image_url, imageAlt: currentQuestion.option_d_image_alt },
-                { key: "E" as const, value: optionE, imageUrl: currentQuestion.option_e_image_url, imageAlt: currentQuestion.option_e_image_alt },
-              ]
-                .filter((opt) => Boolean(opt.value?.trim()) || Boolean(safeImageUrl(opt.imageUrl)))
-                .map((option) => (
-                <label
-                  key={option.key}
-                  className={`exam-option block ${
-                    selectedAnswer === option.key ? "selected" : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="radio"
-                      name={`question-${currentQuestion.id}`}
-                      checked={selectedAnswer === option.key}
-                      onChange={() => handleSelectAnswer(option.key)}
-                      className="mt-1"
-                    />
-                    <div>
-                      <span className="exam-option-letter">{option.key}.</span>
-                      <span>{option.value}</span>
-                      {safeImageUrl(option.imageUrl) && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={safeImageUrl(option.imageUrl)!}
-                          alt={option.imageAlt?.trim() || `Option ${option.key} illustration`}
-                          loading="lazy"
-                          className="mt-2 block max-h-64 w-auto max-w-full rounded-lg object-contain"
-                        />
+                      {/* Text Size Controls */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mr-1">Zoom:</span>
+                        <button
+                          type="button"
+                          onClick={() => setPassageFontSize((prev) => Math.max(13, prev - 1))}
+                          className="h-7 w-7 rounded-lg border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-100 dark:hover:bg-slate-700 transition"
+                          title="Decrease text size"
+                        >
+                          A-
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPassageFontSize(15)}
+                          className="h-7 px-2 rounded-lg border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-100 dark:hover:bg-slate-700 transition"
+                          title="Reset text size"
+                        >
+                          100%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPassageFontSize((prev) => Math.min(22, prev + 1))}
+                          className="h-7 w-7 rounded-lg border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-sky-100 dark:hover:bg-slate-700 transition"
+                          title="Increase text size"
+                        >
+                          A+
+                        </button>
+                      </div>
+                    </div>
+
+                    <h3 className="mt-2 text-base font-black text-sky-950 dark:text-sky-100 flex items-center justify-between">
+                      <span>{currentQuestion.passage_title || "Reading Passage"}</span>
+                      {currentQuestion.reading_text_id && (
+                        <span className="text-xs font-semibold text-sky-700 dark:text-cyan-400">
+                          (The Lekki Headmaster)
+                        </span>
+                      )}
+                    </h3>
+
+                    {/* In-Passage Search */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Search keywords inside passage…"
+                        value={passageSearchQuery}
+                        onChange={(e) => setPassageSearchQuery(e.target.value)}
+                        className="flex-1 rounded-xl border border-sky-200 dark:border-sky-800 bg-white dark:bg-slate-900 px-3 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                      />
+                      {passageSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setPassageSearchQuery("")}
+                          className="text-xs font-bold text-slate-400 hover:text-slate-600 px-1"
+                        >
+                          ✕
+                        </button>
                       )}
                     </div>
                   </div>
-                </label>
-              ))}
-            </div>
 
-            <div className="mt-8 flex items-center justify-between gap-3 sm:gap-4">
-              <button
-                onClick={handlePrevious}
-                disabled={currentIndex === 0}
-                className="exam-nav-btn border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
-              >
-                ← Previous
-              </button>
+                  {/* Scrollable Passage Content */}
+                  <div
+                    className="flex-1 overflow-y-auto pr-3 space-y-3.5 font-serif leading-relaxed text-slate-900 dark:text-slate-100"
+                    style={{ fontSize: `${passageFontSize}px` }}
+                  >
+                    {currentQuestion.passage_text.split("\n\n").map((para, idx) => (
+                      <p key={idx} className="indent-5">
+                        {highlightPassageText(para, passageSearchQuery)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
 
-              <button
-                onClick={toggleFlag}
-                className={`exam-nav-btn active:scale-95 transition-all ${
-                  currentIsFlagged
-                    ? "bg-amber-400 text-slate-950 font-black shadow-sm"
-                    : "border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
-                }`}
-              >
-                {currentIsFlagged ? "⚐ Unflag" : "⚐ Flag"}
-              </button>
+                {/* Right Column: Question & Options */}
+                <div className="lg:col-span-6 xl:col-span-5 flex flex-col">
+                  <div className="exam-soft-card mb-6 p-5">
+                    <p className="exam-question-text">
+                      {currentIndex + 1}. {cleanQuestionText(currentQuestion.question)}
+                    </p>
+                    {safeImageUrl(currentQuestion.question_image_url) && (
+                      <div className="relative mt-4 inline-block group max-w-full">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={safeImageUrl(currentQuestion.question_image_url)!}
+                          alt={currentQuestion.question_image_alt?.trim() || "Question illustration diagram"}
+                          loading="lazy"
+                          onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
+                          className="block max-h-96 w-auto max-w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 object-contain shadow-sm cursor-zoom-in transition hover:opacity-95"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 px-3 py-1 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
+                        >
+                          <span>🔍 Click diagram to enlarge</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-              <button
-                onClick={handleNext}
-                disabled={currentIndex === totalQuestions - 1}
-                className="exam-nav-btn bg-[#012153] hover:bg-[#071c43] text-white shadow-md shadow-blue-950/20 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
-              >
-                Next →
-              </button>
-            </div>
+                  <div className="space-y-3">
+                    {[
+                      { key: "A" as const, value: optionA, imageUrl: currentQuestion.option_a_image_url, imageAlt: currentQuestion.option_a_image_alt },
+                      { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
+                      { key: "C" as const, value: optionC, imageUrl: currentQuestion.option_c_image_url, imageAlt: currentQuestion.option_c_image_alt },
+                      { key: "D" as const, value: optionD, imageUrl: currentQuestion.option_d_image_url, imageAlt: currentQuestion.option_d_image_alt },
+                      { key: "E" as const, value: optionE, imageUrl: currentQuestion.option_e_image_url, imageAlt: currentQuestion.option_e_image_alt },
+                    ]
+                      .filter((opt) => Boolean(opt.value?.trim()) || Boolean(safeImageUrl(opt.imageUrl)))
+                      .map((option) => (
+                      <label
+                        key={option.key}
+                        className={`exam-option block ${
+                          selectedAnswer === option.key ? "selected" : ""
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="radio"
+                            name={`question-${currentQuestion.id}`}
+                            checked={selectedAnswer === option.key}
+                            onChange={() => handleSelectAnswer(option.key)}
+                            className="mt-1"
+                          />
+                          <div>
+                            <span className="exam-option-letter">{option.key}.</span>
+                            <span>{option.value}</span>
+                            {safeImageUrl(option.imageUrl) && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={safeImageUrl(option.imageUrl)!}
+                                alt={option.imageAlt?.trim() || `Option ${option.key} illustration`}
+                                loading="lazy"
+                                className="mt-2 block max-h-64 w-auto max-w-full rounded-lg object-contain"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="mt-8 flex items-center justify-between gap-3 sm:gap-4">
+                    <button
+                      onClick={handlePrevious}
+                      disabled={currentIndex === 0}
+                      className="exam-nav-btn border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      ← Previous
+                    </button>
+
+                    <button
+                      onClick={toggleFlag}
+                      className={`exam-nav-btn active:scale-95 transition-all ${
+                        currentIsFlagged
+                          ? "bg-amber-400 text-slate-950 font-black shadow-sm"
+                          : "border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
+                      }`}
+                    >
+                      {currentIsFlagged ? "⚐ Unflag" : "⚐ Flag"}
+                    </button>
+
+                    <button
+                      onClick={handleNext}
+                      disabled={currentIndex === totalQuestions - 1}
+                      className="exam-nav-btn bg-[#012153] hover:bg-[#071c43] text-white shadow-md shadow-blue-950/20 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="exam-soft-card mb-6 p-5">
+                  <p className="exam-question-text">
+                    {currentIndex + 1}. {cleanQuestionText(currentQuestion.question)}
+                  </p>
+                  {safeImageUrl(currentQuestion.question_image_url) && (
+                    <div className="relative mt-4 inline-block group max-w-full">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={safeImageUrl(currentQuestion.question_image_url)!}
+                        alt={currentQuestion.question_image_alt?.trim() || "Question illustration diagram"}
+                        loading="lazy"
+                        onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
+                        className="block max-h-96 w-auto max-w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 object-contain shadow-sm cursor-zoom-in transition hover:opacity-95"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setZoomImageUrl(safeImageUrl(currentQuestion.question_image_url))}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 px-3 py-1 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
+                      >
+                        <span>🔍 Click diagram to enlarge</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {[
+                    { key: "A" as const, value: optionA, imageUrl: currentQuestion.option_a_image_url, imageAlt: currentQuestion.option_a_image_alt },
+                    { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
+                    { key: "C" as const, value: optionC, imageUrl: currentQuestion.option_c_image_url, imageAlt: currentQuestion.option_c_image_alt },
+                    { key: "D" as const, value: optionD, imageUrl: currentQuestion.option_d_image_url, imageAlt: currentQuestion.option_d_image_alt },
+                    { key: "E" as const, value: optionE, imageUrl: currentQuestion.option_e_image_url, imageAlt: currentQuestion.option_e_image_alt },
+                  ]
+                    .filter((opt) => Boolean(opt.value?.trim()) || Boolean(safeImageUrl(opt.imageUrl)))
+                    .map((option) => (
+                    <label
+                      key={option.key}
+                      className={`exam-option block ${
+                        selectedAnswer === option.key ? "selected" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name={`question-${currentQuestion.id}`}
+                          checked={selectedAnswer === option.key}
+                          onChange={() => handleSelectAnswer(option.key)}
+                          className="mt-1"
+                        />
+                        <div>
+                          <span className="exam-option-letter">{option.key}.</span>
+                          <span>{option.value}</span>
+                          {safeImageUrl(option.imageUrl) && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={safeImageUrl(option.imageUrl)!}
+                              alt={option.imageAlt?.trim() || `Option ${option.key} illustration`}
+                              loading="lazy"
+                              className="mt-2 block max-h-64 w-auto max-w-full rounded-lg object-contain"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="mt-8 flex items-center justify-between gap-3 sm:gap-4">
+                  <button
+                    onClick={handlePrevious}
+                    disabled={currentIndex === 0}
+                    className="exam-nav-btn border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    ← Previous
+                  </button>
+
+                  <button
+                    onClick={toggleFlag}
+                    className={`exam-nav-btn active:scale-95 transition-all ${
+                      currentIsFlagged
+                        ? "bg-amber-400 text-slate-950 font-black shadow-sm"
+                        : "border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60"
+                    }`}
+                  >
+                    {currentIsFlagged ? "⚐ Unflag" : "⚐ Flag"}
+                  </button>
+
+                  <button
+                    onClick={handleNext}
+                    disabled={currentIndex === totalQuestions - 1}
+                    className="exam-nav-btn bg-[#012153] hover:bg-[#071c43] text-white shadow-md shadow-blue-950/20 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="exam-card h-fit p-4 lg:sticky lg:top-24">
@@ -1105,6 +1356,97 @@ export default function ExamPage() {
           isOpen={showCalculator}
           onClose={() => setShowCalculator(false)}
         />
+      )}
+
+      {/* Mobile Reading Passage Drawer Modal */}
+      {mobilePassageOpen && currentQuestion?.passage_text && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4 animate-fade-in lg:hidden"
+          onClick={() => setMobilePassageOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg max-h-[85vh] rounded-3xl border border-sky-300 dark:border-sky-800 bg-white dark:bg-slate-900 p-5 shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
+              <div>
+                <span className="rounded-md bg-blue-700 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                  {currentQuestion.section === "reading_text"
+                    ? "The Lekki Headmaster"
+                    : currentQuestion.section === "cloze"
+                    ? "Cloze Passage"
+                    : "Reading Comprehension"}
+                </span>
+                <h3 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                  {currentQuestion.passage_title || "Reading Passage"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobilePassageOpen(false)}
+                className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Font & Search Bar */}
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPassageFontSize((p) => Math.max(13, p - 1))}
+                  className="h-7 w-7 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200"
+                >
+                  A-
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPassageFontSize(15)}
+                  className="h-7 px-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200"
+                >
+                  100%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPassageFontSize((p) => Math.min(22, p + 1))}
+                  className="h-7 w-7 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200"
+                >
+                  A+
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="Search keywords…"
+                value={passageSearchQuery}
+                onChange={(e) => setPassageSearchQuery(e.target.value)}
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-2.5 py-1 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* Passage Content */}
+            <div
+              className="flex-1 overflow-y-auto pr-1 space-y-3 font-serif leading-relaxed text-slate-900 dark:text-slate-100"
+              style={{ fontSize: `${passageFontSize}px` }}
+            >
+              {currentQuestion.passage_text.split("\n\n").map((para, idx) => (
+                <p key={idx} className="indent-4">
+                  {highlightPassageText(para, passageSearchQuery)}
+                </p>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setMobilePassageOpen(false)}
+                className="w-full rounded-xl bg-blue-700 py-2.5 text-xs font-bold text-white shadow-md active:scale-95"
+              >
+                Return to Question Options →
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     {/* High-Resolution Diagram Lightbox Modal */}
       {zoomImageUrl && (

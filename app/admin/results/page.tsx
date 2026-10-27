@@ -57,6 +57,7 @@ export default function AdminResultsPage() {
   const [clearingResults, setClearingResults] = useState(false);
   const [clearingSessions, setClearingSessions] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [dispatchingNotifications, setDispatchingNotifications] = useState(false);
 
   const [selectedResult, setSelectedResult] = useState<ResultRow | null>(null);
   const [answerSheet, setAnswerSheet] = useState<AnswerDetail[]>([]);
@@ -359,6 +360,48 @@ export default function AdminResultsPage() {
     }
   }
 
+  async function handleDispatchNotifications() {
+    const count = filteredResults.length;
+    if (count === 0) {
+      setMessage("No results to dispatch.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Broadcast official result notifications to ${count} candidate(s)? This will send SMS and Email alerts with verification links.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setDispatchingNotifications(true);
+      setMessage("Broadcasting result notifications across channels...");
+
+      const res = await fetch("/api/exam/dispatch-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resultIds: filteredResults.map((r) => r.id),
+          channels: ["sms", "email", "in_app"],
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setMessage(`Dispatch paused: ${data.message || data.error || "Unknown error"}`);
+        return;
+      }
+
+      const s = data.summary;
+      setMessage(
+        `✓ ${data.message} (Dispatched: ${s?.sent ?? 0}, Skipped: ${s?.skipped ?? 0}, Failed: ${s?.failed ?? 0})`
+      );
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Failed to broadcast notifications.");
+    } finally {
+      setDispatchingNotifications(false);
+    }
+  }
+
   function handleLogout() {
     void adminSignOut();
     router.push("/admin/login");
@@ -486,6 +529,15 @@ export default function AdminResultsPage() {
                 className="admin-btn-light"
               >
                 {exporting ? "Exporting..." : "Export CSV"}
+              </button>
+
+              <button
+                onClick={handleDispatchNotifications}
+                disabled={dispatchingNotifications || filteredResults.length === 0}
+                className="admin-btn-primary"
+                style={{ backgroundColor: "#059669", borderColor: "#059669" }}
+              >
+                {dispatchingNotifications ? "Broadcasting..." : "📢 Broadcast Results (SMS/Email)"}
               </button>
 
               <button
