@@ -43,25 +43,34 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const isAuthorized =
-      adminRole &&
-      ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminRole.role);
+    const body = await request.json();
+    const requestedSubjectId = body.subject_id ? String(body.subject_id) : null;
+    const requestedTutorId = body.tutor_id ? String(body.tutor_id) : user.id;
+    const isSuperAdmin = adminRole?.role === "super_admin";
+    const isPlatformAdmin = adminRole?.role === "platform_admin";
 
-    const { data: memberships } = await supabase
-      .from("learning_subject_memberships")
-      .select("subject_id")
-      .eq("user_id", user.id);
-
-    const hasTeachingAssignment = (memberships && memberships.length > 0) || isAuthorized;
-
-    if (!hasTeachingAssignment) {
-      return NextResponse.json(
-        { error: "Forbidden. Only authorized instructors or administrators can create live classes." },
-        { status: 403 }
-      );
+    if (!requestedSubjectId) {
+      return NextResponse.json({ error: "A subject must be selected for every scheduled class." }, { status: 400 });
     }
 
-    const body = await request.json();
+    if (isSuperAdmin || isPlatformAdmin) {
+      if (requestedTutorId !== user.id) {
+        const { data: assignedRole } = await supabase.from("admin_user_roles").select("role").eq("user_id", requestedTutorId).maybeSingle();
+        const { data: subjectAssignment } = await supabase.from("tutor_subject_assignments").select("id").eq("tutor_id", requestedTutorId).eq("subject_id", requestedSubjectId).maybeSingle();
+        if (assignedRole?.role !== "teacher" || !subjectAssignment) {
+          return NextResponse.json({ error: "The selected lead tutor must be a registered tutor assigned to this subject by the Super Admin." }, { status: 400 });
+        }
+      }
+    } else {
+      const { data: subjectAssignment } = await supabase.from("tutor_subject_assignments").select("id").eq("tutor_id", user.id).eq("subject_id", requestedSubjectId).maybeSingle();
+      if (adminRole?.role !== "teacher" || !subjectAssignment) {
+        return NextResponse.json({ error: "You can only schedule classes for subjects assigned to you by the Super Admin." }, { status: 403 });
+      }
+      if (requestedTutorId !== user.id) {
+        return NextResponse.json({ error: "Tutors cannot assign another tutor to a class. Contact the Super Admin." }, { status: 403 });
+      }
+    }
+
     const {
       title,
       description,
@@ -98,7 +107,7 @@ export async function POST(request: NextRequest) {
         description,
         course_id: course_id || null,
         subject_id: subject_id || null,
-        tutor_id: user.id,
+        tutor_id: requestedTutorId,
         class_format,
         status: "scheduled",
         scheduled_start_at,

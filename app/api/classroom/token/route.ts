@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
+    if (adminRole && ["super_admin", "platform_admin", "cbt_admin"].includes(adminRole.role)) {
       isStaff = true;
     }
 
@@ -97,27 +97,10 @@ export async function POST(request: NextRequest) {
         .eq("id", classId)
         .maybeSingle();
 
-      if (dbClass) {
-        liveClass = dbClass as LiveClass;
-      } else {
-        liveClass = {
-          id: classId,
-          title: `BrainLab Live Class Session (${classId.slice(0, 10)})`,
-          description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-          tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
-          status: "scheduled",
-          class_format: "interactive",
-          course_id: null,
-          scheduled_start_at: new Date().toISOString(),
-          duration_minutes: 90,
-          student_mic_enabled: true,
-          student_camera_enabled: false,
-          student_screenshare_enabled: false,
-          student_chat_enabled: true,
-          is_recording_enabled: false,
-          waiting_room_enabled: false,
-        };
+      if (!dbClass) {
+        return NextResponse.json({ error: "Live class not found. Please open a valid scheduled class." }, { status: 404 });
       }
+      liveClass = dbClass as LiveClass;
     }
 
     if (!liveClass) {
@@ -131,10 +114,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Check Room Configuration from Platform Config
+    // 3. Verify class assignment and persistent lifecycle state.
     const roomConfig = config.room_configs?.[classId];
-    const isTutor = isAuthorizedTutor || liveClass.tutor_id === user.id;
+    const { data: extraTutorAssignments } = isOpenStage
+      ? { data: [] as { assignment_role: string }[] }
+      : await supabase.from("live_class_tutors").select("assignment_role").eq("class_id", classId).eq("tutor_id", user.id);
+    const isAssignedTutor = !isOpenStage && (
+      liveClass.tutor_id === user.id || Boolean(extraTutorAssignments?.length)
+    );
+    const isTutor = isOpenStage ? isAuthorizedTutor : (isStaff || isAssignedTutor);
     const isHost = isTutor;
+
+    if (!isOpenStage && ["ended", "completed", "cancelled", "failed"].includes(liveClass.status)) {
+      return NextResponse.json({ error: "This class has ended or is no longer available to join.", classStatus: liveClass.status }, { status: 410 });
+    }
+    if (!isOpenStage && !isHost && liveClass.status !== "live") {
+      return NextResponse.json({
+        error: liveClass.status === "scheduled" || liveClass.status === "draft"
+          ? "Your tutor has not started this class yet."
+          : "This class is not currently available.",
+        notStarted: true,
+        classDetails: { id: liveClass.id, title: liveClass.title, status: liveClass.status, scheduledStartAt: liveClass.scheduled_start_at }
+      }, { status: 403 });
+    }
+    if (!isOpenStage && !isHost && liveClass.status === "live" && liveClass.scheduled_end_at && Date.now() > new Date(liveClass.scheduled_end_at).getTime() + 3 * 60 * 60 * 1000) {
+      return NextResponse.json({ error: "This class session has exceeded its allowed recovery window. Please contact your tutor." }, { status: 410 });
+    }
 
     // 4. Student Host Restriction: Students are never allowed to enter as host or start the class
     if (!isHost) {

@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
     const { data: subRows } = await supabase
       .from("user_subscriptions")
       .select("user_id, plan_id, status, current_period_end, current_period_start, payment_provider, price_paid_kobo");
-    const subMap = new Map<string, any>();
-    (subRows || []).forEach((s: any) => {
+    const subMap = new Map<string, { user_id: string; plan_id: string | null; status: string | null; current_period_end: string | null; payment_provider: string | null }>();
+    (subRows || []).forEach((s) => {
       if (s.user_id) subMap.set(s.user_id, s);
     });
 
@@ -57,14 +57,14 @@ export async function GET(request: NextRequest) {
     const { data: gamificationRows } = await supabase
       .from("user_gamification_profiles")
       .select("user_id, xp, streak_days, current_level");
-    const gamificationMap = new Map<string, any>();
-    (gamificationRows || []).forEach((g: any) => {
+    const gamificationMap = new Map<string, { user_id: string; xp: number | null; streak_days: number | null; current_level: number | null }>();
+    (gamificationRows || []).forEach((g) => {
       if (g.user_id) gamificationMap.set(g.user_id, g);
     });
 
     // Filter and map candidate records
     const candidates = users
-      .filter((u: any) => {
+      .filter((u) => {
         // Exclude system administrators from candidate directory
         const isStaff = adminMap.has(u.id);
         if (isStaff) return false;
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
 
         return true;
       })
-      .map((u: any) => {
+      .map((u) => {
         const meta = (u.user_metadata || {}) as JsonRecord;
         const sub = subMap.get(u.id);
         const gamification = gamificationMap.get(u.id);
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
       });
 
     // Sort by latest created first
-    candidates.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    candidates.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Paging
     const total = candidates.length;
@@ -146,12 +146,12 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
 
     // Summary statistics
-    const activeSubscribersCount = users.filter((u: any) => {
+    const activeSubscribersCount = users.filter((u) => {
       const sub = subMap.get(u.id);
       return sub && sub.status === "active" && sub.plan_id !== "free";
     }).length;
 
-    const suspendedCount = users.filter((u: any) => {
+    const suspendedCount = users.filter((u) => {
       const meta = (u.user_metadata || {}) as JsonRecord;
       return meta.is_suspended === true || (u.banned_until && new Date(u.banned_until) > new Date());
     }).length;

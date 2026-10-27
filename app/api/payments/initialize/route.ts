@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       reference,
       planId: plan.id,
       userId: user.id,
-      provider: selectedProvider.name as any,
+      provider: selectedProvider.name as "paystack" | "flutterwave" | "bachs" | "bank_transfer",
       couponCode: couponCode || undefined,
       callbackUrl: callbackUrl || defaultCallback,
       metadata: {

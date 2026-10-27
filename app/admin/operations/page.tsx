@@ -173,6 +173,36 @@ export default function InstitutionalOperationsPage() {
   const [flaggedQueue, setFlaggedQueue] = useState<FlaggedItem[]>(INITIAL_FLAGGED);
   const [resolvedCount, setResolvedCount] = useState(188);
 
+
+
+  // Real Live Session Fetcher
+  const fetchLiveSessions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/sessions/live");
+      const data = await res.json();
+      if (res.ok && data.ok && Array.isArray(data.sessions) && data.sessions.length > 0) {
+        setSessions(
+          data.sessions.map((s) => ({
+            id: s.id,
+            candidate_name: s.candidate_name,
+            hub_location: s.access_code ? `Code: ${s.access_code}` : "Direct Online Candidate",
+            subject_combination: s.subject || "Full CBT Assessment",
+            progress_percent: s.status === "completed" ? 100 : 65,
+            questions_answered: s.status === "completed" ? 180 : 120,
+            total_questions: 180,
+            time_left_formatted: s.time_left_formatted || "00:00:00",
+            network_state: "online",
+            network_carrier: "Edge Telemetry",
+            tab_switch_count: s.tab_switch_count || 0,
+            started_at: new Date(s.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }))
+        );
+      }
+    } catch {
+      // Fallback to initial
+    }
+  }, []);
+
   useEffect(() => {
     async function init() {
       try {
@@ -184,11 +214,8 @@ export default function InstitutionalOperationsPage() {
         setAdminUser(admin);
 
         // Fetch live metrics from database if available
-        const { data: dbCodes } = await supabase.from("access_codes").select("id", { count: "exact", head: true });
-        const { data: dbQuestions } = await supabase.from("questions").select("id", { count: "exact", head: true });
-        if (dbQuestions) {
-          // Keep health synchronized
-        }
+        await supabase.from("access_codes").select("id", { count: "exact", head: true });
+        await supabase.from("questions").select("id", { count: "exact", head: true });
         await fetchLiveSessions();
       } catch {
         router.replace("/admin/login?reason=error");
@@ -197,35 +224,7 @@ export default function InstitutionalOperationsPage() {
       }
     }
     void init();
-  }, [router]);
-
-  // Real Live Session Fetcher
-  const fetchLiveSessions = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/sessions/live");
-      const data = await res.json();
-      if (res.ok && data.ok && Array.isArray(data.sessions) && data.sessions.length > 0) {
-        setSessions(
-          data.sessions.map((s: any) => ({
-            id: s.id,
-            candidate_name: s.candidate_name,
-            hub_location: s.access_code ? `Code: ${s.access_code}` : "Direct Online Candidate",
-            subject_combination: s.subject || "Full CBT Assessment",
-            progress_percent: s.status === "completed" ? 100 : 65,
-            questions_answered: s.status === "completed" ? 180 : 120,
-            total_questions: 180,
-            time_left_formatted: s.time_left_formatted || "00:00:00",
-            network_state: (s.status === "completed" ? "online" : "online") as any,
-            network_carrier: "Edge Telemetry",
-            tab_switch_count: s.tab_switch_count || 0,
-            started_at: new Date(s.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          }))
-        );
-      }
-    } catch {
-      // Fallback to initial
-    }
-  }, []);
+  }, [router, fetchLiveSessions]);
 
   // Session Proctoring Real API Actions
   const handleForceSync = useCallback(async (sessionId: string) => {
