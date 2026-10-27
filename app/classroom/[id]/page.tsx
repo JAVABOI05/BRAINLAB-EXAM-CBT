@@ -2420,7 +2420,7 @@ export default function LiveClassroomPage({
                   channel={channelRef.current}
                   currentUserName={
                     currentUser?.user_metadata?.full_name ||
-                    currentUser?.email?.split("@")[0] ||
+                    currentUser?.user_metadata?.name ||
                     "Learner"
                   }
                   currentUserId={currentUser?.id}
