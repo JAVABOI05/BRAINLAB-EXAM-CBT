@@ -18,6 +18,7 @@ create index if not exists idx_ai_generations_user_id on public.ai_generations (
 alter table public.ai_generations enable row level security;
 
 -- Policy: Allow inserts from authenticated users or service role
+drop policy if exists "Allow inserts to ai_generations" on public.ai_generations;
 create policy "Allow inserts to ai_generations"
   on public.ai_generations
   for insert

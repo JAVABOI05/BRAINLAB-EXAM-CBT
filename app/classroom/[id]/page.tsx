@@ -346,6 +346,25 @@ export default function LiveClassroomPage({
           }
         });
 
+        // Listen for student hand raises
+        channel.on("broadcast", { event: "participant_hand_raise" }, ({ payload }) => {
+          if (payload?.userId) {
+            setParticipants((prev) =>
+              prev.map((p) => (p.id === payload.userId ? { ...p, isHandRaised: payload.isHandRaised } : p))
+            );
+            if (payload.isHandRaised && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
+              toast.info(`✋ ${payload.userName || "A student"} raised their hand!`);
+            }
+          }
+        });
+
+        // Listen for student whiteboard access requests
+        channel.on("broadcast", { event: "board_access_request" }, ({ payload }) => {
+          if (payload?.userId && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
+            toast.info(`🎨 ${payload.userName || "Student"} requested permission to draw on the board.`);
+          }
+        });
+
         // Pin to Big Screen Broadcast
         channel.on("broadcast", { event: "pin_message" }, ({ payload }) => {
           if (payload?.message) {
@@ -1153,10 +1172,27 @@ export default function LiveClassroomPage({
 
   // 7. Toggle Hand Raise
   const toggleHandRaise = () => {
-    setIsHandRaised(!isHandRaised);
+    const nextState = !isHandRaised;
+    setIsHandRaised(nextState);
     setParticipants((prev) =>
-      prev.map((p) => (p.id === currentUser?.id ? { ...p, isHandRaised: !isHandRaised } : p))
+      prev.map((p) => (p.id === currentUser?.id ? { ...p, isHandRaised: nextState } : p))
     );
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "participant_hand_raise",
+        payload: {
+          userId: currentUser?.id,
+          userName: currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Student",
+          isHandRaised: nextState,
+        },
+      });
+    }
+    if (nextState) {
+      toast.info("Hand raised! The tutor has been notified.");
+    } else {
+      toast.info("Hand lowered.");
+    }
   };
 
   // 8. Reconnect Stream
@@ -1668,10 +1704,21 @@ export default function LiveClassroomPage({
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase text-emerald-400 border border-emerald-500/20 shrink-0">
             Live
           </span>
-          <span className="hidden sm:inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-            <span className="text-slate-400">Room:</span>
+          <div className="hidden sm:inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            <span className="text-slate-400">Code:</span>
             <span className="font-bold text-blue-600 dark:text-blue-400">{classId}</span>
-          </span>
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard.writeText(classId);
+                toast.success(`Class code ${classId} copied to clipboard!`);
+              }}
+              className="ml-1 text-slate-400 hover:text-blue-500 transition"
+              title="Copy Class Code"
+            >
+              📋
+            </button>
+          </div>
           {isTutorOrModerator ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-600 dark:text-amber-300 shadow-2xs">
               <span>👑</span>

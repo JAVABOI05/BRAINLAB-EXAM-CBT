@@ -23,7 +23,19 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // 1. Fetch class details or provision demo/interactive session fallback
+    // Check staff/admin status early so students are not given host permissions
+    let isStaff = false;
+    const { data: adminRole } = await supabase
+      .from("admin_user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
+      isStaff = true;
+    }
+
+    // 1. Fetch class details or provision session fallback
     type LiveClass = {
       id: string;
       tutor_id: string;
@@ -46,20 +58,20 @@ export async function POST(request: NextRequest) {
     };
     let liveClass: LiveClass | null = null;
 
-    if (classId === "demo-class" || classId === "general-stage") {
+    if (classId === "demo-class" || classId === "general-stage" || classId === "BL-LIVE-101") {
       liveClass = {
         id: classId,
-        title: "BrainLab Live Academic Masterclass & Interactive Stage",
+        title: classId === "BL-LIVE-101" ? "BrainLab Live Academic Stage (BL-LIVE-101)" : "BrainLab Live Masterclass & Interactive Stage",
         description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-        tutor_id: user.id,
+        tutor_id: isStaff ? user.id : "brainlab-official-host",
         status: "live",
         class_format: "interactive",
         course_id: null,
         scheduled_start_at: new Date().toISOString(),
         duration_minutes: 90,
         student_mic_enabled: true,
-        student_camera_enabled: true,
-        student_screenshare_enabled: true,
+        student_camera_enabled: false,
+        student_screenshare_enabled: false,
         student_chat_enabled: true,
         is_recording_enabled: false,
         waiting_room_enabled: false,
@@ -79,15 +91,15 @@ export async function POST(request: NextRequest) {
           id: classId,
           title: `BrainLab Live Class Session (${classId.slice(0, 10)})`,
           description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-          tutor_id: user.id,
+          tutor_id: isStaff ? user.id : "brainlab-official-host",
           status: "live",
           class_format: "interactive",
           course_id: null,
           scheduled_start_at: new Date().toISOString(),
           duration_minutes: 90,
           student_mic_enabled: true,
-          student_camera_enabled: true,
-          student_screenshare_enabled: true,
+          student_camera_enabled: false,
+          student_screenshare_enabled: false,
           student_chat_enabled: true,
           is_recording_enabled: false,
           waiting_room_enabled: false,
@@ -108,16 +120,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Determine User Role & Admin status
     const isTutor = liveClass.tutor_id === user.id;
-    let isAdmin = false;
-    const { data: adminRole } = await supabase
-      .from("admin_user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
-      isAdmin = true;
-    }
+    const isAdmin = isStaff;
 
     // 3. Enforce Enrollment & Entitlement Verification
     let isEnrolled = false;

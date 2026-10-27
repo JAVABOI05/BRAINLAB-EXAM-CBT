@@ -118,33 +118,29 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // Verify class ownership or tutor/admin authorization
-    let isAuthorized = false;
-    if (classId === "demo-class" || classId === "general-stage" || classId.startsWith("live-")) {
-      isAuthorized = true;
-    } else {
-      const { data: liveClass } = await supabase
-        .from("live_classes")
-        .select("tutor_id")
-        .eq("id", classId)
-        .maybeSingle();
+    const { data: liveClass } = await supabase
+      .from("live_classes")
+      .select("tutor_id")
+      .eq("id", classId)
+      .maybeSingle();
 
-      const { data: adminRole1 } = await supabase
-        .from("admin_user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    const { data: adminRole1 } = await supabase
+      .from("admin_user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      const { data: adminRole2 } = await supabase
-        .from("admin_users")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
+    const { data: adminRole2 } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-      isAuthorized =
-        Boolean(liveClass && liveClass.tutor_id === user.id) ||
-        Boolean(adminRole1 && ["super_admin", "platform_admin", "teacher", "cbt_admin", "ai_learning_admin"].includes(adminRole1.role)) ||
-        Boolean(adminRole2 && ["super_admin", "platform_admin", "teacher"].includes(adminRole2.role));
-    }
+    const isStaff =
+      Boolean(adminRole1 && ["super_admin", "platform_admin", "teacher", "cbt_admin", "ai_learning_admin"].includes(adminRole1.role)) ||
+      Boolean(adminRole2 && ["super_admin", "platform_admin", "teacher"].includes(adminRole2.role));
+
+    const isAuthorized = isStaff || Boolean(liveClass && liveClass.tutor_id === user.id);
 
     if (!isAuthorized) {
       return NextResponse.json(

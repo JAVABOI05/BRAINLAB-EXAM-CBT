@@ -451,7 +451,7 @@ export default function LearnPage() {
                     </span>
                   </div>
                   <h3 className="mt-3 text-xl font-black text-slate-950">
-                    BrainLab Main Demo Stage
+                    BrainLab Live Academic Stage (BL-LIVE-101)
                   </h3>
                   <p className="mt-1 text-xs text-slate-600 leading-relaxed">
                     General interactive hall with WebRTC low-latency streaming, screen sharing, and student participation.

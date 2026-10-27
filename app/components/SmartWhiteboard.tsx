@@ -808,7 +808,54 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         }`}
       >
         {/* TOP SMART WHITEBOARD TOOLBAR */}
-        <div className="z-20 flex items-center justify-between gap-1.5 border-b border-slate-800 bg-slate-900/95 px-2.5 sm:px-4 py-2 backdrop-blur overflow-x-auto scrollbar-none shrink-0 shadow-md">
+        {!canDraw ? (
+          <div className="z-20 flex items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/95 px-3 sm:px-4 py-2.5 backdrop-blur shrink-0 shadow-md">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="flex items-center gap-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-1 text-xs font-bold text-blue-300">
+                <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+                <span>Live Instructor Board (View Mode)</span>
+              </span>
+              <span className="text-slate-400 font-mono text-xs hidden sm:inline">
+                Page {activePageIndex + 1} of {pages.length}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  channel?.send({
+                    type: "broadcast",
+                    event: "board_access_request",
+                    payload: { userId: currentUserId, userName: currentUserName },
+                  });
+                  toast.info("Drawing permission requested from instructor.");
+                }}
+                className="rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-amber-300 hover:bg-amber-500/25 transition active-press"
+                title="Request drawing permission from the tutor"
+              >
+                ✋ Request Board Access
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700 transition"
+                title="Download current whiteboard page as image"
+              >
+                📥 Save Notes
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700 transition"
+                title="Toggle fullscreen whiteboard presentation"
+              >
+                {isFullscreen ? "Exit Fullscreen" : "⛶ Fullscreen"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="z-20 flex items-center justify-between gap-1.5 border-b border-slate-800 bg-slate-900/95 px-2.5 sm:px-4 py-2 backdrop-blur overflow-x-auto scrollbar-none shrink-0 shadow-md">
           {/* Group 1: Tools */}
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -1152,6 +1199,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             </button>
           </div>
         </div>
+        )}
 
         {/* CANVAS DRAWING SURFACE */}
         <div className={`flex-1 min-h-0 w-full relative overflow-auto ${backgroundMode === "whiteboard" ? "bg-white" : backgroundMode === "lines" ? "bg-[#0b0f19]" : backgroundMode === "grid" ? "bg-[#090d16]" : "bg-[#070b14]"} cursor-crosshair touch-none flex items-center justify-center p-0.5 sm:p-2 md:p-4`}>
