@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import "./corrections.css";
 import Image from "next/image";
+import Link from "next/link";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -231,12 +232,35 @@ export default function CorrectionsPage() {
   const [loading, setLoading] = useState(true);
   const [activeSubject, setActiveSubject] = useState("");
   const [dataIssue, setDataIssue] = useState("");
+  const [lockNotice, setLockNotice] = useState<{
+    title: string;
+    message: string;
+    actionLabel?: string;
+    actionHref?: string;
+  } | null>(null);
 
   useEffect(() => {
     async function loadReleasedCorrections() {
       const settings = await getPublicSettings();
       if (!settings?.show_results) {
-        router.replace("/result");
+        setLockNotice({
+          title: "Results & Corrections Pending Release",
+          message: "Examination scores and question solutions are currently held under Directorate Proctor Review. Please check back once the active testing window concludes.",
+          actionLabel: "← Return to Examination Result",
+          actionHref: "/result",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (settings?.allow_corrections === false) {
+        setLockNotice({
+          title: "Question Corrections Withheld by Proctor",
+          message: "The examination proctor has locked detailed question items, answer options, and step-by-step solutions for this active testing cycle to maintain exam integrity across test centres.",
+          actionLabel: "← Return to Examination Result",
+          actionHref: "/result",
+        });
+        setLoading(false);
         return;
       }
 
@@ -244,14 +268,26 @@ export default function CorrectionsPage() {
       const savedCandidate = localStorage.getItem("candidate");
 
       if (!savedSummary) {
-        router.replace("/result");
+        setLockNotice({
+          title: "No Active Exam Session Found",
+          message: "No recent CBT examination attempt was found in this browser session. If you have already taken an exam, please check your result slip using your registered phone number.",
+          actionLabel: "Check Result Slip",
+          actionHref: "/result",
+        });
+        setLoading(false);
         return;
       }
 
       try {
         const parsedSummary = JSON.parse(savedSummary) as { result_id?: unknown; show_results?: unknown };
         if (typeof parsedSummary.result_id !== "string" || parsedSummary.show_results !== true) {
-          router.replace("/result");
+          setLockNotice({
+            title: "Results Pending Official Release",
+            message: "This examination attempt is currently scheduled for administrative release. Solutions will become accessible as soon as results are published.",
+            actionLabel: "← Return to Examination Result",
+            actionHref: "/result",
+          });
+          setLoading(false);
           return;
         }
         if (savedCandidate) {
@@ -277,7 +313,13 @@ export default function CorrectionsPage() {
         }
 
         if (!items || !Array.isArray(items)) {
-          router.replace("/result");
+          setLockNotice({
+            title: "Corrections Not Available for This Session",
+            message: "The question-by-question items for this examination session could not be retrieved from the server. Your final score remains recorded on your official result slip.",
+            actionLabel: "← Return to Examination Result",
+            actionHref: "/result",
+          });
+          setLoading(false);
           return;
         }
 
@@ -310,7 +352,13 @@ export default function CorrectionsPage() {
         });
         setLoading(false);
       } catch {
-        router.replace("/result");
+        setLockNotice({
+          title: "Could Not Load Question Corrections",
+          message: "An unexpected error occurred while preparing your question solutions. Please return to your result slip and try again.",
+          actionLabel: "← Return to Examination Result",
+          actionHref: "/result",
+        });
+        setLoading(false);
       }
     }
 
@@ -401,6 +449,39 @@ export default function CorrectionsPage() {
         <div className="corrections-shell">
           <div className="empty-state">
             <p className="empty-state-text">Loading corrections...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (lockNotice) {
+    return (
+      <main className="min-h-screen bg-slate-50 dark:bg-[#000814] flex items-center justify-center px-4 py-8">
+        <div className="mx-auto max-w-lg w-full rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-xl text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-3xl">
+            🔒
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            {lockNotice.title}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            {lockNotice.message}
+          </p>
+
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href={lockNotice.actionHref || "/result"}
+              className="inline-flex items-center justify-center rounded-xl bg-[#012153] hover:bg-[#071c43] px-6 py-3 font-bold text-white shadow transition hover:-translate-y-0.5 active:scale-95 text-xs"
+            >
+              {lockNotice.actionLabel || "← Return to Examination Result"}
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-3 font-bold text-slate-700 dark:text-slate-300 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-xs"
+            >
+              Back to Home
+            </Link>
           </div>
         </div>
       </main>
