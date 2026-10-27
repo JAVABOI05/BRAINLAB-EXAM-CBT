@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useId } from "react";
 import Link from "next/link";
+import { supabase } from "@/app/lib/supabase";
 import { getAdminSession, AdminUser } from "@/app/lib/adminAuth";
 import {
   COMPETITION_PERMISSIONS,
@@ -159,6 +160,16 @@ export default function CompetitionArenaAdminPage() {
 
   const searchInputId = useId();
 
+  // Authenticated fetch helper that automatically attaches the admin session Bearer token
+  const authFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = new Headers(init?.headers || {});
+    if (session?.access_token) {
+      headers.set("Authorization", `Bearer ${session.access_token}`);
+    }
+    return fetch(input, { ...init, headers });
+  }, []);
+
   // Load initial session
   useEffect(() => {
     async function init() {
@@ -177,7 +188,7 @@ export default function CompetitionArenaAdminPage() {
 
   const loadCompetitions = async () => {
     try {
-      const res = await fetch("/api/competition/competitions");
+      const res = await authFetch("/api/competition/competitions");
       if (res.ok) {
         const data = await res.json();
         setCompetitions(data.competitions || []);
@@ -189,7 +200,7 @@ export default function CompetitionArenaAdminPage() {
 
   const loadBanks = async () => {
     try {
-      const res = await fetch("/api/competition/banks");
+      const res = await authFetch("/api/competition/banks");
       if (res.ok) {
         const data = await res.json();
         const b = data.banks || [];
@@ -207,7 +218,7 @@ export default function CompetitionArenaAdminPage() {
   const loadBankQuestions = async (bankId: string) => {
     if (!bankId) return;
     try {
-      const res = await fetch(`/api/competition/banks/${bankId}/questions`);
+      const res = await authFetch(`/api/competition/banks/${bankId}/questions`);
       if (res.ok) {
         const data = await res.json();
         setBankQuestions(data.questions || []);
@@ -219,7 +230,7 @@ export default function CompetitionArenaAdminPage() {
 
   const loadModerationCases = async () => {
     try {
-      const res = await fetch("/api/competition/moderation");
+      const res = await authFetch("/api/competition/moderation");
       if (res.ok) {
         const data = await res.json();
         setModerationCases(data.cases || []);
@@ -231,7 +242,7 @@ export default function CompetitionArenaAdminPage() {
 
   const loadRewardProposals = async () => {
     try {
-      const res = await fetch("/api/competition/rewards");
+      const res = await authFetch("/api/competition/rewards");
       if (res.ok) {
         const data = await res.json();
         setRewardProposals(data.proposals || []);
@@ -243,7 +254,7 @@ export default function CompetitionArenaAdminPage() {
 
   const loadAuditLogs = async () => {
     try {
-      const res = await fetch("/api/competition/audit-logs");
+      const res = await authFetch("/api/competition/audit-logs");
       if (res.ok) {
         const data = await res.json();
         setAuditLogs(data.logs || []);
