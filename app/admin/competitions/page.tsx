@@ -279,7 +279,7 @@ export default function CompetitionArenaAdminPage() {
     e.preventDefault();
     setError(null);
     try {
-      const res = await fetch("/api/competition/banks", {
+      const res = await authFetch("/api/competition/banks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -306,7 +306,7 @@ export default function CompetitionArenaAdminPage() {
     e.preventDefault();
     setError(null);
     try {
-      const res = await fetch("/api/competition/competitions", {
+      const res = await authFetch("/api/competition/competitions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -340,7 +340,7 @@ export default function CompetitionArenaAdminPage() {
   const handleCompetitionAction = async (compId: string, action: string) => {
     setError(null);
     try {
-      const res = await fetch(`/api/competition/competitions/${compId}`, {
+      const res = await authFetch(`/api/competition/competitions/${compId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -368,7 +368,7 @@ export default function CompetitionArenaAdminPage() {
     setBuilderSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/competition/banks/${selectedBankId}/questions`, {
+      const res = await authFetch(`/api/competition/banks/${selectedBankId}/questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -415,7 +415,7 @@ export default function CompetitionArenaAdminPage() {
     setCsvImporting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/competition/banks/${selectedBankId}/import-csv`, {
+      const res = await authFetch(`/api/competition/banks/${selectedBankId}/import-csv`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ csvContent: csvText, dryRun: true }),
@@ -437,7 +437,7 @@ export default function CompetitionArenaAdminPage() {
     setCsvImporting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/competition/banks/${selectedBankId}/import-csv`, {
+      const res = await authFetch(`/api/competition/banks/${selectedBankId}/import-csv`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ csvContent: csvText, dryRun: false }),
@@ -461,7 +461,7 @@ export default function CompetitionArenaAdminPage() {
     e.preventDefault();
     setError(null);
     try {
-      const res = await fetch("/api/competition/rewards", {
+      const res = await authFetch("/api/competition/rewards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -489,7 +489,7 @@ export default function CompetitionArenaAdminPage() {
   const handleApproveReward = async (proposalId: string, decision: "approved" | "rejected") => {
     setError(null);
     try {
-      const res = await fetch("/api/competition/rewards", {
+      const res = await authFetch("/api/competition/rewards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "approve", proposalId, decision }),
@@ -507,7 +507,7 @@ export default function CompetitionArenaAdminPage() {
   const handleResolveCase = async (caseId: string, resolution: string) => {
     setError(null);
     try {
-      const res = await fetch("/api/competition/moderation", {
+      const res = await authFetch("/api/competition/moderation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "resolve_case", caseId, resolution }),
