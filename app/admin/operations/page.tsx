@@ -173,31 +173,7 @@ export default function InstitutionalOperationsPage() {
   const [flaggedQueue, setFlaggedQueue] = useState<FlaggedItem[]>(INITIAL_FLAGGED);
   const [resolvedCount, setResolvedCount] = useState(188);
 
-  useEffect(() => {
-    async function init() {
-      try {
-        const admin = await getAdminSession();
-        if (!admin) {
-          router.replace("/admin/login?reason=session");
-          return;
-        }
-        setAdminUser(admin);
 
-        // Fetch live metrics from database if available
-        const { data: dbCodes } = await supabase.from("access_codes").select("id", { count: "exact", head: true });
-        const { data: dbQuestions } = await supabase.from("questions").select("id", { count: "exact", head: true });
-        if (dbQuestions) {
-          // Keep health synchronized
-        }
-        await fetchLiveSessions();
-      } catch {
-        router.replace("/admin/login?reason=error");
-      } finally {
-        setLoading(false);
-      }
-    }
-    void init();
-  }, [router]);
 
   // Real Live Session Fetcher
   const fetchLiveSessions = useCallback(async () => {
@@ -226,6 +202,29 @@ export default function InstitutionalOperationsPage() {
       // Fallback to initial
     }
   }, []);
+
+  useEffect(() => {
+    async function init() {
+      try {
+        const admin = await getAdminSession();
+        if (!admin) {
+          router.replace("/admin/login?reason=session");
+          return;
+        }
+        setAdminUser(admin);
+
+        // Fetch live metrics from database if available
+        await supabase.from("access_codes").select("id", { count: "exact", head: true });
+        await supabase.from("questions").select("id", { count: "exact", head: true });
+        await fetchLiveSessions();
+      } catch {
+        router.replace("/admin/login?reason=error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void init();
+  }, [router, fetchLiveSessions]);
 
   // Session Proctoring Real API Actions
   const handleForceSync = useCallback(async (sessionId: string) => {
