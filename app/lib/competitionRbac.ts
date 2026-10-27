@@ -334,3 +334,47 @@ export async function logCompetitionAuditEvent(payload: AuditLogPayload): Promis
     console.warn("Failed to write competition audit log:", err);
   }
 }
+
+/**
+ * Resolves the authenticated actor for competition APIs.
+ * Supports Bearer token and cookie authentication, and authoritatively
+ * resolves administrator roles across all profile and role tables.
+ */
+export async function getCompetitionActor(req: NextRequest): Promise<CompetitionActor | null> {
+  const user = await getUserFromRequest(req);
+  if (!user) return null;
+
+  const authHeader = req.headers.get("authorization");
+  const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+
+  const resolvedRole = await resolveAdminRole(user.id, token);
+
+  let role: CompetitionRole = "student";
+  if (resolvedRole) {
+    if (resolvedRole === "super_admin") role = "super_admin";
+    else if (resolvedRole === "platform_admin" || resolvedRole === "cbt_admin") role = "platform_admin";
+    else if (resolvedRole === "competition_admin") role = "competition_admin";
+    else if (resolvedRole === "community_moderator" || resolvedRole === "competition_moderator") role = "competition_moderator";
+    else if (resolvedRole === "competition_host" || resolvedRole === "teacher") role = "competition_host";
+    else role = "platform_admin";
+  }
+
+  let scopedPerms: UserScopedPermission[] = [];
+  try {
+    const supabaseServer = getSupabaseServerClient(token);
+    const { data } = await supabaseServer
+      .from("competition_user_permissions")
+      .select("permission_key, scope_type, scope_id")
+      .eq("user_id", user.id);
+    if (data) scopedPerms = data as UserScopedPermission[];
+  } catch {
+    // optional table
+  }
+
+  return {
+    id: user.id,
+    email: user.email || "",
+    role,
+    scoped_permissions: scopedPerms,
+  };
+}

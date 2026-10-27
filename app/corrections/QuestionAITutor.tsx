@@ -7,6 +7,7 @@ import { streamAiTutor } from "../lib/aiTutor";
 import { enqueueMissedQuestion } from "../lib/spacedRepetition";
 import { AiResponseSkeleton } from "../components/SkeletonLoader";
 import { toast } from "../lib/toast";
+import { nudgeAITutorHint } from "../lib/proNudge";
 
 type OptionKey = "A" | "B" | "C" | "D" | "E";
 
@@ -94,6 +95,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
           setLoading(false);
         }
       );
+      void nudgeAITutorHint();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate breakdown.");
     } finally {

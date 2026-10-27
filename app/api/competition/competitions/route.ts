@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { CompetitionActor, hasPermissionInScope, logCompetitionAuditEvent } from "@/app/lib/competitionRbac";
-
-async function getActor(req: NextRequest): Promise<CompetitionActor | null> {
-  const user = await getUserFromRequest(req);
-  if (!user) return null;
-
-  const supabase = getSupabaseServerClient();
-  const { data: profile } = await supabase
-    .from("admin_profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  return {
-    id: user.id,
-    email: user.email || "",
-    role: (profile?.role || "student") as CompetitionActor["role"],
-  };
-}
+import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import {
+  CompetitionActor,
+  getCompetitionActor,
+  hasPermissionInScope,
+  logCompetitionAuditEvent,
+} from "@/app/lib/competitionRbac";
 
 export async function GET(req: NextRequest) {
   try {
-    const actor = await getActor(req);
+    const actor = await getCompetitionActor(req);
     const supabase = getSupabaseServerClient();
     const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get("status");
@@ -53,7 +40,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const actor = await getActor(req);
+    const actor = await getCompetitionActor(req);
     if (!actor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const perm = hasPermissionInScope(actor, "competition.create");

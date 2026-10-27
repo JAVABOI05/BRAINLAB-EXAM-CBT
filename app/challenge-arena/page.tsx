@@ -9,6 +9,7 @@ import {
   getUserGamificationProfile,
   type UserGamificationProfile,
 } from "../lib/gamification";
+import { nudgeChallengeArena } from "../lib/proNudge";
 
 type OptionKey = "A" | "B" | "C" | "D" | "E";
 
@@ -450,6 +451,7 @@ export default function ChallengeArenaPage() {
         // Refresh profile stats
         const updatedProfile = await getUserGamificationProfile(userId);
         if (updatedProfile) setProfile(updatedProfile);
+        void nudgeChallengeArena();
       } catch {}
     } else {
       // Local fallback for anonymous practice

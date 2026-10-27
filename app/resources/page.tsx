@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { nudgeAcademicResources } from "../lib/proNudge";
 
 interface ResourceCard {
   id: string;
@@ -196,6 +197,7 @@ export default function LearningResourcesPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2500);
+    void nudgeAcademicResources();
   };
 
   return (

@@ -46,6 +46,10 @@ export default function ClassroomLobbyPage() {
 
         const tier = await getStudentSubscriptionAndEntitlements(user.id);
         setSubscriptionInfo(tier);
+        if (!isAdmin && (!tier.isSubscribed || tier.planId === "free")) {
+          const { nudgeLiveClassroom } = await import("@/app/lib/proNudge");
+          void nudgeLiveClassroom();
+        }
       } else {
         const tier = await getStudentSubscriptionAndEntitlements();
         setSubscriptionInfo(tier);

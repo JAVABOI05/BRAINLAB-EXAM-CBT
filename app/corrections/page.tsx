@@ -14,6 +14,7 @@ import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/c
 import QuestionAITutor from "./QuestionAITutor";
 import { recordTopicAttempt } from "../lib/adaptiveEngine";
 import { enqueueMissedQuestion } from "../lib/spacedRepetition";
+import { nudgeCBTCorrections } from "../lib/proNudge";
 
 type ResultItem = {
   id: string | number;
@@ -368,6 +369,7 @@ export default function CorrectionsPage() {
         setResults(items as ResultItem[]);
         const firstSubject = (items as ResultItem[]).find((item) => item.subject?.trim())?.subject;
         if (firstSubject) setActiveSubject(firstSubject);
+        void nudgeCBTCorrections();
 
         // Feed Adaptive Learning Engine & Spaced Repetition queue
         (items as ResultItem[]).forEach((resItem) => {

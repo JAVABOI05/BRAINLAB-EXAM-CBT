@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { cleanAIResponse } from "@/app/lib/cleanText";
 import { toast } from "@/app/lib/toast";
+import { nudgeAITutorHint } from "@/app/lib/proNudge";
 import { AiResponseSkeleton } from "@/app/components/SkeletonLoader";
 
 type Intent = "understand" | "practise" | "mistake" | "exam";
@@ -92,6 +93,7 @@ export default function AILearningStudio() {
 
       setAiResponse(cleanAIResponse(data.response));
       setAiModel(data.model);
+      void nudgeAITutorHint();
     } catch (err) {
       setAiError(err instanceof Error ? err.message : "An error occurred calling AI Tutor.");
     } finally {
