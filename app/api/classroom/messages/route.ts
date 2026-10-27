@@ -48,36 +48,46 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing classId parameter" }, { status: 400 });
     }
 
+    const normalizedClassId = String(classId).trim().toUpperCase();
     const supabase = getSupabaseServerClient();
     const collected: ClassroomMemoryMessage[] = [];
 
     // 1. Check persistent exam_config store for classroom messages (supports any class code like BL-LIVE-101)
-    try {
-      const { data: configRow } = await supabase
-        .from("exam_config")
-        .select("config_value")
-        .eq("config_key", `classroom_messages_${classId}`)
-        .maybeSingle();
+    const keysToCheck = Array.from(new Set([
+      `classroom_messages_${normalizedClassId}`,
+      `classroom_messages_${classId}`,
+      `classroom_messages_${classId.toLowerCase()}`,
+    ]));
 
-      if (configRow && Array.isArray(configRow.config_value)) {
-        for (const item of configRow.config_value) {
-          collected.push({
-            ...item,
-            senderName: sanitizeSenderName(item.senderName),
-          });
+    for (const key of keysToCheck) {
+      try {
+        const { data: configRow } = await supabase
+          .from("exam_config")
+          .select("config_value")
+          .eq("config_key", key)
+          .maybeSingle();
+
+        if (configRow && Array.isArray(configRow.config_value)) {
+          for (const item of configRow.config_value) {
+            collected.push({
+              ...item,
+              senderName: sanitizeSenderName(item.senderName),
+            });
+          }
         }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     // 2. If classId is a UUID, also check native conversations table
-    if (UUID_REGEX.test(classId)) {
+    if (UUID_REGEX.test(classId) || UUID_REGEX.test(normalizedClassId)) {
       try {
+        const targetClassId = UUID_REGEX.test(classId) ? classId : normalizedClassId;
         const { data: conv } = await supabase
           .from("conversations")
           .select("id")
-          .eq("class_id", classId)
+          .eq("class_id", targetClassId)
           .maybeSingle();
 
         if (conv) {
@@ -157,6 +167,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "classId and text/media are required." }, { status: 400 });
     }
 
+    const normalizedClassId = String(classId).trim().toUpperCase();
     const supabase = getSupabaseServerClient();
     const msgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const nowIso = new Date().toISOString();
@@ -181,17 +192,17 @@ export async function POST(request: NextRequest) {
     };
 
     // 1. Store in memory store immediately
-    const existingMem = memoryMessageStore.get(classId) || [];
+    const existingMem = memoryMessageStore.get(normalizedClassId) || [];
     existingMem.push(messageObj);
     if (existingMem.length > 250) existingMem.shift();
-    memoryMessageStore.set(classId, existingMem);
+    memoryMessageStore.set(normalizedClassId, existingMem);
 
     // 2. Persist to exam_config so all workers and newly joining students see it
     try {
       const { data: configRow } = await supabase
         .from("exam_config")
         .select("config_value")
-        .eq("config_key", `classroom_messages_${classId}`)
+        .eq("config_key", `classroom_messages_${normalizedClassId}`)
         .maybeSingle();
 
       let history: ClassroomMemoryMessage[] = [];
@@ -203,7 +214,7 @@ export async function POST(request: NextRequest) {
 
       await supabase.from("exam_config").upsert(
         {
-          config_key: `classroom_messages_${classId}`,
+          config_key: `classroom_messages_${normalizedClassId}`,
           config_value: history,
         },
         { onConflict: "config_key" }

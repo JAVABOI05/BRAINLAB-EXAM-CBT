@@ -20,7 +20,6 @@ const SOCIAL_CHANNELS = [
     name: "WhatsApp Channel",
     handle: "15,000+ Students",
     url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
-    icon: "💬",
     color: "group-hover:border-emerald-500 group-hover:text-emerald-500",
     badge: "Active Channel",
   },
@@ -28,7 +27,6 @@ const SOCIAL_CHANNELS = [
     name: "Instagram",
     handle: "@brain_labacademy",
     url: "https://www.instagram.com/brain_labacademy?dlrf=NGJzcmFnaGcwZHV4",
-    icon: "📸",
     color: "group-hover:border-pink-500 group-hover:text-pink-500",
     badge: "Visual Guides",
   },
@@ -36,7 +34,6 @@ const SOCIAL_CHANNELS = [
     name: "TikTok",
     handle: "@brainlabacademy",
     url: "https://www.tiktok.com/@brainlabacademy",
-    icon: "🎵",
     color: "group-hover:border-cyan-400 group-hover:text-cyan-400",
     badge: "Quick Tips",
   },
@@ -44,7 +41,6 @@ const SOCIAL_CHANNELS = [
     name: "YouTube",
     handle: "@thebrainlabhub",
     url: "https://youtube.com/@thebrainlabhub?si=z4sAVuNmJUdPom_u",
-    icon: "📺",
     color: "group-hover:border-red-500 group-hover:text-red-500",
     badge: "Video Lectures",
   },
@@ -52,7 +48,6 @@ const SOCIAL_CHANNELS = [
     name: "X (Twitter)",
     handle: "@The_brainlabhub",
     url: "https://x.com/The_brainlabhub",
-    icon: "🐦",
     color: "group-hover:border-slate-700 dark:group-hover:border-slate-300 group-hover:text-black dark:group-hover:text-white",
     badge: "Exam News",
   },
@@ -60,19 +55,18 @@ const SOCIAL_CHANNELS = [
     name: "Facebook",
     handle: "BrainLab Academy",
     url: "https://www.facebook.com/profile.php?id=61595669640028",
-    icon: "👥",
     color: "group-hover:border-blue-600 group-hover:text-blue-600",
     badge: "Community",
   },
 ];
 
 const TOPIC_PRESETS = [
-  { id: "cbt_exam", label: "📝 CBT Exam Practice" },
-  { id: "access_code", label: "🔑 Access Code Help" },
-  { id: "subscription", label: "💳 Billing & Subscriptions" },
-  { id: "revision_class", label: "🎥 Live Masterclass" },
-  { id: "institutional", label: "🏫 School Partnership" },
-  { id: "other", label: "💬 General Inquiry" },
+  { id: "cbt_exam", label: "CBT Exam Practice" },
+  { id: "access_code", label: "Access Code Help" },
+  { id: "subscription", label: "Billing & Subscriptions" },
+  { id: "revision_class", label: "Live Masterclass" },
+  { id: "institutional", label: "School Partnership" },
+  { id: "other", label: "General Inquiry" },
 ];
 
 export default function ContactPage() {
@@ -165,12 +159,10 @@ export default function ContactPage() {
               <div className="rounded-3xl border border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50/80 to-white dark:from-emerald-950/30 dark:to-slate-900 p-6 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white font-black text-lg shadow-sm">
-                      💬
-                    </div>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm"><svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></div>
                     <div>
                       <h2 className="text-base font-bold text-slate-950 dark:text-white">Direct WhatsApp Desk</h2>
-                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">⚡ Average reply &lt; 5 mins</p>
+                      <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Average response time: &lt; 5 mins</p>
                     </div>
                   </div>
                   <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-800 dark:text-emerald-300">
@@ -189,7 +181,7 @@ export default function ContactPage() {
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-black text-white shadow transition-all active:scale-95"
                   >
-                    <span>💬</span> Chat on WhatsApp ({CONTACT_INFO.primaryPhone}) &rarr;
+                    <span>Chat on WhatsApp</span> ({CONTACT_INFO.primaryPhone}) &rarr;
                   </a>
                   <a
                     href={CONTACT_INFO.whatsappChannel}
@@ -197,7 +189,7 @@ export default function ContactPage() {
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900/80 px-4 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-slate-800 transition active:scale-95"
                   >
-                    <span>📢</span> Join 15k+ WhatsApp Community ↗
+                    <span>Join 15k+ WhatsApp Community</span> ↗
                   </a>
                 </div>
               </div>
@@ -205,9 +197,7 @@ export default function ContactPage() {
               {/* Direct Phone Lines Card */}
               <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-cyan-400 font-black text-lg">
-                    📞
-                  </div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-cyan-400"><svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
                   <div>
                     <h2 className="text-base font-bold text-slate-950 dark:text-white">Voice Helplines</h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Monday – Saturday: 8:00 AM – 8:00 PM</p>
@@ -225,9 +215,7 @@ export default function ContactPage() {
                         onClick={() => handleCopy(CONTACT_INFO.primaryPhone, "Phone 1")}
                         className="text-xs text-slate-400 hover:text-blue-600"
                         title="Copy number"
-                      >
-                        📋
-                      </button>
+                      ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
                     </div>
                   </div>
 
@@ -241,9 +229,7 @@ export default function ContactPage() {
                         onClick={() => handleCopy(CONTACT_INFO.secondaryPhone, "Phone 2")}
                         className="text-xs text-slate-400 hover:text-blue-600"
                         title="Copy number"
-                      >
-                        📋
-                      </button>
+                      ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
                     </div>
                   </div>
                 </div>
@@ -273,9 +259,7 @@ export default function ContactPage() {
                       onClick={() => handleCopy(CONTACT_INFO.email, "Support email")}
                       className="text-xs text-slate-400 hover:text-blue-600"
                       title="Copy email"
-                    >
-                      📋
-                    </button>
+                    ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
                   </div>
 
                   <div className="flex justify-between items-center rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
@@ -289,9 +273,7 @@ export default function ContactPage() {
                       onClick={() => handleCopy(CONTACT_INFO.academyEmail, "Academy email")}
                       className="text-xs text-slate-400 hover:text-blue-600"
                       title="Copy email"
-                    >
-                      📋
-                    </button>
+                    ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
                   </div>
                 </div>
               </div>
@@ -331,7 +313,7 @@ export default function ContactPage() {
                       rel="noopener noreferrer"
                       className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow transition active:scale-95"
                     >
-                      <span>💬</span> Open WhatsApp Chat Now &rarr;
+                      <span>Open WhatsApp Chat Now</span> &rarr;
                     </a>
                     <button
                       onClick={() => {
@@ -427,7 +409,7 @@ export default function ContactPage() {
 
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        🔒 Form submissions are safeguarded under our NDPA 2023 privacy commitment.
+                        Form submissions are safeguarded under our NDPA 2023 privacy commitment.
                       </p>
 
                       <button
@@ -469,7 +451,9 @@ export default function ContactPage() {
                   className={`group flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${item.color}`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl shrink-0">{item.icon}</span>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    </div>
                     <div>
                       <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-inherit">
                         {item.name}

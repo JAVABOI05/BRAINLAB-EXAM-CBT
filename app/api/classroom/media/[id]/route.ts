@@ -4,8 +4,38 @@ import { getClassroomMedia } from "@/app/lib/classroomMediaStore";
 
 export const dynamic = "force-dynamic";
 
-function serveBuffer(buffer: Buffer, mimeType: string, request: NextRequest) {
+function cleanMimeType(mime?: string | null): string {
+  if (!mime) return "audio/webm";
+  const primary = mime.split(";")[0].trim().toLowerCase();
+  if (primary.includes("webm")) return "audio/webm";
+  if (primary.includes("mp4")) return "audio/mp4";
+  if (primary.includes("aac")) return "audio/aac";
+  if (primary.includes("ogg")) return "audio/ogg";
+  if (primary.includes("wav")) return "audio/wav";
+  if (primary.includes("mpeg") || primary.includes("mp3")) return "audio/mpeg";
+  if (primary.includes("png")) return "image/png";
+  if (primary.includes("jpeg") || primary.includes("jpg")) return "image/jpeg";
+  if (primary.includes("webp")) return "image/webp";
+  if (primary.includes("svg")) return "image/svg+xml";
+  return primary;
+}
+
+const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+  "Access-Control-Allow-Headers": "Range, Content-Type, Accept",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
+
+function serveBuffer(buffer: Buffer, rawMime: string, request: NextRequest) {
   const totalSize = buffer.length;
+  const mimeType = cleanMimeType(rawMime);
   const range = request.headers.get("range");
 
   if (range) {
@@ -18,6 +48,7 @@ function serveBuffer(buffer: Buffer, mimeType: string, request: NextRequest) {
     return new NextResponse(new Uint8Array(chunk), {
       status: 206,
       headers: {
+        ...CORS_HEADERS,
         "Content-Range": `bytes ${start}-${end}/${totalSize}`,
         "Accept-Ranges": "bytes",
         "Content-Length": chunkSize.toString(),
@@ -31,6 +62,7 @@ function serveBuffer(buffer: Buffer, mimeType: string, request: NextRequest) {
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
+      ...CORS_HEADERS,
       "Content-Type": mimeType,
       "Content-Length": totalSize.toString(),
       "Accept-Ranges": "bytes",
@@ -49,7 +81,7 @@ export async function GET(
     const { id } = resolvedParams;
 
     if (!id) {
-      return new NextResponse("Asset ID required", { status: 400 });
+      return new NextResponse("Asset ID required", { status: 400, headers: CORS_HEADERS });
     }
 
     // 1. Check in-memory fast media cache first
@@ -67,7 +99,7 @@ export async function GET(
       .maybeSingle();
 
     if (error || !asset || !asset.file_url) {
-      return new NextResponse("Media asset not found", { status: 404 });
+      return new NextResponse("Media asset not found", { status: 404, headers: CORS_HEADERS });
     }
 
     // Handle base64 data URIs
@@ -86,6 +118,16 @@ export async function GET(
     // If it is a remote URL, redirect to it
     return NextResponse.redirect(asset.file_url);
   } catch (err: unknown) {
-    return new NextResponse((err instanceof Error ? err.message : String(err)) || "Server Error", { status: 500 });
+    return new NextResponse((err instanceof Error ? err.message : String(err)) || "Server Error", {
+      status: 500,
+      headers: CORS_HEADERS,
+    });
   }
+}
+
+export async function HEAD(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return GET(request, { params });
 }

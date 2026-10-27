@@ -129,6 +129,7 @@ export default function LearnerDashboardPage() {
   const { resolvedTheme } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [adminRole, setAdminRole] = useState<string | null>(null);
 
   // Authoritative Learner Progress State
   const [stats, setStats] = useState<LearnerStats>({
@@ -262,10 +263,37 @@ export default function LearnerDashboardPage() {
           });
         }
 
+        // Check if user is an Administrator
+        let resolvedRole: string | null = null;
+        try {
+          const { data: role } = await supabase.rpc("get_admin_role");
+          if (typeof role === "string" && role.length > 0) {
+            resolvedRole = role;
+          }
+        } catch {}
+
+        if (!resolvedRole) {
+          try {
+            const { data: profile } = await supabase
+              .from("admin_profiles")
+              .select("role")
+              .eq("user_id", currentUser.id)
+              .maybeSingle();
+            if (profile?.role) resolvedRole = profile.role;
+          } catch {}
+        }
+
+        if (resolvedRole) {
+          setAdminRole(resolvedRole);
+        }
+
         // Parse Access Entitlements
         let tierName = "Free Learner";
         let maxAllowedQuestions = 50;
-        if (entitlementsRes.data && entitlementsRes.data.length > 0) {
+        if (resolvedRole) {
+          tierName = `${resolvedRole === "super_admin" ? "Super Admin" : "Administrator"} VIP (Universal Access)`;
+          maxAllowedQuestions = 999999;
+        } else if (entitlementsRes.data && entitlementsRes.data.length > 0) {
           const activeEntitlements = entitlementsRes.data;
           const highestQuestions = Math.max(...activeEntitlements.map((e) => e.max_questions || 50));
           maxAllowedQuestions = highestQuestions;
@@ -334,6 +362,37 @@ export default function LearnerDashboardPage() {
       className="learner-theme mx-auto min-h-[75vh] max-w-5xl px-5 py-10 text-slate-900 sm:px-8 sm:py-14"
     >
       <div className="space-y-8">
+        {/* Admin VIP Mode Navigation Banner */}
+        {adminRole && (
+          <div className="rounded-2xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10 p-4 sm:p-5 shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xl font-black border border-amber-500/30">
+                  👑
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                      Administrator Preview Mode Active
+                    </span>
+                    <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-400 dark:border-emerald-600 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:text-emerald-300">
+                      Root VIP Access
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed">
+                    You are exploring the student portal with <strong>Universal Platform Access</strong>. All CBT mock exams, AI study tools, question corrections, and live classrooms are 100% unlocked with zero subscription fees.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/admin/dashboard"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black px-4 py-2.5 text-xs shadow-md transition active:scale-95 shrink-0"
+              >
+                <span>← Return to Admin Portal</span>
+              </Link>
+            </div>
+          </div>
+        )}
         {/* Top Identity Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

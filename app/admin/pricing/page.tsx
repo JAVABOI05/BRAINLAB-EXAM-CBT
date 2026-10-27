@@ -318,7 +318,7 @@ export default function AdminPricingPage() {
                       onClick={() => openEditModal(p)}
                       className="flex-1 rounded-xl bg-[#061a3a] py-2 text-xs font-extrabold text-white hover:bg-[#123566] transition shadow-sm"
                     >
-                      Configure Tier &amp; Access ⚙️
+                      Configure Tier & Access
                     </button>
                     {p.id !== "free" && (
                       <button
@@ -363,7 +363,7 @@ export default function AdminPricingPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">⚡ CBT Mock Exam Quota</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">CBT Mock Exam Quota</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -379,7 +379,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">🔍 Post-Exam Corrections &amp; Explanations</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">Post-Exam Corrections & Explanations</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -395,7 +395,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">🤖 AI Tutor Monthly Allowance</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">AI Tutor Monthly Allowance</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -413,7 +413,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">🎙️ AI Voice Pronunciations &amp; Audio Summaries</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">AI Voice Pronunciations & Audio Summaries</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -425,7 +425,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">🏫 Live Academic Masterclass &amp; Classrooms</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">Live Academic Masterclass & Classrooms</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -437,7 +437,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">🏆 Competition Arena &amp; 1v1 Battle Matches</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">Competition Arena & 1v1 Battle Matches</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -449,7 +449,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">📊 Psychometrics &amp; Topic Weakness Diagnostics</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">Psychometrics & Topic Diagnostics</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -461,7 +461,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">📜 Verified Digital Merit Certificates</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">Verified Digital Certificates</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -473,7 +473,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">🧮 Exam Calculator Type</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">Exam Calculator Type</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -485,7 +485,7 @@ export default function AdminPricingPage() {
                 </tr>
 
                 <tr>
-                  <td className="py-3 px-4 font-bold text-slate-800">👑 VIP 24/7 Priority Support</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">VIP 24/7 Priority Support</td>
                   {plans.map((p) => {
                     const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
                     return (
@@ -536,7 +536,7 @@ export default function AdminPricingPage() {
                       : "border-transparent text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  💳 Plan Details &amp; Pricing
+                  Plan Details & Pricing
                 </button>
                 <button
                   type="button"
@@ -547,7 +547,7 @@ export default function AdminPricingPage() {
                       : "border-transparent text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  🔒 Feature Entitlements &amp; Access Controls
+                  Feature Entitlements & Access Controls
                 </button>
               </div>
 
@@ -643,7 +643,7 @@ export default function AdminPricingPage() {
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="font-extrabold text-slate-900 block">⚡ CBT Mock Exam Quota</span>
+                          <span className="font-extrabold text-slate-900 block">CBT Mock Exam Quota</span>
                           <span className="text-xs text-slate-500">Allow taking simulated CBT examinations.</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -675,7 +675,7 @@ export default function AdminPricingPage() {
                     {/* Post-Exam Corrections & Solutions */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">🔍 Post-Exam Corrections &amp; Explanations</span>
+                        <span className="font-extrabold text-slate-900 block">Post-Exam Corrections & Explanations</span>
                         <span className="text-xs text-slate-500">Allow candidate to review step-by-step solution keys after submitting.</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -693,7 +693,7 @@ export default function AdminPricingPage() {
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="font-extrabold text-slate-900 block">🤖 AI Tutor &amp; Question Hints</span>
+                          <span className="font-extrabold text-slate-900 block">AI Tutor & Question Hints</span>
                           <span className="text-xs text-slate-500">Allow AI assistant explanation and practice queries.</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -737,7 +737,7 @@ export default function AdminPricingPage() {
                     {/* AI Voice Pronunciations */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">🎙️ AI Audio Voice Notes &amp; Read-Aloud</span>
+                        <span className="font-extrabold text-slate-900 block">AI Audio Voice Notes & Read-Aloud</span>
                         <span className="text-xs text-slate-500">Enable synthesized speech explanations for verbal learners.</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -754,7 +754,7 @@ export default function AdminPricingPage() {
                     {/* Live Academic Masterclass */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">🏫 Live Academic Classrooms &amp; Masterclasses</span>
+                        <span className="font-extrabold text-slate-900 block">Live Academic Classrooms & Masterclasses</span>
                         <span className="text-xs text-slate-500">Allow joining live video and whiteboard tutor streams.</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -771,7 +771,7 @@ export default function AdminPricingPage() {
                     {/* Competition Arena */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">🏆 Competition Arena &amp; 1v1 Battle Matches</span>
+                        <span className="font-extrabold text-slate-900 block">Competition Arena & 1v1 Battle Matches</span>
                         <span className="text-xs text-slate-500">Allow entering live timed battles and official school contests.</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -788,7 +788,7 @@ export default function AdminPricingPage() {
                     {/* Advanced Analytics */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">📊 In-Depth Analytics &amp; Psychometrics</span>
+                        <span className="font-extrabold text-slate-900 block">In-Depth Analytics & Psychometrics</span>
                         <span className="text-xs text-slate-500">Provide topic-by-topic weakness diagnostics &amp; item difficulty index.</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -805,7 +805,7 @@ export default function AdminPricingPage() {
                     {/* Verified Digital Certificates */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">📜 Verified Achievement Certificates</span>
+                        <span className="font-extrabold text-slate-900 block">Verified Achievement Certificates</span>
                         <span className="text-xs text-slate-500">Issue verifiable completion &amp; merit certificates.</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -822,7 +822,7 @@ export default function AdminPricingPage() {
                     {/* Exam Calculator Tier */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">🧮 Exam Calculator Tier</span>
+                        <span className="font-extrabold text-slate-900 block">Exam Calculator Tier</span>
                         <span className="text-xs text-slate-500">Select calculator functionality enabled during CBT exams.</span>
                       </div>
                       <select
@@ -839,7 +839,7 @@ export default function AdminPricingPage() {
                     {/* VIP Priority Support */}
                     <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <span className="font-extrabold text-slate-900 block">👑 VIP 24/7 Priority Support</span>
+                        <span className="font-extrabold text-slate-900 block">VIP 24/7 Priority Support</span>
                         <span className="text-xs text-slate-500">Expedited tutor support and direct dispute escalation queue.</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">

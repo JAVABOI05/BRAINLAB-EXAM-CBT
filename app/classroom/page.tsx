@@ -8,6 +8,7 @@ import { supabase } from "@/app/lib/supabase";
 import TierGateModal from "@/app/components/TierGateModal";
 import {
   getStudentSubscriptionAndEntitlements,
+  isCurrentUserAdmin,
   type StudentEntitlementsResult,
 } from "@/app/lib/subscriptionEntitlements";
 
@@ -25,13 +26,10 @@ export default function ClassroomLobbyPage() {
       const user = sessionData?.session?.user;
       if (user) {
         setUserEmail(user.email || null);
-        const { data: adminRole } = await supabase
-          .from("admin_user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle();
 
-        if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
+        // Check if user is an Administrator or authorized tutor
+        const isAdmin = await isCurrentUserAdmin(user.id);
+        if (isAdmin) {
           setIsStaff(true);
         } else if (user.email) {
           const { getLiveClassroomConfig } = await import("@/app/lib/platformConfig");
@@ -103,6 +101,19 @@ export default function ClassroomLobbyPage() {
             >
               Plans
             </Link>
+
+            {/* Quick Admin Portal Button if Staff */}
+            {isStaff && (
+              <Link
+                href="/admin/dashboard"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500 hover:text-slate-950 px-3 py-1.5 text-xs font-black text-amber-300 transition shadow-sm active:scale-95"
+                title="Switch back to Admin Portal"
+              >
+                <span>👑</span>
+                <span>Admin Portal</span>
+              </Link>
+            )}
+
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95"
@@ -225,7 +236,7 @@ export default function ClassroomLobbyPage() {
           Signed in as: <span className="font-semibold text-slate-400">{userEmail || "Learner"}</span>{" "}
           {isStaff ? (
             <span className="ml-1 inline-flex items-center gap-1 rounded bg-amber-500/20 text-amber-300 px-1.5 py-0.5 font-bold text-[10px]">
-              👑 Tutor &amp; Staff Mode
+              👑 Super Admin &amp; Staff Mode (Universal Access)
             </span>
           ) : (
             <span className="ml-1 inline-flex items-center gap-1 rounded bg-blue-500/20 text-blue-300 px-1.5 py-0.5 font-bold text-[10px]">
@@ -234,9 +245,9 @@ export default function ClassroomLobbyPage() {
           )}
         </div>
 
-        {/* Tier Entitlement Gate Modal */}
+        {/* Tier Entitlement Gate Modal - Suppressed for Staff */}
         <TierGateModal
-          isOpen={showTierModal}
+          isOpen={!isStaff && showTierModal}
           onClose={() => setShowTierModal(false)}
           featureTitle="Live Academic Classrooms"
           featureDescription="Real-time interactive tutor sessions with synchronized live whiteboard, math formulas, instant classroom polls, and direct question broadcast are included with Premium Study, Plus, and Pro tiers."

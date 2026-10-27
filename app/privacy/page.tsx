@@ -82,10 +82,10 @@ export default function PrivacyPolicyPage() {
                 NDPA 2023 Compliant
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/25 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-indigo-800 dark:text-indigo-300 shadow-2xs">
-                🔐 AES-256-GCM Encrypted
+                AES-256-GCM Encrypted
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/10 border border-sky-500/25 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-sky-800 dark:text-cyan-300 shadow-2xs">
-                🤖 Zero Student Model Training
+                Zero Student Model Training
               </span>
             </div>
 
@@ -205,7 +205,7 @@ export default function PrivacyPolicyPage() {
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                     title="Copy direct link"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
@@ -273,12 +273,12 @@ export default function PrivacyPolicyPage() {
                     onClick={() => handleCopyLink("ai-ethics")}
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                  <span>🤖</span>
+                  
                   <span>BrainLab AI Tutor &amp; Learning Studio Ethics</span>
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -288,7 +288,7 @@ export default function PrivacyPolicyPage() {
                 <div className="space-y-3 pt-2">
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-5">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>🔒</span> Student Anonymization at Gateway
+                       Student Anonymization at Gateway
                     </h4>
                     <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                       Before any query leaves BrainLab for model inference, our gateway sanitizes the payload, stripping candidate names, phone numbers, email addresses, and school IDs. The foundation model only receives the academic prompt.
@@ -306,7 +306,7 @@ export default function PrivacyPolicyPage() {
 
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-5">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>🛡️</span> Uniform Student Anonymity
+                       Uniform Student Anonymity
                     </h4>
                     <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                       Students interact uniformly with the &ldquo;BrainLab AI Tutor&rdquo;. Behind the scenes, our smart router dynamically selects optimal models (Gemini, Qwen, or Llama) based on cognitive task strength while keeping candidate identities insulated.
@@ -325,12 +325,12 @@ export default function PrivacyPolicyPage() {
                     onClick={() => handleCopyLink("cryptographic-backend")}
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                  <span>🔐</span>
+                  
                   <span>Multi-Layered Cryptographic Backend</span>
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -361,7 +361,7 @@ export default function PrivacyPolicyPage() {
                     onClick={() => handleCopyLink("cbt-integrity")}
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
@@ -411,12 +411,12 @@ export default function PrivacyPolicyPage() {
                     onClick={() => handleCopyLink("data-collected")}
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                  <span>📋</span>
+                  
                   <span>Categories of Information Collected</span>
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -468,12 +468,12 @@ export default function PrivacyPolicyPage() {
                     onClick={() => handleCopyLink("candidate-rights")}
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                  <span>⚖️</span>
+                  
                   <span>Candidate Rights Under NDPA 2023</span>
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -483,7 +483,7 @@ export default function PrivacyPolicyPage() {
                 <div className="grid gap-3 sm:grid-cols-2 pt-1 text-xs sm:text-sm">
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
                     <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <span>👁️</span> Right of Access &amp; Portability
+                       Right of Access &amp; Portability
                     </h4>
                     <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
                       Retrieve historical scorecards, topic diagnostics, and AI tutor transcripts at any time via your student dashboard.
@@ -491,7 +491,7 @@ export default function PrivacyPolicyPage() {
                   </div>
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
                     <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <span>✏️</span> Right to Rectification
+                       Right to Rectification
                     </h4>
                     <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
                       Update or correct inaccurate student names, school affiliations, or subject combinations directly through support.
@@ -499,7 +499,7 @@ export default function PrivacyPolicyPage() {
                   </div>
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
                     <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <span>🗑️</span> Right to Erasure (&ldquo;Forgotten&rdquo;)
+                       Right to Erasure (&ldquo;Forgotten&rdquo;)
                     </h4>
                     <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
                       Request permanent deletion of your phone number, name, and telemetry records upon completing your exam session.
@@ -507,7 +507,7 @@ export default function PrivacyPolicyPage() {
                   </div>
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-4">
                     <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <span>⚖️</span> Right to Contest Scoring
+                       Right to Contest Scoring
                     </h4>
                     <p className="mt-1 text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
                       Request human academic review of any automated anti-cheat flag, scoring dispute, or question questionability.
@@ -526,12 +526,12 @@ export default function PrivacyPolicyPage() {
                     onClick={() => handleCopyLink("terminal-safety")}
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                  <span>🧹</span>
+                  
                   <span>Cybercafé &amp; Shared School Terminal Safety</span>
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -558,13 +558,13 @@ export default function PrivacyPolicyPage() {
                     onClick={() => handleCopyLink("dpo-contact")}
                     className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   >
-                    🔗 Copy link
+                    Copy link
                   </button>
                 </div>
 
                 <div className="rounded-3xl border border-emerald-200 dark:border-emerald-900/60 bg-linear-to-b from-emerald-50/60 to-white dark:from-emerald-950/30 dark:to-[#0a1424] p-6 sm:p-8 shadow-sm">
                   <h3 className="text-xl font-black text-slate-950 dark:text-white flex items-center gap-2">
-                    <span>🛡️</span>
+                    
                     <span>BrainLab Data Protection Officer (DPO)</span>
                   </h3>
                   <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -603,19 +603,19 @@ export default function PrivacyPolicyPage() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition active:scale-95"
                     >
-                      <span>💬</span> WhatsApp DPO Desk (+234 907 431 0204)
+                       WhatsApp DPO Desk (+234 907 431 0204)
                     </a>
                     <Link
                       href="/contact"
                       className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95"
                     >
-                      <span>📞</span> Helpdesk Contact
+                       Helpdesk Contact
                     </Link>
                     <Link
                       href="/account/subscription/refund"
                       className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95"
                     >
-                      <span>🛡️</span> Refund Desk &rarr;
+                       Refund Desk &rarr;
                     </Link>
                   </div>
                 </div>

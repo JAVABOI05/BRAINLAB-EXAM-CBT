@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
 import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { classId, entryCode } = body;
 
     if (!classId) {
@@ -32,13 +32,8 @@ export async function POST(request: NextRequest) {
 
     // 1. Check if user is staff/tutor/admin
     let isStaff = false;
-    const { data: adminRole } = await supabase
-      .from("admin_user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
+    const resolvedRole = await resolveAdminRole(user.id);
+    if (resolvedRole && ["super_admin", "platform_admin", "cbt_admin", "teacher", "school_admin", "ai_learning_admin"].includes(resolvedRole)) {
       isStaff = true;
     }
 
@@ -103,10 +98,10 @@ export async function POST(request: NextRequest) {
         liveClass = {
           id: classId,
           title: `BrainLab Live Class Session (${classId.slice(0, 10)})`,
-          description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-          tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
+          description: "Live interactive class session on the BrainLab Learning Platform.",
+          tutor_id: isAuthorizedTutor ? user.id : "tutor-unassigned",
           status: "scheduled",
-          class_format: "interactive",
+          class_format: "lecture",
           course_id: null,
           scheduled_start_at: new Date().toISOString(),
           duration_minutes: 90,
@@ -146,7 +141,7 @@ export async function POST(request: NextRequest) {
       if (!isRoomActive) {
         return NextResponse.json(
           {
-            error: "This live class has not been started yet. Only authorized tutors or administrators can launch this classroom. Please wait for your instructor to begin.",
+            error: "The tutor has not started this live class session yet. Please wait for the host to launch the stage.",
             requiresHost: true,
             notStarted: true,
             classDetails: {
@@ -161,8 +156,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 4b. Subscription Tier & Feature Entitlement Verification (Open stages like BL-LIVE-101 are free for all learners)
-      if (!isOpenStage) {
+      // 4b. Subscription Tier & Feature Entitlement Verification (Staff and Open Stages are exempt)
+      if (!isOpenStage && !isStaff) {
         const { getStudentSubscriptionAndEntitlements } = await import("@/app/lib/subscriptionEntitlements");
         const studentTier = await getStudentSubscriptionAndEntitlements(user.id);
 
@@ -189,7 +184,7 @@ export async function POST(request: NextRequest) {
         Boolean(roomConfig?.entry_code) ||
         Boolean(roomConfig?.require_permission);
 
-      if (isMasterclass) {
+      if (isMasterclass && !isStaff) {
         // A. Code Entry verification (if configured on this masterclass)
         if (roomConfig?.entry_code && roomConfig.entry_code.trim()) {
           const submittedCode = String(entryCode || "").trim().toUpperCase();
@@ -266,9 +261,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 6. Enforce Enrollment & Entitlement Verification (if class has a bound course)
+    // 6. Enforce Enrollment & Entitlement Verification (Staff and Hosts are always enrolled)
     let isEnrolled = false;
-    if (isHost) {
+    if (isHost || isStaff) {
       isEnrolled = true;
     } else if (liveClass.course_id) {
       const { data: enrollment } = await supabase
@@ -315,18 +310,16 @@ export async function POST(request: NextRequest) {
     }
 
     const permissions: RoomPermissions = {
-      isModerator: isHost,
-      canPublishAudio: isHost ? true : (liveClass.student_mic_enabled && config.student_mic_default),
-      canPublishVideo: isHost ? true : (liveClass.student_camera_enabled && config.student_cam_default),
-      canPublishScreen: isHost ? true : (liveClass.student_screenshare_enabled && config.student_screenshare_default),
-      canChat: liveClass.student_chat_enabled && config.student_chat_default,
+      isModerator: isHost || isStaff,
+      canPublishAudio: isHost || isStaff || liveClass.student_mic_enabled,
+      canPublishVideo: isHost || isStaff || liveClass.student_camera_enabled,
+      canPublishScreen: isHost || isStaff || liveClass.student_screenshare_enabled,
+      canChat: liveClass.student_chat_enabled || isHost || isStaff,
     };
 
-    // 8. Generate Room Token using Selected Provider
-    const configuredProvider = liveClass.provider || config.provider || "webrtc";
-    const providerTypes: VideoProviderType[] = ["webrtc", "livekit", "agora", "daily"];
-    const providerType: VideoProviderType = providerTypes.includes(configuredProvider as VideoProviderType)
-      ? configuredProvider as VideoProviderType
+    // 8. Generate Provider-Specific Access Token (WebRTC, LiveKit, Agora, Daily)
+    const providerType: VideoProviderType = (config.provider as VideoProviderType)
+      ? (config.provider as VideoProviderType)
       : "webrtc";
     const provider = getVideoProvider(providerType, config.provider_credentials);
 

@@ -121,7 +121,7 @@ const FAQ_DATABASE: FAQItem[] = [
     category: "gamification",
     categoryLabel: "Streaks & Arena",
     question: "How do daily learning streaks work and how do I protect my flame?",
-    answer: "Your learning streak counts consecutive days on which you complete at least one substantive academic task (a 5-minute Daily Blitz in the Challenge Arena, completing a CBT mock, or studying a lesson). Practice every day before midnight to protect your flame (🔥) and earn streak bonus XP.",
+    answer: "Your learning streak counts consecutive days on which you complete at least one substantive academic task (a 5-minute Daily Blitz in the Challenge Arena, completing a CBT mock, or studying a lesson). Practice every day before midnight to protect your flame  and earn streak bonus XP.",
     actionHref: "/challenge-arena",
     actionLabel: "Enter Challenge Arena",
   },
@@ -275,12 +275,12 @@ export default function FAQPage() {
           <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
             {[
               { id: "all", label: "All Questions" },
-              { id: "cbt", label: "📝 CBT & Exams" },
-              { id: "payments", label: "💳 Payments & Billing" },
-              { id: "ai", label: "🤖 AI Tutor & Ethics" },
-              { id: "gamification", label: "🔥 Streaks & Arena" },
-              { id: "classes", label: "🎥 Live Classes" },
-              { id: "account", label: "🔐 Account & Help" },
+              { id: "cbt", label: "CBT & Exams" },
+              { id: "payments", label: "Payments & Billing" },
+              { id: "ai", label: "AI Tutor & Ethics" },
+              { id: "gamification", label: "Streaks & Arena" },
+              { id: "classes", label: "Live Classes" },
+              { id: "account", label: "Account & Help" },
             ].map((cat) => (
               <button
                 key={cat.id}
@@ -373,7 +373,7 @@ export default function FAQPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition active:scale-95 shadow-sm"
                 >
-                  <span>💬</span> Ask on WhatsApp &rarr;
+                  <span>Ask on WhatsApp</span> &rarr;
                 </a>
               </div>
             </div>
@@ -396,7 +396,7 @@ export default function FAQPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition active:scale-95 shadow-sm"
               >
-                <span>💬</span> WhatsApp Helpdesk
+                <span>WhatsApp Helpdesk</span>
               </a>
               <Link
                 href="/contact"

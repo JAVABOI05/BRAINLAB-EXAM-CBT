@@ -128,7 +128,7 @@ export default function AdminPaymentGatewaysPage() {
         return;
       }
 
-      setMessage(data.message || "✓ Payment gateway settings saved successfully.");
+      setMessage(data.message || "Payment gateway settings saved successfully.");
       setMessageType("success");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Error saving payment settings.");
@@ -196,7 +196,7 @@ export default function AdminPaymentGatewaysPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl">💳</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-cyan-300"><svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
                 <h1 className="admin-title">Payment Gateways &amp; Merchant Settings</h1>
               </div>
               <p className="admin-subtitle mt-1">
@@ -232,7 +232,7 @@ export default function AdminPaymentGatewaysPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-sm font-black text-white flex items-center gap-2">
-                <span>🔗</span> Central Webhook Callback URL
+                Central Webhook Callback URL
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Paste this exact webhook URL into your Paystack, Flutterwave, or Bachs merchant dashboard.
@@ -246,13 +246,13 @@ export default function AdminPaymentGatewaysPage() {
               onClick={() => {
                 if (webhookUrl) {
                   navigator.clipboard.writeText(webhookUrl);
-                  setMessage("✓ Webhook URL copied to clipboard!");
+                  setMessage("Webhook URL copied to clipboard!");
                   setMessageType("success");
                 }
               }}
               className="admin-btn-light text-xs self-start sm:self-center"
             >
-              📋 Copy Webhook URL
+              Copy Webhook URL
             </button>
           </div>
         </section>
@@ -270,28 +270,28 @@ export default function AdminPaymentGatewaysPage() {
                 {
                   id: "paystack",
                   name: "Paystack",
-                  icon: "🟢",
+                  icon: "",
                   desc: "Nigerian standard. Cards, Bank Transfer, USSD, Apple Pay.",
                   color: "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20",
                 },
                 {
                   id: "flutterwave",
                   name: "Flutterwave",
-                  icon: "🟣",
+                  icon: "",
                   desc: "Pan-African & International cards, Barter, Mobile Money.",
                   color: "border-purple-500 bg-purple-50/30 dark:bg-purple-950/20",
                 },
                 {
                   id: "bachs",
                   name: "Bachs",
-                  icon: "🔵",
+                  icon: "",
                   desc: "Direct collections & automated settlement checkout.",
                   color: "border-blue-500 bg-blue-50/30 dark:bg-blue-950/20",
                 },
                 {
                   id: "bank_transfer",
                   name: "Manual Bank Transfer",
-                  icon: "🏦",
+                  icon: "",
                   desc: "Direct Nigerian bank deposits with proof of payment.",
                   color: "border-amber-500 bg-amber-50/30 dark:bg-amber-950/20",
                 },
@@ -326,7 +326,7 @@ export default function AdminPaymentGatewaysPage() {
                   </div>
                   {config.active_provider === provider.id && (
                     <span className="mt-3 text-[10px] font-extrabold uppercase text-blue-600 dark:text-cyan-400 tracking-wider">
-                      ✓ Active Gateway
+                      Active Gateway
                     </span>
                   )}
                 </label>
@@ -349,7 +349,7 @@ export default function AdminPaymentGatewaysPage() {
                 }
                 className={config.allow_candidate_choice ? "admin-btn-primary" : "admin-btn-light"}
               >
-                {config.allow_candidate_choice ? "✓ Multi-Gateway Choice ON" : "Fixed Single Gateway"}
+                {config.allow_candidate_choice ? "Multi-Gateway Choice ON" : "Fixed Single Gateway"}
               </button>
             </div>
           </section>
@@ -359,7 +359,7 @@ export default function AdminPaymentGatewaysPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>🟢</span> Paystack Configuration
+                  Paystack Configuration
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Configure Secret &amp; Public keys for Paystack API transactions.
@@ -372,7 +372,7 @@ export default function AdminPaymentGatewaysPage() {
                   disabled={testingProvider === "paystack"}
                   className="admin-btn-light text-xs font-bold"
                 >
-                  {testingProvider === "paystack" ? "Testing..." : "⚡ Test Connection"}
+                  {testingProvider === "paystack" ? "Testing..." : "Test Connection"}
                 </button>
                 <button
                   type="button"
@@ -394,7 +394,7 @@ export default function AdminPaymentGatewaysPage() {
                       : "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60"
                   }`}
                 >
-                  {config.providers.paystack.test_mode ? "🧪 Test Mode (Sandbox)" : "🚀 Live Production"}
+                  {config.providers.paystack.test_mode ? "Test Mode (Sandbox)" : "Live Production"}
                 </button>
               </div>
             </div>
@@ -445,7 +445,7 @@ export default function AdminPaymentGatewaysPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>🟣</span> Flutterwave Configuration
+                  Flutterwave Configuration
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Configure Flutterwave v3 credentials for global and African payments.
@@ -458,7 +458,7 @@ export default function AdminPaymentGatewaysPage() {
                   disabled={testingProvider === "flutterwave"}
                   className="admin-btn-light text-xs font-bold"
                 >
-                  {testingProvider === "flutterwave" ? "Testing..." : "⚡ Test Connection"}
+                  {testingProvider === "flutterwave" ? "Testing..." : "Test Connection"}
                 </button>
                 <button
                   type="button"
@@ -480,7 +480,7 @@ export default function AdminPaymentGatewaysPage() {
                       : "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60"
                   }`}
                 >
-                  {config.providers.flutterwave.test_mode ? "🧪 Test Mode (Sandbox)" : "🚀 Live Production"}
+                  {config.providers.flutterwave.test_mode ? "Test Mode (Sandbox)" : "Live Production"}
                 </button>
               </div>
             </div>
@@ -531,7 +531,7 @@ export default function AdminPaymentGatewaysPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>🔵</span> Bachs Checkout Configuration
+                  Bachs Checkout Configuration
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Configure Bachs API Key and Webhook Signing Secret.
@@ -544,7 +544,7 @@ export default function AdminPaymentGatewaysPage() {
                   disabled={testingProvider === "bachs"}
                   className="admin-btn-light text-xs font-bold"
                 >
-                  {testingProvider === "bachs" ? "Testing..." : "⚡ Test Connection"}
+                  {testingProvider === "bachs" ? "Testing..." : "Test Connection"}
                 </button>
                 <button
                   type="button"
@@ -566,7 +566,7 @@ export default function AdminPaymentGatewaysPage() {
                       : "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60"
                   }`}
                 >
-                  {config.providers.bachs.test_mode ? "🧪 Test Mode (Sandbox)" : "🚀 Live Production"}
+                  {config.providers.bachs.test_mode ? "Test Mode (Sandbox)" : "Live Production"}
                 </button>
               </div>
             </div>
@@ -615,7 +615,7 @@ export default function AdminPaymentGatewaysPage() {
           {/* SECTION 5: BANK TRANSFER */}
           <section className="admin-section admin-card border-l-4 border-l-amber-500">
             <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <span>🏦</span> Manual Bank Transfer Details
+              Manual Bank Transfer Details
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Provide institutional bank account details for students or schools wishing to pay via direct Nigerian bank deposit.
@@ -710,7 +710,7 @@ export default function AdminPaymentGatewaysPage() {
               disabled={saving}
               className="admin-btn-primary px-8"
             >
-              {saving ? "Saving Changes..." : "💾 Save Payment Gateway Settings"}
+              {saving ? "Saving Changes..." : "Save Payment Gateway Settings"}
             </button>
           </div>
         </form>

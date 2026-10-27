@@ -248,7 +248,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
     return {
       user_id: u.id,
       display_name: displayName,
-      email: u.email || "",
+      email: u.id === currentUserId ? (u.email || "") : (u.user_metadata?.hide_email === false ? (u.email || "") : ""),
       role,
       status: isOnline ? (p?.status || "online") : "offline",
       custom_status: isOnline ? p?.custom_status || null : null,
@@ -554,6 +554,7 @@ export async function createGroupChat(
     participants: allParticipantIds.map((id) => ({
       user_id: id,
       role: id === userId ? "admin" : "member",
+      invite_status: id === userId ? ("accepted" as const) : ("pending" as const),
     })),
   };
 

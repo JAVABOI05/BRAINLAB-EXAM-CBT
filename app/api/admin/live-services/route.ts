@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
 import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider, getAllVideoProvidersStatus } from "@/app/lib/liveClassroom/provider";
 import type { VideoProviderType, LiveServicesCredentials } from "@/app/lib/liveClassroom/types";
@@ -12,14 +12,9 @@ async function verifySuperAdmin(request: NextRequest) {
     return { error: "Unauthorized. Please sign in as an administrator.", status: 401, user: null };
   }
 
-  const supabase = getSupabaseServerClient();
-  const { data: adminRole, error: roleError } = await supabase
-    .from("admin_user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const role = await resolveAdminRole(user.id);
 
-  if (roleError || adminRole?.role !== "super_admin") {
+  if (role !== "super_admin" && role !== "platform_admin") {
     return {
       error: "Access denied. Only the Super Administrator can configure external live streaming services.",
       status: 403,

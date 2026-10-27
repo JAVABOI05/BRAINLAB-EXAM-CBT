@@ -423,7 +423,7 @@ export default function AdminLiveClassroomControlPage() {
 
         <div className="flex items-center gap-2">
           <AdminNotificationBell />
-          <Link href="/classroom/BL-LIVE-101" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">🎥 Live Room (BL-LIVE-101)</Link>
+          <Link href="/classroom/BL-LIVE-101" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">Live Room (BL-LIVE-101)</Link>
           <Link
             href="/admin/dashboard"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
@@ -455,7 +455,7 @@ export default function AdminLiveClassroomControlPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
               <div>
                 <span className="rounded-full bg-cyan-400/20 border border-cyan-400/40 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-cyan-300">
-                  🔴 Live Interactive Classroom Launcher
+                  Live Interactive Classroom Launcher
                 </span>
                 <h2 className="mt-2 text-2xl font-black text-white">Start &amp; Host an Academic Stage</h2>
                 <p className="mt-1 text-xs text-slate-300 max-w-xl">
@@ -470,7 +470,7 @@ export default function AdminLiveClassroomControlPage() {
                   className="rounded-xl border border-emerald-400/40 bg-emerald-950/60 hover:bg-emerald-900/60 px-3.5 py-2.5 text-xs font-bold text-emerald-300 transition flex items-center gap-2"
                   title="Share invitation with prefilled details directly to WhatsApp class group"
                 >
-                  <span>📲 Broadcast to WhatsApp</span>
+                  <span>Broadcast to WhatsApp</span>
                 </button>
                 <button
                   type="button"
@@ -479,7 +479,7 @@ export default function AdminLiveClassroomControlPage() {
                   className="rounded-xl border border-amber-400/40 bg-amber-950/60 hover:bg-amber-900/60 px-3.5 py-2.5 text-xs font-bold text-amber-300 transition flex items-center gap-2 disabled:opacity-50"
                   title="Dispatch in-app notifications and banner to all logged-in students"
                 >
-                  <span>{isBroadcasting ? "Sending..." : "🔔 In-App Alert to Students"}</span>
+                  <span>{isBroadcasting ? "Sending..." : "In-App Alert to Students"}</span>
                 </button>
                 <button
                   type="button"
@@ -491,7 +491,7 @@ export default function AdminLiveClassroomControlPage() {
                   }}
                   className="rounded-xl border border-cyan-400/40 bg-cyan-950/60 hover:bg-cyan-900/60 px-3.5 py-2.5 text-xs font-bold text-cyan-300 transition flex items-center gap-2"
                 >
-                  <span>{isCopied ? "✅ Link Copied!" : "📋 Copy Link"}</span>
+                  <span>{isCopied ? "Link Copied!" : "Copy Link"}</span>
                 </button>
                 <a
                   href={`/api/classroom/attendance?classId=${sessionRoomId || "BL-LIVE-101"}&format=csv`}
@@ -507,7 +507,7 @@ export default function AdminLiveClassroomControlPage() {
                   onClick={handleLaunchStage}
                   className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-2"
                 >
-                  <span>🚀 Launch Live Stage →</span>
+                  <span>Launch Live Stage →</span>
                 </button>
               </div>
             </div>
@@ -594,7 +594,7 @@ export default function AdminLiveClassroomControlPage() {
                         : "bg-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
-                    🌍 Open Class (No Code)
+                    Open Class (No Code)
                   </button>
                   <button
                     type="button"
@@ -605,7 +605,7 @@ export default function AdminLiveClassroomControlPage() {
                         : "bg-slate-800 text-slate-400 hover:text-white"
                     }`}
                   >
-                    👑 Masterclass (Restricted)
+                    Masterclass (Restricted)
                   </button>
                 </div>
               </div>
@@ -672,7 +672,7 @@ export default function AdminLiveClassroomControlPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
                 <span className="text-xs font-black uppercase tracking-wider text-blue-800">
-                  🛡️ Tutor Access &amp; Host Authorization
+                  Tutor Access & Host Authorization
                 </span>
                 <h2 className="mt-1 text-xl font-black text-slate-950">
                   Authorized Instructors &amp; Classroom Hosts
@@ -711,7 +711,7 @@ export default function AdminLiveClassroomControlPage() {
                       key={email}
                       className="inline-flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-3 py-1.5 text-xs font-bold text-blue-900"
                     >
-                      <span>👨‍🏫 {email}</span>
+                      <span>{email}</span>
                       <button
                         type="button"
                         onClick={() => void handleRemoveAllowedTutor(email)}
@@ -1074,7 +1074,7 @@ export default function AdminLiveClassroomControlPage() {
                       onClick={handleTestService}
                       className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50 transition"
                     >
-                      {testingService ? "Testing Connection…" : `⚡ Test ${selectedServiceTab.toUpperCase()} Connection & Token`}
+                      {testingService ? "Testing Connection…" : `Test ${selectedServiceTab.toUpperCase()} Connection & Token`}
                     </button>
 
                     <button
@@ -1083,7 +1083,7 @@ export default function AdminLiveClassroomControlPage() {
                       onClick={handleSaveServiceCredentials}
                       className="rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2 text-xs font-bold text-white shadow-xs disabled:opacity-50 transition"
                     >
-                      {savingService ? "Saving Credentials…" : "💾 Save Live Service Settings"}
+                      {savingService ? "Saving Credentials…" : "Save Live Service Settings"}
                     </button>
                   </div>
                 )}

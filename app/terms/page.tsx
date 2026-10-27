@@ -82,10 +82,10 @@ export default function TermsOfUsePage() {
               Platform Rules &amp; Candidate Agreement
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 px-3 py-1 text-xs font-black text-emerald-800 dark:text-emerald-300">
-              ⚖️ Fair Testing Standard
+              Fair Testing Standard
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-700 px-3 py-1 text-xs font-bold text-indigo-900 dark:text-indigo-300">
-              🤖 AI Fair Use Policy
+              AI Fair Use Policy
             </span>
           </div>
 
@@ -117,13 +117,13 @@ export default function TermsOfUsePage() {
                 onClick={() => window.print()}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
               >
-                🖨️ Print Terms
+                Print Terms
               </button>
               <Link
                 href="/privacy"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-cyan-800 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-cyan-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
               >
-                🔒 Privacy Notice &rarr;
+                Privacy Notice &rarr;
               </Link>
             </div>
           </div>
@@ -177,7 +177,7 @@ export default function TermsOfUsePage() {
               <div className="rounded-3xl border border-amber-200/80 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/70 to-amber-100/30 dark:from-amber-950/30 dark:to-slate-900 p-6 sm:p-8 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base sm:text-lg font-black text-amber-950 dark:text-amber-300 flex items-center gap-2">
-                    <span>⚡</span>
+                    
                     <span>Executive Highlights for Candidates &amp; Guardians</span>
                   </h2>
                   <button
@@ -185,30 +185,30 @@ export default function TermsOfUsePage() {
                     className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
                     title="Copy section link"
                   >
-                    Copy Link 🔗
+                    Copy Link
                   </button>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                   <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
-                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">🎯 Independent Prep Academy</p>
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">Independent Prep Academy</p>
                     <p className="text-slate-600 dark:text-slate-400 text-xs">
                       BrainLab is an independent academic preparatory body. We are not officially affiliated with or endorsed by JAMB, WAEC, NECO, or NABTEB. Mock scores serve as diagnostic readiness benchmarks.
                     </p>
                   </div>
                   <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
-                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">🛡️ Non-Negotiable CBT Integrity</p>
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">Non-Negotiable CBT Integrity</p>
                     <p className="text-slate-600 dark:text-slate-400 text-xs">
                       Tab switching, proxy candidate sitting, automated script injection, and answer scraping are strictly prohibited. Violations trigger automated test disqualification.
                     </p>
                   </div>
                   <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
-                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">🤖 AI Tutor Educational Use</p>
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">AI Tutor Educational Use</p>
                     <p className="text-slate-600 dark:text-slate-400 text-xs">
                       BrainLab AI Tutor is engineered solely for syllabus explanations and step-by-step problem derivations. Jailbreaks, prompt bombing, and commercial redistribution are forbidden.
                     </p>
                   </div>
                   <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-white/70 dark:bg-slate-900/60 p-4">
-                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">💳 Transparent Subscriptions</p>
+                    <p className="font-bold text-amber-950 dark:text-amber-300 mb-1">Transparent Subscriptions</p>
                     <p className="text-slate-600 dark:text-slate-400 text-xs">
                       Payments via Paystack, Flutterwave, Bank Transfer, and Bachs are securely processed. Digital exam banks are activated immediately upon verification.
                     </p>
@@ -227,7 +227,7 @@ export default function TermsOfUsePage() {
                   onClick={() => handleCopyLink("acceptance")}
                   className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                 >
-                  Copy Link 🔗
+                  Copy Link
                 </button>
               </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -256,7 +256,7 @@ export default function TermsOfUsePage() {
                   onClick={() => handleCopyLink("cbt-integrity")}
                   className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                 >
-                  Copy Link 🔗
+                  Copy Link
                 </button>
               </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -288,7 +288,7 @@ export default function TermsOfUsePage() {
                   onClick={() => handleCopyLink("ai-fair-use")}
                   className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                 >
-                  Copy Link 🔗
+                  Copy Link
                 </button>
               </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -298,7 +298,7 @@ export default function TermsOfUsePage() {
               <div className="grid gap-4 sm:grid-cols-2 pt-1">
                 <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 p-5 space-y-2">
                   <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
-                    <span>✅</span> Permitted Academic Use
+                    <span className="text-emerald-600 font-bold">✓</span> Permitted Academic Use
                   </h3>
                   <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1.5 list-disc list-inside">
                     <li>Step-by-step mathematical &amp; scientific derivations</li>
@@ -310,7 +310,7 @@ export default function TermsOfUsePage() {
 
                 <div className="rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 p-5 space-y-2">
                   <h3 className="text-sm font-bold text-rose-900 dark:text-rose-300 flex items-center gap-2">
-                    <span>❌</span> Prohibited AI Abuse
+                    <span className="text-rose-600 font-bold">✗</span> Prohibited AI Abuse
                   </h3>
                   <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 space-y-1.5 list-disc list-inside">
                     <li>Prompt-injection attacks targeting system instructions</li>
@@ -332,7 +332,7 @@ export default function TermsOfUsePage() {
                   onClick={() => handleCopyLink("subscriptions-billing")}
                   className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                 >
-                  Copy Link 🔗
+                  Copy Link
                 </button>
               </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -359,7 +359,7 @@ export default function TermsOfUsePage() {
                   onClick={() => handleCopyLink("intellectual-property")}
                   className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                 >
-                  Copy Link 🔗
+                  Copy Link
                 </button>
               </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -385,7 +385,7 @@ export default function TermsOfUsePage() {
                   onClick={() => handleCopyLink("community-conduct")}
                   className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                 >
-                  Copy Link 🔗
+                  Copy Link
                 </button>
               </div>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -408,7 +408,7 @@ export default function TermsOfUsePage() {
                   onClick={() => handleCopyLink("disclaimers")}
                   className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                 >
-                  Copy Link 🔗
+                  Copy Link
                 </button>
               </div>
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -436,7 +436,7 @@ export default function TermsOfUsePage() {
                     onClick={() => handleCopyLink("dispute-support")}
                     className="text-xs font-semibold text-slate-400 hover:text-blue-600 transition"
                   >
-                    Copy Link 🔗
+                    Copy Link
                   </button>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -465,19 +465,19 @@ export default function TermsOfUsePage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 font-bold text-white transition active:scale-95 shadow-sm"
                   >
-                    <span>💬</span> Contact WhatsApp Helpdesk (+234 907 431 0204)
+                    <span>Contact WhatsApp Helpdesk</span> (+234 907 431 0204)
                   </a>
                   <Link
                     href="/contact"
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
                   >
-                    <span>📞</span> Contact Directory
+                    <span>Contact Directory</span>
                   </Link>
                   <Link
                     href="/pricing"
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
                   >
-                    <span>💳</span> View Pricing Plans
+                    <span>View Pricing Plans</span>
                   </Link>
                 </div>
               </div>

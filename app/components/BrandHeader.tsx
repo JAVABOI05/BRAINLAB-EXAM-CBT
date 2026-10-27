@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
 import UserBadges from "./UserBadges";
 
 const NAV_LINKS = [
@@ -31,6 +32,7 @@ export default function BrandHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -54,12 +56,21 @@ export default function BrandHeader() {
       .getUser()
       .then(({ data, error }) => {
         if (!active) return;
-        setUser(error ? null : data.user);
+        const currentUser = error ? null : data.user;
+        setUser(currentUser);
+        if (currentUser) {
+          void isCurrentUserAdmin(currentUser.id).then((adminRes) => {
+            if (active) setIsAdmin(adminRes);
+          });
+        } else {
+          setIsAdmin(false);
+        }
         setCheckingSession(false);
       })
       .catch(() => {
         if (active) {
           setUser(null);
+          setIsAdmin(false);
           setCheckingSession(false);
         }
       });
@@ -68,7 +79,15 @@ export default function BrandHeader() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (active) {
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          void isCurrentUserAdmin(currentUser.id).then((adminRes) => {
+            if (active) setIsAdmin(adminRes);
+          });
+        } else {
+          setIsAdmin(false);
+        }
         setCheckingSession(false);
       }
     });

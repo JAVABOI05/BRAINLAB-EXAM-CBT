@@ -334,7 +334,7 @@ export default function MessagesPage() {
       },
       body: JSON.stringify({
         conversationId: activeConvId,
-        content: "🎙️ Voice note",
+        content: "Voice note",
         messageType: "audio_note",
         audioAssetId: uploadJson.asset.id,
       }),
@@ -433,7 +433,7 @@ export default function MessagesPage() {
       if (currentUser) {
         localStorage.setItem(`brainlab_friends_${currentUser.id}`, JSON.stringify(updated));
       }
-      toast.success(`You connected with ${peer.display_name}! 🤝`);
+      toast.success(`You connected with ${peer.display_name}!`);
     } catch {
       toast.error("Could not send friend request.");
     }
@@ -547,7 +547,7 @@ export default function MessagesPage() {
             };
           })
         );
-        toast.success("Joined study circle! Welcome to the group. 👥");
+        toast.success("Joined study circle! Welcome to the group.");
       } else {
         toast.error("Could not accept group invitation.");
       }
@@ -589,7 +589,7 @@ export default function MessagesPage() {
       setActiveConvId(existing.id);
       setActiveTab("chats");
       setMobileShowChat(true);
-      toast.success(`Opened ${circleName}! 👥`);
+      toast.success(`Opened ${circleName}!`);
       return;
     }
 
@@ -621,7 +621,7 @@ export default function MessagesPage() {
         setActiveConvId(json.conversation.id);
         setActiveTab("chats");
         setMobileShowChat(true);
-        toast.success(`Joined ${circleName}! Welcome to the circle 👥`);
+        toast.success(`Joined ${circleName}! Welcome to the circle`);
       } else {
         toast.error(json.error || "Could not join study circle.");
       }
@@ -666,7 +666,7 @@ export default function MessagesPage() {
         setMobileShowChat(true);
         setSelectedPeerForGroup(null);
         setCustomGroupName("");
-        toast.success(`Added ${selectedPeerForGroup.display_name} to ${groupTitle}! 👥`);
+        toast.success(`Added ${selectedPeerForGroup.display_name} to ${groupTitle}!`);
       } else {
         toast.error(json.error || "Could not complete study group addition.");
       }
@@ -709,6 +709,11 @@ export default function MessagesPage() {
   const isPeerBlocked = otherPeerId ? blockedUsers.includes(otherPeerId) : false;
   const isFriend = otherPeerId ? friendsList.includes(otherPeerId) : true;
   const hasSentAnyMessage = messages.some((m) => m.sender_id === currentUser?.id);
+  const myParticipant = activeConv?.participants?.find((p) => p.user_id === currentUser?.id);
+  const isGroupInvitePending = Boolean(
+    activeConv?.type === "group" &&
+    myParticipant?.invite_status === "pending"
+  );
   const isMessageRequestPending = Boolean(
     activeConv?.type === "direct" &&
     otherPeerId &&
@@ -783,7 +788,7 @@ export default function MessagesPage() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <span>💬 Chats</span>
+              <span>Chats</span>
               <span className="rounded-full bg-slate-200/70 px-1.5 py-0.2 text-[10px] font-bold">
                 {conversations.length}
               </span>
@@ -846,7 +851,7 @@ export default function MessagesPage() {
                       : "bg-purple-50 text-purple-800 hover:bg-purple-100"
                   }`}
                 >
-                  <span>👥</span> Circles ({conversations.filter((c) => c.type === "group").length})
+                  <span>Circles</span> ({conversations.filter((c) => c.type === "group").length})
                 </button>
                 <button
                   type="button"
@@ -1028,7 +1033,7 @@ export default function MessagesPage() {
                       : "bg-amber-50 text-amber-800 hover:bg-amber-100"
                   }`}
                 >
-                  🎓 Tutors
+                  Tutors
                 </button>
               </div>
 
@@ -1129,7 +1134,7 @@ export default function MessagesPage() {
                           className="flex items-center justify-center gap-1 rounded-xl bg-blue-50 border border-blue-200 px-2 py-1.5 text-[11px] font-bold text-blue-900 hover:bg-blue-100 transition active-press"
                           title="Start direct conversation"
                         >
-                          <span>💬</span> Message
+                          <span>Message</span>
                         </button>
 
                         <button
@@ -1152,7 +1157,7 @@ export default function MessagesPage() {
                           className="flex items-center justify-center gap-1 rounded-xl bg-purple-50 border border-purple-200 px-2 py-1.5 text-[11px] font-bold text-purple-900 hover:bg-purple-100 transition active-press"
                           title="Invite to Study Circle"
                         >
-                          <span>👥</span> Group
+                          <span>Group</span>
                         </button>
                       </div>
                     </div>
@@ -1238,6 +1243,39 @@ export default function MessagesPage() {
                 </div>
               </div>
 
+              {/* Group Invitation Banner */}
+              {isGroupInvitePending && (
+                <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">👥</span>
+                    <div>
+                      <h4 className="text-xs font-bold text-blue-950">
+                        Group Invitation to {activeConv.title}
+                      </h4>
+                      <p className="text-[11px] text-blue-800">
+                        You were invited to join this study circle. Accept to participate in discussions.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void handleAcceptGroupInvite(activeConv.id)}
+                      className="rounded-xl bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 text-xs font-bold shadow-xs transition active-press"
+                    >
+                      ✓ Accept Invitation
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeclineGroupInvite(activeConv.id)}
+                      className="rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 px-3 py-1.5 text-xs font-bold transition active-press"
+                    >
+                      ✕ Decline
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Message Request Notification Banner */}
               {isMessageRequestPending && (
                 <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1263,14 +1301,14 @@ export default function MessagesPage() {
                       }}
                       className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition active-press"
                     >
-                      ✓ Accept Request
+                      Accept Request
                     </button>
                     <button
                       type="button"
                       onClick={() => otherPeerId && void handleToggleBlock(otherPeerId, activeConv.title)}
                       className="rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 px-3 py-1.5 text-xs font-bold transition active-press"
                     >
-                      🚫 Decline & Block
+                      Decline & Block
                     </button>
                   </div>
                 </div>
@@ -1314,7 +1352,7 @@ export default function MessagesPage() {
                         {/* Tutor badge over message */}
                         {isTutorMsg && !isMe && (
                           <span className="mb-1 rounded bg-amber-100 text-amber-900 text-[9px] font-black uppercase px-1.5 py-0.2 flex items-center gap-1">
-                            <span>🎓</span> Official Tutor Response
+                            Official Tutor Response
                           </span>
                         )}
                         <div
@@ -1444,8 +1482,30 @@ export default function MessagesPage() {
                       onClick={() => otherPeerId && void handleToggleBlock(otherPeerId, activeConv.title)}
                       className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition active-press"
                     >
-                      <span>✓</span> Unblock {activeConv.title}
+                      <span>Unblock</span> {activeConv.title}
                     </button>
+                  </div>
+                ) : isGroupInvitePending ? (
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center">
+                    <p className="text-xs font-bold text-blue-900">
+                      Accept the group invitation above to participate and send messages in {activeConv.title}.
+                    </p>
+                    <div className="mt-2.5 flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleAcceptGroupInvite(activeConv.id)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active-press"
+                      >
+                        <span>✓ Accept Invitation</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeclineGroupInvite(activeConv.id)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-300 px-4 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition active-press"
+                      >
+                        <span>✕ Decline</span>
+                      </button>
+                    </div>
                   </div>
                 ) : isMessageRequestPending ? (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center">
@@ -1463,14 +1523,14 @@ export default function MessagesPage() {
                         }}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition active-press"
                       >
-                        <span>✓</span> Accept Request
+                        <span>Accept Request</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => otherPeerId && void handleToggleBlock(otherPeerId, activeConv.title)}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-rose-200 px-4 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-50 transition active-press"
                       >
-                        <span>🚫</span> Block
+                        <span>Block</span>
                       </button>
                     </div>
                   </div>
@@ -1536,7 +1596,7 @@ export default function MessagesPage() {
                 onClick={() => setActiveTab("peers")}
                 className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 transition"
               >
-                👥 Browse All Real Learners & Peers ({allPeers.length})
+                Browse All Real Learners & Peers ({allPeers.length})
               </button>
             </div>
           )}

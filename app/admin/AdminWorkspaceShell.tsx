@@ -292,6 +292,7 @@ const GROUPS: Group[] = [
     label: "Overview",
     items: [
       { id: "dashboard", label: "Dashboard", href: "/admin/dashboard", description: "Platform overview and quick actions", icon: "dashboard", visible: always },
+      { id: "student-dashboard", label: "Student Dashboard", href: "/dashboard", description: "Switch to Learner Portal (Universal Admin VIP Preview)", icon: "classes", visible: always },
       { id: "candidates", label: "Candidate Directory", href: "/admin/candidates", description: "Search, inspect, and manage student accounts & tiers", icon: "roles", visible: (u, a) => a["institution.manage"] === true || platformAdmin(u) || a["finance.billing.manage"] === true },
       { id: "analytics", label: "Analytics & Reports", href: "/admin/analytics", description: "Permitted aggregate reporting", icon: "analytics", visible: (_u, a) => a["analytics.read"] === true },
     ],
@@ -686,6 +687,19 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
               <span className="admin-status-dot is-online" />
               <span>Cloud Online</span>
             </div>
+
+            {/* Direct Switch to Student Learner Dashboard */}
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-600 hover:text-white px-3 py-1.5 text-xs font-black text-blue-300 transition shadow-sm active:scale-95"
+              title="Switch to Student Dashboard (Preview learner portal with Admin VIP privileges)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                <polyline points="10 2 10 10 13 7 16 10 16 2" />
+              </svg>
+              <span>Student Dashboard</span>
+            </Link>
 
             <Link href="/" target="_blank" className="admin-view-site-btn" title="View live student portal">
               <span>Live Portal</span>

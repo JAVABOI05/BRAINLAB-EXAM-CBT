@@ -204,7 +204,17 @@ export async function POST(request: NextRequest) {
     const planEntitlements = (sub?.subscription_plans as { feature_entitlements?: Record<string, unknown> })
       ?.feature_entitlements;
 
-    isUnlimited = planEntitlements?.ai_unlimited === true;
+    // Administrators have universal unlimited AI Tutor access without paywalls
+    let isAdmin = false;
+    try {
+      const { resolveAdminRole } = await import("@/app/lib/supabaseServer");
+      const adminRole = await resolveAdminRole(authData.user.id);
+      if (adminRole) isAdmin = true;
+    } catch {
+      // ignore
+    }
+
+    isUnlimited = isAdmin || planEntitlements?.ai_unlimited === true;
     const monthlyQuota = Number(planEntitlements?.ai_monthly_quota || 0);
 
     if (isUnlimited) {

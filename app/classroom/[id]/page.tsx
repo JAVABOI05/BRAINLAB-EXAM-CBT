@@ -457,7 +457,7 @@ export default function LiveClassroomPage({
               prev.map((p) => (p.id === payload.userId ? { ...p, isHandRaised: payload.isHandRaised } : p))
             );
             if (payload.isHandRaised && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
-              toast.info(`✋ ${payload.userName || "A student"} raised their hand!`);
+              toast.info(`${payload.userName || "A student"} raised their hand.`);
             }
           }
         });
@@ -465,7 +465,7 @@ export default function LiveClassroomPage({
         // Listen for student whiteboard access requests
         channel.on("broadcast", { event: "board_access_request" }, ({ payload }) => {
           if (payload?.userId && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
-            toast.info(`🎨 ${payload.userName || "Student"} requested permission to draw on the board.`);
+            toast.info(`${payload.userName || "Student"} requested permission to draw on the board.`);
           }
         });
 
@@ -476,7 +476,7 @@ export default function LiveClassroomPage({
               if (prev.some((p) => p.studentId === payload.studentId)) return prev;
               return [...prev, payload];
             });
-            toast.info(`🛡️ Masterclass Request: ${payload.studentName || "A learner"} is waiting for admission.`);
+            toast.info(`Masterclass Request: ${payload.studentName || "A learner"} is waiting for admission.`);
           }
         });
 
@@ -1058,11 +1058,11 @@ export default function LiveClassroomPage({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
 
-      // Detect highest fidelity supported audio mime across Safari, Chrome, Edge & Firefox
+      // Detect highest fidelity supported audio mime across Safari, Chrome, Edge & Firefox (prioritizing audio/mp4 for cross-platform iOS & Android playback)
       const mimeCandidates = [
+        "audio/mp4",
         "audio/webm;codecs=opus",
         "audio/webm",
-        "audio/mp4",
         "audio/aac",
         "audio/ogg;codecs=opus",
       ];
@@ -1168,7 +1168,7 @@ export default function LiveClassroomPage({
           const payloadMsg = {
             classId,
             senderName: safeSender,
-            text: "🎙️ Voice Note",
+            text: "Voice Note",
             type: "audio" as const,
             mediaUrl: uploadedUrl,
             duration: Math.max(1, duration),
@@ -1309,16 +1309,41 @@ export default function LiveClassroomPage({
         audioPlayerRef.current = null;
       }
       try {
+        const fullUrl =
+          url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")
+            ? url
+            : `${window.location.origin}${url}`;
+
         const audio = new Audio();
         audioPlayerRef.current = audio;
         audio.preload = "auto";
-        audio.src = url;
+        audio.src = fullUrl;
 
         audio.onended = () => {
           setCurrentlyPlayingAudioId(null);
         };
-        audio.onerror = (e) => {
-          console.warn("Audio playback error:", e);
+
+        // Fallback: If streaming/codec header triggers error, fetch blob & play via object URL
+        audio.onerror = async () => {
+          console.warn("Direct audio playback error on", fullUrl, "attempting blob stream fallback...");
+          try {
+            const resp = await fetch(fullUrl);
+            if (resp.ok) {
+              const blob = await resp.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              const fallbackAudio = new Audio(blobUrl);
+              audioPlayerRef.current = fallbackAudio;
+              fallbackAudio.onended = () => {
+                setCurrentlyPlayingAudioId(null);
+                URL.revokeObjectURL(blobUrl);
+              };
+              await fallbackAudio.play();
+              setCurrentlyPlayingAudioId(msgId);
+              return;
+            }
+          } catch (fallbackErr) {
+            console.error("Blob playback fallback failed:", fallbackErr);
+          }
           setCurrentlyPlayingAudioId(null);
           toast.error("Could not play voice note. Format may not be supported by your device.");
         };
@@ -1352,7 +1377,7 @@ export default function LiveClassroomPage({
       id: `msg_wb_${Date.now()}`,
       senderId: currentUser.id,
       senderName: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "Scholar",
-      text: "🎨 Shared live whiteboard sketch/diagram",
+      text: "Shared live whiteboard sketch/diagram",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       isHost: classDetails?.tutorId === currentUser.id,
       type: "image",
@@ -2029,7 +2054,7 @@ export default function LiveClassroomPage({
               }}
               className="rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-5 py-2.5 text-xs font-bold text-amber-300 transition"
             >
-              🔄 Check Admission Status
+              Check Admission Status
             </button>
             <Link
               href="/dashboard"
@@ -2069,7 +2094,7 @@ export default function LiveClassroomPage({
               }}
               className="rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-3 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95"
             >
-              🔄 Refresh &amp; Re-check Stage
+              Refresh & Re-check Stage
             </button>
             <Link
               href="/dashboard"
@@ -2140,7 +2165,7 @@ export default function LiveClassroomPage({
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-ping" />
             <span className="font-extrabold text-amber-300">
-              🛡️ Masterclass Waiting Room ({pendingAdmissions.length} pending):
+              Masterclass Waiting Room ({pendingAdmissions.length} pending):
             </span>
             <span className="text-amber-100 max-w-xs sm:max-w-md truncate">
               {pendingAdmissions.map((p) => p.studentName).join(", ")}
@@ -2152,7 +2177,7 @@ export default function LiveClassroomPage({
               onClick={() => void handleAdmitAllStudents()}
               className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1 font-bold text-white shadow-xs transition active:scale-95"
             >
-              ✓ Admit All ({pendingAdmissions.length})
+              Admit All ({pendingAdmissions.length})
             </button>
             {pendingAdmissions.slice(0, 2).map((p) => (
               <button
@@ -2204,12 +2229,12 @@ export default function LiveClassroomPage({
           </div>
           {isTutorOrModerator ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-600 dark:text-amber-300 shadow-2xs">
-              <span>👑</span>
+              
               <span>Tutor &amp; Host</span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300">
-              <span>🎓</span>
+              
               <span>Student</span>
             </span>
           )}
@@ -2242,7 +2267,7 @@ export default function LiveClassroomPage({
               className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition active-press"
               title="Classroom Permissions & Moderation"
             >
-              <span>⚙️</span>
+              
               <span className="hidden md:inline">Permissions</span>
             </button>
           )}
@@ -2333,7 +2358,7 @@ export default function LiveClassroomPage({
             className="lg:hidden relative flex items-center gap-1 rounded-lg border border-blue-500/40 bg-blue-600/20 px-2 sm:px-2.5 py-1 text-xs font-bold text-blue-300 hover:bg-blue-600/30 transition active-press"
             title="Open Chat & Tabs"
           >
-            <span>💬</span>
+            
             <span className="hidden xs:inline">Hub</span>
             {unreadMessagesCount > 0 && (
               <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">
@@ -2375,7 +2400,7 @@ export default function LiveClassroomPage({
               }}
               className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-xs font-black text-white shadow-2xl hover:bg-emerald-500 active-press border border-emerald-400"
             >
-              <span>🔊</span>
+              
               <span>Tap to Hear Live Instructor Audio</span>
             </button>
           </div>
@@ -2512,7 +2537,7 @@ export default function LiveClassroomPage({
                         <div className="flex items-center gap-2.5">
                           <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
                           <span className="text-xs font-black tracking-wider uppercase text-cyan-300">
-                            📡 Big Screen Lecture Board
+                            Big Screen Lecture Board
                           </span>
                           <span className="hidden sm:inline-block rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-400">
                             Low-data Audio Mode
@@ -2521,7 +2546,7 @@ export default function LiveClassroomPage({
 
                         {/* Audio Wave Visualizer */}
                         <div className="flex items-center gap-1 h-5 px-3 py-1 rounded-full bg-slate-950/80 border border-slate-800">
-                          <span className="text-[10px] font-bold text-cyan-400 mr-1">🎙️ LIVE</span>
+                          <span className="text-[10px] font-bold text-cyan-400 mr-1">LIVE</span>
                           {[14, 20, 10, 24, 18, 12, 22, 16].map((h, i) => (
                             <span
                               key={i}
@@ -2539,7 +2564,7 @@ export default function LiveClassroomPage({
                         {pinnedMessage && (
                           <div className="flex items-center gap-2">
                             <span className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-[11px] font-black text-amber-300">
-                              📌 Pinned: {pinnedMessage.senderName}
+                              Pinned: {pinnedMessage.senderName}
                             </span>
                             {isTutorOrModerator && (
                               <button
@@ -2669,7 +2694,7 @@ export default function LiveClassroomPage({
                           {/* Explanation on Reveal */}
                           {!activePoll.is_open && activePoll.explanation && (
                             <div className="mt-5 rounded-2xl bg-blue-950/60 border border-blue-800/60 p-4 text-xs text-blue-200">
-                              💡 <strong className="text-white">Instructor's Explanation:</strong> {activePoll.explanation}
+                              <strong className="text-white">Instructor's Explanation:</strong> {activePoll.explanation}
                             </div>
                           )}
 
@@ -2701,7 +2726,7 @@ export default function LiveClassroomPage({
                               onClick={() => setPreviewImage(featuredMessage.mediaUrl || null)}
                               className="absolute bottom-3 right-3 rounded-xl bg-slate-900/90 border border-slate-700 px-3 py-1.5 text-xs font-bold text-cyan-300 shadow backdrop-blur hover:bg-slate-800"
                             >
-                              🔍 Expand High-Res
+                              Expand High-Res
                             </button>
                           </div>
                           {featuredMessage.text && (
@@ -2726,7 +2751,7 @@ export default function LiveClassroomPage({
                               {currentlyPlayingAudioId === featuredMessage.id ? "⏸" : "▶"}
                             </button>
                           </div>
-                          <h4 className="text-lg font-black text-white">🎙️ Masterclass Audio Explanation</h4>
+                          <h4 className="text-lg font-black text-white">Masterclass Audio Explanation</h4>
                           <p className="mt-1 text-xs text-slate-400">
                             Shared by {featuredMessage.senderName} • {featuredMessage.duration ? `${featuredMessage.duration}s duration` : "Voice Note"}
                           </p>
@@ -2750,7 +2775,7 @@ export default function LiveClassroomPage({
                         /* STAGE ARENA: 4. Tutor Spotlight & Smartboard Card */
                         <div className="w-full max-w-3xl flex flex-col items-center rounded-3xl border-2 border-cyan-500/30 bg-gradient-to-b from-slate-900/95 to-slate-950 p-8 md:p-10 shadow-2xl backdrop-blur text-center">
                           <span className="rounded-full bg-cyan-950 border border-cyan-800/80 px-3 py-1 text-xs font-bold text-cyan-300 mb-4">
-                            📝 Tutor's Note on Big Screen
+                            Tutor's Note on Big Screen
                           </span>
                           <p className="text-lg md:text-2xl font-extrabold text-cyan-50 leading-relaxed font-sans max-w-2xl">
                             {featuredMessage.text}
@@ -2773,13 +2798,13 @@ export default function LiveClassroomPage({
                           {/* Feature Tags */}
                           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                             <span className="rounded-full bg-blue-950/80 border border-blue-800/80 px-2.5 py-1 text-[11px] font-bold text-blue-300">
-                              🎙️ Voice Notes & Chat
+                              Voice Notes & Chat
                             </span>
                             <span className="rounded-full bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-1 text-[11px] font-bold text-emerald-300">
-                              📷 Diagram Sharing
+                              Diagram Sharing
                             </span>
                             <span className="rounded-full bg-amber-950/80 border border-amber-800/80 px-2.5 py-1 text-[11px] font-bold text-amber-300">
-                              🎯 In-Class Live Quizzes
+                              In-Class Live Quizzes
                             </span>
                           </div>
                         </div>
@@ -2793,14 +2818,14 @@ export default function LiveClassroomPage({
                           disabled={isRecordingAudio}
                           className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-cyan-300 transition flex items-center gap-1.5 shadow"
                         >
-                          <span>🎙️ Record Voice Note</span>
+                          <span>Record Voice Note</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => imageInputRef.current?.click()}
                           className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-emerald-300 transition flex items-center gap-1.5 shadow"
                         >
-                          <span>📷 Share Diagram</span>
+                          <span>Share Diagram</span>
                         </button>
                         <button
                           type="button"
@@ -2810,14 +2835,14 @@ export default function LiveClassroomPage({
                           }}
                           className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-amber-300 transition flex items-center gap-1.5 shadow"
                         >
-                          <span>🎯 Launch / View Quizzes</span>
+                          <span>Launch / View Quizzes</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setStageMode("whiteboard")}
                           className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 text-xs font-bold text-purple-300 transition flex items-center gap-1.5 shadow"
                         >
-                          <span>✏️ Open Smart Whiteboard</span>
+                          <span>Open Smart Whiteboard</span>
                         </button>
                       </div>
 
@@ -2836,11 +2861,11 @@ export default function LiveClassroomPage({
             {/* Stage Overlays (Participant count & Hand raises) */}
             <div className="absolute top-4 left-4 flex gap-2">
               <span className="rounded-full bg-slate-900/80 backdrop-blur px-3 py-1 text-xs font-medium text-slate-300 border border-slate-700">
-                👥 {participants.length} Active
+                {participants.length} Active Participants
               </span>
               {isHandRaised && (
                 <span className="rounded-full bg-amber-500/20 border border-amber-500/50 px-3 py-1 text-xs font-bold text-amber-300 flex items-center gap-1">
-                  ✋ Hand Raised
+                  Hand Raised
                 </span>
               )}
             </div>
@@ -2861,7 +2886,7 @@ export default function LiveClassroomPage({
                     className="flex items-center gap-2 text-xs font-black text-cyan-300 hover:text-cyan-200 active-press"
                   >
                     <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
-                    <span>🎯 Checkpoint Quiz Active {pollCountdown !== null && `(${pollCountdown}s)`}</span>
+                    <span>Checkpoint Quiz Active {pollCountdown !== null && `(${pollCountdown}s)`}</span>
                     <span className="text-[10px] rounded-md bg-cyan-950 border border-cyan-800 px-1.5 py-0.5">
                       Expand ↗
                     </span>
@@ -2968,7 +2993,7 @@ export default function LiveClassroomPage({
                     {/* Explanation on Reveal */}
                     {!activePoll.is_open && activePoll.explanation && (
                       <div className="mt-3 rounded-xl bg-blue-950/60 border border-blue-800/60 p-2.5 text-[11px] text-blue-200">
-                        💡 <strong className="text-white">Explanation:</strong> {activePoll.explanation}
+                        <strong className="text-white">Explanation:</strong> {activePoll.explanation}
                       </div>
                     )}
 
@@ -3135,7 +3160,7 @@ export default function LiveClassroomPage({
             {/* Quick Templates */}
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                ⚡ Quick Templates (1-Click Fill)
+                Quick Templates (1-Click Fill)
               </label>
               <div className="flex flex-wrap gap-1.5">
                 <button
@@ -3151,7 +3176,7 @@ export default function LiveClassroomPage({
                   }}
                   className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition active-press"
                 >
-                  ✓ True / False
+                  True / False
                 </button>
 
                 <button
@@ -3167,7 +3192,7 @@ export default function LiveClassroomPage({
                   }}
                   className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition active-press"
                 >
-                  👍 Yes / No
+                  Yes / No
                 </button>
 
                 <button
@@ -3185,7 +3210,7 @@ export default function LiveClassroomPage({
                   }}
                   className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition active-press"
                 >
-                  🔤 4-Option MCQ (A-D)
+                  4-Option MCQ (A-D)
                 </button>
 
                 <button
@@ -3193,16 +3218,16 @@ export default function LiveClassroomPage({
                   onClick={() => {
                     setPollQuestion("Understanding Check: How well do you grasp this concept?");
                     setPollOptions([
-                      { id: "opt_1", text: "💯 100% Clear & Understood" },
-                      { id: "opt_2", text: "🤔 Mostly, Need Another Example" },
-                      { id: "opt_3", text: "❓ Confused, Please Re-explain" },
+                      { id: "opt_1", text: "100% Clear & Understood" },
+                      { id: "opt_2", text: "Mostly, Need Another Example" },
+                      { id: "opt_3", text: "Confused, Please Re-explain" },
                     ]);
                     setPollDuration(45);
                     setPollCorrectId("");
                   }}
                   className="rounded-lg border border-cyan-800/60 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-950/40 hover:text-cyan-200 transition active-press"
                 >
-                  📊 Pulse Check
+                  Pulse Check
                 </button>
               </div>
             </div>
@@ -3585,7 +3610,7 @@ export default function LiveClassroomPage({
           </div>
           {isAssignedTutor && (
             <button type="button" onClick={takeAttendance} disabled={isTakingAttendance} className="rounded-xl border border-emerald-500/40 bg-emerald-600/15 px-2.5 py-2 text-[11px] font-black text-emerald-200 hover:bg-emerald-600/25 disabled:opacity-50" title="Mark currently connected students present">
-              {isTakingAttendance ? "Saving…" : "✓ Attendance"}
+              {isTakingAttendance ? "Saving…" : "Attendance"}
             </button>
           )}
 
@@ -3630,7 +3655,7 @@ export default function LiveClassroomPage({
             className="lg:hidden relative flex items-center gap-1 rounded-xl border border-blue-500/40 bg-blue-600/20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-blue-300 hover:bg-blue-600/30 transition active-press"
             title="Open Chat, Polls & Participants"
           >
-            <span>💬</span>
+            
             <span className="hidden xs:inline">Hub</span>
             {unreadMessagesCount > 0 && (
               <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white">

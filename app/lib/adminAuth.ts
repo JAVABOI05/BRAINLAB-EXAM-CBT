@@ -15,13 +15,53 @@ export async function getAdminSession(): Promise<AdminUser | null> {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return null;
 
-  const { data: role, error: roleError } = await supabase.rpc("get_admin_role");
-  if (roleError || typeof role !== "string" || !ADMIN_ROLES.includes(role as AdminRole)) return null;
+  let resolvedRole: string | null = null;
+
+  try {
+    const { data: role, error: roleError } = await supabase.rpc("get_admin_role");
+    if (!roleError && typeof role === "string" && ADMIN_ROLES.includes(role as AdminRole)) {
+      resolvedRole = role;
+    }
+  } catch {
+    // proceed to table checks
+  }
+
+  if (!resolvedRole) {
+    try {
+      const { data: profile } = await supabase
+        .from("admin_profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (profile && typeof profile.role === "string" && ADMIN_ROLES.includes(profile.role as AdminRole)) {
+        resolvedRole = profile.role;
+      }
+    } catch {
+      // proceed
+    }
+  }
+
+  if (!resolvedRole) {
+    try {
+      const { data: userRole } = await supabase
+        .from("admin_user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (userRole && typeof userRole.role === "string" && ADMIN_ROLES.includes(userRole.role as AdminRole)) {
+        resolvedRole = userRole.role;
+      }
+    } catch {
+      // proceed
+    }
+  }
+
+  if (!resolvedRole) return null;
 
   return {
     id: user.id,
     email: user.email ?? "",
-    role: role as AdminRole,
+    role: resolvedRole as AdminRole,
   };
 }
 
@@ -29,7 +69,7 @@ export async function adminSignIn(
   email: string,
   password: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { ok: false, message: "Invalid login credentials." };
 
   const admin = await getAdminSession();
@@ -37,8 +77,20 @@ export async function adminSignIn(
     await supabase.auth.signOut();
     return { ok: false, message: "This account is not an administrator." };
   }
-  // Do not persist the role as a browser-side authorization credential.
-  // Protected data access is enforced by the database permission function/RLS.
+
+  // Set the operator gate cookie so protected admin middleware passes seamlessly
+  if (data?.session?.access_token) {
+    try {
+      await fetch("/api/auth/operator-gate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: data.session.access_token }),
+      });
+    } catch {
+      // Non-fatal if operator-gate endpoint fails or is in dev
+    }
+  }
+
   return { ok: true };
 }
 
