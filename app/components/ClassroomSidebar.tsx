@@ -82,6 +82,9 @@ export interface ClassroomSidebarProps {
   allowStudentMedia?: boolean;
   allowStudentVoiceNotes?: boolean;
   chatMuted?: boolean;
+  pendingAdmissions?: { studentId: string; studentName: string; studentEmail?: string }[];
+  onAdmitStudent?: (studentId: string, allowed?: boolean) => Promise<void>;
+  onAdmitAllStudents?: () => Promise<void>;
 }
 
 
@@ -126,6 +129,9 @@ export default function ClassroomSidebar({
   allowStudentMedia = false,
   allowStudentVoiceNotes = true,
   chatMuted = false,
+  pendingAdmissions = [],
+  onAdmitStudent,
+  onAdmitAllStudents,
 }: ClassroomSidebarProps) {
   const currentUserName =
     currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Me";
@@ -577,6 +583,56 @@ export default function ClassroomSidebar({
 
         return (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Pending Masterclass Admission Requests (Waiting Room) */}
+            {isTutorOrModerator && pendingAdmissions && pendingAdmissions.length > 0 && (
+              <div className="rounded-2xl border border-amber-500/40 bg-amber-950/30 p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                    <span>🛡️</span>
+                    <span>Waiting Room ({pendingAdmissions.length})</span>
+                  </h4>
+                  {onAdmitAllStudents && (
+                    <button
+                      type="button"
+                      onClick={() => void onAdmitAllStudents()}
+                      className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1 text-[10px] font-bold text-white transition active-press"
+                    >
+                      Admit All
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  {pendingAdmissions.map((req) => (
+                    <div
+                      key={req.studentId}
+                      className="flex items-center justify-between rounded-xl bg-slate-900/80 p-2 text-xs border border-amber-500/20"
+                    >
+                      <div>
+                        <p className="font-bold text-white">{formatSafeName(req.studentName)}</p>
+                        <p className="text-[10px] text-amber-300/80">Requested entry</p>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => void onAdmitStudent?.(req.studentId, true)}
+                          className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1 text-[10px] font-bold text-white transition"
+                        >
+                          ✓ Admit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void onAdmitStudent?.(req.studentId, false)}
+                          className="rounded-lg border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 px-2 py-1 text-[10px] font-bold text-rose-300 transition"
+                        >
+                          ✕ Deny
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Tutors & Instructors Section */}
             <div>
               <div className="flex items-center justify-between mb-2">
