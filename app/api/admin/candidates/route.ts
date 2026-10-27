@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
       return sub && sub.status === "active" && sub.plan_id !== "free";
     }).length;
 
-    const suspendedCount = users.filter((u: any) => {
+    const suspendedCount = users.filter((u) => {
       const meta = (u.user_metadata || {}) as JsonRecord;
       return meta.is_suspended === true || (u.banned_until && new Date(u.banned_until) > new Date());
     }).length;
