@@ -1,5 +1,11 @@
 import { getSupabaseServerClient } from "./supabaseServer";
-import { getAIPlatformConfig } from "./platformConfig";
+import {
+  getAIPlatformConfig,
+  DEFAULT_MODEL_POOL,
+  type AIModelDefinition,
+  type AIRoutingStrategy,
+  type AIModelStrength,
+} from "./platformConfig";
 
 export interface LogAIGenerationParams {
   userId?: string | null;
@@ -18,6 +24,9 @@ export interface ModelUsageSummary {
   modelId: string;
   modelName: string;
   provider: "gemini" | "groq";
+  strength?: AIModelStrength;
+  priority?: number;
+  enabled?: boolean;
   status: "operational" | "warning" | "error" | "unconfigured";
   statusMessage?: string;
   latencyMs: number | null;
@@ -46,6 +55,9 @@ export interface AIMonitoringPayload {
   activeProvider: "gemini" | "groq";
   configuredGeminiModel: string;
   configuredGroqModel: string;
+  routingStrategy: AIRoutingStrategy;
+  pinnedModelId?: string;
+  modelPool: AIModelDefinition[];
   summary: {
     totalRequestsToday: number;
     totalTokensToday: number;
@@ -154,7 +166,7 @@ export async function recordAIGeneration(params: LogAIGenerationParams): Promise
 /**
  * Performs a live gateway probe for Groq models to extract active rate-limit headers.
  */
-async function probeGroq(model: string, groqKey: string): Promise<{
+async function probeGroq(modelIdentifier: string, groqKey: string): Promise<{
   status: "operational" | "warning" | "error";
   statusMessage?: string;
   latencyMs: number | null;
@@ -175,7 +187,7 @@ async function probeGroq(model: string, groqKey: string): Promise<{
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: modelIdentifier,
         messages: [{ role: "user", content: "ping" }],
         max_tokens: 1,
       }),
@@ -254,7 +266,7 @@ async function probeGroq(model: string, groqKey: string): Promise<{
 /**
  * Performs a live gateway probe for Google Gemini model to test status and latency.
  */
-async function probeGemini(model: string, geminiKey: string): Promise<{
+async function probeGemini(modelIdentifier: string, geminiKey: string): Promise<{
   status: "operational" | "warning" | "error";
   statusMessage?: string;
   latencyMs: number | null;
@@ -262,7 +274,7 @@ async function probeGemini(model: string, geminiKey: string): Promise<{
 }> {
   const start = Date.now();
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${geminiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelIdentifier)}:generateContent?key=${geminiKey}`;
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -340,7 +352,7 @@ async function fetchGroqModels(groqKey: string): Promise<string[]> {
 }
 
 /**
- * Aggregates complete AI usage, quotas, reset times, and live gateway telemetry.
+ * Aggregates complete AI usage, quotas, reset times, model pool telemetry, and live gateway telemetry.
  */
 export async function getAIMonitoringData(options?: { probeLive?: boolean }): Promise<AIMonitoringPayload> {
   const probeLive = options?.probeLive ?? true;
@@ -351,9 +363,10 @@ export async function getAIMonitoringData(options?: { probeLive?: boolean }): Pr
   const groqKey = process.env.GROQ_API_KEY || process.env.GROQAPIKEY || "";
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINIAPIKEY || "";
 
-  const activeProvider = config.provider;
+  const activeProvider = config.provider || "gemini";
   const configuredGeminiModel = config.gemini_model || process.env.GEMINI_MODEL || "gemini-3-flash-preview";
   const configuredGroqModel = config.groq_model || process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
+  const modelPool = config.model_pool || DEFAULT_MODEL_POOL;
 
   // Database Queries
   const supabase = getSupabaseServerClient();
@@ -362,7 +375,7 @@ export async function getAIMonitoringData(options?: { probeLive?: boolean }): Pr
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  // Fetch all recent rows (up to 1,500) for metrics calculation
+  // Fetch recent rows for metrics calculation
   const { data: recentRows } = await supabase
     .from("ai_generations")
     .select("id, model, prompt, response, metadata, user_id, created_at")
@@ -427,145 +440,102 @@ export async function getAIMonitoringData(options?: { probeLive?: boolean }): Pr
     }
   }
 
-  // Live Gateway Probing (runs in parallel)
-  let groqProbe: Awaited<ReturnType<typeof probeGroq>> | null = null;
-  let geminiProbe: Awaited<ReturnType<typeof probeGemini>> | null = null;
+  // Live Gateway Probes and Groq model discovery
+  const probeCache: Record<string, any> = {};
   let availableGroqModels: string[] = [];
 
   if (probeLive) {
-    const [groqRes, geminiRes, groqList] = await Promise.all([
-      groqKey ? probeGroq(configuredGroqModel, groqKey) : null,
-      geminiKey ? probeGemini(configuredGeminiModel, geminiKey) : null,
+    const [groqList] = await Promise.all([
       groqKey ? fetchGroqModels(groqKey) : Promise.resolve([]),
+      // Probe models in pool in parallel
+      ...modelPool.map(async (m) => {
+        if (m.provider === "groq" && groqKey) {
+          probeCache[m.modelIdentifier] = await probeGroq(m.modelIdentifier, groqKey);
+        } else if (m.provider === "gemini" && geminiKey) {
+          probeCache[m.modelIdentifier] = await probeGemini(m.modelIdentifier, geminiKey);
+        }
+      }),
     ]);
-    groqProbe = groqRes;
-    geminiProbe = geminiRes;
     availableGroqModels = groqList;
   }
 
-  // Model 1: Primary Gemini Model
-  const geminiTodayRequests = modelStatsMap[configuredGeminiModel]?.todayCount || 0;
-  const geminiLimitRequests = 1500; // Google AI Studio Free Tier RPD
-  const geminiRemainingRequests = Math.max(0, geminiLimitRequests - geminiTodayRequests);
-  const geminiPercentUsed = Math.min(100, Math.round((geminiTodayRequests / geminiLimitRequests) * 100));
+  // Build telemetry summary for each model defined in pool
+  const models: ModelUsageSummary[] = modelPool.map((def) => {
+    const stats = modelStatsMap[def.modelIdentifier] || {
+      todayCount: 0,
+      sevenDayCount: 0,
+      thirtyDayCount: 0,
+      todayTokens: 0,
+      activeUsers: new Set(),
+    };
 
-  const geminiSummary: ModelUsageSummary = {
-    modelId: configuredGeminiModel,
-    modelName: `Google Gemini (${configuredGeminiModel})`,
-    provider: "gemini",
-    status: !geminiKey
-      ? "unconfigured"
-      : geminiProbe
-      ? geminiProbe.status
-      : "operational",
-    statusMessage: !geminiKey ? "GEMINI_API_KEY is not configured" : geminiProbe?.statusMessage,
-    latencyMs: geminiProbe?.latencyMs ?? null,
-    requestsToday: geminiTodayRequests,
-    requestsLast7Days: modelStatsMap[configuredGeminiModel]?.sevenDayCount || 0,
-    requestsLast30Days: modelStatsMap[configuredGeminiModel]?.thirtyDayCount || 0,
-    estimatedTokensToday: modelStatsMap[configuredGeminiModel]?.todayTokens || 0,
-    quotaLimitRequests: geminiLimitRequests,
-    quotaRemainingRequests: geminiRemainingRequests,
-    quotaLimitTokens: 1_000_000, // 1M TPM
-    quotaRemainingTokens: Math.max(0, 1_000_000 - (modelStatsMap[configuredGeminiModel]?.todayTokens || 0)),
-    quotaRequestsPercentUsed: geminiPercentUsed,
-    quotaTokensPercentUsed: Math.min(100, Math.round(((modelStatsMap[configuredGeminiModel]?.todayTokens || 0) / 1_000_000) * 100)),
-    resetTimeDailyUtc: utcReset.iso,
-    resetTimeDailyCountdownSeconds: utcReset.secondsRemaining,
-    resetTimeDailyFormatted: utcReset.formatted,
-    resetTimeMinuteCountdownSeconds: minuteReset,
-    providerReportedResetRequests: null,
-    providerReportedResetTokens: null,
-    rawHeaders: geminiProbe?.headers || {},
-    notes: "Google AI Studio enforces 1,500 RPD (Requests Per Day) and 15 RPM. Daily quotas reset at 00:00:00 UTC.",
-  };
+    const hasKey = def.provider === "gemini" ? Boolean(geminiKey) : Boolean(groqKey);
+    const probe = probeCache[def.modelIdentifier];
 
-  // Model 2: Primary Groq Model
-  const groqTodayRequests = modelStatsMap[configuredGroqModel]?.todayCount || 0;
-  const groqLimitRequests = groqProbe?.limitRequests ?? 1000;
-  const groqRemainingRequests = groqProbe?.remainingRequests ?? Math.max(0, groqLimitRequests - groqTodayRequests);
-  const groqLimitTokens = groqProbe?.limitTokens ?? 8000;
-  const groqRemainingTokens = groqProbe?.remainingTokens ?? 8000;
-  const groqPercentUsed = Math.min(
-    100,
-    groqProbe?.remainingRequests !== null && groqProbe?.remainingRequests !== undefined
-      ? Math.round(((groqLimitRequests - groqRemainingRequests) / groqLimitRequests) * 100)
-      : Math.round((groqTodayRequests / groqLimitRequests) * 100)
-  );
-  const groqTokensPercentUsed = Math.min(
-    100,
-    Math.round(((groqLimitTokens - groqRemainingTokens) / groqLimitTokens) * 100)
-  );
+    let limitRequests = def.dailyQuotaLimit || (def.provider === "gemini" ? 1500 : 1000);
+    let remainingRequests = Math.max(0, limitRequests - stats.todayCount);
+    let limitTokens = def.provider === "gemini" ? 1_000_000 : 8000;
+    let remainingTokens = Math.max(0, limitTokens - stats.todayTokens);
 
-  const groqSummary: ModelUsageSummary = {
-    modelId: configuredGroqModel,
-    modelName: `Groq LPU (${configuredGroqModel})`,
-    provider: "groq",
-    status: !groqKey
-      ? "unconfigured"
-      : groqProbe
-      ? groqProbe.status
-      : "operational",
-    statusMessage: !groqKey ? "GROQ_API_KEY is not configured" : groqProbe?.statusMessage,
-    latencyMs: groqProbe?.latencyMs ?? null,
-    requestsToday: groqTodayRequests,
-    requestsLast7Days: modelStatsMap[configuredGroqModel]?.sevenDayCount || 0,
-    requestsLast30Days: modelStatsMap[configuredGroqModel]?.thirtyDayCount || 0,
-    estimatedTokensToday: modelStatsMap[configuredGroqModel]?.todayTokens || 0,
-    quotaLimitRequests: groqLimitRequests,
-    quotaRemainingRequests: groqRemainingRequests,
-    quotaLimitTokens: groqLimitTokens,
-    quotaRemainingTokens: groqRemainingTokens,
-    quotaRequestsPercentUsed: groqPercentUsed,
-    quotaTokensPercentUsed: groqTokensPercentUsed,
-    resetTimeDailyUtc: utcReset.iso,
-    resetTimeDailyCountdownSeconds: groqProbe?.resetRequests ? (parseDurationToSeconds(groqProbe.resetRequests) ?? utcReset.secondsRemaining) : utcReset.secondsRemaining,
-    resetTimeDailyFormatted: groqProbe?.resetRequests || utcReset.formatted,
-    resetTimeMinuteCountdownSeconds: minuteReset,
-    providerReportedResetRequests: groqProbe?.resetRequests || null,
-    providerReportedResetTokens: groqProbe?.resetTokens || null,
-    rawHeaders: groqProbe?.headers || {},
-    notes: "Groq returns dynamic x-ratelimit headers with exact remaining requests, token limits, and rolling reset counters.",
-  };
-
-  // Build model fleet list
-  const models: ModelUsageSummary[] = [
-    activeProvider === "gemini" ? geminiSummary : groqSummary,
-    activeProvider === "gemini" ? groqSummary : geminiSummary,
-  ];
-
-  // Also include any other models from DB that had activity
-  for (const [key, stats] of Object.entries(modelStatsMap)) {
-    if (key !== configuredGeminiModel && key !== configuredGroqModel && stats.thirtyDayCount > 0) {
-      const isGemini = key.toLowerCase().includes("gemini");
-      models.push({
-        modelId: key,
-        modelName: isGemini ? `Google Gemini (${key})` : `Groq / Open Model (${key})`,
-        provider: isGemini ? "gemini" : "groq",
-        status: "operational",
-        statusMessage: "Historical model in fleet",
-        latencyMs: null,
-        requestsToday: stats.todayCount,
-        requestsLast7Days: stats.sevenDayCount,
-        requestsLast30Days: stats.thirtyDayCount,
-        estimatedTokensToday: stats.todayTokens,
-        quotaLimitRequests: isGemini ? 1500 : 1000,
-        quotaRemainingRequests: Math.max(0, (isGemini ? 1500 : 1000) - stats.todayCount),
-        quotaLimitTokens: isGemini ? 1_000_000 : 8000,
-        quotaRemainingTokens: null,
-        quotaRequestsPercentUsed: Math.min(100, Math.round((stats.todayCount / (isGemini ? 1500 : 1000)) * 100)),
-        quotaTokensPercentUsed: 0,
-        resetTimeDailyUtc: utcReset.iso,
-        resetTimeDailyCountdownSeconds: utcReset.secondsRemaining,
-        resetTimeDailyFormatted: utcReset.formatted,
-        resetTimeMinuteCountdownSeconds: minuteReset,
-        providerReportedResetRequests: null,
-        providerReportedResetTokens: null,
-        rawHeaders: {},
-        notes: "Historical model with recent records in database.",
-      });
+    if (probe?.limitRequests) limitRequests = probe.limitRequests;
+    if (probe?.remainingRequests !== null && probe?.remainingRequests !== undefined) {
+      remainingRequests = probe.remainingRequests;
     }
-  }
+    if (probe?.limitTokens) limitTokens = probe.limitTokens;
+    if (probe?.remainingTokens !== null && probe?.remainingTokens !== undefined) {
+      remainingTokens = probe.remainingTokens;
+    }
+
+    const requestsUsedPercent = Math.min(
+      100,
+      Math.round(((limitRequests - remainingRequests) / Math.max(1, limitRequests)) * 100)
+    );
+    const tokensUsedPercent = Math.min(
+      100,
+      Math.round(((limitTokens - remainingTokens) / Math.max(1, limitTokens)) * 100)
+    );
+
+    return {
+      modelId: def.id,
+      modelName: def.name,
+      provider: def.provider,
+      strength: def.strength,
+      priority: def.priority,
+      enabled: def.enabled,
+      status: !hasKey
+        ? "unconfigured"
+        : probe
+        ? probe.status
+        : def.enabled
+        ? "operational"
+        : "warning",
+      statusMessage: !hasKey
+        ? `${def.provider.toUpperCase()} API key missing`
+        : probe?.statusMessage || (def.enabled ? "Active in Pool" : "Disabled by Admin"),
+      latencyMs: probe?.latencyMs ?? null,
+      requestsToday: stats.todayCount,
+      requestsLast7Days: stats.sevenDayCount,
+      requestsLast30Days: stats.thirtyDayCount,
+      estimatedTokensToday: stats.todayTokens,
+      quotaLimitRequests: limitRequests,
+      quotaRemainingRequests: remainingRequests,
+      quotaLimitTokens: limitTokens,
+      quotaRemainingTokens: remainingTokens,
+      quotaRequestsPercentUsed: requestsUsedPercent,
+      quotaTokensPercentUsed: tokensUsedPercent,
+      resetTimeDailyUtc: utcReset.iso,
+      resetTimeDailyCountdownSeconds:
+        probe?.resetRequests
+          ? parseDurationToSeconds(probe.resetRequests) ?? utcReset.secondsRemaining
+          : utcReset.secondsRemaining,
+      resetTimeDailyFormatted: probe?.resetRequests || utcReset.formatted,
+      resetTimeMinuteCountdownSeconds: minuteReset,
+      providerReportedResetRequests: probe?.resetRequests || null,
+      providerReportedResetTokens: probe?.resetTokens || null,
+      rawHeaders: probe?.headers || {},
+      notes: def.notes || "",
+    };
+  });
 
   // Format recent 25 generations
   const recentGenerations = rows.slice(0, 25).map((row) => {
@@ -587,13 +557,17 @@ export async function getAIMonitoringData(options?: { probeLive?: boolean }): Pr
     };
   });
 
-  const cacheSavingsPercent = totalRequestsToday > 0 ? Math.round((cacheHitsToday / (totalRequestsToday + cacheHitsToday)) * 100) : 0;
+  const cacheSavingsPercent =
+    totalRequestsToday > 0 ? Math.round((cacheHitsToday / (totalRequestsToday + cacheHitsToday)) * 100) : 0;
 
   return {
     timestamp: new Date().toISOString(),
     activeProvider,
     configuredGeminiModel,
     configuredGroqModel,
+    routingStrategy: config.routing_strategy || "auto_strength",
+    pinnedModelId: config.pinned_model_id,
+    modelPool,
     summary: {
       totalRequestsToday,
       totalTokensToday,

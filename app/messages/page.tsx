@@ -1089,8 +1089,8 @@ export default function MessagesPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] text-slate-500 font-mono truncate">
-                              {peer.email}
+                            <p className="text-[10px] text-slate-500 font-medium truncate">
+                              @{peer.display_name.toLowerCase().replace(/[^a-z0-9]/g, "")} · Verified Scholar
                             </p>
                           </div>
                         </div>
@@ -1237,6 +1237,44 @@ export default function MessagesPage() {
                   </Link>
                 </div>
               </div>
+
+              {/* Message Request Notification Banner */}
+              {isMessageRequestPending && (
+                <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">📩</span>
+                    <div>
+                      <h4 className="text-xs font-bold text-amber-950">
+                        Message Request from {activeConv.title}
+                      </h4>
+                      <p className="text-[11px] text-amber-800">
+                        This learner wants to start a study conversation with you. Accept to allow replies.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (otherPeerId) {
+                          void handleAddFriend({ user_id: otherPeerId, display_name: activeConv.title });
+                          toast.success(`Accepted message request from ${activeConv.title}!`);
+                        }
+                      }}
+                      className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition active-press"
+                    >
+                      ✓ Accept Request
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => otherPeerId && void handleToggleBlock(otherPeerId, activeConv.title)}
+                      className="rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 px-3 py-1.5 text-xs font-bold transition active-press"
+                    >
+                      🚫 Decline & Block
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Messages Body */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
