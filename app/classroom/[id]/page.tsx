@@ -2167,29 +2167,36 @@ export default function LiveClassroomPage({
           </div>
         </div>
       )}
-      {/* Top Header Bar */}
-      <header className="h-13 sm:h-14 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-4 transition-colors">
+      {/* Modernized Top Header Bar */}
+      <header className="h-14 sm:h-16 shrink-0 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-[#071328]/90 backdrop-blur-md px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4 transition-colors z-30">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-          <Link href="/dashboard" className="text-xs sm:text-sm font-black text-blue-500 hover:text-blue-400 shrink-0">
-            BrainLab
+          <Link href="/dashboard" className="flex items-center gap-2 group shrink-0" title="Return to Dashboard">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs shadow-xs group-hover:scale-105 transition-transform">
+              BL
+            </span>
+            <div className="hidden xs:flex flex-col leading-none">
+              <span className="text-xs font-black text-slate-900 dark:text-white">BrainLab</span>
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-cyan-400">Classroom</span>
+            </div>
           </Link>
-          <span className="text-slate-600 hidden xs:inline">/</span>
+          <span className="text-slate-400 dark:text-slate-700 hidden xs:inline" aria-hidden="true">/</span>
           <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[120px] xs:max-w-[160px] sm:max-w-xs md:max-w-md">
             {classDetails?.title || "Live Class"}
           </h1>
-          <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase text-emerald-400 border border-emerald-500/20 shrink-0">
-            Live
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 shrink-0">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Live</span>
           </span>
-          <div className="hidden sm:inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-            <span className="text-slate-400">Code:</span>
-            <span className="font-bold text-blue-600 dark:text-blue-400">{classId}</span>
+          <div className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 px-2.5 py-1 text-[11px] font-mono text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+            <span className="text-slate-400 text-[10px]">Code:</span>
+            <span className="font-bold text-blue-600 dark:text-cyan-400">{classId}</span>
             <button
               type="button"
               onClick={() => {
                 void navigator.clipboard.writeText(classId);
                 toast.success(`Class code ${classId} copied to clipboard!`);
               }}
-              className="ml-1 text-slate-400 hover:text-blue-500 transition"
+              className="ml-0.5 text-slate-400 hover:text-blue-500 transition"
               title="Copy Class Code"
             >
               📋
@@ -2210,7 +2217,7 @@ export default function LiveClassroomPage({
 
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {isAssignedTutor && (
-            <Link href="/tutor/recordings" className="hidden lg:inline-flex rounded-lg border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20">
+            <Link href="/tutor/recordings" className="hidden lg:inline-flex rounded-xl border border-blue-500/40 bg-blue-500/10 px-2.5 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition">
               Recordings
             </Link>
           )}
@@ -2220,10 +2227,10 @@ export default function LiveClassroomPage({
               aria-label={isClassRecording ? "Stop class recording" : "Start class recording"}
               onClick={isClassRecording ? stopClassRecording : startClassRecording}
               disabled={isSavingClassRecording || (!isClassRecording && !classDetails?.isRecording)}
-              className={`inline-flex items-center gap-1 rounded-lg border px-2 sm:px-2.5 py-1 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${isClassRecording ? "border-rose-500/50 bg-rose-600 text-white hover:bg-rose-500" : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"}`}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${isClassRecording ? "border-rose-500/50 bg-rose-600 text-white hover:bg-rose-500" : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"}`}
               title={classDetails?.isRecording ? "Record the shared screen and tutor microphone" : "Recording is disabled for this class"}
             >
-              <span>{isClassRecording ? "■" : "●"}</span>
+              <span className={isClassRecording ? "animate-pulse text-white" : "text-rose-500"}>{isClassRecording ? "■" : "●"}</span>
               <span className="hidden sm:inline">{isSavingClassRecording ? "Saving…" : isClassRecording ? `Stop ${Math.floor(classRecordingSeconds / 60)}:${String(classRecordingSeconds % 60).padStart(2, "0")}` : "Record class"}</span>
             </button>
           )}
@@ -2232,7 +2239,7 @@ export default function LiveClassroomPage({
             <button
               type="button"
               onClick={() => setShowModerationModal(true)}
-              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2 sm:px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition active-press"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition active-press"
               title="Classroom Permissions & Moderation"
             >
               <span>⚙️</span>
@@ -2241,21 +2248,21 @@ export default function LiveClassroomPage({
           )}
 
           <div
-            className={`flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs font-semibold ${
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border ${
               networkQuality === "excellent"
-                ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
+                ? "bg-emerald-950/70 text-emerald-400 border-emerald-800"
                 : networkQuality === "good"
-                ? "bg-blue-950 text-blue-400 border border-blue-800"
-                : "bg-amber-950 text-amber-400 border border-amber-800"
+                ? "bg-blue-950/70 text-blue-400 border-blue-800"
+                : "bg-amber-950/70 text-amber-400 border-amber-800"
             }`}
             title="Optimized for Nigerian 3G/4G bandwidth with Nigeria Edge Sync"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-            <span className="hidden sm:inline">Nigeria Edge:</span> <span className="capitalize">{networkQuality}</span>
+            <span className="hidden sm:inline">Edge:</span> <span className="capitalize">{networkQuality}</span>
           </div>
 
           {/* Low-Data Saver Toggle (Google Stitch UI) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-2xs">
+          <div className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 px-2 sm:px-2.5 py-1 shadow-2xs">
             <div className="flex flex-col text-right">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">Data Saver</span>
               <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold hidden sm:inline leading-none">~70% Saved</span>
@@ -2284,7 +2291,8 @@ export default function LiveClassroomPage({
           <button
             onClick={handleReconnect}
             disabled={isReconnecting}
-            className="hidden md:inline-flex rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700"
+            className="hidden md:inline-flex rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+            title="Refresh stream connection"
           >
             {isReconnecting ? "Reconnecting…" : "Refresh"}
           </button>
@@ -2292,7 +2300,7 @@ export default function LiveClassroomPage({
           <button
             type="button"
             onClick={() => setAppearance(resolvedTheme === "dark" ? "light" : "dark")}
-            className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-1 shadow-2xs"
+            className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 sm:px-2.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-1 shadow-2xs"
             title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
           >
             {resolvedTheme === "dark" ? (
@@ -2306,6 +2314,14 @@ export default function LiveClassroomPage({
             )}
             <span className="hidden md:inline">{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
           </button>
+
+          <Link
+            href="/dashboard"
+            className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+            title="Leave live classroom"
+          >
+            <span>Exit ↗</span>
+          </Link>
 
           {/* Mobile Hub Drawer Toggle Button */}
           <button
