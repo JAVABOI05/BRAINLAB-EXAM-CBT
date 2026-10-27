@@ -8,6 +8,10 @@ import { supabase } from "../../lib/supabase";
 import { getPlatformConfig } from "../../lib/platformConfig";
 import { useLearnerTheme } from "../../components/LearnerThemeProvider";
 import { toast } from "../../lib/toast";
+import {
+  requestDeviceNotificationPermission,
+  playNotificationChime,
+} from "../../lib/clientNotifications";
 import type {
   Participant,
   ClassroomMessage,
@@ -85,6 +89,7 @@ export default function LiveClassroomPage({
   const [codeError, setCodeError] = useState<string | null>(null);
   const [pendingApproval, setPendingApproval] = useState(false);
   const [requiresHost, setRequiresHost] = useState(false);
+  const [classAlertSet, setClassAlertSet] = useState(false);
   const [pendingAdmissions, setPendingAdmissions] = useState<
     { studentId: string; studentName: string; studentEmail?: string; requestedAt: string }[]
   >([]);
@@ -2048,6 +2053,22 @@ export default function LiveClassroomPage({
           <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
+              onClick={async () => {
+                const { granted } = await requestDeviceNotificationPermission();
+                if (granted) {
+                  setClassAlertSet(true);
+                  playNotificationChime();
+                  toast.success("Notification active! We'll ring your device the moment your tutor starts.");
+                } else {
+                  toast.error("Please allow browser notifications in your device settings.");
+                }
+              }}
+              className="rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/25 px-5 py-3 text-xs font-bold text-blue-200 transition active:scale-95 inline-flex items-center justify-center gap-2"
+            >
+              <span>{classAlertSet ? "✓ Alert Set (We'll Ring Your Screen)" : "🔔 Turn On Alert When Tutor Goes Live"}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 setLoading(true);
                 void initClassroomRef.current?.(enteredCode);
@@ -2084,6 +2105,22 @@ export default function LiveClassroomPage({
           </p>
 
           <div className="mt-6 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={async () => {
+                const { granted } = await requestDeviceNotificationPermission();
+                if (granted) {
+                  setClassAlertSet(true);
+                  playNotificationChime();
+                  toast.success("Notification active! We'll ring your device the moment your tutor starts.");
+                } else {
+                  toast.error("Please allow browser notifications in your device settings.");
+                }
+              }}
+              className="rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/25 px-5 py-3 text-xs font-bold text-blue-200 transition active:scale-95 inline-flex items-center justify-center gap-2"
+            >
+              <span>{classAlertSet ? "✓ Alert Set (We'll Ring Your Screen)" : "🔔 Turn On Alert When Tutor Goes Live"}</span>
+            </button>
             <button
               type="button"
               onClick={() => {

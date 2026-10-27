@@ -6,6 +6,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useLearnerTheme, type AppearancePreference } from "./LearnerThemeProvider";
+import { sendLiveClassAlert } from "@/app/lib/clientNotifications";
 
 function firstName(user: User) {
   const metadata = user.user_metadata ?? {};
@@ -105,6 +106,11 @@ export default function GlobalLearnerToolbar() {
         (payload) => {
           if (payload.new && payload.new.status === "live") {
             setLiveClass({ id: payload.new.id, title: payload.new.title });
+            void sendLiveClassAlert(
+              payload.new.title || "BrainLab Live Stage",
+              payload.new.description,
+              payload.new.id
+            );
           } else if (payload.new && (payload.new.status === "completed" || payload.new.status === "cancelled")) {
             setLiveClass((prev) => (prev && prev.id === payload.new.id ? null : prev));
           }
