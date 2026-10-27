@@ -6,11 +6,11 @@ import Link from "next/link";
 import { toast } from "../lib/toast";
 
 const CONTACT_INFO = {
-  primaryPhone: "0907 431 0204",
-  secondaryPhone: "0902 111 8231",
+  primaryPhone: "+234 907 431 0204",
+  secondaryPhone: "+234 902 111 8231",
   whatsappNumber: "2349074310204",
-  email: "support@brainlab.edu.ng",
-  academyEmail: "academy@brainlab.edu.ng",
+  email: "support@brainlabacademy.com.ng",
+  academyEmail: "hello@brainlabacademy.com.ng",
   whatsappChannel: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
   location: "Lagos, Nigeria",
   workingHours: "Monday – Saturday: 8:00 AM – 8:00 PM (WAT)",
@@ -18,10 +18,10 @@ const CONTACT_INFO = {
 
 const SOCIAL_CHANNELS = [
   {
-    name: "X (Twitter)",
-    handle: "@The_brainlabhub",
-    url: "https://x.com/The_brainlabhub",
-    color: "hover:border-slate-800 hover:text-black dark:hover:text-white",
+    name: "WhatsApp Channel",
+    handle: "15,000+ Students",
+    url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
+    color: "hover:border-emerald-600 hover:text-emerald-500",
   },
   {
     name: "Instagram",
@@ -30,10 +30,10 @@ const SOCIAL_CHANNELS = [
     color: "hover:border-pink-500 hover:text-pink-600",
   },
   {
-    name: "Facebook",
-    handle: "BrainLab Academy",
-    url: "https://www.facebook.com/profile.php?id=61595669640028",
-    color: "hover:border-blue-600 hover:text-blue-600",
+    name: "TikTok",
+    handle: "@brainlabacademy",
+    url: "https://www.tiktok.com/@brainlabacademy",
+    color: "hover:border-cyan-500 hover:text-cyan-400",
   },
   {
     name: "YouTube",
@@ -42,10 +42,16 @@ const SOCIAL_CHANNELS = [
     color: "hover:border-red-600 hover:text-red-600",
   },
   {
-    name: "TikTok",
-    handle: "@brainlabacademy",
-    url: "https://www.tiktok.com/@brainlabacademy",
-    color: "hover:border-slate-900 hover:text-slate-900 dark:hover:text-white",
+    name: "X (Twitter)",
+    handle: "@The_brainlabhub",
+    url: "https://x.com/The_brainlabhub",
+    color: "hover:border-slate-800 hover:text-black dark:hover:text-white",
+  },
+  {
+    name: "Facebook",
+    handle: "BrainLab Academy",
+    url: "https://www.facebook.com/profile.php?id=61595669640028",
+    color: "hover:border-blue-600 hover:text-blue-600",
   },
 ];
 
