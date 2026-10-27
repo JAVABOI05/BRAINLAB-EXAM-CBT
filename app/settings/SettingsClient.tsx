@@ -105,6 +105,7 @@ export default function LearnerSettingsClient() {
       const nextMetadata = {
         ...(user.user_metadata || {}),
         full_name: trimmedName || user.user_metadata?.full_name || "Learner",
+        name: trimmedName || user.user_metadata?.name || "Learner",
         hide_email: hideEmail,
         require_message_request: requireMessageRequest,
         require_group_approval: requireGroupApproval,
@@ -119,6 +120,16 @@ export default function LearnerSettingsClient() {
         setPrivacyError(error?.message || "Could not save privacy preferences.");
       } else {
         setUser(data.user);
+        try {
+          const savedCandidate = localStorage.getItem("candidate");
+          if (savedCandidate) {
+            const parsed = JSON.parse(savedCandidate);
+            parsed.name = trimmedName || parsed.name;
+            localStorage.setItem("candidate", JSON.stringify(parsed));
+          }
+        } catch {
+          // ignore localStorage parsing errors
+        }
         setPrivacySuccess("Privacy and profile preferences saved successfully!");
       }
     } catch {

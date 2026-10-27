@@ -95,7 +95,7 @@ export default function LearnerProfilePage() {
     setSaving(true);
     try {
       const { data, error: updateError } = await supabase.auth.updateUser({
-        data: { ...(user?.user_metadata ?? {}), full_name: cleanName },
+        data: { ...(user?.user_metadata ?? {}), full_name: cleanName, name: cleanName },
       });
       if (updateError || !data.user) {
         setError("We could not save your profile changes. Please try again.");
@@ -103,6 +103,14 @@ export default function LearnerProfilePage() {
       }
       setUser(data.user);
       setName(getDisplayName(data.user));
+      try {
+        const savedCandidate = localStorage.getItem("candidate");
+        if (savedCandidate) {
+          const parsed = JSON.parse(savedCandidate);
+          parsed.name = cleanName;
+          localStorage.setItem("candidate", JSON.stringify(parsed));
+        }
+      } catch {}
       setMessage("Your profile has been updated. Your name will appear in your learner space.");
     } catch {
       setError("We could not save your profile changes. Please check your connection and try again.");
