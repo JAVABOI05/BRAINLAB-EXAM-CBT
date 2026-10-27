@@ -796,6 +796,50 @@ export default function AdminConfigPage() {
                 {examSettings.result_notifications !== false ? "✓ Result Notifications ON" : "🔕 Result Notifications OFF (Manual Portal Only)"}
               </button>
             </div>
+
+            {/* Chief Examination Officer / Proctor Signatory */}
+            <div className="admin-setting-box border-2 border-blue-500/30 bg-blue-50/20 dark:bg-blue-950/20 sm:col-span-2">
+              <div>
+                <label className="admin-label font-black text-slate-900 dark:text-white">
+                  Official Result Slip Signatory (Chief Examination Officer / Proctor)
+                </label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 mb-3">
+                  Customize the signatory name and designation displayed on all candidate CBT result slips, printable certificates, and verification records.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 pt-1">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Signatory Name &amp; Honors
+                  </label>
+                  <input
+                    type="text"
+                    value={examSettings.chief_proctor_name || ""}
+                    onChange={(e) =>
+                      setExamSettings((prev) => ({ ...prev, chief_proctor_name: e.target.value }))
+                    }
+                    placeholder="e.g. Dr. K. Adeleke, F.Ed."
+                    className="admin-input"
+                  />
+                  <p className="admin-help mt-1">Appears directly above the official signature line.</p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    Official Title / Designation
+                  </label>
+                  <input
+                    type="text"
+                    value={examSettings.chief_proctor_title || ""}
+                    onChange={(e) =>
+                      setExamSettings((prev) => ({ ...prev, chief_proctor_title: e.target.value }))
+                    }
+                    placeholder="e.g. Chief Examination Officer / Chief Examination Proctor"
+                    className="admin-input"
+                  />
+                  <p className="admin-help mt-1">Appears directly beneath the signatory name.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

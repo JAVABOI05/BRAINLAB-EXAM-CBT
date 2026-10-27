@@ -13,7 +13,7 @@ export async function GET(
 ) {
   try {
     const { bankId } = await context.params;
-    const actor = await getActor(req);
+    const actor = await getCompetitionActor(req);
     const supabase = getSupabaseServerClient();
 
     const { data: bank, error } = await supabase
@@ -48,7 +48,7 @@ export async function PUT(
 ) {
   try {
     const { bankId } = await context.params;
-    const actor = await getActor(req);
+    const actor = await getCompetitionActor(req);
     if (!actor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const supabase = getSupabaseServerClient();
@@ -111,7 +111,7 @@ export async function DELETE(
 ) {
   try {
     const { bankId } = await context.params;
-    const actor = await getActor(req);
+    const actor = await getCompetitionActor(req);
     if (!actor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const supabase = getSupabaseServerClient();

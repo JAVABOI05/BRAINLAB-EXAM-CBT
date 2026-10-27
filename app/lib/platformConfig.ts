@@ -60,6 +60,8 @@ export interface ExamSettings {
   show_topic_in_exam?: boolean; // toggle visibility of question topic in CBT exam interface
   allow_corrections?: boolean; // toggle candidate access to post-exam question corrections & explanations
   result_notifications?: boolean; // toggle candidate result notifications dispatch (SMS/Email/Alerts)
+  chief_proctor_name?: string;
+  chief_proctor_title?: string;
 }
 
 export interface CouponCampaign {
@@ -457,6 +459,8 @@ const DEFAULT_EXAM_SETTINGS: ExamSettings = {
   show_topic_in_exam: true,
   allow_corrections: true,
   result_notifications: true,
+  chief_proctor_name: "Dr. K. Adeleke, F.Ed.",
+  chief_proctor_title: "Chief Examination Proctor",
 };
 
 const DEFAULT_ACADEMIC_CONFIG: AcademicConfig = {

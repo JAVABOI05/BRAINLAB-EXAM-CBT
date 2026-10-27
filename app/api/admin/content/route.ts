@@ -19,11 +19,10 @@ async function verifyAdmin(request: NextRequest) {
   const supabase = getSupabaseServerClient();
 
   if (!user) {
-    // Check if session can be verified from admin tables with fallback
     return { isAuthorized: false, user: null, role: null };
   }
 
-  // Check admin roles
+  // 1. Check admin_profiles
   const { data: adminProfile } = await supabase
     .from("admin_profiles")
     .select("role")
@@ -34,6 +33,7 @@ async function verifyAdmin(request: NextRequest) {
     return { isAuthorized: true, user, role: adminProfile.role };
   }
 
+  // 2. Check admin_users
   const { data: adminUser } = await supabase
     .from("admin_users")
     .select("role")
@@ -44,12 +44,23 @@ async function verifyAdmin(request: NextRequest) {
     return { isAuthorized: true, user, role: adminUser.role };
   }
 
+  // 3. Check admin_user_roles
+  const { data: adminUserRole } = await supabase
+    .from("admin_user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (adminUserRole && ["super_admin", "platform_admin", "ai_learning_admin", "teacher"].includes(adminUserRole.role)) {
+    return { isAuthorized: true, user, role: adminUserRole.role };
+  }
+
   return { isAuthorized: false, user, role: null };
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const { isAuthorized, user } = await verifyAdmin(request);
+    const { isAuthorized } = await verifyAdmin(request);
     if (!isAuthorized) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized. Administrator session required." },
@@ -58,7 +69,26 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
+    const { searchParams } = new URL(request.url);
+    const lessonId = searchParams.get("lesson_id");
 
+    // If lesson_id is specified, return blocks for that lesson
+    if (lessonId) {
+      const { data: blocks, error: bErr } = await supabase
+        .from("learning_lesson_blocks")
+        .select("id, lesson_id, block_type, content, order_index, created_at")
+        .eq("lesson_id", lessonId)
+        .order("order_index", { ascending: true });
+
+      if (bErr) throw bErr;
+
+      return NextResponse.json({
+        ok: true,
+        blocks: blocks || [],
+      });
+    }
+
+    // Default: fetch subjects, topics, and lessons
     const [subjectsRes, topicsRes, lessonsRes] = await Promise.all([
       supabase
         .from("learning_subjects")
@@ -108,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const { type, ...payload } = body as {
-      type: "subject" | "topic" | "lesson";
+      type: "subject" | "topic" | "lesson" | "block";
       [key: string]: unknown;
     };
 
@@ -120,7 +150,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: false, error: "Subject name is required." }, { status: 400 });
       }
 
-      let baseSlug = slugify(String(payload.slug || name));
+      const baseSlug = slugify(String(payload.slug || name));
       let slug = baseSlug;
 
       // Ensure slug uniqueness
@@ -173,7 +203,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: false, error: "Topic title is required." }, { status: 400 });
       }
 
-      let baseSlug = slugify(String(payload.slug || title));
+      const baseSlug = slugify(String(payload.slug || title));
       let slug = baseSlug;
 
       // Ensure slug uniqueness within subject
@@ -253,6 +283,36 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (type === "block") {
+      const lessonId = String(payload.lesson_id || "").trim();
+      const blockType = String(payload.block_type || "text").trim();
+      const content = payload.content && typeof payload.content === "object" ? payload.content : {};
+      const orderIndex = typeof payload.order_index === "number" ? payload.order_index : 0;
+
+      if (!lessonId) {
+        return NextResponse.json({ ok: false, error: "Lesson ID is required." }, { status: 400 });
+      }
+
+      const { data: block, error: blockErr } = await supabase
+        .from("learning_lesson_blocks")
+        .insert({
+          lesson_id: lessonId,
+          block_type: blockType,
+          content,
+          order_index: orderIndex,
+        })
+        .select()
+        .single();
+
+      if (blockErr) throw blockErr;
+
+      return NextResponse.json({
+        ok: true,
+        message: "Lesson block created successfully.",
+        data: block,
+      });
+    }
+
     return NextResponse.json({ ok: false, error: "Invalid content type specified." }, { status: 400 });
   } catch (err: unknown) {
     console.error("[api/admin/content POST] Error:", err);
@@ -275,7 +335,7 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const { type, id, updates } = body as {
-      type: "subject" | "topic" | "lesson";
+      type: "subject" | "topic" | "lesson" | "block";
       id: string;
       updates: Record<string, unknown>;
     };
@@ -290,7 +350,15 @@ export async function PATCH(request: NextRequest) {
         ? "learning_subjects"
         : type === "topic"
         ? "learning_topics"
-        : "learning_lessons";
+        : type === "lesson"
+        ? "learning_lessons"
+        : type === "block"
+        ? "learning_lesson_blocks"
+        : null;
+
+    if (!table) {
+      return NextResponse.json({ ok: false, error: "Invalid content type." }, { status: 400 });
+    }
 
     const { error: patchErr } = await supabase
       .from(table)
@@ -336,7 +404,15 @@ export async function DELETE(request: NextRequest) {
         ? "learning_subjects"
         : type === "topic"
         ? "learning_topics"
-        : "learning_lessons";
+        : type === "lesson"
+        ? "learning_lessons"
+        : type === "block"
+        ? "learning_lesson_blocks"
+        : null;
+
+    if (!table) {
+      return NextResponse.json({ ok: false, error: "Invalid content type." }, { status: 400 });
+    }
 
     const { error: delErr } = await supabase.from(table).delete().eq("id", id);
     if (delErr) throw delErr;

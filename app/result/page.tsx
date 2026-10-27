@@ -55,6 +55,8 @@ export default function ResultPage() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
+  const [chiefProctorName, setChiefProctorName] = useState("Dr. K. Adeleke, F.Ed.");
+  const [chiefProctorTitle, setChiefProctorTitle] = useState("Chief Examination Proctor");
 
   useEffect(() => {
     async function loadPage() {
@@ -64,6 +66,8 @@ export default function ResultPage() {
       setAllowCorrections(settings?.allow_corrections !== false);
       setResultNotifications(settings?.result_notifications !== false);
       setCodeRequired(settings ? settings.access_code_required : true);
+      if (settings?.chief_proctor_name) setChiefProctorName(settings.chief_proctor_name);
+      if (settings?.chief_proctor_title) setChiefProctorTitle(settings.chief_proctor_title);
       const savedCandidate = localStorage.getItem("candidate");
       const savedSummary = localStorage.getItem("exam_summary");
       if (!savedSummary) {
@@ -646,9 +650,9 @@ export default function ResultPage() {
 
             <div className="text-center sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200 dark:border-slate-800">
               <div className="inline-block border-b border-slate-400 pb-1 font-mono text-[11px] font-bold text-slate-800 dark:text-slate-200">
-                Dr. K. Adeleke, F.Ed.
+                {chiefProctorName}
               </div>
-              <p className="text-[10px] text-slate-400">Chief Examination Proctor</p>
+              <p className="text-[10px] text-slate-400">{chiefProctorTitle}</p>
             </div>
           </div>
         </div>
