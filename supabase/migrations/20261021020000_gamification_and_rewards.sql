@@ -28,10 +28,12 @@ create index if not exists idx_badge_definitions_active on public.badge_definiti
 alter table public.badge_definitions enable row level security;
 
 -- Public can view active badge definitions
+DROP POLICY IF EXISTS "badge_definitions_public_select" ON public.badge_definitions;
 create policy badge_definitions_public_select on public.badge_definitions
   for select using (is_active);
 
 -- Admin can manage badge definitions
+DROP POLICY IF EXISTS "badge_definitions_admin_all" ON public.badge_definitions;
 create policy badge_definitions_admin_all on public.badge_definitions
   for all to authenticated
   using (
@@ -69,16 +71,19 @@ create index if not exists idx_user_badge_featured on public.user_badge_awards(u
 alter table public.user_badge_awards enable row level security;
 
 -- Public can view non-hidden awards
+DROP POLICY IF EXISTS "user_badge_awards_public_select" ON public.user_badge_awards;
 create policy user_badge_awards_public_select on public.user_badge_awards
   for select using (not is_hidden);
 
 -- Users can update feature/hidden toggles on their own badges
+DROP POLICY IF EXISTS "user_badge_awards_user_update" ON public.user_badge_awards;
 create policy user_badge_awards_user_update on public.user_badge_awards
   for update to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
 -- Admin full access
+DROP POLICY IF EXISTS "user_badge_awards_admin_all" ON public.user_badge_awards;
 create policy user_badge_awards_admin_all on public.user_badge_awards
   for all to authenticated
   using (
@@ -100,6 +105,7 @@ create table if not exists public.gamification_levels (
 );
 
 alter table public.gamification_levels enable row level security;
+DROP POLICY IF EXISTS "gamification_levels_public_select" ON public.gamification_levels;
 create policy gamification_levels_public_select on public.gamification_levels for select using (true);
 
 -- Seed Initial Level Progression (Configurable)
@@ -133,6 +139,7 @@ create table if not exists public.user_gamification_profiles (
 create index if not exists idx_gamification_profile_xp on public.user_gamification_profiles(lifetime_xp desc);
 alter table public.user_gamification_profiles enable row level security;
 
+DROP POLICY IF EXISTS "user_gamification_profiles_public_select" ON public.user_gamification_profiles;
 create policy user_gamification_profiles_public_select on public.user_gamification_profiles
   for select using (true);
 
@@ -154,6 +161,7 @@ create index if not exists idx_user_xp_ledger_user on public.user_xp_ledger(user
 create index if not exists idx_user_xp_ledger_idempotency on public.user_xp_ledger(idempotency_key);
 alter table public.user_xp_ledger enable row level security;
 
+DROP POLICY IF EXISTS "user_xp_ledger_user_select" ON public.user_xp_ledger;
 create policy user_xp_ledger_user_select on public.user_xp_ledger
   for select to authenticated
   using (
@@ -181,6 +189,7 @@ create table if not exists public.gamification_rewards (
 
 create index if not exists idx_gamification_rewards_active on public.gamification_rewards(is_active);
 alter table public.gamification_rewards enable row level security;
+DROP POLICY IF EXISTS "gamification_rewards_public_select" ON public.gamification_rewards;
 create policy gamification_rewards_public_select on public.gamification_rewards for select using (is_active);
 
 -- Claims Table
@@ -194,6 +203,7 @@ create table if not exists public.user_reward_claims (
 
 create index if not exists idx_user_reward_claims_user on public.user_reward_claims(user_id);
 alter table public.user_reward_claims enable row level security;
+DROP POLICY IF EXISTS "user_reward_claims_user_select" ON public.user_reward_claims;
 create policy user_reward_claims_user_select on public.user_reward_claims
   for select to authenticated
   using (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()));

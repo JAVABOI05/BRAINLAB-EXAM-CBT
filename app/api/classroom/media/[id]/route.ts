@@ -33,14 +33,39 @@ export async function GET(
       const base64Data = asset.file_url.substring(commaIndex + 1);
 
       const mimeMatch = meta.match(/data:(.*?);base64/);
-      const mimeType = mimeMatch ? mimeMatch[1] : asset.mime_type || "application/octet-stream";
+      const mimeType = mimeMatch ? mimeMatch[1] : asset.mime_type || "audio/webm";
       const buffer = Buffer.from(base64Data, "base64");
+      const totalSize = buffer.length;
+
+      // Handle HTTP Range requests for seamless audio streaming & seeking
+      const range = request.headers.get("range");
+      if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10) || 0;
+        const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+        const chunkSize = end - start + 1;
+        const chunk = buffer.subarray(start, end + 1);
+
+        return new NextResponse(chunk, {
+          status: 206,
+          headers: {
+            "Content-Range": `bytes ${start}-${end}/${totalSize}`,
+            "Accept-Ranges": "bytes",
+            "Content-Length": chunkSize.toString(),
+            "Content-Type": mimeType,
+            "Content-Disposition": "inline",
+            "Cache-Control": "public, max-age=31536000, immutable",
+          },
+        });
+      }
 
       return new NextResponse(buffer, {
         status: 200,
         headers: {
           "Content-Type": mimeType,
-          "Content-Length": buffer.length.toString(),
+          "Content-Length": totalSize.toString(),
+          "Accept-Ranges": "bytes",
+          "Content-Disposition": "inline",
           "Cache-Control": "public, max-age=31536000, immutable",
         },
       });

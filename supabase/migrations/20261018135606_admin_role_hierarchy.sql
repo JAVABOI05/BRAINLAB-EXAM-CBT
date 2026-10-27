@@ -241,97 +241,131 @@ grant execute on function public.remove_admin_role(uuid) to authenticated;
 
 -- Replace the broad admin-only policies with role-aware command policies.
 drop policy if exists admin_all on public.questions;
+DROP POLICY IF EXISTS "admin_questions_read" ON public.questions;
 create policy admin_questions_read on public.questions for select to authenticated
   using (public.admin_has_permission('cbt.questions.manage'));
+DROP POLICY IF EXISTS "admin_questions_insert" ON public.questions;
 create policy admin_questions_insert on public.questions for insert to authenticated
   with check (public.admin_has_permission('cbt.questions.manage'));
+DROP POLICY IF EXISTS "admin_questions_update" ON public.questions;
 create policy admin_questions_update on public.questions for update to authenticated
   using (public.admin_has_permission('cbt.questions.manage'))
   with check (public.admin_has_permission('cbt.questions.manage'));
+DROP POLICY IF EXISTS "admin_questions_delete" ON public.questions;
 create policy admin_questions_delete on public.questions for delete to authenticated
   using (public.admin_has_permission('cbt.questions.delete'));
 
 drop policy if exists admin_all on public.access_codes;
+DROP POLICY IF EXISTS "admin_codes_read" ON public.access_codes;
 create policy admin_codes_read on public.access_codes for select to authenticated
   using (public.admin_has_permission('cbt.codes.manage'));
+DROP POLICY IF EXISTS "admin_codes_insert" ON public.access_codes;
 create policy admin_codes_insert on public.access_codes for insert to authenticated
   with check (public.admin_has_permission('cbt.codes.manage'));
+DROP POLICY IF EXISTS "admin_codes_update" ON public.access_codes;
 create policy admin_codes_update on public.access_codes for update to authenticated
   using (public.admin_has_permission('cbt.codes.manage'))
   with check (public.admin_has_permission('cbt.codes.manage'));
+DROP POLICY IF EXISTS "admin_codes_delete" ON public.access_codes;
 create policy admin_codes_delete on public.access_codes for delete to authenticated
   using (public.admin_has_permission('cbt.codes.delete'));
 
 drop policy if exists admin_all on public.answers;
+DROP POLICY IF EXISTS "admin_answers_read" ON public.answers;
 create policy admin_answers_read on public.answers for select to authenticated
   using (public.admin_has_permission('cbt.answers.read'));
+DROP POLICY IF EXISTS "admin_answers_insert" ON public.answers;
 create policy admin_answers_insert on public.answers for insert to authenticated
   with check (public.admin_has_permission('cbt.answers.manage'));
+DROP POLICY IF EXISTS "admin_answers_update" ON public.answers;
 create policy admin_answers_update on public.answers for update to authenticated
   using (public.admin_has_permission('cbt.answers.manage'))
   with check (public.admin_has_permission('cbt.answers.manage'));
+DROP POLICY IF EXISTS "admin_answers_delete" ON public.answers;
 create policy admin_answers_delete on public.answers for delete to authenticated
   using (public.admin_has_permission('cbt.results.delete'));
 
 drop policy if exists admin_all on public.results;
+DROP POLICY IF EXISTS "admin_results_read" ON public.results;
 create policy admin_results_read on public.results for select to authenticated
   using (public.admin_has_permission('cbt.results.read'));
+DROP POLICY IF EXISTS "admin_results_insert" ON public.results;
 create policy admin_results_insert on public.results for insert to authenticated
   with check (public.admin_has_permission('cbt.results.create'));
+DROP POLICY IF EXISTS "admin_results_update" ON public.results;
 create policy admin_results_update on public.results for update to authenticated
   using (public.admin_has_permission('cbt.results.manage'))
   with check (public.admin_has_permission('cbt.results.manage'));
+DROP POLICY IF EXISTS "admin_results_delete" ON public.results;
 create policy admin_results_delete on public.results for delete to authenticated
   using (public.admin_has_permission('cbt.results.delete'));
 
 drop policy if exists admin_all on public.exam_sessions;
+DROP POLICY IF EXISTS "admin_sessions_read" ON public.exam_sessions;
 create policy admin_sessions_read on public.exam_sessions for select to authenticated
   using (public.admin_has_permission('cbt.sessions.read'));
+DROP POLICY IF EXISTS "admin_sessions_insert" ON public.exam_sessions;
 create policy admin_sessions_insert on public.exam_sessions for insert to authenticated
   with check (public.admin_has_permission('cbt.sessions.create'));
+DROP POLICY IF EXISTS "admin_sessions_update" ON public.exam_sessions;
 create policy admin_sessions_update on public.exam_sessions for update to authenticated
   using (public.admin_has_permission('cbt.sessions.manage'))
   with check (public.admin_has_permission('cbt.sessions.manage'));
+DROP POLICY IF EXISTS "admin_sessions_delete" ON public.exam_sessions;
 create policy admin_sessions_delete on public.exam_sessions for delete to authenticated
   using (public.admin_has_permission('cbt.sessions.delete'));
 
 drop policy if exists admin_all on public.exam_config;
+DROP POLICY IF EXISTS "admin_exam_config_read" ON public.exam_config;
 create policy admin_exam_config_read on public.exam_config for select to authenticated
   using (public.admin_has_permission('cbt.config.read'));
+DROP POLICY IF EXISTS "admin_exam_config_insert" ON public.exam_config;
 create policy admin_exam_config_insert on public.exam_config for insert to authenticated
   with check (public.admin_has_permission('cbt.config.manage'));
+DROP POLICY IF EXISTS "admin_exam_config_update" ON public.exam_config;
 create policy admin_exam_config_update on public.exam_config for update to authenticated
   using (public.admin_has_permission('cbt.config.manage'))
   with check (public.admin_has_permission('cbt.config.manage'));
+DROP POLICY IF EXISTS "admin_exam_config_delete" ON public.exam_config;
 create policy admin_exam_config_delete on public.exam_config for delete to authenticated
   using (public.admin_has_permission('cbt.config.delete'));
 
 drop policy if exists admin_all on public.settings;
+DROP POLICY IF EXISTS "admin_settings_read" ON public.settings;
 create policy admin_settings_read on public.settings for select to authenticated
   using (public.admin_has_permission('cbt.config.read'));
+DROP POLICY IF EXISTS "admin_settings_insert" ON public.settings;
 create policy admin_settings_insert on public.settings for insert to authenticated
   with check (public.admin_has_permission('cbt.config.manage'));
+DROP POLICY IF EXISTS "admin_settings_update" ON public.settings;
 create policy admin_settings_update on public.settings for update to authenticated
   using (public.admin_has_permission('cbt.config.manage'))
   with check (public.admin_has_permission('cbt.config.manage'));
+DROP POLICY IF EXISTS "admin_settings_delete" ON public.settings;
 create policy admin_settings_delete on public.settings for delete to authenticated
   using (public.admin_has_permission('cbt.config.delete'));
 
 drop policy if exists admin_read on public.audit_logs;
 drop policy if exists admin_append on public.audit_logs;
+DROP POLICY IF EXISTS "admin_audit_read" ON public.audit_logs;
 create policy admin_audit_read on public.audit_logs for select to authenticated
   using (public.admin_has_permission('audit.logs.read'));
+DROP POLICY IF EXISTS "admin_audit_append" ON public.audit_logs;
 create policy admin_audit_append on public.audit_logs for insert to authenticated
   with check (public.admin_has_permission('audit.logs.write'));
 
 drop policy if exists admin_all on public.question_upload_logs;
+DROP POLICY IF EXISTS "admin_question_upload_logs_read" ON public.question_upload_logs;
 create policy admin_question_upload_logs_read on public.question_upload_logs for select to authenticated
   using (public.admin_has_permission('cbt.questions.manage'));
+DROP POLICY IF EXISTS "admin_question_upload_logs_insert" ON public.question_upload_logs;
 create policy admin_question_upload_logs_insert on public.question_upload_logs for insert to authenticated
   with check (public.admin_has_permission('cbt.questions.manage'));
+DROP POLICY IF EXISTS "admin_question_upload_logs_update" ON public.question_upload_logs;
 create policy admin_question_upload_logs_update on public.question_upload_logs for update to authenticated
   using (public.admin_has_permission('cbt.questions.manage'))
   with check (public.admin_has_permission('cbt.questions.manage'));
+DROP POLICY IF EXISTS "admin_question_upload_logs_delete" ON public.question_upload_logs;
 create policy admin_question_upload_logs_delete on public.question_upload_logs for delete to authenticated
   using (public.admin_has_permission('cbt.questions.delete'));
 

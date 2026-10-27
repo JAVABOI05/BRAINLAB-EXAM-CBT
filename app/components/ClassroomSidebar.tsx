@@ -84,6 +84,16 @@ export interface ClassroomSidebarProps {
   chatMuted?: boolean;
 }
 
+
+export function formatSafeName(name?: string | null): string {
+  if (!name) return "Learner";
+  if (name.includes("@")) {
+    const handle = name.split("@")[0];
+    return handle.charAt(0).toUpperCase() + handle.slice(1);
+  }
+  return name;
+}
+
 export default function ClassroomSidebar({
   activeTab,
   setActiveTab,
@@ -208,7 +218,7 @@ export default function ClassroomSidebar({
               <div key={m.id} className="text-xs">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={`font-bold ${m.isHost ? "text-amber-400" : "text-blue-400"}`}>
-                    {m.senderName} {m.isHost && "(Tutor)"}
+                    {formatSafeName(m.senderName)} {m.isHost && "(Tutor)"}
                   </span>
                   <span className="text-[10px] text-slate-500">{m.timestamp}</span>
                 </div>
@@ -593,7 +603,7 @@ export default function ClassroomSidebar({
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <p className="font-bold text-white">{p.name}</p>
+                            <p className="font-bold text-white">{formatSafeName(p.name)}</p>
                             <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-extrabold text-amber-300 border border-amber-500/30">
                               Host
                             </span>
@@ -643,10 +653,10 @@ export default function ClassroomSidebar({
                     >
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-950 text-blue-200 font-bold">
-                          {p.name.charAt(0).toUpperCase()}
+                          {formatSafeName(p.name).charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-white">{p.name}</p>
+                          <p className="font-semibold text-white">{formatSafeName(p.name)}</p>
                           <p className="text-[10px] text-slate-400">Student</p>
                         </div>
                       </div>

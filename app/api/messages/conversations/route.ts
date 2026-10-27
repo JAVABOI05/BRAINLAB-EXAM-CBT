@@ -5,6 +5,7 @@ import {
   getUserConversations,
   createOrGetDirectChat,
   createGroupChat,
+  updateConversationRequestStatus,
 } from "@/app/lib/communicationStore";
 
 export const dynamic = "force-dynamic";
@@ -65,6 +66,31 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Invalid conversation type" }, { status: 400 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { conversationId, action } = body;
+
+    if (!conversationId || !action) {
+      return NextResponse.json({ error: "conversationId and action are required." }, { status: 400 });
+    }
+
+    if (!["accept", "decline", "accept_group", "decline_group"].includes(action)) {
+      return NextResponse.json({ error: "Invalid action." }, { status: 400 });
+    }
+
+    const conversation = await updateConversationRequestStatus(user.id, conversationId, action);
+    return NextResponse.json({ success: true, conversation });
   } catch (err: unknown) {
     return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
   }

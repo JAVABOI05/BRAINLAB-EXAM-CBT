@@ -6,10 +6,6 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const classId = (formData.get("classId") as string) || "live-session";
@@ -30,42 +26,47 @@ export async function POST(request: NextRequest) {
     const base64Data = `data:${mimeType};base64,${Buffer.from(arrayBuffer).toString("base64")}`;
 
     const supabase = getSupabaseServerClient();
+    const userId = user?.id || "guest_learner";
 
-    // Store in audio_assets table (it holds binary payloads with mime_type)
-    const { data: asset, error: insertError } = await supabase
-      .from("audio_assets")
-      .insert({
-        user_id: user.id,
-        asset_type: mediaType === "audio" ? "tutor_voice_note" : "lesson_audio",
-        title: file.name || `Classroom ${mediaType} ${new Date().toLocaleTimeString()}`,
-        file_url: base64Data,
-        duration_seconds: durationSeconds,
-        file_size_bytes: file.size,
-        mime_type: mimeType,
-        metadata: {
-          class_id: classId,
-          media_type: mediaType,
-          original_filename: file.name,
-          uploader_id: user.id,
-        },
-      })
-      .select("id")
-      .single();
+    try {
+      // Store in audio_assets table (holds binary payloads with mime_type)
+      const { data: asset, error: insertError } = await supabase
+        .from("audio_assets")
+        .insert({
+          user_id: user ? user.id : undefined,
+          asset_type: mediaType === "audio" ? "tutor_voice_note" : "lesson_audio",
+          title: file.name || `Classroom ${mediaType} ${new Date().toLocaleTimeString()}`,
+          file_url: base64Data,
+          duration_seconds: durationSeconds,
+          file_size_bytes: file.size,
+          mime_type: mimeType,
+          metadata: {
+            class_id: classId,
+            media_type: mediaType,
+            original_filename: file.name,
+            uploader_id: userId,
+          },
+        })
+        .select("id")
+        .maybeSingle();
 
-    if (insertError) {
-      // If table constraint fails, fallback to served base64 URL directly
-      return NextResponse.json({
-        success: true,
-        url: base64Data,
-      });
+      if (asset && !insertError) {
+        return NextResponse.json({
+          success: true,
+          assetId: asset.id,
+          url: `/api/classroom/media/${asset.id}`,
+          mediaType,
+          duration: durationSeconds,
+        });
+      }
+    } catch {
+      // ignore insert error and use base64Data fallback
     }
 
-    const mediaUrl = `/api/classroom/media/${asset.id}`;
-
+    // Fallback: return universal base64 data URI so all clients can play it directly
     return NextResponse.json({
       success: true,
-      assetId: asset.id,
-      url: mediaUrl,
+      url: base64Data,
       mediaType,
       duration: durationSeconds,
     });

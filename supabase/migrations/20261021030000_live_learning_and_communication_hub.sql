@@ -386,58 +386,67 @@ ALTER TABLE public.user_presence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Courses: Published courses visible to everyone, tutors manage their courses, admins manage all
+DROP POLICY IF EXISTS "Public can view published courses" ON public.courses;
 CREATE POLICY "Public can view published courses" ON public.courses
   FOR SELECT USING (is_published = true OR auth.uid() = tutor_id);
 
+DROP POLICY IF EXISTS "Tutors and admins can manage courses" ON public.courses;
 CREATE POLICY "Tutors and admins can manage courses" ON public.courses
   FOR ALL USING (auth.uid() = tutor_id OR EXISTS (
-    SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+    SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
   ));
 
 -- Enrollments: Users can view their own enrollments, tutors & admins can view for their courses
+DROP POLICY IF EXISTS "Users can view own enrollments" ON public.course_enrollments;
 CREATE POLICY "Users can view own enrollments" ON public.course_enrollments
   FOR SELECT USING (auth.uid() = user_id OR EXISTS (
     SELECT 1 FROM public.courses c WHERE c.id = course_id AND c.tutor_id = auth.uid()
   ) OR EXISTS (
-    SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+    SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
   ));
 
 -- Live Classes: Enrolled students or public if free, tutor can manage
+DROP POLICY IF EXISTS "View live classes" ON public.live_classes;
 CREATE POLICY "View live classes" ON public.live_classes
   FOR SELECT USING (
     status != 'draft' OR tutor_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+      SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
     )
   );
 
+DROP POLICY IF EXISTS "Tutors manage own classes" ON public.live_classes;
 CREATE POLICY "Tutors manage own classes" ON public.live_classes
   FOR ALL USING (tutor_id = auth.uid() OR EXISTS (
-    SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+    SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
   ));
 
 -- Attendance: Users view own attendance, tutors view class attendance
+DROP POLICY IF EXISTS "Users view own attendance" ON public.class_attendance_records;
 CREATE POLICY "Users view own attendance" ON public.class_attendance_records
   FOR SELECT USING (user_id = auth.uid() OR EXISTS (
     SELECT 1 FROM public.live_classes lc WHERE lc.id = class_id AND lc.tutor_id = auth.uid()
   ) OR EXISTS (
-    SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+    SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
   ));
 
 -- Messages & Conversations: Participants can view and post
+DROP POLICY IF EXISTS "Participants view conversations" ON public.conversations;
 CREATE POLICY "Participants view conversations" ON public.conversations
   FOR SELECT USING (EXISTS (
     SELECT 1 FROM public.conversation_participants cp WHERE cp.conversation_id = id AND cp.user_id = auth.uid()
   ) OR EXISTS (
-    SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+    SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
   ));
 
+DROP POLICY IF EXISTS "Participants view messages" ON public.messages;
 CREATE POLICY "Participants view messages" ON public.messages
   FOR SELECT USING (EXISTS (
     SELECT 1 FROM public.conversation_participants cp WHERE cp.conversation_id = conversation_id AND cp.user_id = auth.uid()
   ) OR EXISTS (
-    SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+    SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
   ));
 
+DROP POLICY IF EXISTS "Send messages in joined conversations" ON public.messages;
 CREATE POLICY "Send messages in joined conversations" ON public.messages
   FOR INSERT WITH CHECK (
     auth.uid() = sender_id AND EXISTS (
@@ -446,32 +455,39 @@ CREATE POLICY "Send messages in joined conversations" ON public.messages
   );
 
 -- Notifications: User only
+DROP POLICY IF EXISTS "Users view own notifications" ON public.notifications;
 CREATE POLICY "Users view own notifications" ON public.notifications
   FOR SELECT USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users update own notifications" ON public.notifications;
 CREATE POLICY "Users update own notifications" ON public.notifications
   FOR UPDATE USING (user_id = auth.uid());
 
 -- Official Tags: Everyone can view active tags
+DROP POLICY IF EXISTS "Everyone can view active tags" ON public.official_tags;
 CREATE POLICY "Everyone can view active tags" ON public.official_tags
   FOR SELECT USING (is_active = true);
 
 -- User presence: visible presence can be seen by authenticated users
+DROP POLICY IF EXISTS "Authenticated users view visible presence" ON public.user_presence;
 CREATE POLICY "Authenticated users view visible presence" ON public.user_presence
   FOR SELECT USING (is_visible = true OR user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users update own presence" ON public.user_presence;
 CREATE POLICY "Users update own presence" ON public.user_presence
   FOR ALL USING (user_id = auth.uid());
 
 -- Audio Assets: Tutors/Creators view/manage, student submissions visible to tutors
+DROP POLICY IF EXISTS "Users view accessible audio" ON public.audio_assets;
 CREATE POLICY "Users view accessible audio" ON public.audio_assets
   FOR SELECT USING (
     user_id = auth.uid() OR 
     asset_type IN ('tutor_voice_note', 'lesson_audio') OR
     EXISTS (
-      SELECT 1 FROM public.admin_user_roles aur WHERE aur.user_id = auth.uid()
+      SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
     )
   );
 
+DROP POLICY IF EXISTS "Users create own audio" ON public.audio_assets;
 CREATE POLICY "Users create own audio" ON public.audio_assets
   FOR INSERT WITH CHECK (user_id = auth.uid());

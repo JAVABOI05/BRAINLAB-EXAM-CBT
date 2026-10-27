@@ -250,7 +250,7 @@ export default function LiveClassroomPage({
         // Initialize Participants with current user
         const initialParticipant: Participant = {
           id: user.id,
-          name: json.data.identity ? user.email?.split("@")[0] || "Learner" : "Learner",
+          name: user.user_metadata?.full_name || user.user_metadata?.name || "Learner",
           role: json.data.classDetails.tutorId === user.id ? "host" : "speaker",
           isMuted: true,
           isCameraOn: false,
@@ -263,7 +263,11 @@ export default function LiveClassroomPage({
 
         // Load persistent classroom messages & pinned presentation items
         try {
-          const msgsRes = await fetch(`/api/classroom/messages?classId=${classId}`);
+          const msgsRes = await fetch(`/api/classroom/messages?classId=${encodeURIComponent(classId)}`, {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
           const msgsJson = await msgsRes.json();
           if (msgsRes.ok && Array.isArray(msgsJson.messages) && msgsJson.messages.length > 0) {
             setMessages(msgsJson.messages);
@@ -874,18 +878,28 @@ export default function LiveClassroomPage({
     setChatInput("");
     setShowMentions(false);
 
+    const safeSender =
+      currentUser.user_metadata?.full_name ||
+      currentUser.user_metadata?.name ||
+      "Learner";
+
     const payloadMsg = {
       classId,
-      senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+      senderName: safeSender,
       text: textToSend,
       type: "text" as const,
       isHost: isHostUser,
     };
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const res = await fetch("/api/classroom/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payloadMsg),
       });
       const data = await res.json();
@@ -978,10 +992,24 @@ export default function LiveClassroomPage({
           formData.append("mediaType", "audio");
           formData.append("duration", String(Math.max(1, duration)));
 
-          let uploadedUrl = URL.createObjectURL(audioBlob);
+          // Convert audio blob to universal base64 so all devices/recipients can play it immediately
+          const base64Data: string = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve((reader.result as string) || "");
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(audioBlob);
+          });
+
+          let uploadedUrl = base64Data;
           try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData.session?.access_token;
+            const headers: Record<string, string> = {};
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const uploadRes = await fetch("/api/classroom/upload", {
               method: "POST",
+              headers,
               body: formData,
             });
             const uploadJson = await uploadRes.json();
@@ -992,10 +1020,15 @@ export default function LiveClassroomPage({
             console.warn("Audio upload fallback:", e);
           }
 
-          // 2. Persist message
+          const safeSender =
+            currentUser.user_metadata?.full_name ||
+            currentUser.user_metadata?.name ||
+            "Learner";
+
+          // 2. Persist message with auth header
           const payloadMsg = {
             classId,
-            senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+            senderName: safeSender,
             text: "🎙️ Voice Note",
             type: "audio" as const,
             mediaUrl: uploadedUrl,
@@ -1004,9 +1037,14 @@ export default function LiveClassroomPage({
           };
 
           try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData.session?.access_token;
+            const postHeaders: Record<string, string> = { "Content-Type": "application/json" };
+            if (token) postHeaders["Authorization"] = `Bearer ${token}`;
+
             const postRes = await fetch("/api/classroom/messages", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: postHeaders,
               body: JSON.stringify(payloadMsg),
             });
             const postJson = await postRes.json();
@@ -1117,6 +1155,10 @@ export default function LiveClassroomPage({
   };
 
   const togglePlayAudio = (msgId: string, url: string) => {
+    if (!url) {
+      toast.error("Audio recording is not available.");
+      return;
+    }
     if (currentlyPlayingAudioId === msgId) {
       audioPlayerRef.current?.pause();
       setCurrentlyPlayingAudioId(null);
@@ -1124,12 +1166,33 @@ export default function LiveClassroomPage({
       if (audioPlayerRef.current) {
         audioPlayerRef.current.pause();
       }
-      const audio = new Audio(url);
-      audioPlayerRef.current = audio;
-      audio.onended = () => setCurrentlyPlayingAudioId(null);
-      audio.onerror = () => setCurrentlyPlayingAudioId(null);
-      audio.play().catch(() => setCurrentlyPlayingAudioId(null));
-      setCurrentlyPlayingAudioId(msgId);
+      try {
+        const audio = new Audio(url);
+        audioPlayerRef.current = audio;
+        audio.onended = () => setCurrentlyPlayingAudioId(null);
+        audio.onerror = (e) => {
+          console.warn("Audio playback error:", e);
+          setCurrentlyPlayingAudioId(null);
+          toast.error("Could not play voice note. Format may not be supported by your device.");
+        };
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setCurrentlyPlayingAudioId(msgId);
+            })
+            .catch((err) => {
+              console.warn("Autoplay / audio play rejected:", err);
+              setCurrentlyPlayingAudioId(null);
+              toast.info("Tap again to allow audio playback on your device.");
+            });
+        } else {
+          setCurrentlyPlayingAudioId(msgId);
+        }
+      } catch (err) {
+        console.error("Audio init failed:", err);
+        toast.error("Unable to start audio player.");
+      }
     }
   };
 

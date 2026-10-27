@@ -64,13 +64,15 @@ alter table public.learner_spaced_reviews enable row level security;
 do $$
 begin
   if not exists (select 1 from pg_policies where tablename = 'learner_topic_mastery' and policyname = 'learner_topic_mastery_select_own') then
-    create policy learner_topic_mastery_select_own on public.learner_topic_mastery
+        DROP POLICY IF EXISTS "learner_topic_mastery_select_own" ON public.learner_topic_mastery;
+create policy learner_topic_mastery_select_own on public.learner_topic_mastery
       for select to authenticated
       using (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()));
   end if;
 
   if not exists (select 1 from pg_policies where tablename = 'learner_topic_mastery' and policyname = 'learner_topic_mastery_modify_own') then
-    create policy learner_topic_mastery_modify_own on public.learner_topic_mastery
+        DROP POLICY IF EXISTS "learner_topic_mastery_modify_own" ON public.learner_topic_mastery;
+create policy learner_topic_mastery_modify_own on public.learner_topic_mastery
       for all to authenticated
       using (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()))
       with check (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()));
@@ -81,13 +83,15 @@ end $$;
 do $$
 begin
   if not exists (select 1 from pg_policies where tablename = 'learner_spaced_reviews' and policyname = 'learner_spaced_reviews_select_own') then
-    create policy learner_spaced_reviews_select_own on public.learner_spaced_reviews
+        DROP POLICY IF EXISTS "learner_spaced_reviews_select_own" ON public.learner_spaced_reviews;
+create policy learner_spaced_reviews_select_own on public.learner_spaced_reviews
       for select to authenticated
       using (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()));
   end if;
 
   if not exists (select 1 from pg_policies where tablename = 'learner_spaced_reviews' and policyname = 'learner_spaced_reviews_modify_own') then
-    create policy learner_spaced_reviews_modify_own on public.learner_spaced_reviews
+        DROP POLICY IF EXISTS "learner_spaced_reviews_modify_own" ON public.learner_spaced_reviews;
+create policy learner_spaced_reviews_modify_own on public.learner_spaced_reviews
       for all to authenticated
       using (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()))
       with check (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()));

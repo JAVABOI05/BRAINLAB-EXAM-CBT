@@ -27,6 +27,7 @@ create policy "Allow inserts to ai_generations"
   );
 
 -- Policy: Users can view their own generated responses
+drop policy if exists "Users can view their own ai_generations" on public.ai_generations;
 create policy "Users can view their own ai_generations"
   on public.ai_generations
   for select

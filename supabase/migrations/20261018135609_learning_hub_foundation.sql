@@ -249,38 +249,47 @@ begin
 end;
 $function$;
 
+DROP TRIGGER IF EXISTS "learning_subjects_updated_at" ON public.learning_subjects;
 create trigger learning_subjects_updated_at
 before update on public.learning_subjects
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_topics_updated_at" ON public.learning_topics;
 create trigger learning_topics_updated_at
 before update on public.learning_topics
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_lessons_updated_at" ON public.learning_lessons;
 create trigger learning_lessons_updated_at
 before update on public.learning_lessons
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_lesson_blocks_updated_at" ON public.learning_lesson_blocks;
 create trigger learning_lesson_blocks_updated_at
 before update on public.learning_lesson_blocks
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_topic_tests_updated_at" ON public.learning_topic_tests;
 create trigger learning_topic_tests_updated_at
 before update on public.learning_topic_tests
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_test_questions_updated_at" ON public.learning_test_questions;
 create trigger learning_test_questions_updated_at
 before update on public.learning_test_questions
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_test_attempts_updated_at" ON public.learning_test_attempts;
 create trigger learning_test_attempts_updated_at
 before update on public.learning_test_attempts
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_test_answers_updated_at" ON public.learning_test_answers;
 create trigger learning_test_answers_updated_at
 before update on public.learning_test_answers
 for each row execute function public.set_learning_updated_at();
 
+DROP TRIGGER IF EXISTS "learning_lesson_progress_updated_at" ON public.learning_lesson_progress;
 create trigger learning_lesson_progress_updated_at
 before update on public.learning_lesson_progress
 for each row execute function public.set_learning_updated_at();
@@ -316,6 +325,7 @@ alter table public.learning_lesson_progress enable row level security;
 
 -- Publicly visible learning content is published-only. Tutors/reviewers are scoped
 -- to subjects explicitly assigned to them. Admin permission checks are server-owned.
+DROP POLICY IF EXISTS "learning_subjects_read_published" ON public.learning_subjects;
 create policy learning_subjects_read_published
 on public.learning_subjects for select to anon, authenticated
 using (
@@ -327,6 +337,7 @@ using (
   or (select public.learning_can_manage_all())
 );
 
+DROP POLICY IF EXISTS "learning_subjects_insert_admin" ON public.learning_subjects;
 create policy learning_subjects_insert_admin
 on public.learning_subjects for insert to authenticated
 with check (
@@ -334,6 +345,7 @@ with check (
   and (select public.learning_can_manage_all())
 );
 
+DROP POLICY IF EXISTS "learning_subjects_update_scoped" ON public.learning_subjects;
 create policy learning_subjects_update_scoped
 on public.learning_subjects for update to authenticated
 using (
@@ -353,10 +365,12 @@ with check (
   )
 );
 
+DROP POLICY IF EXISTS "learning_subjects_delete_admin" ON public.learning_subjects;
 create policy learning_subjects_delete_admin
 on public.learning_subjects for delete to authenticated
 using ((select public.learning_can_manage_all()));
 
+DROP POLICY IF EXISTS "learning_memberships_read_scoped" ON public.learning_subject_memberships;
 create policy learning_memberships_read_scoped
 on public.learning_subject_memberships for select to authenticated
 using (
@@ -364,11 +378,13 @@ using (
   or (select public.learning_can_manage_all())
 );
 
+DROP POLICY IF EXISTS "learning_memberships_manage_admin" ON public.learning_subject_memberships;
 create policy learning_memberships_manage_admin
 on public.learning_subject_memberships for all to authenticated
 using ((select public.learning_can_manage_all()))
 with check ((select public.learning_can_manage_all()));
 
+DROP POLICY IF EXISTS "learning_topics_read_published_or_assigned" ON public.learning_topics;
 create policy learning_topics_read_published_or_assigned
 on public.learning_topics for select to anon, authenticated
 using (
@@ -386,6 +402,7 @@ using (
   or (select public.learning_can_manage_all())
 );
 
+DROP POLICY IF EXISTS "learning_topics_manage_scoped" ON public.learning_topics;
 create policy learning_topics_manage_scoped
 on public.learning_topics for all to authenticated
 using (
@@ -405,6 +422,7 @@ with check (
   )
 );
 
+DROP POLICY IF EXISTS "learning_lessons_read_published_or_assigned" ON public.learning_lessons;
 create policy learning_lessons_read_published_or_assigned
 on public.learning_lessons for select to anon, authenticated
 using (
@@ -424,6 +442,7 @@ using (
   or (select public.learning_can_manage_all())
 );
 
+DROP POLICY IF EXISTS "learning_lessons_manage_scoped" ON public.learning_lessons;
 create policy learning_lessons_manage_scoped
 on public.learning_lessons for all to authenticated
 using (
@@ -445,6 +464,7 @@ with check (
   )
 );
 
+DROP POLICY IF EXISTS "learning_blocks_read_published_or_assigned" ON public.learning_lesson_blocks;
 create policy learning_blocks_read_published_or_assigned
 on public.learning_lesson_blocks for select to anon, authenticated
 using (
@@ -463,6 +483,7 @@ using (
   or (select public.learning_can_manage_all())
 );
 
+DROP POLICY IF EXISTS "learning_blocks_manage_scoped" ON public.learning_lesson_blocks;
 create policy learning_blocks_manage_scoped
 on public.learning_lesson_blocks for all to authenticated
 using (
@@ -486,6 +507,7 @@ with check (
   )
 );
 
+DROP POLICY IF EXISTS "learning_topic_tests_read_published_or_assigned" ON public.learning_topic_tests;
 create policy learning_topic_tests_read_published_or_assigned
 on public.learning_topic_tests for select to anon, authenticated
 using (
@@ -504,6 +526,7 @@ using (
   or (select public.learning_can_manage_all())
 );
 
+DROP POLICY IF EXISTS "learning_topic_tests_manage_scoped" ON public.learning_topic_tests;
 create policy learning_topic_tests_manage_scoped
 on public.learning_topic_tests for all to authenticated
 using (
@@ -527,6 +550,7 @@ with check (
 
 -- Question-bank rows (including correct_answer/explanation) are never directly
 -- selectable by students. A secure server endpoint must deliver a redacted payload.
+DROP POLICY IF EXISTS "learning_test_questions_read_authorized" ON public.learning_test_questions;
 create policy learning_test_questions_read_authorized
 on public.learning_test_questions for select to authenticated
 using (
@@ -539,6 +563,7 @@ using (
   )
 );
 
+DROP POLICY IF EXISTS "learning_test_questions_manage_scoped" ON public.learning_test_questions;
 create policy learning_test_questions_manage_scoped
 on public.learning_test_questions for all to authenticated
 using (
@@ -562,10 +587,12 @@ with check (
   )
 );
 
+DROP POLICY IF EXISTS "learning_attempts_read_own" ON public.learning_test_attempts;
 create policy learning_attempts_read_own
 on public.learning_test_attempts for select to authenticated
 using (student_id = (select auth.uid()));
 
+DROP POLICY IF EXISTS "learning_answers_read_own_after_submit" ON public.learning_test_answers;
 create policy learning_answers_read_own_after_submit
 on public.learning_test_answers for select to authenticated
 using (
@@ -578,14 +605,17 @@ using (
 
 -- No direct student INSERT/UPDATE/DELETE policies are intentionally provided for
 -- attempts or answers. The secure server-side attempt service will own those writes.
+DROP POLICY IF EXISTS "learning_progress_read_own" ON public.learning_lesson_progress;
 create policy learning_progress_read_own
 on public.learning_lesson_progress for select to authenticated
 using (student_id = (select auth.uid()));
 
+DROP POLICY IF EXISTS "learning_progress_insert_own" ON public.learning_lesson_progress;
 create policy learning_progress_insert_own
 on public.learning_lesson_progress for insert to authenticated
 with check (student_id = (select auth.uid()));
 
+DROP POLICY IF EXISTS "learning_progress_update_own" ON public.learning_lesson_progress;
 create policy learning_progress_update_own
 on public.learning_lesson_progress for update to authenticated
 using (student_id = (select auth.uid()))

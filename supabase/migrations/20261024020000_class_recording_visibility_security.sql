@@ -45,9 +45,8 @@ using (
     where lc.id = class_recordings.class_id and lc.tutor_id = auth.uid()
   )
   or exists (
-    select 1 from public.admin_user_roles aur
-    where aur.user_id = auth.uid()
-      and aur.role in ('super_admin', 'platform_admin')
+    select 1 from public.admin_users a WHERE a.id = auth.uid()
+      and a.role in ('super_admin', 'platform_admin')
   )
 );
 
@@ -64,9 +63,8 @@ with check (
       where lc.id = class_recordings.class_id and lc.tutor_id = auth.uid()
     )
     or exists (
-      select 1 from public.admin_user_roles aur
-      where aur.user_id = auth.uid()
-        and aur.role in ('super_admin', 'platform_admin')
+      select 1 from public.admin_users a WHERE a.id = auth.uid()
+        and a.role in ('super_admin', 'platform_admin')
     )
   )
 );
@@ -82,9 +80,8 @@ using (
     where lc.id = class_recordings.class_id and lc.tutor_id = auth.uid()
   )
   or exists (
-    select 1 from public.admin_user_roles aur
-    where aur.user_id = auth.uid()
-      and aur.role in ('super_admin', 'platform_admin')
+    select 1 from public.admin_users a WHERE a.id = auth.uid()
+      and a.role in ('super_admin', 'platform_admin')
   )
 )
 with check (
@@ -93,9 +90,8 @@ with check (
     where lc.id = class_recordings.class_id and lc.tutor_id = auth.uid()
   )
   or exists (
-    select 1 from public.admin_user_roles aur
-    where aur.user_id = auth.uid()
-      and aur.role in ('super_admin', 'platform_admin')
+    select 1 from public.admin_users a WHERE a.id = auth.uid()
+      and a.role in ('super_admin', 'platform_admin')
   )
 );
 

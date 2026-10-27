@@ -29,6 +29,7 @@ create index if not exists idx_coupon_campaigns_code on public.coupon_campaigns(
 alter table public.coupon_campaigns enable row level security;
 
 -- Public read for active non-expired coupons to validate at checkout
+DROP POLICY IF EXISTS "coupon_campaigns_public_validate" ON public.coupon_campaigns;
 create policy coupon_campaigns_public_validate on public.coupon_campaigns
   for select
   using (
@@ -38,6 +39,7 @@ create policy coupon_campaigns_public_validate on public.coupon_campaigns
   );
 
 -- Admins full access
+DROP POLICY IF EXISTS "coupon_campaigns_admin_all" ON public.coupon_campaigns;
 create policy coupon_campaigns_admin_all on public.coupon_campaigns
   for all
   to authenticated
@@ -86,6 +88,7 @@ create index if not exists idx_payment_transactions_idempotency on public.paymen
 alter table public.payment_transactions enable row level security;
 
 -- Authenticated users can view their own transactions
+DROP POLICY IF EXISTS "payment_transactions_user_select" ON public.payment_transactions;
 create policy payment_transactions_user_select on public.payment_transactions
   for select
   to authenticated
@@ -95,6 +98,7 @@ create policy payment_transactions_user_select on public.payment_transactions
   );
 
 -- Admin full access
+DROP POLICY IF EXISTS "payment_transactions_admin_all" ON public.payment_transactions;
 create policy payment_transactions_admin_all on public.payment_transactions
   for all
   to authenticated
@@ -122,6 +126,7 @@ create table if not exists public.coupon_redemptions (
 create index if not exists idx_coupon_redemptions_user on public.coupon_redemptions(user_id);
 alter table public.coupon_redemptions enable row level security;
 
+DROP POLICY IF EXISTS "coupon_redemptions_user_select" ON public.coupon_redemptions;
 create policy coupon_redemptions_user_select on public.coupon_redemptions
   for select
   to authenticated
@@ -156,6 +161,7 @@ create index if not exists idx_refund_requests_tx on public.refund_requests(tran
 alter table public.refund_requests enable row level security;
 
 -- Learner can select and insert their own refund requests
+DROP POLICY IF EXISTS "refund_requests_user_select" ON public.refund_requests;
 create policy refund_requests_user_select on public.refund_requests
   for select
   to authenticated
@@ -164,12 +170,14 @@ create policy refund_requests_user_select on public.refund_requests
     or exists (select 1 from public.admin_users a where a.id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "refund_requests_user_insert" ON public.refund_requests;
 create policy refund_requests_user_insert on public.refund_requests
   for insert
   to authenticated
   with check (user_id = auth.uid());
 
 -- Admin full access
+DROP POLICY IF EXISTS "refund_requests_admin_all" ON public.refund_requests;
 create policy refund_requests_admin_all on public.refund_requests
   for all
   to authenticated

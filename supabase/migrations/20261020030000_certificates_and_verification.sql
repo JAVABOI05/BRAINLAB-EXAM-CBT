@@ -31,11 +31,13 @@ create index if not exists learning_certificates_org_idx on public.learning_cert
 alter table public.learning_certificates enable row level security;
 
 -- Public read policy for verified credentials (only non-revoked certificates)
+DROP POLICY IF EXISTS "learning_certificates_public_read" ON public.learning_certificates;
 create policy learning_certificates_public_read on public.learning_certificates
   for select
   using (true);
 
 -- Authenticated admin manage policy
+DROP POLICY IF EXISTS "learning_certificates_admin_all" ON public.learning_certificates;
 create policy learning_certificates_admin_all on public.learning_certificates
   for all
   to authenticated

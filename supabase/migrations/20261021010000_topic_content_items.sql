@@ -46,6 +46,7 @@ create index if not exists idx_topic_content_topic_published
 alter table public.learning_topic_content_items enable row level security;
 
 -- Public can read published content items belonging to published topics and subjects
+DROP POLICY IF EXISTS "topic_content_items_public_select" ON public.learning_topic_content_items;
 create policy topic_content_items_public_select on public.learning_topic_content_items
   for select
   using (
@@ -60,6 +61,7 @@ create policy topic_content_items_public_select on public.learning_topic_content
   );
 
 -- Authorized administrators have full access
+DROP POLICY IF EXISTS "topic_content_items_admin_all" ON public.learning_topic_content_items;
 create policy topic_content_items_admin_all on public.learning_topic_content_items
   for all
   to authenticated

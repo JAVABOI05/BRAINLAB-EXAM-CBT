@@ -3,7 +3,7 @@
 begin;
 revoke all on function public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid) from public,anon,authenticated;
 drop function if exists public.create_learning_access_code(text,boolean,timestamptz,integer,integer,text,text,uuid,uuid,text);
-create function public.create_learning_access_code(
+create or replace function public.create_learning_access_code(
   p_scope_type text,p_permanent boolean,p_expires_at timestamptz,p_max_redemptions integer,
   p_max_questions integer,p_membership_type text,p_resource_key text,
   p_organisation_id uuid,p_assessment_id uuid,p_assigned_email text

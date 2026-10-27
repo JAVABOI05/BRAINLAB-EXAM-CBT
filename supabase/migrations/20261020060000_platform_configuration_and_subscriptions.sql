@@ -21,11 +21,13 @@ create table if not exists public.platform_configuration (
 alter table public.platform_configuration enable row level security;
 
 -- Public can read non-secret configurations
+DROP POLICY IF EXISTS "platform_configuration_public_read" ON public.platform_configuration;
 create policy platform_configuration_public_read on public.platform_configuration
   for select
   using (not is_secret);
 
 -- Only authorized administrators can manage configurations
+DROP POLICY IF EXISTS "platform_configuration_admin_all" ON public.platform_configuration;
 create policy platform_configuration_admin_all on public.platform_configuration
   for all
   to authenticated
@@ -65,11 +67,13 @@ create table if not exists public.subscription_plans (
 alter table public.subscription_plans enable row level security;
 
 -- Public read for active subscription plans
+DROP POLICY IF EXISTS "subscription_plans_public_read" ON public.subscription_plans;
 create policy subscription_plans_public_read on public.subscription_plans
   for select
   using (is_active);
 
 -- Admin management for subscription plans
+DROP POLICY IF EXISTS "subscription_plans_admin_all" ON public.subscription_plans;
 create policy subscription_plans_admin_all on public.subscription_plans
   for all
   to authenticated
@@ -115,6 +119,7 @@ create index if not exists idx_user_subscriptions_plan on public.user_subscripti
 alter table public.user_subscriptions enable row level security;
 
 -- Learner can read their own subscription records
+DROP POLICY IF EXISTS "user_subscriptions_select_own" ON public.user_subscriptions;
 create policy user_subscriptions_select_own on public.user_subscriptions
   for select
   to authenticated
@@ -144,6 +149,7 @@ create index if not exists idx_config_audit_entity on public.configuration_audit
 alter table public.configuration_audit_logs enable row level security;
 
 -- Admin read for audit logs
+DROP POLICY IF EXISTS "configuration_audit_logs_admin_select" ON public.configuration_audit_logs;
 create policy configuration_audit_logs_admin_select on public.configuration_audit_logs
   for select
   to authenticated

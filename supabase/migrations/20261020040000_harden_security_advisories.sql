@@ -12,14 +12,14 @@ begin;
 -- PART 1: Missing RLS Policies for Learning Test Engine Tables
 -- ============================================================================
 
--- Table: learning_test_attempts
+-- Table: learning_test_attempts (column is student_id, not user_id)
 do $$
 begin
   if not exists (select 1 from pg_policies where tablename = 'learning_test_attempts' and policyname = 'learning_test_attempts_select_own_or_admin') then
     create policy learning_test_attempts_select_own_or_admin on public.learning_test_attempts
       for select to authenticated
       using (
-        user_id = auth.uid()
+        student_id = auth.uid()
         or exists (select 1 from public.admin_users a where a.id = auth.uid())
       );
   end if;
@@ -27,14 +27,14 @@ begin
   if not exists (select 1 from pg_policies where tablename = 'learning_test_attempts' and policyname = 'learning_test_attempts_insert_own') then
     create policy learning_test_attempts_insert_own on public.learning_test_attempts
       for insert to authenticated
-      with check (user_id = auth.uid());
+      with check (student_id = auth.uid());
   end if;
 
   if not exists (select 1 from pg_policies where tablename = 'learning_test_attempts' and policyname = 'learning_test_attempts_update_own') then
     create policy learning_test_attempts_update_own on public.learning_test_attempts
       for update to authenticated
-      using (user_id = auth.uid())
-      with check (user_id = auth.uid());
+      using (student_id = auth.uid())
+      with check (student_id = auth.uid());
   end if;
 end $$;
 
@@ -47,7 +47,7 @@ begin
       using (
         exists (
           select 1 from public.learning_test_attempts att
-          where att.id = attempt_id and (att.user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()))
+          where att.id = attempt_id and (att.student_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()))
         )
       );
   end if;
@@ -58,7 +58,7 @@ begin
       with check (
         exists (
           select 1 from public.learning_test_attempts att
-          where att.id = attempt_id and att.user_id = auth.uid()
+          where att.id = attempt_id and att.student_id = auth.uid()
         )
       );
   end if;
@@ -69,13 +69,13 @@ begin
       using (
         exists (
           select 1 from public.learning_test_attempts att
-          where att.id = attempt_id and att.user_id = auth.uid()
+          where att.id = attempt_id and att.student_id = auth.uid()
         )
       )
       with check (
         exists (
           select 1 from public.learning_test_attempts att
-          where att.id = attempt_id and att.user_id = auth.uid()
+          where att.id = attempt_id and att.student_id = auth.uid()
         )
       );
   end if;
@@ -90,7 +90,7 @@ begin
       using (
         exists (
           select 1 from public.learning_test_attempts att
-          where att.id = attempt_id and (att.user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()))
+          where att.id = attempt_id and (att.student_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()))
         )
       );
   end if;
@@ -101,7 +101,7 @@ begin
       with check (
         exists (
           select 1 from public.learning_test_attempts att
-          where att.id = attempt_id and att.user_id = auth.uid()
+          where att.id = attempt_id and att.student_id = auth.uid()
         )
       );
   end if;
@@ -113,7 +113,7 @@ begin
   if not exists (select 1 from pg_policies where tablename = 'learning_subject_memberships' and policyname = 'learning_subject_memberships_select_own') then
     create policy learning_subject_memberships_select_own on public.learning_subject_memberships
       for select to authenticated
-      using (student_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()));
+      using (user_id = auth.uid() or exists (select 1 from public.admin_users a where a.id = auth.uid()));
   end if;
 end $$;
 

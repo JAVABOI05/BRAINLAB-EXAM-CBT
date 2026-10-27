@@ -23,12 +23,14 @@ create index if not exists idx_question_explanations_fingerprint on public.quest
 alter table public.question_explanations enable row level security;
 
 -- Policy: All authenticated learners or visitors on corrections can read cached explanations
+drop policy if exists "Allow read access to question_explanations" on public.question_explanations;
 create policy "Allow read access to question_explanations"
   on public.question_explanations
   for select
   using (true);
 
 -- Policy: Inserts/Updates restricted to service role
+drop policy if exists "Allow service_role full access to question_explanations" on public.question_explanations;
 create policy "Allow service_role full access to question_explanations"
   on public.question_explanations
   for all

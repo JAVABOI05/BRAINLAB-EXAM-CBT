@@ -24,8 +24,7 @@ CREATE POLICY "Enrolled students and tutors view assignments" ON public.assignme
       WHERE ce.course_id = assignments.course_id AND ce.user_id = auth.uid()
     ) OR
     EXISTS (
-      SELECT 1 FROM public.admin_user_roles aur
-      WHERE aur.user_id = auth.uid()
+      SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
     )
   );
 
@@ -34,8 +33,7 @@ CREATE POLICY "Tutors and admins manage assignments" ON public.assignments
   FOR ALL USING (
     tutor_id = auth.uid() OR
     EXISTS (
-      SELECT 1 FROM public.admin_user_roles aur
-      WHERE aur.user_id = auth.uid() AND aur.role IN ('super_admin', 'platform_admin', 'teacher')
+      SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid() AND a.role IN ('super_admin', 'platform_admin', 'teacher')
     )
   );
 
@@ -49,8 +47,7 @@ CREATE POLICY "Students view own submissions, tutors view course submissions" ON
       WHERE a.id = assignment_id AND a.tutor_id = auth.uid()
     ) OR
     EXISTS (
-      SELECT 1 FROM public.admin_user_roles aur
-      WHERE aur.user_id = auth.uid()
+      SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
     )
   );
 
@@ -73,8 +70,7 @@ CREATE POLICY "Students update own submission or tutors grade" ON public.assignm
       WHERE a.id = assignment_id AND a.tutor_id = auth.uid()
     ) OR
     EXISTS (
-      SELECT 1 FROM public.admin_user_roles aur
-      WHERE aur.user_id = auth.uid()
+      SELECT 1 FROM public.admin_users a WHERE a.id = auth.uid()
     )
   );
 

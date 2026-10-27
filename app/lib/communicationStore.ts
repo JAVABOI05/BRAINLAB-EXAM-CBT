@@ -814,3 +814,78 @@ function formatRelativeTime(dateString: string): string {
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays}d ago`;
 }
+
+// ----------------------------------------------------------------------------
+// Message Requests & Group Invites Moderation
+// ----------------------------------------------------------------------------
+
+export async function updateConversationRequestStatus(
+  userId: string,
+  conversationId: string,
+  action: "accept" | "decline" | "accept_group" | "decline_group"
+): Promise<ChatConversation | null> {
+  const supabase = getSupabaseServerClient();
+  const now = new Date().toISOString();
+
+  // 1. Update in exam_config platform_chat_conversations
+  const { data: row } = await supabase
+    .from("exam_config")
+    .select("config_value")
+    .eq("config_key", "platform_chat_conversations")
+    .maybeSingle();
+
+  const convsMap: Record<string, ChatConversation> =
+    row && typeof row.config_value === "object" && row.config_value !== null
+      ? (row.config_value as Record<string, ChatConversation>)
+      : {};
+
+  let conv = convsMap[conversationId];
+
+  if (conv) {
+    if (action === "accept") {
+      conv.status = "accepted";
+    } else if (action === "decline") {
+      conv.status = "declined";
+    } else if (action === "accept_group") {
+      conv.participants = conv.participants.map((p) =>
+        p.user_id === userId ? { ...p, invite_status: "accepted" } : p
+      );
+    } else if (action === "decline_group") {
+      conv.participants = conv.participants.filter((p) => p.user_id !== userId);
+    }
+
+    convsMap[conversationId] = conv;
+
+    await supabase.from("exam_config").upsert(
+      {
+        config_key: "platform_chat_conversations",
+        config_value: convsMap,
+        updated_at: now,
+      },
+      { onConflict: "config_key" }
+    );
+  }
+
+  // 2. Also try native tables if conversation exists there
+  try {
+    if (action === "accept_group" || action === "decline_group") {
+      if (action === "accept_group") {
+        await supabase
+          .from("conversation_participants")
+          .update({ is_muted: false })
+          .eq("conversation_id", conversationId)
+          .eq("user_id", userId);
+      } else {
+        await supabase
+          .from("conversation_participants")
+          .delete()
+          .eq("conversation_id", conversationId)
+          .eq("user_id", userId);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return conv || null;
+}
