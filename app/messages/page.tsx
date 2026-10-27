@@ -405,7 +405,7 @@ export default function MessagesPage() {
   };
 
   // 8. Add Peer as Friend
-  const handleAddFriend = async (peer: OnlinePeer) => {
+  const handleAddFriend = async (peer: { user_id: string; display_name: string }) => {
     if (friendsList.includes(peer.user_id)) {
       toast.info(`${peer.display_name} is already your study buddy!`);
       return;
@@ -707,6 +707,16 @@ export default function MessagesPage() {
       ? activeConv.participants?.find((p) => p.user_id !== currentUser?.id)?.user_id
       : null;
   const isPeerBlocked = otherPeerId ? blockedUsers.includes(otherPeerId) : false;
+  const isFriend = otherPeerId ? friendsList.includes(otherPeerId) : true;
+  const hasSentAnyMessage = messages.some((m) => m.sender_id === currentUser?.id);
+  const isMessageRequestPending = Boolean(
+    activeConv?.type === "direct" &&
+    otherPeerId &&
+    messages.length > 0 &&
+    !hasSentAnyMessage &&
+    !isFriend &&
+    !isPeerBlocked
+  );
 
   const filteredConversations = useMemo(() => {
     let list = conversations;
