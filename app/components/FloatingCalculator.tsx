@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type FloatingCalculatorProps = {
   isOpen: boolean;
@@ -67,7 +68,7 @@ export default function FloatingCalculator({
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = calcRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -78,7 +79,7 @@ export default function FloatingCalculator({
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging) return;
 
     setPosition({
@@ -87,19 +88,21 @@ export default function FloatingCalculator({
     });
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = () => {
     setDragging(false);
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[1000]"
+      className="pointer-events-none fixed inset-0 z-[1000]"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
       <div
         ref={calcRef}
-        className="calc-window absolute w-[320px] bg-white"
+        className="calc-window pointer-events-auto absolute w-[min(320px,calc(100vw-24px))] max-h-[calc(100dvh-24px)] overflow-auto bg-white"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
@@ -191,6 +194,7 @@ export default function FloatingCalculator({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

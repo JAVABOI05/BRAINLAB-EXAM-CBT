@@ -106,7 +106,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
     }
   }
 
-  const cacheKey = `brainlab_ai_corr_${item.id}`;
+  const cacheKey = `brainlab_ai_corr_v2_${item.id}`;
 
   // Load cached AI explanation on mount: first check localStorage, then Supabase shared cache
   useEffect(() => {

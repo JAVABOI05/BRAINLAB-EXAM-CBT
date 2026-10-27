@@ -1063,6 +1063,18 @@ export default function ExamPage() {
       )}
 
       {calculatorEnabled && (
+        <button
+          type="button"
+          onClick={() => setShowCalculator((prev) => !prev)}
+          aria-label={showCalculator ? "Close calculator" : "Open calculator"}
+          aria-expanded={showCalculator}
+          className="exam-calc-btn fixed bottom-20 right-4 z-[900] min-h-11 px-4 shadow-lg md:hidden"
+        >
+          {showCalculator ? "Close calculator" : "Calculator"}
+        </button>
+      )}
+
+      {calculatorEnabled && (
         <FloatingCalculator
           isOpen={showCalculator}
           onClose={() => setShowCalculator(false)}

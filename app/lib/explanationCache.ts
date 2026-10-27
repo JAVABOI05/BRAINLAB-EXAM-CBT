@@ -14,7 +14,7 @@ export function computeQuestionFingerprint(
     .map((k) => `${k}:${(options[k] || "").trim().toLowerCase().replace(/\s+/g, " ")}`)
     .join("|");
   const normAns = (correctAnswer || "").trim().toUpperCase();
-  const raw = `${normText}#${normOptions}#${normAns}`;
+  const raw = `brainlab-explanation-v2#${normText}#${normOptions}#${normAns}`;
   return crypto.createHash("sha256").update(raw).digest("hex").slice(0, 16);
 }
 
@@ -24,6 +24,7 @@ export interface CachedExplanationResult {
   cachedAt: string;
   verified: boolean;
   fingerprint: string;
+  promptVersion: "v2";
 }
 
 // In-Memory Fast Cache (TTL: 15 minutes, max 1000 items) for ultra-fast <1ms lookups
@@ -63,7 +64,7 @@ export async function getCachedExplanation(
 
   // 0. Ultra-fast in-memory check
   const inMem = getFromMemoryCache(qIdStr, fingerprint);
-  if (inMem) return inMem;
+  if (inMem?.promptVersion === "v2") return inMem;
 
   const supabase = getSupabaseServerClient();
 
@@ -71,18 +72,19 @@ export async function getCachedExplanation(
   try {
     const { data, error } = await supabase
       .from("question_explanations")
-      .select("explanation, model, fingerprint, verified, updated_at, created_at")
+      .select("explanation, model, fingerprint, prompt_version, verified, updated_at, created_at")
       .eq("question_id", qIdStr)
       .maybeSingle();
 
     if (!error && data) {
-      if (!fingerprint || data.fingerprint === fingerprint) {
+      if (data.prompt_version === "v2" && (!fingerprint || data.fingerprint === fingerprint)) {
         const res: CachedExplanationResult = {
           explanation: data.explanation,
           model: data.model,
           cachedAt: data.updated_at || data.created_at,
           verified: data.verified ?? true,
           fingerprint: data.fingerprint,
+          promptVersion: "v2",
         };
         setToMemoryCache(qIdStr, res);
         return res;
@@ -99,6 +101,7 @@ export async function getCachedExplanation(
       .select("response, model, metadata, created_at")
       .eq("metadata->>question_id", qIdStr)
       .eq("metadata->>cache_type", "standard_question_explanation")
+      .eq("metadata->>prompt_version", "v2")
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -107,13 +110,14 @@ export async function getCachedExplanation(
       const rowMeta = (row.metadata as Record<string, unknown>) || {};
       const rowFingerprint = String(rowMeta.fingerprint || "");
 
-      if (!fingerprint || !rowFingerprint || rowFingerprint === fingerprint) {
+      if (rowMeta.prompt_version === "v2" && (!fingerprint || rowFingerprint === fingerprint)) {
         return {
           explanation: row.response,
           model: row.model,
           cachedAt: row.created_at,
           verified: Boolean(rowMeta.verified ?? true),
           fingerprint: rowFingerprint,
+          promptVersion: "v2",
         };
       }
     }
@@ -154,6 +158,7 @@ export async function setCachedExplanation(params: {
     cachedAt: now,
     verified: true,
     fingerprint,
+    promptVersion: "v2",
   });
 
   // 1. Save to `question_explanations` if table exists
@@ -165,7 +170,7 @@ export async function setCachedExplanation(params: {
         fingerprint,
         explanation: params.explanation,
         model: params.model,
-        prompt_version: "v1",
+        prompt_version: "v2",
         verified: true,
         updated_at: now,
       },
@@ -188,7 +193,7 @@ export async function setCachedExplanation(params: {
           question_id: qIdStr,
           subject: params.subject,
           fingerprint,
-          prompt_version: "v1",
+          prompt_version: "v2",
           verified: true,
           cached_at: now,
         },
