@@ -165,6 +165,13 @@ export default function ClassroomLobbyPage() {
           </form>
         </div>
 
+        <div className="mt-6 flex justify-center">
+          <Link href="/classroom/schedule" className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-5 py-3 text-sm font-bold text-blue-200 transition hover:bg-blue-500/20">
+            <span>View scheduled classes and countdowns</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+
         {/* Featured Stages & Navigation Cards */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {/* Main Stage */}
