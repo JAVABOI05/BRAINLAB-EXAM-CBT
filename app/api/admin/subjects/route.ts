@@ -157,6 +157,14 @@ export async function POST(request: NextRequest) {
       nextSubjects = nextSubjects.filter((s) => s.toLowerCase() !== cleanName.toLowerCase());
     } else if (action === "reorder_subjects" && Array.isArray(subjectsList)) {
       nextSubjects = subjectsList.map((s) => String(s).trim()).filter(Boolean);
+    } else if (action === "sync_batch_subjects" && Array.isArray(body.subjects)) {
+      const incoming: string[] = body.subjects;
+      for (const raw of incoming) {
+        const clean = String(raw || "").trim();
+        if (clean && !nextSubjects.some((s) => s.toLowerCase() === clean.toLowerCase())) {
+          nextSubjects.push(clean);
+        }
+      }
     }
 
     // Save back to exam_config: academic_structure AND subjects

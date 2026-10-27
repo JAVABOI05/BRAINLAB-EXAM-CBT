@@ -146,6 +146,16 @@ const HEADER_KEY_ALIASES: Record<string, string> = {
   optiondimage: "option_d_image_url",
   optiondimagealt: "option_d_image_alt",
 
+  // option e
+  optione: "option_e",
+  e: "option_e",
+  opte: "option_e",
+  choicee: "option_e",
+  opt5: "option_e",
+  optioneimageurl: "option_e_image_url",
+  optioneimage: "option_e_image_url",
+  optioneimagealt: "option_e_image_alt",
+
   // correct answer
   correctanswer: "correct_answer",
   answer: "correct_answer",
@@ -355,12 +365,41 @@ export default function AdminQuestionsPage() {
           row: rowNo,
           message: `Invalid or missing Correct Answer (${String(rawAnswer ?? "empty")}). Must be A, B, C, D${optionE ? ", or E" : ""}. Cannot point to an empty option.`,
         });
+      } else if (correctAnswer === "E" && !optionE) {
+        nextErrors.push({
+          row: rowNo,
+          message: "Correct answer is set to 'E', but Option E is empty.",
+        });
       }
 
       // Check image constraint if provided
       const rawQImg = normalizeNullable(row.question_image_url);
       if (rawQImg && !normalizeImageUrl(rawQImg)) {
         nextErrors.push({ row: rowNo, message: "Question Image URL must begin with https://" });
+      }
+      const rawOptAImg = normalizeNullable(row.option_a_image_url);
+      if (rawOptAImg && !normalizeImageUrl(rawOptAImg)) {
+        nextErrors.push({ row: rowNo, message: "Option A Image URL must begin with https://" });
+      }
+      const rawOptBImg = normalizeNullable(row.option_b_image_url);
+      if (rawOptBImg && !normalizeImageUrl(rawOptBImg)) {
+        nextErrors.push({ row: rowNo, message: "Option B Image URL must begin with https://" });
+      }
+      const rawOptCImg = normalizeNullable(row.option_c_image_url);
+      if (rawOptCImg && !normalizeImageUrl(rawOptCImg)) {
+        nextErrors.push({ row: rowNo, message: "Option C Image URL must begin with https://" });
+      }
+      const rawOptDImg = normalizeNullable(row.option_d_image_url);
+      if (rawOptDImg && !normalizeImageUrl(rawOptDImg)) {
+        nextErrors.push({ row: rowNo, message: "Option D Image URL must begin with https://" });
+      }
+      const rawOptEImg = normalizeNullable(row.option_e_image_url);
+      if (rawOptEImg && !normalizeImageUrl(rawOptEImg)) {
+        nextErrors.push({ row: rowNo, message: "Option E Image URL must begin with https://" });
+      }
+      const rawExpImg = normalizeNullable(row.explanation_image_url);
+      if (rawExpImg && !normalizeImageUrl(rawExpImg)) {
+        nextErrors.push({ row: rowNo, message: "Explanation Image URL must begin with https://" });
       }
 
       if (subject && question && optionA && optionB && optionC && optionD && correctAnswer) {
@@ -387,6 +426,9 @@ export default function AdminQuestionsPage() {
           option_d: optionD,
           option_d_image_url: normalizeImageUrl(row.option_d_image_url),
           option_d_image_alt: normalizeNullable(row.option_d_image_alt),
+          option_e: optionE,
+          option_e_image_url: normalizeImageUrl(row.option_e_image_url),
+          option_e_image_alt: normalizeNullable(row.option_e_image_alt),
           correct_answer: correctAnswer,
           explanation: normalizeNullable(row.explanation),
           explanation_image_url: normalizeImageUrl(row.explanation_image_url),
@@ -423,6 +465,7 @@ export default function AdminQuestionsPage() {
     Papa.parse<Record<string, unknown>>(file, {
       header: true,
       skipEmptyLines: "greedy",
+      transformHeader: (h) => h.trim(),
       complete: (results) => {
         const rows = (results.data || []).filter((r) => Object.values(r).some((v) => String(v ?? "").trim() !== ""));
         setRawRowsCount(rows.length);
@@ -438,7 +481,7 @@ export default function AdminQuestionsPage() {
     });
   }
 
-  // Batch chunking uploader (50 rows per batch)
+  // Batch chunking uploader (50 rows per batch) with granular fallback isolation
   async function handleBatchUpload() {
     if (parsedRows.length === 0) {
       setMessage({ type: "error", text: "No valid questions found to upload." });
@@ -454,6 +497,7 @@ export default function AdminQuestionsPage() {
       setUploadProgress(0);
 
       let totalInserted = 0;
+      const failedRows: RowError[] = [];
 
       for (let i = 0; i < parsedRows.length; i += BATCH_SIZE) {
         const chunk = parsedRows.slice(i, i + BATCH_SIZE);
@@ -464,22 +508,59 @@ export default function AdminQuestionsPage() {
         const { error } = await supabase.from("questions").insert(chunk);
 
         if (error) {
-          throw new Error(`Batch ${batchNumber} failed: ${error.message}`);
+          // Fall back to row-by-row insert for this batch to isolate the bad row
+          for (let j = 0; j < chunk.length; j++) {
+            const rowItem = chunk[j];
+            const { error: rowErr } = await supabase.from("questions").insert([rowItem]);
+            if (rowErr) {
+              failedRows.push({ row: i + j + 2, message: rowErr.message });
+            } else {
+              totalInserted++;
+            }
+          }
+        } else {
+          totalInserted += chunk.length;
         }
 
-        totalInserted += chunk.length;
-        const currentPercent = Math.round((totalInserted / parsedRows.length) * 100);
+        const currentPercent = Math.round((Math.min(i + BATCH_SIZE, parsedRows.length) / parsedRows.length) * 100);
         setUploadProgress(currentPercent);
       }
 
-      setMessage({
-        type: "success",
-        text: `Successfully uploaded all ${totalInserted} questions into the BrainLab question bank!`,
-      });
-      setParsedRows([]);
-      setRawRowsCount(0);
-      setFileName("");
-      setFileSize("");
+      // Auto-sync unique subjects with platform configuration & academic structure
+      const uniqueSubjects = Array.from(new Set(parsedRows.map((r) => r.subject?.trim()).filter(Boolean)));
+      if (uniqueSubjects.length > 0) {
+        try {
+          await fetch("/api/admin/subjects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "sync_batch_subjects",
+              subjects: uniqueSubjects,
+            }),
+          });
+        } catch (syncErr) {
+          console.warn("Background subject sync notice:", syncErr);
+        }
+      }
+
+      if (failedRows.length > 0) {
+        setErrors((prev) => [...prev, ...failedRows]);
+        setMessage({
+          type: "info",
+          text: `Partially uploaded ${totalInserted} questions. ${failedRows.length} rows encountered database errors (see Validation Notices below).`,
+        });
+      } else {
+        setMessage({
+          type: "success",
+          text: `Successfully uploaded all ${totalInserted} questions into the BrainLab question bank and updated academic subjects!`,
+        });
+        setParsedRows([]);
+        setRawRowsCount(0);
+        setFileName("");
+        setFileSize("");
+        setErrors([]);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
       setErrors([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
@@ -520,6 +601,7 @@ export default function AdminQuestionsPage() {
       "option_b",
       "option_c",
       "option_d",
+      "option_e",
       "correct_answer",
       "explanation",
       "marks",
@@ -535,6 +617,8 @@ export default function AdminQuestionsPage() {
       "option_c_image_alt",
       "option_d_image_url",
       "option_d_image_alt",
+      "option_e_image_url",
+      "option_e_image_alt",
       "explanation_image_url",
       "explanation_image_alt",
     ];
@@ -552,11 +636,12 @@ export default function AdminQuestionsPage() {
         "x = 5",
         "x = 7",
         "x = 9",
+        "x = 11",
         "B",
         "Subtract 9 from both sides: 3x = 15, then divide by 3: x = 5",
         "1",
         "easy",
-        "true", "", "", "", "", "", "", "", "", "", "", "", "",
+        "true", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
       ],
     ];
 
@@ -581,6 +666,7 @@ export default function AdminQuestionsPage() {
       "option_b",
       "option_c",
       "option_d",
+      "option_e",
       "correct_answer",
       "explanation",
       "marks",
@@ -596,6 +682,8 @@ export default function AdminQuestionsPage() {
       "option_c_image_alt",
       "option_d_image_url",
       "option_d_image_alt",
+      "option_e_image_url",
+      "option_e_image_alt",
       "explanation_image_url",
       "explanation_image_alt",
     ];
@@ -1039,14 +1127,20 @@ export default function AdminQuestionsPage() {
                         </span>
                       </td>
                       <td className="text-xs uppercase font-bold text-slate-500">{row.section}</td>
-                      <td className="max-w-xs truncate text-xs" title={row.question}>
-                        {row.question}
+                      <td className="max-w-xs text-xs">
+                        <div className="font-medium text-slate-800 dark:text-slate-100">{row.question}</div>
+                        {row.question_image_url && (
+                          <div className="mt-1 inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-cyan-300">
+                            <span>🖼️ Diagram attached</span>
+                          </div>
+                        )}
                       </td>
                       <td className="text-[11px] text-slate-500">
                         <div>A: {row.option_a}</div>
                         <div>B: {row.option_b}</div>
                         <div>C: {row.option_c}</div>
                         <div>D: {row.option_d}</div>
+                        {row.option_e && <div className="font-semibold text-indigo-700 dark:text-cyan-400">E: {row.option_e}</div>}
                       </td>
                       <td>
                         <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-white">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
@@ -24,7 +24,9 @@ export default function CBTExamPortalPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
-  const availableElectiveSubjects = [
+  // Dynamic Subjects Configuration (loaded from admin platform config / database)
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([
+    "English",
     "Mathematics",
     "Physics",
     "Chemistry",
@@ -34,13 +36,14 @@ export default function CBTExamPortalPage() {
     "Economics",
     "Commerce",
     "Christian Religious Studies",
-  ];
-
-  // Dynamic 4 Subjects Selection (Slot 1 English is Compulsory for all candidates)
-  const [availableSubjects, setAvailableSubjects] = useState<string[]>([
-    "English",
-    ...availableElectiveSubjects,
   ]);
+
+  const availableElectiveSubjects = useMemo(() => {
+    return availableSubjects.filter(
+      (s: string) => s.toLowerCase() !== "english" && s.toLowerCase() !== "english language"
+    );
+  }, [availableSubjects]);
+
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([
     "English",
     "Mathematics",
@@ -378,7 +381,7 @@ export default function CBTExamPortalPage() {
                       onChange={(e) => handleUpdateSubjectSlot(slotIdx, e.target.value)}
                       className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500"
                     >
-                      {availableElectiveSubjects.map((s) => (
+                      {availableElectiveSubjects.map((s: string) => (
                         <option key={s} value={s}>
                           {s}
                         </option>

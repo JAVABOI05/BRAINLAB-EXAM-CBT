@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 
 interface SampleOption {
-  letter: "A" | "B" | "C" | "D";
+  letter: "A" | "B" | "C" | "D" | "E";
   text: string;
 }
 
@@ -14,7 +14,7 @@ interface QuestionItem {
   examContext: string;
   question: string;
   options: SampleOption[];
-  correctLetter: "A" | "B" | "C" | "D";
+  correctLetter: "A" | "B" | "C" | "D" | "E";
   explanation: string;
 }
 
@@ -322,7 +322,7 @@ export default function InteractiveSampleQuestion() {
   const [questionPool, setQuestionPool] = useState<QuestionItem[]>(VERIFIED_FALLBACK_POOL);
   const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("All");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedLetter, setSelectedLetter] = useState<"A" | "B" | "C" | "D" | null>(null);
+  const [selectedLetter, setSelectedLetter] = useState<"A" | "B" | "C" | "D" | "E" | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
 
@@ -377,9 +377,9 @@ export default function InteractiveSampleQuestion() {
     });
   }, [questionPool]);
 
-  const currentQuestion = filteredQuestions[currentIndex] || filteredQuestions[0] || VERIFIED_FALLBACK_POOL[0];
+  const currentQuestion = filteredQuestions[currentIndex] || filteredQuestions[0] || null;
 
-  const handleSelect = (letter: "A" | "B" | "C" | "D") => {
+  const handleSelect = (letter: "A" | "B" | "C" | "D" | "E") => {
     setSelectedLetter(letter);
     setShowFeedback(true);
   };
@@ -424,7 +424,7 @@ export default function InteractiveSampleQuestion() {
     }, 120);
   };
 
-  const isCorrect = selectedLetter === currentQuestion.correctLetter;
+  const isCorrect = currentQuestion ? selectedLetter === currentQuestion.correctLetter : false;
 
   return (
     <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xl shadow-blue-950/5 dark:border-slate-800 dark:bg-slate-900 transition-colors">
@@ -482,178 +482,198 @@ export default function InteractiveSampleQuestion() {
       
 
       {/* Question Header & Stepper Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-4">
-        <div className="flex items-center gap-2">
-          <span className="rounded-md bg-blue-100 dark:bg-blue-900/40 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-blue-900 dark:text-cyan-300">
-            {currentQuestion.subject}
-          </span>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            {currentQuestion.examContext}
-          </span>
+      {!currentQuestion ? (
+        <div className="py-12 text-center">
+          <p className="text-base font-bold text-slate-800 dark:text-slate-100">
+            No sample questions currently available for {activeSubjectFilter}.
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Questions for this subject are being prepared or updated by the academy tutors.
+          </p>
+          <button
+            type="button"
+            onClick={() => setActiveSubjectFilter("All")}
+            className="mt-4 rounded-xl bg-[#012153] hover:bg-blue-900 px-4 py-2 text-xs font-bold text-white transition shadow-sm active:scale-95"
+          >
+            Show All Subjects
+          </button>
         </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-blue-100 dark:bg-blue-900/40 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-blue-900 dark:text-cyan-300">
+                {currentQuestion.subject}
+              </span>
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                {currentQuestion.examContext}
+              </span>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-            Question {currentIndex + 1} of {filteredQuestions.length}
-          </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                Question {currentIndex + 1} of {filteredQuestions.length}
+              </span>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handlePrevious}
-              disabled={isShuffling || filteredQuestions.length <= 1}
-              aria-label="Previous question"
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-40"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={isShuffling || filteredQuestions.length <= 1}
-              aria-label="Next question"
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-40"
-            >
-              →
-            </button>
-            <button
-              type="button"
-              onClick={handleShuffle}
-              title="Shuffle question"
-              disabled={isShuffling || filteredQuestions.length <= 1}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-blue-700 dark:text-cyan-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 disabled:opacity-40"
-            >
-              <span aria-hidden="true" className={isShuffling ? "animate-spin" : ""}>🔀</span>
-            </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  disabled={isShuffling || filteredQuestions.length <= 1}
+                  aria-label="Previous question"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-40"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={isShuffling || filteredQuestions.length <= 1}
+                  aria-label="Next question"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition disabled:opacity-40"
+                >
+                  →
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShuffle}
+                  title="Shuffle question"
+                  disabled={isShuffling || filteredQuestions.length <= 1}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-blue-700 dark:text-cyan-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 disabled:opacity-40"
+                >
+                  <span aria-hidden="true" className={isShuffling ? "animate-spin" : ""}>🔀</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Question Stem (Stitch Clean Box) */}
-      <div className="mt-4 bg-slate-50/90 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-        <p
-          className={`text-base font-extrabold leading-snug text-slate-900 dark:text-white sm:text-lg transition-opacity duration-150 ${
-            isShuffling ? "opacity-30" : "opacity-100"
-          }`}
-        >
-          {currentQuestion.question}
-        </p>
-        <span className="mt-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          Standard UTME Multiple Choice • 1.5 Marks
-        </span>
-      </div>
-
-      {/* Interactive Options Grid (Google Stitch Signature Tiles) */}
-      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-        {currentQuestion.options.map((opt) => {
-          const isSelected = selectedLetter === opt.letter;
-          const isAnswer = opt.letter === currentQuestion.correctLetter;
-
-          let btnClass = "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800";
-          let badgeClass = "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200";
-
-          if (showFeedback) {
-            if (isAnswer) {
-              btnClass = "border-emerald-500 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200 font-extrabold ring-2 ring-emerald-500/40 shadow-sm";
-              badgeClass = "bg-emerald-600 text-white";
-            } else if (isSelected && !isAnswer) {
-              btnClass = "border-rose-400 bg-rose-50 text-rose-950 dark:border-rose-500 dark:bg-rose-950/40 dark:text-rose-200 font-extrabold ring-1 ring-rose-400";
-              badgeClass = "bg-rose-600 text-white";
-            } else {
-              btnClass = "border-slate-200 bg-slate-50/20 text-slate-400 dark:border-slate-800 dark:text-slate-600 opacity-60";
-            }
-          } else if (isSelected) {
-            btnClass = "border-blue-600 bg-blue-50/80 text-blue-950 dark:border-cyan-400 dark:bg-blue-950/40 dark:text-cyan-200 ring-2 ring-blue-500/30";
-            badgeClass = "bg-blue-600 text-white";
-          }
-
-          return (
-            <button
-              key={opt.letter}
-              type="button"
-              disabled={showFeedback}
-              onClick={() => handleSelect(opt.letter)}
-              className={`flex items-center justify-between gap-3 rounded-2xl border p-3.5 text-left text-xs sm:text-sm font-semibold transition active:scale-98 shadow-xs group ${btnClass}`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-xs shadow-2xs transition-colors group-hover:scale-105 ${badgeClass}`}>
-                  {opt.letter}
-                </span>
-                <span className="flex-1 min-w-0 leading-normal">{opt.text}</span>
-              </div>
-              <div className="shrink-0 flex items-center justify-center">
-                {showFeedback && isAnswer && (
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-xs">✓</span>
-                )}
-                {showFeedback && isSelected && !isAnswer && (
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-black shadow-xs">✕</span>
-                )}
-                {!showFeedback && isSelected && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold">●</span>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* CBT Footer Action Ribbon (Google Stitch Design) */}
-      <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-        <span className="flex items-center gap-1.5 font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          Autosaved to device memory
-        </span>
-        <Link
-          href="/cbt"
-          className="inline-flex items-center gap-1 font-bold text-blue-700 dark:text-cyan-400 hover:text-blue-900 dark:hover:text-cyan-300"
-        >
-          Open Full CBT Simulator →
-        </Link>
-      </div>
-
-      {/* Answer Explanation & Feedback Card */}
-      {showFeedback && (
-        <div
-          className={`mt-5 rounded-2xl border p-4.5 transition animate-in fade-in duration-200 ${
-            isCorrect
-              ? "border-emerald-200 bg-emerald-50/70 dark:border-emerald-800/60 dark:bg-emerald-950/30"
-              : "border-amber-200 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/30"
-          }`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5 border-black/5 dark:border-white/5">
-            <span
-              className={`text-xs font-black uppercase tracking-wider ${
-                isCorrect ? "text-emerald-800 dark:text-emerald-300" : "text-amber-800 dark:text-amber-300"
+          {/* Question Stem (Stitch Clean Box) */}
+          <div className="mt-4 bg-slate-50/90 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <p
+              className={`text-base font-extrabold leading-snug text-slate-900 dark:text-white sm:text-lg transition-opacity duration-150 ${
+                isShuffling ? "opacity-30" : "opacity-100"
               }`}
             >
-              {isCorrect ? "✓ Well Done! Correct Answer" : `Incorrect · Correct: Option (${currentQuestion.correctLetter})`}
+              {currentQuestion.question}
+            </p>
+            <span className="mt-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Standard UTME Multiple Choice • 1.5 Marks
             </span>
-
-            <button
-              type="button"
-              onClick={handleReset}
-              className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline"
-            >
-              Try Again
-            </button>
           </div>
 
-          <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-normal">
-            {currentQuestion.explanation}
-          </p>
+          {/* Interactive Options Grid (Google Stitch Signature Tiles) */}
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+            {currentQuestion.options.map((opt) => {
+              const isSelected = selectedLetter === opt.letter;
+              const isAnswer = opt.letter === currentQuestion.correctLetter;
 
-          <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-black/5 dark:border-white/5">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-              Exam tip: Practise full timed sessions to build speed and accuracy.
+              let btnClass = "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800";
+              let badgeClass = "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200";
+
+              if (showFeedback) {
+                if (isAnswer) {
+                  btnClass = "border-emerald-500 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-200 font-extrabold ring-2 ring-emerald-500/40 shadow-sm";
+                  badgeClass = "bg-emerald-600 text-white";
+                } else if (isSelected && !isAnswer) {
+                  btnClass = "border-rose-400 bg-rose-50 text-rose-950 dark:border-rose-500 dark:bg-rose-950/40 dark:text-rose-200 font-extrabold ring-1 ring-rose-400";
+                  badgeClass = "bg-rose-600 text-white";
+                } else {
+                  btnClass = "border-slate-200 bg-slate-50/20 text-slate-400 dark:border-slate-800 dark:text-slate-600 opacity-60";
+                }
+              } else if (isSelected) {
+                btnClass = "border-blue-600 bg-blue-50/80 text-blue-950 dark:border-cyan-400 dark:bg-blue-950/40 dark:text-cyan-200 ring-2 ring-blue-500/30";
+                badgeClass = "bg-blue-600 text-white";
+              }
+
+              return (
+                <button
+                  key={opt.letter}
+                  type="button"
+                  disabled={showFeedback}
+                  onClick={() => handleSelect(opt.letter)}
+                  className={`flex items-center justify-between gap-3 rounded-2xl border p-3.5 text-left text-xs sm:text-sm font-semibold transition active:scale-98 shadow-xs group ${btnClass}`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-xs shadow-2xs transition-colors group-hover:scale-105 ${badgeClass}`}>
+                      {opt.letter}
+                    </span>
+                    <span className="flex-1 min-w-0 leading-normal">{opt.text}</span>
+                  </div>
+                  <div className="shrink-0 flex items-center justify-center">
+                    {showFeedback && isAnswer && (
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-black shadow-xs">✓</span>
+                    )}
+                    {showFeedback && isSelected && !isAnswer && (
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs font-black shadow-xs">✕</span>
+                    )}
+                    {!showFeedback && isSelected && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold">●</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* CBT Footer Action Ribbon (Google Stitch Design) */}
+          <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              Autosaved to device memory
             </span>
             <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#012153] hover:bg-blue-900 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95"
+              href="/cbt"
+              className="inline-flex items-center gap-1 font-bold text-blue-700 dark:text-cyan-400 hover:text-blue-900 dark:hover:text-cyan-300"
             >
-              Launch CBT Exam →
+              Open Full CBT Simulator →
             </Link>
           </div>
-        </div>
+
+          {/* Answer Explanation & Feedback Card */}
+          {showFeedback && (
+            <div
+              className={`mt-5 rounded-2xl border p-4.5 transition animate-in fade-in duration-200 ${
+                isCorrect
+                  ? "border-emerald-200 bg-emerald-50/70 dark:border-emerald-800/60 dark:bg-emerald-950/30"
+                  : "border-amber-200 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/30"
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5 border-black/5 dark:border-white/5">
+                <span
+                  className={`text-xs font-black uppercase tracking-wider ${
+                    isCorrect ? "text-emerald-800 dark:text-emerald-300" : "text-amber-800 dark:text-amber-300"
+                  }`}
+                >
+                  {isCorrect ? "✓ Well Done! Correct Answer" : `Incorrect · Correct: Option (${currentQuestion.correctLetter})`}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline"
+                >
+                  Try Again
+                </button>
+              </div>
+
+              <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-normal">
+                {currentQuestion.explanation}
+              </p>
+
+              <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-black/5 dark:border-white/5">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  Exam tip: Practise full timed sessions to build speed and accuracy.
+                </span>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#012153] hover:bg-blue-900 px-3 py-1.5 text-xs font-bold text-white transition active:scale-95"
+                >
+                  Launch CBT Exam →
+                </Link>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

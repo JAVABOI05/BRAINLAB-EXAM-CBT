@@ -263,7 +263,7 @@ const DEFAULT_ACADEMIC_CONFIG: AcademicConfig = {
 const DEFAULT_AI_CONFIG: AIPlatformConfig = {
   provider: "gemini",
   gemini_model: "gemini-3-flash-preview",
-  groq_model: "llama-3.3-70b-versatile",
+  groq_model: "qwen/qwen3.8-27b",
   daily_free_quota: 10,
   monthly_premium_quota: 500,
   max_output_tokens: 350,

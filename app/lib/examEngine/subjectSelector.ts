@@ -4,6 +4,11 @@
 
 import { OFFICIAL_STANDARD_SUBJECT_BLUEPRINT } from "./blueprints";
 import { EngineQuestion, ExamBlueprint, HighYieldRule } from "./types";
+import {
+  DifficultyAllocationResult,
+  GenericEngineQuestion,
+  selectQuestionsWithDifficultyModel,
+} from "../difficultyEngine";
 
 export type SubjectSelectionResult = {
   success: boolean;
@@ -11,6 +16,7 @@ export type SubjectSelectionResult = {
   questions: EngineQuestion[];
   totalMarks: number;
   distinctTopicsCovered: number;
+  difficultyAllocation?: DifficultyAllocationResult;
   warnings: string[];
   errors: string[];
 };
@@ -66,8 +72,42 @@ export function selectStandardSubjectPaper(
 
   // 3. Apply High-Yield Quotas first
   const subjectHighYield = highYieldRules.filter(
-    (r) => r.isActive && r.subject.toLowerCase() === subject.toLowerCase()
+    (r) => (r.isActive || r.is_active) && r.subject.toLowerCase() === subject.toLowerCase()
   );
+
+  // If blueprint specifies formal difficulty model slider position, execute multi-constraint solver
+  if (blueprint.difficulty_slider !== undefined) {
+    const diffRes = selectQuestionsWithDifficultyModel(eligible as unknown as GenericEngineQuestion[], {
+      totalCount: targetCount,
+      allocationMode: "slider",
+      sliderPosition: blueprint.difficulty_slider,
+      shortagePolicy: blueprint.difficulty_shortage_policy || "best_effort",
+      highYieldTopics: subjectHighYield.map((h) => ({ topic: h.topic, quota: h.quota })),
+      randomize: true,
+    });
+
+    warnings.push(...diffRes.warnings);
+    errors.push(...diffRes.errors);
+
+    const questionsWithMarks = diffRes.selectedQuestions.map((q) => ({
+      ...(q as unknown as EngineQuestion),
+      marks: marksPerQ,
+    }));
+
+    const totalMarks = questionsWithMarks.reduce((sum, q) => sum + (q.marks || marksPerQ), 0);
+    const topicsCovered = new Set(questionsWithMarks.map((q) => (q.topic || q.category || "General").trim()));
+
+    return {
+      success: errors.length === 0,
+      subject,
+      questions: questionsWithMarks,
+      totalMarks,
+      distinctTopicsCovered: topicsCovered.size,
+      difficultyAllocation: diffRes.allocationResult,
+      warnings,
+      errors,
+    };
+  }
 
   for (const hy of subjectHighYield) {
     if (selectedQuestions.length >= targetCount) break;

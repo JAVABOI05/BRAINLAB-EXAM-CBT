@@ -3,20 +3,45 @@ import { getSupabaseServerClient } from "../../../lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
-// Core high-demand UTME / WAEC examination subjects with English as universal compulsory subject
-const CORE_SUBJECTS = ["English", "Mathematics", "Biology", "Chemistry", "Physics"] as const;
-
 export async function GET() {
   try {
     const supabase = getSupabaseServerClient();
 
+    // 1. Discover all distinct subjects currently having active questions in the database
+    const { data: subjectRows } = await supabase
+      .from("questions")
+      .select("subject")
+      .eq("is_active", true);
+
+    const subjectSet = new Set<string>();
+    if (subjectRows) {
+      for (const row of subjectRows) {
+        if (row.subject?.trim()) {
+          subjectSet.add(row.subject.trim());
+        }
+      }
+    }
+
+    // Default to core subjects if DB is empty or unpopulated
+    const discoveredSubjects = Array.from(subjectSet);
+    const candidateSubjects = discoveredSubjects.length > 0
+      ? discoveredSubjects
+      : ["English", "Mathematics", "Physics", "Chemistry", "Biology"];
+
+    // Prioritize English and Mathematics upfront
+    const sortedSubjects = [...candidateSubjects].sort((a, b) => {
+      const pA = a.toLowerCase().includes("english") ? -2 : a.toLowerCase().includes("mathematics") ? -1 : 0;
+      const pB = b.toLowerCase().includes("english") ? -2 : b.toLowerCase().includes("mathematics") ? -1 : 0;
+      return pA - pB || a.localeCompare(b);
+    });
+
     // Query active questions partitioned by subject in parallel so no subject gets starved by DB insertion order
     const subjectBatches = await Promise.all(
-      CORE_SUBJECTS.map(async (subj) => {
+      sortedSubjects.map(async (subj) => {
         const { data, error } = await supabase
           .from("questions")
           .select(
-            "id, subject, section, category, question, option_a, option_b, option_c, option_d, correct_answer, explanation"
+            "id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation"
           )
           .eq("is_active", true)
           .eq("subject", subj)
@@ -34,30 +59,35 @@ export async function GET() {
       subject: string;
       examContext: string;
       question: string;
-      options: Array<{ letter: "A" | "B" | "C" | "D"; text: string }>;
-      correctLetter: "A" | "B" | "C" | "D";
+      options: Array<{ letter: "A" | "B" | "C" | "D" | "E"; text: string }>;
+      correctLetter: "A" | "B" | "C" | "D" | "E";
       explanation: string;
     }> = [];
 
-    // Process each subject in prioritized order (English first as universal compulsory subject)
+    // Process each subject in prioritized order
     for (const batch of subjectBatches) {
       if (!batch.items || batch.items.length === 0) continue;
 
       // Randomly pick up to 5 verified questions per subject for a diverse preview pool
       const shuffled = [...batch.items].sort(() => 0.5 - Math.random()).slice(0, 5);
       for (const q of shuffled) {
+        const options: Array<{ letter: "A" | "B" | "C" | "D" | "E"; text: string }> = [
+          { letter: "A", text: q.option_a },
+          { letter: "B", text: q.option_b },
+          { letter: "C", text: q.option_c },
+          { letter: "D", text: q.option_d },
+        ];
+        if (q.option_e?.trim()) {
+          options.push({ letter: "E", text: q.option_e.trim() });
+        }
+
         sampled.push({
           id: `db-${q.id}`,
           subject: q.subject,
           examContext: `JAMB UTME / WAEC ${q.category || q.subject}`,
           question: q.question,
-          options: [
-            { letter: "A", text: q.option_a },
-            { letter: "B", text: q.option_b },
-            { letter: "C", text: q.option_c },
-            { letter: "D", text: q.option_d },
-          ],
-          correctLetter: q.correct_answer as "A" | "B" | "C" | "D",
+          options,
+          correctLetter: (q.correct_answer?.trim()?.toUpperCase() as "A" | "B" | "C" | "D" | "E") || "A",
           explanation:
             q.explanation ||
             `Option (${q.correct_answer}) is the verified correct answer under standard curriculum guidelines.`,

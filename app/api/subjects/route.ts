@@ -43,15 +43,43 @@ export async function GET() {
       ];
     }
 
-    // Filter out Economics until admin adds questions for it
+    // 2. Also query subjects from active questions in database
+    const { data: questionRows } = await supabase
+      .from("questions")
+      .select("subject")
+      .eq("is_active", true);
+
+    const dbSubjectSet = new Set<string>();
+    if (questionRows) {
+      for (const row of questionRows) {
+        if (row.subject?.trim()) {
+          dbSubjectSet.add(row.subject.trim());
+        }
+      }
+    }
+
+    // Combine configured and DB subjects without duplicates
+    const combinedMap = new Map<string, string>();
+    for (const subj of configuredSubjects) {
+      combinedMap.set(subj.toLowerCase(), subj);
+    }
+    for (const subj of dbSubjectSet) {
+      if (!combinedMap.has(subj.toLowerCase())) {
+        combinedMap.set(subj.toLowerCase(), subj);
+      }
+    }
+
+    const allSubjects = Array.from(combinedMap.values());
+
     return NextResponse.json({
       ok: true,
-      subjects: configuredSubjects,
+      subjects: allSubjects,
+      dbSubjectsWithQuestions: Array.from(dbSubjectSet),
       defaultFour: [
         "English",
-        configuredSubjects.includes("Mathematics") ? "Mathematics" : configuredSubjects[1] || "Mathematics",
-        configuredSubjects.includes("Physics") ? "Physics" : configuredSubjects[2] || "Physics",
-        configuredSubjects.includes("Chemistry") ? "Chemistry" : configuredSubjects[3] || "Chemistry",
+        allSubjects.includes("Mathematics") ? "Mathematics" : allSubjects[1] || "Mathematics",
+        allSubjects.includes("Physics") ? "Physics" : allSubjects[2] || "Physics",
+        allSubjects.includes("Chemistry") ? "Chemistry" : allSubjects[3] || "Chemistry",
       ],
     });
   } catch {

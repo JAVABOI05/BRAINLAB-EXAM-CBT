@@ -185,6 +185,9 @@ export default function EditQuestionPage() {
         option_d: question.option_d,
         option_d_image_url: question.option_d_image_url || null,
         option_d_image_alt: question.option_d_image_alt || null,
+        option_e: question.option_e || null,
+        option_e_image_url: question.option_e_image_url || null,
+        option_e_image_alt: question.option_e_image_alt || null,
         correct_answer: question.correct_answer,
         explanation: question.explanation,
         explanation_image_url: question.explanation_image_url || null,
@@ -347,6 +350,18 @@ export default function EditQuestionPage() {
             </div>
 
             <div className="admin-setting-box">
+              <label className="admin-label">Option E (Optional / JAMB 5-Option)</label>
+              <input
+                className="admin-input"
+                placeholder="Leave blank for 4-option question"
+                value={question.option_e || ""}
+                onChange={(e) =>
+                  setQuestion({ ...question, option_e: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="admin-setting-box">
               <label className="admin-label">Correct Answer</label>
               <select
                 className="admin-input"
@@ -359,6 +374,7 @@ export default function EditQuestionPage() {
                 <option value="B">B</option>
                 <option value="C">C</option>
                 <option value="D">D</option>
+                <option value="E">E</option>
               </select>
             </div>
 
@@ -420,6 +436,7 @@ export default function EditQuestionPage() {
               ["B", "option_b_image_url", "option_b_image_alt"],
               ["C", "option_c_image_url", "option_c_image_alt"],
               ["D", "option_d_image_url", "option_d_image_alt"],
+              ["E", "option_e_image_url", "option_e_image_alt"],
             ] as const).map(([letter, urlKey, altKey]) => (
               <div className="admin-setting-box" key={letter}>
                 <label className="admin-label">Option {letter} image URL</label>

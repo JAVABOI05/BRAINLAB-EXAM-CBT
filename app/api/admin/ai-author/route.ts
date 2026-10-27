@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
 import { getAIPlatformConfig } from "../../../lib/platformConfig";
+import { recordAIGeneration } from "../../../lib/aiUsageTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -77,12 +78,22 @@ async function executeAICompletion(systemPrompt: string, userMessage: string): P
     }
 
     const data = await res.json();
-    return (
+    const geminiText = (
       data.candidates?.[0]?.content?.parts
         ?.map((p: { text?: string }) => p.text || "")
         .join("")
         .trim() || ""
     );
+    if (geminiText) {
+      void recordAIGeneration({
+        prompt: userMessage,
+        response: geminiText,
+        model,
+        provider: "gemini",
+        metadata: { source: "ai_author" },
+      });
+    }
+    return geminiText;
   }
 
   throw new Error("Unable to establish connection to AI gateway.");
