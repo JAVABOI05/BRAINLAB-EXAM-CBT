@@ -271,8 +271,8 @@ export default function LiveClassroomPage({
               event: "request_admission",
               payload: {
                 studentId: user.id,
-                studentName: user.user_metadata?.full_name || user.email || "Learner",
-                studentEmail: user.email,
+                studentName: user.user_metadata?.full_name || user.user_metadata?.name || "Learner",
+                studentEmail: "", // Protect candidate privacy
                 requestedAt: new Date().toISOString(),
               },
             });
@@ -734,7 +734,7 @@ export default function LiveClassroomPage({
           })
           .subscribe(async (status) => {
             if (status === "SUBSCRIBED") {
-              const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Learner";
+              const userName = user.user_metadata?.full_name || user.user_metadata?.name || "Learner";
               await channel.track({
                 id: user.id,
                 name: userName,
@@ -1245,7 +1245,7 @@ export default function LiveClassroomPage({
     const dispatchImgMsg = async (url: string) => {
       const payloadMsg = {
         classId,
-        senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+        senderName: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "Scholar",
         text: file.name || "Academic diagram / problem snapshot",
         type: "image" as const,
         mediaUrl: url,
@@ -1351,7 +1351,7 @@ export default function LiveClassroomPage({
     const newMsg: ClassroomMessage = {
       id: `msg_wb_${Date.now()}`,
       senderId: currentUser.id,
-      senderName: currentUser.user_metadata?.full_name || currentUser.email?.split("@")[0] || "Me",
+      senderName: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "Scholar",
       text: "🎨 Shared live whiteboard sketch/diagram",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       isHost: classDetails?.tutorId === currentUser.id,
@@ -1394,7 +1394,7 @@ export default function LiveClassroomPage({
         event: "participant_hand_raise",
         payload: {
           userId: currentUser?.id,
-          userName: currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Student",
+          userName: currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || "Student",
           isHandRaised: nextState,
         },
       });
@@ -2009,7 +2009,7 @@ export default function LiveClassroomPage({
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400">Student Name:</span>
-              <span className="font-bold text-white">{currentUser?.user_metadata?.full_name || currentUser?.email || "Student"}</span>
+              <span className="font-bold text-white">{currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || "Student"}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400">Status:</span>
