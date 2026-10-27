@@ -94,6 +94,7 @@ export default function MessagesPage() {
 
   // Tab state: "chats" vs "peers"
   const [activeTab, setActiveTab] = useState<"chats" | "peers">("chats");
+  const [conversationFilter, setConversationFilter] = useState<"all" | "circles" | "direct">("all");
 
   // Real member directory & presence state
   const [allPeers, setAllPeers] = useState<OnlinePeer[]>([]);
@@ -417,6 +418,56 @@ export default function MessagesPage() {
     }
   };
 
+  // 8b. Join or open an official BrainLab Study Circle (Stitch UI)
+  const handleJoinCuratedCircle = async (circleName: string) => {
+    const existing = conversations.find(
+      (c) => c.title.toLowerCase().trim() === circleName.toLowerCase().trim()
+    );
+    if (existing) {
+      setActiveConvId(existing.id);
+      setActiveTab("chats");
+      setMobileShowChat(true);
+      toast.success(`Opened ${circleName}! 👥`);
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast.error("Please sign in to join study circles.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          title: circleName.trim(),
+          type: "group",
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.conversation) {
+        setConversations((prev) => {
+          const exists = prev.some((c) => c.id === json.conversation.id);
+          return exists ? prev : [json.conversation, ...prev];
+        });
+        setActiveConvId(json.conversation.id);
+        setActiveTab("chats");
+        setMobileShowChat(true);
+        toast.success(`Joined ${circleName}! Welcome to the circle 👥`);
+      } else {
+        toast.error(json.error || "Could not join study circle.");
+      }
+    } catch {
+      toast.error("Network error joining study circle.");
+    }
+  };
+
   // 9. Add Peer to Study Group
   const handleJoinOrCreateStudyGroup = async (groupTitle: string) => {
     if (!selectedPeerForGroup || !groupTitle.trim()) return;
@@ -491,8 +542,18 @@ export default function MessagesPage() {
   const activeConv = conversations.find((c) => c.id === activeConvId);
 
   const filteredConversations = useMemo(() => {
-    return conversations.filter((c) => c.title.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [conversations, searchQuery]);
+    let list = conversations;
+    if (conversationFilter === "circles") {
+      list = list.filter((c) => c.type === "group");
+    } else if (conversationFilter === "direct") {
+      list = list.filter((c) => c.type !== "group");
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((c) => c.title.toLowerCase().includes(q));
+    }
+    return list;
+  }, [conversations, conversationFilter, searchQuery]);
 
   const filteredOnlinePeers = useMemo(() => {
     let list =
@@ -569,15 +630,60 @@ export default function MessagesPage() {
             </button>
           </div>
 
-          {/* Search Box */}
-          <div className="px-3 pb-3 border-b border-slate-100">
-            <input
-              type="text"
-              placeholder={activeTab === "chats" ? "Search conversations…" : "Search real classmates or tutors…"}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 transition"
-            />
+          {/* Search Box with ⌘K Badge (Google Stitch Design) */}
+          <div className="px-3 pb-2.5 border-b border-slate-100">
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-400 text-xs">🔍</span>
+              <input
+                type="text"
+                placeholder={activeTab === "chats" ? "Search circles, mentors, formulas…" : "Search real classmates or tutors…"}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-12 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 transition"
+              />
+              <span className="absolute right-2.5 rounded bg-slate-200/70 px-1 py-0.5 text-[9px] font-bold text-slate-600 select-none">
+                ⌘K
+              </span>
+            </div>
+
+            {/* Sub-filter tabs for Chats */}
+            {activeTab === "chats" && (
+              <div className="flex items-center gap-1 overflow-x-auto pt-2 scrollbar-none">
+                <button
+                  type="button"
+                  onClick={() => setConversationFilter("all")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition shrink-0 ${
+                    conversationFilter === "all"
+                      ? "bg-[#012153] text-white shadow-2xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  All ({conversations.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConversationFilter("circles")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition flex items-center gap-1 shrink-0 ${
+                    conversationFilter === "circles"
+                      ? "bg-purple-700 text-white shadow-2xs"
+                      : "bg-purple-50 text-purple-800 hover:bg-purple-100"
+                  }`}
+                >
+                  <span>👥</span> Circles ({conversations.filter((c) => c.type === "group").length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConversationFilter("direct")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition shrink-0 ${
+                    conversationFilter === "direct"
+                      ? "bg-blue-700 text-white shadow-2xs"
+                      : "bg-blue-50 text-blue-800 hover:bg-blue-100"
+                  }`}
+                >
+                  Direct ({conversations.filter((c) => c.type !== "group").length})
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Tab 1: Conversations List */}
@@ -588,23 +694,55 @@ export default function MessagesPage() {
                   <ListSkeleton count={4} />
                 </div>
               ) : filteredConversations.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-500">
-                  <p className="font-bold text-slate-700 text-sm">No conversations found</p>
-                  <p className="mt-1 leading-relaxed">
-                    Switch to the <strong className="text-emerald-700">Online Peers</strong> tab above to connect with
-                    active classmates and tutors right now!
-                  </p>
-                  <button
-                    onClick={() => setActiveTab("peers")}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-900 transition"
-                  >
-                    🟢 View Online Peers ({onlinePeers.length})
-                  </button>
+                <div className="p-3.5 space-y-3">
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-3.5 text-center">
+                    <p className="text-xs font-black text-blue-950">Join an Academic Study Circle</p>
+                    <p className="mt-1 text-[11px] text-blue-800 leading-relaxed">
+                      Connect with peers preparing for the same UTME &amp; WAEC subjects:
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {CURATED_STUDY_CIRCLES.map((circle) => (
+                      <button
+                        key={circle.id}
+                        type="button"
+                        onClick={() => void handleJoinCuratedCircle(circle.name)}
+                        className="w-full p-3 rounded-2xl border border-slate-200/90 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-left transition flex items-center justify-between group shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-2xl shrink-0">{circle.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-slate-900 group-hover:text-blue-900 truncate">
+                              {circle.name}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">{circle.description}</p>
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-xs font-bold text-blue-700 bg-blue-100/70 group-hover:bg-blue-600 group-hover:text-white px-2.5 py-1 rounded-lg transition ml-2">
+                          Join →
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 filteredConversations.map((conv) => {
                   const isSelected = conv.id === activeConvId;
                   const isGroup = conv.type === "group";
+                  const initials = isGroup
+                    ? "👥"
+                    : conv.title
+                        .split(" ")
+                        .map((w) => w[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase();
+
+                  const isTutorTitle =
+                    conv.title.toLowerCase().includes("tutor") ||
+                    conv.title.toLowerCase().includes("engr") ||
+                    conv.title.toLowerCase().includes("dr.");
+
                   return (
                     <button
                       key={conv.id}
@@ -612,37 +750,55 @@ export default function MessagesPage() {
                         setActiveConvId(conv.id);
                         setMobileShowChat(true);
                       }}
-                      className={`w-full text-left p-3.5 transition flex items-start gap-3 hover:bg-slate-50 active-press ${
-                        isSelected ? "bg-blue-50/90 border-l-4 border-[#012153] font-semibold" : ""
+                      className={`w-full text-left p-3 transition flex items-start gap-3 hover:bg-slate-50 active-press border-b border-slate-100 ${
+                        isSelected ? "bg-blue-50/80 border-l-4 border-blue-700" : ""
                       }`}
                     >
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-white font-bold text-sm shadow-xs ${
-                          isGroup ? "bg-gradient-to-tr from-purple-700 to-indigo-600" : "bg-[#012153]"
-                        }`}
-                      >
-                        {isGroup ? "👥" : conv.title.charAt(0).toUpperCase()}
+                      {/* Monogram Avatar with Emerald Ring (Google Stitch) */}
+                      <div className="relative shrink-0">
+                        <div
+                          className={`flex h-11 w-11 items-center justify-center rounded-xl text-white font-black text-xs shadow-xs ${
+                            isGroup
+                              ? "bg-gradient-to-tr from-purple-700 to-indigo-600"
+                              : isTutorTitle
+                              ? "bg-slate-900 text-amber-300 border border-amber-400/40"
+                              : "bg-blue-700"
+                          }`}
+                        >
+                          {initials}
+                        </div>
+                        <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white" />
                       </div>
+
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-1">
-                          <h2 className="text-xs font-bold text-slate-950 truncate flex items-center gap-1.5">
-                            {conv.title}
-                            {isGroup && (
-                              <span className="text-[9px] bg-purple-100 text-purple-800 font-bold px-1.5 py-0.2 rounded-md">
-                                Study Circle
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <h2 className="text-xs font-bold text-slate-900 truncate">
+                              {conv.title}
+                            </h2>
+                            {isTutorTitle && (
+                              <span className="rounded bg-amber-100 text-amber-900 text-[8px] font-black uppercase px-1 py-0.2 shrink-0">
+                                TUTOR
                               </span>
                             )}
-                          </h2>
-                          <span className="text-[10px] text-slate-400 shrink-0">
+                          </div>
+                          <span className="text-[10px] text-slate-400 shrink-0 font-medium">
                             {new Date(conv.last_message_at).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500 truncate">
-                          {conv.messages?.[0]?.content || "No messages yet"}
+
+                        <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                          {conv.messages?.[0]?.content || (isGroup ? "Academic group collaboration" : "Direct messaging")}
                         </p>
+
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[9px] font-bold">
+                            {isGroup ? "Study Circle" : "Direct Message"}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   );
@@ -919,15 +1075,24 @@ export default function MessagesPage() {
                 ) : (
                   messages.map((msg) => {
                     const isMe = msg.sender_id === currentUser?.id;
+                    const isTutorMsg = msg.message_type === "tutor" || msg.sender_id?.includes("tutor");
                     return (
                       <div
                         key={msg.id}
                         className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                       >
+                        {/* Tutor badge over message */}
+                        {isTutorMsg && !isMe && (
+                          <span className="mb-1 rounded bg-amber-100 text-amber-900 text-[9px] font-black uppercase px-1.5 py-0.2 flex items-center gap-1">
+                            <span>🎓</span> Official Tutor Response
+                          </span>
+                        )}
                         <div
                           className={`max-w-md rounded-2xl p-3.5 shadow-sm text-xs leading-relaxed ${
                             isMe
                               ? "bg-[#012153] text-white rounded-br-none"
+                              : isTutorMsg
+                              ? "bg-amber-50/70 text-slate-900 border-2 border-amber-300 rounded-bl-none"
                               : "bg-white text-slate-900 border border-slate-200 rounded-bl-none"
                           }`}
                         >
