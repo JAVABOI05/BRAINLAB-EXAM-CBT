@@ -234,6 +234,80 @@ export default function AdminLiveClassroomControlPage() {
     }
   };
 
+  const handleTestService = async () => {
+    setTestingService(true);
+    setTestResult(null);
+    setServiceFeedback("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Session expired. Please sign in again.");
+      const res = await fetch("/api/admin/live-services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          action: "test",
+          testProvider: selectedServiceTab,
+          credentials: liveServicesCreds,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTestResult({
+          success: true,
+          message: data.message || "Connection and token generation verified!",
+          tokenPreview: data.tokenPreview,
+          serverUrl: data.serverUrl,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: data.error || "Service verification test failed.",
+        });
+      }
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: err.message || "Failed to reach live service test endpoint.",
+      });
+    } finally {
+      setTestingService(false);
+    }
+  };
+
+  const handleSaveServiceCredentials = async () => {
+    if (!adminUser || adminUser.role !== "super_admin") return;
+    setSavingService(true);
+    setServiceFeedback("");
+    setTestResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Session expired. Please sign in again.");
+      const res = await fetch("/api/admin/live-services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          action: "save",
+          provider: config.provider,
+          credentials: liveServicesCreds,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setServiceFeedback("Live service settings and credentials saved successfully!");
+        if (data.statuses) setProviderStatuses(data.statuses);
+        if (liveServicesCreds.livekit_api_secret) setHasLivekitSecret(true);
+        if (liveServicesCreds.agora_app_certificate) setHasAgoraCert(true);
+        if (liveServicesCreds.daily_api_key) setHasDailyKey(true);
+      } else {
+        setServiceFeedback(data.error || "Failed to save live service settings.");
+      }
+    } catch (err: any) {
+      setServiceFeedback(err.message || "Failed to save live service settings.");
+    } finally {
+      setSavingService(false);
+    }
+  };
+
   const handleLaunchStage = async () => {
     if (!adminUser) return;
     try {
@@ -708,7 +782,10 @@ export default function AdminLiveClassroomControlPage() {
                 return (
                   <div
                     key={p.name}
-                    onClick={() => setConfig({ ...config, provider: p.name })}
+                    onClick={() => {
+                      setConfig({ ...config, provider: p.name });
+                      setSelectedServiceTab(p.name);
+                    }}
                     className={`cursor-pointer rounded-2xl border p-4 transition ${
                       isSelected
                         ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20"
@@ -748,6 +825,269 @@ export default function AdminLiveClassroomControlPage() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Live Service Setup & API Credentials (Super Admin) */}
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-slate-900">
+                      Live Streaming API Credentials & Connectivity
+                    </h3>
+                    <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-800">
+                      Super Admin
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Connect and configure API keys, host endpoints, and secrets for LiveKit, Agora, Daily.co, or WebRTC.
+                  </p>
+                </div>
+
+                <div className="inline-flex rounded-xl bg-slate-100 p-1">
+                  {(["livekit", "agora", "daily", "webrtc"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setSelectedServiceTab(tab)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
+                        selectedServiceTab === tab
+                          ? "bg-white text-blue-700 shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {adminUser?.role !== "super_admin" && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+                  <span className="font-bold">Notice:</span> Only the Super Administrator can configure external API keys and live service secrets. Currently viewing in read-only status.
+                </div>
+              )}
+
+              {/* Service Details & Fields */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 space-y-4">
+                {selectedServiceTab === "livekit" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">LiveKit Cloud / Self-Hosted SFU</span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${hasLivekitSecret && liveServicesCreds.livekit_url ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>
+                        {hasLivekitSecret && liveServicesCreds.livekit_url ? "Configured" : "Credentials Incomplete"}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Server WebSocket URL (LIVEKIT_URL)
+                        </label>
+                        <input
+                          type="text"
+                          disabled={adminUser?.role !== "super_admin"}
+                          value={liveServicesCreds.livekit_url}
+                          onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, livekit_url: e.target.value })}
+                          placeholder="wss://brainlab-xxxx.livekit.cloud"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          API Key (LIVEKIT_API_KEY)
+                        </label>
+                        <input
+                          type="text"
+                          disabled={adminUser?.role !== "super_admin"}
+                          value={liveServicesCreds.livekit_api_key}
+                          onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, livekit_api_key: e.target.value })}
+                          placeholder="APIxxxxxxxxx"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          API Secret (LIVEKIT_API_SECRET)
+                        </label>
+                        <input
+                          type="password"
+                          disabled={adminUser?.role !== "super_admin"}
+                          value={liveServicesCreds.livekit_api_secret}
+                          onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, livekit_api_secret: e.target.value })}
+                          placeholder={hasLivekitSecret ? "•••••••• (Configured — enter new to replace)" : "Enter LiveKit Secret"}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      💡 Generate these in your LiveKit Cloud Console under <strong>Settings → Project Keys</strong>. LiveKit provides selective forwarding units (SFU) capable of scaling to thousands of live participants.
+                    </p>
+                  </div>
+                )}
+
+                {selectedServiceTab === "agora" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Agora Real-Time Engagement (RTE)</span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${hasAgoraCert && liveServicesCreds.agora_app_id ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>
+                        {hasAgoraCert && liveServicesCreds.agora_app_id ? "Configured" : "Credentials Incomplete"}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          App ID (AGORA_APP_ID)
+                        </label>
+                        <input
+                          type="text"
+                          disabled={adminUser?.role !== "super_admin"}
+                          value={liveServicesCreds.agora_app_id}
+                          onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, agora_app_id: e.target.value })}
+                          placeholder="e.g. 96f8c7e2d4b..."
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Primary Certificate (AGORA_APP_CERTIFICATE)
+                        </label>
+                        <input
+                          type="password"
+                          disabled={adminUser?.role !== "super_admin"}
+                          value={liveServicesCreds.agora_app_certificate}
+                          onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, agora_app_certificate: e.target.value })}
+                          placeholder={hasAgoraCert ? "•••••••• (Configured — enter new to replace)" : "Enter Agora Certificate"}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      💡 Found in the Agora Developer Console under <strong>Project Management → Edit Project → Primary Certificate</strong>. Enables mobile-optimized low latency audio/video streaming.
+                    </p>
+                  </div>
+                )}
+
+                {selectedServiceTab === "daily" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Daily.co Managed Video Infrastructure</span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${hasDailyKey && liveServicesCreds.daily_domain ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>
+                        {hasDailyKey && liveServicesCreds.daily_domain ? "Configured" : "Credentials Incomplete"}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Daily Subdomain (DAILY_DOMAIN)
+                        </label>
+                        <input
+                          type="text"
+                          disabled={adminUser?.role !== "super_admin"}
+                          value={liveServicesCreds.daily_domain}
+                          onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, daily_domain: e.target.value })}
+                          placeholder="e.g. brainlab (for brainlab.daily.co)"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          API Key (DAILY_API_KEY)
+                        </label>
+                        <input
+                          type="password"
+                          disabled={adminUser?.role !== "super_admin"}
+                          value={liveServicesCreds.daily_api_key}
+                          onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, daily_api_key: e.target.value })}
+                          placeholder={hasDailyKey ? "•••••••• (Configured — enter new to replace)" : "Enter Daily.co API Key"}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      💡 Found in Daily.co Dashboard under <strong>Developers → API Key</strong>. Rooms will be auto-provisioned under https://&lt;domain&gt;.daily.co/room_id.
+                    </p>
+                  </div>
+                )}
+
+                {selectedServiceTab === "webrtc" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Adaptive WebRTC Mesh (Built-in)</span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Always Operational (Zero Cost)
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 leading-5">
+                      Built-in browser WebRTC engine utilizing HMAC-SHA256 authenticated admission tokens. Works out of the box with zero third-party subscriptions or monthly fees.
+                    </p>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Custom STUN/TURN ICE Servers (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        disabled={adminUser?.role !== "super_admin"}
+                        value={liveServicesCreds.webrtc_ice_servers}
+                        onChange={(e) => setLiveServicesCreds({ ...liveServicesCreds, webrtc_ice_servers: e.target.value })}
+                        placeholder="stun:stun.l.google.com:19302 (Leave blank for default public Google STUN)"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 disabled:opacity-60"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Test Diagnostic Result */}
+                {testResult && (
+                  <div className={`rounded-xl p-3 text-xs ${testResult.success ? "border border-emerald-200 bg-emerald-50 text-emerald-800" : "border border-rose-200 bg-rose-50 text-rose-800"}`}>
+                    <div className="font-bold">{testResult.message}</div>
+                    {testResult.tokenPreview && (
+                      <div className="mt-1 font-mono text-[10px] break-all opacity-85">
+                        Token Preview: {testResult.tokenPreview}
+                      </div>
+                    )}
+                    {testResult.serverUrl && (
+                      <div className="mt-0.5 font-mono text-[10px] opacity-85">
+                        Target Server: {testResult.serverUrl}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Service Feedback */}
+                {serviceFeedback && (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-bold text-blue-900">
+                    {serviceFeedback}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                {adminUser?.role === "super_admin" && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={testingService}
+                      onClick={handleTestService}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50 transition"
+                    >
+                      {testingService ? "Testing Connection…" : `⚡ Test ${selectedServiceTab.toUpperCase()} Connection & Token`}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={savingService}
+                      onClick={handleSaveServiceCredentials}
+                      className="rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2 text-xs font-bold text-white shadow-xs disabled:opacity-50 transition"
+                    >
+                      {savingService ? "Saving Credentials…" : "💾 Save Live Service Settings"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
