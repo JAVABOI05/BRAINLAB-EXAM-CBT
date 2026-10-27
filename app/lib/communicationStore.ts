@@ -966,7 +966,7 @@ export async function updateConversationRequestStatus(
       ? (row.config_value as Record<string, ChatConversation>)
       : {};
 
-  let conv = convsMap[conversationId];
+  const conv = convsMap[conversationId];
 
   if (conv) {
     if (action === "accept") {
