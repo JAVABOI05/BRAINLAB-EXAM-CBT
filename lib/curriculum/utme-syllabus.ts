@@ -504,11 +504,11 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     sections: [
       { title: "PART I: THE QUR’AN AND HADITH", topics: [
         { title: "1. Revelation of the Glorious Qur’an", contents: ["The Prophet’s visits to Cave Hira and the first revelation", "The Prophet’s reaction to the first revelation and its importance", "Modes of revelation (Q.42:51)", "Piecemeal revelation (Q.17:106; Q.25:32)", "Names and attributes of the Qur’an"] },
-        { title: "2. Preservation of the Glorious Qur’an", contents: ["Recording, compilation and standardization", "Differences between Makkan and Madinan suwar", "Role of the Companions in collection and compilation"] },
-        { title: "1c. Importance of the Glorious Qur’an", contents: ["The Qur’an as a source of guidance in spiritual, moral, economic, political and socio-cultural matters"] },
+        { title: "1b. Preservation of the Glorious Qur’an", contents: ["Recording, compilation and standardization", "Differences between Makkan and Madinan suwar", "Role of the Companions in collection and compilation"] },
+        { title: "1c. Importance of the Glorious Qur’an as a Source of Guidance", contents: ["The Qur’an as a source of guidance in spiritual, moral, economic, political and socio-cultural matters"] },
         { title: "1d. Divine Authenticity of the Glorious Qur’an", contents: ["Divine authenticity, uniqueness and preservation of the Qur’an, including Q.4:82; Q.41:42; Q.39:27; Q.17:88; Q.75:16–19 and Q.15:9"] },
-        { title: "2. Tafsir", contents: ["History, importance and types of Tafsir"] },
-        { title: "3. Introduction to Tajwid", contents: ["Theory and practice of Tajwid"] },
+        { title: "2. Tafsir", contents: ["Historical development and sources of Tafsir", "Importance of Tafsir", "Types of Tafsir and their comparison"] },
+        { title: "3. Introduction to Tajwid", contents: ["Meaning and importance of Tajwid", "Theory and practice of Tajwid"] },
         { title: "4. Study of Arabic Texts: Selected Surahs", contents: ["al-Fatihah (Q.1)", "al-Adiyat (Q.100)", "al-Qari’ah (Q.101)", "at-Takathur (Q.102)", "al-Asr (Q.103)", "al-Humazah (Q.104)", "al-Ma’un (Q.107)", "al-Kawthar (Q.108)", "al-Kafirun (Q.109)", "an-Nasr (Q.110)", "al-Masad (Q.111)", "al-Ikhlas (Q.112)", "al-Falaq (Q.113)", "an-Nas (Q.114)"] },
         { title: "5. Study of Further Arabic Texts", contents: ["al-A’la (Q.87)", "ad-Duha (Q.93)", "al-Inshirah (Q.94)", "at-Tin (Q.95)", "al-Alaq (Q.96)", "al-Qadr (Q.97)", "al-Bayyinah (Q.98)", "al-Zalzalah (Q.99)", "Ayatul-Kursiyy (Q.2:255)", "Amanar-Rasul (Q.2:285–286)", "Laqad ja’akum (Q.9:128–129)"] },
         { title: "6. Hadith", contents: ["History and authentication of Hadith", "Isnad and matn", "Sahih, Hasan and Da’if", "Six sound collectors and Muwatta of Imam Malik", "Selected Nawawi Hadith: 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 18, 19, 21, 22, 25, 27, 34 and 41", "Relationship between Hadith and the Qur’an"] },
