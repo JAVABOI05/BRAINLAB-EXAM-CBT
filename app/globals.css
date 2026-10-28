@@ -1152,110 +1152,61 @@ button:disabled,
   color: #f1f5f9 !important;
 }
 
-
 /* ==========================================================================
-   PUBLIC SITE DARK-THEME CONTRAST PATCH
-   Keep the public marketing page in the selected dark theme. Previously,
-   neutral utility overrides could darken surfaces without updating all text,
-   leaving pale cards and muted copy unreadable.
+   TARGETED DARK-THEME READABILITY FIXES
+   Only correct the light-theme panels that become unreadable in dark mode.
+   Existing readable dark surfaces and their colors are intentionally untouched.
    ========================================================================== */
-:is(html[data-theme="dark"], html.dark) .public-surface {
-  background-color: #070d18 !important;
-  color: #edf4ff !important;
+
+/* Syllabus: this translucent blue panel retained pale/light-theme text colors. */
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] {
+  background-color: #132744 !important;
+  border-color: #294566 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface section,
-:is(html[data-theme="dark"], html.dark) .public-surface footer {
-  color: #edf4ff;
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] h4 {
+  color: #e6f0ff !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface .bg-white,
-:is(html[data-theme="dark"], html.dark) .public-surface .bg-slate-50,
-:is(html[data-theme="dark"], html.dark) .public-surface .bg-slate-100,
-:is(html[data-theme="dark"], html.dark) .public-surface .bg-gray-50,
-:is(html[data-theme="dark"], html.dark) .public-surface .bg-gray-100 {
-  background-color: #0d1727 !important;
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] ul,
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] li,
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] li span {
+  color: #cfe0f7 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-[radial-gradient"],
-:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-[linear-gradient"] {
+
+/* Homepage: final CTA uses a light gradient with dark-theme-incompatible text. */
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] {
   background-image: none !important;
-  background-color: transparent !important;
+  background-color: #0d1727 !important;
+  border-color: #2a3b53 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-950,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-900,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-800,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-gray-900,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-gray-800 {
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] h2 {
   color: #f1f5f9 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-700,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-gray-700 {
-  color: #d2deed !important;
-}
-:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-600,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-500,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-slate-400,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-gray-600,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-gray-500,
-:is(html[data-theme="dark"], html.dark) .public-surface .text-gray-400 {
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] p {
   color: #b0bfd3 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface .border-slate-200,
-:is(html[data-theme="dark"], html.dark) .public-surface .border-slate-300,
-:is(html[data-theme="dark"], html.dark) .public-surface .border-gray-200 {
-  border-color: #2a3b53 !important;
-}
-:is(html[data-theme="dark"], html.dark) .public-surface input,
-:is(html[data-theme="dark"], html.dark) .public-surface textarea,
-:is(html[data-theme="dark"], html.dark) .public-surface select {
-  background-color: #0a1322 !important;
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] a.bg-white {
+  background-color: #132137 !important;
   color: #edf4ff !important;
-  border-color: #2a3b53 !important;
+  border-color: #3a4d68 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface input::placeholder,
-:is(html[data-theme="dark"], html.dark) .public-surface textarea::placeholder {
-  color: #8ea2bc !important;
-}
-/* Keep saturated action buttons and their white labels intact. */
-:is(html[data-theme="dark"], html.dark) .public-surface a.bg-white,
-:is(html[data-theme="dark"], html.dark) .public-surface button.bg-white {
-  color: #edf4ff !important;
-  border-color: #2a3b53 !important;
-}
-:is(html[data-theme="dark"], html.dark) .public-surface .bg-emerald-50,
-:is(html[data-theme="dark"], html.dark) .public-surface .bg-green-50 {
-  background-color: #10352f !important;
-  color: #a7f3d0 !important;
-}
-:is(html[data-theme="dark"], html.dark) .public-surface .text-white {
-  color: #ffffff !important;
-}
-:is(html[data-theme="dark"], html.dark) .public-surface a:focus-visible,
-:is(html[data-theme="dark"], html.dark) .public-surface button:focus-visible,
-:is(html[data-theme="dark"], html.dark) .public-surface summary:focus-visible {
-  outline: 3px solid #7dd3fc !important;
-  outline-offset: 3px !important;
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] a.bg-white:hover {
+  background-color: #192940 !important;
 }
 
-
-/* Final contrast guardrails for muted copy and pale status surfaces used by
-   shared components that do not inherit the public-page utility classes. */
-:is(html[data-theme="dark"], html.dark) .text-slate-400,
-:is(html[data-theme="dark"], html.dark) .text-gray-400,
-:is(html[data-theme="dark"], html.dark) .text-zinc-400,
-:is(html[data-theme="dark"], html.dark) .text-neutral-400 {
-  color: #9fb1c8 !important;
+/* Access Code Support: keep this specific white card readable in dark mode. */
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md {
+  background-color: #0d1727 !important;
+  color: #edf4ff !important;
+  border: 1px solid #2a3b53 !important;
 }
-:is(html[data-theme="dark"], html.dark) .text-slate-300,
-:is(html[data-theme="dark"], html.dark) .text-gray-300 {
-  color: #c7d4e5 !important;
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md h3,
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md .text-gray-800 {
+  color: #f1f5f9 !important;
 }
-:is(html[data-theme="dark"], html.dark) .bg-emerald-100,
-:is(html[data-theme="dark"], html.dark) .bg-green-100,
-:is(html[data-theme="dark"], html.dark) .bg-teal-100 {
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md .bg-green-50 {
   background-color: #10352f !important;
-  color: #d1fae5 !important;
+  border: 1px solid #236454 !important;
 }
-:is(html[data-theme="dark"], html.dark) .bg-emerald-100 *,
-:is(html[data-theme="dark"], html.dark) .bg-green-100 *,
-:is(html[data-theme="dark"], html.dark) .bg-teal-100 * {
-  color: inherit;
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md .text-gray-600 {
+  color: #c2d0df !important;
 }
