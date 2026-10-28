@@ -274,10 +274,10 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Arms of Government", contents: ["The legislature: types and structure", "The executive: types and functions", "The judiciary: functions and powers", "Relationships among the arms of government"] },
         { title: "Structures of Governance", contents: ["Unitary government: features, reasons for adoption, merits and demerits", "Federal government: features, reasons for adoption, merits and demerits", "Confederal government: features and reasons for adoption"] },
         { title: "Systems of Governance", contents: ["Presidential, parliamentary and monarchical systems", "Features, merits and demerits of each system"] },
-        { title: "Political Ideologies", contents: ["Major political ideologies and their principles", "Comparison of political ideologies"] },
-        { title: "Constitution", contents: ["Meaning, sources, types and functions of a constitution", "Constitutional development and constitutionalism"] },
-        { title: "Principles of Democratic Government", contents: ["Democracy and its principles", "Representation, rule of law, separation of powers and checks and balances"] },
-        { title: "Processes of Legislation", contents: ["Stages and procedures involved in making laws"] },
+        { title: "Political Ideologies", contents: ["Major political ideologies and their principles", "Comparison of political ideologies", "Communalism, feudalism, capitalism, socialism, communism, totalitarianism, fascism, Nazism and liberalism; compare ideologies and their modes of production."] },
+        { title: "Constitution", contents: ["Meaning, sources, types and functions of a constitution", "Constitutional development and constitutionalism", "Written and unwritten constitutions; rigid and flexible constitutions; sources and functions of constitutions."] },
+        { title: "Principles of Democratic Government", contents: ["Democracy and its principles", "Representation, rule of law, separation of powers and checks and balances", "Ethics and accountability in public office; separation of powers; checks and balances; individual and collective responsibility; constitutionalism; rule of law; representative government; centralisation and decentralisation."] },
+        { title: "Processes of Legislation", contents: ["Stages and procedures involved in making laws", "Legislative enactments include Acts, Edicts, Bye-laws, delegated legislation and Decrees."] },
         { title: "Citizenship", contents: ["Meaning and types of citizenship", "Methods of acquiring citizenship", "Citizenship rights, duties and obligations", "Dual citizenship and renunciation", "Obligations of the state"] },
         { title: "The Electoral Process", contents: ["Suffrage: evolution and types", "Elections: types and ingredients of free and fair elections", "Electoral systems: types, advantages and disadvantages", "Electoral commissions and their functions"] },
         { title: "Political Parties and Party Systems", contents: ["Meaning and functions of political parties", "Party systems and their characteristics"] },
@@ -306,7 +306,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Nigeria in International Organizations", contents: ["United Nations", "Commonwealth", "Organization of African Unity", "African Union", "Nigeria’s involvement and the contribution of these organizations to Nigeria"] }
       ]},
       { title: "PART IV: INTERNATIONAL ORGANIZATIONS", topics: [
-        { title: "International Organizations", contents: ["ECOWAS", "OAU and AU", "Commonwealth", "OPEC", "Objectives, operations and roles of the organizations in world affairs"] }
+        { title: "International Organizations", contents: ["ECOWAS", "OAU and AU", "Commonwealth", "OPEC", "Objectives, operations and roles of the organizations in world affairs", "Study objectives, operations and roles in world affairs of ECOWAS, OAU, AU, the Commonwealth and OPEC."] }
       ]}
     ]
   },
@@ -336,7 +336,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Appreciation", contents: ["Interpretation of poems", "Deducing the poet’s thematic preoccupation", "Relating a poem’s meaning and techniques to its context"] }
       ]},
       { title: "4. General Literary Terms", topics: [
-        { title: "Literary Terms", contents: ["Literary terms and concepts used in the analysis of drama, prose and poetry"] }
+        { title: "Literary Terms", contents: ["Literary terms and concepts used in the analysis of drama, prose and poetry", "Terms include foreshadowing, suspense, theatre, monologue, dialogue, soliloquy, symbolism, protagonist, antagonist, figures of speech, satire, stream of consciousness, synecdoche and metonymy.", "Identify terms specific to drama, prose and poetry and areas of overlap among genres, such as verse in drama and poetry or narration across genres."] }
       ]},
       { title: "5. Literary Appreciation", topics: [
         { title: "Unseen Literary Passages", contents: ["Unseen passages or extracts from drama, prose and poetry", "Identify literary devices in a given extract", "Interpret the extract", "Relate the extract to real-life experiences", "Unseen extracts may be from drama, prose or poetry.", "Identify literary devices, interpret the extract and relate it to real-life experiences."] },
@@ -374,8 +374,8 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Procedures, Documents, Terms and Payments", contents: ["Enquiry, quotation, order, invoice, pro forma invoice, statement of accounts, indent, consular invoice, bill of lading, certificate of origin and consignment note", "Trade discount, quantity discount, cash discount, warranties, COD, CIF, FOB and EOE", "Cash and credit payments; types, functions, merits and demerits of credit", "Legal tender, bank notes and coins, cheques, standing orders, bank drafts, stamps, postal and money orders, bills of exchange, promissory notes, mail transfer, traveller’s cheques, telegraphic transfer, e-payment and recharge cards", "Documents include enquiry, quotation, order, invoice, pro-forma invoice, statement of account, indent, consular invoice, bill of lading, certificate of origin and consignment note.", "Terms of trade include trade, quantity and cash discounts; warranties; C.O.D., C.I.F., F.O.B. and E. & O.E.", "Cash and credit payments; merits and demerits of credit transactions; legal tender, bank notes and coins, cheques, standing orders, bank drafts, postal and money orders, bills of exchange, promissory notes, mail transfer, traveller's cheques, telegraphic transfer, e-payment and recharge cards."] }
       ]},
       { title: "6. Aids-to-trade", topics: [
-        { title: "Advertising", contents: ["Meaning and roles", "Types, media and methods", "Advantages and disadvantages"] },
-        { title: "Banking", contents: ["Types of banks, services, challenges and e-banking"] },
+        { title: "Advertising", contents: ["Meaning and roles", "Types, media and methods", "Advantages and disadvantages", "Meaning and role; types, media and methods; advantages and disadvantages of advertising."] },
+        { title: "Banking", contents: ["Types of banks, services, challenges and e-banking", "Types of banks, services rendered, challenges facing banks and electronic banking."] },
         { title: "Communication", contents: ["Process and procedure, types, trends, merits and demerits, and barriers", "Contributions of courier services and GSM to business"] },
         { title: "Insurance", contents: ["Types, principles, terms, importance and types of risk"] },
         { title: "Tourism", contents: ["Meaning and forms, importance, agencies promoting tourism in Nigeria, challenges and tourist centres"] },
