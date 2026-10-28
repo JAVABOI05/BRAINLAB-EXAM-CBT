@@ -42,9 +42,16 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Figurative and Idiomatic Usage", contents: ["Interpreting figurative expressions.", "Formal idioms expressed in Standard British English.", "Distinguishing ordinary, figurative and idiomatic meanings."] }
       ]},
       { title: "C. Oral Forms", topics: [
-        { title: "Vowels and Consonants", contents: ["Recognition and distinction of English vowel and consonant sounds.", "Sound contrasts used to distinguish words."] },
-        { title: "Rhymes and Word Stress", contents: ["Identifying rhyming words.", "Recognising stress patterns in words."] },
-        { title: "Emphatic Stress and Intonation", contents: ["Using stress to convey emphasis or contrast.", "Recognising how intonation affects meaning."] }
+        { title: "Vowels", contents: ["Monothongs, diphthongs and triphthongs.", "Distinguishing among vowel types."] },
+        { title: "Consonants", contents: ["Consonants, including consonant clusters.", "Distinguishing among consonant types."] },
+        { title: "Rhymes", contents: ["Rhymes, including homophones."] },
+        { title: "Word Stress", contents: ["Word stress in monosyllabic and polysyllabic words."] },
+        { title: "Emphatic Stress", contents: ["Emphatic stress in connected speech.", "Placing stress on words in an utterance for emphasis."] }
+      ]},
+      { title: "D. Structure of the Examination", topics: [
+        { title: "Comprehension and Summary", contents: ["Comprehension passage: 5 questions.", "Summary passage: 5 questions.", "Cloze passage: 10 questions.", "Approved reading text: 5 questions."] },
+        { title: "Lexis and Structure", contents: ["Sentence interpretation: 5 questions.", "Antonyms: 5 questions.", "Synonyms: 5 questions.", "Basic grammar: 10 questions."] },
+        { title: "Oral Forms", contents: ["Vowels: 2 questions.", "Consonants: 2 questions.", "Rhymes: 2 questions.", "Word stress: 2 questions.", "Emphatic stress: 2 questions.", "Total examination length stated in the supplied syllabus: 60 questions."] }
       ]}
     ]
   },
