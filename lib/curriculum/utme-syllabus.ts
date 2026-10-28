@@ -114,7 +114,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     sections: [
       { title: "A. Variety of Organisms", topics: [
         { title: "Living Organisms", contents: ["Characteristics of living things.", "Cell structure and functions of cell components.", "Levels of organisation: cell, tissue, organ, system and organism.", "Examples include Euglena, Paramecium, epithelial tissues, Hydra, onion bulb and Chlamydomonas."] },
-        { title: "Evolution and Classification of Organisms", contents: ["Monera (prokaryotes), including bacteria and blue-green algae.", "Protista, including Amoeba, Euglena and Paramecium.", "Fungi, including mushroom and Rhizopus.", "Plantae: Thallophyta, Bryophyta, Pteridophyta and Spermatophyta.", "Gymnosperms and angiosperms; monocots and dicots.", "Plants classified by life-cycle span.", "Animal groups and their distinguishing features, life histories and structural complexity."] },
+        { title: "Evolution and Classification of Organisms", contents: ["Monera (prokaryotes), including bacteria and blue-green algae.", "Protista, including Amoeba, Euglena and Paramecium.", "Fungi, including mushroom and Rhizopus.", "Plantae: Thallophyta (Spirogyra); Bryophyta (mosses and liverworts, including Brachmenium and Marchantia); Pteridophyta (ferns, including Dryopteris); Spermatophyta, including Gymnosperms (cycads and conifers) and Angiosperms.", "Angiosperms include monocots such as maize and dicots such as waterleaf.", "Plants classified by life-cycle span.", "Animal groups and their distinguishing features, life histories and structural complexity; use the listed organisms to trace stages of life histories and increasing structural complexity.",] },
         { title: "Structural, Functional and Behavioural Adaptations", contents: ["Adaptations in organisms and their environments.", "Structural, functional and behavioural features that aid survival."] }
       ]},
       { title: "B. Form and Functions", topics: [
@@ -144,8 +144,8 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Biotechnology", contents: ["Applications of biotechnology.", "Uses and implications of biological techniques."] }
       ]},
       { title: "E. Evolution", topics: [
-        { title: "Theories of Evolution", contents: ["Major theories explaining evolution.", "Natural selection and adaptation."] },
-        { title: "Evidence of Evolution", contents: ["Fossils.", "Comparative anatomy and embryology.", "Other evidence used to explain evolutionary relationships."] }
+        { title: "Theories of Evolution", contents: ["Lamarck’s and Darwin’s contributions to theories of evolution.", "Natural selection and adaptation.", "Evidence from modern evolutionary theories, including genetic studies and the role of mutation."] },
+        { title: "Evidence of Evolution", contents: ["Fossil records.", "Comparative anatomy, physiology and embryology.", "Genetic studies and mutation as evidence used in modern evolutionary theories.", "Trace evolutionary trends in plants and animals."] }
       ]}
     ]
   },
