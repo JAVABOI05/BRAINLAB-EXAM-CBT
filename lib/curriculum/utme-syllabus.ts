@@ -62,7 +62,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     generalObjectives: [
       "Acquire computational and manipulative skills.",
       "Develop precise, logical and formal reasoning skills.",
-      "Interpret graphs, diagrams and data.",
+      "Develop deductive skills in interpretation of graphs, diagrams and data.",
       "Apply mathematical concepts to resolve issues in daily living."
     ],
     sections: [
@@ -107,9 +107,9 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     icon: "🧬",
     description: "The UTME Biology syllabus, grouped into Variety of Organisms, Form and Functions, Ecology, Heredity and Variations, and Evolution.",
     generalObjectives: [
-      "Understand the diversity, interdependence and unity of life.",
-      "Explain continuity of life through reproduction, inheritance and evolution.",
-      "Apply biological principles to living things, health, society, the environment and the economy."
+      "Demonstrate sufficient knowledge of the concepts of the diversity, interdependence and unity of life.",
+      "Account for continuity of life through reorganization, inheritance and evolution.",
+      "Apply biological principles and concepts to everyday life, especially to matters affecting living things, individual, society, the environment, community health and the economy."
     ],
     sections: [
       { title: "A. Variety of Organisms", topics: [
@@ -192,9 +192,10 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     icon: "🔭",
     description: "The UTME Physics syllabus, from measurements and mechanics through waves, optics, electricity, magnetism and modern physics.",
     generalObjectives: [
-      "Sustain interest in physics and develop accuracy, precision and objectivity.",
-      "Interpret physical phenomena, laws, definitions, concepts and theories.",
-      "Solve physics problems using relevant theories and concepts."
+      "Sustain their interest in physics.",
+      "Develop attitude relevant to physics that encourage accuracy, precision and objectivity.",
+      "Interpret physical phenomena, laws, definitions, concepts and other theories.",
+      "Demonstrate the ability to solve correctly physics problems using relevant theories and concepts."
     ],
     sections: [
       { title: "Measurements, Mechanics and Properties of Matter", topics: [
