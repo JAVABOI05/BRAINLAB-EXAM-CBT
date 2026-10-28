@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Legacy Node.js maintenance script uses CommonJS. */
 const fs = require('fs');
 
 const file = 'c:/Users/hp/Downloads/BRAINLAB-EXAM-CBT/app/study-groups/page.tsx';
