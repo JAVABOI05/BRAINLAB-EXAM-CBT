@@ -29,8 +29,8 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     ],
     sections: [
       { title: "A. Comprehension and Summary", topics: [
-        { title: "Comprehension", contents: ["Reading passages and answering questions on their content.", "Identifying main ideas, supporting details, tone, purpose and implied meaning.", "Interpreting vocabulary and expressions in context.", "Drawing conclusions and making inferences from a passage."] },
-        { title: "Summary", contents: ["Identifying relevant points in a passage.", "Combining distinct pieces of information into a coherent whole.", "Writing concise answers in the candidate's own words where required."] }
+        { title: "Comprehension", contents: ["Passage forms: description, narration, exposition and argumentation/persuasion.", "The supplied syllabus states that three passages should be set, one of which is a cloze test, with each passage about 200 words long.", "Comprehension of the whole passage or part of a passage.", "Understanding words, phrases, clauses, sentences, figures of speech and idioms as used in passages.", "Coherence and logical reasoning, including deductions and inferences.", "The approved reading text.", "Identifying main points and topic sentences; determining implied meanings; identifying grammatical functions of words, phrases, clauses and figurative or idiomatic expressions; inferring writers' intentions, mood, attitude and opinion."] },
+        { title: "Summary", contents: ["Identifying relevant points in a passage.", "Synthesis of ideas: combining distinct or separate pieces of information to form a complete whole as a summary."] }
       ]},
       { title: "B. Lexis and Structure", topics: [
         { title: "Synonyms", contents: ["Words and expressions with similar meanings.", "Meaning of words in ordinary, figurative and idiomatic contexts."] },
@@ -38,11 +38,11 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Clause and Sentence Patterns", contents: ["Recognising sentence structures and clause patterns.", "Choosing grammatically appropriate sentence constructions."] },
         { title: "Word Classes and Their Functions", contents: ["Nouns, pronouns, verbs, adjectives, adverbs, prepositions, conjunctions and other word classes.", "The grammatical functions of words in sentences."] },
         { title: "Grammar and Usage", contents: ["Mood, tense, aspect and number.", "Agreement and concord.", "Positive, comparative and superlative degrees.", "Question tags.", "Mechanics, spelling and ordinary usage."] },
-        { title: "Figurative and Idiomatic Usage", contents: ["Interpreting figurative expressions.", "Formal idioms expressed in Standard British English.", "Distinguishing ordinary, figurative and idiomatic meanings."] }
+        { title: "Figurative and Idiomatic Usage", contents: ["Interpreting figurative expressions.", "Idioms tested are formal and expressed in Standard British English (SBE).", "Distinguishing ordinary, figurative and idiomatic meanings."] }
       ]},
       { title: "C. Oral Forms", topics: [
-        { title: "Vowels", contents: ["Monothongs, diphthongs and triphthongs.", "Distinguishing among vowel types."] },
-        { title: "Consonants", contents: ["Consonants, including consonant clusters.", "Distinguishing among consonant types."] },
+        { title: "Vowels", contents: ["Monothongs, diphthongs and triphthongs.", "Making distinctions among vowel types.", "The source syllabus spells the first category as 'monothongs'; the term is retained here as printed in the supplied source."] },
+        { title: "Consonants", contents: ["Consonants, including clusters.", "Differentiating among consonant types.", "Identifying correct pronunciation of individual words and articulation of connected speech."] },
         { title: "Rhymes", contents: ["Rhymes, including homophones."] },
         { title: "Word Stress", contents: ["Word stress in monosyllabic and polysyllabic words."] },
         { title: "Emphatic Stress", contents: ["Emphatic stress in connected speech.", "Placing stress on words in an utterance for emphasis."] }
