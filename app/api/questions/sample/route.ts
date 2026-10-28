@@ -35,21 +35,16 @@ export async function GET() {
       return pA - pB || a.localeCompare(b);
     });
 
-    // Query active questions partitioned by subject in parallel so no subject gets starved by DB insertion order
     const subjectBatches = await Promise.all(
       sortedSubjects.map(async (subj) => {
         const { data, error } = await supabase
           .from("questions")
-          .select(
-            "id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation"
-          )
+          .select("id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation")
           .eq("is_active", true)
           .eq("subject", subj)
           .limit(15);
 
-        if (error || !data) {
-          return { subject: subj, items: [] };
-        }
+        if (error || !data) return { subject: subj, items: [] };
         return { subject: subj, items: data };
       })
     );
@@ -64,11 +59,9 @@ export async function GET() {
       explanation: string;
     }> = [];
 
-    // Process each subject in prioritized order
     for (const batch of subjectBatches) {
       if (!batch.items || batch.items.length === 0) continue;
 
-      // Randomly pick up to 5 verified questions per subject for a diverse preview pool
       const shuffled = [...batch.items].sort(() => 0.5 - Math.random()).slice(0, 5);
       for (const q of shuffled) {
         const options: Array<{ letter: "A" | "B" | "C" | "D" | "E"; text: string }> = [
@@ -77,9 +70,7 @@ export async function GET() {
           { letter: "C", text: q.option_c },
           { letter: "D", text: q.option_d },
         ];
-        if (q.option_e?.trim()) {
-          options.push({ letter: "E", text: q.option_e.trim() });
-        }
+        if (q.option_e?.trim()) options.push({ letter: "E", text: q.option_e.trim() });
 
         sampled.push({
           id: `db-${q.id}`,
@@ -88,9 +79,7 @@ export async function GET() {
           question: q.question,
           options,
           correctLetter: (q.correct_answer?.trim()?.toUpperCase() as "A" | "B" | "C" | "D" | "E") || "A",
-          explanation:
-            q.explanation ||
-            `Option (${q.correct_answer}) is the verified correct answer under standard curriculum guidelines.`,
+          explanation: q.explanation || `Option (${q.correct_answer}) is the verified correct answer under standard curriculum guidelines.`,
         });
       }
     }
@@ -99,12 +88,13 @@ export async function GET() {
       return NextResponse.json({ ok: false, fallback: true });
     }
 
-    return NextResponse.json({
-      ok: true,
-      questions: sampled,
-    });
+    // This endpoint is public. Never serialize answer keys or explanations from the
+    // service-role-backed query; candidates should receive those only after an
+    // assessment permits review.
+    const publicQuestions = sampled.map(({ correctLetter: _correctLetter, explanation: _explanation, ...question }) => question);
+
+    return NextResponse.json({ ok: true, questions: publicQuestions });
   } catch {
     return NextResponse.json({ ok: false, fallback: true });
   }
 }
-
