@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
-import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
+import { getLiveClassroomConfig } from "@/app/lib/platformConfig";
+import { readLiveConfigServer, writeLiveConfigServer } from "@/app/lib/liveClassroom/serverConfig";
 import { getVideoProvider, getAllVideoProvidersStatus } from "@/app/lib/liveClassroom/provider";
 import type { VideoProviderType, LiveServicesCredentials } from "@/app/lib/liveClassroom/types";
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const config = await getLiveClassroomConfig();
+    const config = await readLiveConfigServer();
     const creds = config.provider_credentials || {};
 
     const safeCredentials = {
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const action = body.action || "save";
-    const currentConfig = await getLiveClassroomConfig();
+    const currentConfig = await readLiveConfigServer();
     const currentCreds = currentConfig.provider_credentials || {};
 
     if (action === "test") {
@@ -164,21 +165,11 @@ export async function POST(request: NextRequest) {
 
       const updatedProvider = incomingProvider || currentConfig.provider || "webrtc";
 
-      const ok = await saveLiveClassroomConfig(
-        {
-          provider: updatedProvider,
-          provider_credentials: updatedCreds,
-        },
-        { id: auth.user.id, email: auth.user.email || "superadmin@brainlab.ng" },
-        "Super Admin updated live streaming provider and credentials"
-      );
-
-      if (!ok) {
-        return NextResponse.json(
-          { error: "Database error saving live service configuration." },
-          { status: 500 }
-        );
-      }
+      await writeLiveConfigServer({
+        ...currentConfig,
+        provider: updatedProvider,
+        provider_credentials: updatedCreds,
+      });
 
       return NextResponse.json({
         success: true,
