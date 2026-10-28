@@ -270,10 +270,10 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       { title: "PART I: ELEMENTS OF GOVERNMENT", topics: [
         { title: "Definition and Scope of Government", contents: ["Meaning and scope of government", "Functions of government", "Government as an academic field and as an institution"] },
         { title: "Basic Concepts of Government", contents: ["Power, influence and authority", "Society, state, nation and nation-state", "Political processes"] },
-        { title: "Forms of Government", contents: ["Monarchy, republicanism and other forms listed in the syllabus", "Features and comparison of forms of government"] },
+        { title: "Forms of Government", contents: ["Monarchy, aristocracy, oligarchy, autocracy, republicanism and democracy", "Definitions, features, merits and demerits of each form"] },
         { title: "Arms of Government", contents: ["The legislature: types and structure", "The executive: types and functions", "The judiciary: functions and powers", "Relationships among the arms of government"] },
         { title: "Structures of Governance", contents: ["Unitary government: features, reasons for adoption, merits and demerits", "Federal government: features, reasons for adoption, merits and demerits", "Confederal government: features and reasons for adoption"] },
-        { title: "Systems of Governance", contents: ["Parliamentary and presidential systems", "Other systems and their defining features as listed in the source syllabus"] },
+        { title: "Systems of Governance", contents: ["Presidential, parliamentary and monarchical systems", "Features, merits and demerits of each system"] },
         { title: "Political Ideologies", contents: ["Major political ideologies and their principles", "Comparison of political ideologies"] },
         { title: "Constitution", contents: ["Meaning, sources, types and functions of a constitution", "Constitutional development and constitutionalism"] },
         { title: "Principles of Democratic Government", contents: ["Democracy and its principles", "Representation, rule of law, separation of powers and checks and balances"] },
@@ -288,11 +288,11 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       { title: "PART II: POLITICAL DEVELOPMENT IN NIGERIA", topics: [
         { title: "Pre-colonial Polities", contents: ["Structural organization of pre-colonial political systems", "Functions of political institutions and office holders"] },
         { title: "Imperialist Penetration", contents: ["British process of acquisition", "British colonial administrative system", "French colonial administrative system", "Impact of British colonial rule"] },
-        { title: "Process of Decolonization", contents: ["Nationalism: meaning and types", "Emergence of nationalist movements and parties", "Nationalist leaders, including Herbert Macaulay and other leaders named in the source syllabus", "Impact of external forces and the decolonization process"] },
+        { title: "Process of Decolonization", contents: ["Nationalism: meaning and types", "Emergence of nationalist movements and parties", "Nationalist leaders: Herbert Macaulay, Nnamdi Azikiwe, Obafemi Awolowo, Ahmadu Bello and Ladipo Solanke", "Impact of external forces and the decolonization process"] },
         { title: "Constitutional Development in Nigeria", contents: ["Hugh Clifford Constitution (1922)", "Arthur Richards Constitution (1946)", "John Macpherson Constitution (1951)", "Oliver Lyttleton Constitution (1954)", "Comparison of constitutional developments, merits and demerits"] },
-        { title: "Post-independence Constitutions", contents: ["Constitutional developments after independence as itemized in the source syllabus"] },
+        { title: "Post-independence Constitutions", contents: ["Post-independence constitutional development in Nigeria, including the constitutions and political arrangements identified in the syllabus"] },
         { title: "Institutions of Government in the Post-independence Period", contents: ["Legislative structures and functions", "Executive structure and functions", "Judiciary structure and functions", "Government agencies and institutions"] },
-        { title: "Public Commissions Established by the State", contents: ["Commissions listed in the syllabus and their roles"] },
+        { title: "Public Commissions Established by the State", contents: ["Public commissions established by the state and their functions in Nigerian governance"] },
         { title: "Political Parties and Party Politics in Nigeria", contents: ["First Republic", "Second Republic", "Third Republic", "Fourth Republic", "Ideologies, structures and composition of political parties"] },
         { title: "The Structure and Workings of Nigerian Federalism", contents: ["Rationale for a federal system", "Tiers of government and their relationships", "Creation of states in 1963, 1967 and subsequent periods specified in the syllabus", "Problems of Nigerian federalism and solutions adopted"] },
         { title: "Public Corporations and Parastatals", contents: ["Definition, types and purpose", "Finance, control and problems", "Deregulation, privatization and commercialization", "Comparison between public and private enterprises"] },
@@ -321,22 +321,22 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     ],
     sections: [
       { title: "1. Drama", topics: [
-        { title: "Types of Drama", contents: ["Tragedy", "Comedy", "Tragicomedy", "Melodrama", "Farce", "Opera and other types listed in the syllabus"] },
+        { title: "Types of Drama", contents: ["Tragedy", "Comedy", "Tragicomedy", "Melodrama", "Farce", "Opera"] },
         { title: "Dramatic Techniques", contents: ["Characterisation and dialogue", "Flashback and mime", "Costume, music and dance", "Décor and scenery", "Acts and scenes", "Soliloquy and aside", "Figures of speech", "Stage directions and playwrights’ styles"] },
         { title: "Interpretation of Prescribed Drama Texts", contents: ["Theme and plot", "Socio-political context", "Setting: spatial setting and temporal period", "Applying lessons of a play to social reality"] }
       ]},
       { title: "2. Prose", topics: [
         { title: "Types of Prose", contents: ["Fiction: novel, novella/novelette and short story", "Non-fiction: biography, autobiography and memoir", "Faction: combination of fact and fiction"] },
-        { title: "Narrative Techniques and Devices", contents: ["Point of view: omniscient, first person, second person and third person", "Stream of consciousness and epiphany", "Characterisation: round, flat, foil, hero, antihero, villain and heroine", "Other narrative devices and style as listed in the source syllabus"] },
+        { title: "Narrative Techniques and Devices", contents: ["Point of view: omniscient, first person, second person and third person", "Stream of consciousness and epiphany", "Characterisation: round, flat, foil, hero, antihero, villain and heroine", "Narrative style and devices used in prose fiction"] },
         { title: "Textual Analysis", contents: ["Themes and thematic preoccupation", "Plot and structure", "Setting and context", "Character and characterization", "Author’s narrative style and the interpretation of prescribed prose texts"] }
       ]},
       { title: "3. Poetry", topics: [
-        { title: "Types of Poetry", contents: ["Types and forms of poetry listed in the syllabus"] },
+        { title: "Types of Poetry", contents: ["Sonnet", "Ode", "Lyric", "Elegy", "Ballad", "Panegyric", "Epic" and "Blank verse"] },
         { title: "Poetic Devices", contents: ["Figures of speech and sound devices", "Poetic language, imagery, rhythm and other devices specified in the syllabus"] },
         { title: "Appreciation", contents: ["Interpretation of poems", "Deducing the poet’s thematic preoccupation", "Relating a poem’s meaning and techniques to its context"] }
       ]},
       { title: "4. General Literary Terms", topics: [
-        { title: "Literary Terms", contents: ["Identify and explain literary terms, including terms specific to drama, prose and poetry, as covered by the source syllabus"] }
+        { title: "Literary Terms", contents: ["Literary terms and concepts used in the analysis of drama, prose and poetry"] }
       ]},
       { title: "5. Literary Appreciation", topics: [
         { title: "Unseen Literary Passages", contents: ["Unseen passages or extracts from drama, prose and poetry", "Identify literary devices in a given extract", "Interpret the extract", "Relate the extract to real-life experiences"] },
@@ -519,13 +519,13 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "12. Articles of Faith", contents: ["Existence, attributes and works of Allah", "Belief in angels", "Belief in Allah’s books", "Belief in prophets, including Ulul-azmi", "The Last Day, resurrection and destiny"] },
         { title: "13. Ibadat and Their Types", contents: ["Good deeds and their significance", "Purification and al-ghusl", "Salah and its importance", "Zakah: collection, disbursement and eligible recipients", "Sawm: importance, exemptions, qada and kaffarah", "Hajj: importance, types and performance", "Jihad and its lessons as presented in the syllabus"] },
         { title: "14. Family Matters", contents: ["Marriage: importance, prohibited categories, conditions, rights and duties of spouses", "Polygamy and its significance", "Ill-treatment of wife and the Islamic position", "Divorce: types, duration and significance, including Ila, Zihar and Li’an", "Inheritance: heirs and their shares"] },
-        { title: "15. Sources and Schools of Law", contents: ["Sources of Islamic law and schools of jurisprudence as listed in the source syllabus"] },
+        { title: "15. Sources and Schools of Law", contents: ["Sources of Islamic law: the Qur’an, Sunnah, Ijma and Qiyas; schools of jurisprudence and their basic principles"] },
         { title: "16. Islamic Economic System", contents: ["Islamic attitude to Riba", "At-tatfif (fraudulent measure)", "Hoarding (ihtikar)", "Relevant Qur’anic verses and Hadith"] },
         { title: "17. Islamic Political System", contents: ["Allah as Sovereign", "Shurah (consultation)", "Justice and accountability (mas’uliyah)", "The Islamic state and rights of non-Muslims"] }
       ]},
       { title: "PART III: ISLAMIC HISTORY AND CIVILIZATION", topics: [
         { title: "18. Pre-Islamic Arabia (Jahiliyyah)", contents: ["Social, religious and political life in pre-Islamic Arabia"] },
-        { title: "19. The Life of Prophet Muhammad (SAW)", contents: ["Life, mission and significance of Prophet Muhammad (SAW) as detailed in the syllabus"] },
+        { title: "19. The Life of Prophet Muhammad (SAW)", contents: ["The Prophet’s life and mission, including the major events and stages identified in the syllabus"] },
         { title: "20. The Rightly Guided Caliphs", contents: ["The lives, leadership and contributions of al-Khulafa’u ar-Rashidun"] },
         { title: "21. Early Contact of Islam with Africa", contents: ["Early contact, spread and development of Islam in Africa"] },
         { title: "22. Impact of Islam in West Africa", contents: ["Impact of Islam on society, culture, politics and learning in West Africa"] },
