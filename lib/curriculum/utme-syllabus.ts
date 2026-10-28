@@ -505,7 +505,8 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       { title: "PART I: THE QUR’AN AND HADITH", topics: [
         { title: "1. Revelation of the Glorious Qur’an", contents: ["The Prophet’s visits to Cave Hira and the first revelation", "The Prophet’s reaction to the first revelation and its importance", "Modes of revelation (Q.42:51)", "Piecemeal revelation (Q.17:106; Q.25:32)", "Names and attributes of the Qur’an"] },
         { title: "2. Preservation of the Glorious Qur’an", contents: ["Recording, compilation and standardization", "Differences between Makkan and Madinan suwar", "Role of the Companions in collection and compilation"] },
-        { title: "1c–1d. Importance and Divine Authenticity of the Qur’an", contents: ["Qur’an as guidance in spiritual, moral, economic, political and socio-cultural matters", "Divine authenticity, uniqueness and preservation (including Q.4:82; Q.41:42; Q.39:27; Q.17:88; Q.75:16–19; Q.15:9)"] },
+        { title: "1c. Importance of the Glorious Qur’an", contents: ["The Qur’an as a source of guidance in spiritual, moral, economic, political and socio-cultural matters"] },
+        { title: "1d. Divine Authenticity of the Glorious Qur’an", contents: ["Divine authenticity, uniqueness and preservation of the Qur’an, including Q.4:82; Q.41:42; Q.39:27; Q.17:88; Q.75:16–19 and Q.15:9"] },
         { title: "2. Tafsir", contents: ["History, importance and types of Tafsir"] },
         { title: "3. Introduction to Tajwid", contents: ["Theory and practice of Tajwid"] },
         { title: "4. Study of Arabic Texts: Selected Surahs", contents: ["al-Fatihah (Q.1)", "al-Adiyat (Q.100)", "al-Qari’ah (Q.101)", "at-Takathur (Q.102)", "al-Asr (Q.103)", "al-Humazah (Q.104)", "al-Ma’un (Q.107)", "al-Kawthar (Q.108)", "al-Kafirun (Q.109)", "an-Nasr (Q.110)", "al-Masad (Q.111)", "al-Ikhlas (Q.112)", "al-Falaq (Q.113)", "an-Nas (Q.114)"] },
