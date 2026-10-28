@@ -54,7 +54,7 @@ export default function LearnPage() {
   useEffect(() => {
     let active = true;
 
-    const useLocalSyllabus = () => {
+    const showLocalSyllabus = () => {
       setUsingSyllabusFallback(true);
       setError("");
       setSubjects(UTME_SYLLABUS.map((subject) => ({
@@ -81,13 +81,13 @@ export default function LearnPage() {
       if (queryError) {
         // Keep the syllabus readable when the Learning Hub schema is unavailable.
         // This fallback is read-only and does not pretend database-backed lessons are loaded.
-        useLocalSyllabus();
+        showLocalSyllabus();
         return;
       }
 
       const subjectRows = data ?? [];
       if (!subjectRows.length) {
-        useLocalSyllabus();
+        showLocalSyllabus();
         return;
       }
 
@@ -104,7 +104,7 @@ export default function LearnPage() {
         .eq("is_published", true);
 
       if (topicError) {
-        useLocalSyllabus();
+        showLocalSyllabus();
         return;
       }
 
@@ -114,7 +114,7 @@ export default function LearnPage() {
         : { data: [], error: null };
 
       if (lessonError) {
-        useLocalSyllabus();
+        showLocalSyllabus();
         return;
       }
 
