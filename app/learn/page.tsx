@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import TimetableSection from "../components/TimetableSection";
+import { UTME_SYLLABUS } from "../../lib/curriculum/utme-syllabus";
 
 type Subject = {
   id: string;
@@ -31,6 +32,8 @@ export default function LearnPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [usingSyllabusFallback, setUsingSyllabusFallback] = useState(false);
+  const [selectedSyllabusSlug, setSelectedSyllabusSlug] = useState("use-of-english");
   const [hasStudentSession, setHasStudentSession] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [recentLesson, setRecentLesson] = useState<RecentLessonResume | null>(null);
@@ -51,6 +54,22 @@ export default function LearnPage() {
   useEffect(() => {
     let active = true;
 
+    const showLocalSyllabus = () => {
+      setUsingSyllabusFallback(true);
+      setError("");
+      setSubjects(UTME_SYLLABUS.map((subject) => ({
+        id: subject.slug,
+        name: subject.name,
+        slug: subject.slug,
+        description: subject.description,
+        icon_url: null,
+        topicCount: subject.sections.reduce((total, section) => total + section.topics.length, 0),
+        lessonCount: 0,
+        completedCount: 0,
+      })));
+      setLoading(false);
+    };
+
     async function loadSubjects() {
       const { data, error: queryError } = await supabase
         .from("learning_subjects")
@@ -60,15 +79,15 @@ export default function LearnPage() {
 
       if (!active) return;
       if (queryError) {
-        setError("We could not load the Learning Hub yet. Please try again shortly.");
-        setLoading(false);
+        // Keep the syllabus readable when the Learning Hub schema is unavailable.
+        // This fallback is read-only and does not pretend database-backed lessons are loaded.
+        showLocalSyllabus();
         return;
       }
 
       const subjectRows = data ?? [];
       if (!subjectRows.length) {
-        setSubjects([]);
-        setLoading(false);
+        showLocalSyllabus();
         return;
       }
 
@@ -85,8 +104,7 @@ export default function LearnPage() {
         .eq("is_published", true);
 
       if (topicError) {
-        setError("We could not load subject progress information.");
-        setLoading(false);
+        showLocalSyllabus();
         return;
       }
 
@@ -96,8 +114,7 @@ export default function LearnPage() {
         : { data: [], error: null };
 
       if (lessonError) {
-        setError("We could not load subject progress information.");
-        setLoading(false);
+        showLocalSyllabus();
         return;
       }
 
@@ -167,6 +184,8 @@ export default function LearnPage() {
       active = false;
     };
   }, []);
+
+  const selectedSyllabus = UTME_SYLLABUS.find((subject) => subject.slug === selectedSyllabusSlug) ?? UTME_SYLLABUS[0];
 
   const filteredSubjects = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -313,6 +332,13 @@ export default function LearnPage() {
             </p>
           )}
 
+          {!loading && usingSyllabusFallback && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950" role="status">
+              <p className="font-bold">Official UTME syllabus is available in read-only mode.</p>
+              <p className="mt-1">The online Learning Hub catalogue is unavailable, so these syllabus topics are being shown from the supplied source documents. Tutor lessons and saved progress will appear when the database connection is restored.</p>
+            </div>
+          )}
+
           {!loading && error && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950" role="alert">
               <p className="font-bold">{error}</p>
@@ -362,7 +388,13 @@ export default function LearnPage() {
                 <Link
                   key={subject.id}
                   href={`/learn/${subject.slug}`}
-                  className="group hover-lift rounded-3xl border border-slate-200 bg-white p-6 shadow-xs transition hover:border-blue-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
+                  onClick={(event) => {
+                    if (usingSyllabusFallback) {
+                      event.preventDefault();
+                      setSelectedSyllabusSlug(subject.slug);
+                    }
+                  }}
+                  className="group hover-lift rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-xs transition hover:border-blue-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-700"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 text-xl font-black text-blue-900 ring-1 ring-blue-100 transition group-hover:scale-105" aria-hidden="true">
@@ -385,11 +417,13 @@ export default function LearnPage() {
                   </p>
                   <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50/90 p-3.5">
                     <div className="flex items-center justify-between gap-3 text-xs font-bold text-slate-600">
-                      <span>{hasStudentSession ? "Lesson progress" : "Available lessons"}</span>
+                      <span>{usingSyllabusFallback ? "Syllabus topics" : hasStudentSession ? "Lesson progress" : "Available lessons"}</span>
                       <span>
-                        {hasStudentSession
-                          ? `${subject.completedCount}/${subject.lessonCount} complete`
-                          : `${subject.lessonCount} lessons`}
+                        {usingSyllabusFallback
+                          ? `${subject.topicCount} topics`
+                          : hasStudentSession
+                            ? `${subject.completedCount}/${subject.lessonCount} complete`
+                            : `${subject.lessonCount} lessons`}
                       </span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
@@ -416,6 +450,58 @@ export default function LearnPage() {
                 </Link>
               ))}
             </div>
+          )}
+
+          {!loading && usingSyllabusFallback && selectedSyllabus && (
+            <section className="mt-8 space-y-5" aria-labelledby="syllabus-content-heading">
+              <header className="rounded-3xl bg-[#061a3a] p-6 text-white sm:p-8">
+                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-cyan-200">JAMB UTME • Official syllabus</p>
+                <h3 id="syllabus-content-heading" className="mt-2 text-2xl font-black sm:text-3xl">{selectedSyllabus.name}</h3>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-blue-100">{selectedSyllabus.description}</p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+                  <span className="rounded-full border border-white/20 px-3 py-1.5">{selectedSyllabus.sections.length} sections</span>
+                  <span className="rounded-full border border-white/20 px-3 py-1.5">{selectedSyllabus.sections.reduce((sum, section) => sum + section.topics.length, 0)} topics</span>
+                </div>
+              </header>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                <h4 className="text-base font-extrabold text-slate-950">General objectives</h4>
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+                  {selectedSyllabus.generalObjectives.map((objective) => <li key={objective}>{objective}</li>)}
+                </ul>
+              </div>
+
+              {selectedSyllabus.sections.map((section, sectionIndex) => (
+                <details key={section.title} open={sectionIndex === 0} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 p-4 sm:p-5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-lg" aria-hidden="true">{selectedSyllabus.icon}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-extrabold text-slate-950 sm:text-base">{section.title}</span>
+                      <span className="mt-1 block text-xs text-slate-500">{section.topics.length} syllabus topics</span>
+                    </span>
+                    <span className="text-xl text-blue-800" aria-hidden="true">⌄</span>
+                  </summary>
+                  <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
+                    {section.topics.map((topic, topicIndex) => (
+                      <details key={topic.title} className="rounded-xl border border-slate-200 bg-white">
+                        <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1536] text-xs font-black text-white">{String(topicIndex + 1).padStart(2, "0")}</span>
+                          <span className="flex-1 text-sm font-bold leading-5 text-slate-900">{topic.title}</span>
+                          <span className="text-lg text-blue-800" aria-hidden="true">+</span>
+                        </summary>
+                        <div className="border-t border-slate-100 px-4 py-4 sm:pl-16">
+                          <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-blue-800">Syllabus contents</p>
+                          <ul className="list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+                            {topic.contents.map((item) => <li key={item}>{item}</li>)}
+                          </ul>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </details>
+              ))}
+              <p className="text-xs leading-5 text-slate-500">The topic outline is transcribed and organised from the supplied UTME syllabus PDFs. It is a syllabus reference, not a substitute for published lesson notes or topic tests.</p>
+            </section>
           )}
         </section>
       )}
