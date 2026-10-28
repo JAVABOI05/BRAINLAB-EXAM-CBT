@@ -137,7 +137,7 @@ export function selectEnglishExaminationPaper(
     // Filter available questions for this section not already selected
     const pool = eligibleQuestions.filter((q) => !selectedIds.has(q.id) && matchesSection(q, secConfig));
 
-    let chosenForSection: EngineQuestion[] = [];
+    const chosenForSection: EngineQuestion[] = [];
 
     // Stage 6 — Handle passage groups (Comprehension & Cloze)
     if (secConfig.passage_required) {
