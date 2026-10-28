@@ -41,7 +41,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Figurative and Idiomatic Usage", contents: ["Interpreting figurative expressions.", "Idioms tested are formal and expressed in Standard British English (SBE).", "Distinguishing ordinary, figurative and idiomatic meanings."] }
       ]},
       { title: "C. Oral Forms", topics: [
-        { title: "Vowels", contents: ["Monothongs, diphthongs and triphthongs.", "Making distinctions among vowel types.", "The source syllabus spells the first category as 'monothongs'; the term is retained here as printed in the supplied source."] },
+        { title: "Vowels", contents: ["Monothongs, diphthongs and triphthongs.", "Making distinctions among vowel types."] },
         { title: "Consonants", contents: ["Consonants, including clusters.", "Differentiating among consonant types.", "Identifying correct pronunciation of individual words and articulation of connected speech."] },
         { title: "Rhymes", contents: ["Rhymes, including homophones."] },
         { title: "Word Stress", contents: ["Word stress in monosyllabic and polysyllabic words."] },
