@@ -133,6 +133,13 @@ export async function POST(request: NextRequest) {
 
     // 4. Resolve selected payment provider (Bachs or Paystack)
     const selectedProvider = await resolveActivePaymentProvider(provider);
+    const paymentProviderName = selectedProvider.name;
+    if (paymentProviderName !== "paystack" && paymentProviderName !== "bachs") {
+      return NextResponse.json(
+        { ok: false, error: "provider_configuration_error", message: "The configured payment provider is not supported." },
+        { status: 500 }
+      );
+    }
     const reference = `BL_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     // 5. Create pending transaction record
@@ -143,7 +150,7 @@ export async function POST(request: NextRequest) {
       customer_email: user.email,
       amount_kobo: finalAmountKobo,
       currency: plan.currency || "NGN",
-      provider: selectedProvider.name,
+      provider: paymentProviderName,
       status: "pending",
       coupon_id: appliedCouponId,
       discount_kobo: discountKobo,
@@ -151,7 +158,7 @@ export async function POST(request: NextRequest) {
         plan_name: plan.name,
         plan_interval: plan.interval,
         original_price_kobo: plan.price_kobo,
-        requested_provider: selectedProvider.name,
+        requested_provider: paymentProviderName,
       },
     });
 
