@@ -199,6 +199,8 @@ export default function InstitutionalOperationsPage() {
     void init();
   }, [router]);
 
+  type LiveSession = { id: string; candidate_name?: string | null; access_code?: string | null; subject?: string | null; status?: string | null; time_left_formatted?: string | null; tab_switch_count?: number | null; started_at: string };
+
   // Real Live Session Fetcher
   const fetchLiveSessions = useCallback(async () => {
     try {
@@ -206,7 +208,7 @@ export default function InstitutionalOperationsPage() {
       const data = await res.json();
       if (res.ok && data.ok && Array.isArray(data.sessions) && data.sessions.length > 0) {
         setSessions(
-          data.sessions.map((s: any) => ({
+          data.sessions.map((s: LiveSession) => ({
             id: s.id,
             candidate_name: s.candidate_name,
             hub_location: s.access_code ? `Code: ${s.access_code}` : "Direct Online Candidate",
@@ -215,7 +217,7 @@ export default function InstitutionalOperationsPage() {
             questions_answered: s.status === "completed" ? 180 : 120,
             total_questions: 180,
             time_left_formatted: s.time_left_formatted || "00:00:00",
-            network_state: (s.status === "completed" ? "online" : "online") as any,
+            network_state: "online",
             network_carrier: "Edge Telemetry",
             tab_switch_count: s.tab_switch_count || 0,
             started_at: new Date(s.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
