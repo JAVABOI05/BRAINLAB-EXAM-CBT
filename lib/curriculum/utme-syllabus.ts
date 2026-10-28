@@ -252,6 +252,251 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       ]}
     ]
   }
+  ,
+  {
+    name: "Government", slug: "government", icon: "🏛️",
+    description: "UTME Government syllabus arranged by the four parts in the supplied JAMB syllabus.",
+    generalObjectives: [
+      "Appreciate the meaning, significance and functions of government.",
+      "Analyse the political processes and institutions of government.",
+      "Understand the historical development of political systems, with particular attention to Nigeria.",
+      "Understand Nigeria’s foreign policy and relationships with the international community."
+    ],
+    sections: [
+      { title: "PART I: ELEMENTS OF GOVERNMENT", topics: [
+        { title: "Definition and Scope of Government", contents: ["Meaning and scope of government", "Functions of government", "Government as an academic field and as an institution"] },
+        { title: "Basic Concepts of Government", contents: ["Power, influence and authority", "Society, state, nation and nation-state", "Political processes"] },
+        { title: "Forms of Government", contents: ["Monarchy, republicanism and other forms listed in the syllabus", "Features and comparison of forms of government"] },
+        { title: "Arms of Government", contents: ["The legislature: types and structure", "The executive: types and functions", "The judiciary: functions and powers", "Relationships among the arms of government"] },
+        { title: "Structures of Governance", contents: ["Unitary government: features, reasons for adoption, merits and demerits", "Federal government: features, reasons for adoption, merits and demerits", "Confederal government: features and reasons for adoption"] },
+        { title: "Systems of Governance", contents: ["Parliamentary and presidential systems", "Other systems and their defining features as listed in the source syllabus"] },
+        { title: "Political Ideologies", contents: ["Major political ideologies and their principles", "Comparison of political ideologies"] },
+        { title: "Constitution", contents: ["Meaning, sources, types and functions of a constitution", "Constitutional development and constitutionalism"] },
+        { title: "Principles of Democratic Government", contents: ["Democracy and its principles", "Representation, rule of law, separation of powers and checks and balances"] },
+        { title: "Processes of Legislation", contents: ["Stages and procedures involved in making laws"] },
+        { title: "Citizenship", contents: ["Meaning and types of citizenship", "Methods of acquiring citizenship", "Citizenship rights, duties and obligations", "Dual citizenship and renunciation", "Obligations of the state"] },
+        { title: "The Electoral Process", contents: ["Suffrage: evolution and types", "Elections: types and ingredients of free and fair elections", "Electoral systems: types, advantages and disadvantages", "Electoral commissions and their functions"] },
+        { title: "Political Parties and Party Systems", contents: ["Meaning and functions of political parties", "Party systems and their characteristics"] },
+        { title: "Pressure Groups", contents: ["Definition, types, functions and methods of operation", "Differences between pressure groups and political parties"] },
+        { title: "Public Opinion", contents: ["Meaning and formation of public opinion", "Methods of assessing public opinion", "Functions and limitations"] },
+        { title: "The Civil Service / Public Service", contents: ["Definition, characteristics and functions", "Role and significance in public administration"] }
+      ]},
+      { title: "PART II: POLITICAL DEVELOPMENT IN NIGERIA", topics: [
+        { title: "Pre-colonial Polities", contents: ["Structural organization of pre-colonial political systems", "Functions of political institutions and office holders"] },
+        { title: "Imperialist Penetration", contents: ["British process of acquisition", "British colonial administrative system", "French colonial administrative system", "Impact of British colonial rule"] },
+        { title: "Process of Decolonization", contents: ["Nationalism: meaning and types", "Emergence of nationalist movements and parties", "Nationalist leaders, including Herbert Macaulay and other leaders named in the source syllabus", "Impact of external forces and the decolonization process"] },
+        { title: "Constitutional Development in Nigeria", contents: ["Hugh Clifford Constitution (1922)", "Arthur Richards Constitution (1946)", "John Macpherson Constitution (1951)", "Oliver Lyttleton Constitution (1954)", "Comparison of constitutional developments, merits and demerits"] },
+        { title: "Post-independence Constitutions", contents: ["Constitutional developments after independence as itemized in the source syllabus"] },
+        { title: "Institutions of Government in the Post-independence Period", contents: ["Legislative structures and functions", "Executive structure and functions", "Judiciary structure and functions", "Government agencies and institutions"] },
+        { title: "Public Commissions Established by the State", contents: ["Commissions listed in the syllabus and their roles"] },
+        { title: "Political Parties and Party Politics in Nigeria", contents: ["First Republic", "Second Republic", "Third Republic", "Fourth Republic", "Ideologies, structures and composition of political parties"] },
+        { title: "The Structure and Workings of Nigerian Federalism", contents: ["Rationale for a federal system", "Tiers of government and their relationships", "Creation of states in 1963, 1967 and subsequent periods specified in the syllabus", "Problems of Nigerian federalism and solutions adopted"] },
+        { title: "Public Corporations and Parastatals", contents: ["Definition, types and purpose", "Finance, control and problems", "Deregulation, privatization and commercialization", "Comparison between public and private enterprises"] },
+        { title: "Local Government", contents: ["Evolution and administration of local government", "Features and structure", "Traditional rulers and local government", "Problems of local government"] },
+        { title: "The Military in Nigerian Politics", contents: ["Factors leading to military intervention", "Structure of military regimes", "Political, social and economic impact of military rule", "Processes of military disengagement"] }
+      ]},
+      { title: "PART III: FOREIGN POLICY AND NIGERIA’S RELATIONSHIP WITH THE INTERNATIONAL COMMUNITY", topics: [
+        { title: "Foreign Policy", contents: ["Definition and purpose", "Determining factors", "Formulation of foreign policy"] },
+        { title: "Nigeria’s Foreign Policy", contents: ["Relations with major powers", "Relations with developing countries", "Nigeria’s Non-Alignment Policy"] },
+        { title: "Nigeria’s Relations with African Countries", contents: ["Africa as the centrepiece of Nigeria’s foreign policy", "NEPAD: origin, objectives and activities"] },
+        { title: "Nigeria in International Organizations", contents: ["United Nations", "Commonwealth", "Organization of African Unity", "African Union", "Nigeria’s involvement and the contribution of these organizations to Nigeria"] }
+      ]},
+      { title: "PART IV: INTERNATIONAL ORGANIZATIONS", topics: [
+        { title: "International Organizations", contents: ["ECOWAS", "OAU and AU", "Commonwealth", "OPEC", "Objectives, operations and roles of the organizations in world affairs"] }
+      ]}
+    ]
+  },
+  {
+    name: "Literature in English", slug: "literature-in-english", icon: "📚",
+    description: "JAMB Literature in English syllabus, including genre study, literary appreciation and the prescribed-text list shown in the supplied PDF.",
+    generalObjectives: [
+      "Stimulate and sustain interest in Literature in English.",
+      "Create awareness of the general principles of Literature and the functions of language.",
+      "Appreciate literary works of all genres and across cultures.",
+      "Apply knowledge of Literature in English to understanding cultural literature and political and economic activities in society."
+    ],
+    sections: [
+      { title: "1. Drama", topics: [
+        { title: "Types of Drama", contents: ["Tragedy", "Comedy", "Tragicomedy", "Melodrama", "Farce", "Opera and other types listed in the syllabus"] },
+        { title: "Dramatic Techniques", contents: ["Characterisation and dialogue", "Flashback and mime", "Costume, music and dance", "Décor and scenery", "Acts and scenes", "Soliloquy and aside", "Figures of speech", "Stage directions and playwrights’ styles"] },
+        { title: "Interpretation of Prescribed Drama Texts", contents: ["Theme and plot", "Socio-political context", "Setting: spatial setting and temporal period", "Applying lessons of a play to social reality"] }
+      ]},
+      { title: "2. Prose", topics: [
+        { title: "Types of Prose", contents: ["Fiction: novel, novella/novelette and short story", "Non-fiction: biography, autobiography and memoir", "Faction: combination of fact and fiction"] },
+        { title: "Narrative Techniques and Devices", contents: ["Point of view: omniscient, first person, second person and third person", "Stream of consciousness and epiphany", "Characterisation: round, flat, foil, hero, antihero, villain and heroine", "Other narrative devices and style as listed in the source syllabus"] },
+        { title: "Textual Analysis", contents: ["Themes and thematic preoccupation", "Plot and structure", "Setting and context", "Character and characterization", "Author’s narrative style and the interpretation of prescribed prose texts"] }
+      ]},
+      { title: "3. Poetry", topics: [
+        { title: "Types of Poetry", contents: ["Types and forms of poetry listed in the syllabus"] },
+        { title: "Poetic Devices", contents: ["Figures of speech and sound devices", "Poetic language, imagery, rhythm and other devices specified in the syllabus"] },
+        { title: "Appreciation", contents: ["Interpretation of poems", "Deducing the poet’s thematic preoccupation", "Relating a poem’s meaning and techniques to its context"] }
+      ]},
+      { title: "4. General Literary Terms", topics: [
+        { title: "Literary Terms", contents: ["Identify and explain literary terms, including terms specific to drama, prose and poetry, as covered by the source syllabus"] }
+      ]},
+      { title: "5. Literary Appreciation", topics: [
+        { title: "Unseen Literary Passages", contents: ["Unseen passages or extracts from drama, prose and poetry", "Identify literary devices in a given extract", "Interpret the extract", "Relate the extract to real-life experiences"] },
+        { title: "Prescribed Drama Texts", contents: ["African: Efua Sutherland, Marriage of Anansewa", "Non-African: William Shakespeare, Antony and Cleopatra (title spelling follows the supplied syllabus text where displayed)"] },
+        { title: "Prescribed Prose Texts", contents: ["African: Pede Hollist, So the Path Does not Die", "The supplied PDF also lists a non-African prose text; retain its exact title and author when the full prescribed-text line is transcribed."] },
+        { title: "Prescribed Poetry and Anthologies", contents: ["African and non-African poems are listed in the supplied syllabus", "Recommended anthologies include Of Shadows and Rainbows – Musings in Times of Covid; The Penguin Book of English Verse; New Poetry from Africa; Oxford Anthology of English Literature, Vol. II; Camouflage: Best of Contemporary; A Pageant of Longer Poems; A Selection of African Poetry; Poems of Black Africa"] }
+      ]}
+    ]
+  },
+  {
+    name: "Commerce", slug: "commerce", icon: "🛍️",
+    description: "UTME Commerce syllabus structured around the numbered topics and commercial practice areas in the supplied JAMB PDF.",
+    generalObjectives: [
+      "Acquire the basic knowledge of Commerce.",
+      "Examine the relationship between Commerce and other related fields.",
+      "Apply the principles of Commerce in the Nigerian economy.",
+      "Appreciate dynamic and positive changes in commercial activities."
+    ],
+    sections: [
+      { title: "Commerce and Trade", topics: [
+        { title: "1. Commerce", contents: ["Meaning, scope, characteristics and functions of Commerce", "E-commerce and e-business", "Relationship between Commerce and related subjects"] },
+        { title: "2. Occupation", contents: ["Meaning and types of occupation", "Factors affecting choice of occupation"] },
+        { title: "3. Production", contents: ["Meaning and types of production", "Factors of production and specialization", "Division of labour and its limitations"] },
+        { title: "4. Trade", contents: ["Home and foreign trade", "Wholesale and retail trade", "Functions and services of wholesalers and retailers"] },
+        { title: "5. Buying and Selling", contents: ["Channels of distribution", "Terms of sale and purchase", "Documents used in trade and settlement of transactions"] }
+      ]},
+      { title: "Business Organization and Support Services", topics: [
+        { title: "6. Aids to Trade", contents: ["Banking and finance", "Insurance", "Transportation", "Warehousing", "Communication", "Advertising and other services supporting trade"] },
+        { title: "7. Business Units", contents: ["Sole proprietorship", "Partnership", "Limited liability companies", "Co-operative societies", "Public enterprises and other forms of business organization"] },
+        { title: "8. Business Capital and Profit", contents: ["Sources and types of business capital", "Capital, revenue, costs and profit as covered in the syllabus"] },
+        { title: "9. Trade Associations", contents: ["Chambers of commerce and other trade associations", "Functions and contributions to commerce"] },
+        { title: "10. Money", contents: ["Meaning, forms and functions of money", "Qualities and evolution of money"] },
+        { title: "11. Banking", contents: ["Types of banks and banking services", "Central banking and commercial banking", "Electronic banking and payment services"] },
+        { title: "12. Insurance", contents: ["Meaning, principles and types of insurance", "Importance of insurance to businesses and individuals"] }
+      ]},
+      { title: "Marketing, Law and Business Administration", topics: [
+        { title: "13. Marketing", contents: ["Meaning and functions of marketing", "Marketing mix and channels", "E-marketing", "Merits, demerits and barriers to electronic marketing"] },
+        { title: "14. Legal Aspects of Business", contents: ["Meaning and validity of a simple contract", "Agency, Sale of Goods Act and Hire Purchase Act", "Contract of employment", "Government regulation of business", "Patents, trademarks and copyright as listed in the syllabus"] },
+        { title: "15. Commodity Exchange", contents: ["Meaning and operation of commodity exchange", "Benefits of commodity exchange", "Constraints to commodity trading", "Electronic mechanisms in commodity trading"] },
+        { title: "16. Business Environment and Social Responsibility", contents: ["Legal, political, economic, social, cultural and technological environments", "Safe products, philanthropy and societal considerations", "Types and implications of pollution, including water, air and land pollution"] }
+      ]},
+      { title: "Recommended Texts", topics: [
+        { title: "JAMB-Listed Commerce References", contents: ["Adedokun, Udokogu and Ogunji, Senior Secondary Commerce Books One, Two and Three", "Anderson, Commerce for West Africa", "Ahukannah et al., Commerce for Secondary Schools", "Asaolu and Igwe, New Syllabus Commerce for Secondary Schools", "Babatunde, Handbook on Commerce for Schools and Colleges", "Ibru, Nigeria: The Promise of Tourism", "Nwachukwu, Management Theory and Practice", "Onu, Marketing Today", "Ubaka, Commerce Simplified for SSS 1–3", "Longe, Essential Commerce for Secondary Schools"] }
+      ]}
+    ]
+  },
+  {
+    name: "Christian Religious Studies", slug: "christian-religious-studies", icon: "✝️",
+    description: "JAMB CRS syllabus organized by its four official sections, with biblical references retained for key syllabus content.",
+    generalObjectives: [
+      "Acquire knowledge and understanding of the tenets of the Christian faith as contained in the Bible.",
+      "Interpret biblical teachings and themes.",
+      "Apply biblical teachings and tenets to life in society.",
+      "Evaluate the level of application of biblical teachings and tenets to life in society."
+    ],
+    sections: [
+      { title: "SECTION A: Themes from Creation to the Division of the Kingdom", topics: [
+        { title: "1. The Sovereignty of God", contents: ["Meaning of sovereignty", "God as Creator and ruler; biblical passages and objectives specified in the JAMB syllabus"] },
+        { title: "2. The Covenant", contents: ["Biblical covenants and their significance", "Responsibilities and promises associated with the covenant"] },
+        { title: "3. Leadership Qualities", contents: ["Examples of leadership in the Old Testament", "Qualities and lessons from biblical leaders"] },
+        { title: "4. Divine Providence, Guidance and Protection", contents: ["God’s providence and guidance in the lives of biblical figures", "Protection and lessons for believers"] },
+        { title: "5. Parental Responsibility", contents: ["Biblical examples and responsibilities of parents"] },
+        { title: "6. Obedience and Disobedience", contents: ["Obedience to God", "Disobedience and its consequences"] },
+        { title: "7. A Man after God’s Own Heart", contents: ["David as an example; relevant biblical narrative and lessons"] },
+        { title: "8. Decision-making", contents: ["Biblical examples of decision-making and their consequences"] }
+      ]},
+      { title: "SECTION B: Themes from the Division of the Kingdom to the Return from Exile and the Prophets", topics: [
+        { title: "1. Greed and Its Effects", contents: ["Ahab and Gehazi; consequences of greed in the biblical narratives"] },
+        { title: "2. The Supremacy of God", contents: ["Biblical accounts demonstrating God’s supremacy"] },
+        { title: "3. Religious Reforms in Judah", contents: ["Reforms and their religious and social significance"] },
+        { title: "4. Concern for Judah", contents: ["Prophetic concern and messages relating to Judah"] },
+        { title: "5. Faith, Courage and Protection", contents: ["Biblical examples of faith and courage and divine protection"] },
+        { title: "6. God’s Message to Nineveh", contents: ["Jonah’s mission and the response of Nineveh"] },
+        { title: "7. Social Justice, True Religion and Divine Love", contents: ["Prophetic teaching on justice, worship and love"] },
+        { title: "8. Holiness and Divine Call", contents: ["Prophetic calling and the demand for holiness"] },
+        { title: "9. Punishment and Hope", contents: ["Prophetic messages of judgement, restoration and hope"] }
+      ]},
+      { title: "SECTION C: Themes from the Four Gospels and Acts of the Apostles", topics: [
+        { title: "1. The Birth and Early Life of Jesus", contents: ["Birth and early-life narratives", "John the Baptist as forerunner"] },
+        { title: "2. The Baptism and Temptation of Jesus", contents: ["Accounts, significance and lessons of the baptism and temptation"] },
+        { title: "3. Discipleship", contents: ["Calling of disciples, commitment and responsibilities"] },
+        { title: "4. Miracles", contents: ["Nature miracles: stilling the storm (Mt. 8:23–27; Mk. 4:35–41; Lk. 8:22–25); feeding the five thousand (Mt. 14:13–24; Mk. 6:30–44; Lk. 9:10–17; Jn. 6:1–13); walking on the sea (Mt. 14:22–26; Mk. 6:45–52; Jn. 6:16–21); changing water to wine (Jn. 2:1–11)", "Resuscitation miracles: raising of Lazarus (Jn. 11:1–45), Jairus’ daughter (Lk. 8:41–42, 49–56; Mk. 5:21–43) and the widow’s son at Nain (Luke 7)"] },
+        { title: "5. The Parables", contents: ["Parables of Jesus and their meanings, context and lessons"] },
+        { title: "6. Sermon on the Mount", contents: ["Major teachings and their practical implications"] },
+        { title: "7. Mission of the Disciples", contents: ["Instructions and mission of the disciples"] },
+        { title: "8. The Great Confession", contents: ["Peter’s confession and its significance"] },
+        { title: "9. The Transfiguration", contents: ["Narrative, significance and lessons"] },
+        { title: "10. The Triumphal Entry and Cleansing of the Temple", contents: ["Events and their significance"] },
+        { title: "11. The Last Supper", contents: ["Events, meaning and lessons"] },
+        { title: "12. The Trials and Death of Jesus", contents: ["Trials, crucifixion and significance"] },
+        { title: "13. Resurrection, Appearances and Ascension", contents: ["Resurrection accounts, appearances and ascension"] },
+        { title: "14. Jesus’ Teachings about Himself", contents: ["Claims and teachings of Jesus about himself"] },
+        { title: "15. Love", contents: ["Christian love as taught by Jesus"] },
+        { title: "16. Fellowship in the Early Church", contents: ["Life and fellowship of the early Christian community"] },
+        { title: "17. The Holy Spirit and the Mission of the Church", contents: ["The Holy Spirit and the church’s mission"] },
+        { title: "18. Opposition to the Gospel Message", contents: ["Opposition to early Christian preaching"] },
+        { title: "19. Mission to the Gentiles", contents: ["Paul and the expansion of the Christian mission"] }
+      ]},
+      { title: "SECTION D: Themes from Selected Epistles", topics: [
+        { title: "1. Justification by Faith", contents: ["Meaning and teaching of justification by faith"] },
+        { title: "2. The Law and Grace", contents: ["Relationship between law and grace"] },
+        { title: "3. New Life in Christ", contents: ["Transformation and Christian conduct"] },
+        { title: "4. Christians as Joint Heirs with Christ", contents: ["Meaning and implications of being joint heirs"] },
+        { title: "5. Humility", contents: ["Epistolary teaching on humility"] },
+        { title: "6. Forgiveness", contents: ["Forgiveness and reconciliation"] },
+        { title: "7. Spiritual Gifts", contents: ["Kinds, use and purpose of spiritual gifts"] },
+        { title: "8. Christian Giving", contents: ["Principles and practice of Christian giving"] },
+        { title: "9. Civic Responsibility", contents: ["Christian responsibilities toward civil authority and society"] },
+        { title: "10. Dignity of Labour", contents: ["Work, responsibility and dignity of labour"] },
+        { title: "11. The Second Coming of Christ", contents: ["Teaching on the second coming"] },
+        { title: "12. Impartiality", contents: ["Impartiality in Christian conduct"] },
+        { title: "13. Effective Prayer", contents: ["Prayer and its practice"] },
+        { title: "14. Christian Living in the Community", contents: ["Ethical living and community relationships"] },
+        { title: "15. Corruption", contents: ["Christian teaching on corruption and integrity"] },
+        { title: "16. Sexual Immorality", contents: ["Epistolary teaching on sexual morality"] }
+      ]}
+    ]
+  },
+  {
+    name: "Islamic Religious Studies", slug: "islamic-religious-studies", icon: "☪️",
+    description: "JAMB Islamic Religious Studies syllabus organized into Qur’an and Hadith, Tawhid and Fiqh, and Islamic History.",
+    generalObjectives: [
+      "Master the Qur’an and Sunnah as foundations of Islamic and social life.",
+      "Be familiar with Islamic heritage, culture and civilization.",
+      "Be acquainted with the tradition of Islamic scholarship and intellectual discourse.",
+      "Demonstrate knowledge of Islamic moral, spiritual, economic, political and social values.",
+      "Be exposed to the fundamental principles of Islam.",
+      "Be prepared to face the challenges of life as good practising Muslims."
+    ],
+    sections: [
+      { title: "PART I: THE QUR’AN AND HADITH", topics: [
+        { title: "1. Revelation of the Glorious Qur’an", contents: ["The Prophet’s visits to Cave Hira and the first revelation", "The Prophet’s reaction to the first revelation and its importance", "Modes of revelation (Q.42:51)", "Piecemeal revelation (Q.17:106; Q.25:32)", "Names and attributes of the Qur’an"] },
+        { title: "2. Preservation of the Glorious Qur’an", contents: ["Recording, compilation and standardization", "Differences between Makkan and Madinan suwar", "Role of the Companions in collection and compilation"] },
+        { title: "3. Importance and Authenticity of the Qur’an", contents: ["Qur’an as guidance in spiritual, moral, economic, political and socio-cultural matters", "Divine authenticity, uniqueness and preservation (including Q.4:82; Q.41:42; Q.39:27; Q.17:88; Q.75:16–19; Q.15:9)"] },
+        { title: "4. Tafsir", contents: ["History, importance and types of Tafsir"] },
+        { title: "5. Introduction to Tajwid", contents: ["Theory and practice of Tajwid"] },
+        { title: "6. Study of Arabic Texts: Short Surahs", contents: ["al-Fatihah (Q.1)", "al-Adiyat (Q.100)", "al-Qari’ah (Q.101)", "at-Takathur (Q.102)", "al-Asr (Q.103)", "al-Humazah (Q.104)", "al-Ma’un (Q.107)", "al-Kawthar (Q.108)", "al-Kafirun (Q.109)", "an-Nasr (Q.110)", "al-Masad (Q.111)", "al-Ikhlas (Q.112)", "al-Falaq (Q.113)", "an-Nas (Q.114)"] },
+        { title: "7. Study of Further Arabic Texts", contents: ["al-A’la (Q.87)", "ad-Duha (Q.93)", "al-Inshirah (Q.94)", "at-Tin (Q.95)", "al-Alaq (Q.96)", "al-Qadr (Q.97)", "al-Bayyinah (Q.98)", "al-Zalzalah (Q.99)", "Ayatul-Kursiyy (Q.2:255)", "Amanar-Rasul (Q.2:285–286)", "Laqad ja’akum (Q.9:128–129)"] },
+        { title: "8. Hadith", contents: ["History and authentication of Hadith", "Isnad and matn", "Sahih, Hasan and Da’if", "Six sound collectors and Muwatta of Imam Malik", "Selected Nawawi Hadith: 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 15, 16, 18, 19, 21, 22, 25, 27, 34 and 41", "Relationship between Hadith and the Qur’an"] },
+        { title: "9. Moral Lessons in the Qur’an and Hadith", contents: ["Wisdom, goodness to parents, honesty, prohibited earnings and financial wrongdoing", "Alcohol, gambling, stealing, fraud, intoxicants and extravagance", "Dignity of labour, modesty, family conduct and sexual morality", "Leadership, justice, trust, obligations, promises and piety (taqwa)", "Patience, unity, brotherhood, enjoining what is right and forbidding what is wrong", "Apply the cited Qur’anic verses and Hadith to daily life"] }
+      ]},
+      { title: "PART II: TAWHID AND FIQH", topics: [
+        { title: "10. Tawhid and the Oneness of Allah", contents: ["Oneness and attributes of Allah; relevant Qur’anic verses including Q.3:18 and Q.2:255", "Prophethood and the message of Prophet Muhammad (SAW), including universality and finality"] },
+        { title: "11. Shirk and Practices Incompatible with Islamic Principles", contents: ["Idol worship, ancestral worship, Trinity and atheism", "Superstition, fortune-telling, magic, cult worship and bid’ah", "Relevant Qur’anic references and avoidance of prohibited practices"] },
+        { title: "12. Articles of Faith", contents: ["Existence, attributes and works of Allah", "Belief in angels", "Belief in Allah’s books", "Belief in prophets, including Ulul-azmi", "The Last Day, resurrection and destiny"] },
+        { title: "13. Ibadat and Their Types", contents: ["Good deeds and their significance", "Purification and al-ghusl", "Salah and its importance", "Zakah: collection, disbursement and eligible recipients", "Sawm: importance, exemptions, qada and kaffarah", "Hajj: importance, types and performance", "Jihad and its lessons as presented in the syllabus"] },
+        { title: "14. Family Matters", contents: ["Marriage: importance, prohibited categories, conditions, rights and duties of spouses", "Polygamy and its significance", "Ill-treatment of wife and the Islamic position", "Divorce: types, duration and significance, including Ila, Zihar and Li’an", "Inheritance: heirs and their shares"] },
+        { title: "15. Sources and Schools of Law", contents: ["Sources of Islamic law and schools of jurisprudence as listed in the source syllabus"] },
+        { title: "16. Islamic Economic System", contents: ["Islamic attitude to Riba", "At-tatfif (fraudulent measure)", "Hoarding (ihtikar)", "Relevant Qur’anic verses and Hadith"] },
+        { title: "17. Islamic Political System", contents: ["Allah as Sovereign", "Shurah (consultation)", "Justice and accountability (mas’uliyah)", "The Islamic state and rights of non-Muslims"] }
+      ]},
+      { title: "PART III: ISLAMIC HISTORY AND CIVILIZATION", topics: [
+        { title: "18. Pre-Islamic Arabia (Jahiliyyah)", contents: ["Social, religious and political life in pre-Islamic Arabia"] },
+        { title: "19. The Life of Prophet Muhammad (SAW)", contents: ["Life, mission and significance of Prophet Muhammad (SAW) as detailed in the syllabus"] },
+        { title: "20. The Rightly Guided Caliphs", contents: ["The lives, leadership and contributions of al-Khulafa’u ar-Rashidun"] },
+        { title: "21. Early Contact of Islam with Africa", contents: ["Early contact, spread and development of Islam in Africa"] },
+        { title: "22. Impact of Islam in West Africa", contents: ["Impact of Islam on society, culture, politics and learning in West Africa"] },
+        { title: "23. Contributions of Islam to Education and Scholarship", contents: ["Development of written history in Arabic and Sankore University", "Contributions of Ahmad Baba of Timbuktu, Sheikh al-Maghili, Sheikh Uthman Dan Fodio, Sultan Muhammad Bello and Ibn Battuta", "Educational institutions: House of Wisdom in Baghdad, al-Azhar University in Cairo and Nizamiyyah University in Baghdad", "Contributions of Ibn Sina, al-Ghazali, Ibn Rushd, ar-Razi and Ibn Khaldun to medicine, education, philosophy, fiqh and historiography"] }
+      ]},
+      { title: "Recommended Texts", topics: [
+        { title: "JAMB-Listed Islamic Studies References", contents: ["M.O.A. Abdul, Studies in Islam Series Books 2 and 3; The Classical Caliphate", "Abdulrahman and Canham, The Ink of the Scholar", "A.Y. Ali, The Holy Qur’an Text: Translation and Commentary", "M.M. Ali, The Religion of Islam", "A.R.I. Doi, Shariah: The Islamic Law", "M. Hay Lal, The Life of Muhammad (SAW)", "A. Lemu, Islamic Studies for SSS and related texts", "S.Q. Muhammad, al-Burhanu fi tajwidil Qur’an", "M.O. Opeloye, A Dictionary of Peoples and Places in the Qur’an", "A.A.B. Philips, Usool at-Tafseer", "Y.A. Quadri et al., Al-Iziyyah for the English Audience", "A. Rahim, Islamic History", "M.B. Sambo et al., Islamic Religious Knowledge for WASC", "J.S. Trimingham, A History of Islam in West Africa"] }
+      ]}
+    ]
+  }
 ];
 
 export function getUtmeSyllabusSubject(slug: string) {
