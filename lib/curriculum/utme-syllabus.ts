@@ -67,8 +67,8 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     ],
     sections: [
       { title: "I. Number and Numeration", topics: [
-        { title: "Number Bases and Modular Arithmetic", contents: ["Operations in bases from 2 to 10.", "Conversion from one base to another, including fractional parts.", "Modular arithmetic."] },
-        { title: "Fractions, Decimals, Approximations and Percentages", contents: ["Fractions and decimals.", "Significant figures and decimal places.", "Percentage errors.", "Simple interest.", "Profit and loss percentages.", "Ratio, proportion and rate.", "Shares and value added tax (VAT)."] },
+        { title: "Number Bases and Modular Arithmetic", contents: ["Perform the four basic operations (multiplication, addition, subtraction and division) in different bases from 2 to 10.", "Convert one base to another, including fractional parts.", "Perform operations in modulo arithmetic."] },
+        { title: "Fractions, Decimals, Approximations and Percentages", contents: ["Fractions and decimals.", "Express numbers to specified significant figures and decimal places.", "Calculate percentage errors.", "Calculate simple interest, profit and loss percentages, ratios, proportions and rates.", "Solve problems involving shares and value added tax (VAT)."] },
         { title: "Indices, Logarithms and Surds", contents: ["Laws of indices and equations involving indices.", "Standard form.", "Laws of logarithms and logarithms to a given base.", "Change of base and applications.", "Relationship between indices and logarithms.", "Simplifying, rationalising and performing operations on surds."] },
         { title: "Sets", contents: ["Types of sets: empty, universal, complement, subset, finite, infinite and disjoint sets.", "Algebra of sets and set notation.", "Cardinality of sets.", "Venn diagrams and applications involving not more than three sets."] }
       ]},
@@ -78,14 +78,14 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Inequalities", contents: ["Analytical and graphical solutions of linear inequalities.", "Quadratic inequalities with integral roots only.", "Interpretation of graphs of inequalities."] },
         { title: "Progression", contents: ["The nth term of a progression.", "Sum of arithmetic progressions (A.P.).", "Sum of geometric progressions (G.P.).", "Sum to infinity of a given G.P."] },
         { title: "Binary Operations", contents: ["Closure, commutativity, associativity and distributivity.", "Identity and inverse elements in simple cases."] },
-        { title: "Matrices and Determinants", contents: ["Algebra of matrices not exceeding 3 × 3.", "Determinants of matrices not exceeding 3 × 3.", "Inverses of 2 × 2 matrices.", "Quadratic and higher-degree equations are excluded from the stated matrix scope."] }
+        { title: "Matrices and Determinants", contents: ["Perform basic operations on matrices not exceeding 3 × 3.", "Calculate determinants of matrices not exceeding 3 × 3.", "Compute inverses of 2 × 2 matrices.", "Quadratic and higher-degree equations are excluded from the stated matrix scope."] }
       ]},
       { title: "III. Geometry and Trigonometry", topics: [
         { title: "Euclidean Geometry", contents: ["Properties of angles and lines.", "Triangles, quadrilaterals and general polygons.", "Circle theorems, cyclic quadrilaterals and intersecting chords.", "Construction of special angles such as 30°, 45°, 60°, 75° and 90°."] },
-        { title: "Mensuration", contents: ["Lengths and areas of plane figures.", "Lengths of arcs and chords.", "Perimeters and areas of sectors and segments of circles.", "Surface areas and volumes of simple solids and composite figures.", "The Earth as a sphere: longitudes and latitudes."] },
+        { title: "Mensuration", contents: ["Lengths and areas of plane figures.", "Lengths of arcs and chords.", "Perimeters and areas of sectors and segments of circles.", "Surface areas and volumes of simple solids and composite figures.", "The Earth as a sphere: longitudes and latitudes; determine distances between two points on the Earth's surface."] },
         { title: "Loci", contents: ["Two-dimensional loci based on geometric principles.", "Loci related to parallel lines, perpendicular bisectors, angle bisectors and circles."] },
         { title: "Coordinate Geometry", contents: ["Midpoint and gradient of a line segment.", "Distance between two points.", "Parallel and perpendicular lines.", "Equations of straight lines: two-point, point-slope, slope-intercept and general forms."] },
-        { title: "Trigonometry", contents: ["Trigonometric ratios of angles.", "Angles of elevation and depression.", "Bearings.", "Areas and solutions of triangles.", "Graphs of sine and cosine.", "Sine and cosine formulae."] }
+        { title: "Trigonometry", contents: ["Trigonometric ratios of angles from −360° to 360°.", "Special angles, including 30°, 45°, 60°, 75°, 90°, 105° and 135°, and their use in simple trigonometric problems.", "Angles of elevation and depression.", "Bearings.", "Areas and solutions of triangles.", "Graphs of sine and cosine.", "Sine and cosine formulae."] }
       ]},
       { title: "IV. Calculus", topics: [
         { title: "Differentiation", contents: ["Limit of a function.", "Differentiation of explicit algebraic functions.", "Differentiation of simple trigonometric functions: sine, cosine and tangent."] },
