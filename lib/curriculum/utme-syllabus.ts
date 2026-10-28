@@ -257,10 +257,14 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     name: "Government", slug: "government", icon: "🏛️",
     description: "UTME Government syllabus arranged by the four parts in the supplied JAMB syllabus.",
     generalObjectives: [
-      "Appreciate the meaning, significance and functions of government.",
-      "Analyse the political processes and institutions of government.",
-      "Understand the historical development of political systems, with particular attention to Nigeria.",
-      "Understand Nigeria’s foreign policy and relationships with the international community."
+      "Appreciate the meaning of Government.",
+      "Analyse the framework and specify the institutions of Government.",
+      "Appreciate the basic principles of democratic governance and their application in Nigeria.",
+      "Explain the concept of citizenship and define the duties and obligations of a citizen.",
+      "Appreciate the process of political development in Nigeria.",
+      "Evaluate the political development and problems of governance in Nigeria.",
+      "Understand the determinants and dynamics of foreign policy as they relate to Nigeria.",
+      "Assess the role of Nigeria as a member of the international community and the workings of international organizations."
     ],
     sections: [
       { title: "PART I: ELEMENTS OF GOVERNMENT", topics: [
@@ -336,9 +340,10 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       ]},
       { title: "5. Literary Appreciation", topics: [
         { title: "Unseen Literary Passages", contents: ["Unseen passages or extracts from drama, prose and poetry", "Identify literary devices in a given extract", "Interpret the extract", "Relate the extract to real-life experiences"] },
-        { title: "Prescribed Drama Texts", contents: ["African: Efua Sutherland, Marriage of Anansewa", "Non-African: William Shakespeare, Antony and Cleopatra (title spelling follows the supplied syllabus text where displayed)"] },
-        { title: "Prescribed Prose Texts", contents: ["African: Pede Hollist, So the Path Does not Die", "The supplied PDF also lists a non-African prose text; retain its exact title and author when the full prescribed-text line is transcribed."] },
-        { title: "Prescribed Poetry and Anthologies", contents: ["African and non-African poems are listed in the supplied syllabus", "Recommended anthologies include Of Shadows and Rainbows – Musings in Times of Covid; The Penguin Book of English Verse; New Poetry from Africa; Oxford Anthology of English Literature, Vol. II; Camouflage: Best of Contemporary; A Pageant of Longer Poems; A Selection of African Poetry; Poems of Black Africa"] }
+        { title: "Prescribed Drama Texts", contents: ["African: Efua Sutherland, Marriage of Anansewa", "Non-African: Williams Shakespeare, Anthony and Cleopatra (as spelled in the supplied PDF)"] },
+        { title: "Prescribed Prose Texts", contents: ["African: Pede Hollist, So the Path Does not Die", "African: Elma Shaw, Redemption Road", "Non-African: Susanne Bellefeuille, Path of Lucas: The Journey He Endured"] },
+        { title: "Prescribed Poetry", contents: ["African: Gabriel Okara, Once Upon a Time", "African: Elizabeth L.A. Kamara, New Tongue", "African: Wole Soyinka, Night", "African: Niyi Osundare, Not my Business", "African: S.O.H. Afriyie-Vidza, Hearty Garlands", "African: Syl Cheney-Coker, The Breast of the Sea", "Non-African: Lord Byron, She Walks in Beauty", "Non-African: Geoffrey Chaucer, The Nun’s Priest Tale (shortened)", "Non-African: Fleur Adcock, The Telephone Call", "Non-African: Wilfred Wilson Gipson, The Stone"] },
+        { title: "Recommended Anthologies and Critical Texts", contents: ["Obafemi and Agoi (eds), Of Shadows and Rainbows – Musings in Times of Covid", "Hayward (ed.), The Penguin Book of English Verse", "Johnson, Ker, Maduka and Obafemi (eds), New Poetry from Africa", "Kermode, Oxford Anthology of English Literature, Vol. II", "Ofiono and Okenyodo (eds), Camouflage: Best of Contemporary Writing from Nigeria", "Parker (ed.), A Pageant of Longer Poems (spelled ‘Peagent’ in the supplied PDF)", "Senanu and Vincent (eds), A Selection of African Poetry", "Soyinka (ed.), Poems of Black Africa", "Abrams, A Glossary of Literary Terms", "Emeaba, A Dictionary of Literature"] }
       ]}
     ]
   },
