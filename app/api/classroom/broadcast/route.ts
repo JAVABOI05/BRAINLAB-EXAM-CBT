@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     // Resolve roles through the same authoritative sources used by admin authentication.
     // The browser sends a verified Supabase access token; fall back to server-side table
     // lookup when the role RPC is unavailable or does not return an allowed classroom role.
-    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const allowedRoles = ["super_admin", "platform_admin", "teacher", "cbt_admin", "ai_learning_admin"];
     let resolvedRole = await resolveAdminRole(user.id, bearerToken);
 
