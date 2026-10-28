@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const auto = Boolean(body.auto || body.autoSubmitted || body.p_auto);
     const flagged = body.flagged || body.p_flagged || {};
 
-    if (!sessionId || !token) {
+    if (typeof sessionId !== "string" || typeof token !== "string" || !sessionId.trim() || !token.trim()) {
       return NextResponse.json(
         { ok: false, error: "invalid_request", message: "Missing session ID or token." },
         { status: 400 }
@@ -20,8 +20,6 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
-
-    // 1. Invoke the submit_exam RPC via high-speed server connection
     const { data: rpcData, error: rpcError } = await supabase.rpc("submit_exam", {
       p_session: sessionId,
       p_token: token,
@@ -34,40 +32,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(rpcData);
     }
 
-    // 2. Resiliency recovery: If the exam was already submitted (e.g. from a prior auto-save or double click)
-    // look up the existing result directly to prevent candidate lockout.
-    const { data: existingResult } = await supabase
-      .from("results")
-      .select("id, score, total, subject_scores, created_at")
-      .eq("session_id", sessionId)
+    // This server client may use the service-role key, so fallback queries must
+    // independently verify the session/token pair instead of relying on RLS.
+    const { data: sessionRow, error: sessionError } = await supabase
+      .from("exam_sessions")
+      .select("id, status, score, total, result_id")
+      .eq("id", sessionId)
+      .eq("attempt_token", token)
       .maybeSingle();
 
-    if (existingResult) {
-      return NextResponse.json({
-        ok: true,
-        finished: true,
-        status: "submitted",
-        result_id: existingResult.id,
-        score: existingResult.score,
-        total: existingResult.total,
-        subject_scores: existingResult.subject_scores || {},
-        show_results: true,
-      });
+    if (sessionError) {
+      console.error("[api/exam/submit] Session recovery lookup failed:", sessionError.message);
+      return NextResponse.json(
+        { ok: false, error: "submit_failed", message: "Could not verify the exam submission. Please retry." },
+        { status: 500 }
+      );
     }
 
-    // Check if session exists and is marked as finished/submitted
-    const { data: sessionRow } = await supabase
-      .from("exam_sessions")
-      .select("id, status, score, total")
-      .eq("id", sessionId)
-      .maybeSingle();
+    if (!sessionRow) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_session", message: "The exam session or attempt token is invalid." },
+        { status: 401 }
+      );
+    }
 
-    if (sessionRow && (sessionRow.status === "submitted" || sessionRow.status === "expired")) {
+    // Idempotent recovery is allowed only for a verified, finalized attempt.
+    if (sessionRow.status === "submitted" || sessionRow.status === "expired") {
+      const { data: existingResult, error: resultError } = await supabase
+        .from("results")
+        .select("id, score, total, subject_scores, created_at")
+        .eq("session_id", sessionId)
+        .maybeSingle();
+
+      if (resultError) {
+        console.error("[api/exam/submit] Result recovery lookup failed:", resultError.message);
+        return NextResponse.json(
+          { ok: false, error: "submit_failed", message: "Your submission was received, but the result could not be retrieved. Please retry later." },
+          { status: 500 }
+        );
+      }
+
+      if (existingResult) {
+        return NextResponse.json({
+          ok: true,
+          finished: true,
+          status: sessionRow.status,
+          result_id: existingResult.id,
+          score: existingResult.score,
+          total: existingResult.total,
+          subject_scores: existingResult.subject_scores || {},
+          show_results: true,
+        });
+      }
+
       return NextResponse.json({
         ok: true,
         finished: true,
         status: sessionRow.status,
-        result_id: sessionRow.id,
+        result_id: sessionRow.result_id || sessionRow.id,
         score: sessionRow.score || 0,
         total: sessionRow.total || 400,
         subject_scores: {},
@@ -75,19 +97,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const errorMessage = rpcError?.message || (rpcData as { message?: string })?.message || "Could not complete examination submission.";
+    const errorMessage =
+      rpcError?.message ||
+      (rpcData as { message?: string } | null)?.message ||
+      "Could not complete examination submission.";
+    console.error("[api/exam/submit] RPC submission failed:", errorMessage);
     return NextResponse.json(
-      { ok: false, error: "submit_failed", message: errorMessage },
+      { ok: false, error: "submit_failed", message: "Could not complete the submission. Please retry." },
       { status: 500 }
     );
   } catch (err) {
-    console.error("[api/exam/submit] Unexpected error:", err);
+    console.error(
+      "[api/exam/submit] Unexpected error:",
+      err instanceof Error ? err.message : "Unknown error"
+    );
     return NextResponse.json(
-      {
-        ok: false,
-        error: "server_error",
-        message: err instanceof Error ? err.message : "Exam submission failed.",
-      },
+      { ok: false, error: "server_error", message: "Exam submission failed. Please retry." },
       { status: 500 }
     );
   }
