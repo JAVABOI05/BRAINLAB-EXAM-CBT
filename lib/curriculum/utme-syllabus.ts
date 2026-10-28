@@ -268,8 +268,8 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     ],
     sections: [
       { title: "PART I: ELEMENTS OF GOVERNMENT", topics: [
-        { title: "Definition and Scope of Government", contents: ["Meaning and scope of government", "Functions of government", "Government as an academic field and as an institution"] },
-        { title: "Basic Concepts of Government", contents: ["Power, influence and authority", "Society, state, nation and nation-state", "Political processes"] },
+        { title: "Definition and Scope of Government", contents: ["Definition of Government as an institution", "Characteristics of Government", "Functions of Government"] },
+        { title: "Basic Concepts of Government", contents: ["Power, influence, authority, legitimacy and sovereignty", "Society, state, nation and nation-state", "Political socialization, political participation and political culture"] },
         { title: "Forms of Government", contents: ["Monarchy, aristocracy, oligarchy, autocracy, republicanism and democracy", "Definitions, features, merits and demerits of each form"] },
         { title: "Arms of Government", contents: ["The legislature: types and structure", "The executive: types and functions", "The judiciary: functions and powers", "Relationships among the arms of government"] },
         { title: "Structures of Governance", contents: ["Unitary government: features, reasons for adoption, merits and demerits", "Federal government: features, reasons for adoption, merits and demerits", "Confederal government: features and reasons for adoption"] },
@@ -288,13 +288,13 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       { title: "PART II: POLITICAL DEVELOPMENT IN NIGERIA", topics: [
         { title: "Pre-colonial Polities", contents: ["Structural organization of pre-colonial political systems", "Functions of political institutions and office holders"] },
         { title: "Imperialist Penetration", contents: ["British process of acquisition", "British colonial administrative system", "French colonial administrative system", "Impact of British colonial rule"] },
-        { title: "Process of Decolonization", contents: ["Nationalism: meaning and types", "Emergence of nationalist movements and parties", "Nationalist leaders: Herbert Macaulay, Nnamdi Azikiwe, Obafemi Awolowo, Ahmadu Bello and Ladipo Solanke", "Impact of external forces and the decolonization process"] },
-        { title: "Constitutional Development in Nigeria", contents: ["Hugh Clifford Constitution (1922)", "Arthur Richards Constitution (1946)", "John Macpherson Constitution (1951)", "Oliver Lyttleton Constitution (1954)", "Comparison of constitutional developments, merits and demerits"] },
-        { title: "Post-independence Constitutions", contents: ["Post-independence constitutional development in Nigeria, including the constitutions and political arrangements identified in the syllabus"] },
+        { title: "Process of Decolonization", contents: ["Nationalism: meaning and types", "Emergence of nationalist movements and parties", "Nationalist leaders: Herbert Macaulay, Nnamdi Azikiwe, Obafemi Awolowo, Ahmadu Bello, Ladipo Solanke, Aminu Kano, J. S. Tarka and Tafawa Balewa", "Impact of external forces and the decolonization process"] },
+        { title: "Constitutional Development in Nigeria", contents: ["Hugh Clifford Constitution (1922)", "Arthur Richards Constitution (1946)", "John Macpherson Constitution (1951)", "Oliver Lyttleton Constitution (1954)", "Independence Constitution (1960): features, merits and demerits"] },
+        { title: "Post-independence Constitutions", contents: ["Post-independence constitutions: 1963, 1979, 1989 and 1999 (as amended); characteristics, shortcomings, merits and demerits"] },
         { title: "Institutions of Government in the Post-independence Period", contents: ["Legislative structures and functions", "Executive structure and functions", "Judiciary structure and functions", "Government agencies and institutions"] },
-        { title: "Public Commissions Established by the State", contents: ["Public commissions established by the state and their functions in Nigerian governance"] },
+        { title: "Public Commissions Established by the State", contents: ["Civil Service Commission; Public Complaints Commission; Electoral Commissions; National Boundary Commission; Independent Corrupt Practices and Other Related Offences Commission; Economic and Financial Crimes Commission—objectives, functions and problems"] },
         { title: "Political Parties and Party Politics in Nigeria", contents: ["First Republic", "Second Republic", "Third Republic", "Fourth Republic", "Ideologies, structures and composition of political parties"] },
-        { title: "The Structure and Workings of Nigerian Federalism", contents: ["Rationale for a federal system", "Tiers of government and their relationships", "Creation of states in 1963, 1967 and subsequent periods specified in the syllabus", "Problems of Nigerian federalism and solutions adopted"] },
+        { title: "The Structure and Workings of Nigerian Federalism", contents: ["Rationale for a federal system", "Tiers of government and their relationships", "Creation of states in 1963, 1967 and subsequent periods", "Problems of Nigerian federalism and solutions adopted"] },
         { title: "Public Corporations and Parastatals", contents: ["Definition, types and purpose", "Finance, control and problems", "Deregulation, privatization and commercialization", "Comparison between public and private enterprises"] },
         { title: "Local Government", contents: ["Evolution and administration of local government", "Features and structure", "Traditional rulers and local government", "Problems of local government"] },
         { title: "The Military in Nigerian Politics", contents: ["Factors leading to military intervention", "Structure of military regimes", "Political, social and economic impact of military rule", "Processes of military disengagement"] }
@@ -331,7 +331,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Textual Analysis", contents: ["Themes and thematic preoccupation", "Plot and structure", "Setting and context", "Character and characterization", "Author’s narrative style and the interpretation of prescribed prose texts"] }
       ]},
       { title: "3. Poetry", topics: [
-        { title: "Types of Poetry", contents: ["Sonnet", "Ode", "Lyric", "Elegy", "Ballad", "Panegyric", "Epic" and "Blank verse"] },
+        { title: "Types of Poetry", contents: ["Sonnet", "Ode", "Lyrics", "Elegy", "Ballad", "Panegyric", "Epic", "Blank verse"] },
         { title: "Poetic Devices", contents: ["Figures of speech and sound devices", "Poetic language, imagery, rhythm and other devices specified in the syllabus"] },
         { title: "Appreciation", contents: ["Interpretation of poems", "Deducing the poet’s thematic preoccupation", "Relating a poem’s meaning and techniques to its context"] }
       ]},
@@ -429,7 +429,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     ],
     sections: [
       { title: "SECTION A: Themes from Creation to the Division of the Kingdom", topics: [
-        { title: "1. The Sovereignty of God", contents: ["Meaning of sovereignty", "God as Creator and ruler; biblical passages and objectives specified in the JAMB syllabus"] },
+        { title: "1. The Sovereignty of God", contents: ["Meaning of sovereignty", "God as Creator and Controller of the Universe (Genesis 1–2; Amos 9:5–6; Isaiah 45:5–12; Psalm 19:1–6; Jeremiah 18:1–16; Romans 8:28)", "The sequence of creation and humanity’s role in advancing God’s purpose", "God’s sovereignty in the affairs of people and nations"] },
         { title: "2. The Covenant", contents: ["Biblical covenants and their significance", "Responsibilities and promises associated with the covenant"] },
         { title: "3. Leadership Qualities", contents: ["Examples of leadership in the Old Testament", "Qualities and lessons from biblical leaders"] },
         { title: "4. Divine Providence, Guidance and Protection", contents: ["God’s providence and guidance in the lives of biblical figures", "Protection and lessons for believers"] },
@@ -519,13 +519,13 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "12. Articles of Faith", contents: ["Existence, attributes and works of Allah", "Belief in angels", "Belief in Allah’s books", "Belief in prophets, including Ulul-azmi", "The Last Day, resurrection and destiny"] },
         { title: "13. Ibadat and Their Types", contents: ["Good deeds and their significance", "Purification and al-ghusl", "Salah and its importance", "Zakah: collection, disbursement and eligible recipients", "Sawm: importance, exemptions, qada and kaffarah", "Hajj: importance, types and performance", "Jihad and its lessons as presented in the syllabus"] },
         { title: "14. Family Matters", contents: ["Marriage: importance, prohibited categories, conditions, rights and duties of spouses", "Polygamy and its significance", "Ill-treatment of wife and the Islamic position", "Divorce: types, duration and significance, including Ila, Zihar and Li’an", "Inheritance: heirs and their shares"] },
-        { title: "15. Sources and Schools of Law", contents: ["Sources of Islamic law: the Qur’an, Sunnah, Ijma and Qiyas; schools of jurisprudence and their basic principles"] },
+        { title: "15. Sources and Schools of Law", contents: ["The four major sources: Qur’an, Sunnah, Ijma‘ and Qiyas", "The four Sunni schools of law and their founders; contributions of the founders"] },
         { title: "16. Islamic Economic System", contents: ["Islamic attitude to Riba", "At-tatfif (fraudulent measure)", "Hoarding (ihtikar)", "Relevant Qur’anic verses and Hadith"] },
         { title: "17. Islamic Political System", contents: ["Allah as Sovereign", "Shurah (consultation)", "Justice and accountability (mas’uliyah)", "The Islamic state and rights of non-Muslims"] }
       ]},
       { title: "PART III: ISLAMIC HISTORY AND CIVILIZATION", topics: [
         { title: "18. Pre-Islamic Arabia (Jahiliyyah)", contents: ["Social, religious and political life in pre-Islamic Arabia"] },
-        { title: "19. The Life of Prophet Muhammad (SAW)", contents: ["The Prophet’s life and mission, including the major events and stages identified in the syllabus"] },
+        { title: "19. The Life of Prophet Muhammad (SAW)", contents: ["Birth and early life; call to Prophethood; da‘wah in Makkah and Madinah; Hijrah; administration of the Ummah in Madinah; battles of Badr, Uhud and Khandaq and their causes and effects"] },
         { title: "20. The Rightly Guided Caliphs", contents: ["The lives, leadership and contributions of al-Khulafa’u ar-Rashidun"] },
         { title: "21. Early Contact of Islam with Africa", contents: ["Early contact, spread and development of Islam in Africa"] },
         { title: "22. Impact of Islam in West Africa", contents: ["Impact of Islam on society, culture, politics and learning in West Africa"] },
