@@ -349,7 +349,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
   },
   {
     name: "Commerce", slug: "commerce", icon: "🛍️",
-    description: "UTME Commerce syllabus structured around the numbered topics and commercial practice areas in the supplied JAMB PDF.",
+    description: "The 16 numbered topics in the supplied JAMB Commerce syllabus, with the listed content areas retained.",
     generalObjectives: [
       "Acquire the basic knowledge of Commerce.",
       "Examine the relationship between Commerce and other related fields.",
@@ -357,30 +357,64 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       "Appreciate dynamic and positive changes in commercial activities."
     ],
     sections: [
-      { title: "Commerce and Trade", topics: [
-        { title: "1. Commerce", contents: ["Meaning, scope, characteristics and functions of Commerce", "E-commerce and e-business", "Relationship between Commerce and related subjects"] },
-        { title: "2. Occupation", contents: ["Meaning and types of occupation", "Factors affecting choice of occupation"] },
-        { title: "3. Production", contents: ["Meaning and types of production", "Factors of production and specialization", "Division of labour and its limitations"] },
-        { title: "4. Trade", contents: ["Home and foreign trade", "Wholesale and retail trade", "Functions and services of wholesalers and retailers"] },
-        { title: "5. Buying and Selling", contents: ["Channels of distribution", "Terms of sale and purchase", "Documents used in trade and settlement of transactions"] }
+      { title: "1. Commerce", topics: [
+        { title: "Meaning, Scope, Characteristics and Functions", contents: ["Meaning of e-commerce and e-business", "Meaning and scope of Commerce", "Characteristics of Commerce", "Functions of Commerce", "Relationship between Commerce and related subjects"] }
       ]},
-      { title: "Business Organization and Support Services", topics: [
-        { title: "6. Aids to Trade", contents: ["Banking and finance", "Insurance", "Transportation", "Warehousing", "Communication", "Advertising and other services supporting trade"] },
-        { title: "7. Business Units", contents: ["Sole proprietorship", "Partnership", "Limited liability companies", "Co-operative societies", "Public enterprises and other forms of business organization"] },
-        { title: "8. Business Capital and Profit", contents: ["Sources and types of business capital", "Capital, revenue, costs and profit as covered in the syllabus"] },
-        { title: "9. Trade Associations", contents: ["Chambers of commerce and other trade associations", "Functions and contributions to commerce"] },
-        { title: "10. Money", contents: ["Meaning, forms and functions of money", "Qualities and evolution of money"] },
-        { title: "11. Banking", contents: ["Types of banks and banking services", "Central banking and commercial banking", "Electronic banking and payment services"] },
-        { title: "12. Insurance", contents: ["Meaning, principles and types of insurance", "Importance of insurance to businesses and individuals"] }
+      { title: "2. Occupation", topics: [
+        { title: "Meaning, Types and Choice of Occupation", contents: ["Meaning and importance", "Industrial, commercial and service occupations", "Factors determining choice of occupation"] }
       ]},
-      { title: "Marketing, Law and Business Administration", topics: [
-        { title: "13. Marketing", contents: ["Meaning and functions of marketing", "Marketing mix and channels", "E-marketing", "Merits, demerits and barriers to electronic marketing"] },
-        { title: "14. Legal Aspects of Business", contents: ["Meaning and validity of a simple contract", "Agency, Sale of Goods Act and Hire Purchase Act", "Contract of employment", "Government regulation of business", "Patents, trademarks and copyright as listed in the syllabus"] },
-        { title: "15. Commodity Exchange", contents: ["Meaning and operation of commodity exchange", "Benefits of commodity exchange", "Constraints to commodity trading", "Electronic mechanisms in commodity trading"] },
-        { title: "16. Business Environment and Social Responsibility", contents: ["Legal, political, economic, social, cultural and technological environments", "Safe products, philanthropy and societal considerations", "Types and implications of pollution, including water, air and land pollution"] }
+      { title: "3. Production", topics: [
+        { title: "Factors, Types and Organization of Production", contents: ["Factors of production and their rewards: land, labour, capital and entrepreneur", "Division of labour and specialization", "Primary, secondary and tertiary production", "Relationship between production, specialization and exchange"] }
+      ]},
+      { title: "4. Trade", topics: [
+        { title: "Home Trade: Retail and Wholesale", contents: ["Types of retail trade, functions, factors in setting up retail trade, trends, advantages and disadvantages, and reasons for success or failure", "Types of wholesalers, channels of distribution, functions, advantages and disadvantages"] },
+        { title: "Foreign Trade", contents: ["Types of foreign trade", "Balance of trade, balance of payments and counter-trade", "Procedures and documents for export, import and entrepôt trade", "Barriers to international trade", "Tariffs and reasons for their imposition", "Trade restriction and export promotion", "Role of Customs and Excise Authority, Ports Authority and related agencies"] }
+      ]},
+      { title: "5. Purchase and Sale of Goods", topics: [
+        { title: "Procedures, Documents, Terms and Payments", contents: ["Enquiry, quotation, order, invoice, pro forma invoice, statement of accounts, indent, consular invoice, bill of lading, certificate of origin and consignment note", "Trade discount, quantity discount, cash discount, warranties, COD, CIF, FOB and EOE", "Cash and credit payments; types, functions, merits and demerits of credit", "Legal tender, bank notes and coins, cheques, standing orders, bank drafts, stamps, postal and money orders, bills of exchange, promissory notes, mail transfer, traveller’s cheques, telegraphic transfer, e-payment and recharge cards"] }
+      ]},
+      { title: "6. Aids-to-trade", topics: [
+        { title: "Advertising", contents: ["Meaning and roles", "Types, media and methods", "Advantages and disadvantages"] },
+        { title: "Banking", contents: ["Types of banks, services, challenges and e-banking"] },
+        { title: "Communication", contents: ["Process and procedure, types, trends, merits and demerits, and barriers", "Contributions of courier services and GSM to business"] },
+        { title: "Insurance", contents: ["Types, principles, terms, importance and types of risk"] },
+        { title: "Tourism", contents: ["Meaning and forms, importance, agencies promoting tourism in Nigeria, challenges and tourist centres"] },
+        { title: "Transportation", contents: ["Modes, importance, advantages and disadvantages"] },
+        { title: "Warehousing", contents: ["Importance, types and functions", "Factors considered when siting a warehouse"] }
+      ]},
+      { title: "7. Business Units", topics: [
+        { title: "Forms, Registration and Choice of Business Units", contents: ["Sole proprietorship, partnership, limited liability companies, public corporations and co-operative societies", "Registration of businesses", "Factors determining choice of business unit", "Dissolution and liquidation", "Merits and demerits of business units", "Reasons for government ownership of public enterprises"] }
+      ]},
+      { title: "8. Financing Business", topics: [
+        { title: "Sources and Types of Capital", contents: ["Personal savings, shares and bonds, loans, debentures, mortgage, bank overdraft, retained profit, credit purchase and leasing", "Share capital, owned capital, authorized, issued, called-up and paid-up capital, liquid capital, working capital and owners’ equity", "Calculation of gross and net profit, forms of capital and turnover", "Problems of sourcing finance", "Role of Bureau de Change in an economy"] }
+      ]},
+      { title: "9. Trade Associations", topics: [
+        { title: "Associations, Chambers of Commerce and Business Combinations", contents: ["Objectives and functions of trade and manufacturers’ associations", "Objectives and functions of Chambers of Commerce", "Forms of business combination and merger"] }
+      ]},
+      { title: "10. Money", topics: [
+        { title: "Evolution, Forms and Qualities of Money", contents: ["Origin and evolution of money", "Forms and qualities of money", "Other money topics and objectives specified under this heading in the source syllabus"] }
+      ]},
+      { title: "11. Stock Exchange", topics: [
+        { title: "Stock Exchange and Securities", contents: ["Stock exchange topics, instruments, operations and objectives specified under this heading in the supplied syllabus"] }
+      ]},
+      { title: "12. Elements of Business Management", topics: [
+        { title: "Business Management", contents: ["Elements and principles of business management as itemized in the supplied syllabus"] }
+      ]},
+      { title: "13. Elements of Marketing", topics: [
+        { title: "Marketing", contents: ["Marketing concepts, activities and objectives as itemized in the supplied syllabus"] }
+      ]},
+      { title: "14. Legal Aspects of Business", topics: [
+        { title: "Business Law", contents: ["Legal aspects of business as itemized in the supplied syllabus"] }
+      ]},
+      { title: "15. Commodity Exchange", topics: [
+        { title: "Commodity Exchange", contents: ["Meaning and operation, benefits, constraints and electronic mechanisms in commodity trading, as listed in the source syllabus"] }
+      ]},
+      { title: "16. Business Environment and Social Responsibility", topics: [
+        { title: "Business Environment", contents: ["Legal, political, economic, social, cultural and technological environments as specified in the source syllabus"] },
+        { title: "Social Responsibility", contents: ["Business responsibilities and social/environmental issues, including pollution, as itemized in the supplied syllabus"] }
       ]},
       { title: "Recommended Texts", topics: [
-        { title: "JAMB-Listed Commerce References", contents: ["Adedokun, Udokogu and Ogunji, Senior Secondary Commerce Books One, Two and Three", "Anderson, Commerce for West Africa", "Ahukannah et al., Commerce for Secondary Schools", "Asaolu and Igwe, New Syllabus Commerce for Secondary Schools", "Babatunde, Handbook on Commerce for Schools and Colleges", "Ibru, Nigeria: The Promise of Tourism", "Nwachukwu, Management Theory and Practice", "Onu, Marketing Today", "Ubaka, Commerce Simplified for SSS 1–3", "Longe, Essential Commerce for Secondary Schools"] }
+        { title: "JAMB-Listed Commerce References", contents: ["The recommended references printed at the end of the supplied Commerce PDF should be used as the source list for this section."] }
       ]}
     ]
   },
