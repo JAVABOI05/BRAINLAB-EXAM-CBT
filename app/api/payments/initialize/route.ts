@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       reference,
       planId: plan.id,
       userId: user.id,
-      provider: selectedProvider.name,
+      provider: paymentProviderName,
       couponCode: couponCode || undefined,
       callbackUrl: callbackUrl || defaultCallback,
       metadata: {
