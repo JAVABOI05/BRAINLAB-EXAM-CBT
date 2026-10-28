@@ -392,29 +392,29 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
         { title: "Associations, Chambers of Commerce and Business Combinations", contents: ["Objectives and functions of trade and manufacturers’ associations", "Objectives and functions of Chambers of Commerce", "Forms of business combination and merger"] }
       ]},
       { title: "10. Money", topics: [
-        { title: "Evolution, Forms and Qualities of Money", contents: ["Origin and evolution of money", "Forms and qualities of money", "Other money topics and objectives specified under this heading in the source syllabus"] }
+        { title: "Evolution, Forms, Qualities and Functions of Money", contents: ["Origin and evolution of money", "Forms and qualities of money", "Functions of money"] }
       ]},
       { title: "11. Stock Exchange", topics: [
-        { title: "Stock Exchange and Securities", contents: ["Stock exchange topics, instruments, operations and objectives specified under this heading in the supplied syllabus"] }
+        { title: "Stock Exchange and Securities", contents: ["Importance and functions of the Stock Exchange", "Types of securities: stocks, shares, bonds and debentures", "Procedure of transactions and speculations", "Second-Tier Securities Market: listing requirements, types of companies, advantages and operating regulations"] }
       ]},
       { title: "12. Elements of Business Management", topics: [
-        { title: "Business Management", contents: ["Elements and principles of business management as itemized in the supplied syllabus"] }
+        { title: "Business Management", contents: ["Management functions: planning, organizing, staffing, coordinating, motivating, communicating and controlling", "Principles: span of control, unity of command, delegation of authority and related principles", "Organizational structures: line, line-and-staff, functional, matrix and committee", "Functional areas: production, marketing, finance and personnel", "Business resources: man, money, materials, machines, opportunities and goodwill"] }
       ]},
       { title: "13. Elements of Marketing", topics: [
-        { title: "Marketing", contents: ["Marketing concepts, activities and objectives as itemized in the supplied syllabus"] }
+        { title: "Marketing", contents: ["Importance and functions of marketing", "Marketing concept: consumer orientation, customer satisfaction and integrated marketing", "Marketing mix: product, price, place and promotion", "Market segmentation", "Public relations and customer service", "E-marketing"] }
       ]},
       { title: "14. Legal Aspects of Business", topics: [
-        { title: "Business Law", contents: ["Legal aspects of business as itemized in the supplied syllabus"] }
+        { title: "Business Law and Consumer Protection", contents: ["Meaning and validity of a simple contract", "Agency, Sale of Goods Act and Hire Purchase Act", "Contract of employment and rights and obligations of employers and employees", "Government regulation of business, registration, patents, trademarks and copyright", "Consumer protection: government legislation, Standards Organization, Trade Descriptions Act, Consumer Protection Council, NAFDAC, NDLEA, Customs and Excise", "Regulatory agencies and the provision of safe goods and drugs"] }
       ]},
       { title: "15. Commodity Exchange", topics: [
-        { title: "Commodity Exchange", contents: ["Meaning and operation, benefits, constraints and electronic mechanisms in commodity trading, as listed in the source syllabus"] }
+        { title: "Commodity Exchange", contents: ["Meaning of commodity exchange", "Types of tradable commodities: agricultural produce, solid minerals, oil and gas", "Requirements for trading: grading system, warehousing, clearing system and standardizing", "Methods of trading: open outcry and electronic mechanism", "Benefits of commodity exchange", "Constraints to commodity trading"] }
       ]},
       { title: "16. Business Environment and Social Responsibility", topics: [
-        { title: "Business Environment", contents: ["Legal, political, economic, social, cultural and technological environments as specified in the source syllabus"] },
-        { title: "Social Responsibility", contents: ["Business responsibilities and social/environmental issues, including pollution, as itemized in the supplied syllabus"] }
+        { title: "Business Environment", contents: ["Legal, political, economic, social, cultural and technological environments"] },
+        { title: "Social Responsibility", contents: ["Safe products, philanthropic and societal considerations", "Types and implications of pollution: water, air and land"] }
       ]},
       { title: "Recommended Texts", topics: [
-        { title: "JAMB-Listed Commerce References", contents: ["The recommended references printed at the end of the supplied Commerce PDF should be used as the source list for this section."] }
+        { title: "JAMB-Listed Commerce References", contents: ["Adedokun, Udokogu and Ogunji, Senior Secondary Commerce Books One, Two and Three", "Anderson, Commerce for West Africa", "Ahukannah et al., Commerce for Secondary Schools", "Asaolu and Igwe, New Syllabus Commerce for Secondary Schools", "Azuh and Soyibo, Comprehensive Certificate Commerce for Secondary Schools", "Babatunde, Handbook on Commerce for Schools and Colleges", "Ibru, Nigeria: The Promise of Tourism", "Igwe et al., Countdown to WASSCE/SSCE/NECO/JME Commerce", "James et al., Management", "Nwachukwu, Management Theory and Practice", "Odedokun et al., Commerce for Senior Secondary Schools", "Odoom, Commerce for Senior Secondary Schools", "Onifade, Management: Office Business Education", "Onu, Marketing Today", "Pallister and Isaacs (eds), A Dictionary of Business", "Ubaka, Commerce Simplified for SSS 1–3", "Longe, Essential Commerce for Secondary Schools"] }
       ]}
     ]
   },
