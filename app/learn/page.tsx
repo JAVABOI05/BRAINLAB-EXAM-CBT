@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import TimetableSection from "../components/TimetableSection";
-import { UTME_SYLLABUS } from "../lib/curriculum/utme-syllabus";
+import { UTME_SYLLABUS } from "../../lib/curriculum/utme-syllabus";
 
 type Subject = {
   id: string;
