@@ -1228,3 +1228,29 @@ button:disabled,
   color: #edf4ff !important;
   border-color: #3a4d68 !important;
 }
+
+
+/* Homepage CBT sandbox: the feedback cards intentionally use light-theme
+   emerald/amber surfaces. Recolor only these feedback states in dark mode. */
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-emerald-50/90"][class*="border-emerald-200"] {
+  background-color: #10352f !important;
+  border-color: #236454 !important;
+  color: #d1fae5 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-emerald-50/90"][class*="border-emerald-200"] .text-slate-700 {
+  color: #d1e7df !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-emerald-50/90"][class*="border-emerald-200"] .text-slate-500 {
+  color: #a8c9bc !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-amber-50/90"][class*="border-amber-200"] {
+  background-color: #3a2b12 !important;
+  border-color: #795b24 !important;
+  color: #ffedc2 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-amber-50/90"][class*="border-amber-200"] .text-slate-700 {
+  color: #f4dfb4 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-amber-50/90"][class*="border-amber-200"] .text-slate-500 {
+  color: #d7bc83 !important;
+}
