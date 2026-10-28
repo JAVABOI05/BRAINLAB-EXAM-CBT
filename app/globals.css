@@ -1151,3 +1151,106 @@ button:disabled,
   border-color: #344861 !important;
   color: #f1f5f9 !important;
 }
+
+/* ==========================================================================
+   TARGETED DARK-THEME READABILITY FIXES
+   Only correct the light-theme panels that become unreadable in dark mode.
+   Existing readable dark surfaces and their colors are intentionally untouched.
+   ========================================================================== */
+
+/* Syllabus: this translucent blue panel retained pale/light-theme text colors. */
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] {
+  background-color: #132744 !important;
+  border-color: #294566 !important;
+}
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] h4 {
+  color: #e6f0ff !important;
+}
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] ul,
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] li,
+:is(html[data-theme="dark"], html.dark) [class*="bg-blue-50/70"] li span {
+  color: #cfe0f7 !important;
+}
+
+/* Homepage: final CTA uses a light gradient with dark-theme-incompatible text. */
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] {
+  background-image: none !important;
+  background-color: #0d1727 !important;
+  border-color: #2a3b53 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] h2 {
+  color: #f1f5f9 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] p {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] a.bg-white {
+  background-color: #132137 !important;
+  color: #edf4ff !important;
+  border-color: #3a4d68 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface section[class*="bg-gradient-to-b"][class*="border-t"] a.bg-white:hover {
+  background-color: #192940 !important;
+}
+
+/* Access Code Support: target the actual gradient card and its nested white desk. */
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] {
+  background-image: none !important;
+  background-color: #0d1727 !important;
+  border-color: #2a3b53 !important;
+  color: #edf4ff !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] h3 {
+  color: #f1f5f9 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] > p {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .bg-blue-100 {
+  background-color: #17345a !important;
+  color: #dbeafe !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 {
+  background-color: #111e30 !important;
+  border-color: #2a3b53 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 .text-slate-500 {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 a[href*="wa.me"] {
+  color: #ffffff !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 a[href^="/access"] {
+  background-color: #132137 !important;
+  color: #edf4ff !important;
+  border-color: #3a4d68 !important;
+}
+
+
+/* Homepage CBT sandbox: the feedback cards intentionally use light-theme
+   emerald/amber surfaces. Recolor only these feedback states in dark mode. */
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-emerald-50/90"][class*="border-emerald-200"] {
+  background-color: #10352f !important;
+  border-color: #236454 !important;
+  color: #d1fae5 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-emerald-50/90"][class*="border-emerald-200"] .text-slate-700 {
+  color: #d1e7df !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-emerald-50/90"][class*="border-emerald-200"] .text-slate-500 {
+  color: #a8c9bc !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-amber-50/90"][class*="border-amber-200"] {
+  background-color: #3a2b12 !important;
+  border-color: #795b24 !important;
+  color: #ffedc2 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-amber-50/90"][class*="border-amber-200"] .text-slate-700 {
+  color: #f4dfb4 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-amber-50/90"][class*="border-amber-200"] .text-slate-500 {
+  color: #d7bc83 !important;
+}

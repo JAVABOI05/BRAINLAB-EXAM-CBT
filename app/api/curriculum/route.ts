@@ -36,10 +36,14 @@ export async function GET(request: Request) {
       .select("id, subject_id, title, slug, description, subtopics, learning_objectives, recommended_texts, order_index, is_published")
       .order("order_index", { ascending: true });
 
-    const merged: SyllabusSubject[] = dbSubjects.map((s: any) => {
-      const relatedTopics = (dbTopics || [])
-        .filter((t: any) => t.subject_id === s.id)
-        .map((t: any) => ({
+    type DbTopic = { id: string; subject_id: string; title: string; slug: string; description: string | null; subtopics: unknown; learning_objectives: unknown; recommended_texts: unknown; order_index: number | null; is_published: boolean };
+    type DbSubject = { id: string; name: string; slug: string; description: string | null; syllabus_overview: string | null; general_objectives: unknown; recommended_textbooks: unknown; is_published: boolean };
+    const subjects = dbSubjects as unknown as DbSubject[];
+    const topics = (dbTopics || []) as unknown as DbTopic[];
+    const merged: SyllabusSubject[] = subjects.map((s) => {
+      const relatedTopics = topics
+        .filter((t) => t.subject_id === s.id)
+        .map((t) => ({
           id: t.id,
           subject_id: t.subject_id,
           title: t.title,
@@ -56,7 +60,7 @@ export async function GET(request: Request) {
         id: s.id,
         name: s.name,
         slug: s.slug,
-        category: (s.name.includes("English") ? "Compulsory" : "Science") as any,
+        category: (s.name.includes("English") ? "Compulsory" : "Science"),
         description: s.description || "",
         syllabus_overview: s.syllabus_overview || "",
         general_objectives: Array.isArray(s.general_objectives) ? s.general_objectives : [],
@@ -71,8 +75,8 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ success: true, subjects: merged });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message, subjects: DEFAULT_JAMB_SYLLABUS }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : "Unexpected error", subjects: DEFAULT_JAMB_SYLLABUS }, { status: 500 });
   }
 }
 
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
       message: `Curriculum updated successfully for ${subjectSlug}`,
       topic,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : "Unexpected error" }, { status: 500 });
   }
 }

@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // 1. Fetch candidate list according to target audience
-    let query = supabase.from("profiles").select("id, email, full_name");
+    const query = supabase.from("profiles").select("id, email, full_name");
     const { data: candidates, error: candidateErr } = await query.limit(500);
 
     if (candidateErr) {

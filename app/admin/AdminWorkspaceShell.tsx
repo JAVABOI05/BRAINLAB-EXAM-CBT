@@ -363,11 +363,6 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
   const [collapsed, setCollapsed] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
-  // Prevent duplicate rendering if already nested inside an AdminWorkspaceShell
-  if (isInsideShell) {
-    return <>{children}</>;
-  }
-
   // Restore collapsed preferences from localStorage
   useEffect(() => {
     try {
@@ -469,6 +464,11 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
 
   const currentLabel = routeLabels[pathname] ?? pathname.split("/").filter(Boolean).pop()?.replaceAll("-", " ") ?? "Workspace";
   const roleLabel = user.role.replaceAll("_", " ");
+
+  // All hooks run before this guard to preserve React hook ordering.
+  if (isInsideShell) {
+    return <>{children}</>;
+  }
 
   return (
     <AdminShellContext.Provider value={true}>

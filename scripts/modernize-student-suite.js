@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- These maintenance scripts use Node's CommonJS runtime. */
 const fs = require('fs');
 
 function updateLeaderboard() {

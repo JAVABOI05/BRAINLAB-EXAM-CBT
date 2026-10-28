@@ -530,7 +530,7 @@ export default function ClassroomMaterialImporter({
               <div className="rounded-2xl border border-blue-500/20 bg-blue-950/20 p-4 text-xs text-blue-200 leading-relaxed">
                 <span className="font-bold">💡 How to import your PowerPoint slides:</span>
                 <p className="mt-1">
-                  In PowerPoint, select <code className="bg-blue-900/40 px-1 py-0.5 rounded font-mono">File → Export → Change File Type → PNG or JPEG</code>, then select <em>"All Slides"</em>. Select those exported slide images below to load each slide directly onto your interactive whiteboard.
+                  In PowerPoint, select <code className="bg-blue-900/40 px-1 py-0.5 rounded font-mono">File → Export → Change File Type → PNG or JPEG</code>, then select <em>&quot;All Slides&quot;</em>. Select those exported slide images below to load each slide directly onto your interactive whiteboard.
                 </p>
               </div>
 
