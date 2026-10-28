@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,18 +10,18 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // Verify admin or teacher role
-    const { data: adminRole } = await supabase
-      .from("admin_user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // Resolve roles through the same authoritative sources used by admin authentication.
+    // The browser sends a verified Supabase access token; fall back to server-side table
+    // lookup when the role RPC is unavailable or does not return an allowed classroom role.
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const allowedRoles = ["super_admin", "platform_admin", "teacher", "cbt_admin", "ai_learning_admin"];
+    let resolvedRole = await resolveAdminRole(user.id, bearerToken);
 
-    const isAuthorized =
-      adminRole &&
-      ["super_admin", "platform_admin", "teacher", "cbt_admin", "ai_learning_admin"].includes(
-        adminRole.role
-      );
+    if (!allowedRoles.includes(resolvedRole ?? "")) {
+      resolvedRole = await resolveAdminRole(user.id);
+    }
+
+    const isAuthorized = allowedRoles.includes(resolvedRole ?? "");
 
     if (!isAuthorized) {
       return NextResponse.json(
