@@ -1193,20 +1193,38 @@ button:disabled,
   background-color: #192940 !important;
 }
 
-/* Access Code Support: keep this specific white card readable in dark mode. */
-:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md {
+/* Access Code Support: target the actual gradient card and its nested white desk. */
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] {
+  background-image: none !important;
   background-color: #0d1727 !important;
+  border-color: #2a3b53 !important;
   color: #edf4ff !important;
-  border: 1px solid #2a3b53 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md h3,
-:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md .text-gray-800 {
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] h3 {
   color: #f1f5f9 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md .bg-green-50 {
-  background-color: #10352f !important;
-  border: 1px solid #236454 !important;
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] > p {
+  color: #b0bfd3 !important;
 }
-:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.bg-white.p-6.shadow-md .text-gray-600 {
-  color: #c2d0df !important;
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .bg-blue-100 {
+  background-color: #17345a !important;
+  color: #dbeafe !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 {
+  background-color: #111e30 !important;
+  border-color: #2a3b53 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 .text-slate-500 {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 a[href*="wa.me"] {
+  color: #ffffff !important;
+}
+:is(html[data-theme="dark"], html.dark) .public-surface .rounded-3xl.border-blue-200[class*="bg-gradient-to-br"] .rounded-2xl.bg-white.p-5 a[href^="/access"] {
+  background-color: #132137 !important;
+  color: #edf4ff !important;
+  border-color: #3a4d68 !important;
 }
