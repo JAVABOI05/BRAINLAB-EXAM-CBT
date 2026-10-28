@@ -173,32 +173,6 @@ export default function InstitutionalOperationsPage() {
   const [flaggedQueue, setFlaggedQueue] = useState<FlaggedItem[]>(INITIAL_FLAGGED);
   const [resolvedCount, setResolvedCount] = useState(188);
 
-  useEffect(() => {
-    async function init() {
-      try {
-        const admin = await getAdminSession();
-        if (!admin) {
-          router.replace("/admin/login?reason=session");
-          return;
-        }
-        setAdminUser(admin);
-
-        // Fetch live metrics from database if available
-        const { data: dbCodes } = await supabase.from("access_codes").select("id", { count: "exact", head: true });
-        const { data: dbQuestions } = await supabase.from("questions").select("id", { count: "exact", head: true });
-        if (dbQuestions) {
-          // Keep health synchronized
-        }
-        await fetchLiveSessions();
-      } catch {
-        router.replace("/admin/login?reason=error");
-      } finally {
-        setLoading(false);
-      }
-    }
-    void init();
-  }, [router]);
-
   type LiveSession = { id: string; candidate_name?: string | null; access_code?: string | null; subject?: string | null; status?: string | null; time_left_formatted?: string | null; tab_switch_count?: number | null; started_at: string };
 
   // Real Live Session Fetcher
@@ -228,6 +202,29 @@ export default function InstitutionalOperationsPage() {
       // Fallback to initial
     }
   }, []);
+
+
+  useEffect(() => {
+    async function init() {
+      try {
+        const admin = await getAdminSession();
+        if (!admin) {
+          router.replace("/admin/login?reason=session");
+          return;
+        }
+        setAdminUser(admin);
+
+        // Fetch live metrics from database if available
+        await fetchLiveSessions();
+      } catch {
+        router.replace("/admin/login?reason=error");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void init();
+  }, [router]);
+
 
   // Session Proctoring Real API Actions
   const handleForceSync = useCallback(async (sessionId: string) => {
