@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Legacy Node.js maintenance script uses CommonJS. */
 const fs = require('fs');
 
 function updateDashboard() {
