@@ -1,16 +1,13 @@
 "use client";
-
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { toast } from "../lib/toast";
-
 interface LearningStreakProps {
   currentStreak?: number;
   longestStreak?: number;
   lastActiveDate?: string | null;
   compact?: boolean;
 }
-
 const subscribeToLocalStorage = (callback: () => void) => {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", callback);
@@ -20,7 +17,6 @@ const subscribeToLocalStorage = (callback: () => void) => {
     window.removeEventListener("brainlab-local-storage", callback);
   };
 };
-
 const getLastActiveDateSnapshot = () =>
   typeof window === "undefined" ? "" : localStorage.getItem("brainlab_last_active_date") || "";
 const getLastActiveDateServerSnapshot = () => "";
@@ -30,7 +26,6 @@ const getStreakCountServerSnapshot = () => 0;
 const getReminderSnapshot = () =>
   typeof window === "undefined" ? "" : localStorage.getItem("brainlab_streak_reminder") || "";
 const getReminderServerSnapshot = () => "";
-
 export default function LearningStreakCard({
   currentStreak = 0,
   longestStreak = 0,
@@ -68,12 +63,10 @@ export default function LearningStreakCard({
     ? new Date(effectiveLastActiveDate).toISOString().split("T")[0] === todayStr
     : false;
   const [showReminderSettings, setShowReminderSettings] = useState(false);
-
   function saveReminderPreference(enabled: boolean, time: string) {
     localStorage.setItem("brainlab_streak_reminder", JSON.stringify({ enabled, time }));
     window.dispatchEvent(new Event("brainlab-local-storage"));
   }
-
   async function handleToggleReminder() {
     if (!reminderEnabled) {
       if (typeof window !== "undefined" && "Notification" in window) {
@@ -86,24 +79,23 @@ export default function LearningStreakCard({
         }
       }
       saveReminderPreference(true, reminderTime);
-      toast.success(`Streak reminder set for ${reminderTime} daily! We'll help protect your flame 🔥.`);
+      toast.success(`Streak reminder set for ${reminderTime} daily! We'll help protect your streak.`);
     } else {
       saveReminderPreference(false, reminderTime);
     }
   }
-
   function handleSaveReminderTime(time: string) {
     saveReminderPreference(reminderEnabled, time);
   }
-
   // Generate 7-day activity pills for the current week
   const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const currentDayIndex = (new Date().getDay() + 6) % 7; // Monday as 0
-
   if (compact) {
     return (
       <div className="flex items-center gap-2 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/80 dark:bg-amber-950/30 px-3.5 py-2 shadow-sm">
-        <span className="text-xl animate-bounce" aria-hidden="true">🔥</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0" aria-hidden="true">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+        </svg>
         <div>
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-black text-amber-950 dark:text-amber-200">
@@ -123,13 +115,12 @@ export default function LearningStreakCard({
       </div>
     );
   }
-
   return (
     <div className="rounded-3xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-white dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-900 p-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-3xl shadow-md shadow-orange-500/20 text-white">
-            🔥
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-md shadow-orange-500/20 text-white">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -138,11 +129,11 @@ export default function LearningStreakCard({
               </span>
               {hasPracticedToday ? (
                 <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  ✓ Extended Today
+                  Extended Today
                 </span>
               ) : (
                 <span className="rounded-full bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 text-[10px] font-bold text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 animate-pulse">
-                  ⚠️ At Risk
+                  At Risk
                 </span>
               )}
             </div>
@@ -154,7 +145,6 @@ export default function LearningStreakCard({
             </p>
           </div>
         </div>
-
         {/* Streak action buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
@@ -162,9 +152,8 @@ export default function LearningStreakCard({
             onClick={() => setShowReminderSettings(!showReminderSettings)}
             className="rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-bold text-amber-900 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-slate-700 transition active:scale-95 shadow-sm"
           >
-            ⏰ {reminderEnabled ? "Alarm: " + reminderTime : "Set Streak Alarm"}
+            {reminderEnabled ? "Alarm: " + reminderTime : "Set Streak Alarm"}
           </button>
-
           <a
             href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m"
             target="_blank"
@@ -172,10 +161,8 @@ export default function LearningStreakCard({
             className="rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 px-3.5 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 transition active:scale-95 shadow-sm flex items-center gap-1.5"
             title="Receive streak alarms and live class links via WhatsApp"
           >
-            <span>💬</span>
             <span>WhatsApp Alerts</span>
           </a>
-
           <Link
             href="/challenge-arena"
             className="rounded-xl bg-[#012153] hover:bg-[#071c43] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 active:scale-95"
@@ -184,20 +171,17 @@ export default function LearningStreakCard({
           </Link>
         </div>
       </div>
-
       {/* 7-Day Week Dots */}
       <div className="mt-5 border-t border-amber-100 dark:border-slate-800 pt-4">
         <div className="flex justify-between items-center text-xs mb-2">
           <span className="font-bold text-slate-700 dark:text-slate-300">This Week&apos;s Activity</span>
           <span className="text-[11px] text-slate-500 dark:text-slate-400">Practise daily to maintain multiplier bonus</span>
         </div>
-
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center">
           {daysOfWeek.map((day, idx) => {
             const isToday = idx === currentDayIndex;
             const isPast = idx < currentDayIndex;
             const activeDot = isToday ? hasPracticedToday : isPast;
-
             return (
               <div
                 key={day}
@@ -210,15 +194,14 @@ export default function LearningStreakCard({
                 <span className="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
                   {day}
                 </span>
-                <span className="mt-1 block text-base" aria-hidden="true">
-                  {activeDot ? "🔥" : isToday ? "⏳" : "⚪"}
+                <span className="mt-1 flex items-center justify-center h-5" aria-hidden="true">
+                  {activeDot ? (<span className="inline-block h-3.5 w-3.5 rounded-full bg-amber-500 shadow-xs shadow-amber-500/50" />) : isToday ? (<span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-dashed border-amber-500 bg-amber-100 dark:bg-amber-900/40" />) : (<span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-700" />)}
                 </span>
               </div>
             );
           })}
         </div>
       </div>
-
       {/* Streak Reminder Settings Panel */}
       {showReminderSettings && (
         <div className="mt-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-white dark:bg-slate-950 p-4 shadow-sm text-xs">
@@ -231,11 +214,9 @@ export default function LearningStreakCard({
               ✕
             </button>
           </div>
-
           <p className="mt-1 text-slate-600 dark:text-slate-400 text-[11px]">
             We will dispatch an alert to your browser if you haven&apos;t completed a quiz by your chosen time.
           </p>
-
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800 dark:text-slate-200">
               <input
@@ -246,7 +227,6 @@ export default function LearningStreakCard({
               />
               <span>Enable daily alarm reminder</span>
             </label>
-
             {reminderEnabled && (
               <div className="flex items-center gap-2">
                 <span className="text-slate-500">Alert Time:</span>
@@ -259,12 +239,10 @@ export default function LearningStreakCard({
               </div>
             )}
           </div>
-
           {/* WhatsApp Study Alerts Box */}
           <div className="mt-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
             <div>
               <p className="font-bold text-emerald-950 dark:text-emerald-200 flex items-center gap-1.5">
-                <span>💬</span>
                 <span>Get Instant WhatsApp Streak &amp; Class Alerts</span>
               </p>
               <p className="text-[11px] text-emerald-800 dark:text-emerald-400 mt-0.5">
@@ -286,7 +264,7 @@ export default function LearningStreakCard({
                 rel="noopener noreferrer"
                 className="rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-bold px-2.5 py-1.5 text-[11px] hover:bg-emerald-50 transition"
               >
-                DM Desk 💬
+                DM Desk 
               </a>
             </div>
           </div>

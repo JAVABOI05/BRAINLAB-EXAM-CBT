@@ -217,7 +217,7 @@ export default function LearningResourcesPage() {
               <span className="text-blue-700 dark:text-cyan-400">Formula Sheets &amp; Guides</span>
             </nav>
             <h1 className="text-2xl sm:text-4xl font-black text-slate-950 dark:text-white flex items-center gap-3">
-              <span>📚 Learning Resources</span>
+              <span>Learning Resources</span>
               <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 border border-blue-200 dark:border-blue-800 px-3 py-0.5 text-xs font-bold text-blue-900 dark:text-cyan-300">
                 HIGH-YIELD CHEAT SHEETS
               </span>
@@ -232,13 +232,13 @@ export default function LearningResourcesPage() {
               href="/challenge-arena"
               className="inline-flex items-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-sm transition active:scale-95"
             >
-              <span>⚡</span> Test in Arena (2× XP)
+              Test in Arena (2× XP)
             </Link>
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition active:scale-95"
             >
-              <span>🖨️</span> Print / Save PDF
+              Print / Save PDF
             </button>
           </div>
         </div>
@@ -249,12 +249,12 @@ export default function LearningResourcesPage() {
             {/* Subject Tabs */}
             <div className="flex flex-wrap items-center gap-1.5">
               {[
-                { id: "all", label: "All Subjects", icon: "📖" },
-                { id: "Mathematics", label: "Mathematics", icon: "📐" },
-                { id: "Physics", label: "Physics", icon: "⚡" },
-                { id: "Chemistry", label: "Chemistry", icon: "🔬" },
-                { id: "Biology", label: "Biology", icon: "🌿" },
-                { id: "English", label: "English Language", icon: "✍️" },
+                { id: "all", label: "All Subjects" },
+                { id: "Mathematics", label: "Mathematics" },
+                { id: "Physics", label: "Physics" },
+                { id: "Chemistry", label: "Chemistry" },
+                { id: "Biology", label: "Biology" },
+                { id: "English", label: "English Language" },
               ].map((sub) => (
                 <button
                   key={sub.id}
@@ -265,7 +265,6 @@ export default function LearningResourcesPage() {
                       : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
-                  <span>{sub.icon}</span>
                   <span>{sub.label}</span>
                 </button>
               ))}
@@ -273,8 +272,8 @@ export default function LearningResourcesPage() {
 
             {/* Quick Search Input */}
             <div className="relative min-w-[260px]">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
-                🔍
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
               </span>
               <input
                 type="text"
@@ -334,13 +333,13 @@ export default function LearningResourcesPage() {
                       onClick={() => handleCopyFormula(card.id, card.formulaOrRule)}
                       className="absolute top-2.5 right-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 text-[11px] font-bold text-slate-300 hover:text-white transition active:scale-95 border border-slate-700"
                     >
-                      {isCopied ? "✓ Copied!" : "📋 Copy"}
+                      {isCopied ? "Copied!" : "Copy"}
                     </button>
                   </div>
 
                   {/* Exam Application Note */}
                   <div className="rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 p-3 text-xs leading-relaxed text-blue-950 dark:text-blue-200">
-                    <span className="font-bold text-blue-900 dark:text-cyan-300 mr-1">💡 Exam Tip:</span>
+                    <span className="font-bold text-blue-900 dark:text-cyan-300 mr-1">Exam Tip:</span>
                     <span>{card.examApplication}</span>
                   </div>
                 </div>

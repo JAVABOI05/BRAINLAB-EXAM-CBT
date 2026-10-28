@@ -9,13 +9,20 @@ import { supabase } from "../lib/supabase";
 import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
 import UserBadges from "./UserBadges";
 
-const NAV_LINKS = [
+interface NavLinkItem {
+  href: string;
+  label: string;
+  isLiveIndicator?: boolean;
+  badge?: string;
+}
+
+const NAV_LINKS: NavLinkItem[] = [
   { href: "/cbt", label: "CBT Practice" },
   { href: "/syllabus", label: "Syllabus" },
   { href: "/learn", label: "Curriculum" },
-  { href: "/classroom", label: "Live Classes", badge: "Live" },
-  { href: "/challenge-arena", label: "1v1 Arena" },
-  { href: "/resources", label: "Resources", badge: "Formulas" },
+  { href: "/classroom", label: "Live Classes", isLiveIndicator: true },
+  { href: "/challenge-arena", label: "Challenge Arena" },
+  { href: "/resources", label: "Resources" },
 ];
 
 function displayName(user: User) {
@@ -36,8 +43,34 @@ export default function BrandHeader() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [checkingSession, setCheckingSession] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+  const [isLiveClassOn, setIsLiveClassOn] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Poll for active live classes to toggle indicator from red to green
+  useEffect(() => {
+    let isMounted = true;
+    const checkLiveClass = async () => {
+      try {
+        const res = await fetch("/api/classroom/classes?status=live");
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.success && Array.isArray(data.classes)) {
+            setIsLiveClassOn(data.classes.length > 0);
+          }
+        }
+      } catch {
+        // Silently keep default
+      }
+    };
+
+    void checkLiveClass();
+    const interval = setInterval(checkLiveClass, 60_000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -213,15 +246,20 @@ export default function BrandHeader() {
                 }`}
               >
                 <span>{link.label}</span>
-                {link.badge && (
+                {link.isLiveIndicator && (
                   <span
-                    className={`rounded-full px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider ${
-                      link.badge === "Live"
-                        ? "bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 animate-pulse"
-                        : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-cyan-300"
-                    }`}
+                    className="relative flex h-2 w-2 items-center justify-center shrink-0 ml-0.5"
+                    title={isLiveClassOn ? "Live Class is currently ON" : "No live class currently on"}
+                    aria-label={isLiveClassOn ? "Live class on" : "No live class"}
                   >
-                    {link.badge}
+                    {isLiveClassOn && (
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    )}
+                    <span
+                      className={`relative inline-flex h-2 w-2 rounded-full ${
+                        isLiveClassOn ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-rose-500"
+                      }`}
+                    />
                   </span>
                 )}
               </Link>
@@ -430,7 +468,22 @@ export default function BrandHeader() {
                       : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                   }`}
                 >
-                  <span>{link.label}</span>
+                  <span className="flex items-center gap-2">
+                    {link.label}
+                    {link.isLiveIndicator && (
+                      <span className="relative flex h-2 w-2 items-center justify-center">
+                        {isLiveClassOn && (
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        )}
+                        <span
+                          className={`relative inline-flex h-2 w-2 rounded-full ${
+                            isLiveClassOn ? "bg-emerald-500" : "bg-rose-500"
+                          }`}
+                          title={isLiveClassOn ? "Live class in session" : "No live class active"}
+                        />
+                      </span>
+                    )}
+                  </span>
                   {link.badge && (
                     <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black uppercase text-blue-800 dark:bg-blue-900 dark:text-cyan-300">
                       {link.badge}

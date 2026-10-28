@@ -322,12 +322,11 @@ export default function SelfPracticePage() {
                 disabled={hintLoading[String(q.id)]}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition disabled:opacity-50"
               >
-                <span>💡</span>
                 <span>{hintLoading[String(q.id)] ? "Generating Clue…" : "Need a Hint? (No Answer Spoilers)"}</span>
               </button>
             ) : (
               <div className="w-full rounded-xl border border-amber-200 bg-amber-50/90 p-3 text-xs leading-5 text-amber-950">
-                <span className="font-extrabold block text-amber-900 mb-1">💡 AI Tutor Clue:</span>
+                <span className="font-extrabold block text-amber-900 mb-1">AI Tutor Clue:</span>
                 {activeHints[String(q.id)]}
               </div>
             )}

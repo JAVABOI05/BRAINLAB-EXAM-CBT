@@ -39,7 +39,7 @@ const CHALLENGE_MODES: ChallengeMode[] = [
     id: "daily_blitz",
     title: "Daily 5-Minute Blitz",
     subtitle: "10 high-yield questions across all major subjects. Defend your streak with 2x XP multiplier!",
-    icon: "⚡",
+    icon: "daily",
     badge: "2× XP BONUS",
     durationSeconds: 300,
     xpMultiplier: 2.0,
@@ -50,7 +50,7 @@ const CHALLENGE_MODES: ChallengeMode[] = [
     id: "math_sprint",
     title: "Mathematics Speed Run",
     subtitle: "Algebra, calculus, logarithms, and geometry fast drills.",
-    icon: "📐",
+    icon: "math",
     badge: "1.5× XP",
     durationSeconds: 360,
     xpMultiplier: 1.5,
@@ -61,7 +61,7 @@ const CHALLENGE_MODES: ChallengeMode[] = [
     id: "english_sprint",
     title: "English Lexis & Structure",
     subtitle: "Grammar concord, antonyms, synonyms, and idiom master sprint.",
-    icon: "📖",
+    icon: "english",
     badge: "1.5× XP",
     durationSeconds: 300,
     xpMultiplier: 1.5,
@@ -72,7 +72,7 @@ const CHALLENGE_MODES: ChallengeMode[] = [
     id: "science_sprint",
     title: "Science Triple Threat",
     subtitle: "Rapid-fire questions blending Biology, Chemistry, and Physics.",
-    icon: "🔬",
+    icon: "science",
     badge: "1.5× XP",
     durationSeconds: 360,
     xpMultiplier: 1.5,
@@ -83,7 +83,7 @@ const CHALLENGE_MODES: ChallengeMode[] = [
     id: "arts_commercial_sprint",
     title: "Commercial & Social Sciences",
     subtitle: "Economics, Government, and Commerce key exam concepts.",
-    icon: "🏛️",
+    icon: "arts",
     badge: "1.5× XP",
     durationSeconds: 300,
     xpMultiplier: 1.5,
@@ -91,6 +91,57 @@ const CHALLENGE_MODES: ChallengeMode[] = [
     subjects: ["Economics", "Government"],
   },
 ];
+
+function renderModeIcon(icon: string) {
+  switch (icon) {
+    case "daily":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    case "math":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+          <line x1="19" y1="5" x2="5" y2="19" />
+          <circle cx="6.5" cy="6.5" r="2.5" />
+          <circle cx="17.5" cy="17.5" r="2.5" />
+        </svg>
+      );
+    case "english":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </svg>
+      );
+    case "science":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+          <path d="M10 2v7.31L4.35 18.5A2 2 0 0 0 6.07 22h11.86a2 2 0 0 0 1.72-3.5L14 9.31V2" />
+          <line x1="8.5" y1="2" x2="15.5" y2="2" />
+          <line x1="6" y1="17" x2="18" y2="17" />
+        </svg>
+      );
+    case "arts":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500">
+          <line x1="3" y1="21" x2="21" y2="21" />
+          <line x1="6" y1="18" x2="6" y2="11" />
+          <line x1="10" y1="18" x2="10" y2="11" />
+          <line x1="14" y1="18" x2="14" y2="11" />
+          <line x1="18" y1="18" x2="18" y2="11" />
+          <polygon points="12 3 2 10 22 10 12 3" />
+        </svg>
+      );
+    default:
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      );
+  }
+}
 
 const QUESTION_BANK: ChallengeQuestion[] = [
   // Mathematics
@@ -576,12 +627,14 @@ export default function ChallengeArenaPage() {
                     </span>
                   </button>
                   <span className="text-xs text-slate-300">
-                    ⏱️ 300 seconds · 10 questions · Immediate corrections
+                    300 seconds · 10 questions · Immediate corrections
                   </span>
                 </div>
               </div>
-              <div className="absolute -right-8 -bottom-10 opacity-15 text-[180px] select-none pointer-events-none" aria-hidden="true">
-                ⚡
+              <div className="absolute -right-8 -bottom-10 opacity-10 text-white select-none pointer-events-none" aria-hidden="true">
+                <svg width="220" height="220" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
               </div>
             </section>
 
@@ -606,8 +659,8 @@ export default function ChallengeArenaPage() {
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-2xl">
-                          {mode.icon}
+                        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/60">
+                          {renderModeIcon(mode.icon)}
                         </span>
                         <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-[11px] font-black text-blue-800 dark:text-blue-300">
                           {mode.badge}
@@ -620,9 +673,9 @@ export default function ChallengeArenaPage() {
                         {mode.subtitle}
                       </p>
                       <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                        <span>⏱️ {mode.durationSeconds / 60} mins</span>
+                        <span>{mode.durationSeconds / 60} mins</span>
                         <span>•</span>
-                        <span>📋 {mode.questionCount} Questions</span>
+                        <span>{mode.questionCount} Questions</span>
                       </div>
                     </div>
 
@@ -793,9 +846,32 @@ export default function ChallengeArenaPage() {
             {/* Celebration Scorecard */}
             <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
               <div className="bg-gradient-to-r from-[#00112b] via-[#012153] to-blue-900 p-6 sm:p-8 text-white text-center space-y-4">
-                <span className="text-4xl" aria-hidden="true">
-                  {scoreData.percentage >= 80 ? "🏆" : scoreData.percentage >= 50 ? "🎉" : "💪"}
-                </span>
+                <div className="flex justify-center" aria-hidden="true">
+                  {scoreData.percentage >= 80 ? (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/20 text-amber-400 border border-amber-400/40">
+                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                        <path d="M4 22h16" />
+                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                      </svg>
+                    </div>
+                  ) : scoreData.percentage >= 50 ? (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-400/20 text-cyan-300 border border-cyan-400/40">
+                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/20 text-emerald-400 border border-emerald-400/40">
+                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
                 <h2 className="text-2xl sm:text-3xl font-black">
                   {scoreData.percentage >= 80
                     ? "Magnificent Sprint!"
@@ -819,8 +895,8 @@ export default function ChallengeArenaPage() {
                   </div>
                   <div className="h-10 w-px bg-white/20" />
                   <div className="text-center">
-                    <p className="text-3xl sm:text-4xl font-black text-orange-400 flex items-center justify-center gap-1">
-                      <span>🔥</span>
+                    <p className="text-3xl sm:text-4xl font-black text-orange-400 flex items-center justify-center gap-1.5">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-orange-400" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>
                       <span>{scoreData.streakDays}</span>
                     </p>
                     <p className="text-xs uppercase font-extrabold text-slate-300">Day Streak</p>
@@ -842,13 +918,13 @@ export default function ChallengeArenaPage() {
                   }}
                   className="rounded-xl bg-[#012153] hover:bg-blue-900 px-5 py-3 text-xs font-bold text-white transition active:scale-95 shadow-sm"
                 >
-                  ⚡ Take Another Challenge
+                  Take Another Challenge
                 </button>
                 <Link
                   href="/learning/achievements"
                   className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 px-5 py-3 text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-100 transition active:scale-95"
                 >
-                  🏅 View Badges &amp; Streak Hub →
+                  View Badges &amp; Streak Hub →
                 </Link>
                 <Link
                   href="/dashboard"
@@ -862,7 +938,7 @@ export default function ChallengeArenaPage() {
             {/* Comprehensive Question Review */}
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>📝 Solution Explanations &amp; Review</span>
+                <span>Solution Explanations &amp; Review</span>
               </h3>
 
               <div className="space-y-4">
@@ -879,13 +955,13 @@ export default function ChallengeArenaPage() {
                           Question {idx + 1} ({q.subject})
                         </span>
                         <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-black ${
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-black ${
                             isCorrect
                               ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
                               : "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300"
                           }`}
                         >
-                          {isCorrect ? "✓ Correct" : "✗ Review Needed"}
+                          {isCorrect ? "Correct" : "Review Needed"}
                         </span>
                       </div>
 
@@ -918,7 +994,7 @@ export default function ChallengeArenaPage() {
                       {/* Explanation box */}
                       <div className="mt-3 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/80 p-3.5 text-xs sm:text-sm text-blue-950 dark:text-blue-200">
                         <span className="font-black block text-blue-800 dark:text-cyan-400 mb-1">
-                          💡 Solution Note:
+                          Solution Note:
                         </span>
                         <p className="leading-relaxed">{q.explanation}</p>
                       </div>

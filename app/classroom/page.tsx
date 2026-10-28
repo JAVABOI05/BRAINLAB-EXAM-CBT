@@ -118,7 +118,6 @@ export default function ClassroomLobbyPage() {
                 className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500 hover:text-slate-950 px-3 py-1.5 text-xs font-black text-amber-300 transition shadow-sm active:scale-95"
                 title="Switch back to Admin Portal"
               >
-                <span>👑</span>
                 <span>Admin Portal</span>
               </Link>
             )}
@@ -224,7 +223,6 @@ export default function ClassroomLobbyPage() {
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-950/40 hover:bg-blue-900/60 px-3.5 py-2.5 text-xs font-bold text-blue-200 transition"
                 title="Get a phone/browser notification when tutor starts live class"
               >
-                <span>🔔</span>
                 <span>Get Alerts</span>
               </button>
             </div>
@@ -238,7 +236,7 @@ export default function ClassroomLobbyPage() {
                   Instructor Tools
                 </span>
                 <span className="text-[11px] font-bold text-slate-400">
-                  {isStaff ? "👑 Tutor Access" : "🎓 Learner Preview"}
+                  {isStaff ? "Tutor Access" : "Learner Preview"}
                 </span>
               </div>
               <h3 className="mt-3 text-lg font-bold text-white">Whiteboard Studio &amp; Lesson Prep</h3>
@@ -251,7 +249,7 @@ export default function ClassroomLobbyPage() {
                 href="/classroom/studio"
                 className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2.5 text-xs font-bold text-amber-300 transition"
               >
-                Launch Whiteboard Studio 🎨
+                Launch Whiteboard Studio
               </Link>
             </div>
           </div>
@@ -262,11 +260,11 @@ export default function ClassroomLobbyPage() {
           Signed in as: <span className="font-semibold text-slate-400">{userEmail || "Learner"}</span>{" "}
           {isStaff ? (
             <span className="ml-1 inline-flex items-center gap-1 rounded bg-amber-500/20 text-amber-300 px-1.5 py-0.5 font-bold text-[10px]">
-              👑 Super Admin &amp; Staff Mode (Universal Access)
+              Super Admin &amp; Staff Mode (Universal Access)
             </span>
           ) : (
             <span className="ml-1 inline-flex items-center gap-1 rounded bg-blue-500/20 text-blue-300 px-1.5 py-0.5 font-bold text-[10px]">
-              🎓 Student Mode · Tier: {subscriptionInfo?.planName || "Free"}
+              Student Mode · Tier: {subscriptionInfo?.planName || "Free"}
             </span>
           )}
         </div>
