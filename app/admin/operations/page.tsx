@@ -223,7 +223,7 @@ export default function InstitutionalOperationsPage() {
       }
     }
     void init();
-  }, [router]);
+  }, [router, fetchLiveSessions]);
 
 
   // Session Proctoring Real API Actions
