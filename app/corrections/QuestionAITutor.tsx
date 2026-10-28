@@ -199,7 +199,8 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
       let accumulated = "";
       await streamAiTutor(
         {
-          mode: "explain",
+          mode: selectedStyle === "exam_traps" ? "distractor_traps" : "explain",
+          style: selectedStyle,
           forceRefresh: Boolean(forceRefresh),
           question: {
             id: item.id,
@@ -249,7 +250,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
 
     const promptText =
       customPrompt ||
-      `You are BrainLab Academy's AI Tutor. Provide a concise, step-by-step pedagogical breakdown under 180 words for this CBT exam question. Never output markdown hashtags (#) or asterisks (* or **). Write in clean plain text only using simple numbered steps (1., 2.).
+      `You are BrainLab Academy's expert CBT AI Tutor. Provide a complete, thorough, step-by-step pedagogical breakdown for this CBT exam question without cutting off. Explain all calculations and definitions in detail. Never output markdown hashtags (#) or asterisks (* or **). Write in clean plain text only using simple numbered steps (1., 2.) or bullet points.
 
 Subject: ${item.subject}
 Question #${questionNumber}: ${cleanedText}
@@ -265,10 +266,10 @@ Official Correct Answer: ${correctSelected}
 ${cleanedNote ? `Original Answer Key Note: ${cleanedNote}` : ""}
 
 Structure your response with clear plain-text numbered sections:
-1. Core Concept: State the fundamental principle or formula in simple terms.
-2. Step-by-Step Solution: Walk through the exact deduction that makes Option ${item.correctAnswer} correct.
-${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${item.userAnswer} was tempting.` : ""}
-4. CBT Strategy: Give one practical rule to solve similar questions.`;
+1. Core Concept: State the fundamental principle or formula in simple, clear terms.
+2. Step-by-Step Solution: Walk through the exact deduction, formula, and calculation that makes Option ${item.correctAnswer} correct.
+${!item.isCorrect && item.userAnswer ? `3. Common Trap: Explain why Option ${item.userAnswer} was tempting and what blunder led to it.` : "3. Distractor Traps: Briefly explain what makes the other options alluring or why they are invalid."}
+4. CBT Strategy: Give one practical rule to solve similar questions fast in timed exams.`;
 
     try {
       const headers: Record<string, string> = {

@@ -119,16 +119,41 @@ export function isError(value: unknown): value is ApiError {
   return typeof value === "object" && value !== null && (value as { ok?: unknown }).ok === false;
 }
 
+let cachedPublicSettings: { data: PublicSettings; timestamp: number } | null = null;
+const SETTINGS_CACHE_TTL_MS = 3 * 60 * 1000;
+
 export async function getPublicSettings(): Promise<PublicSettings | null> {
+  // 1. In-memory fast cache
+  if (cachedPublicSettings && Date.now() - cachedPublicSettings.timestamp < SETTINGS_CACHE_TTL_MS) {
+    return cachedPublicSettings.data;
+  }
+
+  // 2. SessionStorage cache for instant transitions between pages
+  if (typeof window !== "undefined") {
+    try {
+      const stored = window.sessionStorage.getItem("brainlab_public_settings_cache");
+      if (stored) {
+        const parsed = JSON.parse(stored) as { data: PublicSettings; timestamp: number };
+        if (parsed?.data && Date.now() - parsed.timestamp < SETTINGS_CACHE_TTL_MS) {
+          cachedPublicSettings = parsed;
+          return parsed.data;
+        }
+      }
+    } catch {
+      // Ignore sessionStorage errors
+    }
+  }
+
   let rpcRes: Partial<PublicSettings> | null = null;
   try {
     const res = await call<PublicSettings>("get_public_settings");
     if (!isError(res) && res) rpcRes = res;
   } catch {}
 
+  let resolved: PublicSettings;
   try {
     const [examSettings, flags] = await Promise.all([getExamSettings(), getFeatureFlags()]);
-    return {
+    resolved = {
       mock_enabled: rpcRes?.mock_enabled ?? flags.mock_exams,
       calculator_enabled: (rpcRes?.calculator_enabled ?? flags.calculator_enabled) !== false,
       show_results: rpcRes?.show_results ?? examSettings.show_results_immediately,
@@ -143,7 +168,7 @@ export async function getPublicSettings(): Promise<PublicSettings | null> {
       chief_proctor_title: examSettings.chief_proctor_title || "Chief Examination Proctor",
     };
   } catch {
-    return {
+    resolved = {
       mock_enabled: rpcRes?.mock_enabled ?? true,
       calculator_enabled: (rpcRes?.calculator_enabled) !== false,
       show_results: rpcRes?.show_results ?? true,
@@ -158,6 +183,18 @@ export async function getPublicSettings(): Promise<PublicSettings | null> {
       chief_proctor_title: "Chief Examination Proctor",
     };
   }
+
+  // Cache resolved settings
+  cachedPublicSettings = { data: resolved, timestamp: Date.now() };
+  if (typeof window !== "undefined") {
+    try {
+      window.sessionStorage.setItem("brainlab_public_settings_cache", JSON.stringify(cachedPublicSettings));
+    } catch {
+      // Ignore quota errors
+    }
+  }
+
+  return resolved;
 }
 
 export async function checkAccessCode(code: string, phone: string) {

@@ -61,7 +61,7 @@ export function cleanAIResponse(raw: string): string {
  * excessive prompt injection, or huge cost spikes.
  */
 export const MAX_CANDIDATE_INPUT_CHARS = 300;
-export const MAX_AI_OUTPUT_TOKENS = 350;
+export const MAX_AI_OUTPUT_TOKENS = 1200;
 
 /**
  * Strips trailing source-metadata tags like "— Set 16", "– Set 7", or "- Set 24"

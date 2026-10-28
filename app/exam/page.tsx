@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
 import { queueExamSubmission, queueProgress } from "../lib/offlineSync";
 import FloatingCalculator from "../components/FloatingCalculator";
+import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import { cleanQuestionText } from "../lib/cleanText";
 import { recordLearningActivity } from "../lib/gamification";
 import { securePurgeExamSession } from "../lib/clientCrypto";
@@ -72,6 +73,8 @@ function highlightPassageText(text: string, query: string): React.ReactNode {
 
 export default function ExamPage() {
   const router = useRouter();
+  const { resolvedTheme, setAppearance } = useLearnerTheme();
+  const toggleTheme = () => setAppearance(resolvedTheme === "dark" ? "light" : "dark");
 
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [electiveSubject, setElectiveSubject] = useState<ElectiveSubject | "">(
@@ -160,7 +163,7 @@ export default function ExamPage() {
       if (!settings) { setError("Could not load exam settings. Check your connection and refresh the page."); return; }
       const duration = settings.exam_duration > 0 ? settings.exam_duration : DEFAULT_EXAM_DURATION;
       setExamDuration(duration); setTimeLeft(duration);
-      setCalculatorEnabled(settings?.calculator_enabled !== false); setMockEnabled(settings.mock_enabled);
+      setCalculatorEnabled(true); setMockEnabled(settings.mock_enabled);
       setShowMarksInExam(settings.show_marks_in_exam !== false);
       setShowTopicInExam(settings.show_topic_in_exam !== false);
       if (!settings.mock_enabled) { router.push("/access"); return; }
@@ -662,14 +665,36 @@ export default function ExamPage() {
       <main className="exam-shell px-4 py-8">
         <div className="mx-auto max-w-2xl">
           <div className="exam-card p-8">
-            <div className="mb-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-5">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-5">
               <div className="flex items-center gap-3">
                 <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={120} height={102} className="h-11 w-auto dark:hidden" />
                 <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={120} height={102} className="h-11 w-auto hidden dark:block" />
               </div>
-              <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-3 py-1 text-xs font-black text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
-                Official Examination
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="flex items-center gap-1.5 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95"
+                  title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
+                  aria-label="Toggle Theme"
+                >
+                  <span>{resolvedTheme === "dark" ? "☀️" : "🌙"}</span>
+                  <span>{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCalculator((prev) => !prev)}
+                  className="flex items-center gap-1.5 rounded-full border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/60 px-3 py-1.5 text-xs font-bold text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 transition active:scale-95"
+                  title="Test On-Screen Calculator"
+                  aria-label="Test Calculator"
+                >
+                  <span>🧮</span>
+                  <span>Calculator</span>
+                </button>
+                <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-3 py-1.5 text-xs font-black text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
+                  Official Examination
+                </span>
+              </div>
             </div>
             <h1 className="mb-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               Candidate CBT Setup
@@ -776,33 +801,33 @@ export default function ExamPage() {
         </div>
       )}
       <div className="exam-topbar">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3.5 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-3">
               <div className="shrink-0">
-                <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={100} height={85} className="h-9 w-auto dark:hidden" />
-                <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={100} height={85} className="h-9 w-auto hidden dark:block" />
+                <Image src="/brainlab-logo.png" alt="BrainLab Academy" width={100} height={85} priority className="h-9 w-auto dark:hidden" />
+                <Image src="/brainlab-logo-light.png" alt="BrainLab Academy" width={100} height={85} priority className="h-9 w-auto hidden dark:block" />
               </div>
-              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-              <h1 className="text-lg font-black text-slate-900 dark:text-white">
+              <div className="h-8 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block" />
+              <h1 className="text-lg font-black text-slate-950 dark:text-white tracking-tight">
                 Brainlab CBT Exam
               </h1>
             </div>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-                Candidate: <span className="font-bold text-slate-900 dark:text-white">{candidate.name}</span> | Elective:{" "}
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{electiveSubject || candidate.subject}</span> | Answered: <span className="font-bold text-blue-700 dark:text-cyan-400">{answeredCount}</span> /{" "}
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-medium">
+                Candidate: <span className="font-extrabold text-slate-950 dark:text-white">{candidate.name}</span> | Elective:{" "}
+                <span className="font-bold text-slate-900 dark:text-slate-100">{electiveSubject || candidate.subject}</span> | Answered: <span className="font-black text-blue-700 dark:text-cyan-400">{answeredCount}</span> /{" "}
                 {totalQuestions}
               </p>
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
                   syncStatus === "offline"
-                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    ? "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-700"
                     : syncStatus === "error"
-                    ? "bg-red-100 text-red-800 border border-red-300"
+                    ? "bg-red-100 text-red-900 border border-red-300 dark:bg-red-950/70 dark:text-red-300 dark:border-red-700"
                     : syncStatus === "syncing"
-                    ? "bg-sky-100 text-sky-800 border border-sky-300 animate-pulse"
-                    : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                    ? "bg-sky-100 text-sky-900 border border-sky-300 dark:bg-sky-950/70 dark:text-sky-300 dark:border-sky-700 animate-pulse"
+                    : "bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-700"
                 }`}
               >
                 {syncStatus === "offline" ? (
@@ -846,30 +871,43 @@ export default function ExamPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <div className="exam-timer px-4 py-2">
-              <p className="text-xs uppercase tracking-wide opacity-90">
+              <p className="text-[10px] uppercase font-bold tracking-wider opacity-90">
                 Time Left
               </p>
-              <p className="text-xl font-bold font-mono">{formatTime(timeLeft)}</p>
+              <p className="text-xl font-black font-mono tracking-tight">{formatTime(timeLeft)}</p>
             </div>
 
-            {calculatorEnabled && (
-              <button
-                type="button"
-                onClick={() => setShowCalculator((prev) => !prev)}
-                className={`exam-calc-btn flex items-center gap-1.5 transition-all active:scale-95 ${
-                  showCalculator ? "ring-2 ring-sky-400 bg-slate-800" : "hover:opacity-90"
-                }`}
-                title="Toggle On-Screen Calculator"
-                aria-label="Toggle Calculator"
-              >
-                <span>🧮</span>
-                <span>{showCalculator ? "Hide Calculator" : "Calculator"}</span>
-              </button>
-            )}
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95 shadow-xs"
+              title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
+              aria-label="Toggle Theme"
+            >
+              <span>{resolvedTheme === "dark" ? "☀️" : "🌙"}</span>
+              <span className="hidden sm:inline">{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
+            </button>
 
-            <button onClick={() => handleSubmit()} className="exam-submit-btn hover:opacity-90 active:scale-95 transition-all">
+            {/* Always Available Calculator Button */}
+            <button
+              type="button"
+              onClick={() => setShowCalculator((prev) => !prev)}
+              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all active:scale-95 shadow-xs border ${
+                showCalculator
+                  ? "bg-sky-600 text-white border-sky-500 ring-2 ring-sky-300/40"
+                  : "bg-slate-900 text-white border-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 hover:bg-slate-800"
+              }`}
+              title="Toggle On-Screen Calculator"
+              aria-label="Toggle Calculator"
+            >
+              <span>🧮</span>
+              <span>{showCalculator ? "Hide Calc" : "Calculator"}</span>
+            </button>
+
+            <button onClick={() => handleSubmit()} className="exam-submit-btn hover:opacity-95 active:scale-95 transition-all">
               Submit Exam
             </button>
           </div>
@@ -1420,7 +1458,7 @@ export default function ExamPage() {
             <path d="M12 18h.01" />
             <path d="M8 18h.01" />
           </svg>
-          <span className="hidden sm:inline">{showCalculator ? "Hide Calculator" : "Calculator"}</span>
+          <span className="font-extrabold">{showCalculator ? "Hide Calc" : "Calculator"}</span>
         </button>
       )}
 

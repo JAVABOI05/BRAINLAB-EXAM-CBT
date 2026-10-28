@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
     const { text, model } = await generateGeminiContent(prompt, {
       model: requestedModel,
       systemInstruction: customSystemInstruction,
-      maxOutputTokens: 350,
+      maxOutputTokens: 1200,
     });
 
     // Save to fast in-memory prompt cache

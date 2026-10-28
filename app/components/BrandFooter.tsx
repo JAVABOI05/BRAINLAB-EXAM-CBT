@@ -124,26 +124,30 @@ function renderSocialIcon(platform: SocialLinkConfig["platform"], className = "h
 }
 
 /**
- * Returns stylish brand-specific color styles for prominent pills & badges
+ * Returns clean, uncolored monochrome style by default.
+ * ONLY illuminates with authentic brand colors when hovered upon!
  */
 function getPlatformPillStyle(platform: SocialLinkConfig["platform"]) {
+  const baseNeutral =
+    "border-slate-800/80 bg-slate-900/60 text-slate-400 shadow-sm";
+
   switch (platform) {
     case "whatsapp":
-      return "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-600 hover:border-emerald-400 hover:text-white shadow-emerald-950/30";
+      return `${baseNeutral} hover:border-[#25D366] hover:bg-[#25D366] hover:text-white hover:shadow-lg hover:shadow-emerald-950/50`;
     case "instagram":
-      return "border-pink-500/40 bg-pink-950/40 text-pink-300 hover:bg-gradient-to-r hover:from-purple-600 hover:via-pink-600 hover:to-amber-500 hover:border-pink-400 hover:text-white shadow-pink-950/30";
+      return `${baseNeutral} hover:border-transparent hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:text-white hover:shadow-lg hover:shadow-pink-950/50`;
     case "tiktok":
-      return "border-cyan-500/40 bg-slate-900 text-cyan-300 hover:bg-black hover:border-cyan-400 hover:text-white shadow-cyan-950/30";
+      return `${baseNeutral} hover:border-slate-500 hover:bg-black hover:text-white hover:shadow-lg hover:shadow-cyan-950/50`;
     case "youtube":
-      return "border-red-500/40 bg-red-950/40 text-red-300 hover:bg-red-600 hover:border-red-400 hover:text-white shadow-red-950/30";
+      return `${baseNeutral} hover:border-[#FF0000] hover:bg-[#FF0000] hover:text-white hover:shadow-lg hover:shadow-red-950/50`;
     case "facebook":
-      return "border-blue-500/40 bg-blue-950/40 text-blue-300 hover:bg-blue-600 hover:border-blue-400 hover:text-white shadow-blue-950/30";
+      return `${baseNeutral} hover:border-[#1877F2] hover:bg-[#1877F2] hover:text-white hover:shadow-lg hover:shadow-blue-950/50`;
     case "x":
-      return "border-slate-700 bg-slate-900 text-slate-200 hover:bg-white hover:border-white hover:text-black shadow-slate-950/30";
+      return `${baseNeutral} hover:border-white hover:bg-white hover:text-black hover:shadow-lg hover:shadow-slate-800/50`;
     case "linkedin":
-      return "border-sky-500/40 bg-sky-950/40 text-sky-300 hover:bg-sky-600 hover:border-sky-400 hover:text-white shadow-sky-950/30";
+      return `${baseNeutral} hover:border-[#0A66C2] hover:bg-[#0A66C2] hover:text-white hover:shadow-lg hover:shadow-sky-950/50`;
     default:
-      return "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white";
+      return `${baseNeutral} hover:border-slate-600 hover:bg-slate-800 hover:text-white`;
   }
 }
 
@@ -179,19 +183,19 @@ export default function BrandFooter() {
 
   return (
     <footer
-      className="border-t border-slate-800/80 bg-[#040e21] text-slate-300"
+      className="border-t border-slate-800/80 bg-[#040e21] text-slate-300 font-sans"
       aria-labelledby="footer-heading"
     >
       <h2 id="footer-heading" className="sr-only">
         BrainLab Academy Footer
       </h2>
 
-      {/* Main 4-Column Grid */}
-      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-14">
+      {/* Main 4-Column Balanced Grid */}
+      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           
-          {/* Column 1: Brand, Official Contact & Prominent Community Socials (lg:col-span-5) */}
-          <div className="lg:col-span-5 space-y-5">
+          {/* Column 1: Brand Identity, Direct Contact & Monochrome-to-Color Socials (lg:col-span-5) */}
+          <div className="lg:col-span-5 space-y-6">
             <Link
               href="/"
               className="group inline-flex items-center gap-3 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400"
@@ -215,17 +219,17 @@ export default function BrandFooter() {
               </div>
             </Link>
 
-            <p className="text-xs leading-relaxed text-slate-400 max-w-sm">
-              Nigeria&apos;s premier online CBT examination prep, live academic masterclasses, and AI study tutor for UTME, SSCE, and competitive examinations.
+            <p className="text-xs leading-relaxed text-slate-400 max-w-md">
+              Nigeria&apos;s premier online CBT examination platform, live academic masterclasses, and AI tutor for JAMB UTME, WAEC, NECO, and secondary examinations.
             </p>
 
-            {/* Direct Official Contact Pills */}
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-slate-300">
-                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-500/10 text-blue-400 shrink-0">
+            {/* Direct Official Contact Cards */}
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-blue-400 shrink-0">
                   <MailIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-400 text-[11px]">CBT Support:</span>
+                <span className="text-slate-400 text-[11px] font-semibold">CBT Support:</span>
                 <a
                   href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
                   className="font-medium text-slate-200 hover:text-cyan-300 transition-colors"
@@ -234,11 +238,11 @@ export default function BrandFooter() {
                 </a>
               </div>
 
-              <div className="flex items-center gap-2 text-slate-300">
-                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-400 shrink-0">
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-indigo-400 shrink-0">
                   <AcademicCapIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-400 text-[11px]">Office Desk:</span>
+                <span className="text-slate-400 text-[11px] font-semibold">Office Desk:</span>
                 <a
                   href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20and%20Partnership%20Inquiry`}
                   className="font-medium text-slate-200 hover:text-indigo-300 transition-colors"
@@ -247,11 +251,11 @@ export default function BrandFooter() {
                 </a>
               </div>
 
-              <div className="flex items-center gap-2 text-slate-300">
-                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400 shrink-0">
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-emerald-400 shrink-0">
                   <PhoneIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-400 text-[11px]">WhatsApp &amp; Call:</span>
+                <span className="text-slate-400 text-[11px] font-semibold">WhatsApp &amp; Call:</span>
                 <a
                   href={`https://wa.me/2349074310204?text=Hello%20BrainLab%20Academy,%20I%20need%20inquiry%20regarding%20CBT%20and%20classes.`}
                   target="_blank"
@@ -263,20 +267,20 @@ export default function BrandFooter() {
               </div>
             </div>
 
-            {/* PROMINENT OFFICIAL SOCIAL CHANNELS SECTION */}
+            {/* OFFICIAL SOCIAL CHANNELS (Uncolored by default, vibrant on hover) */}
             <div className="pt-2 space-y-3">
               <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-wider text-white">
-                  Connect &amp; Follow Official Channels
+                <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-200">
+                  Official Channels &amp; Community
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
-                Join our active candidate revision circles, daily UTME challenge drills, and instant announcements:
+                Join our revision communities for past questions drills, exam updates, and study circles:
               </p>
 
-              {/* High-visibility pill grid with branded platform styling */}
-              <div className="flex flex-wrap items-center gap-2" aria-label="Official Social Media Links">
+              {/* High-visibility pill grid with uncolored-until-hover styling */}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5" aria-label="Official Social Media Links">
                 {activeSocialLinks.map((social) => {
                   const icon = renderSocialIcon(social.platform, "h-4 w-4 shrink-0");
                   if (!icon) return null;
@@ -288,7 +292,7 @@ export default function BrandFooter() {
                       href={social.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 ${pillStyle}`}
+                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${pillStyle}`}
                       aria-label={`Follow BrainLab Academy on ${social.name}`}
                       title={social.name}
                     >
@@ -304,122 +308,127 @@ export default function BrandFooter() {
             <div className="pt-1">
               <a
                 href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 active:scale-95"
                 title={`Email ${supportEmail}`}
               >
                 <MailIcon className="h-3.5 w-3.5" />
-                <span>Open CBT Helpdesk</span>
+                <span>Contact CBT Helpdesk</span>
               </a>
             </div>
           </div>
 
-          {/* Column 2: CBT & Practice (lg:col-span-2) */}
-          <div className="lg:col-span-2 space-y-3">
+          {/* Column 2: CBT Examination (lg:col-span-2) */}
+          <div className="lg:col-span-2 space-y-3 sm:pt-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-white">
               CBT Practice
             </h3>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="hover:text-white transition-colors" href="/cbt">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/cbt">
                   JAMB UTME CBT
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/access">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/access">
                   Enter Access Code
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/self-practice">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/self-practice">
                   Self-Paced Practice
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/challenge-arena">
-                  1v1 Challenge Arena
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/challenge-arena">
+                  1v1 Academic Arena
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/leaderboard">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/leaderboard">
                   National Leaderboard
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/instructions">
+                  Exam Guidelines
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Learning & Masterclasses (lg:col-span-3) */}
-          <div className="lg:col-span-3 space-y-3">
+          {/* Column 3: Learning & Masterclasses (lg:col-span-2) */}
+          <div className="lg:col-span-2 space-y-3 sm:pt-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-white">
               Learning Hub
             </h3>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="hover:text-white transition-colors" href="/learn">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/learn">
                   Subject Curriculum
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/classroom">
-                  Live Masterclass Stage
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/classroom">
+                  Live Masterclasses
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/ai-learning">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/ai-learning">
                   AI Study Studio
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/learn?tab=timetable">
-                  Revision Timetable
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/syllabus">
+                  Official Syllabus
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/resources">
-                  Formula Sheets &amp; Notes
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/resources">
+                  Formulas &amp; Notes
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/learn?tab=timetable">
+                  Revision Timetable
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Support & Trust (lg:col-span-2) */}
-          <div className="lg:col-span-2 space-y-3">
+          {/* Column 4: Support & Institutional Trust (lg:col-span-3) */}
+          <div className="lg:col-span-3 space-y-3 sm:pt-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-white">
-              Support &amp; Trust
+              Institutional &amp; Support
             </h3>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="hover:text-white transition-colors" href="/support">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/support">
                   Help Centre &amp; FAQs
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/pricing">
-                  Plans &amp; Pricing
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/pricing">
+                  Subscription Plans
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/verify">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/verify">
                   Verify Certificate
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/about">
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/schools">
+                  For Schools &amp; Centres
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/about">
                   About Our Academy
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white transition-colors" href="/privacy">
-                  Privacy Notice
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white transition-colors" href="/terms">
-                  Terms of Use
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white transition-colors" href="/account/subscription/refund">
-                  Refund Policy
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/contact">
+                  Direct Contact Desk
                 </Link>
               </li>
             </ul>
@@ -428,13 +437,13 @@ export default function BrandFooter() {
         </div>
       </div>
 
-      {/* Modern High-Clarity Bottom Bar */}
+      {/* Modern High-Clarity Bottom Legal & Trust Bar */}
       <div className="border-t border-slate-800/80 bg-[#000814]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-xs text-slate-400 sm:px-8 sm:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-5 text-xs text-slate-400 sm:px-8 md:flex-row">
           
           {/* Copyright & Accreditations */}
-          <div className="text-center sm:text-left">
-            <span>&copy; {currentYear} {config.copyright_notice}</span>
+          <div className="text-center md:text-left">
+            <span className="font-medium">&copy; {currentYear} {config.copyright_notice}</span>
             <span className="hidden sm:inline text-slate-700 mx-2">&bull;</span>
             <span className="block sm:inline text-slate-500 text-[11px] mt-0.5 sm:mt-0">
               Lagos, Nigeria &bull; NDPA 2023 Compliant
@@ -442,48 +451,29 @@ export default function BrandFooter() {
           </div>
 
           {/* Essential Legal Links */}
-          <div className="flex items-center gap-3 text-xs text-slate-300 font-medium">
-            <Link href="/privacy" className="hover:text-cyan-400 transition-colors">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-400 font-medium">
+            <Link href="/privacy" className="hover:text-cyan-300 transition-colors">
               Privacy Notice
             </Link>
             <span className="text-slate-700" aria-hidden="true">&bull;</span>
-            <Link href="/terms" className="hover:text-cyan-400 transition-colors">
+            <Link href="/terms" className="hover:text-cyan-300 transition-colors">
               Terms of Use
             </Link>
             <span className="text-slate-700" aria-hidden="true">&bull;</span>
-            <Link href="/account/subscription/refund" className="hover:text-cyan-400 transition-colors">
+            <Link href="/account/subscription/refund" className="hover:text-cyan-300 transition-colors">
               Refund Policy
             </Link>
             <span className="text-slate-700" aria-hidden="true">&bull;</span>
-            <Link href="/contact" className="hover:text-cyan-400 transition-colors">
+            <Link href="/contact" className="hover:text-cyan-300 transition-colors">
               Contact Desk
             </Link>
           </div>
 
-          {/* Quick Circular Social Icons */}
-          {activeSocialLinks.length > 0 && (
-            <div className="flex items-center gap-2" aria-label="Social media quick links">
-              {activeSocialLinks.map((social) => {
-                const icon = renderSocialIcon(social.platform, "h-4 w-4");
-                if (!icon) return null;
-                const pillStyle = getPlatformPillStyle(social.platform);
-
-                return (
-                  <a
-                    key={social.platform}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex h-8 w-8 items-center justify-center rounded-xl border text-slate-300 transition-all duration-200 hover:scale-110 active:scale-95 ${pillStyle}`}
-                    aria-label={`BrainLab Academy on ${social.name}`}
-                    title={social.name}
-                  >
-                    {icon}
-                  </a>
-                );
-              })}
-            </div>
-          )}
+          {/* Clean Operational Status Badge */}
+          <div className="flex items-center gap-2 text-[11px] text-slate-400 font-semibold bg-slate-900/80 border border-slate-800/80 px-2.5 py-1 rounded-full">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Systems Online</span>
+          </div>
 
         </div>
       </div>

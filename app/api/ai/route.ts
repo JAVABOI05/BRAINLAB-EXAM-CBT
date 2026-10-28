@@ -57,11 +57,39 @@ function buildPrompt(body: JsonRecord, customSystemPrompt?: string): {
   system: string;
   messages: { role: "user" | "assistant"; content: string }[];
 } {
-  const system = customSystemPrompt?.trim() || "You are BrainLab Academy's AI Tutor. Provide clear, direct, and concise pedagogical explanations under 180 words. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean plain text only using simple numbered lists (1., 2.) or regular line breaks. Help students understand the concept and avoid common mistakes without long essays.";
+  const system =
+    customSystemPrompt?.trim() ||
+    "You are BrainLab Academy's expert CBT AI Tutor. Provide complete, thorough, and pedagogical step-by-step explanations for Nigerian examinations (JAMB UTME, WAEC, NECO). Walk through definitions, core formulas, worked calculations, and why the correct answer is logically deduced. Never cut off mid-explanation. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean, structured plain text using numbered lists (1., 2.) or bullet points (•) and clear line breaks.";
 
+  if (body.mode === "distractor_traps" || body.style === "exam_traps") {
+    const question = safeQuestion(body.question);
+    return {
+      system,
+      messages: [
+        {
+          role: "user",
+          content: `Perform a comprehensive Trap Analysis on this CBT exam question:\n\n${question}\n\nBreakdown structure:
+1. Core Examiner Intent: State the fundamental principle being tested and what concept examiners are probing.
+2. Distractor Trap Breakdown:
+   • Option A: What specific misconception, formula error, or temptation does this option represent?
+   • Option B: What specific examiner trap is engineered into this option?
+   • Option C: What specific examiner trap is engineered into this option?
+   • Option D: What specific examiner trap is engineered into this option?
+3. The Winning Clue: Give the exact shortcut, test-taking heuristic, or verification rule to spot and bypass this trap in future timed exams.`,
+        },
+      ],
+    };
+  }
 
   if (body.mode === "explain" || body.mode === "why_wrong") {
     const question = safeQuestion(body.question);
+    const styleInstruction =
+      body.style === "detailed"
+        ? "Provide a comprehensive, in-depth breakdown including background theory, complete worked calculations, formula derivations, and deep conceptual insight."
+        : body.style === "simple"
+        ? "Explain this in very simple, plain everyday language that is easy to understand without heavy jargon, followed by a direct 2-step solution."
+        : "Provide a complete, structured step-by-step explanation covering: 1. Core Principle or Formula, 2. Worked Step-by-Step Solution, 3. Why Distractors Fail, 4. Quick CBT Strategy.";
+
     return {
       system,
       messages: [
@@ -69,8 +97,8 @@ function buildPrompt(body: JsonRecord, customSystemPrompt?: string): {
           role: "user",
           content:
             body.mode === "explain"
-              ? `Please explain this question step-by-step:\n\n${question}`
-              : `Help the candidate understand where the reasoning gap happened between their selection and the correct answer:\n\n${question}`,
+              ? `Please explain this question completely without cutting off:\n\n${question}\n\n${styleInstruction}`
+              : `Help the candidate understand where the reasoning gap happened between their selection and the correct answer:\n\n${question}\n\n${styleInstruction}`,
         },
       ],
     };
@@ -194,7 +222,7 @@ export async function POST(request: NextRequest) {
   const questionId = qRecord?.id ? String(qRecord.id) : null;
   const isForceRefresh = Boolean(body.forceRefresh);
 
-  if (body.mode === "explain" && questionId && !isForceRefresh) {
+  if (body.mode === "explain" && questionId && !isForceRefresh && !body.style) {
     const qText = safeString(qRecord?.text, 2000);
     const qOptions = isRecord(qRecord?.options) ? (qRecord.options as Record<string, string>) : {};
     const qAns = safeString(qRecord?.correctAnswer, 4);
@@ -229,7 +257,7 @@ export async function POST(request: NextRequest) {
     return jsonError(error instanceof Error ? error.message : "Invalid tutor request.", 400);
   }
 
-  const maxTokens = aiConfig?.max_output_tokens || 350;
+  const maxTokens = aiConfig?.max_output_tokens && aiConfig.max_output_tokens > 350 ? aiConfig.max_output_tokens : 1200;
   const upstream = await fetch(
     provider === "gemini"
       ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`
@@ -323,7 +351,7 @@ export async function POST(request: NextRequest) {
         controller.close();
 
         // Save generated standard explanation to shared cache
-        if (body.mode === "explain" && questionId && accumulatedCleaned.trim()) {
+        if (body.mode === "explain" && questionId && accumulatedCleaned.trim() && !body.style) {
           void setCachedExplanation({
             questionId,
             subject: safeString(qRecord?.subject, 120) || "General",

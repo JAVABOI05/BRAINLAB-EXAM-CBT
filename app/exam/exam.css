@@ -14,7 +14,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ===== EXAM PAGE ===== */
+/* ===== EXAM PAGE THEME & CONTRAST ===== */
 
 .exam-shell {
   min-height: 100vh;
@@ -22,37 +22,74 @@ body {
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 28%),
     radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 24%),
     linear-gradient(180deg, #eef4ff 0%, #dde8fb 100%);
+  color: #0f172a;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+:is(.dark, html.dark) .exam-shell {
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 30%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 25%),
+    linear-gradient(180deg, #071224 0%, #030712 100%);
+  color: #f1f5f9;
 }
 
 .exam-topbar {
   position: sticky;
   top: 0;
-  z-index: 20;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.88);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  z-index: 25;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+:is(.dark, html.dark) .exam-topbar {
+  background: rgba(7, 18, 36, 0.94);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .exam-card {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   border-radius: 24px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+:is(.dark, html.dark) .exam-card {
+  background: #0b172a;
+  border-color: #1e293b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
 .exam-soft-card {
   background: #f8fafc;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   border-radius: 18px;
 }
 
+:is(.dark, html.dark) .exam-soft-card {
+  background: #0f1d35;
+  border-color: #1e293b;
+}
+
 .exam-timer {
-  min-width: 140px;
+  min-width: 130px;
   text-align: center;
   border-radius: 16px;
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  color: white;
+  color: #ffffff;
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+:is(.dark, html.dark) .exam-timer {
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.35);
 }
 
 .exam-warning {
@@ -62,26 +99,41 @@ body {
   border-radius: 16px;
 }
 
+:is(.dark, html.dark) .exam-warning {
+  border-color: #7f1d1d;
+  background: rgba(127, 29, 29, 0.3);
+  color: #fca5a5;
+}
+
 .exam-question-meta {
   color: #2563eb;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.95rem;
 }
 
+:is(.dark, html.dark) .exam-question-meta {
+  color: #38bdf8;
+}
+
 .exam-question-text {
-  font-size: 1.1rem;
-  line-height: 1.9;
-  color: #111827;
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: #0f172a;
   font-weight: 500;
 }
 
+:is(.dark, html.dark) .exam-question-text {
+  color: #f8fafc;
+}
+
 .exam-option {
-  border: 1px solid #d1d5db;
+  border: 1px solid #cbd5e1;
   background: #ffffff;
   border-radius: 18px;
   padding: 16px 18px;
   transition: all 0.18s ease;
   cursor: pointer;
+  color: #0f172a;
 }
 
 .exam-option:hover {
@@ -93,19 +145,40 @@ body {
 .exam-option.selected {
   background: #eff6ff;
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+:is(.dark, html.dark) .exam-option {
+  border-color: #334155;
+  background: #0d1b32;
+  color: #f1f5f9;
+}
+
+:is(.dark, html.dark) .exam-option:hover {
+  background: #142442;
+  border-color: #38bdf8;
+}
+
+:is(.dark, html.dark) .exam-option.selected {
+  background: rgba(14, 165, 233, 0.16);
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
 }
 
 .exam-option-letter {
-  font-weight: 700;
+  font-weight: 800;
   color: #1e3a8a;
   margin-right: 8px;
+}
+
+:is(.dark, html.dark) .exam-option-letter {
+  color: #38bdf8;
 }
 
 .exam-nav-btn {
   border-radius: 14px;
   padding: 12px 22px;
-  font-weight: 600;
+  font-weight: 700;
   transition: all 0.18s ease;
   border: none;
   cursor: pointer;
@@ -134,29 +207,39 @@ body {
 
 .exam-submit-btn:hover {
   transform: translateY(-1px);
-  filter: brightness(1.03);
+  filter: brightness(1.05);
 }
 
 .exam-calc-btn {
   border-radius: 14px;
-  padding: 12px 18px;
-  font-weight: 600;
-  color: white;
-  background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
+  padding: 10px 16px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
   transition: all 0.18s ease;
-  border: none;
   cursor: pointer;
 }
 
 .exam-calc-btn:hover {
   transform: translateY(-1px);
-  filter: brightness(1.05);
+  background: #cbd5e1;
+}
+
+:is(.dark, html.dark) .exam-calc-btn {
+  color: #f8fafc;
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+:is(.dark, html.dark) .exam-calc-btn:hover {
+  background: #334155;
 }
 
 .exam-palette-btn {
   height: 42px;
   border-radius: 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #cbd5e1;
   font-size: 0.9rem;
   font-weight: 700;
   transition: all 0.15s ease;
@@ -170,7 +253,13 @@ body {
 .exam-palette-btn.current {
   background: #2563eb;
   border-color: #2563eb;
-  color: white;
+  color: #ffffff;
+}
+
+:is(.dark, html.dark) .exam-palette-btn.current {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
 }
 
 .exam-palette-btn.answered {
@@ -179,10 +268,22 @@ body {
   color: #166534;
 }
 
+:is(.dark, html.dark) .exam-palette-btn.answered {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #059669;
+  color: #34d399;
+}
+
 .exam-palette-btn.unanswered {
   background: #f8fafc;
-  border-color: #d1d5db;
+  border-color: #cbd5e1;
   color: #475569;
+}
+
+:is(.dark, html.dark) .exam-palette-btn.unanswered {
+  background: #0f1c33;
+  border-color: #334155;
+  color: #94a3b8;
 }
 
 .exam-passage {
@@ -192,16 +293,29 @@ body {
   padding: 18px;
 }
 
+:is(.dark, html.dark) .exam-passage {
+  border-color: #1e3a8a;
+  background: rgba(15, 23, 42, 0.75);
+}
+
 .exam-passage-title {
   font-weight: 700;
   color: #1d4ed8;
   margin-bottom: 8px;
 }
 
+:is(.dark, html.dark) .exam-passage-title {
+  color: #38bdf8;
+}
+
 .exam-passage-text {
   line-height: 1.9;
   color: #1f2937;
   white-space: pre-line;
+}
+
+:is(.dark, html.dark) .exam-passage-text {
+  color: #cbd5e1;
 }
 
 .exam-legend-dot {
@@ -212,13 +326,18 @@ body {
   margin-right: 8px;
 }
 
-/* ===== CALCULATOR ===== */
+/* ===== CALCULATOR THEMED STYLES ===== */
 
 .calc-window {
   border-radius: 20px;
   border: 1px solid #cbd5e1;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
   overflow: hidden;
+}
+
+:is(.dark, html.dark) .calc-window {
+  border-color: #334155;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
 }
 
 .calc-display {
@@ -233,6 +352,12 @@ body {
   font-size: 1.8rem;
   font-weight: 600;
   color: #0f172a;
+}
+
+:is(.dark, html.dark) .calc-display {
+  background: #020617;
+  border-color: #1e293b;
+  color: #f8fafc;
 }
 
 .calc-btn {
@@ -250,7 +375,32 @@ body {
   background: #f1f5f9;
 }
 
+:is(.dark, html.dark) .calc-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+:is(.dark, html.dark) .calc-btn:hover {
+  background: #334155;
+}
+
 .calc-op-btn {
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid #0284c7;
+  background: #0284c7;
+  color: white;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.calc-op-btn:hover {
+  background: #0369a1;
+}
+
+.calc-top-btn {
   height: 48px;
   border-radius: 12px;
   border: 1px solid #64748b;
@@ -261,23 +411,8 @@ body {
   cursor: pointer;
 }
 
-.calc-op-btn:hover {
-  background: #475569;
-}
-
-.calc-top-btn {
-  height: 48px;
-  border-radius: 12px;
-  border: 1px solid #94a3b8;
-  background: #94a3b8;
-  color: white;
-  font-weight: 700;
-  transition: all 0.15s ease;
-  cursor: pointer;
-}
-
 .calc-top-btn:hover {
-  background: #64748b;
+  background: #475569;
 }
 
 .calc-equal-btn {

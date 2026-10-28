@@ -37,7 +37,7 @@ export type GeneratePaperResult = {
 /**
  * High-level examination paper generation workflow:
  * 1. Validates candidates subjects (English is always compulsory Slot 1).
- * 2. Fetches active questions from DB.
+ * 2. Fetches active questions concurrently from DB.
  * 3. Applies multi-stage English blueprint (60 questions, 90 raw marks, passage integrity, reading text).
  * 4. Applies shared standard selector for electives (40 questions each, 100 marks, high-yield quotas).
  * 5. Assembles full 180-question paper (English 1..60, Elective 1 61..100, Elective 2 101..140, Elective 3 141..180).
@@ -68,52 +68,63 @@ export async function generateExamPaper(options: {
     chosenSubjects.push(filler);
   }
 
-  // 2. Fetch active questions from database for all chosen subjects
+  // 2. Fetch high-yield rules & questions concurrently across all 4 subjects
   const allPaperQuestions: EngineQuestion[] = [];
   const paperIds: number[] = [];
 
-  // Load high-yield rules
   const allHighYield = await listHighYieldRules();
 
-  for (const subj of chosenSubjects) {
+  // Run all subject generations in parallel for maximum performance
+  const subjectPromises = chosenSubjects.map(async (subj) => {
     const isEnglish = subj.toLowerCase().includes("english");
-    const blueprint = await loadBlueprintForSubject(subj);
-
-    // Fetch questions for this subject from DB
-    const { data: dbRows, error: fetchErr } = await supabase
-      .from("questions")
-      .select("*")
-      .eq("is_active", true)
-      .ilike("subject", isEnglish ? "English" : subj)
-      .limit(600);
+    const [blueprint, { data: dbRows, error: fetchErr }] = await Promise.all([
+      loadBlueprintForSubject(subj),
+      supabase
+        .from("questions")
+        .select("*")
+        .eq("is_active", true)
+        .ilike("subject", isEnglish ? "English" : subj)
+        .limit(600),
+    ]);
 
     if (fetchErr) {
-      errors.push(`Error querying question bank for ${subj}: ${fetchErr.message}`);
-      continue;
+      return {
+        subj,
+        questions: [] as EngineQuestion[],
+        warnings: [] as string[],
+        errors: [`Error querying question bank for ${subj}: ${fetchErr.message}`],
+      };
     }
 
     const available = (dbRows || []) as EngineQuestion[];
 
     if (isEnglish) {
-      // Run multi-stage English engine
       const engResult = selectEnglishExaminationPaper(available, blueprint, allHighYield);
-      warnings.push(...engResult.warnings);
-      errors.push(...engResult.errors);
-
-      for (const q of engResult.questions) {
-        allPaperQuestions.push(q);
-        paperIds.push(q.id);
-      }
+      return {
+        subj,
+        questions: engResult.questions,
+        warnings: engResult.warnings,
+        errors: engResult.errors,
+      };
     } else {
-      // Run standard subject engine
       const stdResult = selectStandardSubjectPaper(subj, available, blueprint, allHighYield);
-      warnings.push(...stdResult.warnings);
-      errors.push(...stdResult.errors);
+      return {
+        subj,
+        questions: stdResult.questions,
+        warnings: stdResult.warnings,
+        errors: stdResult.errors,
+      };
+    }
+  });
 
-      for (const q of stdResult.questions) {
-        allPaperQuestions.push(q);
-        paperIds.push(q.id);
-      }
+  const subjectResults = await Promise.all(subjectPromises);
+
+  for (const res of subjectResults) {
+    warnings.push(...res.warnings);
+    errors.push(...res.errors);
+    for (const q of res.questions) {
+      allPaperQuestions.push(q);
+      paperIds.push(q.id);
     }
   }
 

@@ -13,6 +13,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   const pathname = usePathname() ?? "/";
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   const isActiveExam = pathname === "/exam" || pathname.startsWith("/exam/");
+  const isInstructions = pathname === "/instructions" || pathname.startsWith("/instructions/");
   const isClassroom = pathname === "/classroom" || pathname.startsWith("/classroom/");
   const isMessages = pathname === "/messages" || pathname.startsWith("/messages/");
 
@@ -28,9 +29,9 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // The active exam and live classroom have their own focused task-oriented interfaces.
+  // The active exam, instructions briefing, and live classroom have their own focused task-oriented interfaces.
   // Admin pages retain their own dedicated dashboard navigation.
-  const hidePublicChrome = isAdminArea || isActiveExam || isClassroom;
+  const hidePublicChrome = isAdminArea || isActiveExam || isInstructions || isClassroom;
 
   return (
     <>
