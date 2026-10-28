@@ -176,7 +176,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
       { title: "Organic Chemistry and Applications", topics: [
         { title: "Organic Compounds", contents: ["Tetravalency and catenation of carbon.", "General formulae, IUPAC nomenclature, empirical and molecular formulae.", "Functional groups and isomerism.", "Alkanes, alkenes and alkynes; properties, reactions and uses.", "Petroleum, fractional distillation, cracking, reforming and octane number.", "Aromatic hydrocarbons such as benzene.", "Alcohols, aldehydes, ketones, carboxylic acids, esters and other syllabus-listed classes.", "Polymers, polymerisation and vulcanisation."] },
         { title: "Chemistry and Industry", contents: ["Industrial chemical processes and their raw materials.", "Applications of chemical principles in manufacturing and everyday life."] },
-        { title: "Astronomical Chemistry", contents: ["The astronomical chemistry topic as listed in the supplied syllabus. The source PDF's detailed content for this heading should be checked during editorial verification."] }
+        { title: "Astronomical Chemistry", contents: ["Solar system and planets.", "Composition of the Earth: atmosphere, lithosphere and hydrosphere.", "The Earth's natural satellite.", "The syllabus objective also asks candidates to identify the smallest planet described in the source as farthest from the Sun; retain this source wording for review rather than silently correcting it."] }
       ]}
     ]
   },
