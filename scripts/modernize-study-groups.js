@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports -- Legacy Node.js maintenance script uses CommonJS. */
+/* eslint-disable @typescript-eslint/no-require-imports -- These maintenance scripts use Node's CommonJS runtime. */
 const fs = require('fs');
 
 const file = 'c:/Users/hp/Downloads/BRAINLAB-EXAM-CBT/app/study-groups/page.tsx';
