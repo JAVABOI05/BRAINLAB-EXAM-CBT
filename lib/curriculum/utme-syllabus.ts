@@ -25,8 +25,7 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     description: "Official UTME syllabus arranged into comprehension and summary, lexis and structure, and oral forms.",
     generalObjectives: [
       "Communicate effectively in both written and spoken English.",
-      "Use English appropriately for higher education.",
-      "Understand and interpret written passages, vocabulary, grammar and spoken forms."
+      "Use English Language for learning at the tertiary level."
     ],
     sections: [
       { title: "A. Comprehension and Summary", topics: [
