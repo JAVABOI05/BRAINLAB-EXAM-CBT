@@ -91,7 +91,13 @@ export async function GET() {
     // This endpoint is public. Never serialize answer keys or explanations from the
     // service-role-backed query; candidates should receive those only after an
     // assessment permits review.
-    const publicQuestions = sampled.map(({ correctLetter: _correctLetter, explanation: _explanation, ...question }) => question);
+    const publicQuestions = sampled.map((question) => ({
+      id: question.id,
+      subject: question.subject,
+      examContext: question.examContext,
+      question: question.question,
+      options: question.options,
+    }));
 
     return NextResponse.json({ ok: true, questions: publicQuestions });
   } catch {
