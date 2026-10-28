@@ -154,10 +154,10 @@ export const UTME_SYLLABUS: UtmeSyllabusSubject[] = [
     icon: "⚗️",
     description: "The UTME Chemistry syllabus covering matter, chemical principles, reactions, elements, compounds, organic chemistry and industry.",
     generalObjectives: [
-      "Understand basic principles and concepts in chemistry.",
+      "Understand the basic principles and concepts in chemistry.",
       "Interpret scientific data relating to chemistry.",
-      "Deduce relationships between chemistry and other sciences.",
-      "Apply chemical knowledge to industry and everyday life."
+      "Deduce the relationships between chemistry and other sciences.",
+      "Apply the knowledge of chemistry to industry and everyday life."
     ],
     sections: [
       { title: "Physical Chemistry and Basic Principles", topics: [
