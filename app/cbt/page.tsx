@@ -54,21 +54,23 @@ export default function CBTExamPortalPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [starting, setStarting] = useState(false);
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
-  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_FOOTER_CONFIG.whatsapp_number);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappConfigLoaded, setWhatsappConfigLoaded] = useState(false);
 
-  const accessLink = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
-    CONFIG.accessCodeMessage
-  )}`;
+  const accessLink = whatsappConfigLoaded && whatsappNumber
+    ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(CONFIG.accessCodeMessage)}`
+    : "#";
 
   useEffect(() => {
     let active = true;
 
     async function checkAuthAndLoadSettings() {
       try {
-        const footerConfig = await getFooterConfig().catch(() => DEFAULT_FOOTER_CONFIG);
-        if (active && footerConfig.whatsapp_number) {
+        const footerConfig = await getFooterConfig().catch(() => null);
+        if (active && footerConfig?.whatsapp_number) {
           setWhatsappNumber(footerConfig.whatsapp_number);
         }
+        if (active) setWhatsappConfigLoaded(true);
         // Fetch dynamically configured subjects from backend
         fetch("/api/subjects")
           .then((r) => r.json())
