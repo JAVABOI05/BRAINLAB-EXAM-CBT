@@ -17,7 +17,6 @@ export default function DuplicateQuestionsAdminPage() {
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [adminEmail, setAdminEmail] = useState("admin@brainlabacademy.com.ng");
   const [canManageQuestions, setCanManageQuestions] = useState(false);
   const [canDeleteQuestions, setCanDeleteQuestions] = useState(false);
 
@@ -30,7 +29,6 @@ export default function DuplicateQuestionsAdminPage() {
           setMessage("Administrator sign-in is required to manage duplicate questions.");
           return;
         }
-        if (session?.email) setAdminEmail(session.email);
         const canManage = await adminHasPermission("cbt.questions.manage");
         const canDelete = await adminHasPermission("cbt.questions.delete");
         setCanManageQuestions(canManage);
