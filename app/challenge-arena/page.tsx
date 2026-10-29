@@ -484,7 +484,7 @@ export default function ChallengeArenaPage() {
     const xpEarned = userId ? 0 : Math.round(baseXP * selectedMode.xpMultiplier);
 
     let streakDays = profile?.current_streak_days ?? 1;
-    let newBadges: string[] = [];
+    const newBadges: string[] = [];
 
     // Challenge Arena scores are calculated in the browser. Do not award authoritative
     // XP or streaks until attempts and grading are persisted server-side.
