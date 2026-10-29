@@ -285,7 +285,7 @@ export default function BrandFooter() {
                     {whatsappDisplayNumber}
                   </a>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* OFFICIAL SOCIAL CHANNELS (Uncolored by default, vibrant on hover) */}
