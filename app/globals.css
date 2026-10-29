@@ -1371,3 +1371,34 @@ button:disabled,
   background-color: #17263b !important;
   color: #e7eefb !important;
 }
+
+
+/* Targeted dark-mode readability for learner activity pages.
+   Scoped to these routes to avoid changing already-corrected screens. */
+:is(html[data-theme="dark"], html.dark) :is(.assignments-page, .notifications-page, .calendar-page) .text-slate-400 {
+  color: #a8b7cc !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.assignments-page, .notifications-page, .calendar-page) .text-slate-500 {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.assignments-page, .notifications-page) [class*="bg-blue-50/40"] {
+  background-color: #132744 !important;
+  border-color: #294566 !important;
+}
+:is(html[data-theme="dark"], html.dark) .assignments-page [class*="bg-emerald-50/60"] {
+  background-color: #10352f !important;
+  border-color: #236454 !important;
+  color: #d1fae5 !important;
+}
+:is(html[data-theme="dark"], html.dark) .assignments-page [class*="bg-emerald-50/60"] .text-emerald-950 {
+  color: #d1fae5 !important;
+}
+:is(html[data-theme="dark"], html.dark) .assignments-page [class*="bg-emerald-50/60"] .bg-white\/80 {
+  background-color: #132b27 !important;
+  border-color: #236454 !important;
+  color: #d1fae5 !important;
+}
+:is(html[data-theme="dark"], html.dark) .assignments-page [class*="bg-slate-50/60"] {
+  background-color: #111f36 !important;
+  border-color: #34465f !important;
+}
