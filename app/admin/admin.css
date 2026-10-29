@@ -525,3 +525,53 @@ button.admin-card:hover {
   color: #9aacc4 !important;
   opacity: 1;
 }
+
+
+/* Dark-mode contrast hardening for remaining admin configuration and operations screens. */
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) {
+  color: #e7eefb;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(.bg-white, .bg-slate-50, .bg-gray-50, .bg-slate-100, .bg-gray-100) {
+  background-color: #111d30 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(.text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800, .text-slate-700, .text-gray-700) {
+  color: #e7eefb !important;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(.text-slate-600, .text-slate-500, .text-gray-600, .text-gray-500) {
+  color: #b3c1d5 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(.border-slate-200, .border-slate-300, .border-gray-200, .border-gray-300, .border-slate-100) {
+  border-color: #34465f !important;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  color: #edf4ff !important;
+  background-color: #0a1322 !important;
+  border-color: #3a4d68 !important;
+  color-scheme: dark;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(input, select, textarea)::placeholder {
+  color: #9aacc4 !important;
+  opacity: 1;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(table thead, .table-header) {
+  background-color: #17263b !important;
+  color: #e7eefb !important;
+}
+
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where(tbody tr:hover) {
+  background-color: #1b2b42 !important;
+}
+
+/* Explicitly darken light modal surfaces while preserving colored status/action buttons. */
+:is(html[data-theme="dark"], html.dark) :is(.admin-page, .admin-shell, .admin-page-container) :where([role="dialog"], .modal-content, .admin-modal, .rounded-2xl.bg-white, .rounded-xl.bg-white) {
+  background-color: #111d30 !important;
+  color: #e7eefb !important;
+  border-color: #34465f !important;
+}
