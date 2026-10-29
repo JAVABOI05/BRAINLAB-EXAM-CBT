@@ -3,6 +3,7 @@ import SiteChrome from "./components/SiteChrome";
 import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
 import AnimatedLaunchScreen from "./components/AnimatedLaunchScreen";
 import "./globals.css";
+import "./dashboard/dashboard-dark.css";
 
 const siteUrl = "https://www.brainlabacademy.com.ng";
 
