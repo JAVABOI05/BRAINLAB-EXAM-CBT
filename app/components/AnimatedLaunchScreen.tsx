@@ -25,8 +25,12 @@ export default function AnimatedLaunchScreen() {
       return;
     }
 
-    const exitTimer = window.setTimeout(() => setLeaving(true), 3900);
-    const removeTimer = window.setTimeout(() => setVisible(false), 4450);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const exitDelay = prefersReducedMotion ? 1200 : 3900;
+    const removeDelay = prefersReducedMotion ? 1400 : 4450;
+
+    const exitTimer = window.setTimeout(() => setLeaving(true), exitDelay);
+    const removeTimer = window.setTimeout(() => setVisible(false), removeDelay);
 
     return () => {
       window.clearTimeout(exitTimer);
