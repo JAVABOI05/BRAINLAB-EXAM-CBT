@@ -16,7 +16,7 @@ export default function TutorsPage() {
       .then(({ data }) => { if (active) { setTutors((data ?? []) as Tutor[]); setLoading(false); } });
     return () => { active = false; };
   }, []);
-  return <main id="main" className="min-h-[65vh] bg-slate-50 px-5 py-14 text-slate-900 sm:px-8">
+  return <main id="main" className="public-surface min-h-[65vh] bg-slate-50 px-5 py-14 text-slate-900 sm:px-8">
     <div className="mx-auto max-w-6xl">
       <Link href="/" className="text-sm font-bold text-blue-800 underline underline-offset-4">← BrainLab Academy</Link>
       <header className="mx-auto mt-8 max-w-3xl text-center">
