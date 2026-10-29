@@ -72,7 +72,7 @@ export default function StudentRewardsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+    <div className="public-surface flex min-h-screen flex-col bg-slate-50 text-slate-900">
       
       <main className="flex-1 py-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
