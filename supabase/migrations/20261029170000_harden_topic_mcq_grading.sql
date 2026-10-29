@@ -7,6 +7,12 @@ create table if not exists public.learning_topic_mcq_grading_attempts (
   submitted_at timestamptz not null default now()
 );
 
+alter table public.learning_topic_mcq_grading_attempts
+  add column if not exists score integer,
+  add column if not exists total integer,
+  add column if not exists percentage numeric,
+  add column if not exists feedback jsonb;
+
 create index if not exists idx_topic_mcq_grading_attempts_user_item_time
   on public.learning_topic_mcq_grading_attempts(user_id, content_item_id, submitted_at desc);
 
@@ -34,7 +40,8 @@ declare
   v_score integer := 0;
   v_total integer := 0;
   v_feedback jsonb := '[]'::jsonb;
-  v_recent_attempts integer := 0;
+  v_previous record;
+  v_attempt_id uuid;
 begin
   if v_user_id is null then
     return jsonb_build_object('ok', false, 'error', 'authentication_required');
@@ -55,17 +62,33 @@ begin
     return jsonb_build_object('ok', false, 'error', 'item_not_found');
   end if;
 
-  select count(*)::integer into v_recent_attempts
+  select a.* into v_previous
   from public.learning_topic_mcq_grading_attempts a
   where a.user_id = v_user_id
     and a.content_item_id = p_content_item_id
-    and a.submitted_at > now() - interval '24 hours';
+    and a.submitted_at > now() - interval '24 hours'
+  order by a.submitted_at desc
+  limit 1;
 
-  if v_recent_attempts >= 1 then
+  if found then
+    -- Return the saved result on a refresh/retry without grading a second attempt.
+    if v_previous.score is not null and v_previous.total is not null
+       and v_previous.percentage is not null and v_previous.feedback is not null then
+      return jsonb_build_object(
+        'ok', true,
+        'score', v_previous.score,
+        'total', v_previous.total,
+        'percentage', v_previous.percentage,
+        'feedback', v_previous.feedback,
+        'attempts_remaining', 0,
+        'recovered', true
+      );
+    end if;
+
     return jsonb_build_object(
       'ok', false,
       'error', 'attempt_limit_reached',
-      'message', 'You have already submitted this practice check in the last 24 hours.'
+      'message', 'You have already submitted this practice check in the last 24 hours, but its result could not be recovered. Please contact your tutor.'
     );
   end if;
 
@@ -100,7 +123,8 @@ begin
   end loop;
 
   insert into public.learning_topic_mcq_grading_attempts(user_id, content_item_id)
-  values (v_user_id, p_content_item_id);
+  values (v_user_id, p_content_item_id)
+  returning id into v_attempt_id;
 
   for v_q in select value from jsonb_array_elements(v_questions) as q(value) loop
     v_q_id := v_q ->> 'id';
@@ -127,6 +151,13 @@ begin
       );
     end if;
   end loop;
+
+  update public.learning_topic_mcq_grading_attempts
+  set score = v_score,
+      total = v_total,
+      percentage = case when v_total > 0 then round((v_score::numeric / v_total::numeric) * 100.0, 1) else 0 end,
+      feedback = v_feedback
+  where id = v_attempt_id;
 
   return jsonb_build_object(
     'ok', true,
