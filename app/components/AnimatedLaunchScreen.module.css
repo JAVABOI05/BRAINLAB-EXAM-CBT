@@ -1,0 +1,264 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: #fff;
+  background: #0b1536;
+  isolation: isolate;
+  animation: screenEnter 420ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+.glowTop,
+.glowBottom {
+  position: absolute;
+  z-index: -1;
+  width: min(82vw, 460px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  filter: blur(72px);
+  pointer-events: none;
+}
+
+.glowTop {
+  top: -24%;
+  right: -22%;
+  background: rgba(19, 86, 232, .36);
+  animation: glowDrift 3.2s ease-in-out infinite alternate;
+}
+
+.glowBottom {
+  bottom: -36%;
+  left: -24%;
+  background: rgba(255, 82, 56, .16);
+  animation: glowDrift 3.8s ease-in-out infinite alternate-reverse;
+}
+
+.content {
+  display: flex;
+  width: min(88vw, 440px);
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transform: translateY(-1.5vh);
+}
+
+.emblem {
+  position: relative;
+  display: grid;
+  width: 142px;
+  height: 142px;
+  place-items: center;
+  margin-bottom: 27px;
+  animation: emblemRise 780ms cubic-bezier(.16,1,.3,1) both;
+}
+
+.mark {
+  position: relative;
+  z-index: 2;
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 22px rgba(19, 86, 232, .25));
+  animation: markPulse 1.8s ease-in-out infinite;
+}
+
+.orbit,
+.orbitInner {
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(146, 183, 255, .32);
+  border-radius: 50%;
+  animation: orbitSpin 7s linear infinite;
+}
+
+.orbit::before,
+.orbitInner::before,
+.orbitInner::after {
+  position: absolute;
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5fa0ff;
+  box-shadow: 0 0 14px rgba(95, 160, 255, .9);
+}
+
+.orbit::before {
+  top: 18px;
+  left: 16px;
+}
+
+.orbitInner {
+  inset: 18px;
+  border-color: rgba(255, 255, 255, .15);
+  border-style: dashed;
+  animation-duration: 11s;
+  animation-direction: reverse;
+}
+
+.orbitInner::before {
+  top: 12px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  background: #ff806c;
+  box-shadow: 0 0 12px rgba(255, 128, 108, .8);
+}
+
+.orbitInner::after {
+  bottom: 7px;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+}
+
+.sparkleOne,
+.sparkleTwo {
+  position: absolute;
+  z-index: 3;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 16px 3px rgba(255, 255, 255, .35);
+  animation: sparkle 1.8s ease-in-out infinite;
+}
+
+.sparkleOne {
+  top: 13px;
+  right: 25px;
+}
+
+.sparkleTwo {
+  bottom: 22px;
+  left: 17px;
+  width: 4px;
+  height: 4px;
+  animation-delay: .55s;
+}
+
+.brand {
+  animation: copyRise 680ms 100ms cubic-bezier(.16,1,.3,1) both;
+}
+
+.eyebrow {
+  margin: 0 0 13px;
+  color: #a9c9ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .24em;
+}
+
+.brand h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(27px, 7vw, 38px);
+  font-weight: 850;
+  letter-spacing: -.055em;
+  line-height: 1.1;
+}
+
+.brand h1 span {
+  color: #9dc2ff;
+  font-weight: 650;
+}
+
+.tagline {
+  margin: 13px 0 0;
+  color: rgba(255, 255, 255, .76);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .015em;
+}
+
+.loadingTrack {
+  width: 104px;
+  height: 3px;
+  margin-top: 37px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .13);
+  animation: copyRise 680ms 220ms cubic-bezier(.16,1,.3,1) both;
+}
+
+.loadingBar {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #5c9cff, #fff, #ff806c);
+  animation: loadingSweep 1.15s ease-in-out infinite;
+}
+
+.footer {
+  position: absolute;
+  right: 16px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 16px;
+  color: rgba(220, 232, 255, .48);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .19em;
+  text-align: center;
+  animation: copyRise 800ms 260ms both;
+}
+
+@keyframes screenEnter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes emblemRise {
+  from { opacity: 0; transform: translateY(18px) scale(.82); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes copyRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes orbitSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes markPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: .4; transform: scale(.75); }
+  50% { opacity: 1; transform: scale(1.35); }
+}
+
+@keyframes glowDrift {
+  from { transform: translate3d(-10px, -8px, 0) scale(.94); }
+  to { transform: translate3d(18px, 14px, 0) scale(1.08); }
+}
+
+@keyframes loadingSweep {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .emblem,
+  .brand,
+  .loadingTrack,
+  .footer,
+  .orbit,
+  .orbitInner,
+  .mark,
+  .sparkleOne,
+  .sparkleTwo,
+  .glowTop,
+  .glowBottom,
+  .loadingBar {
+    animation: none !important;
+  }
+}
