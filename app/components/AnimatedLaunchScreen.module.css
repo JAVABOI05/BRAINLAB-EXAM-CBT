@@ -417,7 +417,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .screen { opacity: 1; }
+  .screen { opacity: 1; animation: none; }
   .screen::before,
   .emblem,
   .bookBack,
