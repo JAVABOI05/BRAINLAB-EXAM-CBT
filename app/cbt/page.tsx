@@ -7,9 +7,9 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
 import { toast } from "../lib/toast";
+import { DEFAULT_FOOTER_CONFIG, getFooterConfig } from "../lib/platformConfig";
 
 const CONFIG = {
-  whatsappNumber: "2349074310204",
   accessCodeMessage:
     "Good day BRAINLAB TUTORIALS, I would like to get my access code for the CBT exam. Please can I get more information on the registration and access process?",
   revisionMessage:
@@ -54,8 +54,9 @@ export default function CBTExamPortalPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [starting, setStarting] = useState(false);
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_FOOTER_CONFIG.whatsapp_number);
 
-  const accessLink = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(
+  const accessLink = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
     CONFIG.accessCodeMessage
   )}`;
 
@@ -64,6 +65,10 @@ export default function CBTExamPortalPage() {
 
     async function checkAuthAndLoadSettings() {
       try {
+        const footerConfig = await getFooterConfig().catch(() => DEFAULT_FOOTER_CONFIG);
+        if (active && footerConfig.whatsapp_number) {
+          setWhatsappNumber(footerConfig.whatsapp_number);
+        }
         // Fetch dynamically configured subjects from backend
         fetch("/api/subjects")
           .then((r) => r.json())
