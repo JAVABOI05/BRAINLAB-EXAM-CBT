@@ -173,4 +173,18 @@ $function$;
 revoke all on function public.record_learning_activity(uuid, text, text, numeric) from public, anon;
 grant execute on function public.record_learning_activity(uuid, text, text, numeric) to authenticated, service_role;
 
+-- Pin the search path for the remaining SECURITY DEFINER functions whose bodies use
+-- public table names without schema qualification. Listing pg_temp last prevents a
+-- caller-created temporary object from shadowing a public relation.
+alter function public.finalize_successful_payment(text, text, text, timestamptz, bigint)
+  set search_path = public, pg_temp;
+alter function public.admin_save_topic_content_item(uuid, uuid, text, text, text, jsonb, jsonb, jsonb, boolean)
+  set search_path = public, pg_temp;
+alter function public.admin_duplicate_topic_content_item(uuid)
+  set search_path = public, pg_temp;
+alter function public.admin_reorder_topic_content_items(uuid, uuid[])
+  set search_path = public, pg_temp;
+alter function public.award_user_xp(uuid, integer, text, text, text, jsonb)
+  set search_path = public, pg_temp;
+
 commit;
