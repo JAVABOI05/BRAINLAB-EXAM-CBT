@@ -201,7 +201,7 @@ export default function StudentTopicContentPage() {
           complete_valid_answers_required: "Please answer every question using one of the listed options before submitting.",
           answers_required: "Please select an answer for each question before submitting.",
           invalid_question_data: "This practice check is not configured correctly yet. Please contact your tutor.",
-          attempt_limit_reached: "You've already submitted this practice check in the last 24 hours. Your previous score isn't available on this page after a refresh. Please contact your tutor if you need help.",
+          attempt_limit_reached: "You've already submitted this practice check in the last 24 hours, but the saved result could not be restored. Please contact your tutor if you need help.",
           item_not_found: "This practice check is no longer available.",
         };
         setMcqErrors((prev) => ({
@@ -557,7 +557,7 @@ export default function StudentTopicContentPage() {
                             onClick={() => submitMcqForGrading(item.id)}
                             className="rounded-xl bg-amber-700 px-6 py-2.5 text-xs font-bold text-white hover:bg-amber-800 shadow-sm disabled:opacity-50"
                           >
-                            {gradingMcq === item.id ? "Grading..." : "Submit Answers For Feedback ✓"}
+                            {gradingMcq === item.id ? "Checking..." : "Submit Answers / Recover Previous Result ✓"}
                           </button>
                         )}
                       </div>
