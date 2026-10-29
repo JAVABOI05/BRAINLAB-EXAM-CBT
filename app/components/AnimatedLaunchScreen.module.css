@@ -4,6 +4,8 @@
   z-index: 99999;
   display: grid;
   place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   isolation: isolate;
   color: #fff;
@@ -404,12 +406,18 @@
 
 @media (max-height: 700px) {
   .content { transform: scale(.86); }
+  .footer { bottom: max(16px, env(safe-area-inset-bottom)); }
   .emblem { margin-bottom: 8px; }
   .loadingArea { margin-top: 22px; }
 }
 
+@media (max-height: 560px) {
+  .content { transform: scale(.74); }
+  .footer { font-size: 7px; }
+}
+
 @media (max-width: 360px) {
-  .emblem { transform: scale(.88); margin-bottom: 12px; }
+  .emblem { margin-bottom: 12px; }
   .supportingLine { max-width: 280px; margin-right: auto; margin-left: auto; line-height: 1.5; }
   .footer { font-size: 7px; letter-spacing: .12em; }
   .brand h1 { font-size: 28px; }
