@@ -49,8 +49,10 @@ export async function generateExamPaper(options: {
   token: string;
   subjects: string[];
   durationSeconds?: number;
+  excludeQuestionIds?: number[];
 }): Promise<GeneratePaperResult> {
   const { sessionId, token, durationSeconds = 7200 } = options;
+  const excludedIds = new Set(options.excludeQuestionIds || []);
   const warnings: string[] = [];
   const errors: string[] = [];
 
@@ -77,15 +79,28 @@ export async function generateExamPaper(options: {
   // Run all subject generations in parallel for maximum performance
   const subjectPromises = chosenSubjects.map(async (subj) => {
     const isEnglish = subj.toLowerCase().includes("english");
-    const [blueprint, { data: dbRows, error: fetchErr }] = await Promise.all([
+    const [blueprint, questionPages] = await Promise.all([
       loadBlueprintForSubject(subj),
-      supabase
-        .from("questions")
-        .select("*")
-        .eq("is_active", true)
-        .ilike("subject", isEnglish ? "English" : subj)
-        .limit(600),
+      (async () => {
+        const rows: EngineQuestion[] = [];
+        const pageSize = 1000;
+        for (let offset = 0; offset < 10000; offset += pageSize) {
+          const { data, error } = await supabase
+            .from("questions")
+            .select("*")
+            .eq("is_active", true)
+            .ilike("subject", isEnglish ? "English" : subj)
+            .order("id", { ascending: true })
+            .range(offset, offset + pageSize - 1);
+          if (error) return { rows: [] as EngineQuestion[], error };
+          const page = (data || []) as EngineQuestion[];
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
+        return { rows, error: null };
+      })(),
     ]);
+    const fetchErr = questionPages.error;
 
     if (fetchErr) {
       return {
@@ -96,25 +111,30 @@ export async function generateExamPaper(options: {
       };
     }
 
-    const available = (dbRows || []) as EngineQuestion[];
-
-    if (isEnglish) {
-      const engResult = selectEnglishExaminationPaper(available, blueprint, allHighYield);
-      return {
-        subj,
-        questions: engResult.questions,
-        warnings: engResult.warnings,
-        errors: engResult.errors,
-      };
-    } else {
-      const stdResult = selectStandardSubjectPaper(subj, available, blueprint, allHighYield);
-      return {
-        subj,
-        questions: stdResult.questions,
-        warnings: stdResult.warnings,
-        errors: stdResult.errors,
-      };
+    const available = questionPages.rows;
+    const freshAvailable = excludedIds.size
+      ? available.filter((question) => !excludedIds.has(question.id))
+      : available;
+    const runSelector = (pool: EngineQuestion[]) =>
+      isEnglish
+        ? selectEnglishExaminationPaper(pool, blueprint, allHighYield)
+        : selectStandardSubjectPaper(subj, pool, blueprint, allHighYield);
+    let selected = runSelector(freshAvailable);
+    const targetCount = blueprint.total_questions || (isEnglish ? 60 : 40);
+    const selectedQuestions = selected.questions || [];
+    const selectionWarnings = [...(selected.warnings || [])];
+    // If unseen questions cannot satisfy the existing blueprint, fall back to the
+    // full eligible pool rather than breaking the mock or its scoring structure.
+    if (excludedIds.size && (selected.errors.length > 0 || selectedQuestions.length < targetCount)) {
+      selected = runSelector(available);
+      selectionWarnings.push("Some previously seen questions were reused because the unseen pool could not satisfy the subject blueprint.");
     }
+    return {
+      subj,
+      questions: selected.questions,
+      warnings: selectionWarnings,
+      errors: selected.errors,
+    };
   });
 
   const subjectResults = await Promise.all(subjectPromises);

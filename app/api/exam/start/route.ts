@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "../../../lib/supabaseServer";
+import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
 import crypto from "crypto";
 import { generateExamPaper, freezeAttemptSnapshot } from "../../../lib/examEngine";
 import { getMaintenanceModeConfig } from "../../../lib/platformConfig";
@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
     const { code = "", name = "", phone = "", elective = "", subjects = [] } = body;
 
     const supabase = getSupabaseServerClient();
+    // Exposure history is keyed only from a verified Supabase user, never a client-supplied ID.
+    const registeredUser = await getUserFromRequest(request);
 
     const maintenance = await getMaintenanceModeConfig().catch(() => null);
     if (maintenance?.cbt_maintenance_enabled) {
@@ -96,8 +98,21 @@ export async function POST(request: NextRequest) {
       selectedSubjects.push(nextFiller);
     }
 
-    // 3. Generate exam paper using Master CBT Examination Engine
-    // (Multi-stage English 60-question blueprint + 3 Electives 40 each, passage groups, high-yield quotas, topic coverage)
+    // 3. Generate exam paper. Registered candidates receive unseen questions first.
+    // Anonymous/open-code attempts retain the existing random-selection behaviour.
+    let previouslySeenIds: number[] = [];
+    if (registeredUser) {
+      const { data: seenRows, error: seenError } = await supabase
+        .from("question_exposure_history")
+        .select("question_id")
+        .eq("user_id", registeredUser.id);
+      if (!seenError && seenRows) {
+        previouslySeenIds = [...new Set(seenRows.map((row: { question_id: number }) => Number(row.question_id)).filter(Number.isFinite))];
+      } else if (seenError) {
+        // Keep exam launch available if rotation history is not yet readable.
+        console.error("Unable to load learner question exposure history:", seenError.message);
+      }
+    }
     const attemptToken = crypto.randomUUID();
     const durationSeconds = 7200; // 2 hours
     const provisionalSessionId = crypto.randomUUID();
@@ -107,6 +122,7 @@ export async function POST(request: NextRequest) {
       token: attemptToken,
       subjects: selectedSubjects,
       durationSeconds,
+      excludeQuestionIds: previouslySeenIds,
     });
 
     let paperIds = generated.paperIds;
@@ -155,6 +171,22 @@ export async function POST(request: NextRequest) {
         { ok: false, error: "session_failed", message: `Could not initialize examination session: ${sessionErr?.message}` },
         { status: 500 }
       );
+    }
+
+    // Record question exposure for this registered candidate only after the session exists.
+    if (registeredUser && paperIds.length) {
+      const exposureRows = [...new Set(paperIds)].map((question_id) => ({
+        user_id: registeredUser.id,
+        question_id,
+        surface: "full_mock",
+        attempt_id: sessionRow.id,
+      }));
+      const { error: exposureError } = await supabase
+        .from("question_exposure_history")
+        .upsert(exposureRows, { onConflict: "user_id,question_id,surface,attempt_id", ignoreDuplicates: true });
+      if (exposureError) {
+        console.error("Unable to record full-mock question exposure:", exposureError.message);
+      }
     }
 
     // 5. Freeze immutable attempt snapshot using actual session ID
