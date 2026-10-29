@@ -102,10 +102,11 @@ export async function POST(request: NextRequest) {
     // Anonymous/open-code attempts retain the existing random-selection behaviour.
     let previouslySeenIds: number[] = [];
     const exposureCountByQuestionId = new Map<number, number>();
+    const firstSeenAtByQuestionId = new Map<number, string>();
     if (registeredUser) {
       const { data: seenRows, error: seenError } = await supabase
         .from("learner_question_exposures")
-        .select("question_id, exposure_count")
+        .select("question_id, exposure_count, first_seen_at")
         .eq("user_id", registeredUser.id);
       if (!seenError && seenRows) {
         for (const row of seenRows as { question_id: number; exposure_count: number }[]) {
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
           if (!Number.isFinite(questionId)) continue;
           previouslySeenIds.push(questionId);
           exposureCountByQuestionId.set(questionId, Number(row.exposure_count) || 1);
+          if (row.first_seen_at) firstSeenAtByQuestionId.set(questionId, row.first_seen_at);
         }
       } else if (seenError) {
         // Keep exam launch available if rotation history is not yet readable.
@@ -187,7 +189,7 @@ export async function POST(request: NextRequest) {
         return {
           user_id: registeredUser.id,
           question_id,
-          first_seen_at: seenAt,
+          first_seen_at: firstSeenAtByQuestionId.get(Number(question_id)) || seenAt,
           last_seen_at: seenAt,
           exposure_count: priorCount + 1,
           last_outcome: null,
