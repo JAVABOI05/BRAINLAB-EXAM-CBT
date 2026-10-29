@@ -153,15 +153,17 @@ function getPlatformPillStyle(platform: SocialLinkConfig["platform"]) {
 
 export default function BrandFooter() {
   const [config, setConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     let active = true;
     void getFooterConfig().then((cfg) => {
       if (active && cfg) {
-        setConfig(cfg);
+        setConfig({ ...DEFAULT_FOOTER_CONFIG, ...cfg });
       }
-    });
+      if (active) setConfigLoaded(true);
+    }).catch(() => { if (active) setConfigLoaded(true); });
     return () => {
       active = false;
     };
@@ -182,7 +184,7 @@ export default function BrandFooter() {
   const supportPhone = config.support_phone || "+234 907 431 0204";
   const supportPhoneDial = supportPhone.replace(/[^\d+]/g, "");
   const whatsappNumber = (config.whatsapp_number || "").replace(/\D/g, "");
-  const whatsappHelpdeskUrl = whatsappNumber
+  const whatsappHelpdeskUrl = configLoaded && whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello BrainLab Academy, I need assistance with CBT and classes.")}`
     : null;
   const whatsappDisplayNumber = whatsappNumber ? `+${whatsappNumber}` : "";
