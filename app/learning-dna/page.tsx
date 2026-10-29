@@ -95,7 +95,7 @@ export default function LearningDnaPage() {
   }
 
   return (
-    <main id="main" className="mx-auto min-h-[75vh] max-w-5xl px-5 py-10 sm:px-8 sm:py-14 space-y-8">
+    <main id="main" className="learning-dna-page mx-auto min-h-[75vh] max-w-5xl px-5 py-10 sm:px-8 sm:py-14 space-y-8">
       {/* Top Breadcrumb */}
       <div className="flex items-center justify-between text-xs font-bold text-slate-500">
         <Link href="/dashboard" className="hover:text-blue-800 transition">
