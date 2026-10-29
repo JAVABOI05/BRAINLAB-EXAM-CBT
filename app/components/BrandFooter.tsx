@@ -180,6 +180,11 @@ export default function BrandFooter() {
   const supportEmail = config.support_email || "support@brainlabacademy.com.ng";
   const academyEmail = config.academy_email || "hello@brainlabacademy.com.ng";
   const supportPhone = config.support_phone || "+234 907 431 0204";
+  const supportPhoneDial = supportPhone.replace(/[^\d+]/g, "");
+  const whatsappNumber = (config.whatsapp_number || "").replace(/\D/g, "");
+  const whatsappHelpdeskUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello BrainLab Academy, I need assistance with CBT and classes.")}`
+    : null;
 
   return (
     <footer
@@ -255,15 +260,30 @@ export default function BrandFooter() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-emerald-400 shrink-0">
                   <PhoneIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-400 text-[11px] font-semibold">WhatsApp &amp; Call:</span>
+                <span className="text-slate-400 text-[11px] font-semibold">Call Support:</span>
                 <a
-                  href={`https://wa.me/2349074310204?text=Hello%20BrainLab%20Academy,%20I%20need%20inquiry%20regarding%20CBT%20and%20classes.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-slate-200 hover:text-emerald-300 transition-colors"
+                  href={`tel:${supportPhoneDial}`}
+                  className="font-medium text-slate-200 hover:text-cyan-300 transition-colors"
                 >
                   {supportPhone}
                 </a>
+              </div>
+
+              {whatsappHelpdeskUrl && (
+                <div className="flex items-center gap-2.5 text-slate-300">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-emerald-400 shrink-0">
+                    <WhatsAppIcon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-slate-400 text-[11px] font-semibold">WhatsApp Helpdesk:</span>
+                  <a
+                    href={whatsappHelpdeskUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-slate-200 hover:text-emerald-300 transition-colors"
+                  >
+                    {supportPhone}
+                  </a>
+                </div>
               </div>
             </div>
 
