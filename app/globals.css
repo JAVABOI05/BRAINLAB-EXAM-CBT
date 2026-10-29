@@ -1339,3 +1339,35 @@ button:disabled,
   color: #edf4ff !important;
   border-color: #3a4d68 !important;
 }
+
+
+/* Learner-facing pages: ensure light Tailwind surfaces remain readable in dark mode. */
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) {
+  color: #e7eefb;
+}
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) :where(.bg-white, .bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100) {
+  background-color: #111d30 !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) :where(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700, .text-gray-900, .text-gray-800, .text-gray-700) {
+  color: #e7eefb !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) :where(.text-slate-600, .text-slate-500, .text-slate-400, .text-gray-600, .text-gray-500, .text-gray-400) {
+  color: #b3c1d5 !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) :where(.border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-gray-300) {
+  border-color: #34465f !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  color: #edf4ff !important;
+  background-color: #0a1322 !important;
+  border-color: #3a4d68 !important;
+  color-scheme: dark;
+}
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) :where(input, select, textarea)::placeholder {
+  color: #9aacc4 !important;
+  opacity: 1;
+}
+:is(html[data-theme="dark"], html.dark) :is(.leaderboard-page, .assessment-detail-page, .syllabus-page, .verify-page, .verification-detail-page) :where(thead, .table-header) {
+  background-color: #17263b !important;
+  color: #e7eefb !important;
+}
