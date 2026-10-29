@@ -1,6 +1,6 @@
 begin;
 
-select plan(7);
+select plan(11);
 
 select ok(
   not has_function_privilege('anon', 'public.record_learning_activity(uuid,text,text,numeric)', 'EXECUTE'),
@@ -37,6 +37,28 @@ select ok(
   has_table_privilege('service_role', 'public.verified_gamification_award_events', 'SELECT')
   and has_table_privilege('service_role', 'public.verified_gamification_award_events', 'INSERT'),
   'trusted server-side execution can inspect and record award events'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.grade_topic_mcq_assessment(uuid,jsonb)', 'EXECUTE'),
+  'anonymous clients cannot call the topic MCQ grader'
+);
+
+select ok(
+  has_function_privilege('authenticated', 'public.grade_topic_mcq_assessment(uuid,jsonb)', 'EXECUTE'),
+  'authenticated learners retain the topic MCQ grading flow'
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.learning_topic_mcq_grading_attempts', 'SELECT')
+  and not has_table_privilege('authenticated', 'public.learning_topic_mcq_grading_attempts', 'SELECT'),
+  'clients cannot inspect topic MCQ attempt-limit records'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.learning_topic_mcq_grading_attempts', 'SELECT')
+  and has_table_privilege('service_role', 'public.learning_topic_mcq_grading_attempts', 'INSERT'),
+  'trusted server-side execution can manage topic MCQ attempt records'
 );
 
 select * from finish();
