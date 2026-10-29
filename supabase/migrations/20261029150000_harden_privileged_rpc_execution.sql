@@ -69,7 +69,8 @@ begin
     return jsonb_build_object('ok', false, 'error', 'unauthorized');
   end if;
 
-  if p_activity_type not in ('lesson_complete', 'quiz_complete', 'topic_mcq', 'competition') then
+  if p_activity_type is null
+     or p_activity_type not in ('lesson_complete', 'quiz_complete', 'topic_mcq', 'competition') then
     return jsonb_build_object('ok', false, 'error', 'invalid_activity_type');
   end if;
 
