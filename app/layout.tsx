@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import SiteChrome from "./components/SiteChrome";
 import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
+import AnimatedLaunchScreen from "./components/AnimatedLaunchScreen";
 import "./globals.css";
 
 const siteUrl = "https://www.brainlabacademy.com.ng";
@@ -123,6 +124,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <LearnerThemeProvider>
+          <AnimatedLaunchScreen />
           <SiteChrome>{children}</SiteChrome>
         </LearnerThemeProvider>
       </body>
