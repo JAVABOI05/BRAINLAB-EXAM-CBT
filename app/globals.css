@@ -6,15 +6,37 @@
    1. BASE TYPOGRAPHY & SHELL
    ========================================================================== */
 
+/* Keep every route anchored to the actual viewport instead of allowing a
+   child layout or inherited sizing rule to narrow the entire application. */
+html {
+  width: 100%;
+  min-width: 320px;
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+
 html,
 body {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
 body {
+  width: 100%;
+  max-width: 100%;
+  min-width: 320px;
+  overflow-x: clip;
   color: #0f172a;
   background: #f8fafc;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
