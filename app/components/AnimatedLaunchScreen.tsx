@@ -7,12 +7,11 @@ const SESSION_KEY = "brainlab-launch-intro-shown";
 
 export default function AnimatedLaunchScreen() {
   const [visible, setVisible] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    let isStandalone = false;
-
     try {
-      isStandalone =
+      const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         // Safari on iOS exposes this non-standard property for installed apps.
         Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
@@ -28,14 +27,24 @@ export default function AnimatedLaunchScreen() {
       return;
     }
 
-    const timeout = window.setTimeout(() => setVisible(false), 1900);
-    return () => window.clearTimeout(timeout);
+    const exitTimer = window.setTimeout(() => setLeaving(true), 1500);
+    const removeTimer = window.setTimeout(() => setVisible(false), 1880);
+
+    return () => {
+      window.clearTimeout(exitTimer);
+      window.clearTimeout(removeTimer);
+    };
   }, []);
 
   if (!visible) return null;
 
   return (
-    <div className={styles.screen} role="status" aria-live="polite" aria-label="Opening BrainLab Academy">
+    <div
+      className={`${styles.screen} ${leaving ? styles.leaving : ""}`}
+      role="status"
+      aria-live="polite"
+      aria-label="Opening BrainLab Academy"
+    >
       <div className={styles.glowTop} aria-hidden="true" />
       <div className={styles.glowBottom} aria-hidden="true" />
       <div className={styles.content}>
@@ -44,7 +53,7 @@ export default function AnimatedLaunchScreen() {
           <span className={styles.orbitInner} />
           <span className={styles.sparkleOne} />
           <span className={styles.sparkleTwo} />
-          <img src="/brainlab-mark.svg" alt="" className={styles.mark} />
+          <img src="/icon-192.png" alt="" className={styles.mark} />
         </div>
         <div className={styles.brand}>
           <p className={styles.eyebrow}>LEARN · PRACTISE · PROGRESS</p>
