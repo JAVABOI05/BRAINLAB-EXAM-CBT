@@ -241,6 +241,8 @@ export default function AdminConfigPage() {
           throw new Error("Footer and WhatsApp Helpdesk settings could not be saved. Please check your connection and try again.");
         }
       }
+
+      setMessage("Configuration and footer settings saved successfully.");
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Failed to save configuration."
