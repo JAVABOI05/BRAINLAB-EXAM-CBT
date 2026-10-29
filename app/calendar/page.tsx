@@ -5,7 +5,7 @@ import TimetableSection from "../components/TimetableSection";
 
 export default function CalendarPage() {
   return (
-    <main id="main" className="mx-auto min-h-[75vh] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main id="main" className="calendar-page mx-auto min-h-[75vh] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
         <div>
           <span className="text-xs font-black uppercase tracking-wider text-blue-900">
