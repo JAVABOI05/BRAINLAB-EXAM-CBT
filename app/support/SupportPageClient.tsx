@@ -39,17 +39,20 @@ const faqs = [
 
 export default function SupportPageClient() {
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
     void getFooterConfig().then((config) => {
       if (active && config) setFooterConfig({ ...DEFAULT_FOOTER_CONFIG, ...config });
-    }).catch(() => undefined);
+    }).catch(() => undefined).finally(() => {
+      if (active) setConfigLoaded(true);
+    });
     return () => { active = false; };
   }, []);
 
   const whatsappNumber = (footerConfig.whatsapp_number || "").replace(/\D/g, "");
-  const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : undefined;
+  const whatsappUrl = configLoaded && whatsappNumber ? `https://wa.me/${whatsappNumber}` : undefined;
   const whatsappDisplayNumber = whatsappNumber ? `+${whatsappNumber}` : "";
 
   return (
