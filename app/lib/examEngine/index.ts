@@ -49,8 +49,10 @@ export async function generateExamPaper(options: {
   token: string;
   subjects: string[];
   durationSeconds?: number;
+  excludeQuestionIds?: number[];
 }): Promise<GeneratePaperResult> {
   const { sessionId, token, durationSeconds = 7200 } = options;
+  const excludedIds = new Set(options.excludeQuestionIds || []);
   const warnings: string[] = [];
   const errors: string[] = [];
 
@@ -84,7 +86,7 @@ export async function generateExamPaper(options: {
         .select("*")
         .eq("is_active", true)
         .ilike("subject", isEnglish ? "English" : subj)
-        .limit(600),
+        .limit(10000),
     ]);
 
     if (fetchErr) {
@@ -97,24 +99,29 @@ export async function generateExamPaper(options: {
     }
 
     const available = (dbRows || []) as EngineQuestion[];
-
-    if (isEnglish) {
-      const engResult = selectEnglishExaminationPaper(available, blueprint, allHighYield);
-      return {
-        subj,
-        questions: engResult.questions,
-        warnings: engResult.warnings,
-        errors: engResult.errors,
-      };
-    } else {
-      const stdResult = selectStandardSubjectPaper(subj, available, blueprint, allHighYield);
-      return {
-        subj,
-        questions: stdResult.questions,
-        warnings: stdResult.warnings,
-        errors: stdResult.errors,
-      };
+    const freshAvailable = excludedIds.size
+      ? available.filter((question) => !excludedIds.has(question.id))
+      : available;
+    const runSelector = (pool: EngineQuestion[]) =>
+      isEnglish
+        ? selectEnglishExaminationPaper(pool, blueprint, allHighYield)
+        : selectStandardSubjectPaper(subj, pool, blueprint, allHighYield);
+    let selected = runSelector(freshAvailable);
+    const targetCount = blueprint.total_questions || (isEnglish ? 60 : 40);
+    const selectedQuestions = selected.questions || [];
+    const selectionWarnings = [...(selected.warnings || [])];
+    // If unseen questions cannot satisfy the existing blueprint, fall back to the
+    // full eligible pool rather than breaking the mock or its scoring structure.
+    if (excludedIds.size && (selected.errors.length > 0 || selectedQuestions.length < targetCount)) {
+      selected = runSelector(available);
+      selectionWarnings.push("Some previously seen questions were reused because the unseen pool could not satisfy the subject blueprint.");
     }
+    return {
+      subj,
+      questions: selected.questions,
+      warnings: [...selectionWarnings, ...(selected.warnings || [])],
+      errors: selected.errors,
+    };
   });
 
   const subjectResults = await Promise.all(subjectPromises);
