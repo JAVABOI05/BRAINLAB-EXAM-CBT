@@ -1,4 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  DEFAULT_FOOTER_CONFIG,
+  getFooterConfig,
+  type FooterConfig,
+} from "../lib/platformConfig";
 
 export const metadata = {
   title: "Help and Support",
@@ -39,6 +47,20 @@ const faqs = [
 ];
 
 export default function SupportPage() {
+  const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
+
+  useEffect(() => {
+    let active = true;
+    void getFooterConfig().then((config) => {
+      if (active && config) setFooterConfig({ ...DEFAULT_FOOTER_CONFIG, ...config });
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  const whatsappNumber = (footerConfig.whatsapp_number || "").replace(/\D/g, "");
+  const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}` : "#";
+  const supportPhone = footerConfig.support_phone || DEFAULT_FOOTER_CONFIG.support_phone;
+
   return (
     <main id="main" className="public-surface">
       {/* Hero Section */}
@@ -67,7 +89,7 @@ export default function SupportPage() {
             </a>
 
             <a
-              href="https://wa.me/2349074310204"
+              href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 font-bold text-slate-800 shadow-xs transition-all hover:border-emerald-500 hover:text-emerald-700 active:scale-95"
@@ -97,7 +119,7 @@ export default function SupportPage() {
                 rel="noopener noreferrer"
                 className="mt-1 inline-block text-base font-extrabold text-emerald-800 hover:underline"
               >
-                +234 907 431 0204
+                {supportPhone}
               </a>
               <p className="text-xs text-slate-500 mt-0.5">Fast-track chat assistance</p>
             </div>
