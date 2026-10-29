@@ -1655,3 +1655,52 @@
     transform: none !important;
   }
 }
+
+/* Dark mode: enforce readable contrast across every admin workspace screen,
+   including dashboard metrics, configuration forms, tables and custom cards. */
+:is(html[data-theme="dark"], html.dark) .admin-workspace {
+  background: #070d18 !important;
+  color: #edf4ff !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-topbar,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(.admin-card, .admin-stat-card, .admin-setting-box, .admin-table-wrap, table) {
+  background-color: #0d1727 !important;
+  color: #edf4ff !important;
+  border-color: #2a3b53 !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(h1, h2, h3, h4, label, th, td, p, span, small, strong, legend, summary) {
+  color: #dbe7f7;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(h1, h2, h3, h4, strong) {
+  color: #f1f5f9;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(.admin-kpi-value, .admin-breadcrumb-current) {
+  color: #f8fbff !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(.admin-kpi-label, .admin-kpi-note, .admin-breadcrumb-parent, .admin-breadcrumb-home) {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(thead, th) {
+  background-color: #132137 !important;
+  color: #dbeafe !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(tbody tr:hover) {
+  background-color: #17263d !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  background-color: #0a1322 !important;
+  color: #edf4ff !important;
+  border-color: #3a4d68 !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(input, textarea, select)::placeholder {
+  color: #9aacc4 !important;
+  opacity: 1;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(.admin-btn-light, .admin-view-site-btn, .admin-role-chip, .admin-sidebar-toggle, .admin-mobile-menu) {
+  background-color: #132137 !important;
+  color: #e6f0ff !important;
+  border-color: #3a4d68 !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(.bg-white, .bg-slate-50, .bg-gray-50, .bg-cyan-50, .bg-indigo-50, .bg-emerald-50, .bg-amber-50) {
+  background-color: #132137 !important;
+}
