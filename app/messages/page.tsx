@@ -758,7 +758,7 @@ export default function MessagesPage() {
   }, [allPeers, onlinePeers, peerFilter, searchQuery]);
 
   return (
-    <main id="main" className="mx-auto max-w-7xl h-[calc(100vh-80px)] p-2 sm:p-6 flex flex-col">
+    <main id="main" className="messages-page mx-auto max-w-7xl h-[calc(100vh-80px)] p-2 sm:p-6 flex flex-col">
       <div className="flex-1 flex overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         {/* Left Sidebar: Conversations & Online Peers */}
         <aside
