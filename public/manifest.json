@@ -4,8 +4,8 @@
   "description": "Learn Smarter. Practise with Purpose. Connected CBT & Learning Academy.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#012153",
-  "theme_color": "#012153",
+  "background_color": "#0B1536",
+  "theme_color": "#0B1536",
   "icons": [
     {
       "src": "/favicon-32x32.png",
