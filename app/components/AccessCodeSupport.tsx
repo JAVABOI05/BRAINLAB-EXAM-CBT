@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_FOOTER_CONFIG, getFooterConfig } from "../lib/platformConfig";
+import { getFooterConfig } from "../lib/platformConfig";
 import { CONFIG } from "../lib/config";
 
 export default function AccessCodeSupport() {
