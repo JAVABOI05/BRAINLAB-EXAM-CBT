@@ -485,20 +485,10 @@ export default function ChallengeArenaPage() {
     let streakDays = profile?.current_streak_days ?? 1;
     let newBadges: string[] = [];
 
-    // Award substantive gamification activity if signed in
+    // Challenge Arena scores are calculated in the browser. Do not award authoritative
+    // XP or streaks until attempts and grading are persisted server-side.
     if (userId) {
       try {
-        const challengeRef = `arena_${selectedMode.id}_${Date.now()}`;
-        const activityRes = await recordLearningActivity(
-          "quiz_complete",
-          challengeRef,
-          percentage
-        );
-        if (activityRes.ok) {
-          if (activityRes.streak_days) streakDays = activityRes.streak_days;
-          if (activityRes.new_badges) newBadges = activityRes.new_badges;
-        }
-        // Refresh profile stats
         const updatedProfile = await getUserGamificationProfile(userId);
         if (updatedProfile) setProfile(updatedProfile);
         void nudgeChallengeArena();
