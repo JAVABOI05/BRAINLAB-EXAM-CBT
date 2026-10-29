@@ -1296,3 +1296,46 @@ button:disabled,
 :is(html[data-theme="dark"], html.dark) input[type="tel"] {
   color: var(--bl-dark-text, #edf4ff) !important;
 }
+
+
+/* Readability pass: Learning DNA, Skills Passport and Class Recordings. */
+:is(html[data-theme="dark"], html.dark) :is(.learning-dna-page, .skills-passport-page, .recordings-page) :where(.bg-white, .bg-slate-50, .bg-blue-50\/40, .bg-cyan-50, .bg-cyan-50\/80, .bg-indigo-50, .bg-emerald-50, .bg-amber-50) {
+  background-color: #0d1727 !important;
+  border-color: #2a3b53 !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.learning-dna-page, .skills-passport-page, .recordings-page) :where(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700, .text-blue-800, .text-cyan-900) {
+  color: #e6f0ff !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.learning-dna-page, .skills-passport-page, .recordings-page) :where(.text-slate-600, .text-slate-500, .text-slate-400, .text-blue-700) {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) :is(.learning-dna-page, .skills-passport-page, .recordings-page) :where(input, select, textarea) {
+  background-color: #0a1322 !important;
+  color: #edf4ff !important;
+  border-color: #3a4d68 !important;
+}
+:is(html[data-theme="dark"], html.dark) .learning-dna-page a.rounded-full.bg-cyan-50 {
+  background-color: #132b43 !important;
+  border-color: #31516f !important;
+  color: #dbeafe !important;
+}
+/* Messages: prevent default white/amber message surfaces from blending with dark theme. */
+:is(html[data-theme="dark"], html.dark) .messages-page :where(.bg-white) {
+  background-color: #0d1727 !important;
+  border-color: #2a3b53 !important;
+}
+:is(html[data-theme="dark"], html.dark) .messages-page :where(.bg-amber-50\/70) {
+  background-color: #3a2b12 !important;
+  border-color: #795b24 !important;
+}
+:is(html[data-theme="dark"], html.dark) .messages-page :where(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700) {
+  color: #e6f0ff !important;
+}
+:is(html[data-theme="dark"], html.dark) .messages-page :where(.text-slate-600, .text-slate-500, .text-slate-400) {
+  color: #b0bfd3 !important;
+}
+:is(html[data-theme="dark"], html.dark) .messages-page :where(input, textarea, select) {
+  background-color: #0a1322 !important;
+  color: #edf4ff !important;
+  border-color: #3a4d68 !important;
+}

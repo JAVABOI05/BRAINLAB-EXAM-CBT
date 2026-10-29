@@ -213,7 +213,7 @@ export default function SkillsPassportPage() {
   }
 
   return (
-    <main id="main" className="mx-auto min-h-[75vh] max-w-6xl px-5 py-10 sm:px-8 sm:py-14 space-y-8">
+    <main id="main" className="skills-passport-page mx-auto min-h-[75vh] max-w-6xl px-5 py-10 sm:px-8 sm:py-14 space-y-8">
       {/* Top Breadcrumb */}
       <div className="flex items-center justify-between text-xs font-bold text-slate-500">
         <Link href="/dashboard" className="hover:text-blue-800 transition">

@@ -187,7 +187,7 @@ export default function AdminPricingPage() {
 
   if (loading) {
     return (
-      <main className="admin-page">
+      <main className="admin-page admin-pricing-page">
         <div className="admin-container">
           <section className="admin-card text-center py-12 text-slate-500 font-semibold">
             Loading subscription plans &amp; feature matrices…
