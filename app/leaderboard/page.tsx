@@ -50,7 +50,7 @@ export default function GlobalLeaderboardPage() {
   const remaining = entries.slice(3);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+    <div className="leaderboard-page flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <main className="flex-1 py-10 sm:py-12">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           {/* Header */}

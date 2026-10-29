@@ -38,7 +38,7 @@ export default function CandidateSyllabusPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="syllabus-page min-h-screen bg-slate-50 text-slate-900">
       {/* Header Banner */}
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
