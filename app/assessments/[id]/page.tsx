@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import { recordLearningActivity } from "../../lib/gamification";
 
 interface AssessmentInfo {
   id: string;
@@ -188,7 +187,13 @@ export default function AssessmentRunnerPage() {
         });
       }
 
-      void recordLearningActivity("competition", assessmentId, Number(data.percentage || 0));
+      const { error: awardError } = await supabase.rpc("record_verified_assessment_activity", {
+        p_attempt_id: attemptId,
+      });
+      if (awardError) {
+        // Submission is already committed; do not fail the learner result screen.
+        console.error("Verified assessment XP award failed:", awardError.message);
+      }
       setPhase("completed");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Submission error.");
