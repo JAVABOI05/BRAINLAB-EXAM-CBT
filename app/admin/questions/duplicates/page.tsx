@@ -92,13 +92,19 @@ export default function DuplicateQuestionsAdminPage() {
       return false;
     }
 
-    const { data: retained, error: retainError } = await supabase
+    const groupIds = group.questions.map((q) => q.id);
+    const { data: currentGroup, error: groupReadError } = await supabase
       .from("questions")
       .select("id,is_active")
-      .eq("id", group.recommendedRetainId)
-      .maybeSingle();
-    if (retainError || !retained || retained.is_active !== true) {
-      setMessage("Action blocked: the recommended question is not confirmed active. Refresh the duplicate scan.");
+      .in("id", groupIds)
+      .eq("is_active", true);
+    const currentActiveIds = new Set((currentGroup || []).map((q) => q.id));
+    if (
+      groupReadError ||
+      !currentActiveIds.has(group.recommendedRetainId) ||
+      uniqueTargets.some((id) => !currentActiveIds.has(id))
+    ) {
+      setMessage("Action blocked: this duplicate group changed since the scan. Refresh and review it again.");
       return false;
     }
 
