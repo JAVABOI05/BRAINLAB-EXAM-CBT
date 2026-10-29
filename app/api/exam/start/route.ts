@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
         .eq("config_key", "master_access_code")
         .maybeSingle();
 
-      const masterCode = String(masterRow?.config_value || "STAGING-MASTER-TEST-001").trim().toUpperCase();
+      // Fail closed when no master access code is configured; never accept a known fallback code.
+      const masterCode = String(masterRow?.config_value || "").trim().toUpperCase();
 
       if (cleanCode === masterCode) {
         isMasterCode = true;
