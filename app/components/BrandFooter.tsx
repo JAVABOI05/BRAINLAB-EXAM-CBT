@@ -185,6 +185,7 @@ export default function BrandFooter() {
   const whatsappHelpdeskUrl = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello BrainLab Academy, I need assistance with CBT and classes.")}`
     : null;
+  const whatsappDisplayNumber = whatsappNumber ? `+${whatsappNumber}` : "";
 
   return (
     <footer
@@ -281,7 +282,7 @@ export default function BrandFooter() {
                     rel="noopener noreferrer"
                     className="font-medium text-slate-200 hover:text-emerald-300 transition-colors"
                   >
-                    {supportPhone}
+                    {whatsappDisplayNumber}
                   </a>
                 </div>
               </div>
