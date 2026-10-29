@@ -40,7 +40,7 @@ const faqs = [
 
 export default function SupportPage() {
   return (
-    <main id="main">
+    <main id="main" className="public-surface">
       {/* Hero Section */}
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
