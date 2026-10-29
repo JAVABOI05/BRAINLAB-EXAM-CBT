@@ -1450,3 +1450,28 @@
   .candidate-panel { grid-template-columns:1fr; }
   .palette-grid { grid-template-columns:repeat(6,minmax(0,1fr)); }
 }
+
+/* AI Study Coach panel: the light cyan card and cyan-900 eyebrow must remain
+   readable when the global theme is dark. Scope overrides to this component. */
+:is(html[data-theme="dark"], html.dark) .corrections-page section.rounded-2xl.border-cyan-200 {
+  background: #102238 !important;
+  border-color: #31516f !important;
+  color: #edf4ff !important;
+}
+:is(html[data-theme="dark"], html.dark) .corrections-page section.rounded-2xl.border-cyan-200 :where(h2, p, label, span) {
+  color: #dbeafe !important;
+}
+:is(html[data-theme="dark"], html.dark) .corrections-page section.rounded-2xl.border-cyan-200 h2 {
+  color: #f8fbff !important;
+}
+:is(html[data-theme="dark"], html.dark) .corrections-page section.rounded-2xl.border-cyan-200 > div > div > p.text-cyan-900 {
+  color: #7dd3fc !important;
+}
+:is(html[data-theme="dark"], html.dark) .corrections-page section.rounded-2xl.border-cyan-200 .bg-white {
+  background-color: #0b1728 !important;
+  border-color: #29435f !important;
+}
+:is(html[data-theme="dark"], html.dark) .corrections-page section.rounded-2xl.border-cyan-200 .text-slate-800,
+:is(html[data-theme="dark"], html.dark) .corrections-page section.rounded-2xl.border-cyan-200 .text-slate-700 {
+  color: #dbe7f7 !important;
+}
