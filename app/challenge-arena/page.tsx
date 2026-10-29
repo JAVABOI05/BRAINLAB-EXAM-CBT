@@ -5,7 +5,6 @@ import Link from "next/link";
 import LearningStreakCard from "../components/LearningStreakCard";
 import { supabase } from "../lib/supabase";
 import {
-  recordLearningActivity,
   getUserGamificationProfile,
   type UserGamificationProfile,
 } from "../lib/gamification";
