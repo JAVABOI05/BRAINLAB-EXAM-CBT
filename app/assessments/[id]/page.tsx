@@ -208,7 +208,7 @@ export default function AssessmentRunnerPage() {
 
   if (loading && phase === "briefing") {
     return (
-      <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+      <div className="assessment-detail-page flex min-h-screen flex-col bg-slate-50 text-slate-900">
                 <main className="flex flex-1 items-center justify-center p-6">
           <p className="text-sm font-semibold text-slate-500">Loading assessment details...</p>
         </main>
@@ -217,7 +217,7 @@ export default function AssessmentRunnerPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+    <div className="assessment-detail-page flex min-h-screen flex-col bg-slate-50 text-slate-900">
       
       <main className="flex-1 py-8 sm:py-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
