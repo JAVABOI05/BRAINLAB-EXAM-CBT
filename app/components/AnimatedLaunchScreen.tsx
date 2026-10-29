@@ -27,8 +27,9 @@ export default function AnimatedLaunchScreen() {
       return;
     }
 
-    const exitTimer = window.setTimeout(() => setLeaving(true), 1500);
-    const removeTimer = window.setTimeout(() => setVisible(false), 1880);
+    // Give the full brand reveal time to land before the elegant exit transition.
+    const exitTimer = window.setTimeout(() => setLeaving(true), 3200);
+    const removeTimer = window.setTimeout(() => setVisible(false), 3700);
 
     return () => {
       window.clearTimeout(exitTimer);
@@ -45,26 +46,39 @@ export default function AnimatedLaunchScreen() {
       aria-live="polite"
       aria-label="Opening BrainLab Academy"
     >
-      <div className={styles.glowTop} aria-hidden="true" />
-      <div className={styles.glowBottom} aria-hidden="true" />
+      <div className={styles.ambient} aria-hidden="true">
+        <span className={styles.ambientOrbOne} />
+        <span className={styles.ambientOrbTwo} />
+        <span className={styles.ambientOrbThree} />
+        <span className={styles.starField} />
+      </div>
       <div className={styles.content}>
         <div className={styles.emblem} aria-hidden="true">
+          <span className={styles.halo} />
           <span className={styles.orbit} />
           <span className={styles.orbitInner} />
+          <span className={styles.orbitAccent} />
           <span className={styles.sparkleOne} />
           <span className={styles.sparkleTwo} />
-          <img src="/icon-192.png" alt="" className={styles.mark} />
+          <span className={styles.sparkleThree} />
+          <span className={styles.logoPlate}>
+            <img src="/icon-192.png" alt="" className={styles.mark} />
+          </span>
         </div>
         <div className={styles.brand}>
-          <p className={styles.eyebrow}>LEARN · PRACTISE · PROGRESS</p>
+          <p className={styles.eyebrow}><span /> THE FUTURE OF LEARNING <span /></p>
           <h1>BrainLab <span>Academy</span></h1>
           <p className={styles.tagline}>Practise with purpose.</p>
+          <p className={styles.supportingLine}>Discover. Understand. Achieve.</p>
         </div>
-        <div className={styles.loadingTrack} aria-hidden="true">
-          <span className={styles.loadingBar} />
+        <div className={styles.loadingArea}>
+          <div className={styles.loadingTrack} aria-hidden="true">
+            <span className={styles.loadingBar} />
+          </div>
+          <p className={styles.loadingLabel}>PREPARING YOUR LEARNING SPACE</p>
         </div>
       </div>
-      <span className={styles.footer}>YOUR LEARNING JOURNEY STARTS HERE</span>
+      <span className={styles.footer}>YOUR NEXT BREAKTHROUGH STARTS HERE</span>
     </div>
   );
 }
