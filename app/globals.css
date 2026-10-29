@@ -1254,3 +1254,45 @@ button:disabled,
 :is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-amber-50/90"][class*="border-amber-200"] .text-slate-500 {
   color: #d7bc83 !important;
 }
+
+
+/* Site-wide dark-mode audit: remaining semantic/pastel surfaces and low-contrast text. */
+:is(html[data-theme="dark"], html.dark) .bg-cyan-50,
+:is(html[data-theme="dark"], html.dark) .bg-cyan-100,
+:is(html[data-theme="dark"], html.dark) .bg-teal-50,
+:is(html[data-theme="dark"], html.dark) .bg-teal-100,
+:is(html[data-theme="dark"], html.dark) .bg-violet-50,
+:is(html[data-theme="dark"], html.dark) .bg-purple-50,
+:is(html[data-theme="dark"], html.dark) .bg-pink-50,
+:is(html[data-theme="dark"], html.dark) .bg-orange-50,
+:is(html[data-theme="dark"], html.dark) .bg-lime-50 {
+  background-color: var(--bl-dark-elevated, #132137) !important;
+  border-color: var(--bl-dark-border, #2a3b53) !important;
+}
+:is(html[data-theme="dark"], html.dark) .text-cyan-900,
+:is(html[data-theme="dark"], html.dark) .text-cyan-800,
+:is(html[data-theme="dark"], html.dark) .text-teal-900,
+:is(html[data-theme="dark"], html.dark) .text-violet-900,
+:is(html[data-theme="dark"], html.dark) .text-purple-900,
+:is(html[data-theme="dark"], html.dark) .text-pink-900,
+:is(html[data-theme="dark"], html.dark) .text-orange-900 {
+  color: #dbeafe !important;
+}
+:is(html[data-theme="dark"], html.dark) .text-cyan-700,
+:is(html[data-theme="dark"], html.dark) .text-cyan-800,
+:is(html[data-theme="dark"], html.dark) .text-teal-700,
+:is(html[data-theme="dark"], html.dark) .text-violet-700,
+:is(html[data-theme="dark"], html.dark) .text-purple-700,
+:is(html[data-theme="dark"], html.dark) .text-pink-700,
+:is(html[data-theme="dark"], html.dark) .text-orange-700 {
+  color: #bfdbfe !important;
+}
+:is(html[data-theme="dark"], html.dark) input[type="text"],
+:is(html[data-theme="dark"], html.dark) input[type="email"],
+:is(html[data-theme="dark"], html.dark) input[type="number"],
+:is(html[data-theme="dark"], html.dark) input[type="password"],
+:is(html[data-theme="dark"], html.dark) input[type="search"],
+:is(html[data-theme="dark"], html.dark) input[type="url"],
+:is(html[data-theme="dark"], html.dark) input[type="tel"] {
+  color: var(--bl-dark-text, #edf4ff) !important;
+}
