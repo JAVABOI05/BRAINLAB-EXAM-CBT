@@ -107,7 +107,9 @@ export default function SupportPageClient() {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">WhatsApp Helpdesk</p>
               <a
-                href="https://wa.me/2349074310204"
+                href={whatsappUrl || undefined}
+                aria-disabled={!whatsappUrl}
+                onClick={(event) => { if (!whatsappUrl) event.preventDefault(); }}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-1 inline-block text-base font-extrabold text-emerald-800 hover:underline"
