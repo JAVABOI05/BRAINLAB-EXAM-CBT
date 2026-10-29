@@ -28,8 +28,8 @@ begin
     else 'organisation_quiz'
   end;
   insert into public.question_exposure_history(user_id,question_id,surface,attempt_id)
-  select new.user_id, qid, v_surface, new.id
-  from unnest(new.selected_question_ids) as qid
+  select new.user_id, q.qid, v_surface, new.id
+  from unnest(new.selected_question_ids) as q(qid)
   on conflict (user_id,question_id,surface,attempt_id) do nothing;
   return new;
 end;
