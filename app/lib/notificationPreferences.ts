@@ -26,7 +26,18 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, "em
   unsubscribed_at: null,
 };
 
-const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXTAUTH_SECRET || "brainlab-notif-secret-2026";
+function getNotificationTokenSecret(): string {
+  const secret =
+    process.env.NOTIFICATION_TOKEN_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!secret) {
+    throw new Error("Notification token signing secret is not configured.");
+  }
+
+  return secret;
+}
 
 /**
  * Generates an HMAC-signed one-click unsubscribe token for a given email.
@@ -34,7 +45,7 @@ const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXTAUTH_SEC
 export function generateUnsubscribeToken(email: string): string {
   const normalized = email.trim().toLowerCase();
   const signature = crypto
-    .createHmac("sha256", SECRET)
+    .createHmac("sha256", getNotificationTokenSecret())
     .update(normalized)
     .digest("hex")
     .slice(0, 24);
@@ -51,7 +62,7 @@ export function verifyUnsubscribeToken(token: string): string | null {
     const [email, signature] = decoded.split(":");
     if (!email || !signature) return null;
     const expectedSig = crypto
-      .createHmac("sha256", SECRET)
+      .createHmac("sha256", getNotificationTokenSecret())
       .update(email.trim().toLowerCase())
       .digest("hex")
       .slice(0, 24);
