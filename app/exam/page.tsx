@@ -8,7 +8,6 @@ import { queueExamSubmission, queueProgress } from "../lib/offlineSync";
 import FloatingCalculator from "../components/FloatingCalculator";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import { cleanQuestionText } from "../lib/cleanText";
-import { recordLearningActivity } from "../lib/gamification";
 import { securePurgeExamSession } from "../lib/clientCrypto";
 
 type QuestionRow = PaperQuestion;
@@ -251,10 +250,6 @@ export default function ExamPage() {
       subject_scores: res.subject_scores, show_results: res.show_results, status: res.status,
     }));
     clearAttemptStorage();
-    if (typeof res.score === "number" && typeof res.total === "number" && res.total > 0) {
-      const pct = Math.round((res.score / res.total) * 100);
-      void recordLearningActivity("quiz_complete", res.result_id, pct);
-    }
   }
 
   useEffect(() => {

@@ -5,7 +5,6 @@ import Link from "next/link";
 import LearningStreakCard from "../components/LearningStreakCard";
 import { supabase } from "../lib/supabase";
 import {
-  recordLearningActivity,
   getUserGamificationProfile,
   type UserGamificationProfile,
 } from "../lib/gamification";
@@ -481,25 +480,16 @@ export default function ChallengeArenaPage() {
     // Scaled by mode multiplier and extra bonus for high score
     let baseXP = correctCount * 10;
     if (percentage >= 80) baseXP += 50; // Excellence bonus
-    const xpEarned = Math.round(baseXP * selectedMode.xpMultiplier);
+    // Do not display client-computed points as awarded account XP for signed-in users.
+    const xpEarned = userId ? 0 : Math.round(baseXP * selectedMode.xpMultiplier);
 
     let streakDays = profile?.current_streak_days ?? 1;
-    let newBadges: string[] = [];
+    const newBadges: string[] = [];
 
-    // Award substantive gamification activity if signed in
+    // Challenge Arena scores are calculated in the browser. Do not award authoritative
+    // XP or streaks until attempts and grading are persisted server-side.
     if (userId) {
       try {
-        const challengeRef = `arena_${selectedMode.id}_${Date.now()}`;
-        const activityRes = await recordLearningActivity(
-          "quiz_complete",
-          challengeRef,
-          percentage
-        );
-        if (activityRes.ok) {
-          if (activityRes.streak_days) streakDays = activityRes.streak_days;
-          if (activityRes.new_badges) newBadges = activityRes.new_badges;
-        }
-        // Refresh profile stats
         const updatedProfile = await getUserGamificationProfile(userId);
         if (updatedProfile) setProfile(updatedProfile);
         void nudgeChallengeArena();

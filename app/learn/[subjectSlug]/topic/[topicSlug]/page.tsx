@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
-import { recordLearningActivity } from "@/app/lib/gamification";
 
 interface TopicMcqOption {
   id: string;
@@ -76,6 +75,7 @@ export default function StudentTopicContentPage() {
   // In-Class MCQ State (Keyed by item.id)
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, Record<string, string>>>({});
   const [mcqResults, setMcqResults] = useState<Record<string, { score: number; total: number; percentage: number; feedback: TopicMcqFeedback[] }>>({});
+  const [mcqErrors, setMcqErrors] = useState<Record<string, string>>({});
   const [gradingMcq, setGradingMcq] = useState<string | null>(null);
 
   useEffect(() => {
@@ -126,15 +126,11 @@ export default function StudentTopicContentPage() {
         );
 
         if (contentErr || !contentData?.ok) {
-          // Fallback direct query if RPC isn't deployed yet
-          const { data: directItems } = await supabase
-            .from("learning_topic_content_items")
-            .select("id, content_type, title, summary, order_index, metadata, data")
-            .eq("topic_id", topData.id)
-            .eq("is_published", true)
-            .order("order_index", { ascending: true });
-
-          if (active && directItems) setItems(directItems as ContentItem[]);
+          // Do not fall back to a direct table query: it can expose MCQ answer keys
+          // if the safe RPC is unavailable. Fail closed and show a recoverable error.
+          if (active) {
+            setError("Learning materials could not be loaded securely. Please refresh or try again shortly.");
+          }
         } else if (active) {
           setItems((contentData.items || []) as ContentItem[]);
         }
@@ -162,6 +158,7 @@ export default function StudentTopicContentPage() {
 
   // Handle MCQ Answer Pick
   function handleSelectOption(itemId: string, questionId: string, optionId: string) {
+    setMcqErrors((prev) => ({ ...prev, [itemId]: "" }));
     setMcqAnswers((prev) => ({
       ...prev,
       [itemId]: {
@@ -175,6 +172,7 @@ export default function StudentTopicContentPage() {
   async function submitMcqForGrading(itemId: string) {
     const answers = mcqAnswers[itemId] || {};
     setGradingMcq(itemId);
+    setMcqErrors((prev) => ({ ...prev, [itemId]: "" }));
 
     try {
       const { data, error } = await supabase.rpc("grade_topic_mcq_assessment", {
@@ -182,7 +180,12 @@ export default function StudentTopicContentPage() {
         p_candidate_answers: answers,
       });
 
-      if (!error && data?.ok) {
+      if (error) {
+        setMcqErrors((prev) => ({
+          ...prev,
+          [itemId]: "We couldn't submit your answers. Check your connection and try again.",
+        }));
+      } else if (data?.ok) {
         setMcqResults((prev) => ({
           ...prev,
           [itemId]: {
@@ -192,10 +195,25 @@ export default function StudentTopicContentPage() {
             feedback: data.feedback || [],
           },
         }));
-        void recordLearningActivity("topic_mcq", itemId, data.percentage);
+      } else {
+        const messages: Record<string, string> = {
+          authentication_required: "Please sign in to submit this practice check.",
+          complete_valid_answers_required: "Please answer every question using one of the listed options before submitting.",
+          answers_required: "Please select an answer for each question before submitting.",
+          invalid_question_data: "This practice check is not configured correctly yet. Please contact your tutor.",
+          attempt_limit_reached: "You've already submitted this practice check in the last 24 hours, but the saved result could not be restored. Please contact your tutor if you need help.",
+          item_not_found: "This practice check is no longer available.",
+        };
+        setMcqErrors((prev) => ({
+          ...prev,
+          [itemId]: messages[data?.error] || "Your answers couldn't be graded. Please try again later.",
+        }));
       }
     } catch {
-      // Handle error gracefully
+      setMcqErrors((prev) => ({
+        ...prev,
+        [itemId]: "A network error interrupted submission. Please check your connection and try again.",
+      }));
     } finally {
       setGradingMcq(null);
     }
@@ -518,6 +536,11 @@ export default function StudentTopicContentPage() {
                       </div>
 
                       {/* MCQ Action / Score Bar */}
+                      {mcqErrors[item.id] && (
+                        <div role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold leading-5 text-rose-800">
+                          {mcqErrors[item.id]}
+                        </div>
+                      )}
                       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-amber-200/60 pt-4">
                         {mcqResults[item.id] ? (
                           <div className="flex items-center gap-3">
@@ -534,7 +557,7 @@ export default function StudentTopicContentPage() {
                             onClick={() => submitMcqForGrading(item.id)}
                             className="rounded-xl bg-amber-700 px-6 py-2.5 text-xs font-bold text-white hover:bg-amber-800 shadow-sm disabled:opacity-50"
                           >
-                            {gradingMcq === item.id ? "Grading..." : "Submit Answers For Feedback ✓"}
+                            {gradingMcq === item.id ? "Checking..." : "Submit Answers / Recover Previous Result ✓"}
                           </button>
                         )}
                       </div>
