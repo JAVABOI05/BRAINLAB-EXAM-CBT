@@ -55,7 +55,7 @@ begin
     when v_attempt.attempt_type = 'competition' then 'competition'
     else 'quiz_complete'
   end;
-  v_percentage := round((v_attempt.score / v_attempt.total) * 100, 2);
+  v_percentage := round((v_attempt.score::numeric / v_attempt.total::numeric) * 100, 2);
 
   insert into public.verified_gamification_award_events(attempt_id, user_id, activity_type)
   values (v_attempt.id, v_attempt.user_id, v_activity_type)
