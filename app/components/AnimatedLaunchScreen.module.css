@@ -415,6 +415,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .screen {
+    opacity: 1;
+  }
+
   .screen,
   .screen::before,
   .emblem,
