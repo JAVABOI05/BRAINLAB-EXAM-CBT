@@ -125,15 +125,11 @@ export default function StudentTopicContentPage() {
         );
 
         if (contentErr || !contentData?.ok) {
-          // Fallback direct query if RPC isn't deployed yet
-          const { data: directItems } = await supabase
-            .from("learning_topic_content_items")
-            .select("id, content_type, title, summary, order_index, metadata, data")
-            .eq("topic_id", topData.id)
-            .eq("is_published", true)
-            .order("order_index", { ascending: true });
-
-          if (active && directItems) setItems(directItems as ContentItem[]);
+          // Do not fall back to a direct table query: it can expose MCQ answer keys
+          // if the safe RPC is unavailable. Fail closed and show a recoverable error.
+          if (active) {
+            setError("Learning materials could not be loaded securely. Please refresh or try again shortly.");
+          }
         } else if (active) {
           setItems((contentData.items || []) as ContentItem[]);
         }
