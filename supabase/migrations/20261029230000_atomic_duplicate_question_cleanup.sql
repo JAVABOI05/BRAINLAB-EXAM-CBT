@@ -35,8 +35,8 @@ begin
       using errcode = '22023';
   end if;
 
-  if cardinality(p_group_ids) <> (select count(distinct x) from unnest(p_group_ids) as x)
-     or cardinality(p_target_ids) <> (select count(distinct x) from unnest(p_target_ids) as x) then
+  if cardinality(p_group_ids) <> (select count(distinct x) from unnest(p_group_ids) as ids(id))
+     or cardinality(p_target_ids) <> (select count(distinct x) from unnest(p_target_ids) as ids(id)) then
     raise exception 'Duplicate IDs are not allowed in cleanup requests' using errcode = '22023';
   end if;
 
