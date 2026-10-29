@@ -126,3 +126,29 @@ main#main.learner-theme[data-theme="dark"] .border-indigo-100,
 main#main.learner-theme[data-theme="dark"] .border-purple-100 {
   border-color: #34465f !important;
 }
+
+
+/* Restore the blue hierarchy on the progress heading and access link. */
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] #stats-heading {
+  color: #a9ccff !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] > div:first-child a {
+  color: #9fc5ff !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] > div.grid > div :is(.text-blue-700, .text-sky-700, .text-emerald-700, .text-purple-700) {
+  color: #b9d9ff !important;
+}
+
+/* Convert pale decorative chips to dark, readable accents. */
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 :is(.bg-indigo-100, .bg-red-50\/80, .bg-white\/80) {
+  background-color: #263957 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 :is(.text-indigo-900, .text-red-950, .text-red-700) {
+  color: #e1eaff !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 .bg-purple-100 {
+  background-color: #342b55 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 .text-purple-900 {
+  color: #e2d7ff !important;
+}
