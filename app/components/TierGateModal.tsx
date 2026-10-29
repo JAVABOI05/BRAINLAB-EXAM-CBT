@@ -27,7 +27,7 @@ export default function TierGateModal({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-indigo-200 bg-white p-6 shadow-2xl sm:p-8">
+      <div className="public-surface relative w-full max-w-md overflow-hidden rounded-3xl border border-indigo-200 bg-white p-6 shadow-2xl sm:p-8">
         {/* Top Decorative Header */}
         <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 blur-xl pointer-events-none" />
 
