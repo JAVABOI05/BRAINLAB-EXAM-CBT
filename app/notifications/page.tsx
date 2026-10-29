@@ -112,7 +112,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <main id="main" className="mx-auto min-h-[75vh] max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <main id="main" className="notifications-page mx-auto min-h-[75vh] max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
