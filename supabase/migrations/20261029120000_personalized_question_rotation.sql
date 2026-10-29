@@ -34,6 +34,7 @@ begin
   return new;
 end;
 $function$;
+revoke all on function public.record_learning_attempt_question_exposure() from public, anon, authenticated;
 drop trigger if exists learning_attempt_question_exposure on public.learning_practice_attempts;
 create trigger learning_attempt_question_exposure
 after insert on public.learning_practice_attempts
