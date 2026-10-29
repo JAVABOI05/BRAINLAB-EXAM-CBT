@@ -34,45 +34,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(rpcData);
     }
 
-    // 2. Resiliency recovery: If the exam was already submitted (e.g. from a prior auto-save or double click)
-    // look up the existing result directly to prevent candidate lockout.
-    const { data: existingResult } = await supabase
-      .from("results")
-      .select("id, score, total, subject_scores, created_at")
-      .eq("session_id", sessionId)
-      .maybeSingle();
+    // 2. Safe resiliency recovery: verify the same session/token pair through the
+    // resume_exam RPC. Never return a result based on session ID alone; callers
+    // must prove possession of the attempt token.
+    const { data: resumedData, error: resumeError } = await supabase.rpc("resume_exam", {
+      p_session: sessionId,
+      p_token: token,
+    });
 
-    if (existingResult) {
-      return NextResponse.json({
-        ok: true,
-        finished: true,
-        status: "submitted",
-        result_id: existingResult.id,
-        score: existingResult.score,
-        total: existingResult.total,
-        subject_scores: existingResult.subject_scores || {},
-        show_results: true,
-      });
-    }
-
-    // Check if session exists and is marked as finished/submitted
-    const { data: sessionRow } = await supabase
-      .from("exam_sessions")
-      .select("id, status, score, total")
-      .eq("id", sessionId)
-      .maybeSingle();
-
-    if (sessionRow && (sessionRow.status === "submitted" || sessionRow.status === "expired")) {
-      return NextResponse.json({
-        ok: true,
-        finished: true,
-        status: sessionRow.status,
-        result_id: sessionRow.id,
-        score: sessionRow.score || 0,
-        total: sessionRow.total || 400,
-        subject_scores: {},
-        show_results: true,
-      });
+    if (!resumeError && resumedData && typeof resumedData === "object") {
+      const resumed = resumedData as {
+        ok?: boolean;
+        finished?: boolean;
+        status?: string;
+        result_id?: string;
+        score?: number;
+        total?: number;
+        subject_scores?: Record<string, number>;
+        show_results?: boolean;
+      };
+      if (resumed.ok === true && resumed.finished === true && resumed.result_id) {
+        return NextResponse.json({
+          ok: true,
+          finished: true,
+          status: resumed.status || "submitted",
+          result_id: resumed.result_id,
+          score: resumed.score ?? 0,
+          total: resumed.total ?? 400,
+          subject_scores: resumed.subject_scores || {},
+          show_results: resumed.show_results === true,
+        });
+      }
     }
 
     const errorMessage = rpcError?.message || (rpcData as { message?: string })?.message || "Could not complete examination submission.";
