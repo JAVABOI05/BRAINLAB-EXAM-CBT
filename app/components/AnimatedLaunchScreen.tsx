@@ -13,7 +13,6 @@ export default function AnimatedLaunchScreen() {
     try {
       const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
-        // Safari on iOS exposes this non-standard property for installed apps.
         Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 
       if (!isStandalone || window.sessionStorage.getItem(SESSION_KEY) === "1") {
@@ -23,13 +22,11 @@ export default function AnimatedLaunchScreen() {
       window.sessionStorage.setItem(SESSION_KEY, "1");
       setVisible(true);
     } catch {
-      // If storage is unavailable, do not block access to the app with an intro.
       return;
     }
 
-    // Give the full brand reveal time to land before the elegant exit transition.
-    const exitTimer = window.setTimeout(() => setLeaving(true), 3200);
-    const removeTimer = window.setTimeout(() => setVisible(false), 3700);
+    const exitTimer = window.setTimeout(() => setLeaving(true), 3900);
+    const removeTimer = window.setTimeout(() => setVisible(false), 4450);
 
     return () => {
       window.clearTimeout(exitTimer);
@@ -47,38 +44,42 @@ export default function AnimatedLaunchScreen() {
       aria-label="Opening BrainLab Academy"
     >
       <div className={styles.ambient} aria-hidden="true">
-        <span className={styles.ambientOrbOne} />
-        <span className={styles.ambientOrbTwo} />
-        <span className={styles.ambientOrbThree} />
-        <span className={styles.starField} />
+        <span className={styles.colorWash} />
+        <span className={styles.ribbon} />
+        <span className={styles.ribbonAccent} />
+        <span className={styles.panelOne} />
+        <span className={styles.panelTwo} />
       </div>
+
       <div className={styles.content}>
         <div className={styles.emblem} aria-hidden="true">
-          <span className={styles.halo} />
-          <span className={styles.orbit} />
-          <span className={styles.orbitInner} />
-          <span className={styles.orbitAccent} />
-          <span className={styles.sparkleOne} />
-          <span className={styles.sparkleTwo} />
-          <span className={styles.sparkleThree} />
+          <span className={styles.bookBack} />
+          <span className={styles.bookPageLeft} />
+          <span className={styles.bookPageRight} />
+          <span className={styles.bookSpine} />
+          <span className={styles.pathLine} />
+          <span className={styles.pathNode} />
           <span className={styles.logoPlate}>
             <img src="/icon-192.png" alt="" className={styles.mark} />
           </span>
         </div>
+
         <div className={styles.brand}>
-          <p className={styles.eyebrow}><span /> THE FUTURE OF LEARNING <span /></p>
+          <p className={styles.eyebrow}>LEARN WITH PURPOSE</p>
           <h1>BrainLab <span>Academy</span></h1>
           <p className={styles.tagline}>Practise with purpose.</p>
-          <p className={styles.supportingLine}>Discover. Understand. Achieve.</p>
+          <p className={styles.supportingLine}>Understand more. Go further.</p>
         </div>
+
         <div className={styles.loadingArea}>
           <div className={styles.loadingTrack} aria-hidden="true">
             <span className={styles.loadingBar} />
           </div>
-          <p className={styles.loadingLabel}>PREPARING YOUR LEARNING SPACE</p>
+          <p className={styles.loadingLabel}>YOUR LEARNING JOURNEY IS STARTING</p>
         </div>
       </div>
-      <span className={styles.footer}>YOUR NEXT BREAKTHROUGH STARTS HERE</span>
+
+      <span className={styles.footer}>PRACTISE · UNDERSTAND · PROGRESS</span>
     </div>
   );
 }
