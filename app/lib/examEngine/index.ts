@@ -79,15 +79,27 @@ export async function generateExamPaper(options: {
   // Run all subject generations in parallel for maximum performance
   const subjectPromises = chosenSubjects.map(async (subj) => {
     const isEnglish = subj.toLowerCase().includes("english");
-    const [blueprint, { data: dbRows, error: fetchErr }] = await Promise.all([
+    const [blueprint, questionPages] = await Promise.all([
       loadBlueprintForSubject(subj),
-      supabase
-        .from("questions")
-        .select("*")
-        .eq("is_active", true)
-        .ilike("subject", isEnglish ? "English" : subj)
-        .limit(10000),
+      (async () => {
+        const rows: EngineQuestion[] = [];
+        const pageSize = 1000;
+        for (let offset = 0; offset < 10000; offset += pageSize) {
+          const { data, error } = await supabase
+            .from("questions")
+            .select("*")
+            .eq("is_active", true)
+            .ilike("subject", isEnglish ? "English" : subj)
+            .range(offset, offset + pageSize - 1);
+          if (error) return { rows: [] as EngineQuestion[], error };
+          const page = (data || []) as EngineQuestion[];
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
+        return { rows, error: null };
+      })(),
     ]);
+    const fetchErr = questionPages.error;
 
     if (fetchErr) {
       return {
@@ -98,7 +110,7 @@ export async function generateExamPaper(options: {
       };
     }
 
-    const available = (dbRows || []) as EngineQuestion[];
+    const available = questionPages.rows;
     const freshAvailable = excludedIds.size
       ? available.filter((question) => !excludedIds.has(question.id))
       : available;
