@@ -1766,3 +1766,11 @@
 ) {
   color: #dbe7f7 !important;
 }
+
+
+/* Keep dashboard service-status messages readable in dark mode. */
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-workspace-message.is-subtle {
+  background-color: #132137 !important;
+  border-color: #3a4d68 !important;
+  color: #dbe7f7 !important;
+}
