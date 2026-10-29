@@ -1,0 +1,128 @@
+/* Learner dashboard dark-theme contrast repair.
+   Scoped to the dashboard root so light mode and other routes remain unchanged. */
+@media (prefers-reduced-motion: no-preference) {
+  main#main.learner-theme[data-theme="dark"] {
+    color-scheme: dark;
+  }
+}
+
+main#main.learner-theme[data-theme="dark"] {
+  color: #e7eefb !important;
+}
+
+main#main.learner-theme[data-theme="dark"] > div > div > p.text-blue-800 {
+  color: #9cc8ff !important;
+}
+main#main.learner-theme[data-theme="dark"] h1.text-slate-900,
+main#main.learner-theme[data-theme="dark"] h2.text-slate-950,
+main#main.learner-theme[data-theme="dark"] h2.text-slate-900,
+main#main.learner-theme[data-theme="dark"] h3.text-slate-900,
+main#main.learner-theme[data-theme="dark"] h3.text-slate-950 {
+  color: #f1f5fb !important;
+}
+
+/* Progress overview and its four metric tiles. */
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] {
+  background: #0e1a2b !important;
+  border-color: #293b54 !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] > div.grid > div {
+  background: linear-gradient(145deg, #17263b, #111e31) !important;
+  border-color: #344861 !important;
+  color: #e7eefb !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] > div.grid > div :is(.text-slate-900, .text-slate-800) {
+  color: #f1f5fb !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] > div.grid > div .text-slate-500 {
+  color: #b7c5d8 !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="stats-heading"] > div.grid > div :is(.bg-blue-50, .bg-sky-50, .bg-emerald-50, .bg-purple-50) {
+  background-color: #203754 !important;
+  color: #b9d9ff !important;
+}
+
+/* Exam readiness panel: replace the pale gradient and restore readable text. */
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 {
+  background: linear-gradient(135deg, #17253d, #121e32 70%, #211d3b) !important;
+  border-color: #3b4d70 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 :is(.text-slate-950, .text-slate-900, .text-slate-700, .text-slate-600) {
+  color: #e3ebf8 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 .text-slate-500,
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 .text-slate-400 {
+  color: #b5c4da !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 .bg-white {
+  background: #0c1728 !important;
+  border-color: #354966 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 .text-indigo-950 {
+  color: #c7d9ff !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 .text-indigo-900 {
+  color: #d9e6ff !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-indigo-200 .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+/* Spaced review panel and its question counter. */
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 {
+  background: linear-gradient(145deg, #211d3b, #151e35) !important;
+  border-color: #514477 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 :is(.text-slate-900, .text-slate-600) {
+  color: #e4e8f7 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 .bg-white {
+  background: #0c1728 !important;
+  border-color: #514477 !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 .text-purple-950 {
+  color: #d8c5ff !important;
+}
+main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 .text-purple-800 {
+  color: #c4a9ff !important;
+}
+
+/* Candidate analytics report card. */
+main#main.learner-theme[data-theme="dark"] section[aria-label="Study Report Card"] {
+  background: linear-gradient(110deg, #142945, #101e31 60%, #142d36) !important;
+  border-color: #35516d !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-label="Study Report Card"] :is(.text-slate-900, .text-slate-600, .text-slate-500, .text-slate-400) {
+  color: #d4dfef !important;
+}
+
+/* Resume section and any nested light cards. */
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="resume-heading"] {
+  background: #12233b !important;
+  border-color: #344d6b !important;
+  color: #e7eefb !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="resume-heading"] :is(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700) {
+  color: #edf4ff !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="resume-heading"] :is(.text-slate-600, .text-slate-500, .text-slate-400) {
+  color: #b8c8dc !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="resume-heading"] .bg-white {
+  background: #0b1729 !important;
+  border-color: #344d6b !important;
+}
+
+/* Identity/profile pill and subtle dividers. */
+main#main.learner-theme[data-theme="dark"] a.rounded-full.border-slate-200.bg-white {
+  background: #132238 !important;
+  border-color: #354a65 !important;
+}
+main#main.learner-theme[data-theme="dark"] a.rounded-full.border-slate-200.bg-white .text-slate-700 {
+  color: #e3ebf8 !important;
+}
+main#main.learner-theme[data-theme="dark"] .border-slate-100,
+main#main.learner-theme[data-theme="dark"] .border-indigo-100,
+main#main.learner-theme[data-theme="dark"] .border-purple-100 {
+  border-color: #34465f !important;
+}
