@@ -1704,3 +1704,65 @@
 :is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(.bg-white, .bg-slate-50, .bg-gray-50, .bg-cyan-50, .bg-indigo-50, .bg-emerald-50, .bg-amber-50) {
   background-color: #132137 !important;
 }
+
+
+/* Dashboard dark-mode regression fix: explicitly theme dashboard-only cards.
+   The shared text rules above made these custom cards light-on-light because
+   their selectors were not included in the generic card background override. */
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(
+  .admin-kpi-card,
+  .admin-panel,
+  .admin-action-link,
+  .admin-connection-card,
+  .admin-student-statistics,
+  .admin-student-chart-panel,
+  .admin-quick-settings-panel,
+  .admin-toggle-field,
+  .admin-setting-field,
+  .admin-input-affix-wrap
+) {
+  background-color: #0d1727 !important;
+  color: #e6edf7;
+  border-color: #2a3b53 !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(
+  .admin-kpi-label,
+  .admin-kpi-note,
+  .admin-panel-heading p,
+  .admin-action-content span,
+  .admin-connection-card p,
+  .admin-toggle-copy span,
+  .admin-setting-label span,
+  .admin-student-chart-legend
+) {
+  color: #b8c7dc !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(
+  .admin-kpi-value,
+  .admin-panel-heading h2,
+  .admin-panel-heading h3,
+  .admin-action-content strong,
+  .admin-connection-title strong,
+  .admin-toggle-copy strong,
+  .admin-setting-label strong,
+  .admin-student-statistics .admin-panel-heading h2,
+  .admin-student-chart-panel .admin-panel-heading h3
+) {
+  color: #f1f5f9 !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(
+  .admin-action-link:hover,
+  .admin-connection-card:hover
+) {
+  background-color: #17263d !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(
+  .admin-student-chart-panel
+) {
+  background-color: #0a1322 !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content :where(
+  .admin-input-affix
+) {
+  color: #dbe7f7 !important;
+}
