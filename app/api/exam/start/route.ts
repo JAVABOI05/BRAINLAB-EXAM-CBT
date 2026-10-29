@@ -101,21 +101,13 @@ export async function POST(request: NextRequest) {
     // 3. Generate exam paper. Registered candidates receive unseen questions first.
     // Anonymous/open-code attempts retain the existing random-selection behaviour.
     let previouslySeenIds: number[] = [];
-    const exposureCountByQuestionId = new Map<number, number>();
-    const firstSeenAtByQuestionId = new Map<number, string>();
     if (registeredUser) {
       const { data: seenRows, error: seenError } = await supabase
-        .from("learner_question_exposures")
-        .select("question_id, exposure_count, first_seen_at")
+        .from("question_exposure_history")
+        .select("question_id")
         .eq("user_id", registeredUser.id);
       if (!seenError && seenRows) {
-        for (const row of seenRows as { question_id: number; exposure_count: number }[]) {
-          const questionId = Number(row.question_id);
-          if (!Number.isFinite(questionId)) continue;
-          previouslySeenIds.push(questionId);
-          exposureCountByQuestionId.set(questionId, Number(row.exposure_count) || 1);
-          if (row.first_seen_at) firstSeenAtByQuestionId.set(questionId, row.first_seen_at);
-        }
+        previouslySeenIds = [...new Set(seenRows.map((row: { question_id: number }) => Number(row.question_id)).filter(Number.isFinite))];
       } else if (seenError) {
         // Keep exam launch available if rotation history is not yet readable.
         console.error("Unable to load learner question exposure history:", seenError.message);
@@ -183,23 +175,15 @@ export async function POST(request: NextRequest) {
 
     // Record question exposure for this registered candidate only after the session exists.
     if (registeredUser && paperIds.length) {
-      const seenAt = new Date().toISOString();
-      const exposureRows = [...new Set(paperIds)].map((question_id) => {
-        const priorCount = exposureCountByQuestionId.get(Number(question_id)) || 0;
-        return {
-          user_id: registeredUser.id,
-          question_id,
-          first_seen_at: firstSeenAtByQuestionId.get(Number(question_id)) || seenAt,
-          last_seen_at: seenAt,
-          exposure_count: priorCount + 1,
-          last_outcome: null,
-          last_session_id: sessionRow.id,
-          updated_at: seenAt,
-        };
-      });
+      const exposureRows = [...new Set(paperIds)].map((question_id) => ({
+        user_id: registeredUser.id,
+        question_id,
+        surface: "full_mock",
+        attempt_id: sessionRow.id,
+      }));
       const { error: exposureError } = await supabase
-        .from("learner_question_exposures")
-        .upsert(exposureRows, { onConflict: "user_id,question_id" });
+        .from("question_exposure_history")
+        .upsert(exposureRows, { onConflict: "user_id,question_id,surface,attempt_id", ignoreDuplicates: true });
       if (exposureError) {
         console.error("Unable to record full-mock question exposure:", exposureError.message);
       }
