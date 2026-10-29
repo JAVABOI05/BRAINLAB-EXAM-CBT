@@ -223,10 +223,23 @@ export default function AdminConfigPage() {
         saveConfigRow("result_notifications", examSettings.result_notifications !== false).catch(() => null),
       ]);
       if (adminUser) {
-        await Promise.all([
+        const [examSaved, footerSaved] = await Promise.all([
           saveExamSettings(examSettings, adminUser, "Updated CBT exam rules and duration"),
-          saveFooterConfig(footerConfig, adminUser, "Updated website footer and official channels"),
+          saveFooterConfig(
+            {
+              ...footerConfig,
+              support_phone: footerConfig.support_phone.trim(),
+              whatsapp_number: footerConfig.whatsapp_number.replace(/\D/g, ""),
+            },
+            adminUser,
+            "Updated website footer and official channels"
+          ),
         ]);
+
+        if (!examSaved) throw new Error("Exam settings could not be saved.");
+        if (!footerSaved) {
+          throw new Error("Footer and WhatsApp Helpdesk settings could not be saved. Please check your connection and try again.");
+        }
       }
 
       setMessage("Configuration and footer settings saved successfully.");

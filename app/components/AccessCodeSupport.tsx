@@ -1,9 +1,26 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getFooterConfig } from "../lib/platformConfig";
 import { CONFIG } from "../lib/config";
 
 export default function AccessCodeSupport() {
-  const accessLink = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(
-    CONFIG.accessCodeMessage
-  )}`;
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void getFooterConfig().then((config) => {
+      if (active && config.whatsapp_number) setWhatsappNumber(config.whatsapp_number);
+    }).catch(() => undefined).finally(() => {
+      if (active) setConfigLoaded(true);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const accessLink = configLoaded && whatsappNumber
+    ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(CONFIG.accessCodeMessage)}`
+    : "#";
 
   return (
     <div className="rounded-3xl bg-white p-6 shadow-md">

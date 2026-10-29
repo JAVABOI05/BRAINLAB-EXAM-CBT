@@ -7,9 +7,9 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
 import { toast } from "../lib/toast";
+import { getFooterConfig } from "../lib/platformConfig";
 
 const CONFIG = {
-  whatsappNumber: "2349074310204",
   accessCodeMessage:
     "Good day BRAINLAB TUTORIALS, I would like to get my access code for the CBT exam. Please can I get more information on the registration and access process?",
   revisionMessage:
@@ -54,16 +54,23 @@ export default function CBTExamPortalPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [starting, setStarting] = useState(false);
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappConfigLoaded, setWhatsappConfigLoaded] = useState(false);
 
-  const accessLink = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(
-    CONFIG.accessCodeMessage
-  )}`;
+  const accessLink = whatsappConfigLoaded && whatsappNumber
+    ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(CONFIG.accessCodeMessage)}`
+    : "#";
 
   useEffect(() => {
     let active = true;
 
     async function checkAuthAndLoadSettings() {
       try {
+        const footerConfig = await getFooterConfig().catch(() => null);
+        if (active && footerConfig?.whatsapp_number) {
+          setWhatsappNumber(footerConfig.whatsapp_number);
+        }
+        if (active) setWhatsappConfigLoaded(true);
         // Fetch dynamically configured subjects from backend
         fetch("/api/subjects")
           .then((r) => r.json())
