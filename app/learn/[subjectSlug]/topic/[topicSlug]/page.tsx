@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
-import { recordLearningActivity } from "@/app/lib/gamification";
 
 interface TopicMcqOption {
   id: string;
@@ -192,7 +191,6 @@ export default function StudentTopicContentPage() {
             feedback: data.feedback || [],
           },
         }));
-        void recordLearningActivity("topic_mcq", itemId, data.percentage);
       }
     } catch {
       // Handle error gracefully
