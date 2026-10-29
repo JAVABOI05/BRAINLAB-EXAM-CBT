@@ -90,6 +90,7 @@ export async function generateExamPaper(options: {
             .select("*")
             .eq("is_active", true)
             .ilike("subject", isEnglish ? "English" : subj)
+            .order("id", { ascending: true })
             .range(offset, offset + pageSize - 1);
           if (error) return { rows: [] as EngineQuestion[], error };
           const page = (data || []) as EngineQuestion[];
@@ -131,7 +132,7 @@ export async function generateExamPaper(options: {
     return {
       subj,
       questions: selected.questions,
-      warnings: [...selectionWarnings, ...(selected.warnings || [])],
+      warnings: selectionWarnings,
       errors: selected.errors,
     };
   });
