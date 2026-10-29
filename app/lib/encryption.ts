@@ -1,39 +1,32 @@
 import crypto from "crypto";
 
 /**
- * Enterprise Application-Level Encryption (ALE) Layer
- * Built with AES-256-GCM (Authenticated Encryption with Associated Data).
+ * Application-level AES-256-GCM encryption helpers.
  *
- * Ensures candidate personal identifiable information (PII), national examination IDs,
- * phone numbers, and sensitive exam logs are encrypted before storage at rest in the database,
- * fulfilling the Nigeria Data Protection Act (NDPA 2023) and GDPR Article 32 requirements.
+ * Keep encryption keys in server-side environment variables only. Never fall back
+ * to a public, hardcoded key or silently return plaintext when encryption fails.
  */
 
 const ALGORITHM = "aes-256-gcm";
-const IV_LENGTH = 12; // Standard 96-bit IV recommended for GCM
+const IV_LENGTH = 12;
 const PREFIX = "enc:v1:";
 
-/**
- * Derives a deterministic 256-bit encryption key from environment secrets.
- */
 function getMasterKey(): Buffer {
   const secret =
     process.env.ENCRYPTION_SECRET ||
     process.env.BRAINLAB_PRIVATE_ENTRY_TOKEN ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "brainlab-cbt-default-entropy-vault-2026-fallback";
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!secret?.trim()) {
+    throw new Error("Encryption key is not configured.");
+  }
 
   return crypto.createHash("sha256").update(secret).digest();
 }
 
-/**
- * Encrypts a plaintext string with AES-256-GCM.
- * Output format: enc:v1:<iv_hex>:<authTag_hex>:<ciphertext_hex>
- */
+/** Encrypts plaintext. Returns an empty string for empty input; never returns plaintext on failure. */
 export function encryptSensitive(plaintext: string | null | undefined): string {
   if (!plaintext || typeof plaintext !== "string") return "";
-  
-  // Prevent double encryption
   if (plaintext.startsWith(PREFIX)) return plaintext;
 
   try {
@@ -43,60 +36,52 @@ export function encryptSensitive(plaintext: string | null | undefined): string {
 
     let encrypted = cipher.update(plaintext, "utf8", "hex");
     encrypted += cipher.final("hex");
-
     const authTag = cipher.getAuthTag().toString("hex");
 
     return `${PREFIX}${iv.toString("hex")}:${authTag}:${encrypted}`;
-  } catch (err) {
-    console.error("Encryption failure:", err);
-    return plaintext;
+  } catch {
+    // Fail closed: callers must not persist sensitive data as plaintext.
+    throw new Error("Sensitive-data encryption failed; refusing to return plaintext.");
   }
 }
 
-/**
- * Decrypts an AES-256-GCM encrypted payload.
- * If the input is not encrypted or tampered, returns the original string or fallback.
- */
+/** Decrypts an encrypted payload. Invalid or unauthenticated ciphertext fails closed. */
 export function decryptSensitive(payload: string | null | undefined): string {
   if (!payload || typeof payload !== "string") return "";
-  if (!payload.startsWith(PREFIX)) return payload; // Not encrypted, return as-is
+  if (!payload.startsWith(PREFIX)) return payload;
+
+  const parts = payload.slice(PREFIX.length).split(":");
+  if (parts.length !== 3) {
+    throw new Error("Invalid encrypted payload format.");
+  }
 
   try {
-    const key = getMasterKey();
-    const parts = payload.slice(PREFIX.length).split(":");
-    if (parts.length !== 3) return payload;
-
     const [ivHex, authTagHex, encryptedHex] = parts;
     const iv = Buffer.from(ivHex, "hex");
     const authTag = Buffer.from(authTagHex, "hex");
+    if (iv.length !== IV_LENGTH || authTag.length !== 16 || !/^(?:[0-9a-f]{2})*$/i.test(encryptedHex)) {
+      throw new Error("Invalid encrypted payload.");
+    }
 
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    const decipher = crypto.createDecipheriv(ALGORITHM, getMasterKey(), iv);
     decipher.setAuthTag(authTag);
 
     let decrypted = decipher.update(encryptedHex, "hex", "utf8");
     decrypted += decipher.final("utf8");
-
     return decrypted;
   } catch {
-    // If decryption or authentication fails (tampering/wrong key), return payload or safe message
-    return payload;
+    throw new Error("Sensitive-data decryption failed; ciphertext was not trusted.");
   }
 }
 
-/**
- * Deterministic blind index for encrypted field searching (e.g. looking up a candidate by phone).
- * Uses HMAC-SHA256 with a secondary salt so queries can match exact records without decrypting the entire database.
- */
+/** Deterministic blind index for exact-match searches without decrypting records. */
 export function hashSearchable(value: string | null | undefined): string {
   if (!value || typeof value !== "string") return "";
   const key = getMasterKey();
   return crypto.createHmac("sha256", key).update(value.trim().toLowerCase()).digest("hex");
 }
 
-/**
- * Mask Personal Identifiable Information (PII) for public display on
- * honor rolls, exam slips, certificate lookups, and audit logs.
- */
+/** Masks PII for public display. */
 export function maskPII(
   value: string | null | undefined,
   type: "auto" | "name" | "phone" | "email" = "auto"
@@ -104,7 +89,6 @@ export function maskPII(
   if (!value || typeof value !== "string") return "Anonymous";
   const clean = value.trim();
 
-  // Auto-detect type if not specified
   let detectedType = type;
   if (detectedType === "auto") {
     if (clean.includes("@")) detectedType = "email";
@@ -113,22 +97,17 @@ export function maskPII(
   }
 
   if (detectedType === "phone") {
-    // Nigerian / international phone: keep first 4 and last 3 digits -> 0801****567
     const digits = clean.replace(/\D/g, "");
     if (digits.length <= 6) return clean;
-    const prefix = clean.slice(0, 4);
-    const suffix = clean.slice(-3);
-    return `${prefix}****${suffix}`;
+    return `${clean.slice(0, 4)}****${clean.slice(-3)}`;
   }
 
   if (detectedType === "email") {
-    // Email: j****e@example.com
     const [user, domain] = clean.split("@");
     if (!domain || user.length <= 2) return `***@${domain || "protected.net"}`;
     return `${user[0]}***${user[user.length - 1]}@${domain}`;
   }
 
-  // Name: "Chukwudi Okafor" -> "Chukwudi O." or "C. Okafor"
   const parts = clean.split(/\s+/).filter(Boolean);
   if (parts.length === 1) {
     if (parts[0].length <= 3) return parts[0];
@@ -139,9 +118,7 @@ export function maskPII(
   return `${first} ${lastInitial}.`;
 }
 
-/**
- * Generates a cryptographic verification signature for official result slips and certificates.
- */
+/** Generates a cryptographic verification signature for result slips and certificates. */
 export function generateResultSignature(
   resultId: string,
   candidateName: string,
