@@ -71,7 +71,7 @@ export default function CertificateVerificationResultPage() {
   }, [query]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+    <div className="verification-detail-page flex min-h-screen flex-col bg-slate-50 text-slate-900">
       
       <main className="flex-1 py-12 sm:py-16">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
