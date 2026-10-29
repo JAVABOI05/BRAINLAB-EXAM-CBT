@@ -28,11 +28,14 @@ export default function LeaderboardCard({ limit = 10 }: LeaderboardCardProps = {
       setLoading(true);
       setErrorText("");
 
+      // Settings may be absent on fresh/partially migrated environments, and
+      // duplicate legacy rows must not make this optional feature crash.
       const { data: settingRow, error: settingError } = await supabase
         .from("settings")
         .select("value")
         .eq("key", "leaderboard_enabled")
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (settingError) {
         setErrorText(settingError.message);
