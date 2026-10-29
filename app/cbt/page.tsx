@@ -7,7 +7,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
 import { toast } from "../lib/toast";
-import { DEFAULT_FOOTER_CONFIG, getFooterConfig } from "../lib/platformConfig";
+import { getFooterConfig } from "../lib/platformConfig";
 
 const CONFIG = {
   accessCodeMessage:
