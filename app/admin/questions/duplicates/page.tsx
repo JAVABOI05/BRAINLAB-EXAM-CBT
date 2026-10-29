@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getAdminSession } from "../../../lib/adminAuth";
 import { adminHasPermission } from "../../../lib/adminRoles";
-import { detectDuplicates, generateWordDiff, scoreQuestionQuality, archiveQuestionSafely } from "../../../lib/examEngine/duplicateDetector";
+import { detectDuplicates, generateWordDiff, scoreQuestionQuality } from "../../../lib/examEngine/duplicateDetector";
 import { DuplicateGroup, EngineQuestion } from "../../../lib/examEngine/types";
 import { supabase } from "../../../lib/supabase";
 import "../../admin.css";
@@ -17,14 +17,26 @@ export default function DuplicateQuestionsAdminPage() {
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [adminEmail, setAdminEmail] = useState("admin@brainlabacademy.com.ng");
+  const [canManageQuestions, setCanManageQuestions] = useState(false);
+  const [canDeleteQuestions, setCanDeleteQuestions] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
         const session = await getAdminSession();
-        if (session?.email) setAdminEmail(session.email);
+        if (!session) {
+          setMessage("Administrator sign-in is required to manage duplicate questions.");
+          return;
+        }
+        const canManage = await adminHasPermission("cbt.questions.manage");
+        const canDelete = await adminHasPermission("cbt.questions.delete");
+        setCanManageQuestions(canManage);
+        setCanDeleteQuestions(canDelete);
+        if (!canManage) {
+          setMessage("You do not have permission to manage the question bank.");
+          return;
+        }
 
         const { data: rows, error } = await supabase
           .from("questions")
@@ -61,24 +73,97 @@ export default function DuplicateQuestionsAdminPage() {
 
   const activeGroup: DuplicateGroup | undefined = duplicateGroups[activeGroupIndex];
 
+  async function applyDuplicateAction(group: DuplicateGroup, targetIds: number[], action: "archive" | "delete") {
+    if (group.questions.length < 2 || !group.questions.some((q) => q.id === group.recommendedRetainId)) {
+      setMessage("Safety check failed: this duplicate group has no confirmed question to retain.");
+      return false;
+    }
+    const uniqueTargets = [...new Set(targetIds)].filter((id) => id !== group.recommendedRetainId);
+    if (uniqueTargets.length === 0 || group.questions.length - uniqueTargets.length < 1) {
+      setMessage("This action is blocked because at least one question must remain in the duplicate group.");
+      return false;
+    }
+    if (action === "delete" && !canDeleteQuestions) {
+      setMessage("Your administrator role does not have permission to permanently delete questions.");
+      return false;
+    }
+    if (action === "archive" && !canManageQuestions) {
+      setMessage("You do not have permission to archive questions.");
+      return false;
+    }
+
+    const groupIds = group.questions.map((q) => q.id);
+    const { data: affectedCount, error } = await supabase.rpc("admin_cleanup_duplicate_questions", {
+      p_group_ids: groupIds,
+      p_target_ids: uniqueTargets,
+      p_retain_question_id: group.recommendedRetainId,
+      p_action: action,
+    });
+    if (error) {
+      const detail = error.message || "Unknown database error";
+      setMessage(action === "delete"
+        ? `Delete blocked: ${detail}. If questions are referenced by existing attempts, archive them instead.`
+        : `Archive failed: ${detail}`);
+      return false;
+    }
+    if (typeof affectedCount !== "number" || affectedCount !== uniqueTargets.length) {
+      setMessage("The database did not confirm the full cleanup. Refresh the duplicate scan before trying again.");
+      return false;
+    }
+
+    setQuestions((prev) => action === "delete"
+      ? prev.filter((q) => !uniqueTargets.includes(q.id))
+      : prev.map((q) => uniqueTargets.includes(q.id) ? { ...q, is_active: false, is_archived: true } : q));
+    setMessage(`${uniqueTargets.length} duplicate question(s) ${action === "archive" ? "archived" : "permanently deleted"}. Question #${group.recommendedRetainId} was kept active.`);
+    return true;
+  }
+
   async function handleArchive(questionId: number) {
-    if (!confirm(`Are you sure you want to safely archive Question #${questionId}? It will be removed from new examination generation while preserving completed student attempts.`)) {
+    if (!activeGroup || questionId === activeGroup.recommendedRetainId) {
+      setMessage("The retained question cannot be archived from this duplicate group.");
       return;
     }
+    if (!confirm(`Archive Question #${questionId}? At least one question in this duplicate group will remain active.`)) return;
     setActionLoading(true);
-    const res = await archiveQuestionSafely(
-      questionId,
-      adminEmail,
-      `Deactivated via Duplicate Questions Manager (Group ${activeGroup?.hash || "unknown"})`
-    );
+    await applyDuplicateAction(activeGroup, [questionId], "archive");
     setActionLoading(false);
-    if (res.ok) {
-      setMessage(res.message);
-      // Remove question from active state
-      setQuestions((prev) => prev.filter((q) => q.id !== questionId));
-    } else {
-      setMessage(res.message || "Archival failed.");
+  }
+
+  async function handleDelete(questionId: number) {
+    if (!activeGroup || questionId === activeGroup.recommendedRetainId || !canDeleteQuestions) return;
+    if (!confirm(`PERMANENTLY DELETE Question #${questionId}? This cannot be undone. The recommended question will be kept active.`)) return;
+    setActionLoading(true);
+    await applyDuplicateAction(activeGroup, [questionId], "delete");
+    setActionLoading(false);
+  }
+
+  async function handleGroupAction(action: "archive" | "delete") {
+    if (!activeGroup) return;
+    const targets = activeGroup.questions.filter((q) => q.id !== activeGroup.recommendedRetainId).map((q) => q.id);
+    const label = action === "archive" ? "archive" : "permanently delete";
+    if (!confirm(`You are about to ${label} ${targets.length} duplicate(s) in this group. Question #${activeGroup.recommendedRetainId} will remain active. Continue?`)) return;
+    setActionLoading(true);
+    await applyDuplicateAction(activeGroup, targets, action);
+    setActionLoading(false);
+  }
+
+  async function handleBulkAction(action: "archive" | "delete") {
+    const eligible = duplicateGroups.filter((g) => (g.type === "exact" || g.type === "likely") && g.questions.length > 1);
+    if (eligible.length === 0) {
+      setMessage("There are no exact or likely duplicate groups in the current filters.");
+      return;
     }
+    const total = eligible.reduce((sum, g) => sum + g.questions.filter((q) => q.id !== g.recommendedRetainId).length, 0);
+    if (!confirm(`Bulk ${action === "archive" ? "archive" : "permanent delete"} ${total} duplicate question(s) across ${eligible.length} exact/likely groups? One recommended question per group will be preserved.`)) return;
+    setActionLoading(true);
+    let completed = 0;
+    for (const group of eligible) {
+      const ids = group.questions.filter((q) => q.id !== group.recommendedRetainId).map((q) => q.id);
+      if (await applyDuplicateAction(group, ids, action)) completed += ids.length;
+      else break;
+    }
+    setActionLoading(false);
+    if (completed > 0) setMessage(`Bulk operation completed for ${completed} question(s). One question was retained in each processed group.${completed < total ? " Processing stopped at the first blocked group." : ""}`);
   }
 
   return (
@@ -118,6 +203,19 @@ export default function DuplicateQuestionsAdminPage() {
       {message && (
         <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs font-bold text-blue-900">
           {message}
+        </div>
+      )}
+
+      {canManageQuestions && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <div>
+            <p className="text-sm font-extrabold text-amber-950">Bulk duplicate cleanup</p>
+            <p className="text-xs text-amber-800">Applies to Exact and Likely groups in the current subject/type filters. Keeps one recommended question active in every group.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={actionLoading} onClick={() => handleBulkAction("archive")} className="rounded-xl bg-amber-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Archive all duplicates</button>
+            {canDeleteQuestions && <button type="button" disabled={actionLoading} onClick={() => handleBulkAction("delete")} className="rounded-xl bg-rose-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Delete all duplicates</button>}
+          </div>
         </div>
       )}
 
@@ -234,6 +332,14 @@ export default function DuplicateQuestionsAdminPage() {
           <div className="lg:col-span-8 space-y-6">
             {activeGroup && (
               <>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-semibold text-slate-600">Group cleanup · {Math.max(0, activeGroup.questions.length - 1)} removable record(s)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {canManageQuestions && <button type="button" disabled={actionLoading} onClick={() => handleGroupAction("archive")} className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-50">Archive duplicates in group</button>}
+                    {canDeleteQuestions && <button type="button" disabled={actionLoading} onClick={() => handleGroupAction("delete")} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-800 disabled:opacity-50">Delete duplicates in group</button>}
+                  </div>
+                </div>
+
                 {/* Group Header & Recommendation */}
                 <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4">
                   <div className="flex items-center justify-between gap-2 mb-2">
@@ -356,7 +462,7 @@ export default function DuplicateQuestionsAdminPage() {
                             Edit Record ↗
                           </Link>
 
-                          {!isRecommended && (
+                          {!isRecommended && canManageQuestions && (
                             <button
                               type="button"
                               onClick={() => handleArchive(q.id)}
@@ -364,6 +470,16 @@ export default function DuplicateQuestionsAdminPage() {
                               className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
                             >
                               Archive Duplicate
+                            </button>
+                          )}
+                          {!isRecommended && canDeleteQuestions && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(q.id)}
+                              disabled={actionLoading}
+                              className="rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                            >
+                              Delete Permanently
                             </button>
                           )}
                         </div>
