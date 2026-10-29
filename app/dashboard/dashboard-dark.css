@@ -152,3 +152,38 @@ main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border
 main#main.learner-theme[data-theme="dark"] section.grid > div.rounded-3xl.border-purple-200 .text-purple-900 {
   color: #e2d7ff !important;
 }
+
+
+/* Practice & Assessment Tools cards (Self Practice, Quizzes, Planner, Access).
+   These cards use pale gradient utilities rather than the section selectors above. */
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article {
+  background: linear-gradient(145deg, #17263b, #111e31) !important;
+  border-color: #3a506d !important;
+  color: #e7eefb !important;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article h3 {
+  color: #f1f5fb !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article p {
+  color: #bdcbe0 !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article a {
+  background: #1d4ed8 !important;
+  border: 1px solid #4778ed !important;
+  color: #ffffff !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article a:hover {
+  background: #2563eb !important;
+  border-color: #6b93f2 !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article a:focus-visible {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 3px;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article a.border-t {
+  border-top-color: #3a506d !important;
+}
+main#main.learner-theme[data-theme="dark"] section[aria-labelledby="tools-heading"] > div.grid > article > div > span {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 24%);
+}
