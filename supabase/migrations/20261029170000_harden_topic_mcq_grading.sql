@@ -69,23 +69,43 @@ begin
     );
   end if;
 
-  insert into public.learning_topic_mcq_grading_attempts(user_id, content_item_id)
-  values (v_user_id, p_content_item_id);
-
   v_questions := coalesce(v_item.data -> 'questions', '[]'::jsonb);
-  if jsonb_typeof(v_questions) <> 'array' then
+  if jsonb_typeof(v_questions) <> 'array' or jsonb_array_length(v_questions) = 0 then
     return jsonb_build_object('ok', false, 'error', 'invalid_question_data');
   end if;
+  if coalesce(jsonb_typeof(p_candidate_answers), '') <> 'object' then
+    return jsonb_build_object('ok', false, 'error', 'answers_required');
+  end if;
   v_total := jsonb_array_length(v_questions);
+
+  -- Require a valid selected option for every question before recording an attempt.
+  -- This prevents empty-answer calls from being used as an answer-key oracle.
+  for v_q in select value from jsonb_array_elements(v_questions) as q(value) loop
+    v_q_id := v_q ->> 'id';
+    v_chosen_opt := upper(trim(p_candidate_answers ->> v_q_id));
+
+    if v_q_id is null or v_chosen_opt is null or v_chosen_opt = ''
+       or not exists (
+         select 1
+         from jsonb_array_elements(coalesce(v_q -> 'options', '[]'::jsonb)) as opt(value)
+         where upper(trim(opt.value ->> 'id')) = v_chosen_opt
+       ) then
+      return jsonb_build_object('ok', false, 'error', 'complete_valid_answers_required');
+    end if;
+
+    v_correct_opt := upper(trim(v_q ->> 'correct_option_id'));
+    if v_correct_opt is null or v_correct_opt = '' then
+      raise exception 'Invalid answer key configuration for topic MCQ';
+    end if;
+  end loop;
+
+  insert into public.learning_topic_mcq_grading_attempts(user_id, content_item_id)
+  values (v_user_id, p_content_item_id);
 
   for v_q in select value from jsonb_array_elements(v_questions) as q(value) loop
     v_q_id := v_q ->> 'id';
     v_correct_opt := upper(trim(v_q ->> 'correct_option_id'));
     v_chosen_opt := upper(trim(p_candidate_answers ->> v_q_id));
-
-    if v_correct_opt is null or v_correct_opt = '' then
-      raise exception 'Invalid answer key configuration for topic MCQ';
-    end if;
 
     if v_chosen_opt = v_correct_opt then
       v_score := v_score + 1;
