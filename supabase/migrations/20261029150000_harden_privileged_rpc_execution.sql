@@ -47,7 +47,7 @@ create or replace function public.record_learning_activity(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $function$
 declare
   v_today date := current_date;
