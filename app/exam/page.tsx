@@ -801,7 +801,7 @@ export default function ExamPage() {
         </div>
       )}
       <div className="exam-topbar">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3.5 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-none w-full flex-col gap-3 px-4 py-3.5 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-3">
               <div className="shrink-0">
@@ -915,7 +915,7 @@ export default function ExamPage() {
       </div>
 
       {awayWarning && (
-        <div className="mx-auto max-w-7xl px-4 pt-4">
+        <div className="mx-auto max-w-none w-full px-4 pt-4">
           <div className="exam-warning p-4 text-sm">
             Warning: You left the exam page. Return within 10 seconds or your
             exam will be submitted automatically.
@@ -923,7 +923,7 @@ export default function ExamPage() {
         </div>
       )}
 
-      <div className="mx-auto max-w-7xl p-4">
+      <div className="mx-auto max-w-none w-full p-4">
         <div className="exam-card mb-6 p-4 sm:p-5">
           <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Examination Subjects</h2>
           <div className="flex flex-wrap gap-2.5">
