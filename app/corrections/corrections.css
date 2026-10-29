@@ -1383,15 +1383,19 @@
 :is(html[data-theme="dark"],html.dark) .action-btn.secondary { background:#15223b; color:#e5edff; border-color:#2a3a59; }
 
 
-/* Shared CBT shell: keep corrections visually consistent with instructions/results. */
+/* Shared CBT shell: use the available viewport instead of leaving unused
+   horizontal gutters around the corrections workspace. */
 .corrections-page {
+  width: 100%;
+  min-width: 0;
   min-height: 100vh;
+  box-sizing: border-box;
   padding: 24px 16px 40px;
   background: linear-gradient(180deg,#dfe8f7 0%,#eaf2ff 45%,#f8fbff 80%);
   color: #0b1536;
   font-family: inherit;
 }
-.corrections-shell { max-width: 1200px; gap: 22px; }
+.corrections-shell { width: 100%; min-width: 0; max-width: none; margin-inline: 0; gap: 22px; }
 .corrections-hero {
   overflow: hidden;
   border-radius: 24px;
@@ -1415,7 +1419,7 @@
 .candidate-block-value { color:#0b1536; font-size:14px; }
 .stats-grid { gap:14px; }
 .stat-card { border-radius:18px; padding:19px; background:#fff; box-shadow:0 8px 22px rgba(11,21,54,.055); border-color:#e2e8f0; }
-.main-grid { grid-template-columns:minmax(0,1fr) 290px; gap:20px; align-items:start; }
+.main-grid { width: 100%; min-width: 0; grid-template-columns:minmax(0,1fr) 290px; gap:20px; align-items:start; }
 .questions-column { min-width:0; }
 .sidebar { position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto; padding-right:2px; }
 .side-card { border-radius:18px; padding:18px; background:#fff; box-shadow:0 8px 22px rgba(11,21,54,.055); border-color:#e2e8f0; }
