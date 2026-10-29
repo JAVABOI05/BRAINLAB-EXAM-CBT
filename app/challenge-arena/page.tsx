@@ -480,7 +480,8 @@ export default function ChallengeArenaPage() {
     // Scaled by mode multiplier and extra bonus for high score
     let baseXP = correctCount * 10;
     if (percentage >= 80) baseXP += 50; // Excellence bonus
-    const xpEarned = Math.round(baseXP * selectedMode.xpMultiplier);
+    // Do not display client-computed points as awarded account XP for signed-in users.
+    const xpEarned = userId ? 0 : Math.round(baseXP * selectedMode.xpMultiplier);
 
     let streakDays = profile?.current_streak_days ?? 1;
     let newBadges: string[] = [];
