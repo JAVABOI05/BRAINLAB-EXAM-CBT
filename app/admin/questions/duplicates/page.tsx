@@ -93,34 +93,22 @@ export default function DuplicateQuestionsAdminPage() {
     }
 
     const groupIds = group.questions.map((q) => q.id);
-    const { data: currentGroup, error: groupReadError } = await supabase
-      .from("questions")
-      .select("id,is_active")
-      .in("id", groupIds)
-      .eq("is_active", true);
-    const currentActiveIds = new Set((currentGroup || []).map((q) => q.id));
-    if (
-      groupReadError ||
-      !currentActiveIds.has(group.recommendedRetainId) ||
-      uniqueTargets.some((id) => !currentActiveIds.has(id))
-    ) {
-      setMessage("Action blocked: this duplicate group changed since the scan. Refresh and review it again.");
+    const { data: affectedCount, error } = await supabase.rpc("admin_cleanup_duplicate_questions", {
+      p_group_ids: groupIds,
+      p_target_ids: uniqueTargets,
+      p_retain_question_id: group.recommendedRetainId,
+      p_action: action,
+    });
+    if (error) {
+      const detail = error.message || "Unknown database error";
+      setMessage(action === "delete"
+        ? `Delete blocked: ${detail}. If questions are referenced by existing attempts, archive them instead.`
+        : `Archive failed: ${detail}`);
       return false;
     }
-
-    if (action === "archive") {
-      const { error } = await supabase.from("questions")
-        .update({ is_active: false }).in("id", uniqueTargets);
-      if (error) {
-        setMessage(`Archive failed: ${error.message}`);
-        return false;
-      }
-    } else {
-      const { error } = await supabase.from("questions").delete().in("id", uniqueTargets);
-      if (error) {
-        setMessage(`Delete blocked: ${error.message}. The questions may be referenced by existing records; archive them instead.`);
-        return false;
-      }
+    if (typeof affectedCount !== "number" || affectedCount !== uniqueTargets.length) {
+      setMessage("The database did not confirm the full cleanup. Refresh the duplicate scan before trying again.");
+      return false;
     }
 
     setQuestions((prev) => action === "delete"
