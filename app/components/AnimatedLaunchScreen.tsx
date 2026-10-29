@@ -75,11 +75,11 @@ export default function AnimatedLaunchScreen() {
           <div className={styles.loadingTrack} aria-hidden="true">
             <span className={styles.loadingBar} />
           </div>
-          <p className={styles.loadingLabel}>YOUR LEARNING JOURNEY IS STARTING</p>
+          <p className={styles.loadingLabel}>Getting your learning space ready</p>
         </div>
       </div>
 
-      <span className={styles.footer}>PRACTISE · UNDERSTAND · PROGRESS</span>
+      <span className={styles.footer}>PRACTISE · UNDERSTAND · CONNECT · PROGRESS</span>
     </div>
   );
 }
