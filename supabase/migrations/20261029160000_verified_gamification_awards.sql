@@ -25,7 +25,7 @@ declare
   v_attempt record;
   v_activity_type text;
   v_percentage numeric;
-  v_recorded boolean;
+  v_inserted_rows integer;
   v_result jsonb;
 begin
   if auth.uid() is null then
@@ -60,9 +60,9 @@ begin
   insert into public.verified_gamification_award_events(attempt_id, user_id, activity_type)
   values (v_attempt.id, v_attempt.user_id, v_activity_type)
   on conflict (attempt_id) do nothing;
-  get diagnostics v_recorded = row_count;
+  get diagnostics v_inserted_rows = row_count;
 
-  if not v_recorded then
+  if v_inserted_rows = 0 then
     return jsonb_build_object('ok', true, 'already_awarded', true, 'xp_awarded', 0);
   end if;
 
