@@ -358,8 +358,22 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   async function saveQuickSetting(key: keyof SettingsMap, value: number | boolean) {
-    const { error } = await supabase.from("settings").update({ value }).eq("key", key);
-    if (error) throw new Error(error.message);
+    // Settings may not have a row yet (for example, leaderboard_enabled).
+    // Upsert prevents a successful-looking UPDATE that silently affects zero rows.
+    const { data, error } = await supabase
+      .from("settings")
+      .upsert({ key, value }, { onConflict: "key" })
+      .select("key, value")
+      .single();
+
+    if (error) throw new Error(`Could not save ${key}: ${error.message}`);
+    if (!data || data.key !== key) throw new Error(`The database did not confirm saving ${key}.`);
+
+    const savedValue = data.value;
+    const expectedValue = value;
+    if (savedValue !== expectedValue && String(savedValue) !== String(expectedValue)) {
+      throw new Error(`The database returned a different value for ${key}; please retry.`);
+    }
   }
 
   async function saveQuickSettings() {
