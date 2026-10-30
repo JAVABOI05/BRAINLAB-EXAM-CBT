@@ -1,9 +1,6 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import type { Metadata } from "next";
+import { createClient } from "@supabase/supabase-js";
 
 type Tutor = {
   name: string; slug: string; title: string; bio: string; qualifications: string;
@@ -12,20 +9,36 @@ type Tutor = {
   website_url: string | null; linkedin_url: string | null;
 };
 
-export default function PublicTutorProfilePage() {
-  const params = useParams<{ slug: string }>();
-  const [tutor, setTutor] = useState<Tutor | null>(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let active = true;
-    void supabase.from("tutor_profiles")
-      .select("name,slug,title,bio,qualifications,education,certifications,years_experience,subject_slugs,specialties,languages,teaching_approach,photo_url,website_url,linkedin_url")
-      .eq("slug", params.slug).eq("is_published", true).eq("profile_status", "approved").maybeSingle()
-      .then(({ data }) => { if (active) { setTutor(data as Tutor | null); setLoading(false); } });
-    return () => { active = false; };
-  }, [params.slug]);
+type Props = { params: Promise<{ slug: string }> };
 
-  if (loading) return <main className="min-h-[60vh] p-10 text-center text-slate-500">Loading tutor profile…</main>;
+async function getTutor(slug: string): Promise<Tutor | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+  const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data } = await supabase.from("tutor_profiles")
+    .select("name,slug,title,bio,qualifications,education,certifications,years_experience,subject_slugs,specialties,languages,teaching_approach,photo_url,website_url,linkedin_url")
+    .eq("slug", slug).eq("is_published", true).eq("profile_status", "approved").maybeSingle();
+  return data as Tutor | null;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const tutor = await getTutor(slug);
+  if (!tutor) return { title: "Tutor Profile | BrainLab Academy", robots: { index: false, follow: false } };
+  const description = tutor.bio.replace(/\s+/g, " ").slice(0, 155);
+  return {
+    title: tutor.name + (tutor.title ? " · " + tutor.title : "") + " | BrainLab Academy",
+    description,
+    alternates: { canonical: "/tutors/" + tutor.slug },
+    openGraph: { title: tutor.name + " | BrainLab Academy", description, images: tutor.photo_url ? [tutor.photo_url] : undefined, type: "profile" },
+  };
+}
+
+export default async function PublicTutorProfilePage({ params }: Props) {
+  const { slug } = await params;
+  const tutor = await getTutor(slug);
+
   if (!tutor) return <main className="min-h-[60vh] px-5 py-20 text-center text-slate-900"><h1 className="text-3xl font-black">Tutor profile unavailable</h1><p className="mt-3 text-slate-600">This profile may be unpublished or the address may be incorrect.</p><Link href="/tutors" className="mt-6 inline-flex rounded-xl bg-[#0B1536] px-5 py-3 font-bold text-white">Browse tutors</Link></main>;
 
   const sections = [
@@ -48,9 +61,7 @@ export default function PublicTutorProfilePage() {
             {tutor.title && <p className="mt-2 text-lg font-bold text-blue-800">{tutor.title}</p>}
             {tutor.years_experience > 0 && <p className="mt-2 text-sm font-semibold text-slate-500">{tutor.years_experience} years of teaching experience</p>}
             <p className="mt-6 whitespace-pre-line text-base leading-8 text-slate-700">{tutor.bio}</p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {tutor.subject_slugs?.map((subject) => <span key={subject} className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-900">{subject}</span>)}
-            </div>
+            <div className="mt-6 flex flex-wrap gap-2">{tutor.subject_slugs?.map((subject) => <span key={subject} className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-900">{subject}</span>)}</div>
           </div>
         </div>
         <div className="grid gap-8 border-t border-slate-100 p-6 sm:p-9 md:grid-cols-2">
