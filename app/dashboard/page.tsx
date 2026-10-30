@@ -501,6 +501,17 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
 
+        {adminRole === "teacher" && (
+          <section className="flex flex-col gap-4 rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 to-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.16em] text-blue-700">Tutor workspace</p>
+              <h2 className="mt-1 text-xl font-extrabold text-slate-950">Build your BrainLab tutor profile</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">Add your biography, qualifications, subjects and teaching experience. Your profile becomes visible to learners after review.</p>
+            </div>
+            <Link href="/tutor/profile" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#0B1536] px-5 py-3 text-sm font-black text-white hover:bg-blue-900">Manage my tutor profile →</Link>
+          </section>
+        )}
+
         {/* Live Classroom Quick Launch Bar */}
         <div className="rounded-3xl border border-blue-600/30 bg-gradient-to-r from-[#012153] via-blue-900 to-indigo-950 p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">

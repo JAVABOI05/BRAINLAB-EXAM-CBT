@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
         "/test",
         "/account",
         "/dashboard",
+        "/tutor/profile",
         "/auth",
         "/api",
       ],

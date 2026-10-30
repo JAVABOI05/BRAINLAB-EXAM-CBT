@@ -109,6 +109,13 @@ export default function CommunityPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-5 pt-10 sm:px-8">
+        <div className="flex flex-col gap-4 rounded-3xl border border-blue-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div><p className="text-xs font-black uppercase tracking-wider text-blue-700">Meet your educators</p><h2 className="mt-2 text-2xl font-black text-slate-950">Learn with BrainLab tutors</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore tutor biographies, subject expertise, qualifications and teaching approaches before joining a learning session.</p></div>
+          <Link href="/tutors" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#0B1536] px-5 py-3 text-sm font-bold text-white hover:bg-blue-900">Explore tutor profiles →</Link>
+        </div>
+      </section>
+
       {/* -------------------------------------------------------------------
           2. Active Study Circles Highlights
       ------------------------------------------------------------------- */}
