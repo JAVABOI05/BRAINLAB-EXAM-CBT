@@ -459,7 +459,7 @@ const DEFAULT_EXAM_SETTINGS: ExamSettings = {
   show_topic_in_exam: true,
   allow_corrections: true,
   result_notifications: true,
-  chief_proctor_name: "Dr. K. Adeleke, F.Ed.",
+  chief_proctor_name: "",
   chief_proctor_title: "Chief Examination Proctor",
 };
 
