@@ -1,13 +1,14 @@
 import type { MetadataRoute } from "next";
+import { createClient } from "@supabase/supabase-js";
 
 const siteUrl = "https://www.brainlabacademy.com.ng";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
 
   // Public, canonical pages for search engines (Google, Bing, Yahoo).
   // Sensitive admin, candidate session, test token, or internal API routes are excluded.
-  return [
+  const routes: MetadataRoute.Sitemap = [
     {
       url: siteUrl,
       lastModified,
@@ -135,4 +136,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.4,
     },
   ];
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  let tutorRoutes: MetadataRoute.Sitemap = [];
+  if (url && key) {
+    const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data } = await supabase.from("tutor_profiles").select("slug,updated_at")
+      .eq("is_published", true).eq("profile_status", "approved");
+    tutorRoutes = (data ?? []).map((tutor) => ({
+      url: `${siteUrl}/tutors/${tutor.slug}`,
+      lastModified: tutor.updated_at ? new Date(tutor.updated_at) : lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    }));
+  }
+  return [...routes, ...tutorRoutes];
 }
