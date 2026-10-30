@@ -56,7 +56,7 @@ export default async function PublicTutorProfilePage({ params }: Props) {
             {tutor.photo_url ? <img src={tutor.photo_url} alt={tutor.name} className="h-full min-h-72 w-full object-cover" /> : <div className="flex h-full min-h-72 items-center justify-center text-7xl font-black text-white">{tutor.name.slice(0,1).toUpperCase()}</div>}
           </div>
           <div className="p-6 sm:p-9">
-            <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-800">BrainLab verified tutor profile</span>
+            <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-800">Profile reviewed by BrainLab</span>
             <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{tutor.name}</h1>
             {tutor.title && <p className="mt-2 text-lg font-bold text-blue-800">{tutor.title}</p>}
             {tutor.years_experience > 0 && <p className="mt-2 text-sm font-semibold text-slate-500">{tutor.years_experience} years of teaching experience</p>}
