@@ -214,7 +214,7 @@ export default function ExamPage() {
         } else if (resumed.finished) {
           clearAttemptStorage();
           storeFinished(resumed);
-          router.push("/result");
+          router.replace("/result");
           return;
         } else if (typeof (resumed as AttemptPayload).time_left_seconds === "number" && (resumed as AttemptPayload).time_left_seconds <= 0) {
           // Stale session that has already timed out in the past: clear it so student starts fresh
