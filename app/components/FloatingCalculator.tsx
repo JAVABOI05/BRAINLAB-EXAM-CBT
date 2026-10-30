@@ -5,14 +5,14 @@ import { useEffect, useRef, useState } from "react";
 function evaluateArithmetic(input: string): number {
   const source = input.replace(/×/g, "*").replace(/÷/g, "/");
   const tokens: string[] = [];
-  const tokenPattern = /\\s*(?:(\\d+(?:\\.\\d*)?|\\.\\d+)|([()+\\-*/]))/gy;
+  const tokenPattern = /\s*(?:(\d+(?:\.\d*)?|\.\d+)|([()+/*-]))/gy;
   let position = 0;
 
   while (position < source.length) {
     tokenPattern.lastIndex = position;
     const match = tokenPattern.exec(source);
     if (!match) {
-      if (/^\\s*$/.test(source.slice(position))) break;
+      if (/^\s*$/.test(source.slice(position))) break;
       throw new Error("Invalid expression");
     }
     tokens.push(match[1] ?? match[2]);
@@ -35,7 +35,7 @@ function evaluateArithmetic(input: string): number {
       return value;
     }
     const token = consume();
-    if (token === undefined || !/^(?:\\d+(?:\\.\\d*)?|\\.\\d+)$/.test(token)) {
+    if (token === undefined || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(token)) {
       throw new Error("Expected a number");
     }
     const value = Number(token);
