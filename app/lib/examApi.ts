@@ -122,14 +122,22 @@ export function isError(value: unknown): value is ApiError {
 let cachedPublicSettings: { data: PublicSettings; timestamp: number } | null = null;
 const SETTINGS_CACHE_TTL_MS = 3 * 60 * 1000;
 
-export async function getPublicSettings(): Promise<PublicSettings | null> {
+export async function getPublicSettings(forceRefresh = false): Promise<PublicSettings | null> {
+  // Official result slips must bypass cached signatory details.
+  if (forceRefresh) {
+    cachedPublicSettings = null;
+    if (typeof window !== "undefined") {
+      try { window.sessionStorage.removeItem("brainlab_public_settings_cache"); } catch {}
+    }
+  }
+
   // 1. In-memory fast cache
-  if (cachedPublicSettings && Date.now() - cachedPublicSettings.timestamp < SETTINGS_CACHE_TTL_MS) {
+  if (!forceRefresh && cachedPublicSettings && Date.now() - cachedPublicSettings.timestamp < SETTINGS_CACHE_TTL_MS) {
     return cachedPublicSettings.data;
   }
 
   // 2. SessionStorage cache for instant transitions between pages
-  if (typeof window !== "undefined") {
+  if (!forceRefresh && typeof window !== "undefined") {
     try {
       const stored = window.sessionStorage.getItem("brainlab_public_settings_cache");
       if (stored) {
@@ -164,8 +172,8 @@ export async function getPublicSettings(): Promise<PublicSettings | null> {
       show_topic_in_exam: examSettings.show_topic_in_exam !== false,
       allow_corrections: examSettings.allow_corrections !== false,
       result_notifications: examSettings.result_notifications !== false,
-      chief_proctor_name: examSettings.chief_proctor_name || "Dr. K. Adeleke, F.Ed.",
-      chief_proctor_title: examSettings.chief_proctor_title || "Chief Examination Proctor",
+      chief_proctor_name: examSettings.chief_proctor_name?.trim() || "Dr. K. Adeleke, F.Ed.",
+      chief_proctor_title: examSettings.chief_proctor_title?.trim() || "Chief Examination Proctor",
     };
   } catch {
     resolved = {

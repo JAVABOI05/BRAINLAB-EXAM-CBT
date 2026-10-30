@@ -60,7 +60,7 @@ export default function ResultPage() {
 
   useEffect(() => {
     async function loadPage() {
-      const settings = await getPublicSettings();
+      const settings = await getPublicSettings(true);
       const isResultsReleased = settings?.show_results === true;
       setResultsEnabled(isResultsReleased);
       setAllowCorrections(settings?.allow_corrections !== false);
