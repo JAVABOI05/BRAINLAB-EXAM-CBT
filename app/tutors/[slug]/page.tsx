@@ -41,6 +41,8 @@ export default async function PublicTutorProfilePage({ params }: Props) {
 
   if (!tutor) return <main className="min-h-[60vh] px-5 py-20 text-center text-slate-900"><h1 className="text-3xl font-black">Tutor profile unavailable</h1><p className="mt-3 text-slate-600">This profile may be unpublished or the address may be incorrect.</p><Link href="/tutors" className="mt-6 inline-flex rounded-xl bg-[#0B1536] px-5 py-3 font-bold text-white">Browse tutors</Link></main>;
 
+  const websiteUrl = tutor.website_url?.startsWith("https://") ? tutor.website_url : null;
+  const linkedinUrl = tutor.linkedin_url?.startsWith("https://") ? tutor.linkedin_url : null;
   const sections = [
     ["Qualifications", tutor.qualifications],
     ["Education", tutor.education],
@@ -70,7 +72,7 @@ export default async function PublicTutorProfilePage({ params }: Props) {
             {!!tutor.languages?.length && <><h3 className="mt-6 text-sm font-extrabold uppercase tracking-wider text-slate-500">Languages</h3><p className="mt-2 text-sm text-slate-600">{tutor.languages.join(" · ")}</p></>}
           </section>
           <section><h2 className="text-lg font-extrabold">Education &amp; credentials</h2>{sections.length ? <div className="mt-3 space-y-4">{sections.map(([label,value]) => <div key={label}><h3 className="text-xs font-black uppercase tracking-wider text-slate-500">{label}</h3><p className="mt-1 whitespace-pre-line text-sm leading-7 text-slate-700">{value}</p></div>)}</div> : <p className="mt-3 text-sm text-slate-500">No additional credential details have been provided.</p>}
-            {(tutor.website_url || tutor.linkedin_url) && <div className="mt-6 flex flex-wrap gap-4 border-t border-slate-100 pt-4">{tutor.website_url && <a href={tutor.website_url} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-700 underline">Website ↗</a>}{tutor.linkedin_url && <a href={tutor.linkedin_url} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-700 underline">LinkedIn ↗</a>}</div>}
+            {(websiteUrl || linkedinUrl) && <div className="mt-6 flex flex-wrap gap-4 border-t border-slate-100 pt-4">{websiteUrl && <a href={websiteUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-700 underline">Website ↗</a>}{linkedinUrl && <a href={linkedinUrl} target="_blank" rel="noreferrer" className="text-sm font-bold text-blue-700 underline">LinkedIn ↗</a>}</div>}
           </section>
         </div>
       </article>
