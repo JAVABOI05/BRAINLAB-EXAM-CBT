@@ -2,6 +2,76 @@
 
 import { useEffect, useRef, useState } from "react";
 
+function evaluateArithmetic(input: string): number {
+  const source = input.replace(/×/g, "*").replace(/÷/g, "/");
+  const tokens: string[] = [];
+  const tokenPattern = /\\s*(?:(\\d+(?:\\.\\d*)?|\\.\\d+)|([()+\\-*/]))/gy;
+  let position = 0;
+
+  while (position < source.length) {
+    tokenPattern.lastIndex = position;
+    const match = tokenPattern.exec(source);
+    if (!match) {
+      if (/^\\s*$/.test(source.slice(position))) break;
+      throw new Error("Invalid expression");
+    }
+    tokens.push(match[1] ?? match[2]);
+    position = tokenPattern.lastIndex;
+  }
+
+  let cursor = 0;
+  const peek = () => tokens[cursor];
+  const consume = () => tokens[cursor++];
+
+  const parsePrimary = (): number => {
+    if (peek() === "+" || peek() === "-") {
+      const sign = consume() === "-" ? -1 : 1;
+      return sign * parsePrimary();
+    }
+    if (peek() === "(") {
+      consume();
+      const value = parseExpression();
+      if (consume() !== ")") throw new Error("Missing closing bracket");
+      return value;
+    }
+    const token = consume();
+    if (token === undefined || !/^(?:\\d+(?:\\.\\d*)?|\\.\\d+)$/.test(token)) {
+      throw new Error("Expected a number");
+    }
+    const value = Number(token);
+    if (!Number.isFinite(value)) throw new Error("Invalid number");
+    return value;
+  };
+
+  const parseTerm = (): number => {
+    let value = parsePrimary();
+    while (peek() === "*" || peek() === "/") {
+      const operator = consume();
+      const right = parsePrimary();
+      if (operator === "/" && right === 0) throw new Error("Division by zero");
+      value = operator === "*" ? value * right : value / right;
+    }
+    return value;
+  };
+
+  const parseExpression = (): number => {
+    let value = parseTerm();
+    while (peek() === "+" || peek() === "-") {
+      const operator = consume();
+      const right = parseTerm();
+      value = operator === "+" ? value + right : value - right;
+    }
+    return value;
+  };
+
+  if (tokens.length === 0) throw new Error("Empty expression");
+  const result = parseExpression();
+  if (cursor !== tokens.length || !Number.isFinite(result)) {
+    throw new Error("Invalid expression");
+  }
+  return result;
+}
+
 type FloatingCalculatorProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -103,18 +173,8 @@ export default function FloatingCalculator({
 
   const calculateResult = () => {
     try {
-      const expression = display.replace(/×/g, "*").replace(/÷/g, "/");
-      if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
-        setDisplay("Error");
-        return;
-      }
-      const result = Function(`"use strict"; return (${expression})`)();
-      if (typeof result !== "number" || !Number.isFinite(result)) {
-        setDisplay("Error");
-        return;
-      }
-      // Round to 8 decimal places to avoid floating point artifacts (e.g. 0.1+0.2)
-      const rounded = Math.round(result * 1e8) / 1e8;
+      const result = evaluateArithmetic(display);
+      const rounded = Math.round((result + Number.EPSILON) * 1e8) / 1e8;
       setDisplay(String(rounded));
     } catch {
       setDisplay("Error");
@@ -123,18 +183,12 @@ export default function FloatingCalculator({
 
   const calculateSqrt = () => {
     try {
-      const expression = display.replace(/×/g, "*").replace(/÷/g, "/");
-      if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
+      const value = evaluateArithmetic(display);
+      if (value < 0) {
         setDisplay("Error");
         return;
       }
-      const value = Function(`"use strict"; return (${expression})`)();
-      if (typeof value !== "number" || value < 0 || !Number.isFinite(value)) {
-        setDisplay("Error");
-        return;
-      }
-      const res = Math.sqrt(value);
-      const rounded = Math.round(res * 1e8) / 1e8;
+      const rounded = Math.round((Math.sqrt(value) + Number.EPSILON) * 1e8) / 1e8;
       setDisplay(String(rounded));
     } catch {
       setDisplay("Error");
