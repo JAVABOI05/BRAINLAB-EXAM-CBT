@@ -276,8 +276,6 @@ begin
   end if;
 
   v_standardized := public._standardized_utme_scores(rec.result_id);
-  perform public._log_attempt(v_phone, true);
-
   return jsonb_build_object(
     'ok', true,
     'name', rec.name,
