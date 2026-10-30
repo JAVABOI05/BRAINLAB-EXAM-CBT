@@ -49,6 +49,7 @@ type OnlinePeer = {
   last_heartbeat_at?: string;
   field?: string;
   is_self?: boolean;
+  public_profile_slug?: string;
 };
 
 const CURATED_STUDY_CIRCLES = [
