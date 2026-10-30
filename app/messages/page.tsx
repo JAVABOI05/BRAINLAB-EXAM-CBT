@@ -49,6 +49,7 @@ type OnlinePeer = {
   last_heartbeat_at?: string;
   field?: string;
   is_self?: boolean;
+  public_profile_slug?: string;
 };
 
 const CURATED_STUDY_CIRCLES = [
@@ -1128,7 +1129,7 @@ export default function MessagesPage() {
                       </p>
 
                       {/* 3 Direct Actions: Message, Add Friend, Add to Study Group */}
-                      <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      <div className={`grid ${isTutor ? "grid-cols-4" : "grid-cols-3"} gap-1.5 pt-1`}>
                         <button
                           onClick={() => void handleMessagePeer(peer)}
                           className="flex items-center justify-center gap-1 rounded-xl bg-blue-50 border border-blue-200 px-2 py-1.5 text-[11px] font-bold text-blue-900 hover:bg-blue-100 transition active-press"
@@ -1136,6 +1137,20 @@ export default function MessagesPage() {
                         >
                           <span>Message</span>
                         </button>
+
+                        {isTutor && (peer.public_profile_slug ? (
+                          <Link
+                            href={`/tutors/${peer.public_profile_slug}`}
+                            className="flex items-center justify-center gap-1 rounded-xl bg-amber-50 border border-amber-200 px-2 py-1.5 text-[11px] font-bold text-amber-900 hover:bg-amber-100 transition"
+                            title="View tutor profile"
+                          >
+                            Profile
+                          </Link>
+                        ) : (
+                          <span className="flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 px-1.5 py-1.5 text-[10px] font-semibold text-slate-500" title="This tutor is completing their public profile">
+                            Profile pending
+                          </span>
+                        ))}
 
                         <button
                           onClick={() => void handleAddFriend(peer)}

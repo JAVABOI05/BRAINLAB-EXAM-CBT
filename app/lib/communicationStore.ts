@@ -11,6 +11,7 @@ export interface RealPeer {
   avatar_url?: string | null;
   last_heartbeat_at?: string;
   is_self?: boolean;
+  public_profile_slug?: string;
 }
 
 export interface ChatMessage {
@@ -76,9 +77,9 @@ export async function recordUserHeartbeat(
 
   // Check admin role
   const { data: adminRecord } = await supabase
-    .from("admin_users")
+    .from("admin_profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   const role: "admin" | "tutor" | "student" = adminRecord?.role
@@ -174,12 +175,28 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   // 2. Load admin users to map staff roles
   const adminUsersMap = new Map<string, string>();
   try {
-    const { data: adminRows } = await supabase.from("admin_users").select("id, role");
+    const { data: adminRows } = await supabase.from("admin_profiles").select("user_id, role");
     for (const a of adminRows || []) {
-      adminUsersMap.set(a.id, a.role);
+      adminUsersMap.set(a.user_id, a.role);
     }
   } catch {
     // ignore
+  }
+
+  // 2b. Attach only approved, published tutor profiles to staff accounts.
+  const publicTutorProfiles = new Map<string, string>();
+  try {
+    const { data: profiles } = await supabase
+      .from("tutor_profiles")
+      .select("user_id, slug")
+      .eq("is_published", true)
+      .eq("profile_status", "approved")
+      .not("user_id", "is", null);
+    for (const profile of profiles || []) {
+      if (profile.user_id && profile.slug) publicTutorProfiles.set(profile.user_id, profile.slug);
+    }
+  } catch {
+    // Tutor role discovery must continue even before profiles are published.
   }
 
   // 3. Load presence map from user_presence or exam_config
@@ -260,6 +277,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
       avatar_url: typeof u.user_metadata?.avatar_url === "string" ? u.user_metadata.avatar_url : null,
       last_heartbeat_at: lastHeartbeat || undefined,
       is_self: u.id === currentUserId,
+      public_profile_slug: publicTutorProfiles.get(u.id),
     };
   });
 
