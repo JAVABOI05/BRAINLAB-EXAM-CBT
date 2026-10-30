@@ -76,9 +76,9 @@ export async function recordUserHeartbeat(
 
   // Check admin role
   const { data: adminRecord } = await supabase
-    .from("admin_users")
+    .from("admin_profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
   const role: "admin" | "tutor" | "student" = adminRecord?.role
@@ -174,9 +174,9 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   // 2. Load admin users to map staff roles
   const adminUsersMap = new Map<string, string>();
   try {
-    const { data: adminRows } = await supabase.from("admin_users").select("id, role");
+    const { data: adminRows } = await supabase.from("admin_profiles").select("user_id, role");
     for (const a of adminRows || []) {
-      adminUsersMap.set(a.id, a.role);
+      adminUsersMap.set(a.user_id, a.role);
     }
   } catch {
     // ignore
