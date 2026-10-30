@@ -36,22 +36,26 @@ export function convertEnglishRawScore(rawScore: number, rawMax: number = 90): {
   };
 }
 
-export function convertStandardRawScore(rawScore: number, rawMax: number = 100): {
+export function convertStandardRawScore(rawScore: number, rawMax: number = 100, normalizeTo100 = false): {
   rawScore: number;
   rawMax: number;
   convertedScore: number;
   displayedScore: number;
   percentage: number;
 } {
-  const safeRaw = Math.max(0, Math.min(rawScore, rawMax));
-  const converted = safeRaw; // Standard 40 questions x 2.5 is already out of 100
+  const safeMax = rawMax > 0 ? rawMax : 100;
+  const safeRaw = Math.max(0, Math.min(rawScore, safeMax));
+  // UTME electives normalize against their actual available marks so each
+  // selected subject is consistently reported out of 100. Other assessment
+  // templates retain their existing direct-mark behaviour.
+  const converted = normalizeTo100 ? (safeRaw / safeMax) * 100 : safeRaw;
   const displayed = roundUpScore(converted);
   return {
     rawScore: safeRaw,
-    rawMax,
-    convertedScore: safeRaw,
+    rawMax: safeMax,
+    convertedScore: Math.round(converted * 100) / 100,
     displayedScore: Math.min(100, Math.max(0, displayed)),
-    percentage: Math.round((safeRaw / (rawMax || 100)) * 1000) / 10,
+    percentage: Math.round((safeRaw / safeMax) * 1000) / 10,
   };
 }
 
@@ -77,6 +81,9 @@ export function markExamAttempt(
 
   const subjectDetails: Record<string, SubjectMarkDetail> = {};
   const subjectScores: Record<string, number> = {};
+  const isUtmeCombination =
+    subjectGroups.size === 4 &&
+    Array.from(subjectGroups.keys()).some((subject) => subject.toLowerCase().includes("english"));
 
   let aggregateRawScore = 0;
   let aggregateRawMax = 0;
@@ -148,7 +155,7 @@ export function markExamAttempt(
       conversionRes = convertEnglishRawScore(subjRawScore, subjRawMax || 90);
     } else {
       // Standard elective: 40 questions x 2.5 marks = 100 marks
-      conversionRes = convertStandardRawScore(subjRawScore, subjRawMax || 100);
+      conversionRes = convertStandardRawScore(subjRawScore, subjRawMax || 100, isUtmeCombination);
     }
 
     subjectDetails[subj] = {
