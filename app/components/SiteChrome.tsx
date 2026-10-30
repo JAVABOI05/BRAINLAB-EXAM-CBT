@@ -8,6 +8,7 @@ import GlobalLearnerToolbar from "./GlobalLearnerToolbar";
 import ToastContainer from "./Toast";
 import OfflineSyncManager from "./OfflineSyncManager";
 import GlobalAnnouncementBanner from "./GlobalAnnouncementBanner";
+import PWAInstallPrompt from "./PWAInstallPrompt";
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
@@ -37,6 +38,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     <>
       <ToastContainer />
       <OfflineSyncManager />
+      {!hidePublicChrome && <PWAInstallPrompt />}
       {!hidePublicChrome && <GlobalLearnerToolbar />}
       {!hidePublicChrome && <GlobalAnnouncementBanner />}
       {!hidePublicChrome && <BrandHeader />}
