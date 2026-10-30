@@ -11,6 +11,7 @@ export interface RealPeer {
   avatar_url?: string | null;
   last_heartbeat_at?: string;
   is_self?: boolean;
+  public_profile_slug?: string;
 }
 
 export interface ChatMessage {
@@ -182,6 +183,22 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
     // ignore
   }
 
+  // 2b. Attach only approved, published tutor profiles to staff accounts.
+  const publicTutorProfiles = new Map<string, string>();
+  try {
+    const { data: profiles } = await supabase
+      .from("tutor_profiles")
+      .select("user_id, slug")
+      .eq("is_published", true)
+      .eq("profile_status", "approved")
+      .not("user_id", "is", null);
+    for (const profile of profiles || []) {
+      if (profile.user_id && profile.slug) publicTutorProfiles.set(profile.user_id, profile.slug);
+    }
+  } catch {
+    // Tutor role discovery must continue even before profiles are published.
+  }
+
   // 3. Load presence map from user_presence or exam_config
   let presenceMap: Record<string, { status?: RealPeer["status"]; custom_status?: string | null; last_heartbeat_at?: string; activity_context?: string; display_name?: string }> = {};
 
@@ -260,6 +277,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
       avatar_url: typeof u.user_metadata?.avatar_url === "string" ? u.user_metadata.avatar_url : null,
       last_heartbeat_at: lastHeartbeat || undefined,
       is_self: u.id === currentUserId,
+      public_profile_slug: publicTutorProfiles.get(u.id),
     };
   });
 
