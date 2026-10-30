@@ -43,15 +43,19 @@ export function convertStandardRawScore(rawScore: number, rawMax: number = 100):
   displayedScore: number;
   percentage: number;
 } {
-  const safeRaw = Math.max(0, Math.min(rawScore, rawMax));
-  const converted = safeRaw; // Standard 40 questions x 2.5 is already out of 100
+  const safeMax = rawMax > 0 ? rawMax : 100;
+  const safeRaw = Math.max(0, Math.min(rawScore, safeMax));
+  // Normalize each selected subject against its actual available raw marks.
+  // This guarantees a 100-mark subject scale even when a question set's raw
+  // marks differ slightly from the blueprint target.
+  const converted = (safeRaw / safeMax) * 100;
   const displayed = roundUpScore(converted);
   return {
     rawScore: safeRaw,
-    rawMax,
-    convertedScore: safeRaw,
+    rawMax: safeMax,
+    convertedScore: Math.round(converted * 100) / 100,
     displayedScore: Math.min(100, Math.max(0, displayed)),
-    percentage: Math.round((safeRaw / (rawMax || 100)) * 1000) / 10,
+    percentage: Math.round(converted * 10) / 10,
   };
 }
 
