@@ -132,6 +132,7 @@ export default function TutorProfileEditorPage() {
         : await supabase.from("tutor_profiles").insert({ ...payload, user_id: userId }).select("*").single();
       if (result.error) throw result.error;
       setProfile(result.data as Profile);
+      setDraft((current) => ({ ...current, photo_url: photoUrl }));
       setPhoto(null);
       setNotice("Your profile has been submitted for review. It will appear publicly after BrainLab approves it.");
     } catch (cause) {
