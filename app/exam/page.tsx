@@ -1131,7 +1131,7 @@ export default function ExamPage() {
                         <div className="flex items-start gap-3">
                           <input
                             type="radio"
-                            name={`question-${currentQuestion.id}`}
+                            name={`question-${currentIndex}-${currentQuestion.id}`}
                             checked={selectedAnswer === option.key}
                             onChange={() => handleSelectAnswer(option.key)}
                             className="mt-1"
