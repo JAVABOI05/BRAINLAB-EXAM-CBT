@@ -32,6 +32,30 @@ export async function POST(request: NextRequest) {
     const cleanName = String(name || "").trim() || "Candidate";
     const cleanPhone = String(phone || "").trim() || "08000000000";
 
+    // Server-side one-submission rule: a completed candidate cannot create a new
+    // exam session by revisiting /exam, clearing browser storage, or replaying start.
+    const { data: completedAttempt, error: completedAttemptError } = await supabase
+      .from("exam_sessions")
+      .select("id")
+      .eq("phone", cleanPhone)
+      .eq("status", "submitted")
+      .limit(1)
+      .maybeSingle();
+
+    if (completedAttemptError) {
+      console.error("Unable to verify candidate submission history:", completedAttemptError.message);
+      return NextResponse.json(
+        { ok: false, error: "submission_check_failed", message: "We could not verify your previous exam status. Please contact the examination administrator before starting another attempt." },
+        { status: 503 }
+      );
+    }
+    if (completedAttempt) {
+      return NextResponse.json(
+        { ok: false, error: "already_submitted", message: "Our records show that you have already submitted this examination. You cannot start or retake it again." },
+        { status: 409 }
+      );
+    }
+
     // 1. Check access code if required
     let isMasterCode = false;
     let preconfiguredSubject: string | null = null;

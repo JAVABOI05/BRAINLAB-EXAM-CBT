@@ -146,6 +146,29 @@ export default function ExamPage() {
 
   const submitLockRef = useRef(false);
   const tabSwitchCountRef = useRef(0);
+
+  useEffect(() => {
+    const redirectIfSubmitted = () => {
+      try {
+        const rawLock = localStorage.getItem("exam_submission_lock");
+        const rawCandidate = localStorage.getItem("candidate");
+        if (!rawLock || !rawCandidate) return;
+        const lock = JSON.parse(rawLock) as { phone?: string; code?: string };
+        const savedCandidate = JSON.parse(rawCandidate) as Candidate;
+        if (lock.phone === savedCandidate.phone && (lock.code || "") === (savedCandidate.code || "") && localStorage.getItem("exam_summary")) {
+          router.replace("/result");
+        }
+      } catch {}
+    };
+    const handlePageShow = () => redirectIfSubmitted();
+    const handlePopState = () => redirectIfSubmitted();
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [router]);
   const answerSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const answerSaveSequenceRef = useRef(0);
 
@@ -157,6 +180,16 @@ export default function ExamPage() {
       try { parsedCandidate = JSON.parse(savedCandidate) as Candidate; }
       catch { router.push("/"); return; }
       setCandidate(parsedCandidate);
+      // A completed attempt must never be restored from browser history or local state.
+      try {
+        const lockRaw = localStorage.getItem("exam_submission_lock");
+        const lock = lockRaw ? JSON.parse(lockRaw) as { phone?: string; code?: string } : null;
+        const sameCandidate = Boolean(lock?.phone && lock.phone === parsedCandidate.phone && (lock.code || "") === (parsedCandidate.code || ""));
+        if (sameCandidate && localStorage.getItem("exam_summary")) {
+          router.replace("/result");
+          return;
+        }
+      } catch {}
       if (parsedCandidate.subject === "Biology" || parsedCandidate.subject === "Mathematics") setElectiveSubject(parsedCandidate.subject);
       const settings = await getPublicSettings();
       if (!settings) { setError("Could not load exam settings. Check your connection and refresh the page."); return; }
@@ -181,7 +214,7 @@ export default function ExamPage() {
         } else if (resumed.finished) {
           clearAttemptStorage();
           storeFinished(resumed);
-          router.push("/result");
+          router.replace("/result");
           return;
         } else if (typeof (resumed as AttemptPayload).time_left_seconds === "number" && (resumed as AttemptPayload).time_left_seconds <= 0) {
           // Stale session that has already timed out in the past: clear it so student starts fresh
@@ -243,6 +276,18 @@ export default function ExamPage() {
   }
 
   function storeFinished(res: FinishedPayload) {
+    // Persist a candidate-scoped completion lock before clearing the active attempt.
+    // This also protects against mobile browser Back/BFCache restoring the old exam UI.
+    try {
+      const savedCandidate = localStorage.getItem("candidate");
+      const finishedCandidate = savedCandidate ? JSON.parse(savedCandidate) as Candidate : null;
+      localStorage.setItem("exam_submission_lock", JSON.stringify({
+        phone: finishedCandidate?.phone || candidate?.phone || "",
+        code: finishedCandidate?.code || candidate?.code || "",
+        result_id: res.result_id,
+        submitted_at: new Date().toISOString(),
+      }));
+    } catch {}
     // Answer keys are stripped from client storage to prevent inspection.
     localStorage.removeItem("exam_result");
     localStorage.setItem("exam_summary", JSON.stringify({
@@ -611,7 +656,7 @@ export default function ExamPage() {
       return;
     }
     storeFinished(res);
-    router.push("/result");
+    router.replace("/result");
   };
 
   const handleSubmit = (autoSubmitted = false) => {

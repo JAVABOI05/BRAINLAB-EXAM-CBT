@@ -55,7 +55,7 @@ export default function ResultPage() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
-  const [chiefProctorName, setChiefProctorName] = useState("Dr. K. Adeleke, F.Ed.");
+  const [chiefProctorName, setChiefProctorName] = useState("");
   const [chiefProctorTitle, setChiefProctorTitle] = useState("Chief Examination Proctor");
 
   useEffect(() => {

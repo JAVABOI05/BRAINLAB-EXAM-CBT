@@ -831,7 +831,7 @@ export default function AdminConfigPage() {
                     onChange={(e) =>
                       setExamSettings((prev) => ({ ...prev, chief_proctor_name: e.target.value }))
                     }
-                    placeholder="e.g. Dr. K. Adeleke, F.Ed."
+                    placeholder="Enter the currently appointed proctor's name"
                     className="admin-input"
                   />
                   <p className="admin-help mt-1">Appears directly above the official signature line.</p>
