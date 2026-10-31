@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getWhatsAppChatUrl, DEFAULT_WHATSAPP_NUMBER } from "../lib/whatsapp";
+import { getFooterConfig } from "../lib/platformConfig";
 import Link from "next/link";
 
 interface StudyCircle {
@@ -102,6 +104,19 @@ export default function StudyGroupsPage() {
   });
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"circles" | "rules">("circles");
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    let mounted = true;
+    void getFooterConfig().then((cfg) => {
+      if (mounted && cfg?.whatsapp_number) {
+        setWhatsappNumber(cfg.whatsapp_number);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleToggleJoin = (circleId: string) => {
     let next: string[];
@@ -382,7 +397,7 @@ export default function StudyGroupsPage() {
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <span className="text-xs text-slate-500">Need to report inappropriate behavior?</span>
               <a
-                href="https://wa.me/2349074310204?text=Hello%20BrainLab%20Moderation%2C%20I%20would%20like%20to%20report%20an%20issue."
+                href={getWhatsAppChatUrl("Hello BrainLab Moderation, I would like to report an issue.", whatsappNumber)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-rose-700 dark:text-rose-400 hover:underline"

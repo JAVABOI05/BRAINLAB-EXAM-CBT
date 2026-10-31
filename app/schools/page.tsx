@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getFooterConfig } from "../lib/platformConfig";
+import { getWhatsAppChatUrl, normalizeDialPhone, DEFAULT_SUPPORT_PHONE, DEFAULT_WHATSAPP_NUMBER } from "../lib/whatsapp";
 import Link from "next/link";
 import { toast } from "../lib/toast";
 
@@ -89,6 +91,26 @@ export default function SchoolsPage() {
   const [inquiryNotes, setInquiryNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ ok: boolean; ref?: string; message?: string } | null>(null);
+  const [supportPhone, setSupportPhone] = useState(DEFAULT_SUPPORT_PHONE);
+  const [supportPhoneDial, setSupportPhoneDial] = useState(() => normalizeDialPhone(DEFAULT_SUPPORT_PHONE));
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    let mounted = true;
+    void getFooterConfig().then((cfg) => {
+      if (!mounted || !cfg) return;
+      if (cfg.support_phone) {
+        setSupportPhone(cfg.support_phone);
+        setSupportPhoneDial(normalizeDialPhone(cfg.support_phone));
+      }
+      if (cfg.whatsapp_number) {
+        setWhatsappNumber(cfg.whatsapp_number);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Active tier calculation
   const activeTier =
@@ -716,7 +738,7 @@ export default function SchoolsPage() {
 
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <a
-                    href={`https://wa.me/2349074310204?text=Hello%20BrainLab%20Academic%20Desk,%20we%20just%20submitted%20an%20institutional%20request%20with%20Ref:%20${submitResult.ref}`}
+                    href={getWhatsAppChatUrl(`Hello BrainLab Academic Desk, we just submitted an institutional request with Ref: ${submitResult.ref}`, whatsappNumber)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-emerald-500"
@@ -948,12 +970,12 @@ export default function SchoolsPage() {
               Need immediate assistance? Contact our institutional desk directly:
             </p>
             <div className="mt-3 flex justify-center gap-4 text-xs font-bold text-blue-600 dark:text-sky-400">
-              <a href="mailto:support@brainlab.edu.ng" className="hover:underline">
-                ✉ support@brainlab.edu.ng
+              <a href="mailto:support@brainlabacademy.com.ng" className="hover:underline">
+                ✉ support@brainlabacademy.com.ng
               </a>
               <span>•</span>
-              <a href="tel:+2348169389816" className="hover:underline">
-                📞 +234 (0) 816 938 9816
+              <a href={`tel:${supportPhoneDial}`} className="hover:underline">
+                📞 {supportPhone}
               </a>
               <span>•</span>
               <Link href="/contact" className="hover:underline">

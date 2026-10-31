@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { getWhatsAppChatUrl, DEFAULT_WHATSAPP_NUMBER } from "../lib/whatsapp";
+import { getFooterConfig } from "../lib/platformConfig";
 
 interface FAQItem {
   id: string;
@@ -30,7 +32,7 @@ const FAQ_DATABASE: FAQItem[] = [
     categoryLabel: "CBT & Exams",
     question: "What is an Access Code and how do I get one?",
     answer: "An Access Code is a unique alphanumeric key that grants access to specific examination sessions, institutional mock tests, or subscription question banks. If you don't have a code, you can request one instantly by messaging our dedicated WhatsApp helpline or redeeming a voucher card under Account Access.",
-    actionHref: "https://wa.me/2349074310204?text=Hello%20BrainLab,%20I%20need%20an%20Access%20Code%20for%20CBT%20practice.",
+    actionHref: getWhatsAppChatUrl("Hello BrainLab, I need an Access Code for CBT practice."),
     actionLabel: "Request Code on WhatsApp",
   },
   {
@@ -191,6 +193,19 @@ export default function FAQPage() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({ "cbt-start": true });
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    let mounted = true;
+    void getFooterConfig().then((cfg) => {
+      if (mounted && cfg?.whatsapp_number) {
+        setWhatsappNumber(cfg.whatsapp_number);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const toggleItem = (id: string) => {
     setOpenItems((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -366,9 +381,7 @@ export default function FAQPage() {
               </p>
               <div className="pt-2">
                 <a
-                  href={`https://wa.me/2349074310204?text=${encodeURIComponent(
-                    `Hello BrainLab Helpdesk, I have a question about: ${searchQuery}`
-                  )}`}
+                  href={getWhatsAppChatUrl(`Hello BrainLab Helpdesk, I have a question about: ${searchQuery}`, whatsappNumber)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition active:scale-95 shadow-sm"
@@ -391,7 +404,7 @@ export default function FAQPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <a
-                href="https://wa.me/2349074310204"
+                href={getWhatsAppChatUrl("Hello BrainLab Helpdesk, I need assistance.", whatsappNumber)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition active:scale-95 shadow-sm"

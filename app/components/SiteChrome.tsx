@@ -14,7 +14,9 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
   const isActiveExam = pathname === "/exam" || pathname.startsWith("/exam/");
   const isInstructions = pathname === "/instructions" || pathname.startsWith("/instructions/");
-  const isClassroom = pathname === "/classroom" || pathname.startsWith("/classroom/");
+  // Active live video room or studio has its own dedicated full-viewport controls.
+  // The classroom lobby (/classroom) retains standard public brand navigation and light/dark theme controls.
+  const isClassroomSession = (pathname.startsWith("/classroom/") && pathname !== "/classroom/") || pathname === "/classroom/studio";
   const isMessages = pathname === "/messages" || pathname.startsWith("/messages/");
 
   // Intercept any Supabase PKCE authentication code or error landing on an arbitrary route
@@ -29,9 +31,9 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // The active exam, instructions briefing, and live classroom have their own focused task-oriented interfaces.
+  // The active exam, instructions briefing, and live room sessions have their own focused task-oriented interfaces.
   // Admin pages retain their own dedicated dashboard navigation.
-  const hidePublicChrome = isAdminArea || isActiveExam || isInstructions || isClassroom;
+  const hidePublicChrome = isAdminArea || isActiveExam || isInstructions || isClassroomSession;
 
   return (
     <>

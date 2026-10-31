@@ -2,6 +2,7 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { toast } from "../lib/toast";
+import { getWhatsAppChatUrl, getWhatsAppChannelUrl } from "../lib/whatsapp";
 interface LearningStreakProps {
   currentStreak?: number;
   longestStreak?: number;
@@ -251,7 +252,7 @@ export default function LearningStreakCard({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <a
-                href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m"
+                href={getWhatsAppChannelUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 text-[11px] shadow-sm transition active:scale-95 inline-flex items-center gap-1"
@@ -259,7 +260,7 @@ export default function LearningStreakCard({
                 Join Channel ↗
               </a>
               <a
-                href="https://wa.me/2349074310204?text=Hi%20BrainLab,%20please%20subscribe%20me%20to%20Daily%20Study%20Streak%20Reminders%20and%20Exam%20Alerts."
+                href={getWhatsAppChatUrl("Hi BrainLab, please subscribe me to Daily Study Streak Reminders and Exam Alerts.")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-bold px-2.5 py-1.5 text-[11px] hover:bg-emerald-50 transition"

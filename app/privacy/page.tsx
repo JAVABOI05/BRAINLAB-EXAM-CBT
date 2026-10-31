@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "../lib/toast";
+import { getWhatsAppChatUrl, DEFAULT_WHATSAPP_NUMBER } from "../lib/whatsapp";
+import { getFooterConfig } from "../lib/platformConfig";
 
 const SECTIONS = [
   { id: "core-commitments", label: "Core Security Commitments", icon: "🛡️" },
@@ -19,6 +21,19 @@ export default function PrivacyPolicyPage() {
   const lastUpdated = "October 27, 2026";
   const [activeSection, setActiveSection] = useState("core-commitments");
   const [searchQuery, setSearchQuery] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    let mounted = true;
+    void getFooterConfig().then((cfg) => {
+      if (mounted && cfg?.whatsapp_number) {
+        setWhatsappNumber(cfg.whatsapp_number);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Track active section on scroll
   useEffect(() => {
@@ -598,12 +613,12 @@ export default function PrivacyPolicyPage() {
 
                   <div className="mt-6 flex flex-wrap items-center gap-3">
                     <a
-                      href="https://wa.me/2349074310204?text=Hello%20BrainLab%20DPO,%20I%20have%20an%20inquiry%20regarding%20data%20privacy%20and%20encryption."
+                      href={getWhatsAppChatUrl("Hello BrainLab DPO, I have an inquiry regarding data privacy and encryption.", whatsappNumber)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition active:scale-95"
                     >
-                       WhatsApp DPO Desk (+234 907 431 0204)
+                       WhatsApp DPO Desk (+{whatsappNumber})
                     </a>
                     <Link
                       href="/contact"

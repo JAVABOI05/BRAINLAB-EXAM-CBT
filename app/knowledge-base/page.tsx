@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getWhatsAppChatUrl } from "../lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Knowledge Base | BrainLab Academy",
@@ -124,7 +125,7 @@ export default function KnowledgeBasePage() {
             </p>
           </div>
           <a
-            href="https://wa.me/2349074310204"
+            href={getWhatsAppChatUrl("Hello BrainLab Support, I need help with knowledge base articles.")}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-3 text-xs font-bold text-white transition active:scale-95 shadow-sm shrink-0"

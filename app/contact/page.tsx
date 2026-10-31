@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "../lib/toast";
+import { getFooterConfig } from "../lib/platformConfig";
+import { normalizeWhatsAppNumber, getWhatsAppChatUrl } from "../lib/whatsapp";
 
-const CONTACT_INFO = {
+const DEFAULT_CONTACT_INFO = {
   primaryPhone: "+234 907 431 0204",
   secondaryPhone: "+234 902 111 8231",
   whatsappNumber: "2349074310204",
@@ -70,6 +72,26 @@ const TOPIC_PRESETS = [
 ];
 
 export default function ContactPage() {
+  const [contactInfo, setContactInfo] = useState(DEFAULT_CONTACT_INFO);
+
+  useEffect(() => {
+    let mounted = true;
+    void getFooterConfig().then((cfg) => {
+      if (!mounted || !cfg) return;
+      setContactInfo((prev) => ({
+        ...prev,
+        primaryPhone: cfg.support_phone || prev.primaryPhone,
+        whatsappNumber: cfg.whatsapp_number ? normalizeWhatsAppNumber(cfg.whatsapp_number) : prev.whatsappNumber,
+        whatsappChannel: cfg.whatsapp_channel_url || prev.whatsappChannel,
+        email: cfg.support_email || prev.email,
+        academyEmail: cfg.academy_email || prev.academyEmail,
+        location: cfg.office_location || prev.location,
+      }));
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -92,7 +114,7 @@ export default function ContactPage() {
     const encodedMsg = encodeURIComponent(
       `Hello BrainLab Academy Desk,\n\nCandidate Name: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email || "N/A"}\nTopic: ${formData.category}\n\nMessage:\n${formData.message}`
     );
-    const whatsappUrl = `https://wa.me/${CONTACT_INFO.whatsappNumber}?text=${encodedMsg}`;
+    const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumber}?text=${encodedMsg}`;
 
     setTimeout(() => {
       setLoading(false);
@@ -176,15 +198,15 @@ export default function ContactPage() {
 
                 <div className="mt-4 space-y-2">
                   <a
-                    href={`https://wa.me/${CONTACT_INFO.whatsappNumber}?text=${encodeURIComponent("Hello BrainLab Academy, I need assistance with CBT practice.")}`}
+                    href={`https://wa.me/${contactInfo.whatsappNumber}?text=${encodeURIComponent("Hello BrainLab Academy, I need assistance with CBT practice.")}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-black text-white shadow transition-all active:scale-95"
                   >
-                    <span>Chat on WhatsApp</span> ({CONTACT_INFO.primaryPhone}) &rarr;
+                    <span>Chat on WhatsApp</span> ({contactInfo.primaryPhone}) &rarr;
                   </a>
                   <a
-                    href={CONTACT_INFO.whatsappChannel}
+                    href={contactInfo.whatsappChannel}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900/80 px-4 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-slate-800 transition active:scale-95"
@@ -208,11 +230,11 @@ export default function ContactPage() {
                   <div className="flex justify-between items-center rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
                     <span className="text-slate-500 dark:text-slate-400">Helpline 1:</span>
                     <div className="flex items-center gap-2">
-                      <a href={`tel:${CONTACT_INFO.primaryPhone}`} className="text-slate-900 dark:text-white hover:text-blue-600 font-bold">
-                        {CONTACT_INFO.primaryPhone}
+                      <a href={`tel:${contactInfo.primaryPhone}`} className="text-slate-900 dark:text-white hover:text-blue-600 font-bold">
+                        {contactInfo.primaryPhone}
                       </a>
                       <button
-                        onClick={() => handleCopy(CONTACT_INFO.primaryPhone, "Phone 1")}
+                        onClick={() => handleCopy(contactInfo.primaryPhone, "Phone 1")}
                         className="text-xs text-slate-400 hover:text-blue-600"
                         title="Copy number"
                       ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -222,11 +244,11 @@ export default function ContactPage() {
                   <div className="flex justify-between items-center rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
                     <span className="text-slate-500 dark:text-slate-400">Helpline 2:</span>
                     <div className="flex items-center gap-2">
-                      <a href={`tel:${CONTACT_INFO.secondaryPhone}`} className="text-slate-900 dark:text-white hover:text-blue-600 font-bold">
-                        {CONTACT_INFO.secondaryPhone}
+                      <a href={`tel:${contactInfo.secondaryPhone}`} className="text-slate-900 dark:text-white hover:text-blue-600 font-bold">
+                        {contactInfo.secondaryPhone}
                       </a>
                       <button
-                        onClick={() => handleCopy(CONTACT_INFO.secondaryPhone, "Phone 2")}
+                        onClick={() => handleCopy(contactInfo.secondaryPhone, "Phone 2")}
                         className="text-xs text-slate-400 hover:text-blue-600"
                         title="Copy number"
                       ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -251,12 +273,12 @@ export default function ContactPage() {
                   <div className="flex justify-between items-center rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
                     <div>
                       <p className="text-[10px] uppercase font-bold text-slate-400">Student Support</p>
-                      <a href={`mailto:${CONTACT_INFO.email}`} className="text-blue-600 dark:text-cyan-400 hover:underline">
-                        {CONTACT_INFO.email}
+                      <a href={`mailto:${contactInfo.email}`} className="text-blue-600 dark:text-cyan-400 hover:underline">
+                        {contactInfo.email}
                       </a>
                     </div>
                     <button
-                      onClick={() => handleCopy(CONTACT_INFO.email, "Support email")}
+                      onClick={() => handleCopy(contactInfo.email, "Support email")}
                       className="text-xs text-slate-400 hover:text-blue-600"
                       title="Copy email"
                     ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -265,12 +287,12 @@ export default function ContactPage() {
                   <div className="flex justify-between items-center rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3">
                     <div>
                       <p className="text-[10px] uppercase font-bold text-slate-400">Institutional / Partnerships</p>
-                      <a href={`mailto:${CONTACT_INFO.academyEmail}`} className="text-blue-600 dark:text-cyan-400 hover:underline">
-                        {CONTACT_INFO.academyEmail}
+                      <a href={`mailto:${contactInfo.academyEmail}`} className="text-blue-600 dark:text-cyan-400 hover:underline">
+                        {contactInfo.academyEmail}
                       </a>
                     </div>
                     <button
-                      onClick={() => handleCopy(CONTACT_INFO.academyEmail, "Academy email")}
+                      onClick={() => handleCopy(contactInfo.academyEmail, "Academy email")}
                       className="text-xs text-slate-400 hover:text-blue-600"
                       title="Copy email"
                     ><svg className="h-3.5 w-3.5 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -308,7 +330,7 @@ export default function ContactPage() {
                       Your query has been routed. If WhatsApp didn&apos;t open automatically on your device, click below to connect:
                     </p>
                     <a
-                      href={`https://wa.me/${CONTACT_INFO.whatsappNumber}`}
+                      href={`https://wa.me/${contactInfo.whatsappNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow transition active:scale-95"

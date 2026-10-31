@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "../lib/toast";
+import { getWhatsAppChatUrl, DEFAULT_WHATSAPP_NUMBER } from "../lib/whatsapp";
+import { getFooterConfig } from "../lib/platformConfig";
 
 const SECTIONS = [
   { id: "highlights", label: "Executive Highlights", icon: "⚡" },
@@ -19,6 +21,19 @@ const SECTIONS = [
 export default function TermsOfUsePage() {
   const lastUpdated = "October 27, 2026";
   const [activeSection, setActiveSection] = useState("highlights");
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    let mounted = true;
+    void getFooterConfig().then((cfg) => {
+      if (mounted && cfg?.whatsapp_number) {
+        setWhatsappNumber(cfg.whatsapp_number);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Track active section on scroll
   useEffect(() => {
@@ -159,7 +174,7 @@ export default function TermsOfUsePage() {
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
                 <p>Have an inquiry?</p>
                 <a
-                  href="https://wa.me/2349074310204"
+                  href={getWhatsAppChatUrl("Hello BrainLab Support, I have an inquiry regarding Terms of Use.", whatsappNumber)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-1 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
@@ -460,12 +475,12 @@ export default function TermsOfUsePage() {
 
                 <div className="flex flex-wrap items-center gap-3 pt-3 text-xs sm:text-sm">
                   <a
-                    href="https://wa.me/2349074310204?text=Hello%20BrainLab%20Support,%20I%20have%20an%20inquiry%20regarding%20Terms%20of%20Use."
+                    href={getWhatsAppChatUrl("Hello BrainLab Support, I have an inquiry regarding Terms of Use.", whatsappNumber)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 font-bold text-white transition active:scale-95 shadow-sm"
                   >
-                    <span>Contact WhatsApp Helpdesk</span> (+234 907 431 0204)
+                    <span>Contact WhatsApp Helpdesk</span> (+{whatsappNumber})
                   </a>
                   <Link
                     href="/contact"
