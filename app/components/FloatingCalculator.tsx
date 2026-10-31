@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 function evaluateArithmetic(input: string): number {
   const source = input.replace(/×/g, "*").replace(/÷/g, "/");
@@ -91,7 +91,8 @@ export default function FloatingCalculator({
   // Position nicely in top-right or center-right on initial mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const defaultX = Math.max(16, window.innerWidth - 340);
+      const calcWidth = Math.min(320, window.innerWidth - 32);
+      const defaultX = Math.max(16, window.innerWidth - calcWidth - 24);
       const defaultY = Math.min(140, Math.max(70, Math.floor(window.innerHeight * 0.12)));
       setPosition({ x: defaultX, y: defaultY });
     }
@@ -102,17 +103,21 @@ export default function FloatingCalculator({
     if (!dragging) return;
 
     const onMouseMove = (e: MouseEvent) => {
+      const maxX = Math.max(8, window.innerWidth - 310);
+      const maxY = Math.max(8, window.innerHeight - 400);
       setPosition({
-        x: Math.max(8, Math.min(window.innerWidth - 325, e.clientX - offset.x)),
-        y: Math.max(8, Math.min(window.innerHeight - 440, e.clientY - offset.y)),
+        x: Math.max(8, Math.min(maxX, e.clientX - offset.x)),
+        y: Math.max(8, Math.min(maxY, e.clientY - offset.y)),
       });
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (!e.touches[0]) return;
+      const maxX = Math.max(8, window.innerWidth - 310);
+      const maxY = Math.max(8, window.innerHeight - 400);
       setPosition({
-        x: Math.max(8, Math.min(window.innerWidth - 325, e.touches[0].clientX - offset.x)),
-        y: Math.max(8, Math.min(window.innerHeight - 440, e.touches[0].clientY - offset.y)),
+        x: Math.max(8, Math.min(maxX, e.touches[0].clientX - offset.x)),
+        y: Math.max(8, Math.min(maxY, e.touches[0].clientY - offset.y)),
       });
     };
 
@@ -133,67 +138,103 @@ export default function FloatingCalculator({
     };
   }, [dragging, offset]);
 
-  if (!isOpen) return null;
+  const appendValue = useCallback((value: string) => {
+    setDisplay((prev) => {
+      if (prev === "0" || prev === "Error") {
+        if (value === ".") return "0.";
+        if (["+", "×", "-", "÷"].includes(value)) return "0" + value;
+        return value;
+      }
 
-  const appendValue = (value: string) => {
-    if (display === "0" || display === "Error") {
+      // Check decimal: only one decimal point per current operand
       if (value === ".") {
-        setDisplay("0.");
-        return;
+        const tokens = prev.split(/[+×÷\-]/);
+        const currentToken = tokens[tokens.length - 1];
+        if (currentToken.includes(".")) return prev;
       }
-      if (["+", "×", "-", "÷"].includes(value)) {
-        setDisplay("0" + value);
-        return;
+
+      // Replace back-to-back operators
+      const lastChar = prev.slice(-1);
+      if (["+", "×", "-", "÷"].includes(lastChar) && ["+", "×", "-", "÷"].includes(value)) {
+        return prev.slice(0, -1) + value;
       }
-      setDisplay(value);
-      return;
-    }
 
-    // Replace operator if another operator is clicked back-to-back
-    const lastChar = display.slice(-1);
-    if (["+", "×", "-", "÷"].includes(lastChar) && ["+", "×", "-", "÷"].includes(value)) {
-      setDisplay((prev) => prev.slice(0, -1) + value);
-      return;
-    }
+      return prev + value;
+    });
+  }, []);
 
-    setDisplay((prev) => prev + value);
-  };
-
-  const clearDisplay = () => {
+  const clearDisplay = useCallback(() => {
     setDisplay("0");
-  };
+  }, []);
 
-  const deleteLast = () => {
-    if (display === "Error") {
-      setDisplay("0");
-      return;
-    }
-    setDisplay((prev) => (prev.length > 1 ? prev.slice(0, -1) : "0"));
-  };
+  const deleteLast = useCallback(() => {
+    setDisplay((prev) => {
+      if (prev === "Error") return "0";
+      return prev.length > 1 ? prev.slice(0, -1) : "0";
+    });
+  }, []);
 
-  const calculateResult = () => {
-    try {
-      const result = evaluateArithmetic(display);
-      const rounded = Math.round((result + Number.EPSILON) * 1e8) / 1e8;
-      setDisplay(String(rounded));
-    } catch {
-      setDisplay("Error");
-    }
-  };
+  const calculateResult = useCallback(() => {
+    setDisplay((prev) => {
+      try {
+        let expr = prev.trim();
+        while (expr.length > 0 && ["+", "×", "-", "÷"].includes(expr.slice(-1))) {
+          expr = expr.slice(0, -1).trim();
+        }
+        if (!expr) return "0";
 
-  const calculateSqrt = () => {
-    try {
-      const value = evaluateArithmetic(display);
-      if (value < 0) {
-        setDisplay("Error");
-        return;
+        const result = evaluateArithmetic(expr);
+        const rounded = Math.round((result + Number.EPSILON) * 1e8) / 1e8;
+        return String(rounded);
+      } catch {
+        return "Error";
       }
-      const rounded = Math.round((Math.sqrt(value) + Number.EPSILON) * 1e8) / 1e8;
-      setDisplay(String(rounded));
-    } catch {
-      setDisplay("Error");
-    }
-  };
+    });
+  }, []);
+
+  // Keyboard navigation & inputs for four-function calculator
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || "").toUpperCase();
+      if (activeTag === "INPUT" || activeTag === "TEXTAREA") return;
+
+      if (e.key >= "0" && e.key <= "9") {
+        e.preventDefault();
+        appendValue(e.key);
+      } else if (e.key === ".") {
+        e.preventDefault();
+        appendValue(".");
+      } else if (e.key === "+") {
+        e.preventDefault();
+        appendValue("+");
+      } else if (e.key === "-") {
+        e.preventDefault();
+        appendValue("-");
+      } else if (e.key === "*" || e.key === "x" || e.key === "X") {
+        e.preventDefault();
+        appendValue("×");
+      } else if (e.key === "/") {
+        e.preventDefault();
+        appendValue("÷");
+      } else if (e.key === "Enter" || e.key === "=") {
+        e.preventDefault();
+        calculateResult();
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        deleteLast();
+      } else if (e.key === "Escape" || e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        clearDisplay();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, appendValue, calculateResult, deleteLast, clearDisplay]);
+
+  if (!isOpen) return null;
 
   const handleStartDrag = (clientX: number, clientY: number) => {
     const rect = calcRef.current?.getBoundingClientRect();
@@ -210,7 +251,7 @@ export default function FloatingCalculator({
     <div className="fixed inset-0 z-[1000] pointer-events-none select-none">
       <div
         ref={calcRef}
-        className="calc-window pointer-events-auto absolute w-[310px] sm:w-[320px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl rounded-2xl overflow-hidden transition-shadow"
+        className="calc-window pointer-events-auto absolute w-[300px] sm:w-[320px] max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl rounded-2xl overflow-hidden transition-shadow"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
@@ -225,7 +266,18 @@ export default function FloatingCalculator({
           className="flex cursor-move items-center justify-between bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3 text-white border-b border-slate-700"
         >
           <div className="flex items-center gap-2">
-            <span className="text-base">🧮</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-blue-400">
+              <rect width="16" height="20" x="4" y="2" rx="2" />
+              <line x1="8" x2="16" y1="6" y2="6" />
+              <line x1="16" x2="16" y1="14" y2="18" />
+              <path d="M16 10h.01" />
+              <path d="M12 10h.01" />
+              <path d="M8 10h.01" />
+              <path d="M12 14h.01" />
+              <path d="M8 14h.01" />
+              <path d="M12 18h.01" />
+              <path d="M8 18h.01" />
+            </svg>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
               Exam Calculator
             </span>
@@ -249,16 +301,13 @@ export default function FloatingCalculator({
           </div>
         </div>
 
-        {/* Keypad Grid (with +, -, ×, ÷, √, Del, C, =, .) */}
+        {/* Four-Function Keypad Grid (+, -, ×, ÷, Decimals, Clear, Delete) */}
         <div className="grid grid-cols-4 gap-2 p-3 sm:p-4 bg-white dark:bg-slate-900">
-          <button type="button" onClick={clearDisplay} className="calc-top-btn font-bold">
-            C
+          <button type="button" onClick={clearDisplay} className="calc-top-btn font-bold col-span-2">
+            Clear (C)
           </button>
           <button type="button" onClick={deleteLast} className="calc-top-btn font-bold">
             Del
-          </button>
-          <button type="button" onClick={calculateSqrt} className="calc-top-btn font-bold">
-            √
           </button>
           <button type="button" onClick={() => appendValue("÷")} className="calc-op-btn font-bold text-lg">
             ÷

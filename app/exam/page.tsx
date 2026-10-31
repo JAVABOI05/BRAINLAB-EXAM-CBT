@@ -103,6 +103,11 @@ export default function ExamPage() {
   const [passageFontSize, setPassageFontSize] = useState<number>(15);
   const [passageSearchQuery, setPassageSearchQuery] = useState<string>("");
   const [mobilePassageOpen, setMobilePassageOpen] = useState<boolean>(false);
+  const [submittedLockNotice, setSubmittedLockNotice] = useState<{
+    isSubmitted: boolean;
+    message: string;
+    resultId?: string;
+  } | null>(null);
 
 
   // Track network connectivity and auto-retry sync when online
@@ -173,6 +178,31 @@ export default function ExamPage() {
 
       const savedSessionId = localStorage.getItem("exam_session_id");
       const savedToken = localStorage.getItem("exam_token");
+      const lastSubmittedId = localStorage.getItem("last_submitted_session_id");
+
+      // Verify server-side submission status if there's a recent session
+      const probeSessionId = savedSessionId || lastSubmittedId;
+      if (probeSessionId) {
+        try {
+          const statusRes = await fetch(`/api/exam/status?sessionId=${encodeURIComponent(probeSessionId)}`).then((r) => r.json());
+          if (statusRes.ok && statusRes.isSubmitted) {
+            setSubmittedLockNotice({
+              isSubmitted: true,
+              message: "Your examination has been successfully submitted. You cannot access or modify this examination again.",
+              resultId: statusRes.resultId,
+            });
+            return;
+          }
+        } catch {
+          if (localStorage.getItem("brainlab_submitted_" + probeSessionId)) {
+            setSubmittedLockNotice({
+              isSubmitted: true,
+              message: "Your examination has been successfully submitted. You cannot access or modify this examination again.",
+            });
+            return;
+          }
+        }
+      }
 
       if (savedSessionId && savedToken && !isStartParam) {
         const resumed = await resumeExam(savedSessionId, savedToken);
@@ -237,12 +267,38 @@ export default function ExamPage() {
     void loadPageData();
   }, [router]);
 
+  // Trap back navigation when an exam has been submitted
+  useEffect(() => {
+    const handlePopState = () => {
+      const lastId = localStorage.getItem("last_submitted_session_id");
+      if (lastId && localStorage.getItem("brainlab_submitted_" + lastId)) {
+        if (typeof window !== "undefined") {
+          window.history.pushState(null, "", "/exam");
+        }
+        setSubmittedLockNotice({
+          isSubmitted: true,
+          message: "Your examination has been successfully submitted. You cannot access or modify this examination again.",
+        });
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   function clearAttemptStorage() {
     securePurgeExamSession();
     ["examQuestions", "exam_answers", "exam_flagged", "exam_current_index", "exam_time_left", "exam_session_id", "exam_token", "exam_tab_switch_count"].forEach((key) => localStorage.removeItem(key));
   }
 
   function storeFinished(res: FinishedPayload) {
+    const finishedId = res.result_id || sessionId || "";
+    if (finishedId) {
+      localStorage.setItem("last_submitted_session_id", finishedId);
+      localStorage.setItem("brainlab_submitted_" + finishedId, "true");
+    }
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "/exam");
+    }
     // Answer keys are stripped from client storage to prevent inspection.
     localStorage.removeItem("exam_result");
     localStorage.setItem("exam_summary", JSON.stringify({
@@ -622,6 +678,48 @@ export default function ExamPage() {
     }
   };
 
+  if (submittedLockNotice) {
+    return (
+      <main className="min-h-screen bg-slate-50 dark:bg-[#000814] flex items-center justify-center px-4 py-8">
+        <div className="mx-auto max-w-lg w-full rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-xl text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Examination Submitted
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400 font-medium">
+            {submittedLockNotice.message}
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => router.push("/result")}
+              className="inline-flex items-center justify-center rounded-xl bg-[#012153] hover:bg-[#071c43] px-5 py-3 font-bold text-white shadow transition hover:-translate-y-0.5 active:scale-95 text-xs"
+            >
+              View Examination Result →
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/corrections")}
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-3 font-bold text-slate-700 dark:text-slate-200 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-xs"
+            >
+              Review Corrections
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-3 font-bold text-slate-700 dark:text-slate-200 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-xs"
+            >
+              Dashboard
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (!candidate) {
     return (
       <main className="exam-shell px-4 py-8">
@@ -630,7 +728,7 @@ export default function ExamPage() {
             <p className="text-lg text-gray-700">Loading exam...</p>
           </div>
         </div>
-        </main>
+      </main>
     );
   }
 
@@ -1112,7 +1210,7 @@ export default function ExamPage() {
                     )}
                   </div>
 
-                  <div className="space-y-3">
+                  <div key={`passage-opts-group-${currentQuestion.id}`} className="space-y-3">
                     {[
                       { key: "A" as const, value: optionA, imageUrl: currentQuestion.option_a_image_url, imageAlt: currentQuestion.option_a_image_alt },
                       { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
@@ -1123,13 +1221,15 @@ export default function ExamPage() {
                       .filter((opt) => Boolean(opt.value?.trim()) || Boolean(safeImageUrl(opt.imageUrl)))
                       .map((option) => (
                       <label
-                        key={option.key}
-                        className={`exam-option block ${
+                        key={`q-${currentQuestion.id}-opt-${option.key}`}
+                        htmlFor={`input-q-${currentQuestion.id}-${option.key}`}
+                        className={`exam-option block cursor-pointer ${
                           selectedAnswer === option.key ? "selected" : ""
                         }`}
                       >
                         <div className="flex items-start gap-3">
                           <input
+                            id={`input-q-${currentQuestion.id}-${option.key}`}
                             type="radio"
                             name={`question-${currentIndex}-${currentQuestion.id}`}
                             checked={selectedAnswer === option.key}
@@ -1211,7 +1311,7 @@ export default function ExamPage() {
                   )}
                 </div>
 
-                <div className="space-y-3">
+                <div key={`std-opts-group-${currentQuestion.id}`} className="space-y-3">
                   {[
                     { key: "A" as const, value: optionA, imageUrl: currentQuestion.option_a_image_url, imageAlt: currentQuestion.option_a_image_alt },
                     { key: "B" as const, value: optionB, imageUrl: currentQuestion.option_b_image_url, imageAlt: currentQuestion.option_b_image_alt },
@@ -1222,15 +1322,17 @@ export default function ExamPage() {
                     .filter((opt) => Boolean(opt.value?.trim()) || Boolean(safeImageUrl(opt.imageUrl)))
                     .map((option) => (
                     <label
-                      key={option.key}
-                      className={`exam-option block ${
+                      key={`q-${currentQuestion.id}-opt-${option.key}`}
+                      htmlFor={`input-std-q-${currentQuestion.id}-${option.key}`}
+                      className={`exam-option block cursor-pointer ${
                         selectedAnswer === option.key ? "selected" : ""
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <input
+                          id={`input-std-q-${currentQuestion.id}-${option.key}`}
                           type="radio"
-                          name={`question-${currentQuestion.id}`}
+                          name={`question-radio-${currentQuestion.id}`}
                           checked={selectedAnswer === option.key}
                           onChange={() => handleSelectAnswer(option.key)}
                           className="mt-1"

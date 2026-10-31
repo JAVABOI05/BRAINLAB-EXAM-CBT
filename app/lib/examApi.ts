@@ -172,7 +172,7 @@ export async function getPublicSettings(forceRefresh = false): Promise<PublicSet
       show_topic_in_exam: examSettings.show_topic_in_exam !== false,
       allow_corrections: examSettings.allow_corrections !== false,
       result_notifications: examSettings.result_notifications !== false,
-      chief_proctor_name: examSettings.chief_proctor_name?.trim() || "Dr. K. Adeleke, F.Ed.",
+      chief_proctor_name: examSettings.chief_proctor_name?.trim() || "Chief Examination Proctor",
       chief_proctor_title: examSettings.chief_proctor_title?.trim() || "Chief Examination Proctor",
     };
   } catch {
@@ -187,7 +187,7 @@ export async function getPublicSettings(forceRefresh = false): Promise<PublicSet
       show_topic_in_exam: true,
       allow_corrections: true,
       result_notifications: true,
-      chief_proctor_name: "Dr. K. Adeleke, F.Ed.",
+      chief_proctor_name: "Chief Examination Proctor",
       chief_proctor_title: "Chief Examination Proctor",
     };
   }

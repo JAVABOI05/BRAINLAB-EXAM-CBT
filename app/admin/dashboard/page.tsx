@@ -315,20 +315,34 @@ export default function AdminDashboardPage() {
         }
 
         if (access["cbt.config.read"]) {
-          const { data: settingRows, error: settingsError } = await supabase.from("settings").select("key, value");
+          // Read from primary exam_config first, fallback to legacy settings
+          const { data: configRows } = await supabase
+            .from("exam_config")
+            .select("config_key, config_value");
           if (!active) return;
-          if (settingsError) {
-            setSettingsMessage("Exam quick settings could not be read. Use Exam Configuration if available.");
-          } else {
-            const next = { ...DEFAULT_SETTINGS };
-            (settingRows ?? []).forEach((row: SettingRow) => {
-              if (row.key === "exam_duration") next.exam_duration = Number(row.value) || 7200;
-              if (row.key === "calculator_enabled") next.calculator_enabled = row.value === true || row.value === "true";
-              if (row.key === "leaderboard_enabled") next.leaderboard_enabled = row.value === true || row.value === "true";
-              if (row.key === "show_results") next.show_results = row.value === true || row.value === "true";
-              if (row.key === "mock_enabled") next.mock_enabled = row.value === true || row.value === "true";
+
+          const next = { ...DEFAULT_SETTINGS };
+          if (Array.isArray(configRows) && configRows.length > 0) {
+            configRows.forEach((row: { config_key: string; config_value: unknown }) => {
+              if (row.config_key === "exam_duration") next.exam_duration = Number(row.config_value) || 7200;
+              if (row.config_key === "calculator_enabled") next.calculator_enabled = row.config_value === true || row.config_value === "true";
+              if (row.config_key === "leaderboard_enabled") next.leaderboard_enabled = row.config_value === true || row.config_value === "true";
+              if (row.config_key === "show_results") next.show_results = row.config_value === true || row.config_value === "true";
+              if (row.config_key === "mock_enabled") next.mock_enabled = row.config_value === true || row.config_value === "true";
             });
             setSettings(next);
+          } else {
+            const { data: settingRows, error: settingsError } = await supabase.from("settings").select("key, value");
+            if (!settingsError && Array.isArray(settingRows)) {
+              settingRows.forEach((row: SettingRow) => {
+                if (row.key === "exam_duration") next.exam_duration = Number(row.value) || 7200;
+                if (row.key === "calculator_enabled") next.calculator_enabled = row.value === true || row.value === "true";
+                if (row.key === "leaderboard_enabled") next.leaderboard_enabled = row.value === true || row.value === "true";
+                if (row.key === "show_results") next.show_results = row.value === true || row.value === "true";
+                if (row.key === "mock_enabled") next.mock_enabled = row.value === true || row.value === "true";
+              });
+              setSettings(next);
+            }
           }
         }
 
@@ -358,22 +372,20 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   async function saveQuickSetting(key: keyof SettingsMap, value: number | boolean) {
-    // Settings may not have a row yet (for example, leaderboard_enabled).
-    // Upsert prevents a successful-looking UPDATE that silently affects zero rows.
-    const { data, error } = await supabase
-      .from("settings")
-      .upsert({ key, value }, { onConflict: "key" })
-      .select("key, value")
-      .single();
-
-    if (error) throw new Error(`Could not save ${key}: ${error.message}`);
-    if (!data || data.key !== key) throw new Error(`The database did not confirm saving ${key}.`);
-
-    const savedValue = data.value;
-    const expectedValue = value;
-    if (savedValue !== expectedValue && String(savedValue) !== String(expectedValue)) {
-      throw new Error(`The database returned a different value for ${key}; please retry.`);
-    }
+    // 1. Primary write to exam_config table (upsert)
+    const { error: configError } = await supabase.from("exam_config").upsert(
+      {
+        config_key: key,
+        config_value: value,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "config_key" }
+    );
+    // 2. Dual-write to settings table
+    try {
+      await supabase.from("settings").upsert({ key, value }, { onConflict: "key" });
+    } catch {}
+    if (configError) throw new Error(configError.message);
   }
 
   async function saveQuickSettings() {

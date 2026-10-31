@@ -716,7 +716,7 @@ export default function SchoolsPage() {
 
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <a
-                    href={`https://wa.me/2348169389816?text=Hello%20BrainLab%20Academic%20Desk,%20we%20just%20submitted%20an%20institutional%20request%20with%20Ref:%20${submitResult.ref}`}
+                    href={`https://wa.me/2349074310204?text=Hello%20BrainLab%20Academic%20Desk,%20we%20just%20submitted%20an%20institutional%20request%20with%20Ref:%20${submitResult.ref}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-emerald-500"
@@ -764,7 +764,7 @@ export default function SchoolsPage() {
                       required
                       value={inquiryName}
                       onChange={(e) => setInquiryName(e.target.value)}
-                      placeholder="e.g. Dr. K. Adeleke (Vice Principal Academics)"
+                      placeholder="e.g. Academic Coordinator / Examination Officer"
                       className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     />
                   </div>

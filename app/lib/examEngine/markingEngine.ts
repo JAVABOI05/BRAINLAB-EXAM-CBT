@@ -186,8 +186,8 @@ export function markExamAttempt(
   return {
     raw_score: aggregateRawScore,
     raw_max_marks: aggregateRawMax,
-    converted_score: aggregateDisplayedScore,
-    displayed_score: aggregateDisplayedScore,
+    converted_score: Math.min(400, aggregateDisplayedScore),
+    displayed_score: Math.min(400, aggregateDisplayedScore),
     percentage: aggregatePercentage,
     total_possible: totalPossible,
     subject_scores: subjectScores,

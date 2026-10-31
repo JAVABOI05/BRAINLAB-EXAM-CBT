@@ -259,7 +259,7 @@ export default function LearningStreakCard({
                 Join Channel ↗
               </a>
               <a
-                href="https://wa.me/2348169389816?text=Hi%20BrainLab,%20please%20subscribe%20me%20to%20Daily%20Study%20Streak%20Reminders%20and%20Exam%20Alerts."
+                href="https://wa.me/2349074310204?text=Hi%20BrainLab,%20please%20subscribe%20me%20to%20Daily%20Study%20Streak%20Reminders%20and%20Exam%20Alerts."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-bold px-2.5 py-1.5 text-[11px] hover:bg-emerald-50 transition"

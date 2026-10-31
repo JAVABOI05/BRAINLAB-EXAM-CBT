@@ -55,8 +55,8 @@ export default function ResultPage() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
-  const [chiefProctorName, setChiefProctorName] = useState("Dr. K. Adeleke, F.Ed.");
-  const [chiefProctorTitle, setChiefProctorTitle] = useState("Chief Examination Proctor");
+  const [chiefProctorName, setChiefProctorName] = useState("Chief Examination Proctor");
+  const [chiefProctorTitle, setChiefProctorTitle] = useState("BrainLab CBT Directorate");
 
   useEffect(() => {
     async function loadPage() {
@@ -104,9 +104,9 @@ export default function ResultPage() {
   }, []);
 
   const subjectScores = summary?.subject_scores ?? {};
-  const totalScore = summary?.score ?? 0;
-  const totalPossible = summary?.total ?? 400;
-  const percentage = Math.round((totalScore / (totalPossible || 1)) * 100);
+  const totalScore = Math.min(400, Math.max(0, summary?.score ?? 0));
+  const totalPossible = 400;
+  const percentage = Math.min(100, Math.max(0, Math.round((totalScore / 400) * 100)));
 
   // Diagnostic calculations
   const subjectEntries = Object.entries(subjectScores);

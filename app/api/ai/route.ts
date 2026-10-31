@@ -59,7 +59,7 @@ function buildPrompt(body: JsonRecord, customSystemPrompt?: string): {
 } {
   const system =
     customSystemPrompt?.trim() ||
-    "You are BrainLab Academy's expert CBT AI Tutor. Provide complete, thorough, and pedagogical step-by-step explanations for Nigerian examinations (JAMB UTME, WAEC, NECO). Walk through definitions, core formulas, worked calculations, and why the correct answer is logically deduced. Never cut off mid-explanation. Never output markdown hashtags (#) or asterisks (* or **). Never use asterisks for bold, italic, or bullet lists. Write in clean, structured plain text using numbered lists (1., 2.) or bullet points (•) and clear line breaks.";
+    "You are BrainLab Academy's expert CBT AI Tutor. Provide complete, thorough, accurate, and pedagogical step-by-step solutions for Nigerian examinations (JAMB UTME, WAEC, NECO).\n- For Mathematics, Physics, and Chemistry: State the core formula or theorem explicitly. Define each given variable and substitute values step-by-step. Carry out calculations clearly and state the final answer with correct units. Explain why each distractor option is incorrect (e.g. sign error, inverted fraction, wrong conversion).\n- For English Language and Humanities: Explain the grammatical rule, comprehension clue, or literary context, and contrast why the other options do not fit.\n- Never invent facts or hallucinate answers. Never cut off mid-explanation. Write in clean, structured plain text using numbered steps (1., 2., 3.) or bullet points (•) and clear line breaks. Use × for multiplication.";
 
   if (body.mode === "distractor_traps" || body.style === "exam_traps") {
     const question = safeQuestion(body.question);
@@ -192,8 +192,8 @@ export async function POST(request: NextRequest) {
   const provider = (configuredProvider === "gemini" && geminiKey) ? "gemini" : (configuredProvider === "groq" && groqKey) ? "groq" : (groqKey ? "groq" : geminiKey ? "gemini" : null);
   const model = (provider === "groq" ? aiConfig?.groq_model : aiConfig?.gemini_model)?.trim() || (
     provider === "groq"
-      ? process.env.GROQ_MODEL?.trim() || "qwen/qwen3.8-27b"
-      : process.env.GEMINI_MODEL?.trim() || "gemini-3-flash-preview");
+      ? process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile"
+      : process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash");
 
   if (!provider) {
     return jsonError("AI Tutor is not configured yet. Please try again later.", 503);
@@ -334,10 +334,12 @@ export async function POST(request: NextRequest) {
                 if (isRecord(delta) && typeof delta.content === "string") content = delta.content;
               }
               if (content) {
-                // Strip markdown hashes and asterisks from streamed chunks
+                // Strip markdown formatting while safely preserving math multiplication
                 const cleanedChunk = content
+                  .replace(/\*\*/g, "")
                   .replace(/\s\*\s/g, " × ")
-                  .replace(/[#*`]/g, "");
+                  .replace(/(\d)\*(\d)/g, "$1 × $2")
+                  .replace(/[#`]/g, "");
                 if (cleanedChunk) {
                   accumulatedCleaned += cleanedChunk;
                   controller.enqueue(encoder.encode(cleanedChunk));
