@@ -1,0 +1,10 @@
+# Vercel Ignore file - prevents non-production assets from inflating deployment bundle size
+.git
+.github
+docs/
+scripts/
+supabase/
+PHASE0-UPGRADE-STATUS.md
+AGENTS.md
+CLAUDE.md
+*.tsbuildinfo
