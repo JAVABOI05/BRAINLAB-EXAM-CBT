@@ -161,7 +161,7 @@ export default function InstitutionalOperationsPage() {
   ]);
 
   // PIN Generator Form State
-  const [cohortName, setCohortName] = useState("BrainLab Apex 2026 Cohort");
+  const [cohortName, setCohortName] = useState("BrainLab Apex 2027 Cohort");
   const [examPreset, setExamPreset] = useState("utme_4_subjects");
   const [batchQuantity, setBatchQuantity] = useState(25);
   const [validityDays, setValidityDays] = useState(60);
@@ -293,7 +293,7 @@ export default function InstitutionalOperationsPage() {
     setMessage("");
 
     const newCodes: string[] = [];
-    const prefix = "BL-2026-";
+    const prefix = "BL-2027-";
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     for (let i = 0; i < batchQuantity; i++) {
@@ -312,9 +312,14 @@ export default function InstitutionalOperationsPage() {
         is_used: false,
         is_exported: true,
       }));
-      await supabase.from("access_codes").insert(payload);
-    } catch {
-      // Resilient fallback: preserve in local batch state
+      const { error: insertError } = await supabase.from("access_codes").insert(payload);
+      if (insertError) {
+        throw new Error(`Could not save generated access codes: ${insertError.message}`);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save generated access codes.");
+      setIsGeneratingPins(false);
+      return;
     }
 
     setGeneratedBatch({
