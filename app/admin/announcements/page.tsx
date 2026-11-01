@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getAdminSession, adminSignOut, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission, type AdminPermission } from "../../lib/adminRoles";
 import AdminWorkspaceShell from "../AdminWorkspaceShell";
+import { supabase } from "../../lib/supabase";
 import type { AnnouncementConfig, MaintenanceModeConfig } from "../../lib/platformConfig";
 
 export default function AnnouncementsAdminPage() {
@@ -52,7 +53,12 @@ export default function AnnouncementsAdminPage() {
       setPermissions(perms);
 
       try {
-        const res = await fetch("/api/admin/announcements");
+        const { data: authData } = await supabase.auth.getSession();
+        const accessToken = authData.session?.access_token;
+        if (!accessToken) throw new Error("Your admin session has expired. Please sign in again.");
+        const res = await fetch("/api/admin/announcements", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
         const data = await res.json();
         if (active && res.ok && data.ok) {
           if (data.announcement) setAnnouncement(data.announcement);
@@ -77,9 +83,12 @@ export default function AnnouncementsAdminPage() {
     setMessage(null);
 
     try {
+      const { data: authData } = await supabase.auth.getSession();
+      const accessToken = authData.session?.access_token;
+      if (!accessToken) throw new Error("Your admin session has expired. Please sign in again.");
       const res = await fetch("/api/admin/announcements", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ announcement, maintenance }),
       });
 
