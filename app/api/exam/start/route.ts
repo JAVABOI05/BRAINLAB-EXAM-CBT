@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     // 2. Determine examination subjects (4 subjects: English is always compulsory Subject 1)
     let selectedSubjects: string[] = [];
 
-    if (preconfiguredSubject) {
+    if (preconfiguredSubject && !["utme standard", "utme_4_subjects", "utme standard mock"].includes(preconfiguredSubject.trim().toLowerCase())) {
       selectedSubjects = ["English", preconfiguredSubject];
     } else if (Array.isArray(subjects) && subjects.length > 0) {
       const nonEnglish = subjects
@@ -124,6 +124,20 @@ export async function POST(request: NextRequest) {
       durationSeconds,
       excludeQuestionIds: previouslySeenIds,
     });
+
+    if (!generated.success || generated.paperIds.length !== 180 || generated.clientQuestions.length !== 180) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "incomplete_paper",
+          message: generated.errors.join(" ") || "The question bank cannot currently produce the complete 180-question UTME paper. Please contact the administrator.",
+          expected_questions: 180,
+          generated_questions: generated.paperIds.length,
+          subjects: selectedSubjects,
+        },
+        { status: 422 }
+      );
+    }
 
     let paperIds = generated.paperIds;
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/app/lib/adminAuth";
+import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
 import {
   getAnnouncementConfig,
   saveAnnouncementConfig,
@@ -11,9 +11,27 @@ import {
 
 export const dynamic = "force-dynamic";
 
+async function authorize(request: NextRequest, permission: "cbt.config.read" | "cbt.config.manage") {
+  const authorization = request.headers.get("authorization") || "";
+  const token = authorization.match(/^Bearer\\s+(.+)$/i)?.[1];
+  const user = await getUserFromRequest(request);
+  if (!user || !token) return null;
+
+  const role = await resolveAdminRole(user.id, token);
+  if (!role) return null;
+
+  const supabase = getSupabaseServerClient(token);
+  const { data: allowed, error } = await supabase.rpc("admin_has_permission", {
+    permission_key: permission,
+  });
+  if (error || allowed !== true) return null;
+
+  return { id: user.id, email: user.email || "" };
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await authorize(request, "cbt.config.read");
     if (!admin) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -38,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await authorize(request, "cbt.config.manage");
     if (!admin) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -50,11 +68,13 @@ export async function POST(request: NextRequest) {
     };
 
     if (announcement) {
-      await saveAnnouncementConfig(announcement, admin);
+      const saved = await saveAnnouncementConfig(announcement, admin);
+      if (!saved) throw new Error("Could not save announcement configuration.");
     }
 
     if (maintenance) {
-      await saveMaintenanceModeConfig(maintenance, admin);
+      const saved = await saveMaintenanceModeConfig(maintenance, admin);
+      if (!saved) throw new Error("Could not save maintenance configuration.");
     }
 
     return NextResponse.json({
