@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         // Check normal access codes
         const { data: codeRecord } = await supabase
           .from("access_codes")
-          .select("id, code, subject, is_used")
+          .select("id, code, subject, is_used, used_by")
           .eq("code", cleanCode)
           .maybeSingle();
 
@@ -160,7 +160,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Create the exam session in public.exam_sessions
+    // 4. Consume a normal access code exactly once before creating the session.
+    // A failed session insert restores the code so candidates are not charged for a failed launch.
+    let consumedCodeId: string | null = null;
+    if (cleanCode && !isMasterCode) {
+      const { data: consumed, error: consumeError } = await supabase
+        .from("access_codes")
+        .update({ is_used: true, used_by: cleanPhone })
+        .eq("code", cleanCode)
+        .eq("is_used", false)
+        .select("id")
+        .maybeSingle();
+
+      if (consumeError || !consumed?.id) {
+        return NextResponse.json(
+          { ok: false, error: "code_used", message: "This access code has already been used or could not be reserved. Please contact the administrator if you believe this is an error." },
+          { status: 409 }
+        );
+      }
+      consumedCodeId = consumed.id;
+    }
+
+    // 5. Create the exam session in public.exam_sessions
     const { data: sessionRow, error: sessionErr } = await supabase
       .from("exam_sessions")
       .insert({
@@ -181,6 +202,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (sessionErr || !sessionRow) {
+      if (consumedCodeId) {
+        await supabase.from("access_codes")
+          .update({ is_used: false, used_by: null })
+          .eq("id", consumedCodeId)
+          .eq("used_by", cleanPhone);
+      }
       return NextResponse.json(
         { ok: false, error: "session_failed", message: `Could not initialize examination session: ${sessionErr?.message}` },
         { status: 500 }
