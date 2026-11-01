@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
 
 interface TierGateModalProps {
   isOpen: boolean;
@@ -9,6 +11,7 @@ interface TierGateModalProps {
   featureDescription: string;
   requiredTierName?: string;
   currentPlanName?: string;
+  redirectUrl?: string;
 }
 
 export default function TierGateModal({
@@ -18,8 +21,35 @@ export default function TierGateModal({
   featureDescription,
   requiredTierName = "Premium Study",
   currentPlanName = "Free Learner",
+  redirectUrl,
 }: TierGateModalProps) {
-  if (!isOpen) return null;
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [resolvedRedirect, setResolvedRedirect] = useState(redirectUrl || "");
+
+  useEffect(() => {
+    let active = true;
+    isCurrentUserAdmin().then((admin) => {
+      if (active && admin) {
+        setIsAdminUser(true);
+        onClose(); // Automatically dismiss for Super Admins / Admins
+      }
+    });
+
+    if (!redirectUrl && typeof window !== "undefined") {
+      setResolvedRedirect(`${window.location.pathname}${window.location.search}`);
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [redirectUrl, onClose]);
+
+  // Super Admins and Admins are NEVER shown paywalls or subscription modals
+  if (!isOpen || isAdminUser) return null;
+
+  const upgradeHref = resolvedRedirect
+    ? `/pricing?redirect=${encodeURIComponent(resolvedRedirect)}`
+    : "/pricing";
 
   return (
     <div
@@ -79,7 +109,7 @@ export default function TierGateModal({
             Maybe Later
           </button>
           <Link
-            href="/pricing"
+            href={upgradeHref}
             className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-xs font-black text-white hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-600/25 transition"
           >
             Upgrade Plan Now →

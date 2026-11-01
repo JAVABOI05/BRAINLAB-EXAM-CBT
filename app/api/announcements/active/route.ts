@@ -18,8 +18,10 @@ export async function GET() {
       announcement: announcement.enabled ? announcement : null,
       maintenance: {
         active: maintenance.cbt_maintenance_enabled,
+        title: maintenance.title || "CBT Examination Engine Maintenance",
         message: maintenance.message,
         estimated_resumption: maintenance.estimated_resumption,
+        allow_admin_bypass: maintenance.allow_admin_bypass,
       },
     });
   } catch (err) {

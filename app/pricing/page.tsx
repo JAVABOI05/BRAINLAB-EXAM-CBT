@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import {
   getSubscriptionPlans,
@@ -9,6 +10,7 @@ import {
   DEFAULT_PLANS,
   type SubscriptionPlan,
 } from "../lib/platformConfig";
+import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
 
 type UserSubscription = {
   plan_id: string;
@@ -18,12 +20,19 @@ type UserSubscription = {
 
 type PaymentProviderKey = "paystack" | "flutterwave" | "bank_transfer" | "bachs";
 
-export default function PricingPage() {
-  // Initialize with DEFAULT_PLANS so the pricing table renders instantly without loading delay
+function PricingContent() {
+  const searchParams = useSearchParams();
+  const rawRedirect =
+    searchParams.get("redirect") ||
+    searchParams.get("returnUrl") ||
+    searchParams.get("next") ||
+    "";
+
+  const [returnUrl, setReturnUrl] = useState<string>("");
   const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
   const [activeSub, setActiveSub] = useState<UserSubscription | null>(null);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState("");
 
   // Checkout Modal State
@@ -43,7 +52,24 @@ export default function PricingPage() {
   useEffect(() => {
     let active = true;
 
-    async function loadPlans() {
+    // 1. Resolve and persist returnUrl in session storage
+    if (rawRedirect) {
+      setReturnUrl(rawRedirect);
+      try {
+        sessionStorage.setItem("bl_payment_return_url", rawRedirect);
+      } catch {
+        // ignore
+      }
+    } else if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("bl_payment_return_url");
+        if (stored) setReturnUrl(stored);
+      } catch {
+        // ignore
+      }
+    }
+
+    async function loadData() {
       try {
         const loadedPlans = await getSubscriptionPlans();
         if (!active) return;
@@ -51,10 +77,17 @@ export default function PricingPage() {
           setPlans(loadedPlans.filter((p) => p.is_active));
         }
 
-        // Check if user is signed in and has active sub
+        // Check user session
         const { data: auth } = await supabase.auth.getUser();
         if (auth?.user) {
           setUser(auth.user);
+
+          // Check if user is Super Admin or Admin
+          const adminCheck = await isCurrentUserAdmin(auth.user.id);
+          if (active && adminCheck) {
+            setIsAdmin(true);
+          }
+
           const { data: subData } = await supabase
             .from("user_subscriptions")
             .select("plan_id, status, current_period_end")
@@ -67,23 +100,30 @@ export default function PricingPage() {
           }
         }
       } catch {
-        // Fallback plans are already active; log silently
+        // Fallback plans remain active
       }
     }
 
-    void loadPlans();
+    void loadData();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [rawRedirect]);
 
   function handleChoosePlan(plan: SubscriptionPlan) {
+    if (isAdmin) {
+      // Super admins already possess universal VIP root access
+      window.location.href = returnUrl || "/dashboard";
+      return;
+    }
+
     if (plan.price_kobo === 0) {
+      const target = returnUrl || "/dashboard";
       if (!user) {
-        window.location.href = "/login?next=/dashboard";
+        window.location.href = `/login?next=${encodeURIComponent(target)}`;
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = target;
       }
       return;
     }
@@ -128,7 +168,8 @@ export default function PricingPage() {
   async function handleProceedToPayment() {
     if (!checkoutPlan) return;
     if (!user) {
-      window.location.href = `/login?next=/pricing`;
+      const currentFullUrl = window.location.pathname + window.location.search;
+      window.location.href = `/login?next=${encodeURIComponent(currentFullUrl)}`;
       return;
     }
 
@@ -149,6 +190,7 @@ export default function PricingPage() {
           planId: checkoutPlan.id,
           couponCode: appliedCoupon?.code || undefined,
           provider: selectedProvider,
+          returnUrl: returnUrl || undefined,
         }),
       });
 
@@ -157,6 +199,11 @@ export default function PricingPage() {
       if (!res.ok || !data.ok) {
         setPaymentError(data.message || data.error || "Failed to initialize payment.");
         setInitiatingPayment(false);
+        return;
+      }
+
+      if (data.adminBypass) {
+        window.location.href = data.redirectUrl || returnUrl || "/dashboard";
         return;
       }
 
@@ -185,6 +232,48 @@ export default function PricingPage() {
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <main id="main" className="flex-1 py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          {/* SUPER ADMIN VIP ACCESS BANNER */}
+          {isAdmin && (
+            <div className="mb-10 overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-6 sm:p-8 text-slate-950 shadow-xl backdrop-blur-xs animate-in fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-slate-950 shadow-sm">
+                    👑 Super Administrator · Universal VIP Access
+                  </span>
+                  <h2 className="mt-3 text-2xl font-black text-slate-950">
+                    Universal Root Access Active (Exempt From Payment)
+                  </h2>
+                  <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-700">
+                    As an authorized Administrator or Super Admin, you are completely exempt from all subscription charges. You possess unrestricted access to all CBT exam attempts, complete question explanations, step-by-step master workings, AI tutor queries, and live classrooms.
+                  </p>
+                </div>
+                {returnUrl && (
+                  <div className="flex-shrink-0">
+                    <Link
+                      href={returnUrl}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3.5 text-xs font-black text-white hover:bg-slate-800 shadow-md transition active:scale-95"
+                    >
+                      ← Return to Where You Were
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* User returning from specific page notice */}
+          {returnUrl && !isAdmin && (
+            <div className="mb-6 flex items-center justify-between rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-xs text-indigo-950 shadow-xs">
+              <span className="flex items-center gap-2 font-bold">
+                <span>⚡</span>
+                <span>You will be automatically returned to your previous page after upgrading your plan.</span>
+              </span>
+              <Link href={returnUrl} className="font-extrabold text-indigo-700 hover:underline">
+                Cancel &amp; Return ←
+              </Link>
+            </div>
+          )}
+
           <div className="text-center">
             <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-indigo-900">
               <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>Transparent Monthly Subscriptions</span></span>
@@ -193,11 +282,11 @@ export default function PricingPage() {
               Invest in your knowledge. <span className="text-indigo-700">Own your score.</span>
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-              Dynamic, monthly plans with no lock-in. All pricing, CBT quotas, and AI Tutor entitlements are verified and active on the server.
+              Dynamic monthly plans with no lock-in. Full CBT solutions, question corrections, unlimited practice attempts, and AI Tutor derivations.
             </p>
 
             <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-900 shadow-xs">
-              <span className="flex items-center gap-1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg><span>Active &amp; Verified Subscriptions</span> · Instant Activation via Paystack, Cards &amp; Bank Transfer</span>
+              <span className="flex items-center gap-1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg><span>Instant Tier Activation</span> · Verified via Live Gateways, ATM Cards &amp; Bank Transfer</span>
             </div>
 
             <div className="mt-4 flex justify-center gap-4 text-xs font-bold text-indigo-700">
@@ -240,11 +329,15 @@ export default function PricingPage() {
                   <div>
                     <div className="flex items-center justify-between">
                       <h2 className="text-xl font-extrabold text-slate-950">{plan.name}</h2>
-                      {isCurrent && (
+                      {isAdmin ? (
+                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900">
+                          👑 VIP Admin
+                        </span>
+                      ) : isCurrent ? (
                         <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800">
                           Current
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
                     <p className="mt-2 text-xs leading-5 text-slate-500 min-h-[40px]">{plan.description}</p>
@@ -272,16 +365,21 @@ export default function PricingPage() {
                   <div className="mt-8 pt-4 border-t border-slate-100">
                     <button
                       type="button"
+                      disabled={isAdmin}
                       onClick={() => handleChoosePlan(plan)}
                       className={`w-full rounded-xl py-3 text-xs font-extrabold transition active:scale-95 ${
-                        isCurrent
+                        isAdmin
+                          ? "bg-amber-50 text-amber-800 border border-amber-300 cursor-default"
+                          : isCurrent
                           ? "bg-slate-100 text-slate-400 cursor-default"
                           : isPopular
                           ? "bg-indigo-700 text-white hover:bg-indigo-800"
                           : "bg-[#012153] text-white hover:bg-[#0a2f72]"
                       }`}
                     >
-                      {isCurrent
+                      {isAdmin
+                        ? "Universal Access Active (Super Admin)"
+                        : isCurrent
                         ? "Current Plan"
                         : plan.price_kobo === 0
                         ? (user ? "Current Free Tier →" : "Get Started Free →")
@@ -294,7 +392,7 @@ export default function PricingPage() {
           </div>
 
           {/* Checkout Modal */}
-          {checkoutPlan && (
+          {checkoutPlan && !isAdmin && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 animate-fade-in backdrop-blur-xs">
               <div className="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-slate-200">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -488,7 +586,7 @@ export default function PricingPage() {
                     🛡️ <strong>24-Hour 100% Refund Guarantee:</strong> Full unconditional refund available if requested within 24 hours of payment.
                   </p>
                   <p className="mt-1 text-slate-700">
-                    🔒 <strong>Secure Checkout:</strong> Encrypted via 256-bit SSL. Immediate activation on transaction success.
+                    🔒 <strong>Secure Checkout:</strong> Live encryption via 256-bit SSL. Immediate activation on transaction success.
                   </p>
                 </div>
 
@@ -552,5 +650,13 @@ export default function PricingPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm font-bold text-slate-400">Loading pricing plans...</div>}>
+      <PricingContent />
+    </Suspense>
   );
 }

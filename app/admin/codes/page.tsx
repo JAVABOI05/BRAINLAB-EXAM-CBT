@@ -2,7 +2,7 @@
 
 import { adminSignOut, getAdminSession } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import "@/app/admin/admin.css";
@@ -44,6 +44,16 @@ export default function AdminCodesPage() {
   const [voucherCodes, setVoucherCodes] = useState<string[]>([]);
   const [lastExportedCodes, setLastExportedCodes] = useState<string[]>([]);
 
+  // Authenticated fetch helper attaching Bearer token
+  const authFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = new Headers(init?.headers || {});
+    if (session?.access_token) {
+      headers.set("Authorization", `Bearer ${session.access_token}`);
+    }
+    return fetch(input, { ...init, headers });
+  }, []);
+
   useEffect(() => {
     let active = true;
     async function init() {
@@ -55,7 +65,7 @@ export default function AdminCodesPage() {
         return;
       }
       setAdminUser(admin);
-      await Promise.all([loadMasterCode(), loadCodes()]);
+      await loadCodes();
     }
     void init().catch(() => { if (active) { setMessage("Could not verify administrator access."); setLoading(false); } });
     return () => { active = false; };
@@ -83,22 +93,23 @@ export default function AdminCodesPage() {
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase
-      .from("access_codes")
-      .select(
-        "id, code, subject, is_used, used_by, is_exported, exported_at, created_at"
-      )
-      .order("created_at", { ascending: false })
-      .range(0, 4999);
-
-    if (error) {
-      setMessage(error.message);
+    try {
+      const res = await authFetch("/api/admin/codes?limit=5000");
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setCodes((data.codes || []) as AccessCodeRow[]);
+        if (data.masterCode) {
+          setMasterCode(data.masterCode);
+          setNewMasterCode(data.masterCode);
+        }
+      } else {
+        setMessage(data.error || "Failed to load access codes.");
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Failed to load access codes.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setCodes((data || []) as AccessCodeRow[]);
-    setLoading(false);
   }
 
   async function handleGenerateCodes() {
@@ -111,20 +122,20 @@ export default function AdminCodesPage() {
       setGenerating(true);
       setMessage("");
 
-      const { data, error } = await supabase.rpc("generate_access_codes", {
-        code_count: count,
+      const res = await authFetch("/api/admin/codes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count }),
       });
+      const data = await res.json();
 
-      if (error) {
-        setMessage(`Generate failed: ${error.message}`);
+      if (!res.ok || !data.ok) {
+        setMessage(`Generate failed: ${data.error || "Unknown error"}`);
         return;
       }
 
-      const generatedRows = (data || []) as { code: string }[];
       setMessage(
-        generatedRows.length > 0
-          ? `${generatedRows.length} access code(s) generated successfully.`
-          : `${count} access code(s) generated successfully.`
+        `${data.count || count} access code(s) generated successfully and stored in database.`
       );
 
       await loadCodes();
@@ -135,6 +146,7 @@ export default function AdminCodesPage() {
     } finally {
       setGenerating(false);
     }
+  }
   }
 
   async function handleSetMasterCode() {
@@ -149,12 +161,15 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const { error } = await supabase.rpc("set_master_access_code", {
-        new_code: cleanCode,
+      const res = await authFetch("/api/admin/codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_master", code: cleanCode }),
       });
+      const data = await res.json();
 
-      if (error) {
-        setMessage(`Failed to set master code: ${error.message}`);
+      if (!res.ok || !data.ok) {
+        setMessage(`Failed to set master code: ${data.error || "Unknown error"}`);
         return;
       }
 
@@ -162,9 +177,12 @@ export default function AdminCodesPage() {
       setNewMasterCode(cleanCode);
       await loadCodes();
       setMessage("Master access code updated successfully.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to update master code.");
     } finally {
       setWorking(false);
     }
+  }
   }
 
   async function resetCode(codeRow: AccessCodeRow) {
@@ -177,16 +195,15 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const { error } = await supabase
-        .from("access_codes")
-        .update({
-          is_used: false,
-          used_by: null,
-        })
-        .eq("id", codeRow.id);
+      const res = await authFetch("/api/admin/codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset_code", id: codeRow.id }),
+      });
+      const data = await res.json();
 
-      if (error) {
-        setMessage(`Reset failed: ${error.message}`);
+      if (!res.ok || !data.ok) {
+        setMessage(`Reset failed: ${data.error || "Unknown error"}`);
         return;
       }
 
@@ -199,9 +216,12 @@ export default function AdminCodesPage() {
       );
 
       setMessage(`Code ${codeRow.code} reset successfully.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to reset code.");
     } finally {
       setWorking(false);
     }
+  }
   }
 
   async function resetAllUsed() {
@@ -214,20 +234,26 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const { data, error } = await supabase.rpc(
-        "reset_used_access_codes_preserve_master"
-      );
+      const res = await authFetch("/api/admin/codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset_all" }),
+      });
+      const data = await res.json();
 
-      if (error) {
-        setMessage(`Bulk reset failed: ${error.message}`);
+      if (!res.ok || !data.ok) {
+        setMessage(`Bulk reset failed: ${data.error || "Unknown error"}`);
         return;
       }
 
       await loadCodes();
-      setMessage(`${data ?? 0} used code(s) reset successfully.`);
+      setMessage(`${data.count ?? 0} used code(s) reset successfully.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to reset used codes.");
     } finally {
       setWorking(false);
     }
+  }
   }
 
   async function exportFreshCodes() {
@@ -240,17 +266,20 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const { data, error } = await supabase.rpc("export_fresh_access_codes", {
-        code_count: exportCount,
+      const res = await authFetch("/api/admin/codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "export_fresh", count: exportCount }),
       });
+      const data = await res.json();
 
-      if (error) {
-        setMessage(`Export failed: ${error.message}`);
+      if (!res.ok || !data.ok) {
+        setMessage(`Export failed: ${data.error || "Unknown error"}`);
         setLastExportedCodes([]);
         return;
       }
 
-      const rows = (data || []) as { code: string }[];
+      const rows = (data.codes || []) as { code: string }[];
 
       if (rows.length === 0) {
         setMessage("No fresh unused codes available to export.");
@@ -286,9 +315,12 @@ export default function AdminCodesPage() {
 
       await loadCodes();
       setMessage(`${rows.length} fresh code(s) exported successfully.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to export codes.");
     } finally {
       setWorking(false);
     }
+  }
   }
 
   async function copyExportedCodes() {
@@ -322,27 +354,26 @@ export default function AdminCodesPage() {
       setWorking(true);
       setMessage("");
 
-      const ids = normalCodes.map((c) => c.id);
+      const res = await authFetch("/api/admin/codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_all" }),
+      });
+      const data = await res.json();
 
-      for (let i = 0; i < ids.length; i += 500) {
-        const batch = ids.slice(i, i + 500);
-
-        const { error } = await supabase
-          .from("access_codes")
-          .delete()
-          .in("id", batch);
-
-        if (error) {
-          setMessage(`Clear failed: ${error.message}`);
-          return;
-        }
+      if (!res.ok || !data.ok) {
+        setMessage(`Clear failed: ${data.error || "Unknown error"}`);
+        return;
       }
 
       await loadCodes();
       setMessage("All normal access codes cleared successfully.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to clear codes.");
     } finally {
       setWorking(false);
     }
+  }
   }
 
   function handleLogout() {

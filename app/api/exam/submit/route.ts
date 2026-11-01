@@ -3,6 +3,31 @@ import { getSupabaseServerClient } from "../../../lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
+async function ensureAccessCodeMarkedUsed(sessionId: string) {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { data: s } = await supabase
+      .from("exam_sessions")
+      .select("access_code, candidate_name, is_master_code")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    if (s?.access_code && s.access_code !== "OPEN-CBT" && !s.is_master_code) {
+      const cleanCode = s.access_code.trim().toUpperCase();
+      await supabase
+        .from("access_codes")
+        .update({
+          is_used: true,
+          used_by: s.candidate_name || "Candidate",
+          exam_session_id: sessionId,
+        })
+        .eq("code", cleanCode);
+    }
+  } catch {
+    // Non-fatal background sync
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -31,6 +56,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!rpcError && rpcData && typeof rpcData === "object" && (rpcData as { ok?: boolean }).ok !== false) {
+      void ensureAccessCodeMarkedUsed(sessionId);
       return NextResponse.json(rpcData);
     }
 
@@ -43,6 +69,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingResult) {
+      void ensureAccessCodeMarkedUsed(sessionId);
       return NextResponse.json({
         ok: true,
         finished: true,
@@ -63,6 +90,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (sessionRow && (sessionRow.status === "submitted" || sessionRow.status === "expired")) {
+      void ensureAccessCodeMarkedUsed(sessionId);
       return NextResponse.json({
         ok: true,
         finished: true,

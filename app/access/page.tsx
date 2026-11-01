@@ -15,6 +15,13 @@ export default function AccessPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [mockEnabled, setMockEnabled] = useState(true);
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
+  const [maintenanceNotice, setMaintenanceNotice] = useState<{
+    active: boolean;
+    title?: string;
+    message: string;
+    estimated_resumption?: string;
+    allow_admin_bypass?: boolean;
+  } | null>(null);
   const [errorText, setErrorText] = useState("");
   const [failedCount, setFailedCount] = useState(0);
   const [lockoutRemaining, setLockoutRemaining] = useState(0);
@@ -39,6 +46,12 @@ export default function AccessPage() {
 
       setMockEnabled(settings.mock_enabled);
       setAccessCodeRequired(settings.access_code_required);
+      try {
+        const annRes = await fetch("/api/announcements/active").then((r) => r.json());
+        if (annRes?.maintenance?.active) {
+          setMaintenanceNotice(annRes.maintenance);
+        }
+      } catch {}
 
       if (!settings.access_code_required) {
         router.push("/instructions");
@@ -54,6 +67,11 @@ export default function AccessPage() {
   const handleValidateCode = async () => {
     if (lockoutRemaining > 0) {
       setErrorText(`Too many failed attempts. Please wait ${lockoutRemaining} seconds.`);
+      return;
+    }
+
+    if (maintenanceNotice?.active) {
+      setErrorText(`CBT Engine Under Maintenance: ${maintenanceNotice.message}`);
       return;
     }
 
@@ -206,6 +224,27 @@ export default function AccessPage() {
         <p className="mt-2 text-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
           Provide your candidate phone number and the access code issued for this session.
         </p>
+
+        {maintenanceNotice?.active && (
+          <div className="mt-4 rounded-2xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs">
+            <div className="flex items-start gap-2.5">
+              <span className="text-xl">🛠️</span>
+              <div className="space-y-1 text-rose-950 dark:text-rose-200">
+                <p className="font-bold text-xs uppercase tracking-wide text-rose-800 dark:text-rose-300">
+                  {maintenanceNotice.title || "CBT Examination Engine Maintenance"}
+                </p>
+                <p className="font-medium text-xs leading-relaxed text-rose-900 dark:text-rose-100">
+                  {maintenanceNotice.message}
+                </p>
+                {maintenanceNotice.estimated_resumption && (
+                  <p className="text-[11px] font-bold text-rose-700 dark:text-rose-400 pt-1">
+                    ⏱️ Estimated Resumption: {maintenanceNotice.estimated_resumption}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 space-y-3.5">
           <div>

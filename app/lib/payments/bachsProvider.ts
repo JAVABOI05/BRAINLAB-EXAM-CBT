@@ -29,7 +29,7 @@ export class BachsPaymentProvider implements PaymentProvider {
           ? "production"
           : "sandbox"
         : process.env.BACHS_ENVIRONMENT ||
-          (this.apiKey.startsWith("sk_live_") ? "production" : "sandbox");
+          (this.apiKey.startsWith("sk_live_") ? "production" : "production");
 
     this.isLive = env === "production";
     this.baseUrl = this.isLive
@@ -42,31 +42,24 @@ export class BachsPaymentProvider implements PaymentProvider {
     const currency = (params.currency || "NGN").toUpperCase();
     const decimalAmount = (params.amountKobo / 100).toFixed(2);
 
-    // If no secret key is configured, operate in safe sandbox simulation mode
     if (!this.apiKey) {
-      const mockCallback = params.callbackUrl || "/account/subscription/callback";
-      const simulationUrl = `${mockCallback}?reference=${encodeURIComponent(
-        params.reference
-      )}&simulated=true&provider=bachs`;
-
       return {
-        ok: true,
+        ok: false,
         reference: params.reference,
-        authorizationUrl: simulationUrl,
-        sessionId: `sim_bachs_${Date.now()}`,
-        isTestMode: true,
+        error: "Bachs live API key is not configured. Please contact the administrator or select another payment method.",
+        isTestMode: false,
       };
     }
 
     try {
       const callbackBase = params.callbackUrl || "/account/subscription/callback";
-      const successUrl = `${callbackBase}?reference=${encodeURIComponent(
+      const successUrl = `${callbackBase}${callbackBase.includes("?") ? "&" : "?"}reference=${encodeURIComponent(
         params.reference
       )}&provider=bachs`;
       const cancelUrl = `${callbackBase.replace(
         "/account/subscription/callback",
         "/pricing"
-      )}?cancelled=true&reference=${encodeURIComponent(params.reference)}`;
+      )}${callbackBase.includes("?") ? "&" : "?"}cancelled=true&reference=${encodeURIComponent(params.reference)}`;
 
       const body = {
         pricing: {
@@ -148,20 +141,13 @@ export class BachsPaymentProvider implements PaymentProvider {
     reference: string,
     providerReference?: string
   ): Promise<PaymentVerifyResult> {
-    // If no API key or in simulation mode
-    if (
-      !this.apiKey ||
-      reference.startsWith("test_sim_") ||
-      reference.includes("simulated")
-    ) {
+    if (!this.apiKey) {
       return {
-        ok: true,
+        ok: false,
         reference,
-        status: "success",
+        status: "failed",
         amountKobo: 0,
-        currency: "NGN",
-        paidAt: new Date().toISOString(),
-        channel: "bachs_sandbox_simulation",
+        error: "Bachs API key is missing; cannot verify transaction.",
       };
     }
 
@@ -237,7 +223,6 @@ export class BachsPaymentProvider implements PaymentProvider {
       }
     }
 
-    // Without a provider reference, return pending state awaiting webhook or provider ref
     return {
       ok: true,
       reference,

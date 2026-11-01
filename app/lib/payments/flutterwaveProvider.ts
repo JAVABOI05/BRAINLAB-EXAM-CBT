@@ -24,26 +24,19 @@ export class FlutterwavePaymentProvider implements PaymentProvider {
     this.secretKey = options?.secretKey || process.env.FLUTTERWAVE_SECRET_KEY || "";
     this.publicKey = options?.publicKey || process.env.FLUTTERWAVE_PUBLIC_KEY || "";
     this.webhookSecret = options?.webhookSecret || process.env.FLUTTERWAVE_SECRET_HASH || "";
-    this.isLive = options?.isLive !== undefined ? options.isLive : process.env.PAYMENT_LIVE_ENABLED === "true";
+    this.isLive = options?.isLive !== undefined ? options.isLive : process.env.PAYMENT_LIVE_ENABLED !== "false";
   }
 
   async initializePayment(params: PaymentInitParams): Promise<PaymentInitResult> {
     const isTestMode = !this.isLive;
     const amountNaira = params.amountKobo / 100;
 
-    // Simulation mode if secret key is not provided
     if (!this.secretKey) {
-      const mockCallback = params.callbackUrl || "/account/subscription/callback";
-      const simulationUrl = `${mockCallback}?reference=${encodeURIComponent(
-        params.reference
-      )}&simulated=true&provider=flutterwave`;
-
       return {
-        ok: true,
+        ok: false,
         reference: params.reference,
-        authorizationUrl: simulationUrl,
-        accessCode: `flw_sim_${Date.now()}`,
-        isTestMode: true,
+        error: "Flutterwave live secret key is not configured. Please contact the administrator or select another payment method.",
+        isTestMode: false,
       };
     }
 
@@ -104,15 +97,12 @@ export class FlutterwavePaymentProvider implements PaymentProvider {
 
   async verifyPayment(reference: string, providerReference?: string): Promise<PaymentVerifyResult> {
     if (!this.secretKey) {
-      // Safe simulation auto-verification
       return {
-        ok: true,
+        ok: false,
         reference,
-        status: "success",
+        status: "failed",
         amountKobo: 0,
-        paidAt: new Date().toISOString(),
-        customerEmail: "candidate@brainlab.test",
-        metadata: { simulated: true, provider: "flutterwave" },
+        error: "Flutterwave secret key is missing; cannot verify payment.",
       };
     }
 
@@ -169,7 +159,7 @@ export class FlutterwavePaymentProvider implements PaymentProvider {
     headers?: Record<string, string | null | undefined>
   ): boolean {
     const secretHash = this.webhookSecret || process.env.FLUTTERWAVE_SECRET_HASH;
-    if (!secretHash) return true;
+    if (!secretHash) return false;
 
     const headerHash = headers?.["verif-hash"] || signature;
     return headerHash === secretHash;

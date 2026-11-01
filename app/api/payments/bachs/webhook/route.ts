@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "../../../../lib/supabaseServer";
 import { bachsPaymentProvider } from "../../../../lib/payments/bachsProvider";
+import { recordSuccessfulPayment } from "../../../../lib/payments/paymentProcessor.server";
 
 export const dynamic = "force-dynamic";
 
@@ -95,141 +96,36 @@ export async function POST(request: NextRequest) {
     const { data: tx, error: txError } = await query.maybeSingle();
 
     if (txError || !tx) {
-      // Transaction might belong to external system or unrecorded
       return NextResponse.json({ received: true, unhandled: true });
     }
 
-    // 6. Idempotency Check: if already marked success, acknowledge immediately
-    if (tx.status === "success") {
-      return NextResponse.json({ received: true, alreadyProcessed: true });
-    }
+    const pricing = isRecord(data.pricing) ? data.pricing : {};
+    const amountVal = parseFloat(String(pricing.amount ?? data.amount ?? "0"));
+    const amountKobo = Math.round(amountVal * 100);
+    const paidAt = typeof event.created_at === "string" ? event.created_at : new Date().toISOString();
 
-    // 7. Validate Amount & Currency Match
-    // Bachs amount is typically a decimal string (e.g. "15000.00")
-    if (data.amount !== undefined) {
-      const incomingAmountDecimal = parseFloat(String(data.amount));
-      const incomingKobo = Math.round(incomingAmountDecimal * 100);
-      const expectedKobo = Number(tx.amount_kobo);
-
-      // Verify that amount does not underpay the expected amount
-      if (incomingKobo > 0 && expectedKobo > 0 && Math.abs(incomingKobo - expectedKobo) > 5) {
-        await supabase
-          .from("payment_transactions")
-          .update({
-            metadata: {
-              ...tx.metadata,
-              amount_mismatch_warning: {
-                incoming_kobo: incomingKobo,
-                expected_kobo: expectedKobo,
-              },
-            },
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", tx.id);
-
-        return NextResponse.json(
-          { error: "Payment amount does not match order record" },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (data.currency && tx.currency) {
-      if (String(data.currency).toUpperCase() !== String(tx.currency).toUpperCase()) {
-        return NextResponse.json(
-          { error: "Currency mismatch between Bachs payment and order" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 8. Confirm Payment Success
-    const paidAt = asString(event.created_at) || new Date().toISOString();
-
-    await supabase
-      .from("payment_transactions")
-      .update({
-        status: "success",
-        paid_at: paidAt,
-        provider_reference: checkoutId || tx.provider_reference,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", tx.id);
-
-    // 9. Coupon redemption recording
-    if (tx.coupon_id && tx.user_id) {
-      await supabase.from("coupon_redemptions").upsert(
-        {
-          coupon_id: tx.coupon_id,
-          user_id: tx.user_id,
-          transaction_id: tx.id,
-          discount_applied_kobo: tx.discount_kobo,
-          redeemed_at: paidAt,
+    const recordResult = await recordSuccessfulPayment(
+      tx,
+      {
+        providerReference: checkoutId || tx.provider_reference,
+        paidAt,
+        amountKobo: amountKobo > 0 ? amountKobo : undefined,
+        currency: String(pricing.currency ?? data.currency ?? tx.currency ?? "NGN"),
+        channel: "bachs_webhook",
+        metadata: {
+          webhook_event: eventType,
+          bachs_event_id: event.id,
+          customer_email: isRecord(data.customer) ? data.customer.email : undefined,
         },
-        { onConflict: "coupon_id,user_id" }
-      );
+        verifiedBy: "bachs_webhook",
+      },
+      supabase
+    );
 
-      const { data: coupon } = await supabase
-        .from("coupon_campaigns")
-        .select("current_redemptions")
-        .eq("id", tx.coupon_id)
-        .single();
-
-      if (coupon) {
-        await supabase
-          .from("coupon_campaigns")
-          .update({
-            current_redemptions: (coupon.current_redemptions || 0) + 1,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", tx.coupon_id);
-      }
-    }
-
-    // 10. Activate Subscription & Entitlements for Learner
-    if (tx.user_id && tx.plan_id) {
-      const planInterval = tx.subscription_plans?.interval || "monthly";
-      const periodEnd = new Date();
-      periodEnd.setDate(periodEnd.getDate() + (planInterval === "yearly" ? 365 : 30));
-
-      await supabase.from("user_subscriptions").upsert(
-        {
-          user_id: tx.user_id,
-          plan_id: tx.plan_id,
-          status: "active",
-          current_period_start: paidAt,
-          current_period_end: periodEnd.toISOString(),
-          payment_provider: "bachs",
-          price_paid_kobo: tx.amount_kobo,
-          currency: tx.currency,
-          provider_subscription_id: tx.reference,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
-
-      // Audit log entry
-      await supabase.from("configuration_audit_logs").insert({
-        admin_email: "bachs-webhook@brainlabacademy.com.ng",
-        entity_type: "plan",
-        entity_id: tx.plan_id,
-        action: "updated",
-        new_value: {
-          event: "webhook_bachs_success",
-          transaction_id: tx.id,
-          reference: tx.reference,
-          checkout_id: checkoutId,
-          amount_kobo: tx.amount_kobo,
-          paid_at: paidAt,
-        },
-        change_reason: `Automated Bachs webhook activation for ${tx.reference}`,
-      });
-    }
-
-    return NextResponse.json({ received: true, success: true });
+    return NextResponse.json({ received: true, success: recordResult.ok, provider: "bachs" });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal webhook processing error" },
+      { error: err instanceof Error ? err.message : "Internal Bachs webhook processing error" },
       { status: 500 }
     );
   }

@@ -1,7 +1,8 @@
-// Admin identity helper for UI routing. It is not an authorization boundary: every protected
-// database operation must still be enforced by RLS or a permission-checking database RPC.
+// Admin identity helper for UI routing and server-side request authentication.
+// It authoritatively verifies session credentials against Supabase and administrator role hierarchies.
 import { supabase } from "./supabase";
 import { ADMIN_ROLES, type AdminRole } from "./adminRoles";
+import type { NextRequest } from "next/server";
 
 export type AdminUser = {
   id: string;
@@ -9,9 +10,88 @@ export type AdminUser = {
   role: AdminRole;
 };
 
-export async function getAdminSession(): Promise<AdminUser | null> {
-  // getUser() validates the identity with Supabase Auth; browser storage is never
-  // used as proof of an administrator role.
+export async function getAdminSession(req?: NextRequest): Promise<AdminUser | null> {
+  // 1. If NextRequest is explicitly passed in a route handler, inspect its authorization headers / cookies
+  if (req) {
+    try {
+      const { getUserFromRequest, resolveAdminRole } = await import("./supabaseServer");
+      const user = await getUserFromRequest(req);
+      if (!user) return null;
+
+      const authHeader = req.headers.get("authorization");
+      const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+      const role = await resolveAdminRole(user.id, token);
+
+      if (role && ADMIN_ROLES.includes(role as AdminRole)) {
+        return {
+          id: user.id,
+          email: user.email ?? "",
+          role: role as AdminRole,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.warn("[adminAuth] Request-scoped admin resolution error:", err);
+      return null;
+    }
+  }
+
+  // 2. If running on Node.js server without explicit req, attempt next/headers resolution
+  if (typeof window === "undefined") {
+    try {
+      const { headers, cookies } = await import("next/headers");
+      const { resolveAdminRole, getSupabaseServerClient } = await import("./supabaseServer");
+      const headersList = await headers();
+      const authHeader = headersList.get("authorization");
+      let token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+      let user = null;
+
+      if (token) {
+        const serverSupabase = getSupabaseServerClient(token);
+        const { data } = await serverSupabase.auth.getUser(token);
+        user = data?.user ?? null;
+      }
+
+      if (!user) {
+        const cookieStore = await cookies();
+        const allCookies = cookieStore.getAll();
+        for (const c of allCookies) {
+          if (c.name.includes("auth-token") || c.name.startsWith("sb-")) {
+            try {
+              const parsed = JSON.parse(c.value);
+              const candidate = Array.isArray(parsed) ? parsed[0] : (parsed?.access_token || parsed);
+              if (typeof candidate === "string" && candidate.length > 20) {
+                token = candidate;
+                const serverSupabase = getSupabaseServerClient(token);
+                const { data } = await serverSupabase.auth.getUser(token);
+                if (data?.user) {
+                  user = data.user;
+                  break;
+                }
+              }
+            } catch {
+              // ignore cookie parse error
+            }
+          }
+        }
+      }
+
+      if (user) {
+        const role = await resolveAdminRole(user.id, token);
+        if (role && ADMIN_ROLES.includes(role as AdminRole)) {
+          return {
+            id: user.id,
+            email: user.email ?? "",
+            role: role as AdminRole,
+          };
+        }
+      }
+    } catch {
+      // In case next/headers is accessed outside of request context, fall through
+    }
+  }
+
+  // 3. Client-side browser execution (or fallback)
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) return null;
 

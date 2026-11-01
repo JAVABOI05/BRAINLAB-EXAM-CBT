@@ -135,23 +135,25 @@ export async function resolveAdminRole(
   if (!userId) return null;
 
   try {
-    const serverSupabase = getSupabaseServerClient(bearerToken);
-
     // 1. Check RPC get_admin_role if bearerToken is provided
     if (bearerToken) {
       try {
-        const { data: rpcRole } = await serverSupabase.rpc("get_admin_role");
+        const tokenSupabase = getSupabaseServerClient(bearerToken);
+        const { data: rpcRole } = await tokenSupabase.rpc("get_admin_role");
         if (typeof rpcRole === "string" && rpcRole.trim().length > 0) {
           return rpcRole.trim();
         }
       } catch {
-        // proceed to table checks
+        // proceed to authoritative table checks with service role
       }
     }
 
+    // Direct table checks using privileged server client
+    const serviceSupabase = getSupabaseServerClient();
+
     // 2. Check admin_profiles table
     try {
-      const { data: profile } = await serverSupabase
+      const { data: profile } = await serviceSupabase
         .from("admin_profiles")
         .select("role")
         .eq("user_id", userId)
@@ -165,7 +167,7 @@ export async function resolveAdminRole(
 
     // 3. Check admin_user_roles table
     try {
-      const { data: userRole } = await serverSupabase
+      const { data: userRole } = await serviceSupabase
         .from("admin_user_roles")
         .select("role")
         .eq("user_id", userId)
@@ -179,7 +181,7 @@ export async function resolveAdminRole(
 
     // 4. Check admin_users table
     try {
-      const { data: adminUser } = await serverSupabase
+      const { data: adminUser } = await serviceSupabase
         .from("admin_users")
         .select("role")
         .eq("id", userId)

@@ -9,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -99,6 +99,7 @@ export async function POST(
           status: "completed",
           submitted_at: submittedAt,
           auto_submitted: true,
+          time_left_seconds: 0,
         })
         .eq("id", sessionId);
 
@@ -107,17 +108,17 @@ export async function POST(
         entity_type: "exam_session",
         entity_id: sessionId,
         action: "updated",
-        new_value: { status: "completed", force_submitted: true },
-        change_reason: `Admin force-submitted exam session for candidate ${session.candidate_name || sessionId}`,
+        new_value: { status: "completed", forced_by_admin: true, submitted_at: submittedAt },
+        change_reason: `Invigilator force-submitted candidate exam for ${session.candidate_name || sessionId}`,
       });
 
       return NextResponse.json({
         ok: true,
-        message: `Exam session successfully force-submitted and concluded.`,
+        message: `Candidate examination session successfully force-submitted.`,
       });
     }
 
-    // 4. RESET TAB SWITCH / FOCUS WARNINGS
+    // 4. RESET TAB SWITCH MALPRACTICE COUNTER
     if (action === "reset_switches") {
       await supabase
         .from("exam_sessions")
@@ -131,20 +132,20 @@ export async function POST(
         entity_type: "exam_session",
         entity_id: sessionId,
         action: "updated",
-        new_value: { tab_switch_count: 0 },
-        change_reason: `Admin cleared focus warnings for candidate ${session.candidate_name || sessionId}`,
+        new_value: { tab_switch_count: 0, cleared: true },
+        change_reason: `Admin cleared malpractice tab-switch flags for ${session.candidate_name || sessionId}`,
       });
 
       return NextResponse.json({
         ok: true,
-        message: `Focus warnings reset to 0 for candidate.`,
+        message: `Malpractice tab-switch counter cleared for session.`,
       });
     }
 
-    return NextResponse.json({ ok: false, error: "Unrecognized invigilator action" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid invigilator action" }, { status: 400 });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Invigilator action failed" },
+      { ok: false, error: err instanceof Error ? err.message : "Failed to execute invigilator action" },
       { status: 500 }
     );
   }

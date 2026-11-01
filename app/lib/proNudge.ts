@@ -66,10 +66,13 @@ export async function triggerProFeatureNudge(options: ProNudgeOptions): Promise<
     feature,
     title = NUDGE_PRESETS[feature]?.title ?? "BrainLab Pro Tip",
     message = NUDGE_PRESETS[feature]?.message ?? "Accelerate your learning with BrainLab Pro.",
-    linkUrl = "/pricing",
+    linkUrl,
     actionLabel = NUDGE_PRESETS[feature]?.actionLabel ?? "Explore Pro →",
     cooldownHours = 24,
   } = options;
+
+  const currentPath = window.location.pathname + window.location.search;
+  const resolvedLinkUrl = linkUrl || `/pricing?redirect=${encodeURIComponent(currentPath)}`;
 
   // 1. Check local cooldown to prevent repeated nudges in a short timeframe
   const storageKey = `bl_nudge_last_${feature}`;
@@ -127,7 +130,7 @@ export async function triggerProFeatureNudge(options: ProNudgeOptions): Promise<
           title,
           message,
           type: "billing",
-          link_url: linkUrl,
+          link_url: resolvedLinkUrl,
         }),
       })
         .then((res) => res.json())
@@ -147,7 +150,7 @@ export async function triggerProFeatureNudge(options: ProNudgeOptions): Promise<
       title,
       {
         label: actionLabel,
-        href: linkUrl,
+        href: resolvedLinkUrl,
       },
       7000
     );

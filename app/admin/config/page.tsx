@@ -13,6 +13,10 @@ import {
   saveFooterConfig,
   DEFAULT_FOOTER_CONFIG,
   type FooterConfig,
+  getMaintenanceModeConfig,
+  saveMaintenanceModeConfig,
+  DEFAULT_MAINTENANCE_MODE_CONFIG,
+  type MaintenanceModeConfig,
 } from "../../lib/platformConfig";
 import "../admin.css";
 
@@ -102,6 +106,7 @@ export default function AdminConfigPage() {
     result_notifications: true,
   });
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
+  const [maintenance, setMaintenance] = useState<MaintenanceModeConfig>(DEFAULT_MAINTENANCE_MODE_CONFIG);
 
   function updateSocialLink(platform: string, field: "url" | "enabled", value: string | boolean) {
     setFooterConfig((prev) => {
@@ -223,7 +228,8 @@ export default function AdminConfigPage() {
         saveConfigRow("result_notifications", examSettings.result_notifications !== false).catch(() => null),
       ]);
       if (adminUser) {
-        const [examSaved, footerSaved] = await Promise.all([
+        const [examSaved, footerSaved, maintSaved] = await Promise.all([
+          saveMaintenanceModeConfig(maintenance, adminUser),
           saveExamSettings(examSettings, adminUser, "Updated CBT exam rules and duration"),
           saveFooterConfig(
             {

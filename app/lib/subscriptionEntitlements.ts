@@ -59,25 +59,76 @@ export const ADMIN_VIP_PLAN: SubscriptionPlan = {
 
 /**
  * Checks whether the current or specified user has an active administrator role.
+ * Exhaustively inspects:
+ * 1. get_admin_role RPC
+ * 2. Supabase Auth session app_metadata / user_metadata (role, is_super_admin)
+ * 3. admin_profiles table
+ * 4. admin_user_roles table
+ * 5. admin_users table
+ * 6. Server-side resolveAdminRole helper (if in Node environment)
+ * 7. Browser client-side session cache
  */
 export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
+  // 1. Check RPC get_admin_role
   try {
     const { data: rpcRole } = await supabase.rpc("get_admin_role");
     if (typeof rpcRole === "string" && rpcRole.trim().length > 0) {
       return true;
     }
   } catch {
-    // fallback to table checks
+    // fallback to table and metadata checks
   }
 
+  // 2. Resolve Auth User
   let targetId = userId;
-  if (!targetId) {
+  let authUser: { id: string; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> } | null = null;
+  try {
     const { data: authData } = await supabase.auth.getUser();
-    targetId = authData.user?.id;
+    if (authData?.user) {
+      authUser = authData.user;
+      if (!targetId) {
+        targetId = authData.user.id;
+      }
+    }
+  } catch {
+    // fallback
+  }
+
+  // 3. Inspect user auth metadata if available
+  if (authUser) {
+    const appRole = String(authUser.app_metadata?.role || "").toLowerCase();
+    const userRole = String(authUser.user_metadata?.role || "").toLowerCase();
+    const isSuperAdminFlag = Boolean(authUser.app_metadata?.is_super_admin || authUser.user_metadata?.is_super_admin);
+
+    if (
+      isSuperAdminFlag ||
+      appRole.includes("admin") ||
+      userRole.includes("admin") ||
+      appRole === "teacher" ||
+      userRole === "teacher"
+    ) {
+      return true;
+    }
+  }
+
+  // 4. Check client-side cached admin credentials in browser
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem("admin_user");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.role && (String(parsed.role).includes("admin") || parsed.role === "teacher")) {
+          return true;
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
 
   if (!targetId) return false;
 
+  // 5. Check admin_profiles table
   try {
     const { data: profile } = await supabase
       .from("admin_profiles")
@@ -91,6 +142,7 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
     // proceed
   }
 
+  // 6. Check admin_user_roles table
   try {
     const { data: userRole } = await supabase
       .from("admin_user_roles")
@@ -104,6 +156,103 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
     // proceed
   }
 
+  // 7. Check admin_users table
+  try {
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("id", targetId)
+      .maybeSingle();
+    if (adminUser && typeof adminUser.role === "string" && adminUser.role.trim().length > 0) {
+      return true;
+    }
+  } catch {
+    // proceed
+  }
+
+  // 8. Server-side authoritative lookup fallback
+  if (typeof window === "undefined") {
+    try {
+      const { resolveAdminRole } = await import("./supabaseServer");
+      const resolved = await resolveAdminRole(targetId);
+      if (resolved && resolved.trim().length > 0) {
+        return true;
+      }
+    } catch {
+      // proceed
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Specifically checks whether the user is a Super Administrator.
+ */
+export async function isCurrentUserSuperAdmin(userId?: string): Promise<boolean> {
+  try {
+    const { data: rpcRole } = await supabase.rpc("get_admin_role");
+    if (typeof rpcRole === "string" && rpcRole.trim().toLowerCase() === "super_admin") {
+      return true;
+    }
+  } catch {
+    // proceed
+  }
+
+  let targetId = userId;
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user) {
+      if (
+        authData.user.app_metadata?.is_super_admin ||
+        authData.user.user_metadata?.is_super_admin ||
+        String(authData.user.app_metadata?.role).toLowerCase() === "super_admin" ||
+        String(authData.user.user_metadata?.role).toLowerCase() === "super_admin"
+      ) {
+        return true;
+      }
+      if (!targetId) targetId = authData.user.id;
+    }
+  } catch {
+    // proceed
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem("admin_user");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.role === "super_admin") return true;
+      }
+    } catch {
+      // proceed
+    }
+  }
+
+  if (!targetId) return false;
+
+  try {
+    const { data: profile } = await supabase
+      .from("admin_profiles")
+      .select("role")
+      .eq("user_id", targetId)
+      .maybeSingle();
+    if (profile?.role === "super_admin") return true;
+  } catch {
+    // proceed
+  }
+
+  try {
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("id", targetId)
+      .maybeSingle();
+    if (adminUser?.role === "super_admin") return true;
+  } catch {
+    // proceed
+  }
+
   return false;
 }
 
@@ -111,8 +260,8 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
  * Resolves the student's active subscription tier and authoritative entitlements
  * configured by the administrator in the database.
  *
- * NOTE: Administrators automatically receive unrestricted Universal VIP access across
- * all platform tools and are never asked to pay for subscriptions.
+ * NOTE: Administrators and Super Admins automatically receive unrestricted Universal VIP access across
+ * all platform tools and are NEVER asked to pay for subscriptions or features.
  */
 export async function getStudentSubscriptionAndEntitlements(
   userId?: string

@@ -28,21 +28,21 @@ export default function AdminPaymentGatewaysPage() {
     providers: {
       paystack: {
         enabled: true,
-        test_mode: true,
+        test_mode: false,
         public_key: "",
         secret_key: "",
         webhook_secret: "",
       },
       flutterwave: {
         enabled: false,
-        test_mode: true,
+        test_mode: false,
         public_key: "",
         secret_key: "",
         webhook_secret: "",
       },
       bachs: {
         enabled: true,
-        test_mode: true,
+        test_mode: false,
         api_key: "",
         webhook_secret: "",
       },

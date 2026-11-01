@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
-import { getPaymentProvider, resolveActivePaymentProvider } from "../../../lib/payments";
+import { resolveActivePaymentProvider } from "../../../lib/payments";
 import { getSubscriptionPlans, validateCoupon } from "../../../lib/platformConfig";
+import { isCurrentUserAdmin } from "../../../lib/subscriptionEntitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,18 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const { planId, couponCode, callbackUrl, provider } = body;
+    const returnUrl = typeof body.returnUrl === "string" ? body.returnUrl : typeof body.redirectUrl === "string" ? body.redirectUrl : undefined;
+
+    // Super Admin Bypass: Super Admins are NEVER asked or required to pay for any feature!
+    const isAdmin = await isCurrentUserAdmin(user.id);
+    if (isAdmin) {
+      return NextResponse.json({
+        ok: true,
+        adminBypass: true,
+        message: "Super Admin has universal unrestricted access to all platform features. No payment required.",
+        redirectUrl: returnUrl || "/dashboard",
+      });
+    }
 
     if (!planId || typeof planId !== "string") {
       return NextResponse.json(
@@ -98,28 +111,37 @@ export async function POST(request: NextRequest) {
       const periodEnd = new Date();
       periodEnd.setDate(periodEnd.getDate() + (plan.interval === "yearly" ? 365 : 30));
 
-      await supabase.from("user_subscriptions").upsert(
-        {
-          user_id: user.id,
-          plan_id: plan.id,
-          status: "active",
-          current_period_start: new Date().toISOString(),
-          current_period_end: periodEnd.toISOString(),
-          price_paid_kobo: 0,
-          currency: plan.currency || "NGN",
-          payment_provider: "free_grant",
-          metadata: { plan_name: plan.name, coupon_code: couponCode || null },
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+      const { data: existingSub } = await supabase
+        .from("user_subscriptions")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const freeSubPayload = {
+        user_id: user.id,
+        plan_id: plan.id,
+        status: "active",
+        current_period_start: new Date().toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        price_paid_kobo: 0,
+        currency: plan.currency || "NGN",
+        payment_provider: "free_grant",
+        metadata: { plan_name: plan.name, coupon_code: couponCode || null, return_url: returnUrl || null },
+        updated_at: new Date().toISOString(),
+      };
+
+      if (existingSub?.id) {
+        await supabase.from("user_subscriptions").update(freeSubPayload).eq("id", existingSub.id);
+      } else {
+        await supabase.from("user_subscriptions").insert(freeSubPayload);
+      }
 
       if (appliedCouponId) {
-        await supabase.from("coupon_redemptions").insert({
+        await supabase.from("coupon_redemptions").upsert({
           coupon_id: appliedCouponId,
           user_id: user.id,
           discount_applied_kobo: discountKobo,
-        });
+        }, { onConflict: "coupon_id,user_id" });
         await supabase.rpc("increment_coupon_redemption", { p_coupon_id: appliedCouponId });
       }
 
@@ -127,22 +149,24 @@ export async function POST(request: NextRequest) {
         ok: true,
         freePlan: true,
         message: "Plan activated successfully at no charge.",
-        redirectUrl: "/account/access",
+        redirectUrl: returnUrl || "/account/access",
       });
     }
 
-    // 4. Resolve selected payment provider (Bachs or Paystack)
+    // 4. Resolve selected payment provider
     const selectedProvider = await resolveActivePaymentProvider(provider);
     const paymentProviderName = selectedProvider.name;
-    if (paymentProviderName !== "paystack" && paymentProviderName !== "bachs") {
+    const allowedProviders = ["paystack", "flutterwave", "bachs", "bank_transfer"];
+    if (!allowedProviders.includes(paymentProviderName)) {
       return NextResponse.json(
         { ok: false, error: "provider_configuration_error", message: "The configured payment provider is not supported." },
         { status: 500 }
       );
     }
+
     const reference = `BL_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    // 5. Create pending transaction record
+    // 5. Create pending transaction record with return_url captured in metadata
     const { error: txError } = await supabase.from("payment_transactions").insert({
       reference,
       user_id: user.id,
@@ -159,6 +183,7 @@ export async function POST(request: NextRequest) {
         plan_interval: plan.interval,
         original_price_kobo: plan.price_kobo,
         requested_provider: paymentProviderName,
+        return_url: returnUrl || null,
       },
     });
 
@@ -169,10 +194,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Initialize payment with selected provider
+    // 6. Initialize payment with selected provider and preserve returnUrl in callbackUrl
     const host = request.headers.get("host") || "localhost:3000";
     const protocol = request.headers.get("x-forwarded-proto") || "http";
-    const defaultCallback = `${protocol}://${host}/account/subscription/callback`;
+    const callbackRedirectParam = returnUrl ? `?redirect=${encodeURIComponent(returnUrl)}` : "";
+    const defaultCallback = `${protocol}://${host}/account/subscription/callback${callbackRedirectParam}`;
 
     const initResult = await selectedProvider.initializePayment({
       email: user.email,
@@ -181,19 +207,20 @@ export async function POST(request: NextRequest) {
       reference,
       planId: plan.id,
       userId: user.id,
-      provider: paymentProviderName,
+      provider: paymentProviderName as "paystack" | "bachs",
       couponCode: couponCode || undefined,
       callbackUrl: callbackUrl || defaultCallback,
       metadata: {
         planName: plan.name,
         planInterval: plan.interval,
+        returnUrl: returnUrl || null,
       },
     });
 
     if (!initResult.ok) {
       await supabase
         .from("payment_transactions")
-        .update({ status: "failed", metadata: { failure_reason: initResult.error } })
+        .update({ status: "failed", metadata: { failure_reason: initResult.error, return_url: returnUrl || null } })
         .eq("reference", reference);
 
       return NextResponse.json(
@@ -216,6 +243,7 @@ export async function POST(request: NextRequest) {
       authorizationUrl: initResult.authorizationUrl,
       isTestMode: initResult.isTestMode,
       provider: selectedProvider.name,
+      returnUrl,
     });
   } catch (err) {
     return NextResponse.json(

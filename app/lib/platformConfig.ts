@@ -648,23 +648,36 @@ const DEFAULT_AUDIO_CONFIG: AudioPolicyConfig = {
  * Low-level getter: Reads a configuration key from Supabase.
  * Checks dedicated table first, then `exam_config`, and falls back to defaultValue.
  */
-export async function getPlatformConfig<T>(key: string, defaultValue: T): Promise<T> {
+export async function getPlatformConfig<T>(
+  key: string,
+  defaultValue: T,
+  bearerToken?: string
+): Promise<T> {
   try {
-    // 1. Try exam_config key-value table
-    const { data, error } = await supabase
+    let client = supabase;
+    if (typeof window === "undefined") {
+      try {
+        const { getSupabaseServerClient } = await import("./supabaseServer");
+        client = getSupabaseServerClient(bearerToken);
+      } catch {
+        client = supabase;
+      }
+    }
+
+    const { data, error } = await client
       .from("exam_config")
       .select("config_value")
       .eq("config_key", key)
       .maybeSingle();
 
-    if (!error && data?.config_value !== undefined && data.config_value !== null) {
+    if (!error && data && data.config_value !== undefined && data.config_value !== null) {
       return data.config_value as T;
     }
-  } catch {
-    // Fall through on network error
+  } catch (err) {
+    console.warn(`[platformConfig] Could not read ${key} from Supabase:`, err);
   }
 
-  // 2. Client-side local storage fallback
+  // Fallback to localStorage if in browser
   if (typeof window !== "undefined") {
     try {
       const local = localStorage.getItem(`brainlab_cfg_${key}`);
@@ -683,12 +696,23 @@ export async function setPlatformConfig<T>(
   key: string,
   value: T,
   adminUser?: { id: string; email: string },
-  changeReason?: string
+  changeReason?: string,
+  bearerToken?: string
 ): Promise<boolean> {
   try {
-    const previous = await getPlatformConfig<T>(key, value);
+    const previous = await getPlatformConfig<T>(key, value, bearerToken);
 
-    const { error } = await supabase.from("exam_config").upsert(
+    let client = supabase;
+    if (typeof window === "undefined") {
+      try {
+        const { getSupabaseServerClient } = await import("./supabaseServer");
+        client = getSupabaseServerClient(bearerToken);
+      } catch {
+        client = supabase;
+      }
+    }
+
+    const { error } = await client.from("exam_config").upsert(
       {
         config_key: key,
         config_value: value,
@@ -1218,21 +1242,21 @@ export const DEFAULT_PAYMENT_GATEWAYS_CONFIG: PaymentGatewaysConfig = {
   providers: {
     paystack: {
       enabled: true,
-      test_mode: process.env.PAYMENT_LIVE_ENABLED !== "true",
+      test_mode: false,
       public_key: process.env.PAYSTACK_PUBLIC_KEY || "",
       secret_key: process.env.PAYSTACK_SECRET_KEY || "",
       webhook_secret: process.env.PAYSTACK_SECRET_KEY || "",
     },
     flutterwave: {
       enabled: false,
-      test_mode: true,
+      test_mode: false,
       public_key: process.env.FLUTTERWAVE_PUBLIC_KEY || "",
       secret_key: process.env.FLUTTERWAVE_SECRET_KEY || "",
       webhook_secret: process.env.FLUTTERWAVE_SECRET_HASH || "",
     },
     bachs: {
       enabled: true,
-      test_mode: process.env.BACHS_ENVIRONMENT !== "production",
+      test_mode: false,
       api_key: process.env.BACHS_API_KEY || "",
       webhook_secret: process.env.BACHS_WEBHOOK_SECRET || "",
     },
@@ -1301,17 +1325,37 @@ export const DEFAULT_ANNOUNCEMENT_CONFIG: AnnouncementConfig = {
 
 export interface MaintenanceModeConfig {
   cbt_maintenance_enabled: boolean;
+  title?: string;
   message: string;
   estimated_resumption?: string;
   allow_admin_bypass: boolean;
+  notify_users?: boolean;
+  notification_title?: string;
+  notification_message?: string;
+  notification_channels?: {
+    in_app: boolean;
+    email: boolean;
+    device_push: boolean;
+  };
+  last_notified_at?: string | null;
   updated_at?: string;
 }
 
 export const DEFAULT_MAINTENANCE_MODE_CONFIG: MaintenanceModeConfig = {
   cbt_maintenance_enabled: false,
-  message: "The CBT Testing Engine is undergoing routine scheduled maintenance to update question blueprints. We will resume shortly.",
-  estimated_resumption: "Within 30 minutes",
+  title: "CBT Examination Engine Maintenance",
+  message: "The CBT Testing Engine is undergoing routine scheduled maintenance to update question blueprints and optimize platform performance. We will resume shortly.",
+  estimated_resumption: "Within 45 minutes",
   allow_admin_bypass: true,
+  notify_users: false,
+  notification_title: "System Advisory: Scheduled CBT Maintenance",
+  notification_message: "BrainLab CBT testing engine is undergoing routine scheduled maintenance. Mock exams and test sessions are temporarily paused and will resume shortly.",
+  notification_channels: {
+    in_app: true,
+    email: true,
+    device_push: true,
+  },
+  last_notified_at: null,
 };
 
 export async function getAnnouncementConfig(): Promise<AnnouncementConfig> {
@@ -1325,13 +1369,15 @@ export async function getAnnouncementConfig(): Promise<AnnouncementConfig> {
 export async function saveAnnouncementConfig(
   config: AnnouncementConfig,
   adminUser: { id: string; email: string },
-  reason?: string
+  reason?: string,
+  bearerToken?: string
 ): Promise<boolean> {
   return await setPlatformConfig(
     "announcement_config",
     { ...config, updated_at: new Date().toISOString() },
     adminUser,
-    reason || `Updated site-wide announcement banner (${config.enabled ? "Active" : "Disabled"})`
+    reason || `Updated site-wide announcement banner (${config.enabled ? "Active" : "Disabled"})`,
+    bearerToken
   );
 }
 
@@ -1346,13 +1392,15 @@ export async function getMaintenanceModeConfig(): Promise<MaintenanceModeConfig>
 export async function saveMaintenanceModeConfig(
   config: MaintenanceModeConfig,
   adminUser: { id: string; email: string },
-  reason?: string
+  reason?: string,
+  bearerToken?: string
 ): Promise<boolean> {
   return await setPlatformConfig(
     "maintenance_mode_config",
     { ...config, updated_at: new Date().toISOString() },
     adminUser,
-    reason || `Updated CBT maintenance mode (${config.cbt_maintenance_enabled ? "MAINTENANCE ON" : "NORMAL OPERATIONS"})`
+    reason || `Updated CBT maintenance mode (${config.cbt_maintenance_enabled ? "MAINTENANCE ON" : "NORMAL OPERATIONS"})`,
+    bearerToken
   );
 }
 

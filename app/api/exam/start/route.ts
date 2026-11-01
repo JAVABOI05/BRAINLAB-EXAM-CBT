@@ -15,17 +15,30 @@ export async function POST(request: NextRequest) {
     // Exposure history is keyed only from a verified Supabase user, never a client-supplied ID.
     const registeredUser = await getUserFromRequest(request);
 
+    // Maintenance Mode Guard
     const maintenance = await getMaintenanceModeConfig().catch(() => null);
     if (maintenance?.cbt_maintenance_enabled) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "cbt_maintenance",
-          message: maintenance.message || "CBT examination engine is undergoing scheduled maintenance.",
-          estimated_resumption: maintenance.estimated_resumption,
-        },
-        { status: 503 }
-      );
+      let bypass = false;
+      if (maintenance.allow_admin_bypass && registeredUser) {
+        try {
+          const { resolveAdminRole } = await import("../../../lib/supabaseServer");
+          const adminRole = await resolveAdminRole(registeredUser.id);
+          if (adminRole) bypass = true;
+        } catch {}
+      }
+
+      if (!bypass) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "cbt_maintenance",
+            title: maintenance.title || "CBT Examination Engine Maintenance",
+            message: maintenance.message || "The CBT Examination Engine is currently undergoing scheduled maintenance.",
+            estimated_resumption: maintenance.estimated_resumption,
+          },
+          { status: 503 }
+        );
+      }
     }
 
     const cleanCode = String(code || "").trim().toUpperCase();
@@ -35,6 +48,7 @@ export async function POST(request: NextRequest) {
     // 1. Check access code if required
     let isMasterCode = false;
     let preconfiguredSubject: string | null = null;
+    let codeRecordId: string | null = null;
 
     if (cleanCode) {
       // Check master code in exam_config
@@ -65,6 +79,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
+        codeRecordId = codeRecord.id;
         if (codeRecord.subject) {
           preconfiguredSubject = codeRecord.subject;
         }
@@ -214,6 +229,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 5. ATOMIC ACCESS CODE CONSUMPTION: Mark access code as used (if voucher and not master code)
+    if (!isMasterCode && cleanCode && cleanCode !== "OPEN-CBT") {
+      const usedByString = cleanPhone && cleanPhone !== "08000000000"
+        ? `${cleanName} (${cleanPhone})`
+        : cleanName;
+
+      try {
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc("mark_access_code_used", {
+          p_code: cleanCode,
+          p_used_by: usedByString,
+          p_session_id: sessionRow.id,
+        });
+
+        if (rpcErr || (rpcRes && typeof rpcRes === "object" && (rpcRes as { ok?: boolean }).ok === false)) {
+          // Direct table update fallback
+          const updatePayload: Record<string, unknown> = {
+            is_used: true,
+            used_by: usedByString,
+            used_at: new Date().toISOString(),
+            exam_session_id: sessionRow.id,
+          };
+          const { error: updateErr } = await supabase
+            .from("access_codes")
+            .update(updatePayload)
+            .eq("code", cleanCode);
+
+          if (updateErr) {
+            // Safe fallback if used_at or exam_session_id column does not exist yet
+            await supabase
+              .from("access_codes")
+              .update({ is_used: true, used_by: usedByString })
+              .eq("code", cleanCode);
+          }
+        }
+      } catch (err) {
+        console.warn("[exam/start] Error updating access code:", err);
+        try {
+          await supabase
+            .from("access_codes")
+            .update({ is_used: true, used_by: usedByString })
+            .eq("code", cleanCode);
+        } catch {}
+      }
+    }
+
     // Record question exposure for this registered candidate only after the session exists.
     if (registeredUser && paperIds.length) {
       const exposureRows = [...new Set(paperIds)].map((question_id) => ({
@@ -230,7 +290,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Freeze immutable attempt snapshot using actual session ID
+    // 6. Freeze immutable attempt snapshot using actual session ID
     if (generated.snapshot?.questions_snapshot) {
       void freezeAttemptSnapshot(
         sessionRow.id,
@@ -243,7 +303,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Use clientQuestions from engine (already includes option_e, stripped of correct_answer/explanation)
+    // 7. Use clientQuestions from engine (already includes option_e, stripped of correct_answer/explanation)
     let questionsPayload = generated.clientQuestions || [];
 
     if (!questionsPayload || questionsPayload.length === 0) {

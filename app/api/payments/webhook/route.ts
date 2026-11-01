@@ -7,6 +7,7 @@ import {
   bachsPaymentProvider,
   flutterwavePaymentProvider,
 } from "../../../lib/payments";
+import { recordSuccessfulPayment } from "../../../lib/payments/paymentProcessor.server";
 
 export const dynamic = "force-dynamic";
 
@@ -91,73 +92,26 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true, unhandled: true });
       }
 
-      if (tx.status === "success") {
-        return NextResponse.json({ received: true, alreadyProcessed: true });
-      }
-
+      const pricing = isJsonRecord(data.pricing) ? data.pricing : {};
+      const rawAmount = parseFloat(String(pricing.amount ?? data.amount ?? "0"));
+      const amountKobo = Math.round(rawAmount * 100);
       const paidAt = typeof event.created_at === "string" ? event.created_at : new Date().toISOString();
 
-      await supabase
-        .from("payment_transactions")
-        .update({
-          status: "success",
-          paid_at: paidAt,
-          provider_reference: checkoutId || tx.provider_reference,
-          provider: "bachs",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", tx.id);
+      const recordResult = await recordSuccessfulPayment(
+        tx,
+        {
+          providerReference: checkoutId || tx.provider_reference,
+          paidAt,
+          amountKobo: amountKobo > 0 ? amountKobo : undefined,
+          currency: String(pricing.currency ?? data.currency ?? tx.currency ?? "NGN"),
+          channel: "bachs_webhook",
+          metadata: { webhook_event: eventType, bachs_event_id: event.id },
+          verifiedBy: "bachs_webhook",
+        },
+        supabase
+      );
 
-      if (tx.coupon_id && tx.user_id) {
-        await supabase.from("coupon_redemptions").upsert(
-          {
-            coupon_id: tx.coupon_id,
-            user_id: tx.user_id,
-            transaction_id: tx.id,
-            discount_applied_kobo: tx.discount_kobo,
-            redeemed_at: paidAt,
-          },
-          { onConflict: "coupon_id,user_id" }
-        );
-      }
-
-      if (tx.user_id && tx.plan_id) {
-        const planInterval = tx.subscription_plans?.interval || "monthly";
-        const periodEnd = new Date();
-        periodEnd.setDate(periodEnd.getDate() + (planInterval === "yearly" ? 365 : 30));
-
-        await supabase.from("user_subscriptions").upsert(
-          {
-            user_id: tx.user_id,
-            plan_id: tx.plan_id,
-            status: "active",
-            current_period_start: paidAt,
-            current_period_end: periodEnd.toISOString(),
-            payment_provider: "bachs",
-            price_paid_kobo: tx.amount_kobo,
-            currency: tx.currency,
-            provider_subscription_id: tx.reference,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-
-        await supabase.from("configuration_audit_logs").insert({
-          admin_email: "bachs-webhook@brainlabacademy.com.ng",
-          entity_type: "plan",
-          entity_id: tx.plan_id,
-          action: "updated",
-          new_value: {
-            event: "webhook_charge_success",
-            transaction_id: tx.id,
-            reference: tx.reference,
-            amount_kobo: tx.amount_kobo,
-          },
-          change_reason: `Automated Bachs webhook activation for ${tx.reference}`,
-        });
-      }
-
-      return NextResponse.json({ received: true, success: true, provider: "bachs" });
+      return NextResponse.json({ received: true, success: recordResult.ok, provider: "bachs" });
     }
 
     // ------------------------------------------------------------------------
@@ -200,73 +154,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true, unhandled: true });
       }
 
-      if (tx.status === "success") {
-        return NextResponse.json({ received: true, alreadyProcessed: true });
-      }
-
+      const flwAmount = Number(data.amount || 0);
+      const amountKobo = Math.round(flwAmount * 100);
       const paidAt = typeof data.created_at === "string" ? data.created_at : new Date().toISOString();
 
-      await supabase
-        .from("payment_transactions")
-        .update({
-          status: "success",
-          paid_at: paidAt,
-          provider_reference: flwRef || tx.provider_reference,
-          provider: "flutterwave",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", tx.id);
+      const recordResult = await recordSuccessfulPayment(
+        tx,
+        {
+          providerReference: flwRef || tx.provider_reference,
+          paidAt,
+          amountKobo: amountKobo > 0 ? amountKobo : undefined,
+          currency: String(data.currency || tx.currency || "NGN"),
+          channel: String(data.payment_type || "flutterwave_webhook"),
+          metadata: { webhook_event: eventType, flw_ref: flwRef },
+          verifiedBy: "flutterwave_webhook",
+        },
+        supabase
+      );
 
-      if (tx.coupon_id && tx.user_id) {
-        await supabase.from("coupon_redemptions").upsert(
-          {
-            coupon_id: tx.coupon_id,
-            user_id: tx.user_id,
-            transaction_id: tx.id,
-            discount_applied_kobo: tx.discount_kobo,
-            redeemed_at: paidAt,
-          },
-          { onConflict: "coupon_id,user_id" }
-        );
-      }
-
-      if (tx.user_id && tx.plan_id) {
-        const planInterval = tx.subscription_plans?.interval || "monthly";
-        const periodEnd = new Date();
-        periodEnd.setDate(periodEnd.getDate() + (planInterval === "yearly" ? 365 : 30));
-
-        await supabase.from("user_subscriptions").upsert(
-          {
-            user_id: tx.user_id,
-            plan_id: tx.plan_id,
-            status: "active",
-            current_period_start: paidAt,
-            current_period_end: periodEnd.toISOString(),
-            payment_provider: "flutterwave",
-            price_paid_kobo: tx.amount_kobo,
-            currency: tx.currency,
-            provider_subscription_id: tx.reference,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-
-        await supabase.from("configuration_audit_logs").insert({
-          admin_email: "flutterwave-webhook@brainlabacademy.com.ng",
-          entity_type: "plan",
-          entity_id: tx.plan_id,
-          action: "updated",
-          new_value: {
-            event: "webhook_charge_success",
-            transaction_id: tx.id,
-            reference: tx.reference,
-            amount_kobo: tx.amount_kobo,
-          },
-          change_reason: `Automated Flutterwave webhook activation for ${tx.reference}`,
-        });
-      }
-
-      return NextResponse.json({ received: true, success: true, provider: "flutterwave" });
+      return NextResponse.json({ received: true, success: recordResult.ok, provider: "flutterwave" });
     }
 
     // ------------------------------------------------------------------------
@@ -298,73 +204,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, unhandled: true });
     }
 
-    if (tx.status === "success") {
-      return NextResponse.json({ received: true, alreadyProcessed: true });
-    }
-
     const paidAt = typeof data.paid_at === "string" ? data.paid_at : new Date().toISOString();
+    const amountKobo = typeof data.amount === "number" ? data.amount : undefined;
 
-    await supabase
-      .from("payment_transactions")
-      .update({
-        status: "success",
-        paid_at: paidAt,
-        provider_reference: data.id ? String(data.id) : reference,
-        provider: "paystack",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", tx.id);
+    const recordResult = await recordSuccessfulPayment(
+      tx,
+      {
+        providerReference: data.id ? String(data.id) : reference,
+        paidAt,
+        amountKobo,
+        currency: typeof data.currency === "string" ? data.currency : tx.currency,
+        channel: typeof data.channel === "string" ? data.channel : "paystack_webhook",
+        metadata: { webhook_event: event.event, paystack_id: data.id },
+        verifiedBy: "paystack_webhook",
+      },
+      supabase
+    );
 
-    if (tx.coupon_id && tx.user_id) {
-      await supabase.from("coupon_redemptions").upsert(
-        {
-          coupon_id: tx.coupon_id,
-          user_id: tx.user_id,
-          transaction_id: tx.id,
-          discount_applied_kobo: tx.discount_kobo,
-          redeemed_at: paidAt,
-        },
-        { onConflict: "coupon_id,user_id" }
-      );
-    }
-
-    if (tx.user_id && tx.plan_id) {
-      const planInterval = tx.subscription_plans?.interval || "monthly";
-      const periodEnd = new Date();
-      periodEnd.setDate(periodEnd.getDate() + (planInterval === "yearly" ? 365 : 30));
-
-      await supabase.from("user_subscriptions").upsert(
-        {
-          user_id: tx.user_id,
-          plan_id: tx.plan_id,
-          status: "active",
-          current_period_start: paidAt,
-          current_period_end: periodEnd.toISOString(),
-          payment_provider: "paystack",
-          price_paid_kobo: tx.amount_kobo,
-          currency: tx.currency,
-          provider_subscription_id: reference,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
-
-      await supabase.from("configuration_audit_logs").insert({
-        admin_email: "paystack-webhook@brainlabacademy.com.ng",
-        entity_type: "plan",
-        entity_id: tx.plan_id,
-        action: "updated",
-        new_value: {
-          event: "webhook_charge_success",
-          transaction_id: tx.id,
-          reference,
-          amount_kobo: tx.amount_kobo,
-        },
-        change_reason: `Automated Paystack webhook activation for ${reference}`,
-      });
-    }
-
-    return NextResponse.json({ received: true, success: true, provider: "paystack" });
+    return NextResponse.json({ received: true, success: recordResult.ok, provider: "paystack" });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Internal webhook error" },

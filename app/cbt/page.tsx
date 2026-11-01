@@ -53,6 +53,13 @@ export default function CBTExamPortalPage() {
 
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [maintenanceNotice, setMaintenanceNotice] = useState<{
+    active: boolean;
+    title?: string;
+    message: string;
+    estimated_resumption?: string;
+    allow_admin_bypass?: boolean;
+  } | null>(null);
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [whatsappConfigLoaded, setWhatsappConfigLoaded] = useState(false);
@@ -127,6 +134,12 @@ export default function CBTExamPortalPage() {
 
         // 3. Check public exam settings
         const { data: settingsData } = await supabase.rpc("get_public_settings");
+        try {
+          const annRes = await fetch("/api/announcements/active").then((r) => r.json());
+          if (active && annRes?.maintenance?.active) {
+            setMaintenanceNotice(annRes.maintenance);
+          }
+        } catch {}
         const settings = settingsData as { access_code_required?: unknown } | null;
         if (active) {
           setAccessCodeRequired(
@@ -414,13 +427,34 @@ export default function CBTExamPortalPage() {
               </p>
             </div>
 
+            {maintenanceNotice?.active && (
+              <div className="mt-4 rounded-2xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-xl">🛠️</span>
+                  <div className="space-y-1 text-rose-950 dark:text-rose-200">
+                    <p className="font-bold text-xs uppercase tracking-wide text-rose-800 dark:text-rose-300">
+                      {maintenanceNotice.title || "CBT Examination Engine Maintenance"}
+                    </p>
+                    <p className="font-medium text-xs leading-relaxed text-rose-900 dark:text-rose-100">
+                      {maintenanceNotice.message}
+                    </p>
+                    {maintenanceNotice.estimated_resumption && (
+                      <p className="text-[11px] font-bold text-rose-700 dark:text-rose-400 pt-1">
+                        ⏱️ Estimated Resumption: {maintenanceNotice.estimated_resumption}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Launch Action Button */}
             <button
               onClick={handleStartExam}
-              disabled={starting || (!currentUser && (!name.trim() || !phone.trim()))}
+              disabled={starting || Boolean(maintenanceNotice?.active) || (!currentUser && (!name.trim() || !phone.trim()))}
               className="mt-4 w-full rounded-xl bg-[#012153] hover:bg-blue-900 py-3.5 text-center text-sm font-extrabold text-white shadow-lg transition active-press disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              <span>{starting ? "Verifying…" : "Proceed to Examination Instructions"}</span><span aria-hidden="true">→</span>
+              <span>{maintenanceNotice?.active ? "CBT Testing Engine Under Maintenance (Locked)" : (starting ? "Verifying…" : "Proceed to Examination Instructions")}</span><span aria-hidden="true">→</span>
             </button>
 
             {/* Check Results Action */}

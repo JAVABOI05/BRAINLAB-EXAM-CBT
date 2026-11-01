@@ -270,7 +270,12 @@ export default function CorrectionsPage() {
         return;
       }
 
-      if (settings?.allow_corrections === false) {
+      // Check Subscription Entitlements & Admin Status
+      const { getStudentSubscriptionAndEntitlements, isCurrentUserAdmin } = await import("../lib/subscriptionEntitlements");
+      const isAdmin = await isCurrentUserAdmin();
+
+      // Super Admins & Admins have 100% universal access to all solutions and bypass locks
+      if (!isAdmin && settings?.allow_corrections === false) {
         setLockNotice({
           title: "Question Corrections Withheld by Proctor",
           message: "The examination proctor has locked detailed question items, answer options, and step-by-step solutions for this active testing cycle to maintain exam integrity across test centres.",
@@ -281,17 +286,17 @@ export default function CorrectionsPage() {
         return;
       }
 
-      // Check Subscription Entitlements for Corrections & Step-by-Step Explanations
-      const { getStudentSubscriptionAndEntitlements, isCurrentUserAdmin } = await import("../lib/subscriptionEntitlements");
-      const isAdmin = await isCurrentUserAdmin();
       if (!isAdmin) {
         const tierInfo = await getStudentSubscriptionAndEntitlements();
         if (!tierInfo.entitlements.cbt_corrections) {
+          const currentUrl = typeof window !== "undefined"
+            ? `${window.location.pathname}${window.location.search}`
+            : "/corrections";
           setLockNotice({
             title: "Detailed Explanations Require Subscription Upgrade",
             message: `Your current plan (${tierInfo.planName}) provides candidate score summaries. Full step-by-step question solutions, answer keys, and AI tutor explanations are unlocked on Premium Study, Plus, and Pro tiers.`,
             actionLabel: "Upgrade Plan for Explanations →",
-            actionHref: "/pricing",
+            actionHref: `/pricing?redirect=${encodeURIComponent(currentUrl)}`,
           });
           setLoading(false);
           return;

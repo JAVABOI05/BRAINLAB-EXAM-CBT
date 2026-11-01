@@ -2,7 +2,7 @@
 
 import { adminSignOut, getAdminSession } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import "../admin.css";
@@ -40,23 +40,32 @@ export default function AdminSessionsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [autoOnly, setAutoOnly] = useState(false);
 
+  const authFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = new Headers(init?.headers || {});
+    if (session?.access_token) {
+      headers.set("Authorization", `Bearer ${session.access_token}`);
+    }
+    return fetch(input, { ...init, headers });
+  }, []);
+
   async function loadSessions() {
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase
-      .from("exam_sessions")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      setMessage(`Failed to load sessions: ${error.message}`);
+    try {
+      const res = await authFetch("/api/admin/sessions/live?filter=all");
+      const data = await res.json();
+      if (res.ok && data.ok && Array.isArray(data.sessions)) {
+        setSessions(data.sessions as SessionRow[]);
+      } else {
+        setMessage(data.error || "Failed to load examination sessions.");
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Failed to load examination sessions.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setSessions((data || []) as SessionRow[]);
-    setLoading(false);
   }
 
   useEffect(() => {

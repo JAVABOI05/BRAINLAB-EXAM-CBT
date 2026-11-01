@@ -2170,7 +2170,7 @@ export default function LiveClassroomPage({
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <div className="mt-6 flex flex-col gap-3">
             <Link
-              href="/pricing"
+              href={`/pricing?redirect=${encodeURIComponent(`/classroom/${classId}`)}`}
               className="rounded-xl bg-blue-600 px-5 py-3 font-bold text-white transition hover:bg-blue-500"
             >
               Explore Subscriptions & Access
