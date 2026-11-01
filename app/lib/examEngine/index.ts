@@ -60,7 +60,9 @@ export async function generateExamPaper(options: {
 
   // 1. Normalise subjects list (English is always compulsory Slot 1)
   const incomingSubjects = options.subjects || [];
-  const nonEnglish = incomingSubjects.filter((s) => !s.toLowerCase().includes("english"));
+  const nonEnglish = incomingSubjects
+    .filter((s) => !s.toLowerCase().includes("english"))
+    .filter((s) => !["utme standard", "utme_4_subjects", "utme standard mock"].includes(s.trim().toLowerCase()));
   const chosenSubjects = ["English", ...nonEnglish.slice(0, 3)];
 
   // Fill up to 4 subjects if candidate provided fewer
@@ -148,6 +150,13 @@ export async function generateExamPaper(options: {
     }
   }
 
+  const expectedQuestionCount = 180;
+  if (paperIds.length !== expectedQuestionCount) {
+    errors.push(`Incomplete UTME paper: generated ${paperIds.length} unique questions; exactly ${expectedQuestionCount} are required (60 English + 40 for each of 3 electives).`);
+  }
+  if (new Set(paperIds).size !== paperIds.length) {
+    errors.push("The generated UTME paper contains repeated question IDs.");
+  }
   if (allPaperQuestions.length === 0) {
     errors.push("No examination questions could be assembled from the question bank.");
   }
