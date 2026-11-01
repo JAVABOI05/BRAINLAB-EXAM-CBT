@@ -54,9 +54,17 @@ export function selectStandardSubjectPaper(
   });
 
   if (eligible.length < targetCount) {
-    warnings.push(
-      `Subject '${subject}' only has ${eligible.length} eligible active questions in bank (target is ${targetCount}). Selecting all available.`
-    );
+    const message = `Subject '${subject}' has only ${eligible.length} eligible active questions; ${targetCount} are required. Add or activate more questions before starting this exam.`;
+    errors.push(message);
+    return {
+      success: false,
+      subject,
+      questions: [],
+      totalMarks: 0,
+      distinctTopicsCovered: 0,
+      warnings,
+      errors,
+    };
   }
 
   const selectedQuestions: EngineQuestion[] = [];
