@@ -415,7 +415,35 @@ export default function InstitutionalOperationsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setMessage("Emergency Pause signal broadcasted across all test sessions.")}
+                onClick={async () => {
+                  if (!confirm("Activate emergency CBT maintenance mode? New exam attempts will be blocked until maintenance is switched off.")) return;
+                  try {
+                    const { data: authData } = await supabase.auth.getSession();
+                    const accessToken = authData.session?.access_token;
+                    if (!accessToken) {
+                      setMessage("Emergency pause failed: administrator session expired. Sign in again.");
+                      return;
+                    }
+                    const res = await fetch("/api/admin/announcements", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                      body: JSON.stringify({
+                        maintenance: {
+                          cbt_maintenance_enabled: true,
+                          message: "BrainLab CBT examinations are temporarily paused by the administrator. Please wait for further instructions.",
+                          estimated_resumption: "To be announced",
+                          allow_admin_bypass: true,
+                        },
+                      }),
+                    });
+                    const data = await res.json();
+                    setMessage(res.ok && data.ok
+                      ? "Emergency maintenance mode activated. New exam attempts are now blocked."
+                      : `Emergency pause failed: ${data.error || "Permission denied"}`);
+                  } catch {
+                    setMessage("Emergency pause failed: network error.");
+                  }
+                }}
                 className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 font-bold text-xs sm:text-sm transition active:scale-95 flex items-center gap-1.5"
               >
                 <span>⏸</span>
