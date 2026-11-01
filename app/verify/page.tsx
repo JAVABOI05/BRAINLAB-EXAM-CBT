@@ -46,7 +46,7 @@ export default function CertificateLookupPage() {
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. BL-2026-A8F93 or UUID"
+                    placeholder="e.g. BL-2027-A8F93K or UUID"
                     className="flex-1 rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-sm font-mono text-slate-900 outline-none transition focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-600/20"
                   />
                   <button
