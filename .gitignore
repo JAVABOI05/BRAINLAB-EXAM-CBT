@@ -17,3 +17,5 @@ supabase/.temp/
 
 # Scratch scripts
 PY QUESTIONS
+Clean-Vercel.ps1
+*.ps1

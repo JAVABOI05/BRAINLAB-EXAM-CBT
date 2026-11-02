@@ -8,3 +8,5 @@ PHASE0-UPGRADE-STATUS.md
 AGENTS.md
 CLAUDE.md
 *.tsbuildinfo
+Clean-Vercel.ps1
+*.ps1
