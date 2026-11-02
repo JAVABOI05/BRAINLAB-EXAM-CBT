@@ -362,26 +362,7 @@ export default function InstitutionalOperationsPage() {
     }
   };
 
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setGeneratedBatch({
-          cohort: cohortName,
-          codes: data.codes || [],
-          timestamp: new Date().toLocaleDateString("en-NG", { dateStyle: "medium", timeStyle: "short" }),
-        });
-        setMessage(data.message || `Successfully generated and issued ${data.count} PINs.`);
-        setShowBatchModal(true);
-        // Refresh telemetry feeds
-        await fetchLiveSessions();
-      } else {
-        setMessage(`PIN issuance failed: ${data.error || "Could not generate PIN batch."}`);
-      }
-    } catch (err) {
-      setMessage(`Network error generating PIN batch: ${err instanceof Error ? err.message : "Unknown error"}`);
-    } finally {
-      setIsGeneratingPins(false);
-    }
-  };
+
 
   const handleDownloadCsv = () => {
     if (!generatedBatch) return;
