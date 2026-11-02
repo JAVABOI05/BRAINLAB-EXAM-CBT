@@ -147,7 +147,6 @@ export default function AdminCodesPage() {
       setGenerating(false);
     }
   }
-  }
 
   async function handleSetMasterCode() {
     const cleanCode = newMasterCode.trim().toUpperCase();
@@ -182,7 +181,6 @@ export default function AdminCodesPage() {
     } finally {
       setWorking(false);
     }
-  }
   }
 
   async function resetCode(codeRow: AccessCodeRow) {
@@ -222,7 +220,6 @@ export default function AdminCodesPage() {
       setWorking(false);
     }
   }
-  }
 
   async function resetAllUsed() {
     const confirmed = window.confirm(
@@ -253,7 +250,6 @@ export default function AdminCodesPage() {
     } finally {
       setWorking(false);
     }
-  }
   }
 
   async function exportFreshCodes() {
@@ -321,7 +317,6 @@ export default function AdminCodesPage() {
       setWorking(false);
     }
   }
-  }
 
   async function copyExportedCodes() {
     if (!lastExportedCodes.length) {
@@ -373,7 +368,6 @@ export default function AdminCodesPage() {
     } finally {
       setWorking(false);
     }
-  }
   }
 
   function handleLogout() {
