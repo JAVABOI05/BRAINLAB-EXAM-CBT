@@ -19,29 +19,50 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    let query = supabase
-      .from("access_codes")
-      .select("id, code, subject, is_used, used_by, is_exported, exported_at, created_at", { count: "exact" })
-      .order("created_at", { ascending: false });
+    const buildQuery = (selectCols: string) => {
+      let q = supabase
+        .from("access_codes")
+        .select(selectCols, { count: "exact" })
+        .order("created_at", { ascending: false });
 
-    if (filter === "unused") {
-      query = query.eq("is_used", false);
-    } else if (filter === "used") {
-      query = query.eq("is_used", true);
-    } else if (filter === "exported") {
-      query = query.eq("is_exported", true);
+      if (filter === "unused") {
+        q = q.eq("is_used", false);
+      } else if (filter === "used") {
+        q = q.eq("is_used", true);
+      } else if (filter === "exported") {
+        q = q.eq("is_exported", true);
+      }
+
+      if (search) {
+        q = q.ilike("code", `%${search}%`);
+      }
+
+      return q.range(offset, offset + limit - 1);
+    };
+
+    let codesData: unknown[] | null = null;
+    let countTotal = 0;
+
+    const { data: codesWithPlan, count: countWithPlan, error: errorWithPlan } = await buildQuery(
+      "id, code, subject, grants_plan, validity_days, cohort, is_used, used_by, used_at, is_exported, exported_at, created_at"
+    );
+
+    if (errorWithPlan) {
+      const { data: codesBasic, count: countBasic, error: errorBasic } = await buildQuery(
+        "id, code, subject, is_used, used_by, is_exported, exported_at, created_at"
+      );
+      if (errorBasic) {
+        return NextResponse.json({ ok: false, error: errorBasic.message }, { status: 500 });
+      }
+      codesData = codesBasic;
+      countTotal = countBasic || 0;
+    } else {
+      codesData = codesWithPlan;
+      countTotal = countWithPlan || 0;
     }
 
-    if (search) {
-      query = query.ilike("code", `%${search}%`);
-    }
-
-    query = query.range(offset, offset + limit - 1);
-
-    const { data: codes, count, error } = await query;
-    if (error) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    }
+    const codes = codesData;
+    const count = countTotal;
 
     // Also fetch master code
     const { data: masterRow } = await supabase
@@ -88,6 +109,7 @@ export async function POST(request: NextRequest) {
         .update({
           is_used: false,
           used_by: null,
+          used_at: null,
         })
         .eq("id", codeId)
         .select()
@@ -124,6 +146,7 @@ export async function POST(request: NextRequest) {
         .update({
           is_used: false,
           used_by: null,
+          used_at: null,
         })
         .eq("is_used", true);
 
