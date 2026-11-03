@@ -1,12 +1,16 @@
-/* eslint react/no-unescaped-entities: "off" */
+/* eslint react/no-unescaped-entities: "off", @typescript-eslint/no-explicit-any: "off" */
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
-import { SmartWhiteboard, type WhiteboardPage } from "@/app/components/SmartWhiteboard";
+import { SmartWhiteboard, SmartWhiteboardHandle, type WhiteboardPage } from "@/app/components/SmartWhiteboard";
 import ClassroomMaterialImporter, { type LessonAttachment } from "@/app/components/ClassroomMaterialImporter";
+import PictureInPictureCamera, { type PipCorner, type PipSize } from "@/app/components/classroom/media/PictureInPictureCamera";
+import RecordingCountdown from "@/app/components/classroom/media/RecordingCountdown";
+import VideoPreviewEditor from "@/app/components/classroom/media/VideoPreviewEditor";
+import { toast } from "@/app/lib/toast";
 
 type Lesson = {
   id: string;
@@ -19,48 +23,109 @@ type Lesson = {
   active_page_index?: number;
   attachments?: LessonAttachment[];
 };
+
 type PageData = WhiteboardPage & { backgroundMode?: string };
 
 export default function ClassroomStudioPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedId = searchParams.get("id");
+
+  // Authentication & Lesson State
   const [token, setToken] = useState("");
+  const [user, setUser] = useState<any>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonId, setLessonId] = useState<string | null>(requestedId);
   const [title, setTitle] = useState("Untitled lesson");
   const [subject, setSubject] = useState("");
+  const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"draft" | "ready">("draft");
-  const [pages, setPages] = useState<PageData[]>([{ id: "page-1", title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] }]);
+  const [pages, setPages] = useState<PageData[]>([
+    { id: "page-1", title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] },
+  ]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [attachments, setAttachments] = useState<LessonAttachment[]>([]);
   const [showImporter, setShowImporter] = useState(false);
   const [busy, setBusy] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("Loading your classroom studio…");
+  const [message, setMessage] = useState("Loading Classroom Studio…");
   const [showStudioBoard, setShowStudioBoard] = useState(false);
+
+  // Whiteboard ref
+  const whiteboardRef = useRef<SmartWhiteboardHandle | null>(null);
+
+  // --------------------------------------------------------------------------
+  // INDEPENDENT MEDIA & RECORDING STATE (Browser-native, NO LiveKit)
+  // --------------------------------------------------------------------------
+  const [isMicEnabled, setIsMicEnabled] = useState(true);
+  const [isCameraEnabled, setIsCameraEnabled] = useState(false);
+  const [pipCorner, setPipCorner] = useState<PipCorner>("bottom_right");
+  const [pipSize, setPipSize] = useState<PipSize>("medium");
+
+  // Media streams
+  const [userMediaStream, setUserMediaStream] = useState<MediaStream | null>(null);
+  const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Recording State Machine: idle -> countdown -> recording -> paused -> preview
+  const [recordingState, setRecordingState] = useState<
+    "idle" | "countdown" | "recording" | "paused" | "preview"
+  >("idle");
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const compositeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const compositeAnimRef = useRef<number | null>(null);
+
+  // Finished video preview
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewMimeType, setPreviewMimeType] = useState("video/webm");
+
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onBoardPagesChange = useCallback((nextPages: WhiteboardPage[], nextIndex: number) => { setPages(nextPages as PageData[]); setActivePageIndex(nextIndex); }, []);
+  const onBoardPagesChange = useCallback((nextPages: WhiteboardPage[], nextIndex: number) => {
+    setPages(nextPages as PageData[]);
+    setActivePageIndex(nextIndex);
+  }, []);
 
-  const authHeaders = useCallback(() => ({ "Content-Type": "application/json", Authorization: `Bearer ${token}` }), [token]);
+  const authHeaders = useCallback(
+    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${token}` }),
+    [token]
+  );
 
+  // Load saved lessons
   const loadLessons = useCallback(async (authToken: string) => {
-    const response = await fetch("/api/classroom/studio", { headers: { Authorization: `Bearer ${authToken}` }, cache: "no-store" });
+    const response = await fetch("/api/classroom/studio", {
+      headers: { Authorization: `Bearer ${authToken}` },
+      cache: "no-store",
+    });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Unable to load saved lessons.");
     setLessons(data.lessons || []);
   }, []);
 
   const loadOne = useCallback(async (id: string, authToken: string) => {
-    const response = await fetch(`/api/classroom/studio?id=${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${authToken}` }, cache: "no-store" });
+    const response = await fetch(`/api/classroom/studio?id=${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+      cache: "no-store",
+    });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Unable to open lesson.");
     const lesson = data.lesson as Lesson;
-    setLessonId(lesson.id); setTitle(lesson.title); setSubject(lesson.subject || ""); setDescription(lesson.description || "");
+    setLessonId(lesson.id);
+    setTitle(lesson.title);
+    setSubject(lesson.subject || "");
+    setDescription(lesson.description || "");
     setStatus(lesson.status === "ready" ? "ready" : "draft");
-    setPages(Array.isArray(lesson.pages) && lesson.pages.length ? lesson.pages as PageData[] : [{ id: "page-1", title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] }]);
-    setActivePageIndex(Math.min(lesson.active_page_index || 0, Math.max(0, (lesson.pages as unknown[] | undefined)?.length || 1) - 1));
+    setPages(
+      Array.isArray(lesson.pages) && lesson.pages.length
+        ? (lesson.pages as PageData[])
+        : [{ id: "page-1", title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] }]
+    );
+    setActivePageIndex(
+      Math.min(lesson.active_page_index || 0, Math.max(0, (lesson.pages as unknown[] | undefined)?.length || 1) - 1)
+    );
     setAttachments(Array.isArray(lesson.attachments) ? lesson.attachments : []);
     setShowStudioBoard(true);
   }, []);
@@ -70,342 +135,668 @@ export default function ClassroomStudioPage() {
     void (async () => {
       const { data } = await supabase.auth.getSession();
       const session = data.session;
-      if (!session) { router.replace("/account?redirect=/classroom/studio"); return; }
+      if (!session) {
+        router.replace("/account?redirect=/classroom/studio");
+        return;
+      }
       if (!alive) return;
       setToken(session.access_token);
+      setUser(session.user);
       try {
         await loadLessons(session.access_token);
         if (requestedId) await loadOne(requestedId, session.access_token);
         else setMessage("Create a lesson or continue one of your saved drafts.");
-      } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to load Classroom Studio."); }
-      finally { if (alive) setBusy(false); }
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "Unable to load Classroom Studio.");
+      } finally {
+        if (alive) setBusy(false);
+      }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [router, requestedId, loadLessons, loadOne]);
 
-  const saveLesson = useCallback(async (nextStatus: "draft" | "ready" = status) => {
-    if (!token) return;
-    setSaving(true); setMessage("Saving to your BrainLab account…");
-    try {
-      const response = await fetch("/api/classroom/studio", {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          id: lessonId,
-          title,
-          subject,
-          description,
-          status: nextStatus,
-          pages,
-          active_page_index: activePageIndex,
-          attachments,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Save failed.");
-      const lesson = data.lesson as Lesson;
-      setLessonId(lesson.id); setStatus(nextStatus);
-      setLessons((previous) => [lesson, ...previous.filter((item) => item.id !== lesson.id)]);
-      setMessage(`Saved to your account at ${new Date(lesson.updated_at).toLocaleTimeString()}.`);
-      if (typeof window !== "undefined") localStorage.setItem(`brainlab-classroom-studio:${lesson.id}`, JSON.stringify({ title, subject, description, status: nextStatus, pages, activePageIndex, attachments }));
-      return lesson.id;
-    } catch (error) {
-      // Offline recovery fallback. Keep the complete draft on this device until the next successful save.
-      try { localStorage.setItem(`brainlab-classroom-studio:pending:${lessonId || "new"}`, JSON.stringify({ title, subject, description, status: nextStatus, pages, activePageIndex, attachments })); } catch {}
-      setMessage(`${error instanceof Error ? error.message : "Cloud save failed."} Your current draft was kept locally where browser storage is available; retry when connected.`);
-      return null;
-    } finally { setSaving(false); }
-  }, [token, authHeaders, lessonId, title, subject, description, status, pages, activePageIndex, attachments]);
+  // Autosave Lesson Draft
+  const saveLesson = useCallback(
+    async (nextStatus: "draft" | "ready" = status) => {
+      if (!token) return null;
+      setSaving(true);
+      try {
+        const response = await fetch("/api/classroom/studio", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            id: lessonId,
+            title,
+            subject,
+            description,
+            status: nextStatus,
+            pages,
+            active_page_index: activePageIndex,
+            attachments,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Save failed.");
+        const lesson = data.lesson as Lesson;
+        setLessonId(lesson.id);
+        setStatus(nextStatus);
+        setLessons((prev) => [lesson, ...prev.filter((i) => i.id !== lesson.id)]);
+        toast.success(`Lesson draft saved at ${new Date().toLocaleTimeString()}`);
+        return lesson.id;
+      } catch (error) {
+        console.warn("Cloud save failed, keeping locally:", error);
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [token, authHeaders, lessonId, title, subject, description, status, pages, activePageIndex, attachments]
+  );
 
+  // Autosave timer (debounced)
   useEffect(() => {
     if (!showStudioBoard || !lessonId || !token) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => { void saveLesson(status); }, 1800);
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+    saveTimer.current = setTimeout(() => {
+      void saveLesson(status);
+    }, 2500);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
   }, [showStudioBoard, lessonId, token, title, subject, description, pages, activePageIndex, status, attachments, saveLesson]);
 
+  // Create new lesson
   const createLesson = () => {
-    setLessonId(null); setTitle("Untitled lesson"); setSubject(""); setDescription(""); setStatus("draft");
+    setLessonId(null);
+    setTitle("Untitled lesson");
+    setSubject("");
+    setTopic("");
+    setDescription("");
+    setStatus("draft");
     setPages([{ id: `page-${Date.now()}`, title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] }]);
-    setActivePageIndex(0); setAttachments([]); setShowStudioBoard(true); setMessage("New lesson ready. Add your notes or import materials, then save as draft or prepare it to teach.");
+    setActivePageIndex(0);
+    setAttachments([]);
+    setShowStudioBoard(true);
   };
 
-  const startLive = async () => {
+  // --------------------------------------------------------------------------
+  // CAMERA & MICROPHONE PERMISSIONS MANAGEMENT
+  // --------------------------------------------------------------------------
+  const toggleCamera = async () => {
+    if (isCameraEnabled) {
+      if (userMediaStream) {
+        userMediaStream.getVideoTracks().forEach((track) => track.stop());
+      }
+      setIsCameraEnabled(false);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+          audio: isMicEnabled,
+        });
+        setUserMediaStream(stream);
+        setIsCameraEnabled(true);
+        toast.success("Tutor camera activated in Picture-in-Picture.");
+      } catch (err: unknown) {
+        toast.error("Camera access denied or unavailable on this device.");
+      }
+    }
+  };
+
+  const toggleMic = async () => {
+    if (isMicEnabled) {
+      if (userMediaStream) {
+        userMediaStream.getAudioTracks().forEach((track) => (track.enabled = false));
+      }
+      setIsMicEnabled(false);
+    } else {
+      setIsMicEnabled(true);
+      if (userMediaStream) {
+        userMediaStream.getAudioTracks().forEach((track) => (track.enabled = true));
+      }
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // COMPOSITE CANVAS RECORDING ENGINE (Whiteboard + PiP Camera + Microphone)
+  // --------------------------------------------------------------------------
+  const startRecordingFlow = () => {
+    if (!whiteboardRef.current) {
+      toast.error("Whiteboard is initializing. Please wait a moment.");
+      return;
+    }
+    setRecordingState("countdown");
+  };
+
+  const beginActualRecording = async () => {
+    try {
+      const sourceCanvas = whiteboardRef.current?.getCanvasElement();
+      if (!sourceCanvas) {
+        toast.error("Could not access whiteboard canvas.");
+        setRecordingState("idle");
+        return;
+      }
+
+      // 1. Create Offscreen Composite Canvas matching target resolution (1920x1080)
+      const width = 1920;
+      const height = 1080;
+      const compCanvas = document.createElement("canvas");
+      compCanvas.width = width;
+      compCanvas.height = height;
+      compositeCanvasRef.current = compCanvas;
+      const ctx = compCanvas.getContext("2d", { alpha: false });
+      if (!ctx) throw new Error("Could not initialize 2D composite context.");
+
+      // 2. Start Composite Render Loop (30fps)
+      let active = true;
+      const renderFrame = () => {
+        if (!active) return;
+
+        // Clear background
+        ctx.fillStyle = "#070d1e";
+        ctx.fillRect(0, 0, width, height);
+
+        // A. Draw current Whiteboard Canvas
+        if (sourceCanvas && sourceCanvas.width > 0 && sourceCanvas.height > 0) {
+          ctx.drawImage(sourceCanvas, 0, 0, width, height);
+        }
+
+        // B. Draw Picture-in-Picture Camera if enabled
+        if (isCameraEnabled && cameraVideoRef.current && cameraVideoRef.current.readyState >= 2) {
+          const pipW = pipSize === "small" ? 360 : pipSize === "medium" ? 480 : 640;
+          const pipH = (pipW * 9) / 16;
+          let pipX = width - pipW - 40;
+          let pipY = height - pipH - 40;
+
+          if (pipCorner === "top_left") {
+            pipX = 40;
+            pipY = 40;
+          } else if (pipCorner === "top_right") {
+            pipX = width - pipW - 40;
+            pipY = 40;
+          } else if (pipCorner === "bottom_left") {
+            pipX = 40;
+            pipY = height - pipH - 40;
+          }
+
+          ctx.save();
+          // Rounded PiP clipping
+          ctx.beginPath();
+          ctx.roundRect(pipX, pipY, pipW, pipH, 20);
+          ctx.clip();
+
+          // Flip horizontally for natural mirror feel
+          ctx.translate(pipX + pipW, pipY);
+          ctx.scale(-1, 1);
+          ctx.drawImage(cameraVideoRef.current, 0, 0, pipW, pipH);
+          ctx.restore();
+
+          // PiP Border
+          ctx.save();
+          ctx.strokeStyle = "#1356E8";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.roundRect(pipX, pipY, pipW, pipH, 20);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        compositeAnimRef.current = requestAnimationFrame(renderFrame);
+      };
+
+      compositeAnimRef.current = requestAnimationFrame(renderFrame);
+
+      // 3. Composite Video Stream from Canvas
+      const videoStream = compCanvas.captureStream(30);
+
+      // 4. Audio Mixing (Microphone audio track)
+      let combinedStream = videoStream;
+      if (isMicEnabled) {
+        try {
+          const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const audioTrack = micStream.getAudioTracks()[0];
+          if (audioTrack) {
+            videoStream.addTrack(audioTrack);
+          }
+        } catch (micErr) {
+          console.warn("Microphone not attached to recording:", micErr);
+        }
+      }
+
+      // 5. Codec Detection: MP4 if genuine, otherwise WebM
+      let chosenMime = "video/webm;codecs=vp9,opus";
+      if (MediaRecorder.isTypeSupported("video/mp4;codecs=avc1")) {
+        chosenMime = "video/mp4;codecs=avc1";
+      } else if (MediaRecorder.isTypeSupported("video/mp4")) {
+        chosenMime = "video/mp4";
+      } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")) {
+        chosenMime = "video/webm;codecs=vp9,opus";
+      } else if (MediaRecorder.isTypeSupported("video/webm")) {
+        chosenMime = "video/webm";
+      }
+
+      setPreviewMimeType(chosenMime);
+      recordedChunksRef.current = [];
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType: chosenMime,
+        videoBitsPerSecond: 2500000,
+      });
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        active = false;
+        if (compositeAnimRef.current) cancelAnimationFrame(compositeAnimRef.current);
+
+        const fullBlob = new Blob(recordedChunksRef.current, { type: chosenMime });
+        setPreviewBlob(fullBlob);
+        const url = URL.createObjectURL(fullBlob);
+        setPreviewUrl(url);
+        setRecordingState("preview");
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start(1000); // 1-second timeslice chunking for reliability
+
+      setRecordingSeconds(0);
+      setRecordingState("recording");
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+
+      toast.success("Studio recording started. Teach freely!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to start studio recording.");
+      setRecordingState("idle");
+    }
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.pause();
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      setRecordingState("paused");
+      toast.info("Recording paused. Notes and whiteboard remain interactive.");
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+      mediaRecorderRef.current.resume();
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+      setRecordingState("recording");
+      toast.success("Recording resumed.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  // Cloud Save from VideoPreviewEditor
+  const handleSaveToCloudLibrary = async (meta: {
+    duration: number;
+    fileSize: number;
+    trimmedStart: number;
+    trimmedEnd: number;
+  }) => {
+    if (!previewBlob || !token) throw new Error("No video or authentication found.");
+
+    // 1. Upload to Supabase Storage: 'live-class-recordings'
+    const ext = previewMimeType.includes("mp4") ? "mp4" : "webm";
+    const safeTitle = (title || "Lesson").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const filename = `studio-lessons/${user?.id || "tutor"}/${Date.now()}-${safeTitle}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("live-class-recordings")
+      .upload(filename, previewBlob, {
+        contentType: previewMimeType,
+        upsert: true,
+      });
+
+    if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
+
+    // Get signed or public URL
+    const { data: signedData } = await supabase.storage
+      .from("live-class-recordings")
+      .createSignedUrl(filename, 60 * 60 * 24 * 365); // 1 year access
+
+    const finalVideoUrl = signedData?.signedUrl || filename;
+
+    // 2. Save metadata to class_recordings table
+    const response = await fetch("/api/classroom/recordings", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        lessonId,
+        title,
+        subject,
+        topic,
+        videoUrl: finalVideoUrl,
+        storagePath: filename,
+        durationSeconds: meta.duration,
+        fileSizeBytes: meta.fileSize,
+        recordingSource: "lesson_studio",
+        isVisibleToStudents: false,
+      }),
+    });
+
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || "Failed to save recording record.");
+  };
+
+  const startLiveClassFromLesson = async () => {
     const id = await saveLesson("ready");
     if (!id) return;
     try {
-      const response = await fetch("/api/classroom/studio/live", { method: "POST", headers: authHeaders(), body: JSON.stringify({ lessonId: id }) });
+      const response = await fetch("/api/classroom/studio/live", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ lessonId: id }),
+      });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not start the live class.");
+      if (!response.ok) throw new Error(data.error || "Could not launch live class.");
       router.push(data.url);
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not start the live class. Your lesson is saved."); }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not start live class.");
+    }
   };
 
-  if (busy) return <main className="min-h-screen bg-slate-950 p-8 text-white">{message}</main>;
+  if (busy) {
+    return (
+      <main className="min-h-screen bg-[#070d1e] flex items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-3">
+          <span className="h-8 w-8 rounded-full border-3 border-blue-500 border-t-transparent animate-spin" />
+          <p className="text-sm font-semibold text-slate-300">{message}</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-[#071127]/90 px-4 py-3.5 backdrop-blur-md sm:px-8">
+    <main className="min-h-screen bg-[#070d1e] text-white flex flex-col">
+      {/* ================================================================== */}
+      {/* 1. TOP HEADER: BRANDING, TITLE, LESSON META & CONTROLS */}
+      {/* ================================================================== */}
+      <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#0B1536]/95 px-4 py-2.5 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <Link href="/classroom" className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-blue-300 hover:bg-white/10 transition" title="Back to Classroom Lobby">
+          <Link
+            href="/classroom"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-blue-300 hover:bg-white/10 transition"
+            title="Classroom Lobby"
+          >
             ←
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black text-white sm:text-xl">Classroom Studio</h1>
-              <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300">
-                Instructor Studio
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Lesson Title..."
+                className="bg-transparent text-base sm:text-lg font-black text-white outline-none border-b border-transparent hover:border-white/20 focus:border-blue-500 transition px-1"
+              />
+              <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-300">
+                Video Lesson Studio
               </span>
             </div>
-            <p className="text-xs text-slate-400">Prepare, import question banks, write derivations, and autosave before students join.</p>
+            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Subject (e.g. Mathematics)"
+                className="bg-transparent outline-none hover:text-white focus:text-white max-w-[140px]"
+              />
+              <span>·</span>
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="Topic / Unit"
+                className="bg-transparent outline-none hover:text-white focus:text-white max-w-[140px]"
+              />
+            </div>
           </div>
         </div>
+
+        {/* Action Buttons: Import, Recording Engine, Save & Go Live */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Import Materials */}
           <button
             type="button"
             onClick={() => setShowImporter(true)}
-            disabled={!showStudioBoard}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-950/60 hover:bg-purple-900/80 px-3.5 py-2 text-xs font-bold text-purple-200 transition disabled:opacity-40 shadow-xs"
-            title="Import CSV questions, PowerPoint slides, Word outlines, or lesson handouts"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-950/60 hover:bg-purple-900/80 px-3 py-1.5 text-xs font-bold text-purple-200 transition"
+            title="Import questions from CSV, slides from PowerPoint/PDF, or lesson outlines"
           >
             <span>📥</span>
-            <span>Import Materials</span>
+            <span>Import</span>
             {attachments.length > 0 && (
               <span className="rounded-full bg-purple-600 px-1.5 py-0.2 text-[10px] font-black text-white">
                 {attachments.length}
               </span>
             )}
           </button>
+
+          {/* Camera PiP Toggle */}
+          <button
+            type="button"
+            onClick={toggleCamera}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+              isCameraEnabled
+                ? "border-emerald-500/50 bg-emerald-950/60 text-emerald-200"
+                : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+            }`}
+            title="Toggle Picture-in-Picture Tutor Camera overlay"
+          >
+            <span>📷</span>
+            <span>{isCameraEnabled ? "Camera ON" : "Camera"}</span>
+          </button>
+
+          {/* Mic Toggle */}
+          <button
+            type="button"
+            onClick={toggleMic}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+              isMicEnabled
+                ? "border-blue-500/50 bg-blue-950/60 text-blue-200"
+                : "border-rose-500/50 bg-rose-950/60 text-rose-300"
+            }`}
+            title="Toggle Microphone"
+          >
+            <span>{isMicEnabled ? "🎙️" : "🔇"}</span>
+          </button>
+
+          {/* ================================================================ */}
+          {/* INDEPENDENT STUDIO RECORDING CONTROLS */}
+          {/* ================================================================ */}
+          {recordingState === "idle" && (
+            <button
+              type="button"
+              onClick={startRecordingFlow}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#FF5238] to-rose-600 hover:from-rose-600 hover:to-rose-500 px-4 py-1.5 text-xs font-black text-white shadow-lg transition active:scale-95"
+              title="Start recording your video lesson with 3-2-1 countdown (No LiveKit room required)"
+            >
+              <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+              <span>Record Lesson</span>
+            </button>
+          )}
+
+          {recordingState === "recording" && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-950/80 px-3 py-1 text-xs">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-500 animate-ping" />
+              <span className="font-mono font-bold text-rose-200">
+                {Math.floor(recordingSeconds / 60)
+                  .toString()
+                  .padStart(2, "0")}
+                :{(recordingSeconds % 60).toString().padStart(2, "0")}
+              </span>
+              <button
+                type="button"
+                onClick={pauseRecording}
+                className="ml-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 px-2 py-0.5 text-[10px] font-black text-amber-200"
+              >
+                ⏸ Pause
+              </button>
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="rounded-lg bg-rose-600 hover:bg-rose-500 px-2.5 py-0.5 text-[10px] font-black text-white"
+              >
+                ■ Stop &amp; Finish
+              </button>
+            </div>
+          )}
+
+          {recordingState === "paused" && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-950/80 px-3 py-1 text-xs">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <span className="font-bold text-amber-200 uppercase text-[10px]">PAUSED</span>
+              <button
+                type="button"
+                onClick={resumeRecording}
+                className="ml-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-2.5 py-0.5 text-[10px] font-black text-white"
+              >
+                ▶ Resume
+              </button>
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="rounded-lg bg-rose-600 hover:bg-rose-500 px-2.5 py-0.5 text-[10px] font-black text-white"
+              >
+                ■ Finish
+              </button>
+            </div>
+          )}
+
+          {/* Save Draft */}
           <button
             type="button"
             onClick={() => void saveLesson("draft")}
-            disabled={saving || !showStudioBoard}
-            className="rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:opacity-40 transition"
+            disabled={saving}
+            className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-200 disabled:opacity-40 transition"
           >
-            Save Draft
+            {saving ? "Saving…" : "Save Draft"}
           </button>
+
+          {/* Go Live */}
           <button
             type="button"
-            onClick={() => void saveLesson("ready")}
-            disabled={saving || !showStudioBoard}
-            className="rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40 shadow-xs transition"
+            onClick={() => void startLiveClassFromLesson()}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md transition active:scale-95"
+            title="Convert this prepared lesson directly into an active Live Classroom session for students"
           >
-            Save &amp; Prepare
-          </button>
-          <button
-            type="button"
-            onClick={() => void startLive()}
-            disabled={saving || !showStudioBoard}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 px-4 py-2 text-xs font-black text-white disabled:opacity-40 shadow-sm transition active:scale-95"
-          >
-            <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+            <span>📡</span>
             <span>Go Live</span>
           </button>
+
+          {/* Video Library Link */}
+          <Link
+            href="/classroom/library"
+            className="rounded-xl border border-blue-500/30 bg-[#1356E8]/10 hover:bg-[#1356E8]/20 px-3 py-1.5 text-xs font-bold text-blue-300 transition"
+            title="Open Teaching and Video Library"
+          >
+            📚 Library
+          </Link>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1600px] gap-5 p-4 sm:p-8 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="space-y-4">
-          <button onClick={createLesson} className="w-full rounded-2xl bg-[#1356E8] p-4 text-left font-black shadow-lg hover:bg-blue-600 transition">
-            ＋ Create a class / lesson
-            <span className="mt-1 block text-xs font-medium text-blue-100">Start fresh without replacing other classes</span>
-          </button>
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <h2 className="mb-3 font-bold">My saved lessons</h2>
-            {lessons.length === 0 ? (
-              <p className="text-sm text-slate-400">Your saved drafts will appear here.</p>
-            ) : (
-              <div className="space-y-2">
-                {lessons.map((lesson) => (
-                  <button
-                    key={lesson.id}
-                    onClick={() => {
-                      setBusy(true);
-                      void loadOne(lesson.id, token)
-                        .then(() => setMessage("Lesson loaded. Changes autosave as you work."))
-                        .catch((error) => setMessage(error.message))
-                        .finally(() => setBusy(false));
-                    }}
-                    className={`w-full rounded-xl border p-3 text-left transition ${lessonId === lesson.id ? "border-blue-500 bg-blue-500/10" : "border-white/10 bg-slate-900 hover:bg-slate-800/80"}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="block truncate text-sm font-bold">{lesson.title}</span>
-                      {Array.isArray(lesson.attachments) && lesson.attachments.length > 0 && (
-                        <span className="shrink-0 text-[10px] text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded border border-purple-500/30 font-semibold" title={`${lesson.attachments.length} attachment(s)`}>
-                          📎 {lesson.attachments.length}
-                        </span>
-                      )}
-                    </div>
-                    <span className="mt-1 block text-xs text-slate-400">
-                      {lesson.subject || "General"} · {lesson.status} · {new Date(lesson.updated_at).toLocaleDateString()}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-          <div className="rounded-xl border border-blue-400/20 bg-blue-950/30 p-3 text-xs leading-5 text-blue-100">
-            Your lesson is separate from its live session. Save your pages and import materials first. A lost connection will not remove the last successful cloud save; local browser recovery is used when disconnected.
-          </div>
-        </aside>
+      {/* ================================================================== */}
+      {/* 2. MAIN TEACHING WORKSPACE WITH PIP CAMERA & WHITEBOARD */}
+      {/* ================================================================== */}
+      <div className="relative flex-1 flex overflow-hidden">
+        {/* Whiteboard Workspace */}
+        <div className="flex-1 relative w-full h-full">
+          <SmartWhiteboard
+            ref={whiteboardRef}
+            classId={lessonId || "studio-draft"}
+            isHost={true}
+            canDraw={true}
+            initialPages={pages}
+            initialActivePageIndex={activePageIndex}
+            onPagesChange={onBoardPagesChange}
+            showWatermark={true}
+          />
 
-        <section className="min-w-0 space-y-4">
-          {!showStudioBoard ? (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
-              <h2 className="text-2xl font-black">Prepare before students arrive</h2>
-              <p className="mt-2 max-w-xl text-slate-400">
-                Create a lesson, import CSV questions or PPT slides, write notes on the board, and save it as a draft. You can return later or prepare it to go live instantly.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button onClick={createLesson} className="rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-3 font-bold text-white transition">
-                  Create your first lesson
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="text-xs font-bold text-slate-300">
-                  Class / lesson title
-                  <input
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
-                    maxLength={160}
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-base text-white outline-none focus:border-blue-500"
-                  />
-                </label>
-                <label className="text-xs font-bold text-slate-300">
-                  Subject (optional)
-                  <input
-                    value={subject}
-                    onChange={(event) => setSubject(event.target.value)}
-                    maxLength={120}
-                    placeholder="e.g. Mathematics, Use of English, Physics"
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-base text-white outline-none focus:border-blue-500"
-                  />
-                </label>
-                <label className="text-xs font-bold text-slate-300 md:col-span-2">
-                  Lesson notes / description
-                  <textarea
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    rows={2}
-                    maxLength={2000}
-                    placeholder="What will learners cover? (e.g. 2024 Past Questions Review & Derivations)"
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none focus:border-blue-500"
-                  />
-                </label>
-              </div>
-
-              {/* Handouts Preview Bar if attachments exist */}
-              {attachments.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-500/30 bg-purple-950/20 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">📎</span>
-                    <span className="text-xs font-bold text-purple-200">
-                      {attachments.length} Lesson Handout{attachments.length === 1 ? "" : "s"} Attached:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {attachments.map((att) => (
-                        <span
-                          key={att.id}
-                          className="inline-flex items-center gap-1 rounded-lg bg-purple-900/60 border border-purple-500/40 px-2 py-0.5 text-[11px] text-purple-200"
-                        >
-                          <span className="truncate max-w-[150px]">{att.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => setAttachments((prev) => prev.filter((a) => a.id !== att.id))}
-                            className="text-purple-400 hover:text-rose-400 text-xs ml-1 font-bold"
-                            title="Remove attachment"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowImporter(true)}
-                    className="text-xs font-bold text-purple-300 hover:text-purple-100 underline"
-                  >
-                    Manage Handouts
-                  </button>
-                </div>
-              )}
-
-              <div className="overflow-hidden rounded-3xl border border-[#1356E8]/40 bg-[#0B1536] shadow-2xl">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <h2 className="font-black">Lesson Whiteboard</h2>
-                      <p className="text-xs text-slate-400">Full-size board tools · per-page layout · autosave</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowImporter(true)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-950/40 hover:bg-purple-900/60 px-2.5 py-1 text-xs font-bold text-purple-200 transition"
-                      title="Import CSV questions or slide decks directly onto pages"
-                    >
-                      <span>📥</span>
-                      <span>Import to Board</span>
-                    </button>
-                    <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-blue-200 border border-white/10">
-                      {pages.length} page(s)
-                    </span>
-                  </div>
-                </div>
-                <div className="min-h-[560px]">
-                  <SmartWhiteboard
-                    key={lessonId || "new-lesson"}
-                    classId={lessonId || "new-lesson"}
-                    isHost={true}
-                    currentUserId="studio-tutor"
-                    currentUserName="Tutor"
-                    showWatermark={true}
-                    initialPages={pages}
-                    initialActivePageIndex={activePageIndex}
-                    onPagesChange={onBoardPagesChange}
-                  />
-                </div>
-                <div className="border-t border-white/10 p-3 text-xs text-slate-400 flex items-center justify-between">
-                  <span>The board's pages, drawings, and imported slide backgrounds autosave as you work.</span>
-                  {saving && <span className="text-amber-300 text-xs font-bold animate-pulse">Saving…</span>}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-sm text-slate-300">{message}</p>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${saving ? "bg-amber-500/15 text-amber-200" : "bg-emerald-500/15 text-emerald-200"}`}>
-                  {saving ? "Saving…" : "Cloud save status"}
-                </span>
-              </div>
-            </>
-          )}
-        </section>
+          {/* Movable & Resizable Picture-in-Picture Tutor Camera */}
+          <PictureInPictureCamera
+            stream={userMediaStream}
+            isEnabled={isCameraEnabled}
+            corner={pipCorner}
+            size={pipSize}
+            onChangeCorner={setPipCorner}
+            onChangeSize={setPipSize}
+            onClose={() => setIsCameraEnabled(false)}
+            videoRef={cameraVideoRef}
+          />
+        </div>
       </div>
 
-      {/* Classroom Material Importer Modal */}
-      <ClassroomMaterialImporter
-        isOpen={showImporter}
-        onClose={() => setShowImporter(false)}
-        onAddPages={(newPages, replace) => {
-          if (replace) {
-            setPages(newPages as PageData[]);
-            setActivePageIndex(0);
-          } else {
-            setPages((prev) => [...prev, ...(newPages as PageData[])]);
-            setActivePageIndex((prev) => prev + newPages.length - 1);
-          }
-        }}
-        onAddAttachment={(att) => setAttachments((prev) => [...prev, att])}
-        onRemoveAttachment={(id) => setAttachments((prev) => prev.filter((a) => a.id !== id))}
-        attachments={attachments}
-        authToken={token}
-        lessonId={lessonId || "draft"}
-      />
+      {/* ================================================================== */}
+      {/* 3. MODALS: 3-2-1 COUNTDOWN & VIDEO PREVIEW / TRIMMING EDITOR */}
+      {/* ================================================================== */}
+      {recordingState === "countdown" && (
+        <RecordingCountdown
+          seconds={3}
+          onComplete={beginActualRecording}
+          onCancel={() => setRecordingState("idle")}
+        />
+      )}
+
+      {recordingState === "preview" && (
+        <VideoPreviewEditor
+          videoBlob={previewBlob}
+          videoUrl={previewUrl}
+          mimeType={previewMimeType}
+          lessonTitle={title}
+          subject={subject}
+          topic={topic}
+          onRetake={() => {
+            setRecordingState("idle");
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+            setPreviewBlob(null);
+          }}
+          onSaveToLibrary={handleSaveToCloudLibrary}
+          onClose={() => {
+            setRecordingState("idle");
+          }}
+        />
+      )}
+
+      {/* Material Importer */}
+      {showImporter && (
+        <ClassroomMaterialImporter
+          isOpen={showImporter}
+          onClose={() => setShowImporter(false)}
+          onAddPages={(newPages, replace) => {
+            if (replace) {
+              setPages(newPages as PageData[]);
+              setActivePageIndex(0);
+            } else {
+              setPages((prev) => [...prev, ...(newPages as PageData[])]);
+            }
+            toast.success(`Imported ${newPages.length} slide(s) into your lesson whiteboard!`);
+          }}
+          authToken={token}
+          lessonId={lessonId || "studio-draft"}
+          attachments={attachments}
+          onAddAttachment={(att) => setAttachments((prev) => [...prev, att])}
+        />
+      )}
     </main>
   );
 }

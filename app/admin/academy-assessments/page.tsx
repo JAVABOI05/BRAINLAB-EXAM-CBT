@@ -247,7 +247,7 @@ export default function AcademyAssessmentsAdminPage() {
         : "single_subject"
     );
     setFormQuestionSource(
-      item.question_source === "legacy_questions" ? "bank" : (item.question_source as any) || "bank"
+      item.question_source === "legacy_questions" ? "bank" : (item.question_source as "bank" | "custom_builder" | "csv_import") || "bank"
     );
     setFormQuestionCount(item.question_count);
     setFormDurationMinutes(item.duration_seconds ? Math.round(item.duration_seconds / 60) : null);
@@ -387,7 +387,7 @@ export default function AcademyAssessmentsAdminPage() {
           const optC = row[cIndex];
           const optD = row[dIndex];
           const rawAns = (row[ansIndex] || "A").toUpperCase().trim();
-          const validAns = ["A", "B", "C", "D", "E"].includes(rawAns) ? (rawAns as any) : "A";
+          const validAns = (["A", "B", "C", "D", "E"].includes(rawAns) ? rawAns : "A") as "A" | "B" | "C" | "D" | "E";
 
           if (prompt && optA && optB) {
             parsedList.push({
@@ -965,7 +965,7 @@ export default function AcademyAssessmentsAdminPage() {
                         <select
                           value={formScopeType}
                           onChange={(e) => {
-                            const val = e.target.value as any;
+                            const val = e.target.value as "single_topic" | "single_subject" | "multi_subject";
                             setFormScopeType(val);
                             if (val === "multi_subject" && selectedSubjects.length <= 1) {
                               setSelectedSubjects(availableSubjects.slice(0, 4));
@@ -985,7 +985,7 @@ export default function AcademyAssessmentsAdminPage() {
                         </label>
                         <select
                           value={formStatus}
-                          onChange={(e) => setFormStatus(e.target.value as any)}
+                          onChange={(e) => setFormStatus(e.target.value as "open" | "draft" | "closed")}
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold text-slate-800 text-xs focus:outline-none focus:border-blue-500"
                         >
                           <option value="open">🟢 Open &amp; Active (Ready for candidates)</option>
@@ -1471,7 +1471,7 @@ export default function AcademyAssessmentsAdminPage() {
                               </label>
                               <select
                                 value={newCorrectAnswer}
-                                onChange={(e) => setNewCorrectAnswer(e.target.value as any)}
+                                onChange={(e) => setNewCorrectAnswer(e.target.value as "A" | "B" | "C" | "D" | "E")}
                                 className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-white"
                               >
                                 <option value="A">Option A</option>

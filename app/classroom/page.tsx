@@ -112,71 +112,81 @@ export default function ClassroomLobbyPage() {
         </div>
 
         {/* Featured Stages & Navigation Cards */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {/* Main Stage */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 flex flex-col justify-between hover:border-blue-500/40 shadow-sm dark:shadow-none transition">
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
-                  General Lecture
+                  Live Classroom
                 </span>
                 <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Now
                 </span>
               </div>
-              <h3 className="mt-3 text-lg font-bold text-slate-900 dark:text-white">BrainLab Main Stage (BL-LIVE-101)</h3>
+              <h3 className="mt-3 text-base sm:text-lg font-bold text-slate-900 dark:text-white">BrainLab Main Stage</h3>
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                UTME, SSCE &amp; JAMB live revision class with synchronized whiteboard, low-bandwidth voice notes, and instant quizzes.
+                Live interactive tutor lectures with synchronized whiteboard, LiveKit video, audio notes, and instant quizzes.
               </p>
             </div>
-            <div className="mt-5 flex flex-col sm:flex-row gap-2">
+            <div className="mt-5 flex flex-col gap-2">
               <Link
                 href="/classroom/BL-LIVE-101"
-                className="flex-1 inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95 text-center"
+                className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition active:scale-95 text-center"
               >
                 Enter Main Stage →
               </Link>
-              <button
-                type="button"
-                onClick={async () => {
-                  const { granted } = await requestDeviceNotificationPermission();
-                  if (granted) {
-                    await sendDeviceNotification("🔔 Live Classroom Alerts Active!", {
-                      body: "You'll be alerted with a ring notification as soon as your tutor goes live on stage.",
-                      url: "/classroom/BL-LIVE-101",
-                    });
-                  }
-                }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 px-3.5 py-2.5 text-xs font-bold text-blue-700 dark:text-blue-200 transition"
-                title="Get a phone/browser notification when tutor starts live class"
-              >
-                <span>Get Alerts</span>
-              </button>
             </div>
           </div>
 
-          {/* Tutor / Studio Board Card */}
+          {/* Video Lesson Studio Card */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 flex flex-col justify-between hover:border-amber-500/40 shadow-sm dark:shadow-none transition">
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                  Instructor Tools
+                  Lesson Production
                 </span>
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                  {isStaff ? "Tutor Access" : "Learner Preview"}
+                  Studio Mode
                 </span>
               </div>
-              <h3 className="mt-3 text-lg font-bold text-slate-900 dark:text-white">Whiteboard Studio &amp; Lesson Prep</h3>
+              <h3 className="mt-3 text-base sm:text-lg font-bold text-slate-900 dark:text-white">Video Lesson Studio</h3>
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Tutor lesson board with math formulas, science diagram tools, multipage notes, and classroom recording options.
+                Record independent lessons with tutor PiP camera, ✍️ laser pointer, slides, and download directly to phone or desktop.
               </p>
             </div>
             <div className="mt-5">
               <Link
                 href="/classroom/studio"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2.5 text-xs font-bold text-amber-800 dark:text-amber-300 transition"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2.5 text-xs font-bold text-amber-800 dark:text-amber-300 transition text-center"
               >
-                Launch Whiteboard Studio
+                Open Studio Studio →
+              </Link>
+            </div>
+          </div>
+
+          {/* Video & Teaching Library Card */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 flex flex-col justify-between hover:border-emerald-500/40 shadow-sm dark:shadow-none transition">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                  Resource Archive
+                </span>
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Library
+                </span>
+              </div>
+              <h3 className="mt-3 text-base sm:text-lg font-bold text-slate-900 dark:text-white">Teaching &amp; Video Library</h3>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Reopen saved lesson drafts, view cloud recorded videos, download past lectures, and manage slide decks.
+              </p>
+            </div>
+            <div className="mt-5">
+              <Link
+                href="/classroom/library"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 transition text-center"
+              >
+                Browse Library →
               </Link>
             </div>
           </div>

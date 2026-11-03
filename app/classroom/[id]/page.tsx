@@ -19,6 +19,7 @@ import type {
 } from "../../lib/liveClassroom/types";
 import { SmartWhiteboard, SmartWhiteboardHandle } from "../../components/SmartWhiteboard";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
+import EndClassModal from "../../components/classroom/live/EndClassModal";
 
 interface ClassroomPollOption {
   id: string;
@@ -90,6 +91,8 @@ export default function LiveClassroomPage({
   const [pendingApproval, setPendingApproval] = useState(false);
   const [requiresHost, setRequiresHost] = useState(false);
   const [classAlertSet, setClassAlertSet] = useState(false);
+  const [showEndClassModal, setShowEndClassModal] = useState(false);
+  const [classEndedByTutor, setClassEndedByTutor] = useState(false);
   const [pendingAdmissions, setPendingAdmissions] = useState<
     { studentId: string; studentName: string; studentEmail?: string; requestedAt: string }[]
   >([]);
@@ -490,6 +493,11 @@ export default function LiveClassroomPage({
           if (payload?.message) {
             setPinnedMessage(payload.message);
           }
+        });
+
+        // Class Ended by Tutor Broadcast
+        channel.on("broadcast", { event: "class_ended" }, () => {
+          setClassEndedByTutor(true);
         });
 
         // WebRTC Real-Time Video & Screen Stream Signaling
@@ -1913,6 +1921,48 @@ export default function LiveClassroomPage({
     if (recorder && recorder.state !== "inactive") recorder.stop();
   };
 
+  const handleConfirmEndClass = async (saveRec: boolean) => {
+    if (isClassRecording && !saveRec) {
+      if (classMediaRecorderRef.current && classMediaRecorderRef.current.state !== "inactive") {
+        classMediaRecorderRef.current.stop();
+      }
+    } else if (isClassRecording && saveRec) {
+      stopClassRecording();
+    }
+
+    try {
+      const response = await fetch(`/api/classroom/classes/${classId}/end`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+
+      // Broadcast class_ended to all participants
+      if (channelRef.current) {
+        try {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "class_ended",
+            payload: { classId, title: classDetails?.title || "Live Class", endedAt: new Date().toISOString() },
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
+
+      return data.summary || {
+        classId,
+        title: classDetails?.title || "Live Class",
+        endedAt: new Date().toISOString(),
+        durationMinutes: 60,
+        totalAttendees: participants.length || 1,
+      };
+    } catch {
+      toast.error("Network issue finalizing session, closing session locally.");
+      return null;
+    }
+  };
+
   const takeAttendance = async () => {
     if (!isAssignedTutor || !classDetails?.id) return;
     const connectedStudentIds = [...new Set(
@@ -2284,17 +2334,47 @@ export default function LiveClassroomPage({
             </Link>
           )}
           {isAssignedTutor && (
-            <button
-              type="button"
-              aria-label={isClassRecording ? "Stop class recording" : "Start class recording"}
-              onClick={isClassRecording ? stopClassRecording : startClassRecording}
-              disabled={isSavingClassRecording || (!isClassRecording && !classDetails?.isRecording)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${isClassRecording ? "border-rose-500/50 bg-rose-600 text-white hover:bg-rose-500" : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"}`}
-              title={classDetails?.isRecording ? "Record the shared screen and tutor microphone" : "Recording is disabled for this class"}
-            >
-              <span className={isClassRecording ? "animate-pulse text-white" : "text-rose-500"}>{isClassRecording ? "■" : "●"}</span>
-              <span className="hidden sm:inline">{isSavingClassRecording ? "Saving…" : isClassRecording ? `Stop ${Math.floor(classRecordingSeconds / 60)}:${String(classRecordingSeconds % 60).padStart(2, "0")}` : "Record class"}</span>
-            </button>
+            <div className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-slate-900/90 px-2 py-1 shadow-xs">
+              {isClassRecording ? (
+                <>
+                  <span className={`h-2 w-2 rounded-full ${isClassRecordingPaused ? "bg-amber-400" : "bg-rose-500 animate-pulse"}`} />
+                  <span className="text-[11px] font-mono font-bold text-rose-200">
+                    {Math.floor(classRecordingSeconds / 60)}:{(classRecordingSeconds % 60).toString().padStart(2, "0")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={pauseOrResumeClassRecording}
+                    className="rounded px-1.5 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition"
+                    title={isClassRecordingPaused ? "Resume recording" : "Pause recording"}
+                  >
+                    {isClassRecordingPaused ? "▶" : "⏸"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Finish recording and save to your private Teaching Library?")) {
+                        stopClassRecording();
+                      }
+                    }}
+                    disabled={isSavingClassRecording}
+                    className="rounded px-2 py-0.5 text-[10px] font-black bg-rose-600 text-white hover:bg-rose-500 transition"
+                  >
+                    {isSavingClassRecording ? "Saving…" : "■ Stop"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startClassRecording}
+                  disabled={isSavingClassRecording}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-400 hover:text-rose-300 transition"
+                  title="Start recording the classroom session"
+                >
+                  <span className="text-rose-500">●</span>
+                  <span>Record Class</span>
+                </button>
+              )}
+            </div>
           )}
           {/* Tutor Moderation Controls Trigger */}
           {isTutorOrModerator && (
@@ -2407,12 +2487,24 @@ export default function LiveClassroomPage({
             )}
           </button>
 
-          <Link
-            href="/dashboard"
-            className="rounded-lg bg-rose-600 px-2.5 sm:px-3 py-1 text-xs font-bold text-white hover:bg-rose-500 active-press"
-          >
-            Leave
-          </Link>
+          {isAssignedTutor || isTutorOrModerator ? (
+            <button
+              type="button"
+              onClick={() => setShowEndClassModal(true)}
+              className="rounded-lg bg-gradient-to-r from-rose-600 to-red-600 px-3 py-1.5 text-xs font-black text-white hover:from-rose-500 hover:to-red-500 shadow-md active-press transition"
+              title="End this live class for all participants"
+            >
+              End Class
+            </button>
+          ) : (
+            <Link
+              href="/dashboard"
+              className="rounded-lg bg-slate-700 hover:bg-slate-600 px-2.5 sm:px-3 py-1 text-xs font-bold text-white active-press transition"
+              title="Leave classroom"
+            >
+              Leave
+            </Link>
+          )}
         </div>
       </header>
 
@@ -3785,6 +3877,36 @@ export default function LiveClassroomPage({
           </Link>
         </div>
       </footer>
+
+      {/* End Class Lifecycle Modal */}
+      <EndClassModal
+        isOpen={showEndClassModal}
+        classTitle={classDetails?.title || "Live Class Session"}
+        isRecordingActive={isClassRecording}
+        onConfirmEnd={handleConfirmEndClass}
+        onClose={() => setShowEndClassModal(false)}
+      />
+
+      {/* Student View: Class Ended by Tutor Notification Modal */}
+      {classEndedByTutor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-white/15 bg-[#0B1536] p-6 text-center space-y-4 text-white shadow-2xl">
+            <span className="text-4xl">🎓</span>
+            <h3 className="text-lg font-black text-white">Class Has Concluded</h3>
+            <p className="text-xs text-slate-300">
+              The tutor has concluded this live classroom session. Your attendance has been recorded.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/dashboard"
+                className="inline-block w-full rounded-xl bg-[#1356E8] hover:bg-blue-600 py-2.5 text-xs font-black text-white shadow-lg transition"
+              >
+                Return to Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

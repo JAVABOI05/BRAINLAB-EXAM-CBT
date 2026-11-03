@@ -159,9 +159,9 @@ export default function CompetitionArenaAdminPage() {
   const [rewardReason, setRewardReason] = useState("");
 
   // Live Matches, Squads, Disputes, and Emergency States
-  const [liveMatches, setLiveMatches] = useState<any[]>([]);
-  const [adminSquads, setAdminSquads] = useState<any[]>([]);
-  const [adminDisputes, setAdminDisputes] = useState<any[]>([]);
+  const [liveMatches, setLiveMatches] = useState<Record<string, unknown>[]>([]);
+  const [adminSquads, setAdminSquads] = useState<Record<string, unknown>[]>([]);
+  const [adminDisputes, setAdminDisputes] = useState<Record<string, unknown>[]>([]);
   const [emergencyControls, setEmergencyControls] = useState<{
     is_paused: boolean;
     freeze_leaderboards: boolean;
@@ -710,7 +710,7 @@ export default function CompetitionArenaAdminPage() {
             activeTab === "disputes" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
           }`}
         >
-          ⚖️ Disputes Queue (${adminDisputes.filter((d: any) => d.status === "pending").length})
+          ⚖️ Disputes Queue (${adminDisputes.filter((d) => d.status === "pending").length})
         </button>
         <button
           onClick={() => handleTabChange("emergency")}

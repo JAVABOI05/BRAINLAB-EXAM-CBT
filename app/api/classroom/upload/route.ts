@@ -10,16 +10,16 @@ export async function POST(request: NextRequest) {
     const user = await getUserFromRequest(request);
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    const classId = (formData.get("classId") as string) || "live-session";
-    const mediaType = (formData.get("mediaType") as string) || "audio"; // "audio" | "image" | "document"
+    const classId = (formData.get("classId") as string) || "classroom-assets";
+    const mediaType = (formData.get("mediaType") as string) || "image"; // "audio" | "image" | "document"
     const durationSeconds = parseFloat((formData.get("duration") as string) || "0");
 
     if (!file) {
       return NextResponse.json({ error: "No media file provided." }, { status: 400 });
     }
 
-    // Limit to 25MB for presentation decks/documents, 10MB for audio/images
-    const maxSizeBytes = mediaType === "document" ? 25 * 1024 * 1024 : 10 * 1024 * 1024;
+    // Limit to 50MB for presentation decks/documents, 25MB for audio/images
+    const maxSizeBytes = mediaType === "document" ? 50 * 1024 * 1024 : 25 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
       return NextResponse.json(
         { error: `File exceeds limit of ${Math.round(maxSizeBytes / (1024 * 1024))}MB.` },
@@ -30,43 +30,72 @@ export async function POST(request: NextRequest) {
     const mimeType = file.type || (mediaType === "audio" ? "audio/webm" : mediaType === "image" ? "image/jpeg" : "application/octet-stream");
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const base64Data = `data:${mimeType};base64,${buffer.toString("base64")}`;
     const assetId = crypto.randomUUID();
 
-    // 1. Immediately store in fast in-memory media cache
+    // 1. Store in fast in-memory media cache for instant fallback
     storeClassroomMedia(assetId, buffer, mimeType, durationSeconds, file.name);
 
     const supabase = getSupabaseServerClient();
     const userId = user?.id || "guest_learner";
 
-    // 2. Also persist in database if table available
+    // 2. Upload file to Supabase Storage: 'learning-content-media'
+    const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
+    const storagePath = `classroom-assets/${classId}/${assetId}-${safeName}`;
+    let finalUrl = `/api/classroom/media/${assetId}`;
+
     try {
-      await supabase
-        .from("audio_assets")
-        .insert({
-          id: assetId,
-          user_id: user ? user.id : undefined,
-          asset_type: mediaType === "audio" ? "tutor_voice_note" : "lesson_audio",
-          title: file.name || `Classroom ${mediaType} ${new Date().toLocaleTimeString()}`,
-          file_url: base64Data,
-          duration_seconds: durationSeconds,
-          file_size_bytes: file.size,
-          mime_type: mimeType,
-          metadata: {
-            class_id: classId,
-            media_type: mediaType,
-            original_filename: file.name,
-            uploader_id: userId,
-          },
+      const { error: uploadError } = await supabase.storage
+        .from("learning-content-media")
+        .upload(storagePath, buffer, {
+          contentType: mimeType,
+          upsert: true,
         });
-    } catch {
-      // Ignore database insert issues; in-memory store serves immediately
+
+      if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage
+          .from("learning-content-media")
+          .getPublicUrl(storagePath);
+        if (publicUrlData?.publicUrl) {
+          finalUrl = publicUrlData.publicUrl;
+        }
+      } else {
+        console.warn("[classroom/upload] Storage bucket upload warning:", uploadError.message);
+      }
+    } catch (storageErr) {
+      console.warn("[classroom/upload] Storage upload exception, falling back to media route:", storageErr);
+    }
+
+    // 3. Persist asset record if audio
+    if (mediaType === "audio" && user) {
+      try {
+        await supabase
+          .from("audio_assets")
+          .insert({
+            id: assetId,
+            user_id: user.id,
+            asset_type: "tutor_voice_note",
+            title: file.name || `Classroom Voice Note ${new Date().toLocaleTimeString()}`,
+            file_url: finalUrl,
+            storage_path: storagePath,
+            duration_seconds: durationSeconds,
+            file_size_bytes: file.size,
+            mime_type: mimeType,
+            metadata: {
+              class_id: classId,
+              media_type: mediaType,
+              original_filename: file.name,
+              uploader_id: userId,
+            },
+          });
+      } catch {
+        // Non-blocking
+      }
     }
 
     return NextResponse.json({
       success: true,
       assetId,
-      url: `/api/classroom/media/${assetId}`,
+      url: finalUrl,
       fileName: file.name,
       fileSize: file.size,
       mediaType,

@@ -267,6 +267,29 @@ export default function ClassroomMaterialImporter({
 
     for (const f of files) {
       if (!f.type.startsWith("image/")) continue;
+      try {
+        const formData = new FormData();
+        formData.append("file", f);
+        formData.append("mediaType", "image");
+        formData.append("classId", lessonId || "slides");
+
+        const res = await fetch("/api/classroom/upload", {
+          method: "POST",
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          body: formData,
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.url) {
+            loaded.push({ name: f.name, dataUrl: json.url });
+            continue;
+          }
+        }
+      } catch (err) {
+        console.warn("Storage upload failed for slide, using fallback URL:", err);
+      }
+
       const dataUrl = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);

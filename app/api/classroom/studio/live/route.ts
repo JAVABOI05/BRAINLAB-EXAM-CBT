@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getLiveClassroomConfig } from "@/app/lib/platformConfig";
 
 export async function POST(request: NextRequest) {
   const user = await getUserFromRequest(request);
@@ -15,8 +16,11 @@ export async function POST(request: NextRequest) {
   if (lessonError) return NextResponse.json({ error: "Unable to load the saved lesson. Confirm the Classroom Studio migration is applied." }, { status: 500 });
   if (!lesson) return NextResponse.json({ error: "Lesson not found or access denied." }, { status: 404 });
 
+  const config = await getLiveClassroomConfig();
+  const selectedProvider = config.provider || "livekit";
+
   const now = new Date();
-  const end = new Date(now.getTime() + 90 * 60 * 1000);
+  const end = new Date(now.getTime() + (config.default_duration_minutes || 90) * 60 * 1000);
   const roomName = `brainlab-${lesson.id.slice(0, 8)}-${crypto.randomUUID().slice(0, 8)}`;
   const { data: liveClass, error } = await supabase.from("live_classes").insert({
     tutor_id: user.id,
@@ -27,15 +31,15 @@ export async function POST(request: NextRequest) {
     scheduled_start_at: now.toISOString(),
     scheduled_end_at: end.toISOString(),
     actual_start_at: now.toISOString(),
-    max_capacity: 100,
+    max_capacity: config.max_capacity_default || 100,
     room_name: roomName,
-    provider: "webrtc",
-    is_recording_enabled: true,
-    waiting_room_enabled: false,
-    student_mic_enabled: true,
-    student_camera_enabled: false,
-    student_chat_enabled: true,
-    student_screenshare_enabled: false,
+    provider: selectedProvider,
+    is_recording_enabled: config.recordings_enabled ?? true,
+    waiting_room_enabled: config.waiting_room_default ?? false,
+    student_mic_enabled: config.student_mic_default ?? true,
+    student_camera_enabled: config.student_cam_default ?? false,
+    student_chat_enabled: config.student_chat_default ?? true,
+    student_screenshare_enabled: config.student_screenshare_default ?? false,
   }).select("id").single();
 
   if (error || !liveClass) return NextResponse.json({ error: "Could not create the live session. Please check your live_classes schema and retry; your saved lesson remains safe." }, { status: 500 });
