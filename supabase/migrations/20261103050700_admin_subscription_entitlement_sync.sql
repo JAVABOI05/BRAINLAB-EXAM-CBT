@@ -24,7 +24,7 @@ DECLARE
   v_questions integer;
 BEGIN
   -- Strict server-side execution guard: browser/client roles must NEVER invoke this RPC
-  IF coalesce(auth.role(), '') <> 'service_role' THEN
+  IF coalesce(auth.role(), '') <> 'service_role' AND current_user NOT IN ('service_role', 'postgres') THEN
     RAISE EXCEPTION 'Service role required' USING ERRCODE = '42501';
   END IF;
 

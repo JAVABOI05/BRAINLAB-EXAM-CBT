@@ -128,7 +128,20 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
 
   if (!targetId) return false;
 
-  // 5. Check admin_profiles table
+  // 5. Server-side authoritative lookup fallback
+  if (typeof window === "undefined") {
+    try {
+      const { resolveAdminRole } = await import("./supabaseServer");
+      const resolved = await resolveAdminRole(targetId, undefined, authUser?.email);
+      if (resolved && resolved.trim().length > 0) {
+        return true;
+      }
+    } catch {
+      // proceed
+    }
+  }
+
+  // 6. Check admin_profiles table
   try {
     const { data: profile } = await supabase
       .from("admin_profiles")
@@ -142,7 +155,7 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
     // proceed
   }
 
-  // 6. Check admin_user_roles table
+  // 7. Check admin_user_roles table
   try {
     const { data: userRole } = await supabase
       .from("admin_user_roles")
@@ -156,7 +169,7 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
     // proceed
   }
 
-  // 7. Check admin_users table
+  // 8. Check admin_users table
   try {
     const { data: adminUser } = await supabase
       .from("admin_users")
@@ -179,19 +192,6 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
     }
   } catch {
     // proceed
-  }
-
-  // 8. Server-side authoritative lookup fallback
-  if (typeof window === "undefined") {
-    try {
-      const { resolveAdminRole } = await import("./supabaseServer");
-      const resolved = await resolveAdminRole(targetId, undefined, authUser?.email);
-      if (resolved && resolved.trim().length > 0) {
-        return true;
-      }
-    } catch {
-      // proceed
-    }
   }
 
   return false;
@@ -330,15 +330,21 @@ export async function getStudentSubscriptionAndEntitlements(
       };
     }
 
+    // Select database client: use server-side client when in Node.js to bypass RLS, or client supabase in browser
+    const dbClient =
+      typeof window === "undefined"
+        ? (await import("./supabaseServer")).getSupabaseServerClient()
+        : supabase;
+
     // Query both user_subscriptions and learning_entitlements in parallel
     const [subRes, entRes] = await Promise.all([
-      supabase
+      dbClient
         .from("user_subscriptions")
         .select("plan_id, status, current_period_end")
         .eq("user_id", targetUserId)
         .eq("status", "active")
         .maybeSingle(),
-      supabase
+      dbClient
         .from("learning_entitlements")
         .select("entitlement_type, membership_type, max_questions, status, starts_at, expires_at, permanent, revoked_at")
         .eq("user_id", targetUserId)
