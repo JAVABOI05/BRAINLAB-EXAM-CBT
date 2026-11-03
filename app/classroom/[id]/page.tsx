@@ -259,6 +259,21 @@ export default function LiveClassroomPage({
           if (json.classDetails) setClassDetails(json.classDetails);
           setError(json.error);
           setLoading(false);
+
+          // Connect to waiting channel to automatically admit student the moment tutor launches stage
+          const waitChannel = supabase.channel(`classroom:${classId}`, {
+            config: { broadcast: { self: false } },
+          });
+          channelRef.current = waitChannel;
+
+          waitChannel.on("broadcast", { event: "class_started" }, () => {
+            toast.success("Instructor has launched the stage! Entering classroom…");
+            setRequiresHost(false);
+            setLoading(true);
+            void initClassroomRef.current?.(codeOverride ?? enteredCode);
+          });
+
+          waitChannel.subscribe();
           return;
         }
 
@@ -2189,6 +2204,12 @@ export default function LiveClassroomPage({
             >
               Return to My Learning
             </Link>
+            <Link
+              href={`/account?redirect=/classroom/${classId}&role=tutor`}
+              className="pt-2 text-xs font-bold text-amber-400 hover:text-amber-300 underline"
+            >
+              👨‍🏫 Are you the instructor? Sign in with tutor account →
+            </Link>
           </div>
         </div>
       </div>
@@ -2536,8 +2557,12 @@ export default function LiveClassroomPage({
         )}
 
         {/* Video / Stage Area */}
-        <main className="flex-1 flex flex-col items-center justify-center p-0 sm:p-2 md:p-3 bg-slate-200/70 dark:bg-slate-950 relative transition-colors overflow-hidden">
-          <div className="w-full h-full rounded-none sm:rounded-2xl border-0 sm:border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+        <main className={`flex-1 flex flex-col items-center justify-center ${
+          stageMode === "whiteboard" ? "p-0" : "p-0 sm:p-2 md:p-3"
+        } bg-slate-200/70 dark:bg-slate-950 relative transition-colors overflow-hidden`}>
+          <div className={`w-full h-full ${
+            stageMode === "whiteboard" ? "rounded-none border-0" : "rounded-none sm:rounded-2xl border-0 sm:border border-slate-300 dark:border-slate-800"
+          } bg-white/80 dark:bg-slate-900/60 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl`}>
             {/* Top Right Stage Mode Switcher (Google Stitch 3-Way Mode) */}
             <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-slate-700/80 backdrop-blur shadow-md">
               <button

@@ -81,7 +81,7 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
 
   // 2. Resolve Auth User
   let targetId = userId;
-  let authUser: { id: string; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> } | null = null;
+  let authUser: { id: string; email?: string; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> } | null = null;
   try {
     const { data: authData } = await supabase.auth.getUser();
     if (authData?.user) {
@@ -166,6 +166,17 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
     if (adminUser && typeof adminUser.role === "string" && adminUser.role.trim().length > 0) {
       return true;
     }
+
+    if (authUser?.email) {
+      const { data: adminByEmail } = await supabase
+        .from("admin_users")
+        .select("role")
+        .ilike("email", authUser.email.trim())
+        .maybeSingle();
+      if (adminByEmail && typeof adminByEmail.role === "string" && adminByEmail.role.trim().length > 0) {
+        return true;
+      }
+    }
   } catch {
     // proceed
   }
@@ -174,7 +185,7 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
   if (typeof window === "undefined") {
     try {
       const { resolveAdminRole } = await import("./supabaseServer");
-      const resolved = await resolveAdminRole(targetId);
+      const resolved = await resolveAdminRole(targetId, undefined, authUser?.email);
       if (resolved && resolved.trim().length > 0) {
         return true;
       }
@@ -319,15 +330,70 @@ export async function getStudentSubscriptionAndEntitlements(
       };
     }
 
-    // Check active subscription
-    const { data: subData, error: subError } = await supabase
-      .from("user_subscriptions")
-      .select("plan_id, status, current_period_end")
-      .eq("user_id", targetUserId)
-      .eq("status", "active")
-      .maybeSingle();
+    // Query both user_subscriptions and learning_entitlements in parallel
+    const [subRes, entRes] = await Promise.all([
+      supabase
+        .from("user_subscriptions")
+        .select("plan_id, status, current_period_end")
+        .eq("user_id", targetUserId)
+        .eq("status", "active")
+        .maybeSingle(),
+      supabase
+        .from("learning_entitlements")
+        .select("entitlement_type, membership_type, max_questions, status, starts_at, expires_at, permanent, revoked_at")
+        .eq("user_id", targetUserId)
+        .eq("status", "active"),
+    ]);
 
-    if (subError || !subData) {
+    const now = Date.now();
+
+    // Filter valid, unrevoked, active learning entitlements
+    const activeEntitlements = (entRes.data || []).filter((e) => {
+      const startsAt = e.starts_at ? new Date(e.starts_at).getTime() : 0;
+      const expiresAt = e.expires_at ? new Date(e.expires_at).getTime() : Number.POSITIVE_INFINITY;
+      return !e.revoked_at && startsAt <= now && (e.permanent || expiresAt > now);
+    });
+
+    const activeMembership = activeEntitlements.find(
+      (e) =>
+        e.entitlement_type === "membership" &&
+        ["premium", "plus", "pro"].includes((e.membership_type || "").toLowerCase())
+    );
+
+    // Validate active subscription row
+    const subData = subRes.data;
+    const subExpiry = subData?.current_period_end ? new Date(subData.current_period_end).getTime() : 0;
+    const hasValidSub = Boolean(
+      subData &&
+      subData.status === "active" &&
+      subExpiry > now &&
+      ["premium", "plus", "pro"].includes((subData.plan_id || "").toLowerCase())
+    );
+
+    // Tier rankings: pro (3) > plus (2) > premium (1) > free (0)
+    const tierRank = (tier?: string | null): number => {
+      const t = (tier || "").toLowerCase();
+      if (t === "pro") return 3;
+      if (t === "plus") return 2;
+      if (t === "premium") return 1;
+      return 0;
+    };
+
+    const entTier = activeMembership?.membership_type?.toLowerCase() || null;
+    const subTier = hasValidSub ? subData!.plan_id.toLowerCase() : null;
+
+    let effectivePlanId = "free";
+    let effectiveExpiry: string | null = null;
+
+    if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
+      effectivePlanId = entTier!;
+      effectiveExpiry = activeMembership!.permanent ? null : (activeMembership!.expires_at || null);
+    } else if (tierRank(subTier) > 0) {
+      effectivePlanId = subTier!;
+      effectiveExpiry = subData!.current_period_end || null;
+    }
+
+    if (effectivePlanId === "free") {
       return {
         userId: targetUserId,
         planId: freePlan.id,
@@ -335,27 +401,11 @@ export async function getStudentSubscriptionAndEntitlements(
         plan: freePlan,
         entitlements: normalizePlanEntitlements(freePlan.entitlements, true),
         isSubscribed: false,
-        expiresAt: null,
+        expiresAt: subData?.current_period_end || null,
       };
     }
 
-    // Check expiration
-    if (subData.current_period_end) {
-      const expiry = new Date(subData.current_period_end);
-      if (expiry.getTime() < Date.now()) {
-        return {
-          userId: targetUserId,
-          planId: freePlan.id,
-          planName: freePlan.name,
-          plan: freePlan,
-          entitlements: normalizePlanEntitlements(freePlan.entitlements, true),
-          isSubscribed: false,
-          expiresAt: subData.current_period_end,
-        };
-      }
-    }
-
-    const matchedPlan = plans.find((p) => p.id === subData.plan_id);
+    const matchedPlan = plans.find((p) => p.id === effectivePlanId);
     const resolvedPlan = matchedPlan || freePlan;
 
     return {
@@ -363,9 +413,9 @@ export async function getStudentSubscriptionAndEntitlements(
       planId: resolvedPlan.id,
       planName: resolvedPlan.name,
       plan: resolvedPlan,
-      entitlements: normalizePlanEntitlements(resolvedPlan.entitlements, resolvedPlan.id === "free"),
+      entitlements: normalizePlanEntitlements(resolvedPlan.entitlements, false),
       isSubscribed: true,
-      expiresAt: subData.current_period_end || null,
+      expiresAt: effectiveExpiry,
     };
   } catch (err) {
     console.error("[subscriptionEntitlements] Error resolving student tier:", err);

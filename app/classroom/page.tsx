@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import TierGateModal from "@/app/components/TierGateModal";
 import DeviceNotificationPrompt from "@/app/components/DeviceNotificationPrompt";
@@ -23,7 +23,7 @@ interface LiveClassItem {
   description?: string;
   status: "scheduled" | "live" | "completed" | "cancelled" | "draft";
   scheduled_start_at: string;
-  scheduled_end_at: string;
+  scheduled_end_at?: string;
   max_capacity: number;
   provider: string;
   is_recording_enabled: boolean;
@@ -32,21 +32,37 @@ interface LiveClassItem {
   learning_subjects?: { name: string; slug: string };
 }
 
-export default function ClassroomLobbyPage() {
+function ClassroomLobbyContent() {
   const router = useRouter();
-  const [classCode, setClassCode] = useState("BL-LIVE-101");
+  const searchParams = useSearchParams();
+
+  // URL query pre-fills
+  const initialCode = searchParams.get("code") || "BL-LIVE-101";
+
+  const [classCode, setClassCode] = useState(initialCode);
   const [isStaff, setIsStaff] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("Learner");
   const [subscriptionInfo, setSubscriptionInfo] = useState<StudentEntitlementsResult | null>(null);
   const [showTierModal, setShowTierModal] = useState(false);
+
+  // Portal View Mode: "tutor" | "student"
+  const [portalMode, setPortalMode] = useState<"tutor" | "student">("student");
+
+  // Inline Tutor Sign-In Modal
+  const [showTutorAuthModal, setShowTutorAuthModal] = useState(false);
+  const [tutorAuthEmail, setTutorAuthEmail] = useState("");
+  const [tutorAuthPassword, setTutorAuthPassword] = useState("");
+  const [tutorAuthBusy, setTutorAuthBusy] = useState(false);
+  const [tutorAuthError, setTutorAuthError] = useState<string | null>(null);
 
   // Live & Scheduled Classes State
   const [classes, setClasses] = useState<LiveClassItem[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [classFilter, setClassFilter] = useState<"all" | "live" | "scheduled" | "completed">("all");
 
-  // Create Class Modal State
+  // Create Class Modal State (Tutor Only)
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createTitle, setCreateTitle] = useState("");
   const [createDescription, setCreateDescription] = useState("");
@@ -55,6 +71,7 @@ export default function ClassroomLobbyPage() {
   const [createCapacity, setCreateCapacity] = useState(100);
   const [createRecording, setCreateRecording] = useState(true);
   const [isSubmittingClass, setIsSubmittingClass] = useState(false);
+  const [isLaunchingInstant, setIsLaunchingInstant] = useState(false);
 
   // Load Classes from API
   const fetchClasses = useCallback(async () => {
@@ -72,88 +89,217 @@ export default function ClassroomLobbyPage() {
     }
   }, []);
 
-  useEffect(() => {
-    async function checkRole() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const user = sessionData?.session?.user;
-      if (user) {
-        setUserId(user.id);
-        setUserEmail(user.email || null);
+  const checkUserRoleAndAuth = useCallback(async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (user) {
+      setUserId(user.id);
+      setUserEmail(user.email || null);
+      const name =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "User";
+      setUserName(name);
 
-        const isAdmin = await isCurrentUserAdmin(user.id);
-        if (isAdmin) {
-          setIsStaff(true);
-        } else if (user.email) {
-          const { getLiveClassroomConfig } = await import("@/app/lib/platformConfig");
-          const config = await getLiveClassroomConfig();
-          if (config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())) {
-            setIsStaff(true);
-          }
-        }
+      const isAdmin = await isCurrentUserAdmin(user.id);
+      let staffIdentified = isAdmin;
 
-        const tier = await getStudentSubscriptionAndEntitlements(user.id);
-        setSubscriptionInfo(tier);
-        if (!isAdmin && (!tier.isSubscribed || tier.planId === "free")) {
-          const { nudgeLiveClassroom } = await import("@/app/lib/proNudge");
-          void nudgeLiveClassroom();
+      if (!staffIdentified && user.email) {
+        const { getLiveClassroomConfig } = await import("@/app/lib/platformConfig");
+        const config = await getLiveClassroomConfig();
+        if (config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())) {
+          staffIdentified = true;
         }
-      } else {
-        const tier = await getStudentSubscriptionAndEntitlements();
-        setSubscriptionInfo(tier);
       }
-    }
-    void checkRole();
-    void fetchClasses();
-  }, [fetchClasses]);
 
-  const handleJoin = (e: React.FormEvent) => {
+      if (staffIdentified) {
+        setIsStaff(true);
+        setPortalMode("tutor"); // Auto-route verified tutors to Tutor Teaching Station
+      } else {
+        setIsStaff(false);
+        setPortalMode("student");
+      }
+
+      const tier = await getStudentSubscriptionAndEntitlements(user.id);
+      setSubscriptionInfo(tier);
+    } else {
+      setUserId(null);
+      setUserEmail(null);
+      setIsStaff(false);
+      setPortalMode("student");
+      const tier = await getStudentSubscriptionAndEntitlements();
+      setSubscriptionInfo(tier);
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkUserRoleAndAuth();
+    void fetchClasses();
+  }, [checkUserRoleAndAuth, fetchClasses]);
+
+  // Handle Tutor Direct Sign In
+  const handleTutorSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = classCode.trim().toUpperCase() || "BL-LIVE-101";
-    router.push(`/classroom/${encodeURIComponent(code)}`);
+    setTutorAuthBusy(true);
+    setTutorAuthError(null);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: tutorAuthEmail.trim(),
+        password: tutorAuthPassword,
+      });
+
+      if (error || !data.session) {
+        throw new Error(error?.message || "Invalid tutor credentials.");
+      }
+
+      toast.success("Signed in successfully! Verifying instructor permissions…");
+      setShowTutorAuthModal(false);
+      await checkUserRoleAndAuth();
+      await fetchClasses();
+    } catch (err: any) {
+      setTutorAuthError(err.message || "Failed to sign in. Check your instructor email and password.");
+    } finally {
+      setTutorAuthBusy(false);
+    }
   };
 
-  // Create Class Submission
-  const handleCreateClass = async (e: React.FormEvent) => {
+  // Student Join Live Class Action
+  const handleStudentJoin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createTitle.trim() || !createStart || !createEnd) {
-      toast.error("Please fill in the class title, start time, and end time.");
+    const code = classCode.trim().toUpperCase() || "BL-LIVE-101";
+
+    // Subscription entitlement gate for students
+    if (subscriptionInfo && (!subscriptionInfo.isSubscribed || subscriptionInfo.planId === "free")) {
+      const isFreeStage = code === "BL-LIVE-101";
+      if (!isFreeStage) {
+        setShowTierModal(true);
+        return;
+      }
+    }
+
+    router.push(`/classroom/${code}`);
+  };
+
+  // Tutor Launch Instant Stage
+  const handleLaunchInstantClass = async () => {
+    if (!isStaff) {
+      toast.error("Only verified instructors can launch live stages.");
+      setShowTutorAuthModal(true);
       return;
     }
 
-    setIsSubmittingClass(true);
+    setIsLaunchingInstant(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const token = session?.session?.access_token;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      // Authoritatively start BL-LIVE-101
+      const res = await fetch(`/api/classroom/classes/BL-LIVE-101/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Failed to launch instant stage.");
+      }
+
+      toast.success("Academic stage launched! Entering host cockpit…");
+      router.push("/classroom/BL-LIVE-101");
+    } catch (err: any) {
+      toast.error(err.message || "Could not launch stage.");
+    } finally {
+      setIsLaunchingInstant(false);
+    }
+  };
+
+  // Tutor Start a Scheduled Class
+  const handleStartScheduledClass = async (classItem: LiveClassItem) => {
+    if (!isStaff) {
+      toast.error("Only verified instructors can start live classes.");
+      return;
+    }
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      const res = await fetch(`/api/classroom/classes/${classItem.id}/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Failed to start class session.");
+      }
+
+      toast.success(`Stage started for "${classItem.title}"! Entering live room…`);
+      router.push(`/classroom/${classItem.id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Could not start scheduled class.");
+    }
+  };
+
+  // Tutor Create New Scheduled Class
+  const handleCreateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isStaff) return;
+    setIsSubmittingClass(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Authentication required.");
+
+      const payload = {
+        title: createTitle.trim(),
+        description: createDescription.trim() || undefined,
+        scheduled_start_at: new Date(createStart).toISOString(),
+        scheduled_end_at: createEnd ? new Date(createEnd).toISOString() : undefined,
+        max_capacity: Number(createCapacity) || 100,
+        is_recording_enabled: createRecording,
+        provider: "livekit",
+      };
 
       const res = await fetch("/api/classroom/classes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: createTitle.trim(),
-          description: createDescription.trim(),
-          scheduled_start_at: new Date(createStart).toISOString(),
-          scheduled_end_at: new Date(createEnd).toISOString(),
-          max_capacity: createCapacity,
-          is_recording_enabled: createRecording,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to schedule class.");
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Failed to schedule class.");
+      }
 
-      toast.success("Live class scheduled successfully!");
+      toast.success("Masterclass scheduled successfully!");
       setShowCreateModal(false);
       setCreateTitle("");
       setCreateDescription("");
-      void fetchClasses();
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error creating class.");
+      setCreateStart("");
+      setCreateEnd("");
+      await fetchClasses();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to schedule class.");
     } finally {
       setIsSubmittingClass(false);
     }
+  };
+
+  const copyCodeToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success(`Class code "${code}" copied to clipboard! Share with your students.`);
   };
 
   const filteredClasses = classes.filter((c) => {
@@ -163,143 +309,296 @@ export default function ClassroomLobbyPage() {
     return true;
   });
 
+  const liveClassesNow = classes.filter((c) => c.status === "live");
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-slate-100 flex flex-col selection:bg-blue-500 selection:text-white transition-colors duration-200">
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8 sm:py-12 space-y-10">
-        {/* Header Hero */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>BrainLab Academy Live Learning &amp; Studio Stage</span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-            Live Virtual Classroom &amp; Studio
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Participate in real-time tutor masterclasses, write derivations on the interactive smart whiteboard, or use the Video Lesson Studio to produce lessons offline.
-          </p>
-        </div>
-
-        {/* 3 Core Capability Cards */}
-        <div className="grid gap-5 sm:grid-cols-3">
-          {/* Card 1: Live Interactive Classroom */}
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-6 flex flex-col justify-between shadow-xl transition hover:border-blue-500/40">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:py-10 space-y-8">
+        
+        {/* ================================================================== */}
+        {/* TOP ROLE BAR & AUTHENTICATION IDENTIFICATION */}
+        {/* ================================================================== */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0B1536]/80 p-3.5 backdrop-blur-md shadow-sm">
+          {/* Identity Pill */}
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-[#1356E8] to-blue-400 flex items-center justify-center text-white font-black text-sm shadow-md">
+              {portalMode === "tutor" ? "👨‍🏫" : "🎓"}
+            </div>
             <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-full">
-                  Interactive Stage
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  {userId ? userName : "Guest Learner"}
                 </span>
-                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Live Now
-                </span>
+                {isStaff ? (
+                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                    Verified Instructor
+                  </span>
+                ) : userId ? (
+                  <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.2 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                    Student Account
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-slate-500/15 border border-slate-500/30 px-2 py-0.2 text-[10px] font-bold text-slate-500">
+                    Not Signed In
+                  </span>
+                )}
               </div>
-              <h2 className="mt-4 text-lg font-black text-slate-900 dark:text-white">BrainLab Main Stage</h2>
-              <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Connect directly to our high-capacity lecture stage with LiveKit audio/video, synchronized whiteboard derivations, and live polls.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {userId ? userEmail : "Sign in to track attendance, save lecture notes, and participate in live polls"}
               </p>
             </div>
-            <div className="mt-6 flex flex-col gap-2">
-              <Link
-                href="/classroom/BL-LIVE-101"
-                className="inline-flex items-center justify-center rounded-xl bg-[#1356E8] hover:bg-blue-600 px-4 py-2.5 text-xs font-black text-white shadow-lg transition active:scale-95 text-center"
-              >
-                Enter Main Stage (BL-LIVE-101) →
-              </Link>
-            </div>
           </div>
 
-          {/* Card 2: Video Lesson Studio */}
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-6 flex flex-col justify-between shadow-xl transition hover:border-amber-500/40">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
-                  Lesson Production
-                </span>
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Offline / Independent
-                </span>
-              </div>
-              <h2 className="mt-4 text-lg font-black text-slate-900 dark:text-white">Video Lesson Studio</h2>
-              <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Produce professional video lessons with draggable PiP camera, ✍️ laser pointer, PowerPoint/PDF slides, and direct phone/desktop downloads.
-              </p>
-            </div>
-            <div className="mt-6">
-              <Link
-                href="/classroom/studio"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2.5 text-xs font-black text-amber-800 dark:text-amber-300 transition text-center active:scale-95"
-              >
-                Launch Lesson Studio →
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 3: Teaching & Video Library */}
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-6 flex flex-col justify-between shadow-xl transition hover:border-emerald-500/40">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                  Cloud Archive
-                </span>
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Reusable
-                </span>
-              </div>
-              <h2 className="mt-4 text-lg font-black text-slate-900 dark:text-white">Teaching &amp; Video Library</h2>
-              <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Access your saved lesson projects, recorded lecture videos, slide presentation assets, and reusable whiteboard derivations.
-              </p>
-            </div>
-            <div className="mt-6">
-              <Link
-                href="/classroom/library"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2.5 text-xs font-black text-emerald-800 dark:text-emerald-300 transition text-center active:scale-95"
-              >
-                Browse Teaching Library →
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Join by Class Code Box */}
-        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/60 p-6 sm:p-8 shadow-xl backdrop-blur">
-          <form onSubmit={handleJoin} className="space-y-4 max-w-lg mx-auto">
-            <div>
-              <label htmlFor="class-code" className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                Join Classroom by Code
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="class-code"
-                  type="text"
-                  value={classCode}
-                  onChange={(e) => setClassCode(e.target.value)}
-                  placeholder="e.g. BL-LIVE-101"
-                  className="flex-1 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#070d1e] px-4 py-3 text-sm font-mono font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
-                  required
-                />
+          {/* Right Action: Sign In buttons OR Portal Switcher */}
+          <div className="flex items-center gap-2">
+            {!userId ? (
+              <div className="flex items-center gap-2">
                 <button
-                  type="submit"
-                  className="rounded-xl bg-[#1356E8] hover:bg-blue-600 active:scale-95 px-6 py-3 text-xs font-black text-white shadow-lg transition"
+                  type="button"
+                  onClick={() => setShowTutorAuthModal(true)}
+                  className="rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3.5 py-1.5 text-xs font-black text-amber-700 dark:text-amber-300 transition active:scale-95 shadow-sm"
                 >
-                  Join Stage →
+                  👨‍🏫 Instructor Sign In
+                </button>
+                <Link
+                  href="/account?redirect=/classroom"
+                  className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md transition active:scale-95"
+                >
+                  🎓 Student Sign In
+                </Link>
+              </div>
+            ) : isStaff ? (
+              /* Tutor / Admin Portal Switcher */
+              <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 p-1">
+                <button
+                  type="button"
+                  onClick={() => setPortalMode("tutor")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-black transition flex items-center gap-1.5 ${
+                    portalMode === "tutor"
+                      ? "bg-[#1356E8] text-white shadow-md"
+                      : "text-slate-600 dark:text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <span>👨‍🏫 Tutor Station</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPortalMode("student")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    portalMode === "student"
+                      ? "bg-slate-700 text-white shadow-md"
+                      : "text-slate-600 dark:text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <span>🎓 Student View</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowTutorAuthModal(true)}
+                className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline"
+              >
+                Are you an instructor? Sign in with tutor account →
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ================================================================== */}
+        {/* 1. TUTOR PORTAL (TEACHING COCKPIT & RESPONSIBILITIES) */}
+        {/* ================================================================== */}
+        {portalMode === "tutor" && isStaff && (
+          <section className="space-y-6 animate-fade-in">
+            {/* Tutor Header Hero */}
+            <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-br from-[#0B1536] via-[#0d1c47] to-[#070d1e] p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden">
+              <div className="relative z-10 space-y-3 max-w-3xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-0.5 text-xs font-black text-amber-300">
+                  <span>👨‍🏫 Authoritative Teaching Cockpit</span>
+                </div>
+                <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+                  Instructor Station &amp; Live Stage
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Only authorized instructors can launch live classes, start recordings, mute participants, and write on the synchronized whiteboard. Students cannot start sessions.
+                </p>
+
+                {/* Primary Tutor Action Buttons */}
+                <div className="flex flex-wrap items-center gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={handleLaunchInstantClass}
+                    disabled={isLaunchingInstant}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-5 py-3 text-xs font-black text-white shadow-xl transition active:scale-95 disabled:opacity-50"
+                  >
+                    <span>🚀</span>
+                    <span>{isLaunchingInstant ? "Launching Stage…" : "Launch Instant Stage (Host)"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-2 rounded-xl bg-[#1356E8] hover:bg-blue-600 px-5 py-3 text-xs font-black text-white shadow-xl transition active:scale-95"
+                  >
+                    <span>📅</span>
+                    <span>Schedule Masterclass</span>
+                  </button>
+
+                  <Link
+                    href="/classroom/studio"
+                    className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition active:scale-95 backdrop-blur"
+                  >
+                    <span>🎥</span>
+                    <span>Video Lesson Studio (Offline)</span>
+                  </Link>
+
+                  <Link
+                    href="/classroom/library"
+                    className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition active:scale-95 backdrop-blur"
+                  >
+                    <span>📚</span>
+                    <span>Teaching Library</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Link to Standard Main Stage */}
+            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Default General Stage Code
+                </span>
+                <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                  Main Academic Stage (BL-LIVE-101)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  General stage for quick revisions and open lectures. Entering as instructor automatically opens the room for waiting students.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => copyCodeToClipboard("BL-LIVE-101")}
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                >
+                  📋 Copy Code
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLaunchInstantClass}
+                  className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-md transition active:scale-95"
+                >
+                  Launch &amp; Enter as Host →
                 </button>
               </div>
             </div>
-          </form>
-        </div>
+          </section>
+        )}
 
         {/* ================================================================== */}
-        {/* LIVE & SCHEDULED CLASSES DASHBOARD TABLE (Section 5.1 Requirements) */}
+        {/* 2. STUDENT PORTAL (LEARNING COCKPIT & SAFE WAITING ROOM) */}
         {/* ================================================================== */}
-        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-6 sm:p-8 shadow-2xl space-y-6">
+        {portalMode === "student" && (
+          <section className="space-y-6 animate-fade-in">
+            {/* Student Header Hero */}
+            <div className="text-center space-y-3 py-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>BrainLab Live Academic Classroom • Student Hub</span>
+              </div>
+              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                Live Interactive Lectures
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
+                Join real-time lectures led by verified BrainLab tutors. Write questions, participate in instant polls, and follow derivations on the whiteboard.
+              </p>
+            </div>
+
+            {/* Student Class Code Input Box */}
+            <div className="max-w-xl mx-auto rounded-3xl border border-blue-500/30 bg-white dark:bg-[#0B1536]/90 p-6 sm:p-8 shadow-2xl backdrop-blur">
+              <form onSubmit={handleStudentJoin} className="space-y-4">
+                <div className="text-left space-y-1">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Enter Class Code / Room ID
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={classCode}
+                      onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+                      placeholder="e.g. BL-LIVE-101 or 6-digit code"
+                      className="w-full rounded-2xl border-2 border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-[#070d1e] px-4 py-3.5 text-sm sm:text-base font-black text-slate-900 dark:text-white outline-none focus:border-[#1356E8] tracking-widest placeholder:tracking-normal placeholder:font-normal"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-2 bottom-2 rounded-xl bg-gradient-to-r from-[#1356E8] to-blue-600 hover:from-blue-600 hover:to-blue-500 px-5 text-xs font-black text-white shadow-lg transition active:scale-95"
+                    >
+                      Enter Class →
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 text-left">
+                  <span>🔒</span>
+                  <span>Classes are conducted by BrainLab instructors. If the tutor has not started yet, you will safely wait in the waiting room.</span>
+                </div>
+              </form>
+            </div>
+
+            {/* Live Now: Active Tutor Stages */}
+            {liveClassesNow.length > 0 && (
+              <div className="rounded-3xl border-2 border-emerald-500/40 bg-emerald-500/5 p-6 shadow-xl space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-3 w-3 rounded-full bg-emerald-500 animate-ping" />
+                  <h3 className="text-base font-black text-emerald-800 dark:text-emerald-300">
+                    Active Stages (Tutors Teaching Live Right Now)
+                  </h3>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {liveClassesNow.map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded-2xl border border-emerald-500/30 bg-white dark:bg-[#0B1536] p-4 flex items-center justify-between gap-3 shadow-md"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-[10px] font-black px-1.5 py-0.5">
+                            LIVE
+                          </span>
+                          <span className="text-xs font-mono font-bold text-slate-500">{c.id}</span>
+                        </div>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white mt-1">
+                          {c.title}
+                        </h4>
+                      </div>
+                      <Link
+                        href={`/classroom/${c.id}`}
+                        className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-black text-white shadow-md transition active:scale-95 shrink-0"
+                      >
+                        Join Now →
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ================================================================== */}
+        {/* 3. CLASSROOM SCHEDULE & SESSIONS DIRECTORY (Shared by Both) */}
+        {/* ================================================================== */}
+        <section className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-6 sm:p-8 shadow-2xl space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
             <div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                Classroom Schedule &amp; Live Sessions
+                Classroom Schedule &amp; Academic Stages
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Track upcoming tutor lectures, active live classes, and completed session archives.
+                Track upcoming masterclasses, live lectures, and completed session archives.
               </p>
             </div>
 
@@ -322,94 +621,133 @@ export default function ClassroomLobbyPage() {
                 ))}
               </div>
 
-              {/* Schedule New Class Action for Tutors/Staff */}
-              {isStaff && (
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(true)}
-                  className="rounded-xl bg-gradient-to-r from-[#1356E8] to-blue-600 hover:from-blue-600 hover:to-blue-500 px-4 py-2 text-xs font-black text-white shadow-lg transition active:scale-95"
-                >
-                  ＋ Schedule Class
-                </button>
-              )}
+              {/* Refresh */}
+              <button
+                type="button"
+                onClick={fetchClasses}
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 p-2 text-xs text-slate-600 dark:text-slate-300 transition"
+                title="Refresh Schedule"
+              >
+                🔄
+              </button>
             </div>
           </div>
 
           {/* Classes Table */}
           {loadingClasses ? (
-            <div className="text-center py-12 text-xs text-slate-400">
-              Loading classroom schedule...
+            <div className="py-12 text-center text-xs text-slate-500 animate-pulse">
+              Loading scheduled academic classes…
             </div>
           ) : filteredClasses.length === 0 ? (
-            <div className="text-center py-12 space-y-2">
+            <div className="py-12 text-center space-y-2">
               <span className="text-3xl">📅</span>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                No classes matching the selected filter.
+              <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                No classes match the "{classFilter}" filter.
               </p>
+              {isStaff && (
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(true)}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#1356E8] px-4 py-2 text-xs font-black text-white hover:bg-blue-600 shadow-md"
+                >
+                  <span>＋ Schedule a Masterclass</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    <th className="pb-3">Class Title</th>
-                    <th className="pb-3">Subject / Course</th>
-                    <th className="pb-3">Scheduled Time</th>
-                    <th className="pb-3">Capacity</th>
-                    <th className="pb-3">Status</th>
-                    <th className="pb-3 text-right">Action</th>
+                  <tr className="border-b border-slate-200 dark:border-white/10 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    <th className="pb-3 pr-4">Class Details</th>
+                    <th className="pb-3 px-4">Subject</th>
+                    <th className="pb-3 px-4">Scheduled Time</th>
+                    <th className="pb-3 px-4">Status</th>
+                    <th className="pb-3 pl-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {filteredClasses.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition">
-                      <td className="py-3.5 pr-3">
-                        <span className="block font-bold text-slate-900 dark:text-white">
+                    <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition">
+                      <td className="py-3.5 pr-4">
+                        <div className="font-black text-slate-900 dark:text-white text-sm">
                           {item.title}
-                        </span>
-                        {item.description && (
-                          <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-xs">
-                            {item.description}
-                          </span>
-                        )}
+                        </div>
+                        <div className="text-[11px] font-mono text-slate-400">
+                          Code: {item.id}
+                        </div>
                       </td>
-                      <td className="py-3.5 pr-3 text-slate-600 dark:text-slate-300">
+
+                      <td className="py-3.5 px-4 font-bold text-slate-600 dark:text-slate-300">
                         {item.learning_subjects?.name || item.courses?.title || "General Lecture"}
                       </td>
-                      <td className="py-3.5 pr-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                        {new Date(item.scheduled_start_at).toLocaleDateString()} ·{" "}
-                        {new Date(item.scheduled_start_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        {new Date(item.scheduled_start_at).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        ·{" "}
+                        {new Date(item.scheduled_start_at).toLocaleTimeString(undefined, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </td>
-                      <td className="py-3.5 pr-3 text-slate-500 dark:text-slate-400">
-                        max {item.max_capacity}
-                      </td>
-                      <td className="py-3.5 pr-3">
+
+                      <td className="py-3.5 px-4">
                         {item.status === "live" ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-300">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
                             Live Now
                           </span>
-                        ) : item.status === "completed" ? (
-                          <span className="rounded-full bg-slate-500/20 border border-slate-500/30 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                            Completed
+                        ) : item.status === "scheduled" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                            Scheduled
                           </span>
                         ) : (
-                          <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
-                            Scheduled
+                          <span className="inline-flex items-center rounded-full bg-slate-500/15 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                            {item.status}
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 text-right">
-                        <Link
-                          href={`/classroom/${item.id}`}
-                          className={`inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-black transition active:scale-95 ${
-                            item.status === "live"
-                              ? "bg-[#1356E8] hover:bg-blue-600 text-white shadow-md"
-                              : "border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200"
-                          }`}
-                        >
-                          {item.status === "live" ? "Enter Class →" : "View Details"}
-                        </Link>
+
+                      <td className="py-3.5 pl-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Copy code button */}
+                          <button
+                            type="button"
+                            onClick={() => copyCodeToClipboard(item.id)}
+                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                            title="Copy Class Code"
+                          >
+                            📋
+                          </button>
+
+                          {/* Action Button: Tutor starts, Student enters */}
+                          {isStaff && item.status !== "completed" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleStartScheduledClass(item)}
+                              className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white shadow-xs transition active:scale-95"
+                            >
+                              🚀 {item.status === "live" ? "Enter Live" : "Start Stage"}
+                            </button>
+                          ) : item.status === "live" ? (
+                            <Link
+                              href={`/classroom/${item.id}`}
+                              className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white shadow-xs transition active:scale-95"
+                            >
+                              Join Live →
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/classroom/${item.id}`}
+                              className="rounded-lg border border-slate-300 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 px-3 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 transition"
+                            >
+                              Waiting Room →
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -417,110 +755,179 @@ export default function ClassroomLobbyPage() {
               </table>
             </div>
           )}
-        </div>
-
-        {/* User Role & Notification Footer */}
-        <div className="text-center text-xs text-slate-500 dark:text-slate-400">
-          Signed in as: <span className="font-semibold text-slate-700 dark:text-slate-300">{userEmail || "Learner"}</span>{" "}
-          {isStaff ? (
-            <span className="ml-1 inline-flex items-center gap-1 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 font-bold text-[10px]">
-              Tutor &amp; Administrator Mode
-            </span>
-          ) : (
-            <span className="ml-1 inline-flex items-center gap-1 rounded bg-blue-500/20 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 font-bold text-[10px]">
-              Student Mode · Tier: {subscriptionInfo?.planName || "Free"}
-            </span>
-          )}
-        </div>
-
-        {/* Tier Entitlement Gate Modal */}
-        <TierGateModal
-          isOpen={!isStaff && showTierModal}
-          onClose={() => setShowTierModal(false)}
-          featureTitle="Live Academic Classrooms"
-          featureDescription="Real-time interactive tutor sessions with synchronized live whiteboard, math formulas, instant classroom polls, and direct question broadcast are included with Premium Study, Plus, and Pro tiers."
-          requiredTierName="Premium Study"
-          currentPlanName={subscriptionInfo?.planName || "Free Learner"}
-        />
-        <DeviceNotificationPrompt />
+        </section>
 
         {/* ================================================================== */}
-        {/* SCHEDULE NEW CLASS MODAL (Tutor / Staff Only) */}
+        {/* INLINE TUTOR AUTHENTICATION MODAL */}
         {/* ================================================================== */}
-        {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in">
-            <div className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0B1536] p-6 sm:p-8 text-white shadow-2xl space-y-5">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 className="text-lg font-black text-white">Schedule New Live Class</h3>
+        {showTutorAuthModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs animate-fade-in"
+            onClick={() => setShowTutorAuthModal(false)}
+          >
+            <div
+              className="max-w-md w-full rounded-3xl border border-amber-500/40 bg-[#0B1536] p-6 sm:p-8 text-white shadow-2xl space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">👨‍🏫</span>
+                  <h3 className="text-base font-black text-white">BrainLab Instructor Sign In</h3>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-slate-400 hover:text-white"
+                  onClick={() => setShowTutorAuthModal(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:text-white"
                 >
                   ✕
                 </button>
               </div>
 
-              <form onSubmit={handleCreateClass} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Class Title *
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Enter your instructor account credentials to access the authoritative Teaching Cockpit, launch instant live stages, write on the synchronized whiteboard, and moderate participants.
+              </p>
+
+              {tutorAuthError && (
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+                  {tutorAuthError}
+                </div>
+              )}
+
+              <form onSubmit={handleTutorSignIn} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                    Instructor Email
+                  </label>
+                  <input
+                    type="email"
+                    value={tutorAuthEmail}
+                    onChange={(e) => setTutorAuthEmail(e.target.value)}
+                    placeholder="tutor@brainlab.ng"
+                    className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-amber-400"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={tutorAuthPassword}
+                    onChange={(e) => setTutorAuthPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-amber-400"
+                    required
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowTutorAuthModal(false)}
+                    className="rounded-xl border border-white/10 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/5"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={tutorAuthBusy}
+                    className="rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 px-5 py-2 text-xs font-black text-slate-950 shadow-lg transition active:scale-95 disabled:opacity-50"
+                  >
+                    {tutorAuthBusy ? "Verifying Instructor…" : "Sign In as Tutor →"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================== */}
+        {/* SCHEDULE MASTERCLASS MODAL (Tutor Only) */}
+        {/* ================================================================== */}
+        {showCreateModal && isStaff && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs animate-fade-in"
+            onClick={() => setShowCreateModal(false)}
+          >
+            <div
+              className="max-w-lg w-full rounded-3xl border border-blue-500/40 bg-[#0B1536] p-6 sm:p-8 text-white shadow-2xl space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📅</span>
+                  <h3 className="text-base font-black text-white">Schedule New Masterclass</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateClass} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                    Masterclass Title *
                   </label>
                   <input
                     type="text"
                     value={createTitle}
                     onChange={(e) => setCreateTitle(e.target.value)}
-                    placeholder="e.g. JAMB Mathematics: Calculus & Graphs Speed Drill"
-                    className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-3 text-white outline-none focus:border-blue-500"
+                    placeholder="e.g. Organic Chemistry & Reaction Mechanisms Masterclass"
+                    className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500"
                     required
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Description &amp; Goals
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                    Description &amp; Learning Objectives
                   </label>
                   <textarea
+                    rows={2}
                     value={createDescription}
                     onChange={(e) => setCreateDescription(e.target.value)}
-                    rows={2}
-                    placeholder="Key concepts to cover, expected practice exercises..."
-                    className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-3 text-white outline-none focus:border-blue-500"
+                    placeholder="Key concepts to cover, target students, homework review..."
+                    className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-300 uppercase tracking-wider mb-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
                       Start Time *
                     </label>
                     <input
                       type="datetime-local"
                       value={createStart}
                       onChange={(e) => setCreateStart(e.target.value)}
-                      className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-2.5 text-white outline-none focus:border-blue-500"
+                      className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
                       required
                     />
                   </div>
 
-                  <div>
-                    <label className="block font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      End Time *
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                      End Time (Optional)
                     </label>
                     <input
                       type="datetime-local"
                       value={createEnd}
                       onChange={(e) => setCreateEnd(e.target.value)}
-                      className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-2.5 text-white outline-none focus:border-blue-500"
-                      required
+                      className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      Max Student Capacity
+                <div className="grid grid-cols-2 gap-3 items-center">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                      Max Capacity
                     </label>
                     <input
                       type="number"
@@ -528,44 +935,63 @@ export default function ClassroomLobbyPage() {
                       max={1000}
                       value={createCapacity}
                       onChange={(e) => setCreateCapacity(Number(e.target.value))}
-                      className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-2.5 text-white outline-none"
+                      className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="flex items-center pt-6">
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={createRecording}
-                        onChange={(e) => setCreateRecording(e.target.checked)}
-                        className="rounded accent-[#1356E8] h-4 w-4"
-                      />
-                      <span>Enable Recording</span>
+                  <div className="pt-5 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="rec-check"
+                      checked={createRecording}
+                      onChange={(e) => setCreateRecording(e.target.checked)}
+                      className="rounded border-white/20 bg-white/5 text-blue-600 focus:ring-0"
+                    />
+                    <label htmlFor="rec-check" className="text-xs text-slate-300">
+                      Enable Cloud Video Recording
                     </label>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                <div className="pt-3 flex items-center justify-end gap-2 border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-700"
+                    className="rounded-xl border border-white/10 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/5"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingClass}
-                    className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-5 py-2 text-xs font-black text-white shadow-lg disabled:opacity-50 transition active:scale-95"
+                    className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-5 py-2 text-xs font-black text-white shadow-lg transition active:scale-95 disabled:opacity-50"
                   >
-                    {isSubmittingClass ? "Scheduling..." : "Create Live Class"}
+                    {isSubmittingClass ? "Scheduling…" : "Publish Masterclass Schedule"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
+
       </main>
+
+      {/* Subscription Tier Gate Modal */}
+      <TierGateModal
+        isOpen={showTierModal}
+        onClose={() => setShowTierModal(false)}
+        requiredTierName="BrainLab Pro"
+        featureTitle="BrainLab Academic Masterclasses & Live Stage"
+        featureDescription="Interactive live classes with verified tutors require an active BrainLab Pro or Premium subscription."
+      />
     </div>
+  );
+}
+
+export default function ClassroomLobbyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white text-xs">Loading Live Classroom…</div>}>
+      <ClassroomLobbyContent />
+    </Suspense>
   );
 }

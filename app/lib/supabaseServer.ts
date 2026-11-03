@@ -130,9 +130,10 @@ export async function saveAIGeneration(
  */
 export async function resolveAdminRole(
   userId: string,
-  bearerToken?: string
+  bearerToken?: string,
+  userEmail?: string
 ): Promise<string | null> {
-  if (!userId) return null;
+  if (!userId && !userEmail) return null;
 
   try {
     // 1. Check RPC get_admin_role if bearerToken is provided
@@ -152,42 +153,58 @@ export async function resolveAdminRole(
     const serviceSupabase = getSupabaseServerClient();
 
     // 2. Check admin_profiles table
-    try {
-      const { data: profile } = await serviceSupabase
-        .from("admin_profiles")
-        .select("role")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (profile && typeof profile.role === "string" && profile.role.trim().length > 0) {
-        return profile.role.trim();
+    if (userId) {
+      try {
+        const { data: profile } = await serviceSupabase
+          .from("admin_profiles")
+          .select("role")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (profile && typeof profile.role === "string" && profile.role.trim().length > 0) {
+          return profile.role.trim();
+        }
+      } catch {
+        // proceed
       }
-    } catch {
-      // proceed
     }
 
     // 3. Check admin_user_roles table
-    try {
-      const { data: userRole } = await serviceSupabase
-        .from("admin_user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (userRole && typeof userRole.role === "string" && userRole.role.trim().length > 0) {
-        return userRole.role.trim();
+    if (userId) {
+      try {
+        const { data: userRole } = await serviceSupabase
+          .from("admin_user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (userRole && typeof userRole.role === "string" && userRole.role.trim().length > 0) {
+          return userRole.role.trim();
+        }
+      } catch {
+        // proceed
       }
-    } catch {
-      // proceed
     }
 
-    // 4. Check admin_users table
+    // 4. Check admin_users table (by id or email)
     try {
-      const { data: adminUser } = await serviceSupabase
-        .from("admin_users")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
-      if (adminUser && typeof adminUser.role === "string" && adminUser.role.trim().length > 0) {
-        return adminUser.role.trim();
+      if (userId) {
+        const { data: adminUser } = await serviceSupabase
+          .from("admin_users")
+          .select("role")
+          .eq("id", userId)
+          .maybeSingle();
+        if (adminUser && typeof adminUser.role === "string" && adminUser.role.trim().length > 0) {
+          return adminUser.role.trim();
+        }
+      }
+      if (userEmail) {
+        const { data: adminByEmail } = await serviceSupabase
+          .from("admin_users")
+          .select("role")
+          .eq("email", userEmail)
+          .maybeSingle();
+        if (adminByEmail && typeof adminByEmail.role === "string" && adminByEmail.role.trim().length > 0) {
+          return adminByEmail.role.trim();
+        }
       }
     } catch {
       // proceed

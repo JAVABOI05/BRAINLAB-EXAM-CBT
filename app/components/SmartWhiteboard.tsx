@@ -130,7 +130,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     // Authoritative pages collection
     const [pages, setPages] = useState<WhiteboardPage[]>(() => {
       if (initialPages && initialPages.length > 0) return initialPages;
-      return [{ id: "page-1", title: "Page 1", elements: [], aspectRatio: "16 / 9", backgroundMode: "blackboard" }];
+      return [{ id: "page-1", title: "Page 1", elements: [], aspectRatio: "free", backgroundMode: "blackboard" }];
     });
     const [activePageIndex, setActivePageIndex] = useState(initialActivePageIndex);
 
@@ -153,11 +153,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       id: "page-1",
       title: "Page 1",
       elements: [],
-      aspectRatio: "16 / 9" as BoardAspectRatio,
+      aspectRatio: "free" as BoardAspectRatio,
       backgroundMode: "blackboard" as const,
     };
 
-    const boardAspectRatio = activePage?.aspectRatio || "16 / 9";
+    const boardAspectRatio = activePage?.aspectRatio || "free";
 
     // Text annotation modal
     const [textPromptOpen, setTextPromptOpen] = useState(false);
@@ -326,8 +326,19 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     useEffect(() => {
       resizeCanvas();
+      const container = boardSurfaceRef.current;
+      let observer: ResizeObserver | null = null;
+      if (container && typeof ResizeObserver !== "undefined") {
+        observer = new ResizeObserver(() => {
+          resizeCanvas();
+        });
+        observer.observe(container);
+      }
       window.addEventListener("resize", resizeCanvas);
-      return () => window.removeEventListener("resize", resizeCanvas);
+      return () => {
+        if (observer) observer.disconnect();
+        window.removeEventListener("resize", resizeCanvas);
+      };
     }, [resizeCanvas]);
 
     // Draw background surface
@@ -830,6 +841,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     // ------------------------------------------------------------------------
     // EXPORT & IMPERATIVE HANDLE
     // ------------------------------------------------------------------------
+    const handleExportImage = useCallback(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const link = document.createElement("a");
+      link.download = `brainlab-whiteboard-${activePage.title.toLowerCase().replace(/\s+/g, "_")}-${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast.success("Whiteboard lecture notes saved to your device!");
+    }, [activePage.title]);
+
     useImperativeHandle(ref, () => ({
       getCanvasDataUrl: () => {
         const canvas = canvasRef.current;
@@ -839,14 +860,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       clear: handleClear,
       undo: handleUndo,
       redo: handleRedo,
-      downloadImage: () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const link = document.createElement("a");
-        link.download = `brainlab-whiteboard-${activePage.title.toLowerCase().replace(/\s+/g, "_")}-${new Date().toISOString().slice(0, 10)}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      },
+      downloadImage: handleExportImage,
       addPage: handleAddPage,
       duplicateCurrentPage: handleDuplicatePage,
       deleteCurrentPage: handleDeletePage,
@@ -863,8 +877,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     // Calculate aspect ratio CSS
     const getAspectRatioClass = () => {
-      if (boardAspectRatio === "16 / 9") return "aspect-video max-w-full";
-      if (boardAspectRatio === "4 / 3") return "aspect-4/3 max-w-full";
+      if (boardAspectRatio === "16 / 9") return "aspect-video max-w-full max-h-full";
+      if (boardAspectRatio === "4 / 3") return "aspect-4/3 max-w-full max-h-full";
       if (boardAspectRatio === "9 / 16") return "aspect-9/16 max-h-[85vh]";
       return "w-full h-full";
     };
@@ -922,191 +936,251 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             </span>
           </div>
 
-          {/* Group B: Drawing Tools Center Strip */}
-          <div className="flex flex-wrap items-center gap-1">
-            {/* Pen */}
-            <button
-              type="button"
-              onClick={() => setTool("pen")}
-              className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
-                tool === "pen"
-                  ? "bg-[#1356E8] text-white shadow-md ring-1 ring-blue-400"
-                  : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Freehand Vector Pen"
-            >
-              <span>✏️</span>
-              <span className="hidden sm:inline">Pen</span>
-            </button>
+          {/* Group B & C: Responsive Toolbar with Role Awareness (Tutor vs Student) */}
+          {readOnly || !canDraw ? (
+            /* ================================================================== */
+            /* STUDENT MODE VIEW: Clean, Uncluttered, Reading & Note-Saving Mode  */
+            /* ================================================================== */
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-bold text-blue-200">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>👨‍🏫 Viewing Instructor's Live Whiteboard</span>
+              </div>
 
-            {/* Highlighter */}
-            <button
-              type="button"
-              onClick={() => setTool("highlighter")}
-              className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
-                tool === "highlighter"
-                  ? "bg-amber-400 text-slate-950 font-black shadow-md ring-1 ring-amber-300"
-                  : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Translucent Highlighter"
-            >
-              <span>🖍️</span>
-              <span className="hidden sm:inline">Marker</span>
-            </button>
+              {/* Student Action: Save Notes */}
+              <button
+                type="button"
+                onClick={handleExportImage}
+                className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 hover:bg-emerald-500/30 px-3 py-1.5 text-xs font-bold text-emerald-200 transition active:scale-95 shadow-sm"
+                title="Download high-resolution snapshot of this lecture page"
+              >
+                <span>📸</span>
+                <span className="hidden sm:inline">Save Page Notes</span>
+              </button>
 
-            {/* MANDATORY LASER POINTER: ✍️ */}
-            <button
-              type="button"
-              onClick={() => setTool("laser")}
-              className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
-                tool === "laser"
-                  ? "bg-[#FF5238] text-white shadow-md ring-2 ring-red-400 animate-pulse font-black"
-                  : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="✍️ Laser Pointer (Live glowing pointing without permanent marks)"
-            >
-              <span>✍️</span>
-              <span className="font-extrabold">Laser</span>
-            </button>
-
-            {/* Straight Line */}
-            <button
-              type="button"
-              onClick={() => setTool("line")}
-              className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
-                tool === "line" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Straight Line"
-            >
-              <span>📏</span>
-            </button>
-
-            {/* Arrow */}
-            <button
-              type="button"
-              onClick={() => setTool("arrow")}
-              className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
-                tool === "arrow" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Vector Arrow"
-            >
-              <span>➡️</span>
-            </button>
-
-            {/* Rectangle Box */}
-            <button
-              type="button"
-              onClick={() => setTool("rect")}
-              className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
-                tool === "rect" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Formula Box / Rectangle"
-            >
-              <span>🔲</span>
-            </button>
-
-            {/* Circle */}
-            <button
-              type="button"
-              onClick={() => setTool("circle")}
-              className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
-                tool === "circle" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Circle / Ellipse"
-            >
-              <span>⭕</span>
-            </button>
-
-            {/* Text & Math Formula */}
-            <button
-              type="button"
-              onClick={() => setTool("text")}
-              className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
-                tool === "text" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Insert Text & Formula Annotation"
-            >
-              <span>🔤</span>
-              <span className="hidden md:inline">Text</span>
-            </button>
-
-            {/* Eraser */}
-            <button
-              type="button"
-              onClick={() => setTool("eraser")}
-              className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
-                tool === "eraser"
-                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
-                  : "text-slate-300 hover:bg-white/10"
-              }`}
-              title="Eraser"
-            >
-              <span>🧹</span>
-              <span className="hidden md:inline">Eraser</span>
-            </button>
-          </div>
-
-          {/* Group C: Color Palette & Stroke Widths */}
-          <div className="flex items-center gap-1.5">
-            {/* Color dots */}
-            <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
-              {PRESET_COLORS.slice(0, 5).map((c) => (
+              {/* Zoom Controls for Students */}
+              <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-xs">
                 <button
-                  key={c.value}
                   type="button"
-                  onClick={() => setColor(c.value)}
-                  className={`h-4.5 w-4.5 rounded-full border transition active:scale-125 ${
-                    color === c.value ? "scale-125 border-white ring-2 ring-cyan-400" : "border-transparent opacity-80"
+                  onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
+                  className="px-1 text-slate-300 hover:text-white"
+                  title="Zoom Out"
+                >
+                  －
+                </button>
+                <span className="text-slate-200 min-w-8 text-center text-[11px] font-mono">{Math.round(zoom * 100)}%</span>
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))}
+                  className="px-1 text-slate-300 hover:text-white"
+                  title="Zoom In"
+                >
+                  ＋
+                </button>
+              </div>
+
+              {/* Fullscreen for Students */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-1.5 text-xs text-slate-300 transition"
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Board"}
+              >
+                {isFullscreen ? "🗗" : "⛶"}
+              </button>
+            </div>
+          ) : (
+            /* ================================================================== */
+            /* TUTOR / INSTRUCTOR MODE VIEW: Full Authoritative Teaching Tools     */
+            /* ================================================================== */
+            <>
+              {/* Group B: Drawing Tools Center Strip */}
+              <div className="flex flex-wrap items-center gap-1">
+                {/* Pen */}
+                <button
+                  type="button"
+                  onClick={() => setTool("pen")}
+                  className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    tool === "pen"
+                      ? "bg-[#1356E8] text-white shadow-md ring-1 ring-blue-400"
+                      : "text-slate-300 hover:bg-white/10"
                   }`}
-                  style={{ backgroundColor: c.value }}
-                  title={`${c.name} ink`}
-                />
-              ))}
-            </div>
+                  title="Freehand Vector Pen"
+                >
+                  <span>✏️</span>
+                  <span className="hidden sm:inline">Pen</span>
+                </button>
 
-            {/* Undo / Redo */}
-            <div className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-white/5 p-0.5">
-              <button
-                type="button"
-                onClick={handleUndo}
-                disabled={elements.length === 0}
-                className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-white/10 disabled:opacity-30 transition"
-                title="Undo (Ctrl+Z)"
-              >
-                ↩
-              </button>
-              <button
-                type="button"
-                onClick={handleRedo}
-                disabled={redoStack.length === 0}
-                className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-white/10 disabled:opacity-30 transition"
-                title="Redo (Ctrl+Y)"
-              >
-                ↪
-              </button>
-            </div>
+                {/* Highlighter */}
+                <button
+                  type="button"
+                  onClick={() => setTool("highlighter")}
+                  className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    tool === "highlighter"
+                      ? "bg-amber-400 text-slate-950 font-black shadow-md ring-1 ring-amber-300"
+                      : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Translucent Highlighter"
+                >
+                  <span>🖍️</span>
+                  <span className="hidden sm:inline">Marker</span>
+                </button>
 
-            {/* Clear Board */}
-            <button
-              type="button"
-              onClick={handleClear}
-              disabled={elements.length === 0}
-              className="rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1.5 text-xs font-bold text-rose-300 disabled:opacity-30 transition"
-              title="Clear Canvas"
-            >
-              🗑️
-            </button>
+                {/* MANDATORY LASER POINTER: ✍️ */}
+                <button
+                  type="button"
+                  onClick={() => setTool("laser")}
+                  className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    tool === "laser"
+                      ? "bg-[#FF5238] text-white shadow-md ring-2 ring-red-400 animate-pulse font-black"
+                      : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="✍️ Laser Pointer (Live glowing pointing without permanent marks)"
+                >
+                  <span>✍️</span>
+                  <span className="font-extrabold">Laser</span>
+                </button>
 
-            {/* Fullscreen */}
-            <button
-              type="button"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-1.5 text-xs text-slate-300 transition"
-              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Board"}
-            >
-              {isFullscreen ? "🗗" : "⛶"}
-            </button>
-          </div>
+                {/* Straight Line */}
+                <button
+                  type="button"
+                  onClick={() => setTool("line")}
+                  className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
+                    tool === "line" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Straight Line"
+                >
+                  <span>📏</span>
+                </button>
+
+                {/* Arrow */}
+                <button
+                  type="button"
+                  onClick={() => setTool("arrow")}
+                  className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
+                    tool === "arrow" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Vector Arrow"
+                >
+                  <span>➡️</span>
+                </button>
+
+                {/* Rectangle Box */}
+                <button
+                  type="button"
+                  onClick={() => setTool("rect")}
+                  className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
+                    tool === "rect" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Formula Box / Rectangle"
+                >
+                  <span>🔲</span>
+                </button>
+
+                {/* Circle */}
+                <button
+                  type="button"
+                  onClick={() => setTool("circle")}
+                  className={`rounded-xl px-2 py-1.5 text-xs font-bold transition ${
+                    tool === "circle" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Circle / Ellipse"
+                >
+                  <span>⭕</span>
+                </button>
+
+                {/* Text & Math Formula */}
+                <button
+                  type="button"
+                  onClick={() => setTool("text")}
+                  className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    tool === "text" ? "bg-[#1356E8] text-white" : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Insert Text & Formula Annotation"
+                >
+                  <span>🔤</span>
+                  <span className="hidden md:inline">Text</span>
+                </button>
+
+                {/* Eraser */}
+                <button
+                  type="button"
+                  onClick={() => setTool("eraser")}
+                  className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    tool === "eraser"
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
+                      : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Eraser"
+                >
+                  <span>🧹</span>
+                  <span className="hidden md:inline">Eraser</span>
+                </button>
+              </div>
+
+              {/* Group C: Color Palette & Stroke Widths */}
+              <div className="flex items-center gap-1.5">
+                {/* Color dots */}
+                <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+                  {PRESET_COLORS.slice(0, 5).map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setColor(c.value)}
+                      className={`h-4.5 w-4.5 rounded-full border transition active:scale-125 ${
+                        color === c.value ? "scale-125 border-white ring-2 ring-cyan-400" : "border-transparent opacity-80"
+                      }`}
+                      style={{ backgroundColor: c.value }}
+                      title={`${c.name} ink`}
+                    />
+                  ))}
+                </div>
+
+                {/* Undo / Redo */}
+                <div className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-white/5 p-0.5">
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    disabled={elements.length === 0}
+                    className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-white/10 disabled:opacity-30 transition"
+                    title="Undo (Ctrl+Z)"
+                  >
+                    ↩
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRedo}
+                    disabled={redoStack.length === 0}
+                    className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-white/10 disabled:opacity-30 transition"
+                    title="Redo (Ctrl+Y)"
+                  >
+                    ↪
+                  </button>
+                </div>
+
+                {/* Clear Board */}
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  disabled={elements.length === 0}
+                  className="rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1.5 text-xs font-bold text-rose-300 disabled:opacity-30 transition"
+                  title="Clear Canvas"
+                >
+                  🗑️
+                </button>
+
+                {/* Fullscreen */}
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-1.5 text-xs text-slate-300 transition"
+                  title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Board"}
+                >
+                  {isFullscreen ? "🗗" : "⛶"}
+                </button>
+              </div>
+            </>
+          )}
         </header>
 
         {/* ================================================================== */}
@@ -1236,10 +1310,12 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           )}
 
           {/* 2. CENTER RESPONSIVE TEACHING CANVAS */}
-          <main className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+          <main className="flex-1 w-full h-full flex flex-col items-center justify-center p-0 overflow-hidden relative select-none">
             <div
               ref={boardSurfaceRef}
-              className={`relative shadow-2xl rounded-2xl overflow-hidden border border-white/10 ${getAspectRatioClass()}`}
+              className={`relative shadow-2xl overflow-hidden ${
+                boardAspectRatio === "free" ? "w-full h-full rounded-none border-0" : "rounded-2xl border border-white/10"
+              } ${getAspectRatioClass()}`}
               style={{
                 cursor:
                   tool === "laser"
@@ -1269,117 +1345,119 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               )}
             </div>
 
-            {/* Bottom floating quick controls */}
-            <footer className="mt-2 flex flex-wrap items-center justify-center gap-2 z-10">
-              {/* Aspect Ratio Selector */}
-              <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B1536]/80 px-2 py-1 text-[11px] font-bold backdrop-blur">
-                <span className="text-slate-400">Ratio:</span>
-                {(["16 / 9", "4 / 3", "9 / 16", "free"] as const).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => handleSetAspectRatio(r)}
-                    className={`rounded px-1.5 py-0.5 transition ${
-                      boardAspectRatio === r ? "bg-[#1356E8] text-white font-black" : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
+            {/* Floating Quick Controls (Tutor Only: Ratio, Board Surface, Zoom, Export) */}
+            {!readOnly && canDraw && (
+              <footer className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center gap-2 z-20 shadow-2xl">
+                {/* Aspect Ratio Selector */}
+                <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B1536]/90 px-2 py-1 text-[11px] font-bold backdrop-blur shadow-lg">
+                  <span className="text-slate-400">Ratio:</span>
+                  {(["free", "16 / 9", "4 / 3", "9 / 16"] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => handleSetAspectRatio(r)}
+                      className={`rounded px-1.5 py-0.5 transition ${
+                        boardAspectRatio === r ? "bg-[#1356E8] text-white font-black" : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {r === "free" ? "Full" : r}
+                    </button>
+                  ))}
+                </div>
 
-              {/* Background Mode Selector */}
-              <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B1536]/80 px-2 py-1 text-[11px] font-bold backdrop-blur">
-                <span className="text-slate-400">Board:</span>
-                {(
-                  [
-                    { mode: "blackboard", label: "🌑 Dark" },
-                    { mode: "whiteboard", label: "⚪ Light" },
-                    { mode: "grid", label: "📐 Grid" },
-                    { mode: "lines", label: "📝 Lines" },
-                  ] as const
-                ).map((b) => (
-                  <button
-                    key={b.mode}
-                    type="button"
-                    onClick={() => {
-                      setBackgroundMode(b.mode);
-                      updatePagesAndNotify((prev) =>
-                        prev.map((p, idx) => (idx === activePageIndex ? { ...p, backgroundMode: b.mode } : p))
-                      );
-                    }}
-                    className={`rounded px-1.5 py-0.5 transition ${
-                      (activePage.backgroundMode || backgroundMode) === b.mode
-                        ? "bg-[#1356E8] text-white font-black"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {b.label}
-                  </button>
-                ))}
-              </div>
+                {/* Background Mode Selector */}
+                <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B1536]/90 px-2 py-1 text-[11px] font-bold backdrop-blur shadow-lg">
+                  <span className="text-slate-400">Board:</span>
+                  {(
+                    [
+                      { mode: "blackboard", label: "🌑 Dark" },
+                      { mode: "whiteboard", label: "⚪ Light" },
+                      { mode: "grid", label: "📐 Grid" },
+                      { mode: "lines", label: "📝 Lines" },
+                    ] as const
+                  ).map((b) => (
+                    <button
+                      key={b.mode}
+                      type="button"
+                      onClick={() => {
+                        setBackgroundMode(b.mode);
+                        updatePagesAndNotify((prev) =>
+                          prev.map((p, idx) => (idx === activePageIndex ? { ...p, backgroundMode: b.mode } : p))
+                        );
+                      }}
+                      className={`rounded px-1.5 py-0.5 transition ${
+                        (activePage.backgroundMode || backgroundMode) === b.mode
+                          ? "bg-[#1356E8] text-white font-black"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
 
-              {/* Zoom controls */}
-              <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B1536]/80 px-2 py-1 text-[11px] font-bold backdrop-blur">
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
-                  className="px-1 text-slate-300 hover:text-white"
-                  title="Zoom Out"
-                >
-                  －
-                </button>
-                <span className="text-slate-200 min-w-8 text-center">{Math.round(zoom * 100)}%</span>
-                <button
-                  type="button"
-                  onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))}
-                  className="px-1 text-slate-300 hover:text-white"
-                  title="Zoom In"
-                >
-                  ＋
-                </button>
-                {zoom !== 1 && (
+                {/* Zoom controls */}
+                <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B1536]/90 px-2 py-1 text-[11px] font-bold backdrop-blur shadow-lg">
                   <button
                     type="button"
-                    onClick={() => setZoom(1)}
-                    className="ml-1 text-[10px] text-blue-300 hover:underline"
+                    onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
+                    className="px-1 text-slate-300 hover:text-white"
+                    title="Zoom Out"
                   >
-                    Reset
+                    －
                   </button>
-                )}
-              </div>
+                  <span className="text-slate-200 min-w-8 text-center">{Math.round(zoom * 100)}%</span>
+                  <button
+                    type="button"
+                    onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))}
+                    className="px-1 text-slate-300 hover:text-white"
+                    title="Zoom In"
+                  >
+                    ＋
+                  </button>
+                  {zoom !== 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setZoom(1)}
+                      className="ml-1 text-[10px] text-blue-300 hover:underline"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
 
-              {/* Export Image action */}
-              <button
-                type="button"
-                onClick={() => {
-                  const canvas = canvasRef.current;
-                  if (!canvas) return;
-                  const link = document.createElement("a");
-                  link.download = `brainlab-whiteboard-${activePage.title.toLowerCase().replace(/\s+/g, "_")}-${new Date().toISOString().slice(0, 10)}.png`;
-                  link.href = canvas.toDataURL("image/png");
-                  link.click();
-                }}
-                className="rounded-xl border border-white/10 bg-[#0B1536]/80 hover:bg-white/10 px-2.5 py-1 text-[11px] font-bold text-slate-200 transition"
-                title="Download current page as image"
-              >
-                💾 Export Image
-              </button>
-
-              {onShareToChat && (
+                {/* Export Image action */}
                 <button
                   type="button"
                   onClick={() => {
                     const canvas = canvasRef.current;
-                    if (canvas) onShareToChat(canvas.toDataURL("image/png"));
+                    if (!canvas) return;
+                    const link = document.createElement("a");
+                    link.download = `brainlab-whiteboard-${activePage.title.toLowerCase().replace(/\s+/g, "_")}-${new Date().toISOString().slice(0, 10)}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
                   }}
-                  className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-2.5 py-1 text-[11px] font-black text-white shadow-sm transition"
-                  title="Share whiteboard snapshot directly into live classroom chat"
+                  className="rounded-xl border border-white/10 bg-[#0B1536]/90 hover:bg-[#1356E8] px-2 py-1 text-[11px] font-bold text-slate-200 transition backdrop-blur shadow-lg"
+                  title="Download current page as image"
                 >
-                  💬 Share to Chat
+                  💾 Save
                 </button>
-              )}
-            </footer>
+
+                {onShareToChat && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const canvas = canvasRef.current;
+                      if (canvas) onShareToChat(canvas.toDataURL("image/png"));
+                    }}
+                    className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-2.5 py-1 text-[11px] font-black text-white shadow-md transition"
+                    title="Share whiteboard snapshot directly into live classroom chat"
+                  >
+                    💬 Share to Chat
+                  </button>
+                )}
+              </footer>
+            )}
           </main>
         </div>
 

@@ -42,7 +42,7 @@ export default function ClassroomStudioPage() {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"draft" | "ready">("draft");
   const [pages, setPages] = useState<PageData[]>([
-    { id: "page-1", title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] },
+    { id: "page-1", title: "Page 1", aspectRatio: "free", backgroundMode: "blackboard", elements: [] },
   ]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [attachments, setAttachments] = useState<LessonAttachment[]>([]);
@@ -121,7 +121,7 @@ export default function ClassroomStudioPage() {
     setPages(
       Array.isArray(lesson.pages) && lesson.pages.length
         ? (lesson.pages as PageData[])
-        : [{ id: "page-1", title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] }]
+        : [{ id: "page-1", title: "Page 1", aspectRatio: "free", backgroundMode: "blackboard", elements: [] }]
     );
     setActivePageIndex(
       Math.min(lesson.active_page_index || 0, Math.max(0, (lesson.pages as unknown[] | undefined)?.length || 1) - 1)
@@ -215,7 +215,7 @@ export default function ClassroomStudioPage() {
     setTopic("");
     setDescription("");
     setStatus("draft");
-    setPages([{ id: `page-${Date.now()}`, title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] }]);
+    setPages([{ id: `page-${Date.now()}`, title: "Page 1", aspectRatio: "free", backgroundMode: "blackboard", elements: [] }]);
     setActivePageIndex(0);
     setAttachments([]);
     setShowStudioBoard(true);
@@ -352,7 +352,7 @@ export default function ClassroomStudioPage() {
       const videoStream = compCanvas.captureStream(30);
 
       // 4. Audio Mixing (Microphone audio track)
-      let combinedStream = videoStream;
+      const combinedStream = videoStream;
       if (isMicEnabled) {
         try {
           const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });

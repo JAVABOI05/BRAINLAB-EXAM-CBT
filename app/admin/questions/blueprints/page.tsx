@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getAdminSession } from "../../../lib/adminAuth";
-import { adminHasPermission } from "../../../lib/adminRoles";
+// Admin session and permissions handled at route level
+
 import {
   OFFICIAL_UTME_ENGLISH_BLUEPRINT,
   OFFICIAL_STANDARD_SUBJECT_BLUEPRINT,
@@ -46,8 +46,9 @@ export default function BlueprintsAdminPage() {
   ]);
 
   const [dbStats, setDbStats] = useState<Record<string, number>>({});
-  const [loadingStats, setLoadingStats] = useState(true);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -72,7 +73,7 @@ export default function BlueprintsAdminPage() {
 
   // Total 4-subject exam questions & marks
   const totalExamQuestions = totalEnglishQuestions + standardQuota * 3;
-  const totalExamMaxScore = 100 + 100 * 3; // 400
+
 
   // 1. Load Blueprint and Database Stats from server
   useEffect(() => {
