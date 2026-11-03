@@ -4,6 +4,7 @@ import { adminSignOut, getAdminSession } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import {
   getExamSettings,
@@ -333,6 +334,9 @@ export default function AdminConfigPage() {
             </div>
 
             <div className="admin-actions">
+              <Link href="/admin/questions/blueprints" className="admin-btn-light border-blue-300 text-blue-700 font-bold">
+                📖 Section Blueprints &amp; Quotas
+              </Link>
               <button
                 onClick={() => router.push("/admin/dashboard")}
                 className="admin-btn-light"
