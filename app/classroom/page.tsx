@@ -157,8 +157,8 @@ function ClassroomLobbyContent() {
       setShowTutorAuthModal(false);
       await checkUserRoleAndAuth();
       await fetchClasses();
-    } catch (err: any) {
-      setTutorAuthError(err.message || "Failed to sign in. Check your instructor email and password.");
+    } catch (err: unknown) {
+      setTutorAuthError((err instanceof Error ? err.message : null) || "Failed to sign in. Check your instructor email and password.");
     } finally {
       setTutorAuthBusy(false);
     }
@@ -210,8 +210,8 @@ function ClassroomLobbyContent() {
 
       toast.success("Academic stage launched! Entering host cockpit…");
       router.push("/classroom/BL-LIVE-101");
-    } catch (err: any) {
-      toast.error(err.message || "Could not launch stage.");
+    } catch (err: unknown) {
+      toast.error((err instanceof Error ? err.message : null) || "Could not launch stage.");
     } finally {
       setIsLaunchingInstant(false);
     }
@@ -243,8 +243,8 @@ function ClassroomLobbyContent() {
 
       toast.success(`Stage started for "${classItem.title}"! Entering live room…`);
       router.push(`/classroom/${classItem.id}`);
-    } catch (err: any) {
-      toast.error(err.message || "Could not start scheduled class.");
+    } catch (err: unknown) {
+      toast.error((err instanceof Error ? err.message : null) || "Could not start scheduled class.");
     }
   };
 
@@ -290,8 +290,8 @@ function ClassroomLobbyContent() {
       setCreateStart("");
       setCreateEnd("");
       await fetchClasses();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to schedule class.");
+    } catch (err: unknown) {
+      toast.error((err instanceof Error ? err.message : null) || "Failed to schedule class.");
     } finally {
       setIsSubmittingClass(false);
     }
@@ -642,7 +642,7 @@ function ClassroomLobbyContent() {
             <div className="py-12 text-center space-y-2">
               <span className="text-3xl">📅</span>
               <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                No classes match the "{classFilter}" filter.
+                No classes match the &quot;{classFilter}&quot; filter.
               </p>
               {isStaff && (
                 <button
