@@ -715,7 +715,7 @@ export default function AdminDashboardPage() {
         {canOpen("cbt.sessions.read") && (
           <MetricCard
             label="Live CBT Sessions"
-            value={metrics.sessions}
+            value={metrics.sessions ?? null}
             note="Concurrent candidates actively testing"
             iconName="sessions"
             accent="blue"
