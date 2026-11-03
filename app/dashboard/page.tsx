@@ -189,7 +189,7 @@ export default function LearnerDashboardPage() {
           if (active && gp) setGamification(gp);
         });
 
-        const [progressRes, planRes, entitlementsRes, testAttemptsRes] = await Promise.all([
+        const [progressRes, planRes, entitlementsRes, subscriptionRes, testAttemptsRes] = await Promise.all([
           // 1. Lessons completed
           supabase
             .from("learning_lesson_progress")
@@ -206,11 +206,18 @@ export default function LearnerDashboardPage() {
           // 3. Entitlements
           supabase
             .from("learning_entitlements")
-            .select("entitlement_type, membership_type, max_questions, status")
+            .select("entitlement_type, membership_type, max_questions, status, starts_at, expires_at, permanent, revoked_at")
             .eq("user_id", currentUser.id)
             .eq("status", "active"),
 
-          // 4. Test attempts
+          // 4. Subscription fallback keeps the dashboard consistent with billing/admin records.
+          supabase
+            .from("user_subscriptions")
+            .select("plan_id, status, current_period_end")
+            .eq("user_id", currentUser.id)
+            .maybeSingle(),
+
+          // 5. Test attempts
           supabase
             .from("learning_test_attempts")
             .select("id, score, total_marks, status, submitted_at")
@@ -294,12 +301,35 @@ export default function LearnerDashboardPage() {
         if (resolvedRole) {
           tierName = `${resolvedRole === "super_admin" ? "Super Admin" : "Administrator"} VIP (Universal Access)`;
           maxAllowedQuestions = 999999;
-        } else if (entitlementsRes.data && entitlementsRes.data.length > 0) {
-          const activeEntitlements = entitlementsRes.data;
-          const highestQuestions = Math.max(...activeEntitlements.map((e) => e.max_questions || 50));
-          maxAllowedQuestions = highestQuestions;
+        } else {
+          const now = Date.now();
+          const activeEntitlements = (entitlementsRes.data || []).filter((e) => {
+            const startsAt = e.starts_at ? new Date(e.starts_at).getTime() : 0;
+            const expiresAt = e.expires_at ? new Date(e.expires_at).getTime() : Number.POSITIVE_INFINITY;
+            return !e.revoked_at && startsAt <= now && (e.permanent || expiresAt > now);
+          });
           const membership = activeEntitlements.find((e) => e.entitlement_type === "membership");
-          tierName = membership?.membership_type ? `${membership.membership_type.toUpperCase()} Member` : "Enrolled Learner";
+          const subscription = subscriptionRes.data;
+          const subscriptionExpiry = subscription?.current_period_end
+            ? new Date(subscription.current_period_end).getTime()
+            : 0;
+          const hasActiveSubscription = subscription?.status === "active"
+            && subscriptionExpiry > now
+            && ["premium", "plus", "pro"].includes((subscription.plan_id || "").toLowerCase());
+
+          if (membership) {
+            maxAllowedQuestions = Math.max(50, membership.max_questions || 50);
+            tierName = membership.membership_type
+              ? `${membership.membership_type.toUpperCase()} Member`
+              : "Enrolled Learner";
+          } else if (hasActiveSubscription) {
+            // Defensive fallback for older/manual grants while entitlement data is repaired.
+            maxAllowedQuestions = 500;
+            tierName = `${subscription!.plan_id.toUpperCase()} Member`;
+          } else if (activeEntitlements.length > 0) {
+            maxAllowedQuestions = Math.max(50, ...activeEntitlements.map((e) => e.max_questions || 50));
+            tierName = "Enrolled Learner";
+          }
         }
 
         // Test attempts count
