@@ -38,71 +38,59 @@ export async function POST(
     // ACTION 1: GRANT OR EXTEND SUBSCRIPTION (UPGRADE TO PREMIUM / PLUS / PRO)
     // ------------------------------------------------------------------------
     if (action === "grant_subscription" || action === "upgrade_tier") {
-      const planId = (body.planId || body.plan || "premium").toLowerCase();
-      const durationDays = Math.max(1, parseInt(body.durationDays || body.validityDays || "30", 10));
-      const reason = body.reason || "Direct Administrator Plan Upgrade";
+      const planId = String(body.planId || body.plan || "premium").trim().toLowerCase();
+      const parsedDuration = Number.parseInt(String(body.durationDays || body.validityDays || "30"), 10);
+      const durationDays = Number.isFinite(parsedDuration) ? parsedDuration : 30;
+      const reason = String(body.reason || "Direct Administrator Plan Upgrade").trim();
 
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + durationDays);
+      if (!["premium", "plus", "pro"].includes(planId)) {
+        return NextResponse.json({ ok: false, error: "Invalid subscription plan." }, { status: 400 });
+      }
+      if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 3650) {
+        return NextResponse.json({ ok: false, error: "Subscription duration must be between 1 and 3650 days." }, { status: 400 });
+      }
 
-      // Upsert into user_subscriptions
-      const { error: subError } = await supabase.from("user_subscriptions").upsert(
+      // One database transaction updates the subscription, replaces the
+      // membership entitlement, and notifies the candidate.
+      const { data: grantResult, error: grantError } = await supabase.rpc(
+        "admin_grant_candidate_subscription",
         {
-          user_id: candidateId,
-          plan_id: planId,
-          status: "active",
-          current_period_start: startDate.toISOString(),
-          current_period_end: endDate.toISOString(),
-          payment_provider: "admin_manual_grant",
-          price_paid_kobo: 0,
-          currency: "NGN",
-          provider_subscription_id: `ADMIN-GRANT-${Date.now()}`,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
+          p_user_id: candidateId,
+          p_plan_id: planId,
+          p_duration_days: durationDays,
+          p_reason: reason,
+          p_admin_email: admin.email,
+        }
       );
 
-      if (subError) {
+      if (grantError) {
+        console.error("[admin/candidates/action] Subscription grant failed:", grantError);
         return NextResponse.json(
-          { ok: false, error: `Failed to update user subscription: ${subError.message}` },
+          { ok: false, error: `Failed to grant subscription and learning entitlement: ${grantError.message}` },
           { status: 500 }
         );
       }
 
-      // Upsert learning entitlements to grant full question quota if table exists
-      try {
-        await supabase.from("learning_entitlements").upsert({
-          user_id: candidateId,
-          entitlement_type: "tier_membership",
-          membership_type: planId,
-          max_questions: 10000,
-          status: "active",
-          permanent: durationDays > 365,
-          starts_at: startDate.toISOString(),
-          expires_at: endDate.toISOString(),
-        });
-      } catch (entErr) {
-        console.warn("[admin/candidates/action] Entitlements table upsert skipped:", entErr);
-      }
+      const grant = grantResult as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        plan_id?: string;
+        plan_name?: string;
+        expires_at?: string;
+        max_questions?: number;
+      } | null;
 
-      // Deliver in-app notification if table exists
-      try {
-        const planName = planId === "pro" ? "BrainLab Pro" : planId === "plus" ? "BrainLab Plus" : "Premium Study";
-        await supabase.from("notifications").insert({
-          user_id: candidateId,
-          title: `🎉 Account Upgraded to ${planName}`,
-          message: `Your account has been upgraded to ${planName} for ${durationDays} days by Platform Administration. You now have full access to CBT corrections, step-by-step solutions, and AI tutor explanations.`,
-          type: "subscription",
-          is_read: false,
-        });
-      } catch (notifErr) {
-        console.warn("[admin/candidates/action] Notification insert skipped:", notifErr);
+      if (!grant?.ok) {
+        return NextResponse.json(
+          { ok: false, error: grant?.message || grant?.error || "Subscription grant was not completed." },
+          { status: 400 }
+        );
       }
 
       // Audit log
       try {
-        await supabase.from("configuration_audit_logs").insert({
+        const { error: auditError } = await supabase.from("configuration_audit_logs").insert({
           admin_email: admin.email,
           entity_type: "candidate_subscription",
           entity_id: candidateId,
@@ -112,21 +100,24 @@ export async function POST(
             durationDays,
             reason,
             grantedBy: admin.email,
-            periodEnd: endDate.toISOString(),
+            periodEnd: grant.expires_at,
+            maxQuestions: grant.max_questions,
           },
           change_reason: `Admin upgraded account to ${planId.toUpperCase()} for ${durationDays} days (${reason})`,
         });
+        if (auditError) console.warn("[admin/candidates/action] Audit log failed:", auditError.message);
       } catch (auditErr) {
-        console.warn("[admin/candidates/action] Audit log skipped:", auditErr);
+        console.warn("[admin/candidates/action] Audit log failed:", auditErr);
       }
 
       return NextResponse.json({
         ok: true,
-        message: `Successfully upgraded candidate to ${planId.toUpperCase()} tier for ${durationDays} days.`,
+        message: grant.message || `Successfully upgraded candidate to ${planId.toUpperCase()} tier for ${durationDays} days.`,
         subscription: {
           planId,
           status: "active",
-          current_period_end: endDate.toISOString(),
+          current_period_end: grant.expires_at,
+          max_questions: grant.max_questions,
         },
       });
     }
