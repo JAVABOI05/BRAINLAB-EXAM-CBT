@@ -216,6 +216,10 @@ export default function ExamPage() {
         } else if (typeof (resumed as AttemptPayload).time_left_seconds === "number" && (resumed as AttemptPayload).time_left_seconds <= 0) {
           // Stale session that has already timed out in the past: clear it so student starts fresh
           clearAttemptStorage();
+        } else if ((resumed as AttemptPayload).questions && (resumed as AttemptPayload).questions.length < 180) {
+          // Incomplete legacy attempt (e.g. 140 questions): purge to ensure full 180 UTME mock
+          clearAttemptStorage();
+          setError("A previous incomplete session was cleared. Starting your official 180-question UTME mock paper.");
         } else {
           const attempt: AttemptPayload = resumed as AttemptPayload;
           setQuestions(attempt.questions);
@@ -514,10 +518,16 @@ export default function ExamPage() {
     if (!activeCand) return;
 
     let subjects = activeCand.subjects || [];
-    if (!subjects.length) {
-      subjects = activeCand.subject ? ["English", activeCand.subject] : ["English", "Mathematics", "Physics", "Chemistry"];
+    if (!subjects.length || subjects.length < 4) {
+      if (activeCand.subject?.toLowerCase() === "biology") {
+        subjects = ["English", "Biology", "Physics", "Chemistry"];
+      } else if (activeCand.subject && activeCand.subject.toLowerCase() !== "english") {
+        subjects = ["English", "Mathematics", "Physics", activeCand.subject];
+      } else {
+        subjects = ["English", "Mathematics", "Physics", "Chemistry"];
+      }
     }
-    const finalElective = subjects[3] || subjects[1] || "Mathematics";
+    const finalElective = subjects.find((s) => !s.toLowerCase().includes("english")) || "Mathematics";
 
     if (!mockEnabled) { setError("This exam is currently unavailable."); return; }
     try {

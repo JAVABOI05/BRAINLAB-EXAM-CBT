@@ -10,7 +10,7 @@ import AdminWorkspaceShell from "../AdminWorkspaceShell";
 
 type Access = Partial<Record<AdminPermission, boolean>>;
 type Metric = number | null;
-type Metrics = { questions: Metric; results: Metric; codes: Metric };
+type Metrics = { questions: Metric; results: Metric; codes: Metric; sessions?: Metric };
 type StudentStats = {
   registeredStudents: number;
   activeStudents30d: number;
@@ -24,6 +24,7 @@ type SettingsMap = {
   leaderboard_enabled: boolean;
   show_results: boolean;
   mock_enabled: boolean;
+  ai_explanations_enabled: boolean;
 };
 type SettingRow = { key: string; value: unknown };
 
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: SettingsMap = {
   leaderboard_enabled: false,
   show_results: false,
   mock_enabled: true,
+  ai_explanations_enabled: true,
 };
 
 const PERMISSIONS: AdminPermission[] = [
@@ -70,7 +72,10 @@ function DashboardIcon({
     | "ai"
     | "pricing"
     | "moderation"
-    | "security";
+    | "security"
+    | "duplicates"
+    | "sessions"
+    | "communication";
   className?: string;
 }) {
   const common = {
@@ -208,6 +213,28 @@ function DashboardIcon({
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
       );
+    case "duplicates":
+      return (
+        <svg {...common}>
+          <rect width="13" height="13" x="9" y="9" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      );
+    case "sessions":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    case "communication":
+      return (
+        <svg {...common}>
+          <path d="M11 5 6 9H2v6h4l5 4V5Z" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -223,7 +250,7 @@ function MetricCard({
   label: string;
   value: Metric;
   note: string;
-  iconName: "questions" | "results" | "codes" | "students" | "active" | "registrations";
+  iconName: "questions" | "results" | "codes" | "students" | "active" | "registrations" | "sessions";
   accent?: "blue" | "emerald" | "amber" | "indigo" | "rose" | "purple";
 }) {
   return (
@@ -248,7 +275,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<AdminUser | null>(null);
   const [permissions, setPermissions] = useState<Access>({});
-  const [metrics, setMetrics] = useState<Metrics>({ questions: null, results: null, codes: null });
+  const [metrics, setMetrics] = useState<Metrics>({ questions: null, results: null, codes: null, sessions: null });
   const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
   const [studentStatsError, setStudentStatsError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -278,7 +305,7 @@ export default function AdminDashboardPage() {
         const access = Object.fromEntries(entries) as Access;
         setPermissions(access);
 
-        const [questions, results, codes] = await Promise.all([
+        const [questions, results, codes, activeSessions] = await Promise.all([
           access["cbt.questions.manage"]
             ? supabase.from("questions").select("*", { count: "exact", head: true })
             : Promise.resolve(null),
@@ -288,6 +315,9 @@ export default function AdminDashboardPage() {
           access["cbt.codes.manage"]
             ? supabase.from("access_codes").select("*", { count: "exact", head: true })
             : Promise.resolve(null),
+          access["cbt.sessions.read"]
+            ? supabase.from("sessions").select("*", { count: "exact", head: true }).eq("status", "in_progress")
+            : Promise.resolve(null),
         ]);
         if (!active) return;
         setMetrics({
@@ -295,6 +325,8 @@ export default function AdminDashboardPage() {
             access["cbt.questions.manage"] ? (questions && !questions.error ? questions.count ?? 0 : null) : null,
           results: access["cbt.results.read"] ? (results && !results.error ? results.count ?? 0 : null) : null,
           codes: access["cbt.codes.manage"] ? (codes && !codes.error ? codes.count ?? 0 : null) : null,
+          sessions:
+            access["cbt.sessions.read"] ? (activeSessions && !activeSessions.error ? activeSessions.count ?? 0 : null) : null,
         });
 
         // Protected student statistics for platform administrators
@@ -329,6 +361,7 @@ export default function AdminDashboardPage() {
               if (row.config_key === "leaderboard_enabled") next.leaderboard_enabled = row.config_value === true || row.config_value === "true";
               if (row.config_key === "show_results") next.show_results = row.config_value === true || row.config_value === "true";
               if (row.config_key === "mock_enabled") next.mock_enabled = row.config_value === true || row.config_value === "true";
+              if (row.config_key === "ai_explanations_enabled") next.ai_explanations_enabled = row.config_value === true || row.config_value === "true";
             });
             setSettings(next);
           } else {
@@ -340,13 +373,14 @@ export default function AdminDashboardPage() {
                 if (row.key === "leaderboard_enabled") next.leaderboard_enabled = row.value === true || row.value === "true";
                 if (row.key === "show_results") next.show_results = row.value === true || row.value === "true";
                 if (row.key === "mock_enabled") next.mock_enabled = row.value === true || row.value === "true";
+                if (row.key === "ai_explanations_enabled") next.ai_explanations_enabled = row.value === true || row.value === "true";
               });
               setSettings(next);
             }
           }
         }
 
-        if ([questions, results, codes].some((result) => result?.error)) {
+        if ([questions, results, codes, activeSessions].some((result) => result?.error)) {
           setLoadError(
             "Some dashboard data could not be loaded. Unavailable values are shown explicitly rather than as zero."
           );
@@ -398,6 +432,7 @@ export default function AdminDashboardPage() {
         saveQuickSetting("leaderboard_enabled", settings.leaderboard_enabled),
         saveQuickSetting("show_results", settings.show_results),
         saveQuickSetting("mock_enabled", settings.mock_enabled),
+        saveQuickSetting("ai_explanations_enabled", settings.ai_explanations_enabled),
       ]);
       setSettingsMessage("Exam quick settings saved successfully.");
     } catch (error) {
@@ -677,6 +712,15 @@ export default function AdminDashboardPage() {
             accent="amber"
           />
         )}
+        {canOpen("cbt.sessions.read") && (
+          <MetricCard
+            label="Live CBT Sessions"
+            value={metrics.sessions}
+            note="Concurrent candidates actively testing"
+            iconName="sessions"
+            accent="blue"
+          />
+        )}
       </section>
 
       {/* Main Two-Column Operational Layout */}
@@ -708,7 +752,33 @@ export default function AdminDashboardPage() {
                 </span>
                 <div className="admin-action-content">
                   <strong>Question Bank</strong>
-                  <span>Manage multi-subject questions, blueprinted quotas, and duplicate detection.</span>
+                  <span>Manage multi-subject questions, blueprinted quotas, and question uploads.</span>
+                </div>
+                <span className="admin-action-arrow" aria-hidden="true">→</span>
+              </Link>
+            )}
+
+            {canOpen("cbt.questions.manage") && (
+              <Link className="admin-action-link" href="/admin/questions/duplicates">
+                <span className="admin-action-icon is-rose">
+                  <DashboardIcon name="duplicates" />
+                </span>
+                <div className="admin-action-content">
+                  <strong>Duplicate Questions Manager</strong>
+                  <span>Similarity detection, group review, and zero-data-loss bulk archival.</span>
+                </div>
+                <span className="admin-action-arrow" aria-hidden="true">→</span>
+              </Link>
+            )}
+
+            {canOpen("cbt.sessions.read") && (
+              <Link className="admin-action-link" href="/admin/sessions">
+                <span className="admin-action-icon is-blue">
+                  <DashboardIcon name="sessions" />
+                </span>
+                <div className="admin-action-content">
+                  <strong>Live Exam Sessions</strong>
+                  <span>Invigilate active candidates, monitor tab switches, and review session timers.</span>
                 </div>
                 <span className="admin-action-arrow" aria-hidden="true">→</span>
               </Link>
@@ -800,6 +870,32 @@ export default function AdminDashboardPage() {
                 <div className="admin-action-content">
                   <strong>Plans &amp; Subscriptions</strong>
                   <span>Pricing tiers, student pass entitlements, and Paystack/BACHS integrations.</span>
+                </div>
+                <span className="admin-action-arrow" aria-hidden="true">→</span>
+              </Link>
+            )}
+
+            {(canOpen("finance.billing.manage") || platformAdmin) && (
+              <Link className="admin-action-link" href="/admin/payment-gateways">
+                <span className="admin-action-icon is-emerald">
+                  <DashboardIcon name="pricing" />
+                </span>
+                <div className="admin-action-content">
+                  <strong>Payment Gateways &amp; Webhooks</strong>
+                  <span>Configure BACHS, Paystack, and Flutterwave credentials.</span>
+                </div>
+                <span className="admin-action-arrow" aria-hidden="true">→</span>
+              </Link>
+            )}
+
+            {(canOpen("cbt.config.manage") || platformAdmin) && (
+              <Link className="admin-action-link" href="/admin/announcements">
+                <span className="admin-action-icon is-amber">
+                  <DashboardIcon name="communication" />
+                </span>
+                <div className="admin-action-content">
+                  <strong>Announcements &amp; Maintenance</strong>
+                  <span>Publish live broadcast banners and manage emergency CBT maintenance.</span>
                 </div>
                 <span className="admin-action-arrow" aria-hidden="true">→</span>
               </Link>
@@ -918,8 +1014,8 @@ export default function AdminDashboardPage() {
 
             <div className="admin-toggle-field">
               <div className="admin-toggle-copy">
-                <strong>Scientific Calculator</strong>
-                <span>Provide on-screen calculator in candidate test interface</span>
+                <strong>Four-Function CBT Calculator</strong>
+                <span>Provide on-screen 4-function arithmetic calculator in candidate test interface</span>
               </div>
               <label className="admin-switch" htmlFor="calculator-toggle">
                 <input
@@ -982,6 +1078,24 @@ export default function AdminDashboardPage() {
                   checked={settings.mock_enabled}
                   onChange={(event) =>
                     setSettings((prev) => ({ ...prev, mock_enabled: event.target.checked }))
+                  }
+                />
+                <span className="admin-switch-slider" />
+              </label>
+            </div>
+
+            <div className="admin-toggle-field">
+              <div className="admin-toggle-copy">
+                <strong>AI Tutor Explanations</strong>
+                <span>Provide step-by-step worked solutions and reasoning on released corrections</span>
+              </div>
+              <label className="admin-switch" htmlFor="ai-explanations-toggle">
+                <input
+                  id="ai-explanations-toggle"
+                  type="checkbox"
+                  checked={settings.ai_explanations_enabled}
+                  onChange={(event) =>
+                    setSettings((prev) => ({ ...prev, ai_explanations_enabled: event.target.checked }))
                   }
                 />
                 <span className="admin-switch-slider" />

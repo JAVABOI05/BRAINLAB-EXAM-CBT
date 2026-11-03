@@ -119,7 +119,11 @@ export default function CBTExamPortalPage() {
             if (Array.isArray(parsedSaved?.subjects) && parsedSaved.subjects.length === 4) {
               setSelectedSubjects(parsedSaved.subjects);
             } else if (parsedSaved?.subject) {
-              setSelectedSubjects(["English", "Mathematics", "Physics", parsedSaved.subject]);
+              if (parsedSaved.subject.toLowerCase() === "biology") {
+                setSelectedSubjects(["English", "Biology", "Physics", "Chemistry"]);
+              } else {
+                setSelectedSubjects(["English", "Mathematics", "Physics", parsedSaved.subject]);
+              }
             }
           } else if (parsedSaved) {
             setName(parsedSaved.name || "");
@@ -218,7 +222,7 @@ export default function CBTExamPortalPage() {
       JSON.stringify({
         name: effectiveName,
         phone: effectivePhone,
-        subject: selectedSubjects[0], // legacy compatibility
+        subject: selectedSubjects[1] || selectedSubjects[0], // primary elective for legacy compatibility
         subjects: selectedSubjects,
         code: savedCode,
         user_id: currentUser?.id || null,

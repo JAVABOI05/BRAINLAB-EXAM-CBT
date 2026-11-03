@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
 import crypto from "crypto";
-import { generateExamPaper, freezeAttemptSnapshot } from "../../../lib/examEngine";
+import { generateExamPaper, freezeAttemptSnapshot, resolveUtme4Subjects, isAcademicSubject } from "../../../lib/examEngine";
 import { getMaintenanceModeConfig } from "../../../lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -80,38 +80,18 @@ export async function POST(request: NextRequest) {
           );
         }
         codeRecordId = codeRecord.id;
-        if (codeRecord.subject) {
+        if (codeRecord.subject && isAcademicSubject(codeRecord.subject)) {
           preconfiguredSubject = codeRecord.subject;
         }
       }
     }
 
-    // 2. Determine examination subjects (4 subjects: English is always compulsory Subject 1)
-    let selectedSubjects: string[] = [];
-
-    if (preconfiguredSubject && !["utme standard", "utme_4_subjects", "utme standard mock"].includes(preconfiguredSubject.trim().toLowerCase())) {
-      selectedSubjects = ["English", preconfiguredSubject];
-    } else if (Array.isArray(subjects) && subjects.length > 0) {
-      const nonEnglish = subjects
-        .map((s) => String(s).trim())
-        .filter((s) => Boolean(s) && !s.toLowerCase().includes("english"));
-      selectedSubjects = ["English", ...nonEnglish.slice(0, 3)];
-    } else if (elective) {
-      selectedSubjects = ["English", "Mathematics", "Physics", elective];
-    } else {
-      selectedSubjects = ["English", "Mathematics", "Physics", "Chemistry"];
-    }
-
-    if (selectedSubjects[0]?.toLowerCase() !== "english") {
-      const remaining = selectedSubjects.filter((s) => !s.toLowerCase().includes("english"));
-      selectedSubjects = ["English", ...remaining.slice(0, 3)];
-    }
-
-    const defaultFillers = ["Mathematics", "Physics", "Chemistry", "Biology"];
-    while (selectedSubjects.length < 4) {
-      const nextFiller = defaultFillers.find((f) => !selectedSubjects.includes(f)) || "Mathematics";
-      selectedSubjects.push(nextFiller);
-    }
+    // 2. Authoritatively resolve examination subjects (English + 3 electives = exactly 4 subjects)
+    const selectedSubjects = resolveUtme4Subjects({
+      candidateSubjects: Array.isArray(subjects) ? subjects : undefined,
+      primaryElective: typeof elective === "string" ? elective : undefined,
+      preconfiguredSubject: preconfiguredSubject,
+    });
 
     // 3. Generate exam paper. Registered candidates receive unseen questions first.
     // Anonymous/open-code attempts retain the existing random-selection behaviour.

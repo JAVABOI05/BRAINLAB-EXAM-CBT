@@ -130,42 +130,29 @@ export default function AccessPage() {
 
     const savedCandidate = localStorage.getItem("candidate");
 
+    let candidateData: Record<string, unknown> = {};
     if (savedCandidate) {
       try {
-        const parsed = JSON.parse(savedCandidate);
-        localStorage.setItem(
-          "candidate",
-          JSON.stringify({
-            ...parsed,
-            code: normalizedCode,
-            phone: trimmedPhone,
-            access_type: result.type === "master" ? "master" : "normal",
-          })
-        );
-      } catch {
-        localStorage.setItem(
-          "candidate",
-          JSON.stringify({
-            name: "",
-            phone: trimmedPhone,
-            subject: "",
-            code: normalizedCode,
-            access_type: result.type === "master" ? "master" : "normal",
-          })
-        );
-      }
-    } else {
-      localStorage.setItem(
-        "candidate",
-        JSON.stringify({
-          name: "",
-          phone: trimmedPhone,
-          subject: "",
-          code: normalizedCode,
-          access_type: result.type === "master" ? "master" : "normal",
-        })
-      );
+        candidateData = JSON.parse(savedCandidate) || {};
+      } catch {}
     }
+
+    const existingSubjects = Array.isArray(candidateData.subjects) && candidateData.subjects.length === 4
+      ? candidateData.subjects
+      : ["English", "Mathematics", "Physics", "Chemistry"];
+
+    localStorage.setItem(
+      "candidate",
+      JSON.stringify({
+        ...candidateData,
+        name: candidateData.name || "",
+        phone: trimmedPhone,
+        subject: candidateData.subject || existingSubjects[1] || "Mathematics",
+        subjects: existingSubjects,
+        code: normalizedCode,
+        access_type: result.type === "master" ? "master" : "normal",
+      })
+    );
 
     setLoading(false);
     router.push("/instructions");

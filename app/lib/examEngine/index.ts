@@ -8,6 +8,7 @@ import { listHighYieldRules } from "./highYieldManager";
 import { markExamAttempt } from "./markingEngine";
 import { freezeAttemptSnapshot } from "./snapshotManager";
 import { selectStandardSubjectPaper } from "./subjectSelector";
+import { resolveUtme4Subjects } from "./subjectResolver";
 import { AttemptSnapshot, AuthoritativeMarkingResult, EngineQuestion, ExamBlueprint, OptionLetter } from "./types";
 import { getSupabaseServerClient } from "../supabaseServer";
 
@@ -19,6 +20,7 @@ export * from "./highYieldManager";
 export * from "./duplicateDetector";
 export * from "./englishSelector";
 export * from "./subjectSelector";
+export * from "./subjectResolver";
 export * from "../difficultyEngine";
 
 export type GeneratePaperResult = {
@@ -58,19 +60,10 @@ export async function generateExamPaper(options: {
 
   const supabase = getSupabaseServerClient();
 
-  // 1. Normalise subjects list (English is always compulsory Slot 1)
-  const incomingSubjects = options.subjects || [];
-  const nonEnglish = incomingSubjects
-    .filter((s) => !s.toLowerCase().includes("english"))
-    .filter((s) => !["utme standard", "utme_4_subjects", "utme standard mock"].includes(s.trim().toLowerCase()));
-  const chosenSubjects = ["English", ...nonEnglish.slice(0, 3)];
-
-  // Fill up to 4 subjects if candidate provided fewer
-  const defaultFillers = ["Mathematics", "Physics", "Chemistry", "Biology"];
-  while (chosenSubjects.length < 4) {
-    const filler = defaultFillers.find((f) => !chosenSubjects.includes(f)) || "Mathematics";
-    chosenSubjects.push(filler);
-  }
+  // 1. Authoritatively resolve the 4 UTME subjects using official curriculum rules
+  const chosenSubjects = resolveUtme4Subjects({
+    candidateSubjects: options.subjects,
+  });
 
   // 2. Fetch high-yield rules & questions concurrently across all 4 subjects
   const allPaperQuestions: EngineQuestion[] = [];

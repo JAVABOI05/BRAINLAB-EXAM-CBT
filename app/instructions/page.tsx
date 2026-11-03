@@ -83,9 +83,11 @@ export default function InstructionsPage() {
     );
   }
 
-  const subjectsList = candidate.subjects && candidate.subjects.length > 0
+  const subjectsList = candidate.subjects && candidate.subjects.length === 4
     ? candidate.subjects
-    : ["English", "Mathematics", "Physics", candidate.subject || "Chemistry"];
+    : candidate.subject?.toLowerCase() === "biology"
+      ? ["English", "Biology", "Physics", "Chemistry"]
+      : ["English", "Mathematics", "Physics", candidate.subject || "Chemistry"];
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#eef4ff_0%,#dfe8f7_50%,#f8fbff_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_30%),linear-gradient(180deg,#060e1a_0%,#030712_100%)] px-4 py-6 sm:px-6 sm:py-10 text-slate-900 dark:text-slate-100 transition-colors">
