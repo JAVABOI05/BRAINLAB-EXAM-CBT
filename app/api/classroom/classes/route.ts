@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
     const config = await getLiveClassroomConfig();
     const capacity = max_capacity || config.max_capacity_default || 100;
     const roomName = `bl_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const selectedProvider = body.provider || config.provider || "livekit";
 
     const { data: liveClass, error: insertError } = await supabase
       .from("live_classes")
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
         scheduled_end_at,
         max_capacity: capacity,
         room_name: roomName,
-        provider,
+        provider: selectedProvider,
         is_recording_enabled,
         waiting_room_enabled,
         student_mic_enabled,
