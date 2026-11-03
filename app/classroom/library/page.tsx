@@ -34,7 +34,7 @@ interface LessonProject {
 export default function TeachingVideoLibraryPage() {
   const router = useRouter();
   const [token, setToken] = useState("");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"videos" | "projects" | "resources">("videos");
 
   const [recordings, setRecordings] = useState<VideoRecording[]>([]);

@@ -114,6 +114,8 @@ export default function MyAccessPage() {
         });
         setCode("");
         await loadAccessData(user);
+      } else if (pinData?.error === "single_exam_pass" || pinData?.error === "already_used" || pinData?.error === "auth_required") {
+        setError(pinData.message || "This access code could not be redeemed.");
       } else {
         // Fallback to legacy learning_access_codes RPC
         const { data, error: rpcError } = await supabase.rpc("redeem_learning_access_code", {

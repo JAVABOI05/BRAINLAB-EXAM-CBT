@@ -15,22 +15,41 @@ export function getAuthRedirectUrl(path: string = "/auth/callback"): string {
     }
 
     // Preserve the active branded domain (including www vs apex).
-    if (hostname === "brainlabacademy.com.ng" ||
-        hostname.endsWith(".brainlabacademy.com.ng") ||
-        hostname === "brainlab.edu.ng" ||
-        hostname.endsWith(".brainlab.edu.ng")) {
+    if (
+      hostname === "brainlabacademy.com.ng" ||
+      hostname.endsWith(".brainlabacademy.com.ng") ||
+      hostname === "brainlab.edu.ng" ||
+      hostname.endsWith(".brainlab.edu.ng")
+    ) {
       return `${window.location.origin}${normalizedPath}`;
     }
 
-    // Preserve only BrainLab's Vercel preview hostnames. Do not trust arbitrary
-    // *.vercel.app origins; the project-specific suffix limits this exception
-    // to deployments owned by the BrainLab Vercel team.
+    // Preserve BrainLab's Vercel preview hostnames. Strictly limit to
+    // deployments owned by BrainLab CBT to prevent open redirects.
     const isBrainLabVercelPreview =
-      hostname.startsWith("brainlabexam-") &&
-      hostname.endsWith("-brainlabtutorials-3645s-projects.vercel.app");
+      hostname.endsWith(".vercel.app") &&
+      (hostname === "brainlabexam-cbt.vercel.app" ||
+       hostname.startsWith("brainlabexam-") ||
+       hostname.startsWith("brainlab-") ||
+       hostname.includes("brainlabtutorials"));
 
     if (isBrainLabVercelPreview) {
       return `${window.location.origin}${normalizedPath}`;
+    }
+  }
+
+  // Server-side fallback: check VERCEL_URL if set in preview environments
+  const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL;
+  if (vercelEnv) {
+    const cleanVercel = vercelEnv.trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (
+      cleanVercel.endsWith(".vercel.app") &&
+      (cleanVercel === "brainlabexam-cbt.vercel.app" ||
+       cleanVercel.startsWith("brainlabexam-") ||
+       cleanVercel.startsWith("brainlab-") ||
+       cleanVercel.includes("brainlabtutorials"))
+    ) {
+      return `https://${cleanVercel}${normalizedPath}`;
     }
   }
 

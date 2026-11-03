@@ -22,6 +22,7 @@ type LearnerStats = {
   revisionTasksCompleted: number;
   accessTier: string;
   maxQuestions: number;
+  subscriptionExpiry?: string | null;
 };
 
 type RecentExam = {
@@ -140,6 +141,7 @@ export default function LearnerDashboardPage() {
     revisionTasksCompleted: 0,
     accessTier: "Free Learner",
     maxQuestions: 50,
+    subscriptionExpiry: null,
   });
 
   const [recentExam, setRecentExam] = useState<RecentExam | null>(null);
@@ -298,9 +300,12 @@ export default function LearnerDashboardPage() {
         // Parse Access Entitlements
         let tierName = "Free Learner";
         let maxAllowedQuestions = 50;
+        let expiryDateText: string | null = null;
+
         if (resolvedRole) {
           tierName = `${resolvedRole === "super_admin" ? "Super Admin" : "Administrator"} VIP (Universal Access)`;
           maxAllowedQuestions = 999999;
+          expiryDateText = "Universal Access";
         } else {
           const now = Date.now();
           const activeEntitlements = (entitlementsRes.data || []).filter((e) => {
@@ -308,7 +313,9 @@ export default function LearnerDashboardPage() {
             const expiresAt = e.expires_at ? new Date(e.expires_at).getTime() : Number.POSITIVE_INFINITY;
             return !e.revoked_at && startsAt <= now && (e.permanent || expiresAt > now);
           });
-          const membership = activeEntitlements.find((e) => e.entitlement_type === "membership");
+          const membership = activeEntitlements.find(
+            (e) => e.entitlement_type === "membership" && ["premium", "plus", "pro"].includes((e.membership_type || "").toLowerCase())
+          );
           const subscription = subscriptionRes.data;
           const subscriptionExpiry = subscription?.current_period_end
             ? new Date(subscription.current_period_end).getTime()
@@ -317,17 +324,29 @@ export default function LearnerDashboardPage() {
             && subscriptionExpiry > now
             && ["premium", "plus", "pro"].includes((subscription.plan_id || "").toLowerCase());
 
-          if (membership) {
-            maxAllowedQuestions = Math.max(50, membership.max_questions || 50);
-            tierName = membership.membership_type
-              ? `${membership.membership_type.toUpperCase()} Member`
-              : "Enrolled Learner";
-          } else if (hasActiveSubscription) {
-            // Defensive fallback for older/manual grants while entitlement data is repaired.
-            maxAllowedQuestions = 500;
-            tierName = `${subscription!.plan_id.toUpperCase()} Member`;
+          const tierRank = (t?: string | null) => {
+            const val = (t || "").toLowerCase();
+            if (val === "pro") return 3;
+            if (val === "plus") return 2;
+            if (val === "premium") return 1;
+            return 0;
+          };
+
+          const entTier = membership?.membership_type?.toLowerCase() || null;
+          const subTier = hasActiveSubscription ? subscription!.plan_id.toLowerCase() : null;
+
+          if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
+            maxAllowedQuestions = Math.min(500, Math.max(50, membership!.max_questions || (entTier === "pro" ? 500 : entTier === "plus" ? 400 : 250)));
+            tierName = `${entTier!.toUpperCase()} Member`;
+            expiryDateText = membership!.permanent
+              ? "Lifetime"
+              : (membership!.expires_at ? new Date(membership!.expires_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : null);
+          } else if (tierRank(subTier) > 0) {
+            maxAllowedQuestions = subTier === "pro" ? 500 : subTier === "plus" ? 400 : 250;
+            tierName = `${subTier!.toUpperCase()} Member`;
+            expiryDateText = subscription!.current_period_end ? new Date(subscription!.current_period_end).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : null;
           } else if (activeEntitlements.length > 0) {
-            maxAllowedQuestions = Math.max(50, ...activeEntitlements.map((e) => e.max_questions || 50));
+            maxAllowedQuestions = Math.min(500, Math.max(50, ...activeEntitlements.map((e) => e.max_questions || 50)));
             tierName = "Enrolled Learner";
           }
         }
@@ -342,6 +361,7 @@ export default function LearnerDashboardPage() {
           revisionTasksCompleted: planCompletedTasks,
           accessTier: tierName,
           maxQuestions: maxAllowedQuestions,
+          subscriptionExpiry: expiryDateText,
         });
       } catch {
         // Defensive: dashboard remains operational even if database tables are in migration
@@ -498,6 +518,11 @@ export default function LearnerDashboardPage() {
             >
               <svg className="h-3.5 w-3.5 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
               <span>{stats.accessTier}</span>
+              {stats.subscriptionExpiry && stats.accessTier.includes("Member") && (
+                <span className="hidden sm:inline-block text-[10px] font-medium text-blue-700/80 ml-1">
+                  • {stats.subscriptionExpiry}
+                </span>
+              )}
             </Link>
             <Link
               href="/profile"
