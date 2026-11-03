@@ -19,6 +19,7 @@ import {
   type MaintenanceModeConfig,
 } from "../../lib/platformConfig";
 import "../admin.css";
+import AdminPinGuard from "@/app/components/AdminPinGuard";
 
 type AdminUser = {
   id: string;

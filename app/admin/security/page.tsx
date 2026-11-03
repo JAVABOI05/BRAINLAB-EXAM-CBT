@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getAdminSession, adminSignOut, type AdminUser } from "../../lib/adminAuth";
 import { ADMIN_ROLE_DETAILS, type AdminPermission } from "../../lib/adminRoles";
+import AdminPinGuard from "@/app/components/AdminPinGuard";
+import { updateAdminPin, lockAdminPin } from "@/app/lib/adminPinAuth";
 import "../admin.css";
 
 type SecurityCheckItem = {
@@ -23,6 +25,48 @@ export default function AdminSecurityPage() {
   const [sessionVerifiedAt, setSessionVerifiedAt] = useState<string>("");
   const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState("");
+  const [currentPinInput, setCurrentPinInput] = useState("");
+  const [newPinInput, setNewPinInput] = useState("");
+  const [confirmPinInput, setConfirmPinInput] = useState("");
+  const [pinUpdating, setPinUpdating] = useState(false);
+  const [pinMessage, setPinMessage] = useState("");
+  const [pinError, setPinError] = useState("");
+
+  async function handlePinUpdateSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPinError("");
+    setPinMessage("");
+
+    if (!currentPinInput.trim()) {
+      setPinError("Current PIN is required.");
+      return;
+    }
+    if (!newPinInput.trim() || newPinInput.length < 4 || newPinInput.length > 12) {
+      setPinError("New PIN must be between 4 and 12 characters.");
+      return;
+    }
+    if (newPinInput !== confirmPinInput) {
+      setPinError("New PIN and confirmation do not match.");
+      return;
+    }
+
+    setPinUpdating(true);
+    try {
+      const res = await updateAdminPin(currentPinInput.trim(), newPinInput.trim());
+      if (!res.ok) {
+        setPinError(res.error || "Failed to update Security PIN.");
+        return;
+      }
+      setPinMessage("Security PIN updated successfully! The new PIN will be required on all future sign-ins and sensitive settings.");
+      setCurrentPinInput("");
+      setNewPinInput("");
+      setConfirmPinInput("");
+    } catch {
+      setPinError("Network error updating PIN.");
+    } finally {
+      setPinUpdating(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -135,6 +179,10 @@ export default function AdminSecurityPage() {
 
   return (
     <main className="admin-shell">
+      <AdminPinGuard
+        title="Security & System Settings Protected"
+        description="This workspace controls authentication gate tokens, role permissions, and system security policies. Enter your Admin Security PIN to continue."
+      >
       <section className="admin-hero">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -330,6 +378,7 @@ export default function AdminSecurityPage() {
           ))}
         </div>
       </section>
+      </AdminPinGuard>
     </main>
   );
 }

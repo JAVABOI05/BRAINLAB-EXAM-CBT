@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import { ADMIN_ROLES, ADMIN_ROLE_DETAILS, type AdminRole } from "../../lib/adminRoles";
+import AdminPinGuard from "@/app/components/AdminPinGuard";
 
 type AdminProfile = {
   user_id: string;

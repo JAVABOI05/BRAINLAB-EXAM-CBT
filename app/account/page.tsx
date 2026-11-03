@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getAuthRedirectUrl } from "../lib/authRedirect";
+import { isAdminPinLocallyVerified } from "../lib/adminPinAuth";
 
 type Mode = "signin" | "signup";
 
@@ -72,8 +73,12 @@ export default function AccountPage() {
           return;
         }
         window.localStorage.removeItem("admin_user");
+      if (isAdminPinLocallyVerified()) {
         router.replace("/admin/dashboard");
-        return;
+      } else {
+        router.replace("/admin/login?pinRequired=true");
+      }
+      return;
       }
 
       await clearOperatorGate();
@@ -139,7 +144,11 @@ export default function AccountPage() {
       // The dashboard re-checks the current role from Supabase before loading data.
       // Do not persist an admin role in browser storage as an authorization signal.
       window.localStorage.removeItem("admin_user");
-      router.replace("/admin/dashboard");
+      if (isAdminPinLocallyVerified()) {
+        router.replace("/admin/dashboard");
+      } else {
+        router.replace("/admin/login?pinRequired=true");
+      }
       return;
     }
 

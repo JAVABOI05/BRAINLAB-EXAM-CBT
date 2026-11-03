@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { adminSignOut, getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission, type AdminPermission } from "../../lib/adminRoles";
 import AdminWorkspaceShell from "../AdminWorkspaceShell";
+import AdminPinGuard from "@/app/components/AdminPinGuard";
 import type { PaymentGatewaysConfig } from "../../lib/platformConfig";
 import "../admin.css";
 
@@ -191,6 +192,10 @@ export default function AdminPaymentGatewaysPage() {
   return (
     <AdminWorkspaceShell user={adminUser} permissions={permissions} onLogout={onLogout}>
       <div className="admin-page-container">
+        <AdminPinGuard
+          title="Payment Gateways & Merchant Credentials"
+          description="Payment gateways store live secret API keys, webhook signing secrets, and merchant bank settlement accounts. Enter your Admin Security PIN to view and modify."
+        >
         {/* Header */}
         <section className="admin-section admin-hero">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -714,6 +719,7 @@ export default function AdminPaymentGatewaysPage() {
             </button>
           </div>
         </form>
+        </AdminPinGuard>
       </div>
     </AdminWorkspaceShell>
   );
