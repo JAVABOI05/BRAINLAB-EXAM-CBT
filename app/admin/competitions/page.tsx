@@ -16,7 +16,7 @@ import {
   DuplicateDetectionResult,
 } from "@/app/lib/competitionQuestionBank";
 
-type TabKey = "competitions" | "banks" | "builder" | "csv_import" | "moderation" | "rewards" | "audit";
+type TabKey = "competitions" | "banks" | "builder" | "csv_import" | "moderation" | "rewards" | "audit" | "live_matches" | "squads" | "disputes" | "emergency";
 
 interface CompetitionBank {
   id: string;
@@ -158,6 +158,24 @@ export default function CompetitionArenaAdminPage() {
   const [rewardXpAmount, setRewardXpAmount] = useState(100);
   const [rewardReason, setRewardReason] = useState("");
 
+  // Live Matches, Squads, Disputes, and Emergency States
+  const [liveMatches, setLiveMatches] = useState<any[]>([]);
+  const [adminSquads, setAdminSquads] = useState<any[]>([]);
+  const [adminDisputes, setAdminDisputes] = useState<any[]>([]);
+  const [emergencyControls, setEmergencyControls] = useState<{
+    is_paused: boolean;
+    freeze_leaderboards: boolean;
+    maintenance_mode: boolean;
+    announcement: string;
+  }>({
+    is_paused: false,
+    freeze_leaderboards: false,
+    maintenance_mode: false,
+    announcement: "",
+  });
+  const [emergencyPin, setEmergencyPin] = useState("");
+  const [emergencySaving, setEmergencySaving] = useState(false);
+
   const searchInputId = useId();
 
   // Authenticated fetch helper that automatically attaches the admin session Bearer token
@@ -264,12 +282,56 @@ export default function CompetitionArenaAdminPage() {
     }
   };
 
+  const loadLiveMatches = useCallback(async () => {
+    try {
+      const res = await fetch("/api/competition/spectators");
+      if (res.ok) {
+        const d = await res.json();
+        setLiveMatches(d.matches || []);
+      }
+    } catch {}
+  }, []);
+
+  const loadAdminSquads = useCallback(async () => {
+    try {
+      const res = await fetch("/api/competition/teams");
+      if (res.ok) {
+        const d = await res.json();
+        setAdminSquads(d.teams || []);
+      }
+    } catch {}
+  }, []);
+
+  const loadAdminDisputes = useCallback(async () => {
+    try {
+      const res = await authFetch("/api/competition/disputes");
+      if (res.ok) {
+        const d = await res.json();
+        setAdminDisputes(d.disputes || []);
+      }
+    } catch {}
+  }, [authFetch]);
+
+  const loadEmergencyControls = useCallback(async () => {
+    try {
+      const res = await fetch("/api/competition/emergency-controls");
+      if (res.ok) {
+        const d = await res.json();
+        if (d.controls) setEmergencyControls(d.controls);
+      }
+    } catch {}
+  }, []);
+
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
     setError(null);
     setMessage(null);
     if (tab === "moderation") loadModerationCases();
     if (tab === "rewards") loadRewardProposals();
+    if (tab === "live_matches") loadLiveMatches();
+    if (tab === "squads") loadAdminSquads();
+    if (tab === "disputes") loadAdminDisputes();
+    if (tab === "emergency") loadEmergencyControls();
     if (tab === "audit") loadAuditLogs();
     if (tab === "banks" && selectedBankId) loadBankQuestions(selectedBankId);
   };
@@ -621,10 +683,42 @@ export default function CompetitionArenaAdminPage() {
         <button
           onClick={() => handleTabChange("audit")}
           className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-            activeTab === "audit" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100"
+            activeTab === "audit" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
           }`}
         >
-          📜 Immutable Audit Logs
+          📜 Audit Logs
+        </button>
+        <button
+          onClick={() => handleTabChange("live_matches")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+            activeTab === "live_matches" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          }`}
+        >
+          👁️ Live Matches (${liveMatches.length})
+        </button>
+        <button
+          onClick={() => handleTabChange("squads")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+            activeTab === "squads" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          }`}
+        >
+          🛡️ Squad Governance (${adminSquads.length})
+        </button>
+        <button
+          onClick={() => handleTabChange("disputes")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+            activeTab === "disputes" ? "bg-blue-600 text-white shadow-md" : "text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          }`}
+        >
+          ⚖️ Disputes Queue (${adminDisputes.filter((d: any) => d.status === "pending").length})
+        </button>
+        <button
+          onClick={() => handleTabChange("emergency")}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+            activeTab === "emergency" ? "bg-red-600 text-white shadow-md" : "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+          }`}
+        >
+          🚨 Emergency Controls
         </button>
       </div>
 

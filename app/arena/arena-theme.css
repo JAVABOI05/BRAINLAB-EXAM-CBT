@@ -1,0 +1,345 @@
+/* ==========================================================================
+   BRAINLAB ARENA — WORLD-CLASS DESIGN SYSTEM & SEMANTIC THEME TOKENS
+   Section 25A: Mandatory Light Mode & Dark Mode Specifications
+   Brand Identity: Deep Navy (#0B1536), Electric Blue (#1356E8), Coral (#FF5238)
+   ========================================================================== */
+
+:root {
+  /* Surface & Background (Light Mode) */
+  --arena-bg-page: #f8fafc;
+  --arena-bg-surface: #ffffff;
+  --arena-bg-elevated: #f1f5f9;
+  --arena-bg-sunken: #e2e8f0;
+  --arena-bg-glass: rgba(255, 255, 255, 0.85);
+
+  /* Borders & Dividers */
+  --arena-border-subtle: #e2e8f0;
+  --arena-border-default: #cbd5e1;
+  --arena-border-strong: #94a3b8;
+  --arena-border-focus: #1356e8;
+
+  /* Typography */
+  --arena-text-primary: #0b1536;
+  --arena-text-secondary: #334155;
+  --arena-text-muted: #64748b;
+  --arena-text-inverse: #ffffff;
+
+  /* Brand Accents */
+  --arena-brand-navy: #0b1536;
+  --arena-brand-blue: #1356e8;
+  --arena-brand-blue-hover: #0d43b8;
+  --arena-brand-blue-light: #eff6ff;
+  --arena-brand-blue-border: #bfdbfe;
+  --arena-brand-coral: #ff5238;
+  --arena-brand-coral-hover: #e03c22;
+  --arena-brand-coral-light: #fff1ef;
+  --arena-brand-coral-border: #fecdd3;
+  --arena-brand-cyan: #0284c7;
+
+  /* Status Tokens */
+  --arena-success-bg: #ecfdf5;
+  --arena-success-border: #a7f3d0;
+  --arena-success-text: #065f46;
+  --arena-warning-bg: #fffbeb;
+  --arena-warning-border: #fde68a;
+  --arena-warning-text: #92400e;
+  --arena-danger-bg: #fef2f2;
+  --arena-danger-border: #fecaca;
+  --arena-danger-text: #991b1b;
+
+  /* Shadows & Depth */
+  --arena-shadow-sm: 0 1px 2px 0 rgba(11, 21, 54, 0.05);
+  --arena-shadow-md: 0 4px 6px -1px rgba(11, 21, 54, 0.08), 0 2px 4px -2px rgba(11, 21, 54, 0.04);
+  --arena-shadow-lg: 0 10px 15px -3px rgba(11, 21, 54, 0.08), 0 4px 6px -4px rgba(11, 21, 54, 0.03);
+  --arena-shadow-glow-blue: 0 0 20px rgba(19, 86, 232, 0.15);
+  --arena-shadow-glow-coral: 0 0 20px rgba(255, 82, 56, 0.15);
+}
+
+/* Dark Mode Tokens (Triggered by .dark or [data-theme="dark"]) */
+.dark,
+[data-theme="dark"] {
+  /* Surface & Background (Dark Mode) */
+  --arena-bg-page: #060b18;
+  --arena-bg-surface: #0d172e;
+  --arena-bg-elevated: #13203f;
+  --arena-bg-sunken: #091022;
+  --arena-bg-glass: rgba(13, 23, 46, 0.85);
+
+  /* Borders & Dividers */
+  --arena-border-subtle: #19284d;
+  --arena-border-default: #233869;
+  --arena-border-strong: #334d8a;
+  --arena-border-focus: #3b82f6;
+
+  /* Typography */
+  --arena-text-primary: #f8fafc;
+  --arena-text-secondary: #cbd5e1;
+  --arena-text-muted: #8fa0c0;
+  --arena-text-inverse: #0b1536;
+
+  /* Brand Accents */
+  --arena-brand-navy: #132247;
+  --arena-brand-blue: #3b82f6;
+  --arena-brand-blue-hover: #60a5fa;
+  --arena-brand-blue-light: rgba(59, 130, 246, 0.15);
+  --arena-brand-blue-border: rgba(59, 130, 246, 0.35);
+  --arena-brand-coral: #ff6b57;
+  --arena-brand-coral-hover: #ff8575;
+  --arena-brand-coral-light: rgba(255, 82, 56, 0.15);
+  --arena-brand-coral-border: rgba(255, 82, 56, 0.35);
+  --arena-brand-cyan: #38bdf8;
+
+  /* Status Tokens */
+  --arena-success-bg: rgba(16, 185, 129, 0.12);
+  --arena-success-border: rgba(16, 185, 129, 0.3);
+  --arena-success-text: #6ee7b7;
+  --arena-warning-bg: rgba(245, 158, 11, 0.12);
+  --arena-warning-border: rgba(245, 158, 11, 0.3);
+  --arena-warning-text: #fcd34d;
+  --arena-danger-bg: rgba(239, 68, 68, 0.12);
+  --arena-danger-border: rgba(239, 68, 68, 0.3);
+  --arena-danger-text: #fca5a5;
+
+  /* Shadows & Depth */
+  --arena-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --arena-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --arena-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --arena-shadow-glow-blue: 0 0 25px rgba(59, 130, 246, 0.25);
+  --arena-shadow-glow-coral: 0 0 25px rgba(255, 107, 87, 0.25);
+}
+
+/* ==========================================================================
+   ARENA UTILITY CLASSES
+   ========================================================================== */
+
+.arena-card {
+  background-color: var(--arena-bg-surface);
+  border: 1px solid var(--arena-border-subtle);
+  border-radius: 1rem;
+  box-shadow: var(--arena-shadow-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.arena-card-hover:hover {
+  border-color: var(--arena-border-default);
+  box-shadow: var(--arena-shadow-md);
+  transform: translateY(-2px);
+}
+
+.arena-card-elevated {
+  background-color: var(--arena-bg-elevated);
+  border: 1px solid var(--arena-border-default);
+  border-radius: 1rem;
+}
+
+.arena-badge-blue {
+  background-color: var(--arena-brand-blue-light);
+  border: 1px solid var(--arena-brand-blue-border);
+  color: var(--arena-brand-blue);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.arena-badge-coral {
+  background-color: var(--arena-brand-coral-light);
+  border: 1px solid var(--arena-brand-coral-border);
+  color: var(--arena-brand-coral);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.arena-btn-primary {
+  background: linear-gradient(135deg, var(--arena-brand-blue), var(--arena-brand-navy));
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(19, 86, 232, 0.25);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arena-btn-primary:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(19, 86, 232, 0.35);
+}
+
+.arena-btn-coral {
+  background: linear-gradient(135deg, var(--arena-brand-coral), #d93820);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(255, 82, 56, 0.25);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arena-btn-coral:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 82, 56, 0.35);
+}
+
+.arena-btn-secondary {
+  background-color: var(--arena-bg-surface);
+  color: var(--arena-text-primary);
+  border: 1px solid var(--arena-border-default);
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arena-btn-secondary:hover:not(:disabled) {
+  background-color: var(--arena-bg-elevated);
+  border-color: var(--arena-border-strong);
+}
+
+/* ==========================================================================
+   TOURNAMENT BRACKET & MATCH ROOM VISUALS
+   ========================================================================== */
+
+.arena-bracket-node {
+  background-color: var(--arena-bg-surface);
+  border: 1.5px solid var(--arena-border-default);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: var(--arena-shadow-sm);
+  transition: border-color 0.15s ease;
+}
+
+.arena-bracket-node:hover {
+  border-color: var(--arena-brand-blue);
+}
+
+.arena-bracket-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--arena-border-subtle);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.arena-bracket-slot:last-child {
+  border-bottom: none;
+}
+
+.arena-bracket-slot.is-winner {
+  background-color: var(--arena-brand-blue-light);
+  color: var(--arena-brand-blue);
+  font-weight: 800;
+}
+
+/* Match Room distraction-free canvas */
+.arena-match-canvas {
+  min-height: 100vh;
+  background-color: var(--arena-bg-page);
+  color: var(--arena-text-primary);
+}
+
+.arena-timer-pill {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  background-color: var(--arena-bg-elevated);
+  border: 1.5px solid var(--arena-border-default);
+  color: var(--arena-text-primary);
+}
+
+.arena-timer-urgent {
+  background-color: var(--arena-danger-bg);
+  border-color: var(--arena-danger-border);
+  color: var(--arena-danger-text);
+  animation: arenaPulse 1s infinite alternate;
+}
+
+@keyframes arenaPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.04); }
+}
+
+/* High contrast option item */
+.arena-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  background-color: var(--arena-bg-surface);
+  border: 1.5px solid var(--arena-border-default);
+  color: var(--arena-text-primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arena-option-btn:hover:not(:disabled) {
+  border-color: var(--arena-brand-blue);
+  background-color: var(--arena-brand-blue-light);
+}
+
+.arena-option-btn.is-selected {
+  border-color: var(--arena-brand-blue);
+  background-color: var(--arena-brand-blue-light);
+  box-shadow: 0 0 0 2px var(--arena-brand-blue);
+  font-weight: 800;
+}
+
+.arena-option-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background-color: var(--arena-bg-elevated);
+  border: 1px solid var(--arena-border-default);
+  color: var(--arena-text-primary);
+  font-weight: 900;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.arena-option-btn.is-selected .arena-option-badge {
+  background-color: var(--arena-brand-blue);
+  color: #ffffff;
+  border-color: var(--arena-brand-blue);
+}

@@ -25,6 +25,22 @@ function shuffle<T>(array: T[]): T[] {
   return arr;
 }
 
+/**
+ * Extracts sequence number (e.g. blank [1]..[10]) for Cloze or passage questions.
+ */
+function extractQuestionSequence(q: EngineQuestion): number {
+  const text = `${q.question} ${q.subtopic || ""}`;
+  const match =
+    text.match(/(?:blank\s*\[?|#|\b\[)(\d{1,2})(?:\]|\b)/i) ||
+    text.match(/\bquestion\s*(\d{1,2})\b/i) ||
+    text.match(/^(\d{1,2})\./);
+  if (match && match[1]) {
+    const n = parseInt(match[1], 10);
+    if (!isNaN(n) && n >= 1 && n <= 100) return n;
+  }
+  return typeof q.id === "number" ? q.id : 0;
+}
+
 export function selectEnglishExaminationPaper(
   allEnglishQuestions: EngineQuestion[],
   blueprint: ExamBlueprint = OFFICIAL_UTME_ENGLISH_BLUEPRINT,
@@ -63,12 +79,13 @@ export function selectEnglishExaminationPaper(
     };
   }
 
-  // Pre-index questions by section / category and passage groups
+  // Pre-index questions by passage groups
   const passageGroups = new Map<string, EngineQuestion[]>();
   for (const q of eligibleQuestions) {
-    if (q.passage_id) {
-      if (!passageGroups.has(q.passage_id)) passageGroups.set(q.passage_id, []);
-      passageGroups.get(q.passage_id)!.push(q);
+    if (q.passage_id && q.passage_id.trim()) {
+      const pid = q.passage_id.trim();
+      if (!passageGroups.has(pid)) passageGroups.set(pid, []);
+      passageGroups.get(pid)!.push(q);
     }
   }
 
@@ -97,6 +114,7 @@ export function selectEnglishExaminationPaper(
       return (
         (qSec.includes("comprehension") || qCat.includes("comprehension")) &&
         !qCat.includes("cloze") &&
+        !qSec.includes("cloze") &&
         !qCat.includes("lekki")
       );
     }
@@ -104,10 +122,9 @@ export function selectEnglishExaminationPaper(
     // 3. Cloze passage check (Stage 6)
     if (cfgSec.includes("cloze")) {
       return (
+        qSec === "cloze" ||
         qCat.includes("cloze") ||
-        qSec.includes("cloze") ||
-        qCat.includes("grammar in context") ||
-        qCat.includes("registers")
+        (qSec.includes("cloze") && !qCat.includes("comprehension"))
       );
     }
 
@@ -130,90 +147,167 @@ export function selectEnglishExaminationPaper(
     const quota = secConfig.quota;
     const marksPerQ = secConfig.marks_per_question;
     const secName = secConfig.section;
+    const secNameLower = secName.toLowerCase();
 
     sectionCounts[secName] = 0;
     sectionMarks[secName] = 0;
 
-    // Filter available questions for this section not already selected
-    const pool = eligibleQuestions.filter((q) => !selectedIds.has(q.id) && matchesSection(q, secConfig));
-
     const chosenForSection: EngineQuestion[] = [];
 
-    // Stage 6 — Handle passage groups (Comprehension & Cloze)
-    if (secConfig.passage_required) {
-      // Find eligible passage groups whose questions belong to this pool
-      const eligiblePassageIds = Array.from(passageGroups.keys()).filter((pid) => {
-        const pQuestions = passageGroups.get(pid)!;
-        return pQuestions.some((q) => !selectedIds.has(q.id) && matchesSection(q, secConfig));
-      });
+    // =========================================================================
+    // SPECIALIZED HANDLER 1: Cloze Test Passage Grouping (Strict 10 Qs from 1 Passage)
+    // =========================================================================
+    if (secNameLower.includes("cloze")) {
+      // 1. Identify all eligible Cloze passage groups
+      // Each group must contain EXACTLY 10 active, unselected questions belonging to that passage
+      const eligibleClozePassages: { passageId: string; questions: EngineQuestion[] }[] = [];
 
-      if (eligiblePassageIds.length > 0) {
-        // Pick randomized passage group
-        const shuffledPids = shuffle(eligiblePassageIds);
-        for (const pid of shuffledPids) {
-          if (chosenForSection.length >= quota) break;
-          const groupQuestions = passageGroups.get(pid)!.filter((q) => !selectedIds.has(q.id));
-          const needed = quota - chosenForSection.length;
-          // Select as complete unit or slice up to needed
-          const toAdd = groupQuestions.slice(0, needed);
-          chosenForSection.push(...toAdd);
+      for (const [pid, pQuestions] of passageGroups.entries()) {
+        const availableInGroup = pQuestions.filter(
+          (q) => !selectedIds.has(q.id) && matchesSection(q, secConfig)
+        );
+
+        // Validation rule: each Cloze passage group must contain exactly 10 questions
+        // Incomplete (<10), excessive (>10), or invalid groups are strictly excluded
+        if (availableInGroup.length === 10) {
+          // Sort in their original sequence (preserving blank 1..10 order)
+          const sortedGroup = [...availableInGroup].sort(
+            (a, b) => extractQuestionSequence(a) - extractQuestionSequence(b) || a.id - b.id
+          );
+          eligibleClozePassages.push({ passageId: pid, questions: sortedGroup });
         }
+      }
+
+      if (eligibleClozePassages.length === 0) {
+        // Strict Rejection Rule: Never select individual questions randomly across different Cloze passages
+        // Reject incomplete selection rather than filling with unrelated questions
+        errors.push("No complete 10-question Cloze Test passage found in the question bank.");
+        return {
+          success: false,
+          questions: [],
+          rawTotalMarks: 0,
+          sectionCounts,
+          sectionMarks,
+          warnings,
+          errors,
+        };
+      }
+
+      // Randomly select ONE complete eligible Cloze passage unit
+      const selectedGroup = shuffle(eligibleClozePassages)[0];
+
+      for (const q of selectedGroup.questions) {
+        selectedIds.add(q.id);
+        const questionWithMarks: EngineQuestion = {
+          ...q,
+          marks: marksPerQ,
+        };
+        chosenForSection.push(questionWithMarks);
+        selectedQuestions.push(questionWithMarks);
+        sectionCounts[secName] += 1;
+        sectionMarks[secName] += marksPerQ;
+      }
+
+      // Cloze section is fully and authoritatively satisfied by the single complete unit
+      continue;
+    }
+
+    // =========================================================================
+    // SPECIALIZED HANDLER 2: Comprehension Passage Grouping (5 Qs from 1 Passage)
+    // =========================================================================
+    if (secNameLower.includes("comprehension") && secConfig.passage_required) {
+      const eligibleCompPassages: { passageId: string; questions: EngineQuestion[] }[] = [];
+
+      for (const [pid, pQuestions] of passageGroups.entries()) {
+        const availableInGroup = pQuestions.filter(
+          (q) => !selectedIds.has(q.id) && matchesSection(q, secConfig)
+        );
+
+        if (availableInGroup.length >= quota) {
+          const sortedGroup = [...availableInGroup].sort(
+            (a, b) => extractQuestionSequence(a) - extractQuestionSequence(b) || a.id - b.id
+          );
+          eligibleCompPassages.push({ passageId: pid, questions: sortedGroup });
+        }
+      }
+
+      if (eligibleCompPassages.length > 0) {
+        // Randomly pick ONE comprehension passage unit
+        const selectedGroup = shuffle(eligibleCompPassages)[0];
+        const toAdd = selectedGroup.questions.slice(0, quota);
+
+        for (const q of toAdd) {
+          selectedIds.add(q.id);
+          const questionWithMarks: EngineQuestion = {
+            ...q,
+            marks: marksPerQ,
+          };
+          chosenForSection.push(questionWithMarks);
+          selectedQuestions.push(questionWithMarks);
+          sectionCounts[secName] += 1;
+          sectionMarks[secName] += marksPerQ;
+        }
+
+        continue;
       }
     }
 
+    // =========================================================================
+    // GENERAL SECTIONS: Reading Text, Grammar, Vocabulary, Oral Forms
+    // =========================================================================
+    const pool = eligibleQuestions.filter(
+      (q) => !selectedIds.has(q.id) && matchesSection(q, secConfig)
+    );
+
     // Stage 4 & Stage 5 — Maximise topic coverage & apply High-Yield rules
+    const byTopic = new Map<string, EngineQuestion[]>();
+    for (const q of pool) {
+      if (chosenForSection.some((c) => c.id === q.id)) continue;
+      const topic = (q.topic || q.category || "General").trim();
+      if (!byTopic.has(topic)) byTopic.set(topic, []);
+      byTopic.get(topic)!.push(q);
+    }
+
+    // Check high yield rules for this section
+    const activeHighYield = highYieldRules.filter(
+      (r) =>
+        r.isActive &&
+        r.subject.toLowerCase() === "english" &&
+        (r.section?.toLowerCase() === secName.toLowerCase() || !r.section)
+    );
+
+    for (const hy of activeHighYield) {
+      if (chosenForSection.length >= quota) break;
+      const matchingQuestions = byTopic.get(hy.topic) || [];
+      const toTake = Math.min(hy.quota, quota - chosenForSection.length, matchingQuestions.length);
+      const shuffled = shuffle(matchingQuestions).slice(0, toTake);
+      chosenForSection.push(...shuffled);
+    }
+
+    // Fill remaining quota round-robin across distinct topics to maximise syllabus spread
+    const topicKeys = shuffle(Array.from(byTopic.keys()));
+    let topicIndex = 0;
+    let loopCount = 0;
+    while (chosenForSection.length < quota && topicKeys.length > 0 && loopCount < 500) {
+      loopCount++;
+      const currentTopic = topicKeys[topicIndex % topicKeys.length];
+      const topicPool = byTopic.get(currentTopic) || [];
+      const candidate = topicPool.find((q) => !chosenForSection.some((c) => c.id === q.id));
+      if (candidate) {
+        chosenForSection.push(candidate);
+      }
+      topicIndex++;
+      if (!topicPool.some((q) => !chosenForSection.some((c) => c.id === q.id))) {
+        const idx = topicKeys.indexOf(currentTopic);
+        if (idx !== -1) topicKeys.splice(idx, 1);
+      }
+    }
+
+    // If still short, fallback to any available question in section pool
     if (chosenForSection.length < quota) {
-      // Group remaining available pool by distinct topic/category
-      const byTopic = new Map<string, EngineQuestion[]>();
-      for (const q of pool) {
-        if (chosenForSection.some((c) => c.id === q.id)) continue;
-        const topic = (q.topic || q.category || "General").trim();
-        if (!byTopic.has(topic)) byTopic.set(topic, []);
-        byTopic.get(topic)!.push(q);
-      }
-
-      // Check high yield rules for this section
-      const activeHighYield = highYieldRules.filter(
-        (r) =>
-          r.isActive &&
-          r.subject.toLowerCase() === "english" &&
-          (r.section?.toLowerCase() === secName.toLowerCase() || !r.section)
-      );
-
-      for (const hy of activeHighYield) {
-        if (chosenForSection.length >= quota) break;
-        const matchingQuestions = byTopic.get(hy.topic) || [];
-        const toTake = Math.min(hy.quota, quota - chosenForSection.length, matchingQuestions.length);
-        const shuffled = shuffle(matchingQuestions).slice(0, toTake);
-        chosenForSection.push(...shuffled);
-      }
-
-      // Fill remaining quota round-robin across distinct topics to maximise syllabus spread
-      const topicKeys = shuffle(Array.from(byTopic.keys()));
-      let topicIndex = 0;
-      let loopCount = 0;
-      while (chosenForSection.length < quota && topicKeys.length > 0 && loopCount < 500) {
-        loopCount++;
-        const currentTopic = topicKeys[topicIndex % topicKeys.length];
-        const topicPool = byTopic.get(currentTopic) || [];
-        const candidate = topicPool.find((q) => !chosenForSection.some((c) => c.id === q.id));
-        if (candidate) {
-          chosenForSection.push(candidate);
-        }
-        topicIndex++;
-        // If all questions in that topic exhausted, drop it
-        if (!topicPool.some((q) => !chosenForSection.some((c) => c.id === q.id))) {
-          const idx = topicKeys.indexOf(currentTopic);
-          if (idx !== -1) topicKeys.splice(idx, 1);
-        }
-      }
-
-      // If still short, fallback to any available question in pool
-      if (chosenForSection.length < quota) {
-        const remaining = pool.filter((q) => !chosenForSection.some((c) => c.id === q.id));
-        const needed = quota - chosenForSection.length;
-        chosenForSection.push(...shuffle(remaining).slice(0, needed));
-      }
+      const remaining = pool.filter((q) => !chosenForSection.some((c) => c.id === q.id));
+      const needed = quota - chosenForSection.length;
+      chosenForSection.push(...shuffle(remaining).slice(0, needed));
     }
 
     // Enforce blueprint marks on selected questions for this section
@@ -235,10 +329,13 @@ export function selectEnglishExaminationPaper(
     }
   }
 
-  // If total selected questions < 60 due to bank shortages, fill from remaining active English questions
+  // If total selected questions < 60 due to non-passage shortages, fill from remaining standalone active English questions
+  // Never fill with Cloze questions or broken passage fragments
   if (selectedQuestions.length < totalTarget) {
     const needed = totalTarget - selectedQuestions.length;
-    const remainingFillers = eligibleQuestions.filter((q) => !selectedIds.has(q.id));
+    const remainingFillers = eligibleQuestions.filter(
+      (q) => !selectedIds.has(q.id) && !q.passage_id && q.section !== "cloze"
+    );
     const fillers = shuffle(remainingFillers).slice(0, needed);
     for (const f of fillers) {
       selectedIds.add(f.id);
@@ -253,8 +350,8 @@ export function selectEnglishExaminationPaper(
   // Calculate final raw marks total
   const rawTotalMarks = selectedQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
 
-  // Stage 8 — Randomise presentation while preserving passage integrity
-  // Questions belonging to the same passage are kept sequential
+  // Stage 8 — Preserve section and passage integrity
+  // Questions belonging to the same passage are kept sequential in 1..10 order
   const sequencedQuestions: EngineQuestion[] = [];
   const processedPassages = new Set<string>();
 
@@ -262,7 +359,9 @@ export function selectEnglishExaminationPaper(
     if (q.passage_id) {
       if (processedPassages.has(q.passage_id)) continue;
       processedPassages.add(q.passage_id);
-      const passageSiblingQuestions = selectedQuestions.filter((item) => item.passage_id === q.passage_id);
+      const passageSiblingQuestions = selectedQuestions
+        .filter((item) => item.passage_id === q.passage_id)
+        .sort((a, b) => extractQuestionSequence(a) - extractQuestionSequence(b) || a.id - b.id);
       sequencedQuestions.push(...passageSiblingQuestions);
     } else {
       sequencedQuestions.push(q);
@@ -270,7 +369,8 @@ export function selectEnglishExaminationPaper(
   }
 
   // Stage 9 — Validate completed paper
-  const finalQuestions = sequencedQuestions.length === selectedQuestions.length ? sequencedQuestions : selectedQuestions;
+  const finalQuestions =
+    sequencedQuestions.length === selectedQuestions.length ? sequencedQuestions : selectedQuestions;
 
   // Verify no duplicate IDs
   const uniqueCheck = new Set(finalQuestions.map((q) => q.id));

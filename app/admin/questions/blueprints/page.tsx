@@ -163,19 +163,19 @@ export default function BlueprintsAdminPage() {
   }, []);
 
   // Update a specific English section field
-  const handleUpdateEnglishSection = (index: number, field: keyof SectionConfig, value: any) => {
+  const handleUpdateEnglishSection = (index: number, field: keyof SectionConfig, value: unknown) => {
     setEnglishBlueprint((prev) => {
       const nextSections = [...prev.sections_config];
       const sec = { ...nextSections[index] };
 
       if (field === "quota") {
-        sec.quota = Math.max(1, parseInt(value, 10) || 1);
+        sec.quota = Math.max(1, parseInt(String(value), 10) || 1);
         sec.raw_total = Math.round(sec.quota * sec.marks_per_question * 10) / 10;
       } else if (field === "marks_per_question") {
-        sec.marks_per_question = Math.max(0.1, parseFloat(value) || 1);
+        sec.marks_per_question = Math.max(0.1, parseFloat(String(value)) || 1);
         sec.raw_total = Math.round(sec.quota * sec.marks_per_question * 10) / 10;
       } else {
-        (sec as any)[field] = value;
+        (sec as Record<string, unknown>)[field] = value;
       }
 
       nextSections[index] = sec;
@@ -723,7 +723,7 @@ export default function BlueprintsAdminPage() {
             <div>
               <h3 className="text-base font-bold text-slate-900">Elective Examination Quotas &amp; Scoring Standard</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Standard UTME elective subjects (Mathematics, Chemistry, Physics, Biology, etc.) each form 1 of the candidate's 3 chosen electives.
+                Standard UTME elective subjects (Mathematics, Chemistry, Physics, Biology, etc.) each form 1 of the candidate&apos;s 3 chosen electives.
               </p>
             </div>
 

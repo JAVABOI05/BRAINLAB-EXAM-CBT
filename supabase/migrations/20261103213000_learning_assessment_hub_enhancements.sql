@@ -105,6 +105,7 @@ DECLARE
   a public.learning_assessments%ROWTYPE;
   c public.learning_access_codes%ROWTYPE;
   v_ids BIGINT[];
+  v_selected_ids BIGINT[];
   v_snapshot JSONB;
   v_attempt public.learning_practice_attempts%ROWTYPE;
   v_number INTEGER;

@@ -1,1001 +1,986 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import LearningStreakCard from "../components/LearningStreakCard";
+import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import {
-  getUserGamificationProfile,
-  type UserGamificationProfile,
-} from "../lib/gamification";
-import { nudgeChallengeArena } from "../lib/proNudge";
+import { useLearnerTheme } from "../components/LearnerThemeProvider";
+import ArenaThemeToggle from "../components/arena/ArenaThemeToggle";
 
-type OptionKey = "A" | "B" | "C" | "D" | "E";
-
-interface ChallengeQuestion {
-  id: string;
-  subject: string;
-  question: string;
-  options: Record<string, string>;
-  correctAnswer: OptionKey;
-  explanation: string;
-}
-
-interface ChallengeMode {
+interface Competition {
   id: string;
   title: string;
-  subtitle: string;
-  icon: string;
-  badge: string;
-  durationSeconds: number;
-  xpMultiplier: number;
-  questionCount: number;
-  subjects: string[];
+  description: string;
+  code: string;
+  competition_type: string;
+  status: "draft" | "pending_approval" | "scheduled" | "published" | "active" | "paused" | "cancelled" | "concluded";
+  start_time: string | null;
+  end_time: string | null;
+  entry_fee: number;
+  prize_pool?: string;
+  current_participants?: number;
+  max_participants?: number;
+  rules?: {
+    question_count?: number;
+    duration_seconds?: number;
+  };
 }
 
-const CHALLENGE_MODES: ChallengeMode[] = [
-  {
-    id: "daily_blitz",
-    title: "Daily 5-Minute Blitz",
-    subtitle: "10 high-yield questions across all major subjects. Defend your streak with 2x XP multiplier!",
-    icon: "daily",
-    badge: "2× XP BONUS",
-    durationSeconds: 300,
-    xpMultiplier: 2.0,
-    questionCount: 10,
-    subjects: ["Mathematics", "English", "Biology", "Chemistry", "Physics", "Economics"],
-  },
-  {
-    id: "math_sprint",
-    title: "Mathematics Speed Run",
-    subtitle: "Algebra, calculus, logarithms, and geometry fast drills.",
-    icon: "math",
-    badge: "1.5× XP",
-    durationSeconds: 360,
-    xpMultiplier: 1.5,
-    questionCount: 10,
-    subjects: ["Mathematics"],
-  },
-  {
-    id: "english_sprint",
-    title: "English Lexis & Structure",
-    subtitle: "Grammar concord, antonyms, synonyms, and idiom master sprint.",
-    icon: "english",
-    badge: "1.5× XP",
-    durationSeconds: 300,
-    xpMultiplier: 1.5,
-    questionCount: 10,
-    subjects: ["English"],
-  },
-  {
-    id: "science_sprint",
-    title: "Science Triple Threat",
-    subtitle: "Rapid-fire questions blending Biology, Chemistry, and Physics.",
-    icon: "science",
-    badge: "1.5× XP",
-    durationSeconds: 360,
-    xpMultiplier: 1.5,
-    questionCount: 10,
-    subjects: ["Biology", "Chemistry", "Physics"],
-  },
-  {
-    id: "arts_commercial_sprint",
-    title: "Commercial & Social Sciences",
-    subtitle: "Economics, Government, and Commerce key exam concepts.",
-    icon: "arts",
-    badge: "1.5× XP",
-    durationSeconds: 300,
-    xpMultiplier: 1.5,
-    questionCount: 10,
-    subjects: ["Economics", "Government"],
-  },
-];
-
-function renderModeIcon(icon: string) {
-  switch (icon) {
-    case "daily":
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-      );
-    case "math":
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-          <line x1="19" y1="5" x2="5" y2="19" />
-          <circle cx="6.5" cy="6.5" r="2.5" />
-          <circle cx="17.5" cy="17.5" r="2.5" />
-        </svg>
-      );
-    case "english":
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-        </svg>
-      );
-    case "science":
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
-          <path d="M10 2v7.31L4.35 18.5A2 2 0 0 0 6.07 22h11.86a2 2 0 0 0 1.72-3.5L14 9.31V2" />
-          <line x1="8.5" y1="2" x2="15.5" y2="2" />
-          <line x1="6" y1="17" x2="18" y2="17" />
-        </svg>
-      );
-    case "arts":
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500">
-          <line x1="3" y1="21" x2="21" y2="21" />
-          <line x1="6" y1="18" x2="6" y2="11" />
-          <line x1="10" y1="18" x2="10" y2="11" />
-          <line x1="14" y1="18" x2="14" y2="11" />
-          <line x1="18" y1="18" x2="18" y2="11" />
-          <polygon points="12 3 2 10 22 10 12 3" />
-        </svg>
-      );
-    default:
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-      );
-  }
+interface Challenge {
+  id: string;
+  challenger_id: string;
+  challenged_id: string | null;
+  subject: string;
+  question_count: number;
+  duration_minutes: number;
+  difficulty: string;
+  status: "pending" | "accepted" | "declined" | "expired" | "completed" | "cancelled";
+  match_id?: string | null;
+  created_at: string;
+  challenger?: {
+    full_name?: string;
+    username?: string;
+  };
+  challenged?: {
+    full_name?: string;
+    username?: string;
+  } | null;
 }
 
-const QUESTION_BANK: ChallengeQuestion[] = [
-  // Mathematics
-  {
-    id: "m1",
-    subject: "Mathematics",
-    question: "If log₁₀ 2 = 0.3010 and log₁₀ 3 = 0.4771, find the value of log₁₀ 18.",
-    options: {
-      A: "1.2552",
-      B: "0.9542",
-      C: "1.0791",
-      D: "1.4771",
-    },
-    correctAnswer: "A",
-    explanation: "log₁₀ 18 = log₁₀ (2 × 3²) = log₁₀ 2 + 2(log₁₀ 3) = 0.3010 + 2(0.4771) = 0.3010 + 0.9542 = 1.2552.",
-  },
-  {
-    id: "m2",
-    subject: "Mathematics",
-    question: "Differentiate y = (3x² - 2)⁴ with respect to x.",
-    options: {
-      A: "24x(3x² - 2)³",
-      B: "12x(3x² - 2)³",
-      C: "4(3x² - 2)³",
-      D: "24(3x² - 2)³",
-    },
-    correctAnswer: "A",
-    explanation: "Using the chain rule: dy/dx = 4(3x² - 2)³ · d/dx(3x² - 2) = 4(3x² - 2)³ · (6x) = 24x(3x² - 2)³.",
-  },
-  {
-    id: "m3",
-    subject: "Mathematics",
-    question: "A bag contains 5 red balls and 7 black balls. If two balls are drawn at random without replacement, find the probability that both are red.",
-    options: {
-      A: "5/33",
-      B: "25/144",
-      C: "7/22",
-      D: "35/132",
-    },
-    correctAnswer: "A",
-    explanation: "P(both red) = (5/12) × (4/11) = 20/132 = 5/33.",
-  },
-  {
-    id: "m4",
-    subject: "Mathematics",
-    question: "Find the sum to infinity of the geometric progression: 1, 1/3, 1/9, 1/27, ...",
-    options: {
-      A: "3/2",
-      B: "2/3",
-      C: "4/3",
-      D: "3/4",
-    },
-    correctAnswer: "A",
-    explanation: "First term a = 1, common ratio r = 1/3. Sum to infinity S_∞ = a / (1 - r) = 1 / (1 - 1/3) = 1 / (2/3) = 3/2.",
-  },
+interface Team {
+  id: string;
+  name: string;
+  slug: string;
+  motto: string;
+  avatar_url: string | null;
+  is_recruiting: boolean;
+  elo_rating: number;
+  matches_played: number;
+  matches_won: number;
+  matches_drawn: number;
+  matches_lost: number;
+  member_count?: number;
+  is_my_team?: boolean;
+}
 
-  // English Language
-  {
-    id: "e1",
-    subject: "English",
-    question: "Choose the word nearest in meaning to the italicized word: 'The politician's argument was completely TENABLE and backed by verifiable census records.'",
-    options: {
-      A: "Defensible",
-      B: "Fragile",
-      C: "Ambiguous",
-      D: "Dubious",
-    },
-    correctAnswer: "A",
-    explanation: "'Tenable' describes an argument, position, or theory that is justifiable, defensible, and able to be maintained against attack or objection.",
-  },
-  {
-    id: "e2",
-    subject: "English",
-    question: "Select the option that correctly completes the sentence: 'Neither the principal nor the teachers _____ in attendance at the emergency briefing yesterday.'",
-    options: {
-      A: "were",
-      B: "was",
-      C: "is",
-      D: "are",
-    },
-    correctAnswer: "A",
-    explanation: "Under the rule of proximity for 'neither... nor', when subjects differ in number, the verb agrees with the closer subject. 'Teachers' is plural and the event occurred yesterday (past), so 'were' is correct.",
-  },
-  {
-    id: "e3",
-    subject: "English",
-    question: "Choose the word opposite in meaning (antonym) to the capitalized word: 'The company entered a period of ACUTE financial instability.'",
-    options: {
-      A: "Mild",
-      B: "Severe",
-      C: "Sudden",
-      D: "Crucial",
-    },
-    correctAnswer: "A",
-    explanation: "'Acute' denotes intense, severe, or sharply experienced distress. Its direct antonym is 'mild' or 'slight'.",
-  },
-  {
-    id: "e4",
-    subject: "English",
-    question: "Choose the option that best explains the idiom: 'The new manager refused to BEAT ABOUT THE BUSH during the meeting.'",
-    options: {
-      A: "Speak directly and honestly about the main problem",
-      B: "Avoid talking about unpleasant truths",
-      C: "Waste company resources unnecessarily",
-      D: "Arrive late to scheduled discussions",
-    },
-    correctAnswer: "A",
-    explanation: "To 'beat about the bush' means to discuss a matter without coming directly to the point. Refusing to beat about the bush means addressing the issue directly and plainly.",
-  },
+interface LeaderboardEntry {
+  rank: number | string;
+  user_id: string;
+  elo_rating: number;
+  peak_elo: number;
+  matches_played: number;
+  matches_won: number;
+  matches_drawn: number;
+  matches_lost: number;
+  win_rate: number;
+  win_streak: number;
+  tier: string;
+  profile?: {
+    full_name?: string;
+    username?: string;
+  };
+}
 
-  // Biology
-  {
-    id: "b1",
-    subject: "Biology",
-    question: "Which of the following cellular organelles is primarily responsible for ATP synthesis during cellular respiration?",
-    options: {
-      A: "Mitochondria",
-      B: "Ribosome",
-      C: "Golgi apparatus",
-      D: "Endoplasmic reticulum",
-    },
-    correctAnswer: "A",
-    explanation: "Mitochondria are the powerhouses of eukaryotic cells, executing the Krebs cycle and oxidative phosphorylation to synthesize ATP.",
-  },
-  {
-    id: "b2",
-    subject: "Biology",
-    question: "In human circulatory physiology, which blood vessel carries oxygenated blood from the lungs back to the left atrium of the heart?",
-    options: {
-      A: "Pulmonary vein",
-      B: "Pulmonary artery",
-      C: "Vena cava",
-      D: "Aorta",
-    },
-    correctAnswer: "A",
-    explanation: "The pulmonary veins are unique among veins because they transport freshly oxygenated blood from the alveolar capillary beds of the lungs into the left atrium.",
-  },
-  {
-    id: "b3",
-    subject: "Biology",
-    question: "A cross between a homozygous red-flowered plant (RR) and a homozygous white-flowered plant (rr) produces pink flowers in all F₁ offspring. This genetic phenomenon illustrates:",
-    options: {
-      A: "Incomplete dominance",
-      B: "Co-dominance",
-      C: "Epistasis",
-      D: "Sex-linked inheritance",
-    },
-    correctAnswer: "A",
-    explanation: "Incomplete dominance occurs when neither allele is completely dominant, resulting in a heterozygous phenotype that is an intermediate blend (pink) of the two homozygous traits.",
-  },
-
-  // Chemistry
-  {
-    id: "c1",
-    subject: "Chemistry",
-    question: "What volume of hydrogen gas is liberated at s.t.p. when 2.4 g of magnesium reacts completely with excess dilute hydrochloric acid? (Mg = 24, Molar volume at s.t.p. = 22.4 dm³)",
-    options: {
-      A: "2.24 dm³",
-      B: "1.12 dm³",
-      C: "4.48 dm³",
-      D: "22.4 dm³",
-    },
-    correctAnswer: "A",
-    explanation: "Reaction: Mg + 2HCl → MgCl₂ + H₂. Moles of Mg = 2.4g / 24g/mol = 0.1 mol. Since mole ratio Mg:H₂ is 1:1, 0.1 mol of H₂ is produced. Volume = 0.1 mol × 22.4 dm³/mol = 2.24 dm³.",
-  },
-  {
-    id: "c2",
-    subject: "Chemistry",
-    question: "Which of the following electronic configurations represents a transition element in the periodic table?",
-    options: {
-      A: "1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s¹",
-      B: "1s² 2s² 2p⁶ 3s² 3p⁶ 4s²",
-      C: "1s² 2s² 2p⁶ 3s² 3p⁴",
-      D: "1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p²",
-    },
-    correctAnswer: "A",
-    explanation: "Configuration 1s² 2s² 2p⁶ 3s² 3p⁶ 3d⁵ 4s¹ represents Chromium (Cr, atomic number 24), a d-block transition element with half-filled stable 3d and 4s subshells.",
-  },
-  {
-    id: "c3",
-    subject: "Chemistry",
-    question: "According to Le Chatelier's principle, what will happen to the equilibrium 2SO₂(g) + O₂(g) ⇌ 2SO₃(g) (ΔH = -197 kJ) if the pressure is increased at constant temperature?",
-    options: {
-      A: "Equilibrium shifts to the right (forward reaction favored)",
-      B: "Equilibrium shifts to the left (backward reaction favored)",
-      C: "Equilibrium remains unaffected",
-      D: "Reaction rate drops to zero",
-    },
-    correctAnswer: "A",
-    explanation: "An increase in pressure favors the side with fewer moles of gas. The reactants have 3 moles (2 + 1) while the product has 2 moles. Thus, equilibrium shifts forward to yield more SO₃.",
-  },
-
-  // Physics
-  {
-    id: "p1",
-    subject: "Physics",
-    question: "An object is dropped from rest from the top of a cliff 80 meters high. Calculate the time it takes to strike the ground below. (Take g = 10 m/s² and ignore air resistance)",
-    options: {
-      A: "4.0 seconds",
-      B: "2.8 seconds",
-      C: "8.0 seconds",
-      D: "16.0 seconds",
-    },
-    correctAnswer: "A",
-    explanation: "Using s = ut + ½gt² with initial velocity u = 0: 80 = 0 + ½(10)t² => 80 = 5t² => t² = 16 => t = 4.0 seconds.",
-  },
-  {
-    id: "p2",
-    subject: "Physics",
-    question: "A step-down transformer has 1200 turns in its primary coil and 120 turns in its secondary coil. If an alternating voltage of 240 V is applied to the primary, what is the output voltage from the secondary coil?",
-    options: {
-      A: "24 V",
-      B: "12 V",
-      C: "2400 V",
-      D: "48 V",
-    },
-    correctAnswer: "A",
-    explanation: "Transformer formula: V_s / V_p = N_s / N_p => V_s = 240 × (120 / 1200) = 240 × 0.1 = 24 V.",
-  },
-
-  // Economics & Government
-  {
-    id: "ec1",
-    subject: "Economics",
-    question: "When the percentage change in quantity demanded is exactly equal to the percentage change in price, elasticity of demand is described as:",
-    options: {
-      A: "Unitary elastic (Ed = 1)",
-      B: "Perfectively elastic (Ed = ∞)",
-      C: "Inelastic (Ed < 1)",
-      D: "Perfectively inelastic (Ed = 0)",
-    },
-    correctAnswer: "A",
-    explanation: "Unitary elasticity occurs when price elasticity of demand |Ed| = 1, meaning that any percentage shift in price produces a proportional change in quantity demanded.",
-  },
-  {
-    id: "g1",
-    subject: "Government",
-    question: "The doctrine of separation of powers, designed to prevent tyranny by dividing governmental powers between the executive, legislature, and judiciary, was formulated systematically by:",
-    options: {
-      A: "Baron de Montesquieu",
-      B: "John Locke",
-      C: "Jean-Jacques Rousseau",
-      D: "Thomas Hobbes",
-    },
-    correctAnswer: "A",
-    explanation: "Baron de Montesquieu expounded the modern doctrine of separation of powers in his 1748 masterpiece 'The Spirit of the Laws' (De l'esprit des lois).",
-  },
-];
+interface SpectatorMatch {
+  id: string;
+  match_type: string;
+  status: string;
+  score_a: number;
+  score_b: number;
+  duration_seconds: number;
+  started_at: string;
+  spectators_count: number;
+  metadata?: {
+    subject?: string;
+    player_a_name?: string;
+    player_b_name?: string;
+  };
+}
 
 export default function ChallengeArenaPage() {
-  const [profile, setProfile] = useState<UserGamificationProfile | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [selectedMode, setSelectedMode] = useState<ChallengeMode>(CHALLENGE_MODES[0]);
-  const [activeSession, setActiveSession] = useState<boolean>(false);
-  const [questions, setQuestions] = useState<ChallengeQuestion[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [userAnswers, setUserAnswers] = useState<Record<string, OptionKey>>({});
-  const [timeLeft, setTimeLeft] = useState<number>(300);
-  const [isFinished, setIsFinished] = useState<boolean>(false);
-  const [scoreData, setScoreData] = useState<{
-    correctCount: number;
-    total: number;
-    percentage: number;
-    timeSpent: number;
-    xpEarned: number;
-    streakDays: number;
-    newBadges: string[];
-  } | null>(null);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const router = useRouter();
+  const { isDark } = useLearnerTheme();
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Navigation tabs
+  const [activeTab, setActiveTab] = useState<"tournaments" | "challenges" | "teams" | "leaderboard" | "spectate">("tournaments");
 
-  // Load user session and gamification stats
-  useEffect(() => {
-    let mounted = true;
-    async function loadUser() {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!mounted) return;
-      if (auth.user) {
-        setUserId(auth.user.id);
-        const p = await getUserGamificationProfile(auth.user.id);
-        if (mounted && p) setProfile(p);
+  // User state
+  const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
+  const [myRating, setMyRating] = useState<LeaderboardEntry | null>(null);
+
+  // Data states
+  const [loading, setLoading] = useState(true);
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [spectatorMatches, setSpectatorMatches] = useState<SpectatorMatch[]>([]);
+
+  // Emergency Banner
+  const [emergencyAlert, setEmergencyAlert] = useState<{ is_paused: boolean; announcement: string } | null>(null);
+
+  // Challenge modal
+  const [showCreateChallengeModal, setShowCreateChallengeModal] = useState(false);
+  const [newChallengeSubject, setNewChallengeSubject] = useState("Mathematics");
+  const [newChallengeQCount, setNewChallengeQCount] = useState(10);
+  const [newChallengeDuration, setNewChallengeDuration] = useState(5);
+  const [newChallengeDifficulty, setNewChallengeDifficulty] = useState("medium");
+  const [submittingChallenge, setSubmittingChallenge] = useState(false);
+
+  // Squad modal
+  const [showCreateSquadModal, setShowCreateSquadModal] = useState(false);
+  const [newSquadName, setNewSquadName] = useState("");
+  const [newSquadMotto, setNewSquadMotto] = useState("");
+  const [submittingSquad, setSubmittingSquad] = useState(false);
+
+  // Tournament registration state
+  const [registeringCompId, setRegisteringCompId] = useState<string | null>(null);
+  const [registrationMessage, setRegistrationMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Fetch initial user & arena data
+  const loadArenaData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // 1. Get current auth user
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user ? { id: user.id, email: user.email } : null);
+
+      // 2. Fetch emergency status
+      fetch("/api/competition/emergency-controls")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.controls && (data.controls.is_paused || data.controls.announcement)) {
+            setEmergencyAlert(data.controls);
+          }
+        })
+        .catch(() => {});
+
+      // 3. Fetch Competitions
+      const compRes = await fetch("/api/competition/competitions");
+      if (compRes.ok) {
+        const compJson = await compRes.json();
+        setCompetitions(compJson.competitions || []);
       }
+
+      // 4. Fetch Challenges
+      const chalRes = await fetch("/api/competition/challenges?filter=all");
+      if (chalRes.ok) {
+        const chalJson = await chalRes.json();
+        setChallenges(chalJson.challenges || []);
+      }
+
+      // 5. Fetch Teams
+      const teamRes = await fetch("/api/competition/teams");
+      if (teamRes.ok) {
+        const teamJson = await teamRes.json();
+        setTeams(teamJson.teams || []);
+        setMyTeamId(teamJson.my_team_id || null);
+      }
+
+      // 6. Fetch Leaderboard & User Rating
+      const leadRes = await fetch("/api/competition/leaderboards?type=all");
+      if (leadRes.ok) {
+        const leadJson = await leadRes.json();
+        setLeaderboard(leadJson.individuals || []);
+        if (leadJson.my_rank) {
+          setMyRating(leadJson.my_rank);
+        }
+      }
+
+      // 7. Fetch Spectator Matches
+      const specRes = await fetch("/api/competition/spectators");
+      if (specRes.ok) {
+        const specJson = await specRes.json();
+        setSpectatorMatches(specJson.matches || []);
+      }
+    } catch (err) {
+      console.error("Error loading arena data:", err);
+    } finally {
+      setLoading(false);
     }
-    void loadUser();
-    return () => {
-      mounted = false;
-    };
   }, []);
 
-
-
-  const handleStartChallenge = (mode: ChallengeMode) => {
-    setSelectedMode(mode);
-    // Filter questions based on mode subjects
-    const filtered = QUESTION_BANK.filter((q) =>
-      mode.subjects.includes(q.subject)
-    );
-    // Shuffle and pick desired count
-    const shuffled = [...filtered].sort(() => 0.5 - Math.random());
-    const finalSet = shuffled.slice(0, mode.questionCount);
-    // Fallback if not enough questions in subject
-    const selected = finalSet.length >= 5 ? finalSet : QUESTION_BANK.slice(0, mode.questionCount);
-
-    setQuestions(selected);
-    setCurrentIndex(0);
-    setUserAnswers({});
-    setTimeLeft(mode.durationSeconds);
-    setIsFinished(false);
-    setScoreData(null);
-    setActiveSession(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleSelectOption = (questionId: string, option: OptionKey) => {
-    if (isFinished) return;
-    setUserAnswers((prev) => ({ ...prev, [questionId]: option }));
-  };
-
-  const handleCompleteChallenge = useCallback(async () => {
-    if (isFinished || submitting) return;
-    setSubmitting(true);
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    let correctCount = 0;
-    questions.forEach((q) => {
-      if (userAnswers[q.id] === q.correctAnswer) {
-        correctCount += 1;
-      }
-    });
-
-    const total = questions.length;
-    const percentage = Math.round((correctCount / total) * 100);
-    const timeSpent = selectedMode.durationSeconds - timeLeft;
-
-    // Base XP calculation: 10 XP per correct question
-    // Scaled by mode multiplier and extra bonus for high score
-    let baseXP = correctCount * 10;
-    if (percentage >= 80) baseXP += 50; // Excellence bonus
-    // Do not display client-computed points as awarded account XP for signed-in users.
-    const xpEarned = userId ? 0 : Math.round(baseXP * selectedMode.xpMultiplier);
-
-    let streakDays = profile?.current_streak_days ?? 1;
-    const newBadges: string[] = [];
-
-    // Challenge Arena scores are calculated in the browser. Do not award authoritative
-    // XP or streaks until attempts and grading are persisted server-side.
-    if (userId) {
-      try {
-        const updatedProfile = await getUserGamificationProfile(userId);
-        if (updatedProfile) setProfile(updatedProfile);
-        void nudgeChallengeArena();
-      } catch {}
-    } else {
-      // Local fallback for anonymous practice
-      const localStreak = parseInt(localStorage.getItem("brainlab_streak_count") || "0", 10) + 1;
-      streakDays = localStreak;
-      localStorage.setItem("brainlab_streak_count", String(localStreak));
-      localStorage.setItem("brainlab_last_active_date", new Date().toISOString().split("T")[0]);
-    }
-
-    setScoreData({
-      correctCount,
-      total,
-      percentage,
-      timeSpent,
-      xpEarned,
-      streakDays,
-      newBadges,
-    });
-
-    setIsFinished(true);
-    setSubmitting(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [isFinished, submitting, questions, userAnswers, selectedMode, timeLeft, userId, profile]);
-
-  // Timer countdown. Declared after the completion callback to avoid a temporal-dead-zone reference.
   useEffect(() => {
-    if (activeSession && !isFinished && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            void handleCompleteChallenge();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [activeSession, isFinished, timeLeft, handleCompleteChallenge]);
+    loadArenaData();
+    const refreshInterval = setInterval(loadArenaData, 15000); // 15s auto-refresh
+    return () => clearInterval(refreshInterval);
+  }, [loadArenaData]);
 
-  const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainder = secs % 60;
-    return `${mins}:${remainder < 10 ? "0" : ""}${remainder}`;
+  // Handle Create Challenge
+  const handleCreateChallenge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) {
+      router.push("/auth/signin?redirect=/challenge-arena");
+      return;
+    }
+
+    try {
+      setSubmittingChallenge(true);
+      const res = await fetch("/api/competition/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: newChallengeSubject,
+          question_count: newChallengeQCount,
+          duration_minutes: newChallengeDuration,
+          difficulty: newChallengeDifficulty,
+          challenged_id: null,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create challenge");
+
+      setShowCreateChallengeModal(false);
+      loadArenaData();
+      alert("⚔️ Challenge created and posted to the Arena!");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error creating challenge");
+    } finally {
+      setSubmittingChallenge(false);
+    }
+  };
+
+  // Handle Accept Challenge
+  const handleAcceptChallenge = async (challengeId: string) => {
+    if (!currentUser) {
+      router.push("/auth/signin?redirect=/challenge-arena");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/competition/challenges", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_id: challengeId,
+          action: "accept",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to accept challenge");
+
+      if (data.match_id) {
+        // Direct redirect to live match lobby!
+        router.push(`/challenge-arena/matches/${data.match_id}`);
+      } else {
+        loadArenaData();
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error accepting challenge");
+    }
+  };
+
+  // Handle Create Squad
+  const handleCreateSquad = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) {
+      router.push("/auth/signin?redirect=/challenge-arena");
+      return;
+    }
+
+    try {
+      setSubmittingSquad(true);
+      const res = await fetch("/api/competition/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newSquadName,
+          motto: newSquadMotto,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to form squad");
+
+      setShowCreateSquadModal(false);
+      setNewSquadName("");
+      setNewSquadMotto("");
+      loadArenaData();
+      if (data.team?.id) {
+        router.push(`/challenge-arena/teams/${data.team.id}`);
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error creating squad");
+    } finally {
+      setSubmittingSquad(false);
+    }
+  };
+
+  // Handle Tournament Registration (with BACHS payment support)
+  const handleRegisterTournament = async (competitionId: string) => {
+    if (!currentUser) {
+      router.push(`/auth/signin?redirect=/challenge-arena`);
+      return;
+    }
+
+    try {
+      setRegisteringCompId(competitionId);
+      setRegistrationMessage(null);
+
+      const res = await fetch(`/api/competition/competitions/${competitionId}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to register for competition");
+
+      if (data.requiresPayment && data.checkoutUrl) {
+        // Redirect to BACHS hosted checkout
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
+      setRegistrationMessage({ text: "✓ Registered successfully for this competition!", ok: true });
+      loadArenaData();
+    } catch (err: unknown) {
+      setRegistrationMessage({ text: err instanceof Error ? err.message : "Registration failed", ok: false });
+    } finally {
+      setRegisteringCompId(null);
+    }
+  };
+
+  // Helper for tier color
+  const getTierColor = (tier: string) => {
+    switch (tier?.toLowerCase()) {
+      case "grandmaster":
+        return "text-amber-400 bg-amber-400/10 border-amber-400/30";
+      case "master":
+        return "text-purple-400 bg-purple-400/10 border-purple-400/30";
+      case "diamond":
+        return "text-cyan-400 bg-cyan-400/10 border-cyan-400/30";
+      case "platinum":
+        return "text-emerald-400 bg-emerald-400/10 border-emerald-400/30";
+      case "gold":
+        return "text-yellow-400 bg-yellow-400/10 border-yellow-400/30";
+      case "silver":
+        return "text-slate-300 bg-slate-400/10 border-slate-400/30";
+      default:
+        return "text-orange-400 bg-orange-400/10 border-orange-400/30";
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* Arena Breadcrumb & Header - Only shown in lobby view */}
-        {!activeSession && (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+    <div className={`min-h-screen font-sans transition-colors duration-200 ${isDark ? "bg-[#060B18] text-slate-100" : "bg-slate-50 text-slate-900"}`}>
+      {/* ARENA TOP BAR */}
+      <header className={`sticky top-0 z-40 border-b backdrop-blur-md px-6 py-3.5 flex items-center justify-between ${isDark ? "bg-[#0B1536]/85 border-slate-800" : "bg-white/85 border-slate-200"}`}>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="p-2 rounded-lg hover:bg-slate-700/20 text-slate-400 hover:text-white transition">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </Link>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20">
+              ⚡
+            </div>
             <div>
-              <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                <Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-cyan-400">
-                  Dashboard
-                </Link>
-                <span>/</span>
-                <span className="text-slate-900 dark:text-slate-200">Challenge Arena</span>
-              </nav>
-              <h1 className="mt-1 text-2xl sm:text-3xl font-black text-slate-950 dark:text-white flex items-center gap-2.5">
-                <span className="flex items-center gap-2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>Challenge Arena</span></span>
-                <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 px-3 py-0.5 text-xs font-black text-amber-800 dark:text-amber-300">
-                  DAILY SPRINT &amp; XP
-                </span>
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Link
-                href="/learning/achievements"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 text-xs font-bold text-amber-900 dark:text-amber-200 shadow-sm transition hover:bg-amber-100 dark:hover:bg-amber-900/40"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg><span>Streak &amp; Badges</span>
-              </Link>
-              <Link
-                href="/cbt"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-900"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><polyline points="10 9 9 9 8 9" /></svg><span>Full CBT Exam</span>
-              </Link>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black tracking-widest text-[#FF5238] uppercase">BRAINLAB</span>
+                <span className="text-xs px-2 py-0.5 rounded-full font-black bg-blue-500/20 text-blue-400 border border-blue-500/30">COMPETITION ARENA</span>
+              </div>
+              <p className="text-[11px] text-slate-400">Competitive Examination & Esports Learning Hub</p>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* LOBBY VIEW */}
-        {!activeSession && (
-          <div className="space-y-8 animate-fade-in-up">
-            {/* Embedded Learning Streak Card with Reminder */}
-            <section aria-label="Learning Streak Status">
-              <LearningStreakCard
-                currentStreak={profile?.current_streak_days ?? 0}
-                longestStreak={profile?.longest_streak_days ?? 0}
-                lastActiveDate={profile?.last_activity_date}
-                compact={false}
-              />
-            </section>
+        <div className="flex items-center gap-3">
+          {currentUser ? (
+            <div className={`hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-2xl border text-xs font-bold ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+              <span className={`px-2 py-0.5 rounded-md border font-black uppercase text-[10px] ${getTierColor(myRating?.tier || "Bronze")}`}>
+                {myRating?.tier || "Bronze"}
+              </span>
+              <span className="text-blue-500 font-mono font-black">{myRating?.elo_rating || 1200} ELO</span>
+              <span className="text-orange-500 font-mono">🔥 {myRating?.win_streak || 0} Streak</span>
+            </div>
+          ) : (
+            <Link href="/auth/signin?redirect=/challenge-arena" className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition">
+              Sign In to Compete
+            </Link>
+          )}
 
-            {/* Daily Sprint Banner */}
-            <section className="relative overflow-hidden rounded-3xl border border-blue-600/30 bg-gradient-to-r from-[#00112b] via-[#012153] to-indigo-950 p-6 sm:p-8 text-white shadow-xl">
-              <div className="relative z-10 max-w-2xl space-y-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 px-3 py-1 text-xs font-black tracking-wide text-amber-300 uppercase">
-                  <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>5-Minute Daily Challenge</span></span>
+          <ArenaThemeToggle />
+        </div>
+      </header>
+
+      {/* EMERGENCY ANNOUNCEMENT BANNER */}
+      {emergencyAlert && (
+        <div className="bg-gradient-to-r from-red-600 to-[#FF5238] text-white px-6 py-2.5 text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md">
+          <span>⚠️ ARENA ADVISORY:</span>
+          <span>{emergencyAlert.announcement || "Match generation temporarily paused for scheduled maintenance."}</span>
+        </div>
+      )}
+
+      {/* CONTENDER HERO STRIP */}
+      <section className={`border-b py-8 px-6 relative overflow-hidden ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-white border-slate-200"}`}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+          <div>
+            <span className="text-xs font-black tracking-widest text-blue-400 uppercase">OFFICIAL COMPETITIVE LEAGUE</span>
+            <h1 className="text-3xl sm:text-4xl font-black mt-1 tracking-tight">Prove Your Academic Mastery</h1>
+            <p className="text-slate-400 text-sm mt-1 max-w-xl">
+              Compete in official tournaments, challenge fellow candidates in real-time 1v1 showdowns, assemble squad teams, and climb the Grandmaster Elo leaderboard.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setShowCreateChallengeModal(true)}
+              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm shadow-xl shadow-blue-600/25 transition transform active:scale-95 flex items-center gap-2"
+            >
+              <span>⚔️</span> Issue 1v1 Challenge
+            </button>
+
+            <button
+              onClick={() => setShowCreateSquadModal(true)}
+              className={`px-5 py-3 rounded-2xl border font-bold text-sm transition transform active:scale-95 flex items-center gap-2 ${
+                isDark ? "border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200" : "border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800"
+              }`}
+            >
+              <span>🛡️</span> Form Squad Team
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ARENA NAVIGATION TABS */}
+      <div className={`border-b sticky top-[61px] z-30 backdrop-blur-md px-6 ${isDark ? "bg-[#060B18]/90 border-slate-800" : "bg-slate-50/90 border-slate-200"}`}>
+        <div className="max-w-6xl mx-auto flex overflow-x-auto gap-2 py-2.5 no-scrollbar">
+          {[
+            { id: "tournaments", label: "Official Tournaments", icon: "🏆", count: competitions.length },
+            { id: "challenges", label: "1v1 Battle Arena", icon: "⚔️", count: challenges.filter((c) => c.status === "pending").length },
+            { id: "teams", label: "Squad Teams", icon: "🛡️", count: teams.length },
+            { id: "leaderboard", label: "Elo Leaderboards", icon: "👑" },
+            { id: "spectate", label: "Live Spectate", icon: "👁️", count: spectatorMatches.length },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap flex items-center gap-2 transition-all ${
+                activeTab === tab.id
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                  activeTab === tab.id ? "bg-white/20 text-white" : "bg-blue-500/20 text-blue-400"
+                }`}>
+                  {tab.count}
                 </span>
-                <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
-                  Ignite Your Learning Flame Today
-                </h2>
-                <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
-                  Spend 5 minutes answering 10 fast-paced questions. Complete the challenge to double your XP, extend your streak, and unlock academic badges!
-                </p>
-                <div className="pt-3 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => handleStartChallenge(CHALLENGE_MODES[0])}
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-amber-400 hover:bg-amber-300 px-6 py-3 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-all duration-150 active:scale-95"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>Start Daily 5-Min Blitz</span>
-                    <span className="text-xs bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-extrabold">
-                      2× XP
-                    </span>
-                  </button>
-                  <span className="text-xs text-slate-300">
-                    300 seconds · 10 questions · Immediate corrections
-                  </span>
-                </div>
-              </div>
-              <div className="absolute -right-8 -bottom-10 opacity-10 text-white select-none pointer-events-none" aria-hidden="true">
-                <svg width="220" height="220" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-              </div>
-            </section>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
 
-            {/* Subject Specific Challenge Tracks */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                    <span className="flex items-center gap-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg><span>Practice Challenge Modes</span></span>
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                    Target specific disciplines in rapid 10-question micro-quizzes.
-                  </p>
-                </div>
-              </div>
+      {/* TAB CONTENT CONTAINER */}
+      <main className="max-w-6xl mx-auto p-4 sm:p-6 flex flex-col gap-6">
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {CHALLENGE_MODES.slice(1).map((mode) => (
-                  <div
-                    key={mode.id}
-                    className="flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/60">
-                          {renderModeIcon(mode.icon)}
-                        </span>
-                        <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-[11px] font-black text-blue-800 dark:text-blue-300">
-                          {mode.badge}
-                        </span>
+        {/* =========================================================================
+            TAB 1: OFFICIAL TOURNAMENTS & COMPETITIONS
+           ========================================================================= */}
+        {activeTab === "tournaments" && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black">Official Grand Prix & Tournaments</h2>
+                <p className="text-slate-400 text-xs">Structured competitive exams with verified leaderboards and awards</p>
+              </div>
+            </div>
+
+            {registrationMessage && (
+              <div className={`p-4 rounded-2xl text-xs sm:text-sm font-bold text-center ${
+                registrationMessage.ok ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-red-500/10 text-red-400 border border-red-500/30"
+              }`}>
+                {registrationMessage.text}
+              </div>
+            )}
+
+            {competitions.length === 0 ? (
+              <div className={`p-12 rounded-3xl border text-center shadow-lg ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-3xl">🏆</div>
+                <h3 className="text-lg font-black">No Active Tournaments Scheduled</h3>
+                <p className="text-slate-400 text-xs mt-1">Official BrainLab championships will appear here once published by administrators.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {competitions.map((comp) => {
+                  const entryFee = Number(comp.entry_fee) || 0;
+                  const isFree = entryFee === 0;
+
+                  return (
+                    <div
+                      key={comp.id}
+                      className={`rounded-3xl border p-6 flex flex-col justify-between transition-all hover:shadow-2xl ${
+                        isDark ? "bg-[#0D172E] border-slate-800 hover:border-blue-500/40" : "bg-white border-slate-200 hover:border-blue-400"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            comp.status === "active"
+                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse"
+                              : comp.status === "scheduled" || comp.status === "published"
+                              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                              : "bg-slate-700/30 text-slate-400"
+                          }`}>
+                            {comp.status.toUpperCase()}
+                          </span>
+                          <span className={`text-xs font-black ${isFree ? "text-emerald-400" : "text-amber-400"}`}>
+                            {isFree ? "FREE ENTRY" : `₦${entryFee.toLocaleString()}`}
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-bold line-clamp-1">{comp.title}</h3>
+                        <p className="text-slate-400 text-xs mt-1.5 line-clamp-2 leading-relaxed">
+                          {comp.description || "Official competitive examination testing core curriculum knowledge."}
+                        </p>
+
+                        <div className={`grid grid-cols-2 gap-2 p-3 rounded-2xl border my-4 text-[11px] font-semibold ${
+                          isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"
+                        }`}>
+                          <div>
+                            <span className="text-slate-400 block text-[10px] uppercase">Questions</span>
+                            <span className="font-bold">{comp.rules?.question_count || 40} Items</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px] uppercase">Duration</span>
+                            <span className="font-bold">{Math.round((comp.rules?.duration_seconds || 1800) / 60)} Mins</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px] uppercase">Prize Pool</span>
+                            <span className="font-bold text-amber-400">{comp.prize_pool || "XP & Trophy"}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px] uppercase">Contenders</span>
+                            <span className="font-bold text-blue-400">{comp.current_participants || 0} Registered</span>
+                          </div>
+                        </div>
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                        {mode.title}
-                      </h3>
-                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {mode.subtitle}
-                      </p>
-                      <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                        <span>{mode.durationSeconds / 60} mins</span>
-                        <span>•</span>
-                        <span>{mode.questionCount} Questions</span>
-                      </div>
+
+                      <button
+                        onClick={() => handleRegisterTournament(comp.id)}
+                        disabled={registeringCompId === comp.id}
+                        className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/20 active:scale-95"
+                      >
+                        {registeringCompId === comp.id
+                          ? "Processing..."
+                          : isFree
+                          ? "Register Free Now"
+                          : `Pay ₦${entryFee.toLocaleString()} (BACHS) & Enter`}
+                      </button>
                     </div>
-
-                    <button
-                      onClick={() => handleStartChallenge(mode)}
-                      className="mt-5 w-full rounded-xl bg-slate-100 hover:bg-[#012153] hover:text-white dark:bg-slate-800 dark:hover:bg-blue-700 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all duration-150 active:scale-95"
-                    >
-                      Start Challenge →
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
-
-        {/* ACTIVE TEST SESSION */}
-        {activeSession && !isFinished && questions.length > 0 && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Header / Countdown Bar */}
-            <div className="sticky top-2 z-20 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-4 shadow-md flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-xl" aria-hidden="true">{selectedMode.icon}</span>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {selectedMode.title}
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Question {currentIndex + 1} of {questions.length}
-                  </p>
-                </div>
-              </div>
-
-              {/* Timer indicator */}
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-black tracking-wider ${
-                    timeLeft < 60
-                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 animate-pulse"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
-                  }`}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg><span className="tabular-nums">{formatTime(timeLeft)}</span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (window.confirm("Submit your challenge now?")) {
-                      void handleCompleteChallenge();
-                    }
-                  }}
-                  disabled={submitting}
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-black text-white transition active:scale-95 shadow-sm"
-                >
-                  {submitting ? "Submitting..." : "Submit Sprint"}
-                </button>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-blue-600 h-full transition-all duration-300 ease-out"
-                style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-              />
-            </div>
-
-            {/* Current Question Card */}
-            {questions[currentIndex] && (
-              <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-xs font-bold text-blue-800 dark:text-blue-300">
-                    {questions[currentIndex].subject}
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {Object.keys(userAnswers).length} of {questions.length} Answered
-                  </span>
-                </div>
-
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-relaxed">
-                  {questions[currentIndex].question}
-                </h3>
-
-                {/* Options List */}
-                <div className="space-y-3">
-                  {(Object.keys(questions[currentIndex].options).sort() as OptionKey[]).map((optKey) => {
-                    const isSelected = userAnswers[questions[currentIndex].id] === optKey;
-                    return (
-                      <button
-                        key={optKey}
-                        onClick={() => handleSelectOption(questions[currentIndex].id, optKey)}
-                        className={`w-full flex items-start gap-3.5 p-4 rounded-2xl text-left border transition-all duration-150 active:scale-[0.99] ${
-                          isSelected
-                            ? "border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 dark:border-blue-500 shadow-sm"
-                            : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
-                        }`}
-                      >
-                        <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-black transition ${
-                            isSelected
-                              ? "bg-blue-600 text-white"
-                              : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                          }`}
-                        >
-                          {optKey}
-                        </span>
-                        <span className="text-sm font-medium text-slate-800 dark:text-slate-200 pt-0.5">
-                          {questions[currentIndex].options[optKey]}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Question Navigation Controls */}
-                <div className="pt-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                    disabled={currentIndex === 0}
-                    className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none"
-                  >
-                    ← Previous
-                  </button>
-
-                  <div className="flex gap-1.5">
-                    {questions.map((q, idx) => (
-                      <button
-                        key={q.id}
-                        onClick={() => setCurrentIndex(idx)}
-                        className={`h-7 w-7 rounded-lg text-xs font-bold transition ${
-                          currentIndex === idx
-                            ? "bg-[#012153] text-white ring-2 ring-blue-500"
-                            : userAnswers[q.id]
-                            ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        {idx + 1}
-                      </button>
-                    ))}
-                  </div>
-
-                  {currentIndex < questions.length - 1 ? (
-                    <button
-                      onClick={() => setCurrentIndex((prev) => Math.min(questions.length - 1, prev + 1))}
-                      className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-bold text-white transition active:scale-95"
-                    >
-                      Next →
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => void handleCompleteChallenge()}
-                      disabled={submitting}
-                      className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2 text-xs font-black text-white transition active:scale-95 shadow-sm"
-                    >
-                      {submitting ? "Finishing..." : "Finish Challenge"}
-                    </button>
-                  )}
-                </div>
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
-        {/* RESULTS & REVIEW VIEW */}
-        {isFinished && scoreData && (
-          <div className="space-y-8 animate-fade-in-up">
-            {/* Celebration Scorecard */}
-            <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
-              <div className="bg-gradient-to-r from-[#00112b] via-[#012153] to-blue-900 p-6 sm:p-8 text-white text-center space-y-4">
-                <div className="flex justify-center" aria-hidden="true">
-                  {scoreData.percentage >= 80 ? (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/20 text-amber-400 border border-amber-400/40">
-                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                        <path d="M4 22h16" />
-                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-                      </svg>
-                    </div>
-                  ) : scoreData.percentage >= 50 ? (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-400/20 text-cyan-300 border border-cyan-400/40">
-                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                    </div>
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/20 text-emerald-400 border border-emerald-400/40">
-                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black">
-                  {scoreData.percentage >= 80
-                    ? "Magnificent Sprint!"
-                    : scoreData.percentage >= 50
-                    ? "Well Done, Challenger!"
-                    : "Good Effort, Keep Practicing!"}
-                </h2>
-                <div className="flex items-center justify-center gap-6 pt-2">
-                  <div className="text-center">
-                    <p className="text-3xl sm:text-4xl font-black text-amber-400">
-                      {scoreData.correctCount} / {scoreData.total}
-                    </p>
-                    <p className="text-xs uppercase font-extrabold text-slate-300">Score ({scoreData.percentage}%)</p>
-                  </div>
-                  <div className="h-10 w-px bg-white/20" />
-                  <div className="text-center">
-                    <p className="text-3xl sm:text-4xl font-black text-emerald-400">
-                      +{scoreData.xpEarned}
-                    </p>
-                    <p className="text-xs uppercase font-extrabold text-slate-300">XP Earned</p>
-                  </div>
-                  <div className="h-10 w-px bg-white/20" />
-                  <div className="text-center">
-                    <p className="text-3xl sm:text-4xl font-black text-orange-400 flex items-center justify-center gap-1.5">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-orange-400" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>
-                      <span>{scoreData.streakDays}</span>
-                    </p>
-                    <p className="text-xs uppercase font-extrabold text-slate-300">Day Streak</p>
-                  </div>
-                </div>
-
-                <p className="text-xs sm:text-sm text-slate-200 max-w-md mx-auto pt-2">
-                  Completed in {Math.floor(scoreData.timeSpent / 60)}m {scoreData.timeSpent % 60}s · Multiplier {selectedMode.xpMultiplier}× applied!
-                </p>
+        {/* =========================================================================
+            TAB 2: 1V1 BATTLE ARENA & OPEN CHALLENGES
+           ========================================================================= */}
+        {activeTab === "challenges" && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black">1v1 Direct & Open Challenges</h2>
+                <p className="text-slate-400 text-xs">Accept open challenges from students online or launch your own duel</p>
               </div>
+              <button
+                onClick={() => setShowCreateChallengeModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2 self-start sm:self-auto"
+              >
+                <span>⚔️</span> Issue Challenge
+              </button>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="p-6 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-center gap-3">
-                <button
-                  onClick={() => {
-                    setIsFinished(false);
-                    setActiveSession(false);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="rounded-xl bg-[#012153] hover:bg-blue-900 px-5 py-3 text-xs font-bold text-white transition active:scale-95 shadow-sm"
-                >
-                  Take Another Challenge
-                </button>
+            {/* OPEN CHALLENGES BOARD */}
+            <div className={`p-6 rounded-3xl border shadow-xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
+              <h3 className="text-base font-bold mb-4 flex items-center gap-2">
+                <span>🔥</span> Open Challenges Waiting for Contenders ({challenges.filter((c) => c.status === "pending").length})
+              </h3>
+
+              {challenges.filter((c) => c.status === "pending").length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  No open challenges currently pending. Be the first to issue a duel!
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {challenges
+                    .filter((c) => c.status === "pending")
+                    .map((chal) => (
+                      <div
+                        key={chal.id}
+                        className={`p-5 rounded-2xl border flex flex-col justify-between gap-4 transition hover:border-blue-500/50 ${
+                          isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className="text-xs font-black uppercase text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                              {chal.subject}
+                            </span>
+                            <span className="text-[11px] text-slate-400">{chal.duration_minutes} Mins</span>
+                          </div>
+                          <h4 className="font-bold text-sm">
+                            {chal.challenger?.full_name || chal.challenger?.username || "Anonymous Contender"}
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {chal.question_count} Questions • {chal.difficulty.toUpperCase()} Difficulty
+                          </p>
+                        </div>
+
+                        {chal.challenger_id === currentUser?.id ? (
+                          <span className="text-xs text-slate-400 italic text-center py-2">Your Open Challenge</span>
+                        ) : (
+                          <button
+                            onClick={() => handleAcceptChallenge(chal.id)}
+                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-md shadow-blue-600/20 transform active:scale-95"
+                          >
+                            Accept & Enter Room ⚔️
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 3: SQUADS & TEAMS
+           ========================================================================= */}
+        {activeTab === "teams" && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black">Squad Teams & Democratic Guilds</h2>
+                <p className="text-slate-400 text-xs">Assemble or join competitive squads with democratic leadership</p>
+              </div>
+              <button
+                onClick={() => setShowCreateSquadModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2 self-start sm:self-auto"
+              >
+                <span>🛡️</span> Form New Squad
+              </button>
+            </div>
+
+            {myTeamId && (
+              <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🛡️</span>
+                  <div>
+                    <h4 className="font-bold text-sm">You are an active Squad member!</h4>
+                    <p className="text-xs text-slate-400">View roster, match records, and vote in squad elections.</p>
+                  </div>
+                </div>
                 <Link
-                  href="/learning/achievements"
-                  className="rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 px-5 py-3 text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-100 transition active:scale-95"
+                  href={`/challenge-arena/teams/${myTeamId}`}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition"
                 >
-                  View Badges &amp; Streak Hub →
+                  Open Squad Profile →
                 </Link>
-                <Link
-                  href="/dashboard"
-                  className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition"
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {teams.map((team) => (
+                <div
+                  key={team.id}
+                  className={`rounded-3xl border p-6 flex flex-col justify-between transition-all hover:shadow-xl ${
+                    isDark ? "bg-[#0D172E] border-slate-800 hover:border-slate-700" : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
                 >
-                  Back to Dashboard
-                </Link>
+                  <div>
+                    <div className="flex items-center gap-3.5 mb-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-blue-500/20">
+                        {team.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base">{team.name}</h3>
+                        <p className="text-xs text-slate-400">{team.member_count || 1} Members</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 italic mb-4">&ldquo;{team.motto}&rdquo;</p>
+
+                    <div className={`grid grid-cols-2 gap-2 p-3 rounded-2xl border text-xs font-semibold mb-4 ${
+                      isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"
+                    }`}>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase">Squad Elo</span>
+                        <span className="text-blue-500 font-black">{team.elo_rating}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase">Record</span>
+                        <span className="text-slate-200 font-bold">{team.matches_won}W - {team.matches_lost}L</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={`/challenge-arena/teams/${team.id}`}
+                    className="w-full py-2.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 font-bold text-xs text-center transition"
+                  >
+                    View Roster & Details →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 4: ELO LEADERBOARDS
+           ========================================================================= */}
+        {activeTab === "leaderboard" && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black">Arena Hall of Fame</h2>
+                <p className="text-slate-400 text-xs">Global contender ratings calculated via server-authoritative Elo</p>
               </div>
             </div>
 
-            {/* Comprehensive Question Review */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Solution Explanations &amp; Review</span>
-              </h3>
-
-              <div className="space-y-4">
-                {questions.map((q, idx) => {
-                  const studentAnswer = userAnswers[q.id];
-                  const isCorrect = studentAnswer === q.correctAnswer;
-                  return (
-                    <div
-                      key={q.id}
-                      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                          Question {idx + 1} ({q.subject})
-                        </span>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-black ${
-                            isCorrect
-                              ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
-                              : "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300"
+            <div className={`rounded-3xl border shadow-xl overflow-hidden ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead className={`border-b text-slate-400 font-bold uppercase text-[10px] tracking-wider ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                    <tr>
+                      <th className="py-3 px-4">Rank</th>
+                      <th className="py-3 px-4">Contender</th>
+                      <th className="py-3 px-4">Tier</th>
+                      <th className="py-3 px-4">Elo Rating</th>
+                      <th className="py-3 px-4">Win Rate</th>
+                      <th className="py-3 px-4">Streak</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/40">
+                    {leaderboard.map((item) => {
+                      const isMe = item.user_id === currentUser?.id;
+                      return (
+                        <tr
+                          key={item.user_id}
+                          className={`transition ${
+                            isMe
+                              ? "bg-blue-500/10 font-bold"
+                              : isDark
+                              ? "hover:bg-slate-800/30"
+                              : "hover:bg-slate-50"
                           }`}
                         >
-                          {isCorrect ? "Correct" : "Review Needed"}
-                        </span>
-                      </div>
-
-                      <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                        {q.question}
-                      </h4>
-
-                      <div className="grid gap-2 sm:grid-cols-2 pt-2">
-                        {(Object.keys(q.options).sort() as OptionKey[]).map((opt) => {
-                          const isKeyCorrect = opt === q.correctAnswer;
-                          const isStudentSelected = opt === studentAnswer;
-                          return (
-                            <div
-                              key={opt}
-                              className={`p-3 rounded-xl border text-xs sm:text-sm font-medium ${
-                                isKeyCorrect
-                                  ? "border-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-bold"
-                                  : isStudentSelected && !isCorrect
-                                  ? "border-rose-400 bg-rose-50/70 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200"
-                                  : "border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300"
-                              }`}
-                            >
-                              <span className="font-black mr-1.5">{opt}.</span>
-                              <span>{q.options[opt]}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Explanation box */}
-                      <div className="mt-3 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/80 p-3.5 text-xs sm:text-sm text-blue-950 dark:text-blue-200">
-                        <span className="font-black block text-blue-800 dark:text-cyan-400 mb-1">
-                          Solution Note:
-                        </span>
-                        <p className="leading-relaxed">{q.explanation}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                          <td className="py-3.5 px-4 font-mono font-bold">
+                            {item.rank === 1 ? "🥇 1" : item.rank === 2 ? "🥈 2" : item.rank === 3 ? "🥉 3" : `#${item.rank}`}
+                          </td>
+                          <td className="py-3.5 px-4 font-semibold">
+                            {item.profile?.full_name || item.profile?.username || "Candidate"}
+                            {isMe && <span className="text-xs text-blue-400 ml-1.5">(You)</span>}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getTierColor(item.tier)}`}>
+                              {item.tier}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-black text-blue-500">{item.elo_rating}</td>
+                          <td className="py-3.5 px-4 font-mono text-emerald-400">{item.win_rate}%</td>
+                          <td className="py-3.5 px-4 font-mono text-orange-400">🔥 {item.win_streak}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         )}
+
+        {/* =========================================================================
+            TAB 5: LIVE SPECTATOR ARENA
+           ========================================================================= */}
+        {activeTab === "spectate" && (
+          <div className="flex flex-col gap-6">
+            <div>
+              <h2 className="text-xl font-black">Live Spectator Broadcasts</h2>
+              <p className="text-slate-400 text-xs">Watch active matches with 30-second anti-cheat broadcast latency</p>
+            </div>
+
+            {spectatorMatches.length === 0 ? (
+              <div className={`p-12 rounded-3xl border text-center shadow-lg ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-3xl">👁️</div>
+                <h3 className="text-lg font-black">No Live Matches In Progress</h3>
+                <p className="text-slate-400 text-xs mt-1">Ongoing 1v1 showdowns and squad battles will appear here live.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {spectatorMatches.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`rounded-3xl border p-6 flex flex-col justify-between gap-4 ${
+                      isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1.5 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> LIVE
+                        </span>
+                        <span className="text-xs text-slate-400">👁️ {m.spectators_count} Watching</span>
+                      </div>
+
+                      <h4 className="font-bold text-sm mb-3">{m.metadata?.subject || "General"} Duel</h4>
+
+                      {/* Score comparison */}
+                      <div className={`p-3 rounded-2xl border flex items-center justify-between text-xs font-bold ${
+                        isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"
+                      }`}>
+                        <span>{m.metadata?.player_a_name || "Player 1"}: {m.score_a}</span>
+                        <span className="text-slate-500">VS</span>
+                        <span>{m.metadata?.player_b_name || "Player 2"}: {m.score_b}</span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/challenge-arena/matches/${m.id}?spectator=true`}
+                      className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs text-center transition"
+                    >
+                      Enter Spectator Stream →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* CREATE 1V1 CHALLENGE MODAL */}
+      {showCreateChallengeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className={`max-w-md w-full p-6 rounded-3xl border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+            <h3 className="text-xl font-black mb-1">Issue 1v1 Challenge</h3>
+            <p className="text-slate-400 text-xs mb-4">Set up challenge rules and broadcast to the Arena.</p>
+
+            <form onSubmit={handleCreateChallenge} className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-400 block mb-1">Examination Subject</label>
+                <select
+                  value={newChallengeSubject}
+                  onChange={(e) => setNewChallengeSubject(e.target.value)}
+                  className={`w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                >
+                  {["Mathematics", "English", "Physics", "Chemistry", "Biology", "Economics", "Government", "General"].map((sub) => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Questions</label>
+                  <select
+                    value={newChallengeQCount}
+                    onChange={(e) => setNewChallengeQCount(Number(e.target.value))}
+                    className={`w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                  >
+                    <option value={5}>5 Questions</option>
+                    <option value={10}>10 Questions</option>
+                    <option value={15}>15 Questions</option>
+                    <option value={20}>20 Questions</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Duration</label>
+                  <select
+                    value={newChallengeDuration}
+                    onChange={(e) => setNewChallengeDuration(Number(e.target.value))}
+                    className={`w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                  >
+                    <option value={3}>3 Minutes</option>
+                    <option value={5}>5 Minutes</option>
+                    <option value={10}>10 Minutes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateChallengeModal(false)}
+                  className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white text-sm font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingChallenge}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold transition shadow-lg shadow-blue-600/25"
+                >
+                  {submittingChallenge ? "Posting..." : "Broadcast Challenge ⚔️"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE SQUAD MODAL */}
+      {showCreateSquadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className={`max-w-md w-full p-6 rounded-3xl border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+            <h3 className="text-xl font-black mb-1">Form New Squad Team</h3>
+            <p className="text-slate-400 text-xs mb-4">You will be designated as the founding Captain.</p>
+
+            <form onSubmit={handleCreateSquad} className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-400 block mb-1">Squad Name</label>
+                <input
+                  type="text"
+                  value={newSquadName}
+                  onChange={(e) => setNewSquadName(e.target.value)}
+                  placeholder="e.g. Apex Scholars"
+                  required
+                  className={`w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-400 block mb-1">Motto / Battle Cry</label>
+                <input
+                  type="text"
+                  value={newSquadMotto}
+                  onChange={(e) => setNewSquadMotto(e.target.value)}
+                  placeholder="e.g. Rise Together, Win Together"
+                  className={`w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateSquadModal(false)}
+                  className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white text-sm font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingSquad || !newSquadName.trim()}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition shadow-lg shadow-blue-600/25"
+                >
+                  {submittingSquad ? "Creating..." : "Establish Squad 🛡️"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

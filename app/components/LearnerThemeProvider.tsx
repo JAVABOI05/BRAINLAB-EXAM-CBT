@@ -7,6 +7,7 @@ type ResolvedTheme = "light" | "dark";
 type ThemeContextValue = {
   appearance: AppearancePreference;
   resolvedTheme: ResolvedTheme;
+  isDark: boolean;
   setAppearance: (appearance: AppearancePreference) => void;
 };
 
@@ -70,7 +71,10 @@ export function LearnerThemeProvider({ children }: { children: React.ReactNode }
     }
   }, [resolvedTheme]);
 
-  const value = useMemo(() => ({ appearance, resolvedTheme, setAppearance }), [appearance, resolvedTheme, setAppearance]);
+  const value = useMemo(
+    () => ({ appearance, resolvedTheme, isDark: resolvedTheme === "dark", setAppearance }),
+    [appearance, resolvedTheme, setAppearance]
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

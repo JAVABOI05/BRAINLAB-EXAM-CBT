@@ -162,8 +162,8 @@ test("English generator selects exactly 60 questions respecting all 8 sections a
     });
   }
 
-  // 2. Cloze passage (passage_id: CL1, 15 questions)
-  for (let i = 0; i < 15; i++) {
+  // 2. Cloze passage (passage_id: CL1, exactly 10 questions)
+  for (let i = 0; i < 10; i++) {
     mockEnglishBank.push({
       id: idSeq++,
       subject: "English",

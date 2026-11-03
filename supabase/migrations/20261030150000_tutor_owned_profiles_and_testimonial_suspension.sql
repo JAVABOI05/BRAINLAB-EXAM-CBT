@@ -17,6 +17,10 @@ alter table public.tutor_profiles
   add column if not exists reviewed_by uuid references auth.users(id) on delete set null;
 
 alter table public.tutor_profiles
+  drop constraint if exists tutor_profiles_years_experience_check,
+  drop constraint if exists tutor_profiles_profile_status_check;
+
+alter table public.tutor_profiles
   add constraint tutor_profiles_years_experience_check check (years_experience between 0 and 60),
   add constraint tutor_profiles_profile_status_check check (profile_status in ('draft','pending','approved','rejected','suspended'));
 
