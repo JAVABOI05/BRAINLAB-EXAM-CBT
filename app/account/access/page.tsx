@@ -91,19 +91,44 @@ export default function MyAccessPage() {
     const normalizedCode = code.trim().toUpperCase();
 
     try {
-      const { data, error: rpcError } = await supabase.rpc("redeem_learning_access_code", {
-        p_code: normalizedCode,
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = "Bearer " + session.access_token;
+      }
 
-      if (rpcError) {
-        setError(rpcError.message || "Could not redeem this access code.");
-      } else if (!data?.ok) {
-        setError((data as RedeemResult).message || "This code could not be redeemed.");
-      } else {
-        setResult(data as RedeemResult);
+      // Try unified PIN voucher redemption API
+      const pinRes = await fetch("/api/access/redeem-pin", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ code: normalizedCode }),
+      });
+      const pinData = await pinRes.json();
+
+      if (pinRes.ok && pinData.ok) {
+        setResult({
+          ok: true,
+          message: pinData.message || `Upgraded to ${pinData.plan_name || 'Premium'} successfully!`,
+          scope_type: pinData.plan_id || "premium",
+          expires_at: pinData.expires_at,
+        });
         setCode("");
-        // Reload authoritative entitlements
         await loadAccessData(user);
+      } else {
+        // Fallback to legacy learning_access_codes RPC
+        const { data, error: rpcError } = await supabase.rpc("redeem_learning_access_code", {
+          p_code: normalizedCode,
+        });
+
+        if (rpcError) {
+          setError(pinData.message || rpcError.message || "Could not redeem this access code.");
+        } else if (!data?.ok) {
+          setError(pinData.message || (data as RedeemResult).message || "This code could not be redeemed.");
+        } else {
+          setResult(data as RedeemResult);
+          setCode("");
+          await loadAccessData(user);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred while redeeming.");

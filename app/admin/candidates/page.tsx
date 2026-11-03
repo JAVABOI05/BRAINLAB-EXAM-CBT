@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getAdminSession, adminSignOut, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission, type AdminPermission } from "../../lib/adminRoles";
 import AdminWorkspaceShell from "../AdminWorkspaceShell";
+import { supabase } from "../../lib/supabase";
 
 interface CandidateSummary {
   id: string;
@@ -89,6 +90,41 @@ export default function CandidatesAdminPage() {
   const [grantDurationDays, setGrantDurationDays] = useState(30);
   const [grantReason, setGrantReason] = useState("");
 
+  // Authenticated fetch helper attaching admin Bearer token
+  const authFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = new Headers(init?.headers || {});
+    if (session?.access_token) {
+      headers.set("Authorization", "Bearer " + session.access_token);
+    }
+    return fetch(input, { ...init, headers });
+  }, []);
+
+  async function handleQuickUpgrade(candidateId: string, candidateName: string) {
+    if (!window.confirm(`Upgrade ${candidateName} to Premium Study for 30 days immediately?`)) return;
+    try {
+      const res = await authFetch(`/api/admin/candidates/${candidateId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "grant_subscription",
+          planId: "premium",
+          durationDays: 30,
+          reason: "1-Click Administrator Upgrade from Registry",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        alert(`Successfully upgraded ${candidateName} to Premium Study!`);
+        await loadCandidates();
+      } else {
+        alert(data.error || "Failed to upgrade candidate.");
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Network error upgrading candidate.");
+    }
+  }
+
   const loadCandidates = useCallback(async () => {
     try {
       const query = new URLSearchParams({
@@ -99,7 +135,7 @@ export default function CandidatesAdminPage() {
         limit: "25",
       });
 
-      const res = await fetch(`/api/admin/candidates?${query.toString()}`);
+      const res = await authFetch(`/api/admin/candidates?${query.toString()}`);
       const data = await res.json();
 
       if (res.ok && data.ok) {
@@ -150,7 +186,7 @@ export default function CandidatesAdminPage() {
     setActiveTab("overview");
 
     try {
-      const res = await fetch(`/api/admin/candidates/${id}`);
+      const res = await authFetch(`/api/admin/candidates/${id}`);
       const data = await res.json();
       if (res.ok && data.ok) {
         setCandidateDetail(data.candidate);
@@ -175,7 +211,7 @@ export default function CandidatesAdminPage() {
     setActionMessage(null);
 
     try {
-      const res = await fetch(`/api/admin/candidates/${selectedCandidateId}/action`, {
+      const res = await authFetch(`/api/admin/candidates/${selectedCandidateId}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: actionType, ...payload }),
@@ -186,7 +222,7 @@ export default function CandidatesAdminPage() {
         setActionMessage({ type: "success", text: data.message || "Action executed successfully." });
         // Refresh detail & list
         await loadCandidates();
-        const refreshDetail = await fetch(`/api/admin/candidates/${selectedCandidateId}`);
+        const refreshDetail = await authFetch(`/api/admin/candidates/${selectedCandidateId}`);
         const refData = await refreshDetail.json();
         if (refData.ok) setCandidateDetail(refData.candidate);
       } else {
@@ -409,12 +445,23 @@ export default function CandidatesAdminPage() {
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => openCandidateDrawer(cand.id)}
-                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-[#012153] shadow-sm hover:bg-slate-50 transition active:scale-95"
-                        >
-                          Manage →
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {cand.subscription.planId === "free" && (
+                            <button
+                              onClick={() => handleQuickUpgrade(cand.id, cand.fullName)}
+                              className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                              title="Instantly upgrade candidate to Premium (30 days)"
+                            >
+                              ⚡ Upgrade
+                            </button>
+                          )}
+                          <button
+                            onClick={() => openCandidateDrawer(cand.id)}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-[#012153] shadow-sm hover:bg-slate-50 transition active:scale-95 cursor-pointer"
+                          >
+                            Manage →
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -702,9 +749,9 @@ export default function CandidatesAdminPage() {
                             onChange={(e) => setGrantPlanId(e.target.value)}
                             className="mt-1 w-full rounded-xl border border-slate-300 p-2 text-xs font-semibold focus:border-blue-500 focus:outline-none"
                           >
-                            <option value="premium">Premium Plan (Full Access)</option>
-                            <option value="basic">Basic Plan</option>
-                            <option value="institutional">Institutional / School</option>
+                            <option value="premium">⭐ Premium Study (CBT Corrections & AI Tutor)</option>
+                            <option value="plus">🚀 BrainLab Plus (Corrections + Competitions + AI)</option>
+                            <option value="pro">👑 BrainLab Pro (Universal Academy & 1-on-1 AI)</option>
                           </select>
                         </div>
                         <div>

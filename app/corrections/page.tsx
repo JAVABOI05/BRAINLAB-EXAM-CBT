@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSettings, getResultCorrections, isError } from "../lib/examApi";
+import { supabase } from "../lib/supabase";
 import { streamAiTutor, type AiCoachContext } from "../lib/aiTutor";
 import { cleanAIResponse, cleanQuestionText, cleanAnswerKeyNote } from "../lib/cleanText";
 import QuestionAITutor from "./QuestionAITutor";
@@ -249,6 +250,11 @@ export default function CorrectionsPage() {
   const [loading, setLoading] = useState(true);
   const [activeSubject, setActiveSubject] = useState("");
   const [dataIssue, setDataIssue] = useState("");
+  const [pinCode, setPinCode] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinError, setPinError] = useState("");
+  const [pinSuccess, setPinSuccess] = useState("");
+
   const [lockNotice, setLockNotice] = useState<{
     title: string;
     message: string;
@@ -256,9 +262,10 @@ export default function CorrectionsPage() {
     actionHref?: string;
   } | null>(null);
 
-  useEffect(() => {
-    async function loadReleasedCorrections() {
-      const settings = await getPublicSettings();
+  const loadReleasedCorrections = async () => {
+    setLoading(true);
+    setPinError("");
+    const settings = await getPublicSettings();
       if (!settings?.show_results) {
         setLockNotice({
           title: "Results & Corrections Pending Release",
@@ -400,10 +407,55 @@ export default function CorrectionsPage() {
         });
         setLoading(false);
       }
-    }
+  };
 
+  useEffect(() => {
     void loadReleasedCorrections();
   }, [router]);
+
+  async function handleRedeemPin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pinCode.trim()) return;
+    setPinBusy(true);
+    setPinError("");
+    setPinSuccess("");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = "Bearer " + session.access_token;
+      }
+
+      const res = await fetch("/api/access/redeem-pin", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          code: pinCode.trim(),
+          phone: candidate?.phone || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setPinSuccess(data.message || "Account successfully upgraded! Unlocking corrections...");
+        setTimeout(() => {
+          setLockNotice(null);
+          loadReleasedCorrections();
+        }, 1200);
+      } else {
+        if (data.error === "auth_required") {
+          setPinError("Please sign in or create an account to link your Premium PIN and unlock solutions.");
+        } else {
+          setPinError(data.message || "Failed to redeem PIN. Please check the code.");
+        }
+      }
+    } catch (err) {
+      setPinError(err instanceof Error ? err.message : "Network error redeeming PIN.");
+    } finally {
+      setPinBusy(false);
+    }
+  }
 
   const summary = useMemo(() => {
     const total = results.length;
@@ -508,6 +560,58 @@ export default function CorrectionsPage() {
           <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
             {lockNotice.message}
           </p>
+
+          {lockNotice.actionHref?.includes("/pricing") && (
+            <div className="mt-6 border-t border-slate-200 dark:border-slate-800 pt-6 text-left">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-base">🎟️</span>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Have an Access PIN / Voucher?
+                </h3>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+                Enter your centre or school access PIN to instantly upgrade your account to Premium and unlock question solutions.
+              </p>
+
+              <form onSubmit={handleRedeemPin} className="space-y-2.5">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. BL-2027-ABC123"
+                    value={pinCode}
+                    onChange={(e) => setPinCode(e.target.value.toUpperCase())}
+                    className="flex-1 px-3 py-2 text-xs font-mono font-bold tracking-wider uppercase rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={pinBusy || !pinCode.trim()}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    {pinBusy ? <span className="animate-spin text-xs">⏳</span> : "Redeem PIN"}
+                  </button>
+                </div>
+
+                {pinError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-700 dark:text-rose-300 font-medium">
+                    {pinError}
+                    {pinError.includes("sign in") && (
+                      <div className="mt-1 font-bold">
+                        <Link href={`/account?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "/corrections")}`} className="underline text-blue-600 dark:text-blue-400">
+                          Click here to Sign In →
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {pinSuccess && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-200 font-bold">
+                    {pinSuccess}
+                  </div>
+                )}
+              </form>
+            </div>
+          )}
 
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <Link

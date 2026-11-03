@@ -113,9 +113,10 @@ export default function InstitutionalOperationsPage() {
   const [examPreset, setExamPreset] = useState("utme_4_subjects");
   const [batchQuantity, setBatchQuantity] = useState(25);
   const [validityDays, setValidityDays] = useState(60);
-  const [customPrefix, setCustomPrefix] = useState("BL-2026");
+  const [customPrefix, setCustomPrefix] = useState("BL-2027");
+  const [targetPlan, setTargetPlan] = useState("premium");
   const [isGeneratingPins, setIsGeneratingPins] = useState(false);
-  const [generatedBatch, setGeneratedBatch] = useState<{ cohort: string; codes: string[]; timestamp: string } | null>(null);
+  const [generatedBatch, setGeneratedBatch] = useState<{ cohort: string; codes: string[]; plan?: string; timestamp: string } | null>(null);
   const [showBatchModal, setShowBatchModal] = useState(false);
 
   // Flagged Items State
@@ -314,6 +315,7 @@ export default function InstitutionalOperationsPage() {
           count: batchQuantity,
           cohort: cohortName,
           subject: examPreset === "utme_4_subjects" ? "UTME Standard" : examPreset === "speed_sprint" ? "Speed Mock" : "Specialist Drill",
+          plan_id: targetPlan,
           validityDays,
           prefix: customPrefix || "BL-2027-",
         }),
@@ -324,6 +326,7 @@ export default function InstitutionalOperationsPage() {
         setGeneratedBatch({
           cohort: cohortName,
           codes: data.codes || [],
+          plan: targetPlan,
           timestamp: new Date().toLocaleDateString("en-NG", { dateStyle: "medium", timeStyle: "short" }),
         });
         setMessage(data.message || `Successfully generated and issued ${data.count} PINs.`);
@@ -366,9 +369,9 @@ export default function InstitutionalOperationsPage() {
 
   const handleDownloadCsv = () => {
     if (!generatedBatch) return;
-    const header = "Access PIN,Institution Cohort,Target Examination,Validity Days,Distribution Status\n";
+    const header = "Access PIN,Institution Cohort,Target Examination,Granted Plan,Validity Days,Distribution Status\n";
     const rows = generatedBatch.codes
-      .map((code) => `"${code}","${generatedBatch.cohort}","${examPreset}","${validityDays}","Unused / Active"`)
+      .map((code) => `"${code}","${generatedBatch.cohort}","${examPreset}","${(generatedBatch.plan || targetPlan).toUpperCase()}","${validityDays} Days","Unused / Active"`)
       .join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -931,6 +934,22 @@ onClick={() => setAutoPolling((prev) => !prev)}
 
               <div>
                 <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
+                  Account Plan to Grant on Redemption
+                </label>
+                <select
+                  value={targetPlan}
+                  onChange={(e) => setTargetPlan(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none font-semibold text-slate-800"
+                >
+                  <option value="premium">⭐ Premium Study (Full Corrections & AI Tutor)</option>
+                  <option value="plus">🚀 BrainLab Plus (Corrections + Competitions + AI)</option>
+                  <option value="pro">👑 BrainLab Pro (Universal Academy & 1-on-1 AI)</option>
+                  <option value="none">🔒 Single Exam Pass Only (No Account Subscription Upgrade)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
                   Examination Assessment Profile
                 </label>
                 <select
@@ -1073,7 +1092,7 @@ onClick={() => setAutoPolling((prev) => !prev)}
                   <div>
                     <h3 className="text-lg font-black text-slate-900">PIN Batch Successfully Issued</h3>
                     <p className="text-xs text-slate-500">
-                      {generatedBatch.codes.length} Live Access PINs created and stored in Supabase for {generatedBatch.cohort}
+                      {generatedBatch.codes.length} Live PINs created for {generatedBatch.cohort} &bull; <strong className="text-emerald-700 font-bold uppercase">{generatedBatch.plan || targetPlan} Tier ({validityDays}d)</strong>
                     </p>
                   </div>
                 </div>

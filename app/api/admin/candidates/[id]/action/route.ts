@@ -9,9 +9,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ ok: false, error: "Unauthorized: Admin privileges required" }, { status: 401 });
     }
 
     const resolvedParams = await params;
@@ -28,19 +28,19 @@ export async function POST(
     // Verify candidate exists
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(candidateId);
     if (userError || !userData.user) {
-      return NextResponse.json({ ok: false, error: "Candidate not found" }, { status: 404 });
+      return NextResponse.json({ ok: false, error: "Candidate account not found" }, { status: 404 });
     }
 
     const candidate = userData.user;
     const currentMeta = candidate.user_metadata || {};
 
     // ------------------------------------------------------------------------
-    // ACTION 1: GRANT OR EXTEND SUBSCRIPTION
+    // ACTION 1: GRANT OR EXTEND SUBSCRIPTION (UPGRADE TO PREMIUM / PLUS / PRO)
     // ------------------------------------------------------------------------
-    if (action === "grant_subscription") {
-      const planId = (body.planId || "premium").toLowerCase();
-      const durationDays = Math.max(1, parseInt(body.durationDays || "30", 10));
-      const reason = body.reason || "Manual Administrator Grant";
+    if (action === "grant_subscription" || action === "upgrade_tier") {
+      const planId = (body.planId || body.plan || "premium").toLowerCase();
+      const durationDays = Math.max(1, parseInt(body.durationDays || body.validityDays || "30", 10));
+      const reason = body.reason || "Direct Administrator Plan Upgrade";
 
       const startDate = new Date();
       const endDate = new Date();
@@ -57,7 +57,7 @@ export async function POST(
           payment_provider: "admin_manual_grant",
           price_paid_kobo: 0,
           currency: "NGN",
-          provider_subscription_id: `ADMIN-${Date.now()}`,
+          provider_subscription_id: `ADMIN-GRANT-${Date.now()}`,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }
@@ -65,42 +65,69 @@ export async function POST(
 
       if (subError) {
         return NextResponse.json(
-          { ok: false, error: `Failed to update subscription: ${subError.message}` },
+          { ok: false, error: `Failed to update user subscription: ${subError.message}` },
           { status: 500 }
         );
       }
 
-      // Upsert learning entitlements to grant full question quota
-      await supabase.from("learning_entitlements").upsert({
-        user_id: candidateId,
-        entitlement_type: "tier_membership",
-        membership_type: planId,
-        max_questions: 10000,
-        status: "active",
-        permanent: durationDays > 365,
-        starts_at: startDate.toISOString(),
-        expires_at: endDate.toISOString(),
-      });
+      // Upsert learning entitlements to grant full question quota if table exists
+      try {
+        await supabase.from("learning_entitlements").upsert({
+          user_id: candidateId,
+          entitlement_type: "tier_membership",
+          membership_type: planId,
+          max_questions: 10000,
+          status: "active",
+          permanent: durationDays > 365,
+          starts_at: startDate.toISOString(),
+          expires_at: endDate.toISOString(),
+        });
+      } catch (entErr) {
+        console.warn("[admin/candidates/action] Entitlements table upsert skipped:", entErr);
+      }
+
+      // Deliver in-app notification if table exists
+      try {
+        const planName = planId === "pro" ? "BrainLab Pro" : planId === "plus" ? "BrainLab Plus" : "Premium Study";
+        await supabase.from("notifications").insert({
+          user_id: candidateId,
+          title: `🎉 Account Upgraded to ${planName}`,
+          message: `Your account has been upgraded to ${planName} for ${durationDays} days by Platform Administration. You now have full access to CBT corrections, step-by-step solutions, and AI tutor explanations.`,
+          type: "subscription",
+          is_read: false,
+        });
+      } catch (notifErr) {
+        console.warn("[admin/candidates/action] Notification insert skipped:", notifErr);
+      }
 
       // Audit log
-      await supabase.from("configuration_audit_logs").insert({
-        admin_email: admin.email,
-        entity_type: "candidate_subscription",
-        entity_id: candidateId,
-        action: "updated",
-        new_value: {
-          planId,
-          durationDays,
-          reason,
-          grantedBy: admin.email,
-          periodEnd: endDate.toISOString(),
-        },
-        change_reason: `Admin manual grant: ${planId} for ${durationDays} days (${reason})`,
-      });
+      try {
+        await supabase.from("configuration_audit_logs").insert({
+          admin_email: admin.email,
+          entity_type: "candidate_subscription",
+          entity_id: candidateId,
+          action: "updated",
+          new_value: {
+            planId,
+            durationDays,
+            reason,
+            grantedBy: admin.email,
+            periodEnd: endDate.toISOString(),
+          },
+          change_reason: `Admin upgraded account to ${planId.toUpperCase()} for ${durationDays} days (${reason})`,
+        });
+      } catch (auditErr) {
+        console.warn("[admin/candidates/action] Audit log skipped:", auditErr);
+      }
 
       return NextResponse.json({
         ok: true,
-        message: `Successfully granted ${planId.toUpperCase()} tier to candidate for ${durationDays} days.`,
+        message: `Successfully upgraded candidate to ${planId.toUpperCase()} tier for ${durationDays} days.`,
+        subscription: {
+          planId,
+          status: "active",
+          current_period_end: endDate.toISOString(),
+        },
       });
     }
 
@@ -123,14 +150,16 @@ export async function POST(
       });
 
       // Audit log
-      await supabase.from("configuration_audit_logs").insert({
-        admin_email: admin.email,
-        entity_type: "candidate_account",
-        entity_id: candidateId,
-        action: "updated",
-        new_value: { is_suspended: true, reason },
-        change_reason: `Candidate suspended: ${reason}`,
-      });
+      try {
+        await supabase.from("configuration_audit_logs").insert({
+          admin_email: admin.email,
+          entity_type: "candidate_account",
+          entity_id: candidateId,
+          action: "updated",
+          new_value: { is_suspended: true, reason },
+          change_reason: `Candidate suspended: ${reason}`,
+        });
+      } catch {}
 
       return NextResponse.json({
         ok: true,
@@ -153,14 +182,16 @@ export async function POST(
       });
 
       // Audit log
-      await supabase.from("configuration_audit_logs").insert({
-        admin_email: admin.email,
-        entity_type: "candidate_account",
-        entity_id: candidateId,
-        action: "updated",
-        new_value: { is_suspended: false },
-        change_reason: `Candidate account reactivated by ${admin.email}`,
-      });
+      try {
+        await supabase.from("configuration_audit_logs").insert({
+          admin_email: admin.email,
+          entity_type: "candidate_account",
+          entity_id: candidateId,
+          action: "updated",
+          new_value: { is_suspended: false },
+          change_reason: `Candidate account reactivated by ${admin.email}`,
+        });
+      } catch {}
 
       return NextResponse.json({
         ok: true,
@@ -180,14 +211,16 @@ export async function POST(
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.brainlabacademy.com.ng"}/auth/reset-password`,
       });
 
-      await supabase.from("configuration_audit_logs").insert({
-        admin_email: admin.email,
-        entity_type: "candidate_auth",
-        entity_id: candidateId,
-        action: "updated",
-        new_value: { action: "password_reset_sent", email: candidate.email },
-        change_reason: `Admin requested password reset for ${candidate.email}`,
-      });
+      try {
+        await supabase.from("configuration_audit_logs").insert({
+          admin_email: admin.email,
+          entity_type: "candidate_auth",
+          entity_id: candidateId,
+          action: "updated",
+          new_value: { action: "password_reset_sent", email: candidate.email },
+          change_reason: `Admin requested password reset for ${candidate.email}`,
+        });
+      } catch {}
 
       return NextResponse.json({
         ok: true,

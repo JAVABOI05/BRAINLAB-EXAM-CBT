@@ -17,8 +17,12 @@ type AccessCodeRow = {
   id: string;
   code: string;
   subject: string | null;
+  grants_plan?: string | null;
+  validity_days?: number | null;
+  cohort?: string | null;
   is_used: boolean;
   used_by: string | null;
+  used_at?: string | null;
   is_exported: boolean;
   exported_at: string | null;
   created_at: string;
@@ -35,6 +39,8 @@ export default function AdminCodesPage() {
 
   const [count, setCount] = useState(10);
   const [exportCount, setExportCount] = useState(20);
+  const [targetPlan, setTargetPlan] = useState("premium");
+  const [validityDays, setValidityDays] = useState(60);
 
   const [message, setMessage] = useState("");
   const [masterCode, setMasterCode] = useState("");
@@ -125,7 +131,11 @@ export default function AdminCodesPage() {
       const res = await authFetch("/api/admin/codes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({
+          count,
+          plan_id: targetPlan,
+          validity_days: validityDays,
+        }),
       });
       const data = await res.json();
 
@@ -549,6 +559,41 @@ export default function AdminCodesPage() {
             </div>
 
             <div className="admin-setting-box">
+              <label className="admin-label">Target Plan to Grant on Redemption</label>
+              <select
+                value={targetPlan}
+                onChange={(e) => setTargetPlan(e.target.value)}
+                className="admin-input"
+              >
+                <option value="premium">⭐ Premium Study (Corrections & AI Tutor)</option>
+                <option value="plus">🚀 BrainLab Plus (Corrections + Competitions)</option>
+                <option value="pro">👑 BrainLab Pro (Universal Full Access)</option>
+                <option value="none">🔒 Single Exam Pass Only (No Plan Upgrade)</option>
+              </select>
+              <p className="admin-help">
+                Plan automatically granted when candidate redeems this PIN.
+              </p>
+            </div>
+
+            <div className="admin-setting-box">
+              <label className="admin-label">Plan Validity Duration</label>
+              <select
+                value={validityDays}
+                onChange={(e) => setValidityDays(Number(e.target.value))}
+                className="admin-input"
+              >
+                <option value={30}>30 Days (1 Month)</option>
+                <option value={60}>60 Days (2 Months)</option>
+                <option value={90}>90 Days (1 Term)</option>
+                <option value={180}>180 Days (Half Year)</option>
+                <option value={365}>365 Days (1 Full Year)</option>
+              </select>
+              <p className="admin-help">
+                Duration of the granted subscription tier.
+              </p>
+            </div>
+
+            <div className="admin-setting-box">
               <label className="admin-label">Number of Fresh Codes to Export</label>
               <input
                 type="number"
@@ -645,6 +690,7 @@ export default function AdminCodesPage() {
                 <thead>
                   <tr>
                     <th>Code</th>
+                    <th>Granted Plan</th>
                     <th>Used</th>
                     <th>Used By</th>
                     <th>Exported</th>
@@ -665,6 +711,21 @@ export default function AdminCodesPage() {
                               (MASTER)
                             </span>
                           ) : null}
+                        </td>
+                        <td>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "2px 8px",
+                              borderRadius: "6px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              background: code.grants_plan === "pro" ? "#f3e8ff" : code.grants_plan === "plus" ? "#e0f2fe" : code.grants_plan ? "#ecfdf5" : "#f1f5f9",
+                              color: code.grants_plan === "pro" ? "#6b21a8" : code.grants_plan === "plus" ? "#0369a1" : code.grants_plan ? "#047857" : "#475569"
+                            }}
+                          >
+                            {code.grants_plan ? `${code.grants_plan.toUpperCase()} (${code.validity_days || 30}d)` : "Exam Pass"}
+                          </span>
                         </td>
                         <td>
                           {code.is_used ? (
