@@ -138,6 +138,18 @@ export default function CandidateReceiptPage({
     verificationUrl
   )}`;
 
+  const returnUrl = typeof receipt.metadata?.return_url === "string" ? receipt.metadata.return_url.trim() : "";
+  const safeReturnUrl = returnUrl.startsWith("/") && !returnUrl.startsWith("//") && !returnUrl.startsWith("/\\") ? returnUrl : "";
+  const returnLabel = safeReturnUrl.includes("correction")
+    ? "Test Corrections & Solutions"
+    : safeReturnUrl.includes("classroom")
+    ? "Interactive Classroom"
+    : safeReturnUrl.includes("exam") || safeReturnUrl.includes("cbt")
+    ? "Exam Simulator"
+    : safeReturnUrl.includes("learn")
+    ? "Learning Hub"
+    : "Previous Page";
+
   return (
     <div className="min-h-screen bg-slate-100 py-10 px-4 sm:px-6 print:bg-white print:p-0">
       <style jsx global>{`
@@ -367,12 +379,20 @@ export default function CandidateReceiptPage({
       </div>
 
       {/* Screen Footer Back Link */}
-      <div className="mt-8 text-center no-print">
+      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center no-print">
+        {safeReturnUrl && (
+          <Link
+            href={safeReturnUrl}
+            className="rounded-xl bg-[#012153] px-6 py-3 text-xs font-black text-white shadow-md transition hover:bg-[#071c43] active:scale-95"
+          >
+            ← Return to {returnLabel}
+          </Link>
+        )}
         <Link
           href="/dashboard"
-          className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+          className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 transition active:scale-95"
         >
-          ← Return to Candidate Dashboard
+          Go to Candidate Dashboard
         </Link>
       </div>
     </div>

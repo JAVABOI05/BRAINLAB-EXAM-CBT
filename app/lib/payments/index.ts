@@ -29,7 +29,7 @@ export function createPaymentProviderFromConfig(
       publicKey: flwConf?.public_key,
       secretKey: flwConf?.secret_key,
       webhookSecret: flwConf?.webhook_secret,
-      isLive: flwConf?.test_mode === false,
+      isLive: flwConf ? flwConf.test_mode !== true : process.env.PAYMENT_LIVE_ENABLED !== "false",
     });
   }
 
@@ -38,7 +38,7 @@ export function createPaymentProviderFromConfig(
     return new BachsPaymentProvider({
       apiKey: bachsConf?.api_key,
       webhookSecret: bachsConf?.webhook_secret,
-      isLive: bachsConf?.test_mode === false,
+      isLive: bachsConf ? bachsConf.test_mode !== true : process.env.PAYMENT_LIVE_ENABLED !== "false",
     });
   }
 
@@ -48,7 +48,7 @@ export function createPaymentProviderFromConfig(
     publicKey: psConf?.public_key,
     secretKey: psConf?.secret_key,
     webhookSecret: psConf?.webhook_secret,
-    isLive: psConf?.test_mode === false,
+    isLive: psConf ? psConf.test_mode !== true : process.env.PAYMENT_LIVE_ENABLED !== "false",
   });
 }
 

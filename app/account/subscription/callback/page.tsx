@@ -4,6 +4,27 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+function sanitizeRedirect(target: string | null | undefined): string {
+  if (!target || typeof target !== "string") return "/dashboard";
+  const trimmed = target.trim();
+  // Valid relative path starting with single slash (disallow // protocol-relative redirects)
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\")) {
+    return trimmed;
+  }
+  return "/dashboard";
+}
+
+function getDestinationLabel(target: string): string {
+  const lower = (target || "").toLowerCase();
+  if (lower.includes("correction")) return "Test Corrections & Master Solutions";
+  if (lower.includes("classroom")) return "Interactive Classroom";
+  if (lower.includes("exam") || lower.includes("cbt")) return "Exam Simulator";
+  if (lower.includes("learning") || lower.includes("learn")) return "Learning Hub";
+  if (lower.includes("practice")) return "Self Practice";
+  if (lower === "/dashboard") return "Candidate Dashboard";
+  return "Previous Page";
+}
+
 function SubscriptionCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -20,8 +41,9 @@ function SubscriptionCallbackContent() {
   const [planId, setPlanId] = useState("");
   const [returnTarget, setReturnTarget] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(3);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
 
-  // 1. Initial resolution of return URL
+  // 1. Initial resolution of return URL from query param or session storage
   useEffect(() => {
     let resolved = rawRedirect;
     if (!resolved && typeof window !== "undefined") {
@@ -33,7 +55,7 @@ function SubscriptionCallbackContent() {
       }
     }
     if (resolved) {
-      setReturnTarget(resolved);
+      setReturnTarget(sanitizeRedirect(resolved));
     }
   }, [rawRedirect]);
 
@@ -68,7 +90,7 @@ function SubscriptionCallbackContent() {
 
         // If returned target from server metadata exists, prioritize it
         if (data.returnUrl && typeof data.returnUrl === "string") {
-          setReturnTarget(data.returnUrl);
+          setReturnTarget(sanitizeRedirect(data.returnUrl));
         }
 
         if (res.ok && data.ok) {
@@ -101,9 +123,11 @@ function SubscriptionCallbackContent() {
     };
   }, [reference, isCancelled]);
 
-  // 3. Countdown & auto-redirect effect on success
+  // 3. Countdown & auto-redirect effect on success (defaults to dashboard if no specific returnTarget)
   useEffect(() => {
-    if (status !== "success" || !returnTarget) return;
+    if (status !== "success" || isPaused) return;
+
+    const effectiveTarget = sanitizeRedirect(returnTarget || "/dashboard");
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -114,7 +138,7 @@ function SubscriptionCallbackContent() {
           } catch {
             // ignore
           }
-          router.push(returnTarget);
+          router.push(effectiveTarget);
           return 0;
         }
         return prev - 1;
@@ -124,7 +148,7 @@ function SubscriptionCallbackContent() {
     return () => {
       clearInterval(timer);
     };
-  }, [status, returnTarget, router]);
+  }, [status, isPaused, returnTarget, router]);
 
   function handleManualNavigate(target: string) {
     try {
@@ -132,17 +156,11 @@ function SubscriptionCallbackContent() {
     } catch {
       // ignore
     }
-    router.push(target);
+    router.push(sanitizeRedirect(target));
   }
 
-  // Friendly human readable label for destination
-  const destinationLabel = returnTarget.includes("correction")
-    ? "Test Corrections & Master Solutions"
-    : returnTarget.includes("classroom")
-    ? "Interactive Classroom"
-    : returnTarget.includes("exam")
-    ? "Exam Simulator"
-    : "Previous Page";
+  const effectiveReturnTarget = sanitizeRedirect(returnTarget || "/dashboard");
+  const destinationLabel = getDestinationLabel(effectiveReturnTarget);
 
   return (
     <div className="flex min-h-[65vh] flex-col items-center justify-center p-6 text-center">
@@ -174,7 +192,7 @@ function SubscriptionCallbackContent() {
           </p>
 
           <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
-            {returnTarget ? (
+            {returnTarget && returnTarget !== "/dashboard" ? (
               <button
                 type="button"
                 onClick={() => handleManualNavigate(returnTarget)}
@@ -254,9 +272,13 @@ function SubscriptionCallbackContent() {
             Your payment was confirmed. Your unlimited CBT questions, AI tutor quota, and step-by-step master solutions are now unlocked.
           </p>
 
-          {/* Redirection banner if returning to where user was */}
-          {returnTarget && (
-            <div className="mt-5 rounded-2xl border-2 border-indigo-200 bg-indigo-50/90 p-4 text-center">
+          {/* Automatic Redirection banner */}
+          <div className="mt-5 rounded-2xl border-2 border-indigo-200 bg-indigo-50/90 p-4 text-center shadow-xs">
+            {isPaused ? (
+              <p className="text-xs font-bold text-slate-700">
+                Auto-redirect paused. You can remain on this page or continue whenever ready.
+              </p>
+            ) : (
               <p className="text-xs font-bold text-indigo-950">
                 Returning you to <span className="font-black text-indigo-700">{destinationLabel}</span> in{" "}
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 font-mono text-xs font-black text-white">
@@ -264,15 +286,25 @@ function SubscriptionCallbackContent() {
                 </span>{" "}
                 seconds...
               </p>
+            )}
+
+            <div className="mt-3 flex flex-col sm:flex-row gap-2">
               <button
                 type="button"
-                onClick={() => handleManualNavigate(returnTarget)}
-                className="mt-3 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-xs font-black text-white shadow-md shadow-indigo-600/20 transition hover:from-indigo-700 hover:to-purple-700 active:scale-95"
+                onClick={() => handleManualNavigate(effectiveReturnTarget)}
+                className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-xs font-black text-white shadow-md shadow-indigo-600/20 transition hover:from-indigo-700 hover:to-purple-700 active:scale-95"
               >
                 Continue to {destinationLabel} Now →
               </button>
+              <button
+                type="button"
+                onClick={() => setIsPaused((prev) => !prev)}
+                className="rounded-xl border border-indigo-300 bg-white px-4 py-3 text-xs font-bold text-indigo-900 hover:bg-indigo-50 transition"
+              >
+                {isPaused ? "Resume Redirect" : "Stay on Receipt"}
+              </button>
             </div>
-          )}
+          </div>
 
           {reference && (
             <div className="mt-4">

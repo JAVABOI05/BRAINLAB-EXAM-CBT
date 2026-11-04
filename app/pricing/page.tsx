@@ -20,13 +20,23 @@ type UserSubscription = {
 
 type PaymentProviderKey = "paystack" | "flutterwave" | "bank_transfer" | "bachs";
 
+function sanitizeRedirect(target: string | null | undefined): string {
+  if (!target || typeof target !== "string") return "";
+  const trimmed = target.trim();
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\")) {
+    return trimmed;
+  }
+  return "";
+}
+
 function PricingContent() {
   const searchParams = useSearchParams();
-  const rawRedirect =
+  const rawRedirect = sanitizeRedirect(
     searchParams.get("redirect") ||
     searchParams.get("returnUrl") ||
     searchParams.get("next") ||
-    "";
+    ""
+  );
 
   const [returnUrl, setReturnUrl] = useState<string>("");
   const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
@@ -247,13 +257,22 @@ function PricingContent() {
                     As an authorized Administrator or Super Admin, you are completely exempt from all subscription charges. You possess unrestricted access to all CBT exam attempts, complete question explanations, step-by-step master workings, AI tutor queries, and live classrooms.
                   </p>
                 </div>
-                {returnUrl && (
+                {returnUrl ? (
                   <div className="flex-shrink-0">
                     <Link
                       href={returnUrl}
                       className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3.5 text-xs font-black text-white hover:bg-slate-800 shadow-md transition active:scale-95"
                     >
                       ← Return to Where You Were
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0">
+                    <Link
+                      href="/admin/dashboard"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3.5 text-xs font-black text-white hover:bg-slate-800 shadow-md transition active:scale-95"
+                    >
+                      Go to Admin Console →
                     </Link>
                   </div>
                 )}

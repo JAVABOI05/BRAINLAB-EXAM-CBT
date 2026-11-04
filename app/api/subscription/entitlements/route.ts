@@ -71,8 +71,22 @@ async function handleResolution(request: NextRequest) {
       });
     }
 
-    // 2. Administrator VIP Check
-    const adminRole = await resolveAdminRole(targetUserId);
+    // 2. Administrator VIP Check (by ID or Email to guarantee Super Admins never pay)
+    let userEmail: string | undefined;
+    try {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("email")
+        .eq("id", targetUserId)
+        .maybeSingle();
+      if (profile?.email) {
+        userEmail = profile.email;
+      }
+    } catch {
+      // fallback
+    }
+
+    const adminRole = await resolveAdminRole(targetUserId, undefined, userEmail);
     if (adminRole) {
       return NextResponse.json({
         userId: targetUserId,
@@ -142,9 +156,30 @@ async function handleResolution(request: NextRequest) {
         if (isSubMissing || isEntMissing) {
           const maxQuestions = txPlanId === "pro" ? 500 : txPlanId === "plus" ? 400 : 250;
 
-          // Upsert user_subscriptions
-          await supabase.from("user_subscriptions").upsert(
-            {
+          // Upsert user_subscriptions safely (avoiding onConflict on table without unique constraint)
+          const { data: existingSubRows } = await supabase
+            .from("user_subscriptions")
+            .select("id")
+            .eq("user_id", targetUserId)
+            .order("updated_at", { ascending: false });
+
+          if (existingSubRows && existingSubRows.length > 0) {
+            await supabase
+              .from("user_subscriptions")
+              .update({
+                plan_id: txPlanId,
+                status: "active",
+                current_period_start: txPaidAt,
+                current_period_end: txExpiry.toISOString(),
+                payment_provider: recentTx.provider || "payment_gateway",
+                price_paid_kobo: recentTx.amount_kobo || 0,
+                currency: recentTx.currency || "NGN",
+                provider_subscription_id: recentTx.reference,
+                updated_at: nowIso,
+              })
+              .eq("id", existingSubRows[0].id);
+          } else {
+            await supabase.from("user_subscriptions").insert({
               user_id: targetUserId,
               plan_id: txPlanId,
               status: "active",
@@ -155,9 +190,8 @@ async function handleResolution(request: NextRequest) {
               currency: recentTx.currency || "NGN",
               provider_subscription_id: recentTx.reference,
               updated_at: nowIso,
-            },
-            { onConflict: "user_id" }
-          );
+            });
+          }
 
           // Upsert learning_entitlements
           await supabase

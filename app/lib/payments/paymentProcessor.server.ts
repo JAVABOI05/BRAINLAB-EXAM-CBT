@@ -73,6 +73,16 @@ export async function recordSuccessfulPayment(
     };
   }
 
+  // 1b. Check if this transaction was previously locked for fraud
+  if (txMetadata.fraud_detected === true) {
+    return {
+      ok: false,
+      reference: tx.reference,
+      error: "Security alert: This transaction was previously flagged for fraud and locked.",
+      fraudDetected: true,
+    };
+  }
+
   // 2. Anti-Fraud Check: Amount tampering detection
   if (params.amountKobo !== undefined && Number.isFinite(params.amountKobo)) {
     const paidKobo = Math.round(Number(params.amountKobo));
@@ -133,12 +143,30 @@ export async function recordSuccessfulPayment(
   const paidAt = params.paidAt || new Date().toISOString();
   const providerRef = params.providerReference || tx.provider_reference || tx.reference;
 
+  // Resolve effective user_id if null (prevents paid users from losing entitlements)
+  let effectiveUserId = tx.user_id;
+  if (!effectiveUserId && tx.customer_email) {
+    try {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .ilike("email", tx.customer_email.trim())
+        .maybeSingle();
+      if (profile?.id) {
+        effectiveUserId = profile.id;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   // 4. Mark transaction as successfully paid
   const { error: updateTxError } = await supabase
     .from("payment_transactions")
     .update({
       status: "success",
       paid_at: paidAt,
+      user_id: effectiveUserId || tx.user_id,
       provider_reference: providerRef,
       metadata: {
         ...txMetadata,
@@ -155,12 +183,12 @@ export async function recordSuccessfulPayment(
   }
 
   // 5. Handle Coupon Redemption if applied
-  if (tx.coupon_id && tx.user_id) {
+  if (tx.coupon_id && effectiveUserId) {
     try {
       await supabase.from("coupon_redemptions").upsert(
         {
           coupon_id: tx.coupon_id,
-          user_id: tx.user_id,
+          user_id: effectiveUserId,
           transaction_id: tx.id,
           discount_applied_kobo: tx.discount_kobo || 0,
           redeemed_at: paidAt,
@@ -189,14 +217,16 @@ export async function recordSuccessfulPayment(
   }
 
   // 6. Authoritative Learner Subscription Activation (Guaranteed update or insert)
-  if (tx.user_id && tx.plan_id) {
-    const planInterval = tx.subscription_plans?.interval || "monthly";
+  const effectivePlanId = tx.plan_id || (typeof txMetadata.plan_id === "string" ? txMetadata.plan_id : "premium");
+
+  if (effectiveUserId && effectivePlanId) {
+    const planInterval = tx.subscription_plans?.interval || (typeof txMetadata.plan_interval === "string" ? txMetadata.plan_interval : "monthly");
     const periodEnd = new Date();
     periodEnd.setDate(periodEnd.getDate() + (planInterval === "yearly" ? 365 : 30));
 
     const subscriptionPayload = {
-      user_id: tx.user_id,
-      plan_id: tx.plan_id,
+      user_id: effectiveUserId,
+      plan_id: effectivePlanId,
       status: "active",
       current_period_start: paidAt,
       current_period_end: periodEnd.toISOString(),
@@ -207,21 +237,31 @@ export async function recordSuccessfulPayment(
       updated_at: new Date().toISOString(),
     };
 
-    // Check if an existing subscription row exists for this user to guarantee error-free upsert
-    const { data: existingSub } = await supabase
+    // Query existing subscriptions by user_id safely (avoiding .maybeSingle() crash on duplicates)
+    const { data: existingSubs } = await supabase
       .from("user_subscriptions")
       .select("id")
-      .eq("user_id", tx.user_id)
-      .maybeSingle();
+      .eq("user_id", effectiveUserId)
+      .order("updated_at", { ascending: false });
 
-    if (existingSub?.id) {
+    if (existingSubs && existingSubs.length > 0) {
+      const primarySubId = existingSubs[0].id;
       const { error: subUpdateErr } = await supabase
         .from("user_subscriptions")
         .update(subscriptionPayload)
-        .eq("id", existingSub.id);
+        .eq("id", primarySubId);
 
       if (subUpdateErr) {
         console.error("[paymentProcessor] Error updating user subscription:", subUpdateErr);
+      }
+
+      // Deactivate any duplicate secondary subscription rows
+      if (existingSubs.length > 1) {
+        const extraIds = existingSubs.slice(1).map((s) => s.id);
+        await supabase
+          .from("user_subscriptions")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .in("id", extraIds);
       }
     } else {
       const { error: subInsertErr } = await supabase
@@ -235,7 +275,7 @@ export async function recordSuccessfulPayment(
 
     // 6b. Authoritative Synchronous Learning Entitlements Activation
     try {
-      const normalizedPlan = (tx.plan_id || "").toLowerCase();
+      const normalizedPlan = (effectivePlanId || "").toLowerCase();
       const maxQuestions = normalizedPlan === "pro" ? 500 : normalizedPlan === "plus" ? 400 : 250;
       const planDisplayName =
         normalizedPlan === "pro"
@@ -248,13 +288,13 @@ export async function recordSuccessfulPayment(
       await supabase
         .from("learning_entitlements")
         .update({ status: "revoked", revoked_at: paidAt })
-        .eq("user_id", tx.user_id)
+        .eq("user_id", effectiveUserId)
         .eq("entitlement_type", "membership")
         .eq("status", "active");
 
       // Insert new active membership row
       const { error: entInsertErr } = await supabase.from("learning_entitlements").insert({
-        user_id: tx.user_id,
+        user_id: effectiveUserId,
         entitlement_type: "membership",
         membership_type: normalizedPlan,
         max_questions: maxQuestions,
@@ -270,7 +310,7 @@ export async function recordSuccessfulPayment(
 
       // Deliver user confirmation notification
       await supabase.from("notifications").insert({
-        user_id: tx.user_id,
+        user_id: effectiveUserId,
         title: `🎉 Account Upgraded to ${planDisplayName}`,
         message: `Your payment was confirmed. Full CBT corrections, solutions, unlimited practice, and AI tutoring are unlocked until ${periodEnd.toLocaleDateString("en-NG", { dateStyle: "medium" })}.`,
         type: "subscription",
@@ -286,7 +326,7 @@ export async function recordSuccessfulPayment(
       await supabase.from("configuration_audit_logs").insert({
         admin_email: tx.customer_email || "system@brainlabacademy.com.ng",
         entity_type: "plan",
-        entity_id: tx.plan_id,
+        entity_id: effectivePlanId,
         action: "updated",
         new_value: {
           event: "subscription_activated",
@@ -306,8 +346,8 @@ export async function recordSuccessfulPayment(
   return {
     ok: true,
     reference: tx.reference,
-    planId: tx.plan_id || undefined,
-    userId: tx.user_id || undefined,
+    planId: effectivePlanId || undefined,
+    userId: effectiveUserId || undefined,
     returnUrl,
   };
 }
