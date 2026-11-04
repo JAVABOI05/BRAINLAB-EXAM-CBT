@@ -481,7 +481,8 @@ export default function AdminQuestionsPage() {
     });
   }
 
-  // Batch chunking uploader (50 rows per batch) with granular fallback isolation
+  // Duplicate-aware batch uploader with granular fallback isolation.
+  // Existing source_question_id values are skipped; existing records are never overwritten.
   async function handleBatchUpload() {
     if (parsedRows.length === 0) {
       setMessage({ type: "error", text: "No valid questions found to upload." });
@@ -489,7 +490,6 @@ export default function AdminQuestionsPage() {
     }
 
     const BATCH_SIZE = 50;
-    const totalBatches = Math.ceil(parsedRows.length / BATCH_SIZE);
 
     try {
       setUploading(true);
@@ -497,23 +497,76 @@ export default function AdminQuestionsPage() {
       setUploadProgress(0);
 
       let totalInserted = 0;
+      let existingSkipped = 0;
+      let duplicateInputSkipped = 0;
       const failedRows: RowError[] = [];
 
-      for (let i = 0; i < parsedRows.length; i += BATCH_SIZE) {
-        const chunk = parsedRows.slice(i, i + BATCH_SIZE);
+      // Ignore repeated source IDs within the same CSV, keeping the first occurrence.
+      const seenSourceIds = new Set<string>();
+      const uniqueRows: ParsedQuestionRow[] = [];
+      parsedRows.forEach((row, index) => {
+        const sourceId = row.source_question_id?.trim();
+        if (sourceId) {
+          if (seenSourceIds.has(sourceId)) {
+            duplicateInputSkipped++;
+            return;
+          }
+          seenSourceIds.add(sourceId);
+        }
+        uniqueRows.push(row);
+      });
+
+      // Read existing IDs in bounded chunks before attempting inserts.
+      // If this check fails, stop rather than risk a duplicate or overwrite.
+      const sourceIds = uniqueRows
+        .map((row) => row.source_question_id?.trim())
+        .filter((id): id is string => Boolean(id));
+      const existingIds = new Set<string>();
+      for (let i = 0; i < sourceIds.length; i += 100) {
+        const idChunk = sourceIds.slice(i, i + 100);
+        const { data, error } = await supabase
+          .from("questions")
+          .select("source_question_id")
+          .in("source_question_id", idChunk);
+        if (error) {
+          throw new Error(`Could not check existing question IDs safely: ${error.message}`);
+        }
+        (data || []).forEach((item) => {
+          if (item.source_question_id) existingIds.add(item.source_question_id);
+        });
+      }
+
+      const rowsToInsert = uniqueRows.filter((row) => {
+        const sourceId = row.source_question_id?.trim();
+        if (sourceId && existingIds.has(sourceId)) {
+          existingSkipped++;
+          return false;
+        }
+        return true;
+      });
+
+      const totalBatches = Math.ceil(rowsToInsert.length / BATCH_SIZE);
+      for (let i = 0; i < rowsToInsert.length; i += BATCH_SIZE) {
+        const chunk = rowsToInsert.slice(i, i + BATCH_SIZE);
         const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
-        setUploadStatus(`Uploading batch ${batchNumber} of ${totalBatches} (${i + 1} - ${Math.min(i + BATCH_SIZE, parsedRows.length)})...`);
+        setUploadStatus(`Uploading batch ${batchNumber} of ${totalBatches} (${i + 1} - ${Math.min(i + BATCH_SIZE, rowsToInsert.length)})...`);
 
         const { error } = await supabase.from("questions").insert(chunk);
 
         if (error) {
-          // Fall back to row-by-row insert for this batch to isolate the bad row
+          // Isolate row-level failures, including a concurrent duplicate insert.
           for (let j = 0; j < chunk.length; j++) {
             const rowItem = chunk[j];
             const { error: rowErr } = await supabase.from("questions").insert([rowItem]);
             if (rowErr) {
-              failedRows.push({ row: i + j + 2, message: rowErr.message });
+              const isDuplicate = rowErr.code === "23505";
+              failedRows.push({
+                row: parsedRows.indexOf(rowItem) + 2,
+                message: isDuplicate
+                  ? `Question ID "${rowItem.source_question_id || "unknown"}" already exists (duplicate insert).`
+                  : rowErr.message,
+              });
             } else {
               totalInserted++;
             }
@@ -522,47 +575,48 @@ export default function AdminQuestionsPage() {
           totalInserted += chunk.length;
         }
 
-        const currentPercent = Math.round((Math.min(i + BATCH_SIZE, parsedRows.length) / parsedRows.length) * 100);
-        setUploadProgress(currentPercent);
+        setUploadProgress(Math.round((Math.min(i + BATCH_SIZE, rowsToInsert.length) / rowsToInsert.length) * 100));
       }
 
-      // Auto-sync unique subjects with platform configuration & academic structure
-      const uniqueSubjects = Array.from(new Set(parsedRows.map((r) => r.subject?.trim()).filter(Boolean)));
-      if (uniqueSubjects.length > 0) {
-        try {
-          await fetch("/api/admin/subjects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "sync_batch_subjects",
-              subjects: uniqueSubjects,
-            }),
-          });
-        } catch (syncErr) {
-          console.warn("Background subject sync notice:", syncErr);
+      // Sync subjects only when there were genuinely new rows to import.
+      if (totalInserted > 0) {
+        const uniqueSubjects = Array.from(new Set(rowsToInsert.map((r) => r.subject?.trim()).filter(Boolean)));
+        if (uniqueSubjects.length > 0) {
+          try {
+            await fetch("/api/admin/subjects", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "sync_batch_subjects",
+                subjects: uniqueSubjects,
+              }),
+            });
+          } catch (syncErr) {
+            console.warn("Background subject sync notice:", syncErr);
+          }
         }
       }
 
       if (failedRows.length > 0) {
+        // Preserve validation notices and append database errors for the UI.
         setErrors((prev) => [...prev, ...failedRows]);
         setMessage({
           type: "info",
-          text: `Partially uploaded ${totalInserted} questions. ${failedRows.length} rows encountered database errors (see Validation Notices below).`,
+          text: `Uploaded ${totalInserted} new questions; skipped ${existingSkipped} already-existing and ${duplicateInputSkipped} duplicate CSV IDs; ${failedRows.length} rows failed. See Validation Notices for details.`,
         });
       } else {
         setMessage({
           type: "success",
-          text: `Successfully uploaded all ${totalInserted} questions into the BrainLab question bank and updated academic subjects!`,
+          text: totalInserted > 0
+            ? `Uploaded ${totalInserted} new questions; skipped ${existingSkipped} already-existing and ${duplicateInputSkipped} duplicate CSV IDs.`
+            : `No new questions uploaded. Skipped ${existingSkipped} already-existing questions and ${duplicateInputSkipped} duplicate CSV IDs.`,
         });
         setParsedRows([]);
         setRawRowsCount(0);
         setFileName("");
         setFileSize("");
-        setErrors([]);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
-      setErrors([]);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       setMessage({
         type: "error",
