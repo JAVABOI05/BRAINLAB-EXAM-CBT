@@ -72,8 +72,8 @@ export async function POST(
         const maxQ = planId === "pro" ? 500 : planId === "plus" ? 400 : 250;
         const planDisplayName = planId === "pro" ? "BrainLab Pro" : planId === "plus" ? "BrainLab Plus" : "Premium Study";
 
-        // Upsert user_subscriptions
-        await supabase.from("user_subscriptions").upsert({
+        // Resilient upsert user_subscriptions (query-then-update-or-insert)
+        const subData = {
           user_id: candidateId,
           plan_id: planId,
           status: "active",
@@ -89,7 +89,19 @@ export async function POST(
             validity_days: durationDays,
           },
           updated_at: periodStart,
-        }, { onConflict: "user_id" });
+        };
+
+        const { data: existingSub } = await supabase
+          .from("user_subscriptions")
+          .select("id")
+          .eq("user_id", candidateId)
+          .maybeSingle();
+
+        if (existingSub?.id) {
+          await supabase.from("user_subscriptions").update(subData).eq("id", existingSub.id);
+        } else {
+          await supabase.from("user_subscriptions").insert(subData);
+        }
 
         // Revoke previous membership and insert new active membership
         await supabase.from("learning_entitlements").update({

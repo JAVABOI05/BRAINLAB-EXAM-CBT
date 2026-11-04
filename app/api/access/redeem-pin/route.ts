@@ -165,29 +165,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // C. Upsert into user_subscriptions
-    const { error: subErr } = await serviceClient.from("user_subscriptions").upsert(
-      {
-        user_id: userId,
-        plan_id: planId,
-        status: "active",
-        current_period_start: startDate.toISOString(),
-        current_period_end: endDate.toISOString(),
-        payment_provider: "voucher_pin",
-        price_paid_kobo: 0,
-        currency: "NGN",
-        provider_subscription_id: `PIN-${rawCode}`,
-        metadata: {
-          pin_code: rawCode,
-          cohort: codeRow.cohort || null,
-          subject: codeRow.subject || null,
-          redeemed_at: startDate.toISOString(),
-          validity_days: validityDays,
-        },
-        updated_at: startDate.toISOString(),
+    // C. Upsert into user_subscriptions (resilient query-then-update-or-insert)
+    const subPayload = {
+      user_id: userId,
+      plan_id: planId,
+      status: "active",
+      current_period_start: startDate.toISOString(),
+      current_period_end: endDate.toISOString(),
+      payment_provider: "voucher_pin",
+      price_paid_kobo: 0,
+      currency: "NGN",
+      provider_subscription_id: `PIN-${rawCode}`,
+      metadata: {
+        pin_code: rawCode,
+        cohort: codeRow.cohort || null,
+        subject: codeRow.subject || null,
+        redeemed_at: startDate.toISOString(),
+        validity_days: validityDays,
       },
-      { onConflict: "user_id" }
-    );
+      updated_at: startDate.toISOString(),
+    };
+
+    const { data: existingSub } = await serviceClient
+      .from("user_subscriptions")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    let subErr: { message: string } | null = null;
+    if (existingSub?.id) {
+      const res = await serviceClient
+        .from("user_subscriptions")
+        .update(subPayload)
+        .eq("id", existingSub.id);
+      subErr = res.error;
+    } else {
+      const res = await serviceClient
+        .from("user_subscriptions")
+        .insert(subPayload);
+      subErr = res.error;
+    }
 
     if (subErr) {
       console.error("[api/access/redeem-pin] Subscription upsert error:", subErr);
