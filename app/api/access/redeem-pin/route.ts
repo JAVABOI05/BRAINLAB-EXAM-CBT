@@ -3,8 +3,40 @@ import { getSupabaseServerClient, getUserFromRequest } from "@/app/lib/supabaseS
 
 export const dynamic = "force-dynamic";
 
+// In-memory sliding window rate limiter: 20 redemption attempts per 60 seconds per IP/user
+interface RateLimitBucket {
+  count: number;
+  resetAt: number;
+}
+const rateLimitMap = new Map<string, RateLimitBucket>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_ATTEMPTS = 20;
+
+function checkRedeemRateLimit(identifier: string): { allowed: boolean; remaining: number; resetInSec: number } {
+  const now = Date.now();
+  const bucket = rateLimitMap.get(identifier);
+
+  if (!bucket || now > bucket.resetAt) {
+    rateLimitMap.set(identifier, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_ATTEMPTS - 1, resetInSec: Math.ceil(RATE_LIMIT_WINDOW_MS / 1000) };
+  }
+
+  if (bucket.count >= RATE_LIMIT_MAX_ATTEMPTS) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetInSec: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
+    };
+  }
+
+  bucket.count += 1;
+  return { allowed: true, remaining: RATE_LIMIT_MAX_ATTEMPTS - bucket.count, resetInSec: Math.ceil((bucket.resetAt - now) / 1000) };
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+
     const body = await request.json().catch(() => ({}));
     const rawCode = String(body.code || body.pin || "").trim().toUpperCase();
     const phone = body.phone ? String(body.phone).trim() : null;
@@ -19,6 +51,25 @@ export async function POST(request: NextRequest) {
     // Resolve caller identity from Bearer token or Supabase session cookies
     const user = await getUserFromRequest(request);
     let userId: string | null = user?.id || null;
+
+    // Enforce rate limiting per user or IP
+    const rateLimitKey = userId ? `user:${userId}` : `ip:${clientIp}`;
+    const rateCheck = checkRedeemRateLimit(rateLimitKey);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "rate_limited",
+          message: `Too many access code redemption attempts. Please wait ${rateCheck.resetInSec} seconds before trying again.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateCheck.resetInSec),
+          },
+        }
+      );
+    }
 
     const serviceClient = getSupabaseServerClient();
 
@@ -46,7 +97,14 @@ export async function POST(request: NextRequest) {
 
       if (!rpcError && rpcData) {
         if (!rpcData.ok) {
-          const status = rpcData.error === "auth_required" ? 401 : 400;
+          if (userId && (rpcData.error === "authentication_required" || rpcData.error === "auth_required")) {
+            // When user is authenticated, an auth_required error from legacy fallback indicates code was not found
+            return NextResponse.json(
+              { ok: false, error: "not_found", message: "The access PIN entered is invalid or does not exist." },
+              { status: 404 }
+            );
+          }
+          const status = rpcData.error === "auth_required" ? 401 : rpcData.error === "not_found" ? 404 : 400;
           return NextResponse.json(rpcData, { status });
         }
         return NextResponse.json(rpcData);
