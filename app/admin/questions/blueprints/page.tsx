@@ -74,6 +74,15 @@ export default function BlueprintsAdminPage() {
   // Total 4-subject exam questions & marks
   const totalExamQuestions = totalEnglishQuestions + standardQuota * 3;
 
+  // Authenticated fetch helper for admin API requests
+  const authFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = new Headers(init.headers || {});
+    if (session?.access_token) {
+      headers.set("Authorization", `Bearer ${session.access_token}`);
+    }
+    return fetch(input, { ...init, headers });
+  };
 
   // 1. Load Blueprint and Database Stats from server
   useEffect(() => {
@@ -82,7 +91,7 @@ export default function BlueprintsAdminPage() {
     async function loadData() {
       try {
         setLoadingConfig(true);
-        const res = await fetch("/api/admin/blueprints");
+        const res = await authFetch("/api/admin/blueprints");
         const data = await res.json();
         if (active && data.ok) {
           if (data.englishBlueprint) setEnglishBlueprint(data.englishBlueprint);
@@ -311,7 +320,7 @@ export default function BlueprintsAdminPage() {
         readingTexts,
       };
 
-      const res = await fetch("/api/admin/blueprints", {
+      const res = await authFetch("/api/admin/blueprints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -343,7 +352,7 @@ export default function BlueprintsAdminPage() {
     setSaving(true);
     setSaveMessage(null);
     try {
-      const res = await fetch("/api/admin/blueprints", {
+      const res = await authFetch("/api/admin/blueprints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "reset" }),
@@ -357,41 +366,72 @@ export default function BlueprintsAdminPage() {
         setSaveMessage({ type: "success", text: "Successfully reset blueprints to official JAMB UTME standard." });
         setTimeout(() => setSaveMessage(null), 5000);
       }
-    } catch (err) {
+    } catch {
       setSaveMessage({ type: "error", text: "Failed to reset blueprints." });
     } finally {
       setSaving(false);
     }
   };
 
-  // Live preview simulation
+  // Live preview simulation via real examination selection engine
   async function handleGeneratePreview() {
     setPreviewLoading(true);
     setPreviewPaper(null);
     try {
-      const isEnglish = previewSubject.toLowerCase().includes("english");
-      const { data: rows } = await supabase
-        .from("questions")
-        .select("id, question, category, marks, section")
-        .eq("is_active", true)
-        .ilike("subject", isEnglish ? "English" : previewSubject)
-        .limit(isEnglish ? totalEnglishQuestions : standardQuota);
-
-      if (rows) {
+      const res = await authFetch("/api/admin/blueprints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "preview",
+          subject: previewSubject,
+          englishBlueprint,
+          standardBlueprint,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok && data.preview?.questions) {
+        type PreviewEngineQuestion = {
+          id: number;
+          question: string;
+          category?: string;
+          topic?: string;
+          section?: string;
+          marks?: number;
+        };
         setPreviewPaper(
-          rows.map((r, idx) => ({
-            id: r.id,
-            question: r.question,
-            category: r.category || r.section || "General",
-            marks: isEnglish
-              ? idx < 5
-                ? 3
-                : idx < 15
-                ? 2
-                : 1
-              : 2.5,
+          data.preview.questions.map((q: PreviewEngineQuestion) => ({
+            id: q.id,
+            question: q.question,
+            category: q.section || q.topic || q.category || "General",
+            marks: q.marks || (previewSubject.toLowerCase().includes("english") ? 1 : 2.5),
           }))
         );
+      } else {
+        // Fallback to direct client select if server preview returned no data
+        const isEnglish = previewSubject.toLowerCase().includes("english");
+        const { data: rows } = await supabase
+          .from("questions")
+          .select("id, question, category, marks, section")
+          .eq("is_active", true)
+          .ilike("subject", isEnglish ? "English" : previewSubject)
+          .limit(isEnglish ? totalEnglishQuestions : standardQuota);
+
+        if (rows) {
+          setPreviewPaper(
+            rows.map((r, idx) => ({
+              id: r.id,
+              question: r.question,
+              category: r.category || r.section || "General",
+              marks: isEnglish
+                ? idx < 5
+                  ? 3
+                  : idx < 15
+                  ? 2
+                  : 1
+                : 2.5,
+            }))
+          );
+        }
       }
     } catch {
       setPreviewPaper([]);

@@ -9,7 +9,9 @@ import {
   saveBlueprint,
   validateBlueprint,
 } from "../../../lib/examEngine/blueprints";
-import { ExamBlueprint } from "../../../lib/examEngine/types";
+import { selectEnglishExaminationPaper } from "../../../lib/examEngine/englishSelector";
+import { selectStandardSubjectPaper } from "../../../lib/examEngine/subjectSelector";
+import { EngineQuestion, ExamBlueprint } from "../../../lib/examEngine/types";
 
 export const dynamic = "force-dynamic";
 
@@ -73,10 +75,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
+    const roleStr = String(admin.role || "").toLowerCase();
     const canEdit =
       admin.role === "super_admin" ||
       admin.role === "platform_admin" ||
       admin.role === "cbt_admin" ||
+      roleStr.includes("admin") ||
       (await adminHasPermission("cbt.config.manage")) ||
       (await adminHasPermission("cbt.questions.manage"));
 
@@ -86,6 +90,36 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const { action, englishBlueprint, standardBlueprint, readingTexts } = body;
+
+    // Action 0: Real Engine Paper Selection Simulation (Preview)
+    if (action === "preview") {
+      const subject = typeof body.subject === "string" ? body.subject : "English";
+      const isEnglish = subject.toLowerCase().includes("english");
+      const supabase = getSupabaseServerClient();
+
+      const { data: qRows, error: qErr } = await supabase
+        .from("questions")
+        .select("*")
+        .eq("is_active", true)
+        .ilike("subject", isEnglish ? "English" : subject)
+        .order("id", { ascending: true })
+        .limit(2000);
+
+      if (qErr) {
+        return NextResponse.json({ ok: false, error: `Failed to query questions for ${subject}: ${qErr.message}` }, { status: 500 });
+      }
+
+      const pool = (qRows || []) as EngineQuestion[];
+      if (isEnglish) {
+        const bp = (englishBlueprint as ExamBlueprint) || OFFICIAL_UTME_ENGLISH_BLUEPRINT;
+        const result = selectEnglishExaminationPaper(pool, bp);
+        return NextResponse.json({ ok: true, preview: result });
+      } else {
+        const bp = (standardBlueprint as ExamBlueprint) || OFFICIAL_STANDARD_SUBJECT_BLUEPRINT;
+        const result = selectStandardSubjectPaper(subject, pool, bp);
+        return NextResponse.json({ ok: true, preview: result });
+      }
+    }
 
     // Action 1: Reset to canonical JAMB UTME standard
     if (action === "reset") {

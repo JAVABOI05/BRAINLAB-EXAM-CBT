@@ -167,10 +167,10 @@ export function selectEnglishExaminationPaper(
           (q) => !selectedIds.has(q.id) && matchesSection(q, secConfig)
         );
 
-        // Validation rule: each Cloze passage group must contain exactly 10 questions
-        // Incomplete (<10), excessive (>10), or invalid groups are strictly excluded
-        if (availableInGroup.length === 10) {
-          // Sort in their original sequence (preserving blank 1..10 order)
+        // Validation rule: each Cloze passage group must contain exactly the configured section quota (default 10)
+        // Incomplete (<quota), excessive (>quota), or invalid groups are strictly excluded
+        if (availableInGroup.length === quota) {
+          // Sort in their original sequence (preserving blank 1..quota order)
           const sortedGroup = [...availableInGroup].sort(
             (a, b) => extractQuestionSequence(a) - extractQuestionSequence(b) || a.id - b.id
           );
@@ -181,7 +181,7 @@ export function selectEnglishExaminationPaper(
       if (eligibleClozePassages.length === 0) {
         // Strict Rejection Rule: Never select individual questions randomly across different Cloze passages
         // Reject incomplete selection rather than filling with unrelated questions
-        errors.push("No complete 10-question Cloze Test passage found in the question bank.");
+        errors.push(`No complete ${quota}-question Cloze Test passage found in the question bank.`);
         return {
           success: false,
           questions: [],
