@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { getStudentSubscriptionAndEntitlements } from "../lib/subscriptionEntitlements";
 import { getTopicMasteryRecords, calculateExamReadiness, type ExamReadiness } from "../lib/adaptiveEngine";
 import { getDueSpacedReviews } from "../lib/spacedRepetition";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
@@ -297,58 +298,33 @@ export default function LearnerDashboardPage() {
           setAdminRole(resolvedRole);
         }
 
-        // Parse Access Entitlements
+        // Parse Access Entitlements (Authoritative unified tier resolution)
         let tierName = "Free Learner";
         let maxAllowedQuestions = 50;
         let expiryDateText: string | null = null;
 
-        if (resolvedRole) {
-          tierName = `${resolvedRole === "super_admin" ? "Super Admin" : "Administrator"} VIP (Universal Access)`;
-          maxAllowedQuestions = 999999;
-          expiryDateText = "Universal Access";
-        } else {
-          const now = Date.now();
-          const activeEntitlements = (entitlementsRes.data || []).filter((e) => {
-            const startsAt = e.starts_at ? new Date(e.starts_at).getTime() : 0;
-            const expiresAt = e.expires_at ? new Date(e.expires_at).getTime() : Number.POSITIVE_INFINITY;
-            return !e.revoked_at && startsAt <= now && (e.permanent || expiresAt > now);
-          });
-          const membership = activeEntitlements.find(
-            (e) => e.entitlement_type === "membership" && ["premium", "plus", "pro"].includes((e.membership_type || "").toLowerCase())
-          );
-          const subscription = subscriptionRes.data;
-          const subscriptionExpiry = subscription?.current_period_end
-            ? new Date(subscription.current_period_end).getTime()
-            : 0;
-          const hasActiveSubscription = subscription?.status === "active"
-            && subscriptionExpiry > now
-            && ["premium", "plus", "pro"].includes((subscription.plan_id || "").toLowerCase());
-
-          const tierRank = (t?: string | null) => {
-            const val = (t || "").toLowerCase();
-            if (val === "pro") return 3;
-            if (val === "plus") return 2;
-            if (val === "premium") return 1;
-            return 0;
-          };
-
-          const entTier = membership?.membership_type?.toLowerCase() || null;
-          const subTier = hasActiveSubscription ? subscription!.plan_id.toLowerCase() : null;
-
-          if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
-            maxAllowedQuestions = Math.min(500, Math.max(50, membership!.max_questions || (entTier === "pro" ? 500 : entTier === "plus" ? 400 : 250)));
-            tierName = `${entTier!.toUpperCase()} Member`;
-            expiryDateText = membership!.permanent
-              ? "Lifetime"
-              : (membership!.expires_at ? new Date(membership!.expires_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : null);
-          } else if (tierRank(subTier) > 0) {
-            maxAllowedQuestions = subTier === "pro" ? 500 : subTier === "plus" ? 400 : 250;
-            tierName = `${subTier!.toUpperCase()} Member`;
-            expiryDateText = subscription!.current_period_end ? new Date(subscription!.current_period_end).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : null;
-          } else if (activeEntitlements.length > 0) {
-            maxAllowedQuestions = Math.min(500, Math.max(50, ...activeEntitlements.map((e) => e.max_questions || 50)));
-            tierName = "Enrolled Learner";
+        try {
+          const authTier = await getStudentSubscriptionAndEntitlements(currentUser.id);
+          if (authTier.planId === "admin_vip" || resolvedRole) {
+            tierName = `${(resolvedRole === "super_admin" || authTier.planId === "admin_vip") ? "Super Admin" : "Administrator"} VIP (Universal Access)`;
+            maxAllowedQuestions = 999999;
+            expiryDateText = "Universal Access";
+          } else if (authTier.isSubscribed && authTier.planId !== "free") {
+            const planKey = authTier.planId.toLowerCase();
+            tierName = `${planKey.toUpperCase()} Member`;
+            maxAllowedQuestions = planKey === "pro" ? 500 : planKey === "plus" ? 400 : 250;
+            expiryDateText = authTier.expiresAt
+              ? new Date(authTier.expiresAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })
+              : "Active";
+          } else {
+            tierName = "Free Learner";
+            maxAllowedQuestions = 50;
+            expiryDateText = null;
           }
+        } catch {
+          tierName = "Free Learner";
+          maxAllowedQuestions = 50;
+          expiryDateText = null;
         }
 
         // Test attempts count

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
+import { getStudentSubscriptionAndEntitlements } from "../../lib/subscriptionEntitlements";
 
 type Entitlement = {
   id: string;
@@ -50,11 +51,36 @@ export default function MyAccessPage() {
         .eq("user_id", currentUser.id)
         .order("created_at", { ascending: false });
 
-      if (data && Array.isArray(data)) {
-        setEntitlements(data as Entitlement[]);
-      }
+      const resolvedEnts = Array.isArray(data) ? (data as Entitlement[]) : [];
+
+      // Check authoritative subscription service fallback
+      try {
+        const sub = await getStudentSubscriptionAndEntitlements(currentUser.id);
+        if (sub.isSubscribed && sub.planId !== "free") {
+          const hasMembership = resolvedEnts.some(
+            (e) => e.entitlement_type === "membership" && e.status === "active"
+          );
+          if (!hasMembership) {
+            resolvedEnts.unshift({
+              id: "sub-" + sub.planId,
+              entitlement_type: "membership",
+              membership_type: sub.planId,
+              resource_key: null,
+              organisation_id: null,
+              assessment_id: null,
+              max_questions: sub.planId === "pro" ? 500 : sub.planId === "plus" ? 400 : 250,
+              status: "active",
+              permanent: !sub.expiresAt,
+              starts_at: new Date().toISOString(),
+              expires_at: sub.expiresAt,
+            });
+          }
+        }
+      } catch {}
+
+      setEntitlements(resolvedEnts);
     } catch {
-      // Fallback gracefully if database table is undergoing migration
+      // Fallback gracefully
     }
   }
 

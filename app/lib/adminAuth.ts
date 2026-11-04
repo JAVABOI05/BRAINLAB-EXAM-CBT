@@ -20,7 +20,7 @@ export async function getAdminSession(req?: NextRequest): Promise<AdminUser | nu
 
       const authHeader = req.headers.get("authorization");
       const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
-      const role = await resolveAdminRole(user.id, token);
+      const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
 
       if (role && ADMIN_ROLES.includes(role as AdminRole)) {
         return {
@@ -77,7 +77,7 @@ export async function getAdminSession(req?: NextRequest): Promise<AdminUser | nu
       }
 
       if (user) {
-        const role = await resolveAdminRole(user.id, token);
+        const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
         if (role && ADMIN_ROLES.includes(role as AdminRole)) {
           return {
             id: user.id,

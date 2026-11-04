@@ -186,42 +186,27 @@ export async function POST(request: NextRequest) {
     );
 
   // ============================================================================
-  // Quota & Entitlement Enforcement
+  // Quota & Entitlement Enforcement (Authoritative Server-Side Check)
   // ============================================================================
   let isUnlimited = false;
   let quotaLimit = 10;
   let currentUsage = 0;
 
   try {
-    const { data: sub } = await authClient
-      .from("user_subscriptions")
-      .select("plan_id, status, current_period_end, subscription_plans:plan_id(feature_entitlements)")
-      .eq("user_id", authData.user.id)
-      .eq("status", "active")
-      .gt("current_period_end", new Date().toISOString())
-      .maybeSingle();
+    const { getStudentSubscriptionAndEntitlements } = await import("@/app/lib/subscriptionEntitlements");
+    const tierResult = await getStudentSubscriptionAndEntitlements(authData.user.id);
 
-    const planEntitlements = (sub?.subscription_plans as { feature_entitlements?: Record<string, unknown> })
-      ?.feature_entitlements;
-
-    // Administrators have universal unlimited AI Tutor access without paywalls
-    let isAdmin = false;
-    try {
-      const { resolveAdminRole } = await import("@/app/lib/supabaseServer");
-      const adminRole = await resolveAdminRole(authData.user.id);
-      if (adminRole) isAdmin = true;
-    } catch {
-      // ignore
-    }
-
-    isUnlimited = isAdmin || planEntitlements?.ai_unlimited === true;
-    const monthlyQuota = Number(planEntitlements?.ai_monthly_quota || 0);
+    const entitlements = tierResult.entitlements;
+    isUnlimited = Boolean(entitlements.ai_voice_tutor || (entitlements.ai_monthly_quota && entitlements.ai_monthly_quota >= 999999));
+    const monthlyQuota = Number(entitlements.ai_monthly_quota || 0);
 
     if (isUnlimited) {
       quotaLimit = 999999;
-    } else if (monthlyQuota > 0) {
+    } else if (monthlyQuota > 0 && tierResult.isSubscribed) {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const { count } = await authClient
+      const { getSupabaseServerClient } = await import("@/app/lib/supabaseServer");
+      const serviceDb = getSupabaseServerClient();
+      const { count } = await serviceDb
         .from("ai_generations")
         .select("id", { count: "exact", head: true })
         .eq("user_id", authData.user.id)
@@ -231,7 +216,9 @@ export async function POST(request: NextRequest) {
     } else {
       const todayStart = new Date();
       todayStart.setUTCHours(0, 0, 0, 0);
-      const { count } = await authClient
+      const { getSupabaseServerClient } = await import("@/app/lib/supabaseServer");
+      const serviceDb = getSupabaseServerClient();
+      const { count } = await serviceDb
         .from("ai_generations")
         .select("id", { count: "exact", head: true })
         .eq("user_id", authData.user.id)
@@ -242,14 +229,15 @@ export async function POST(request: NextRequest) {
 
     if (!isUnlimited && currentUsage >= quotaLimit) {
       return jsonError(
-        monthlyQuota > 0
+        monthlyQuota > 0 && tierResult.isSubscribed
           ? `You have reached your monthly AI Tutor quota (${monthlyQuota} questions). Upgrade your plan or check back next billing cycle.`
           : "You have reached your daily AI Tutor limit (10 free questions/day). Upgrade to Premium or Plus for higher quotas.",
         429
       );
     }
-  } catch {
-    // If quota check fails due to transient connection, proceed safely
+  } catch (quotaErr) {
+    console.warn("[ai-tutor] Quota evaluation notice:", quotaErr);
+    // Proceed safely
   }
 
   // ============================================================================

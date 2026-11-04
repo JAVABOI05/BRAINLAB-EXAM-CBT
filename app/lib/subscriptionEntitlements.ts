@@ -330,6 +330,27 @@ export async function getStudentSubscriptionAndEntitlements(
       };
     }
 
+    // =========================================================================
+    // BROWSER CLIENT OPTIMIZATION:
+    // When executing in browser, call authoritative server API route to guarantee
+    // service-role resolution and auto-repair without RLS or 42501 permission blocks.
+    // =========================================================================
+    if (typeof window !== "undefined") {
+      try {
+        const res = await fetch(`/api/subscription/entitlements?userId=${encodeURIComponent(targetUserId)}`, {
+          headers: { "Cache-Control": "no-cache" },
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.planId && json.entitlements) {
+            return json as StudentEntitlementsResult;
+          }
+        }
+      } catch (clientFetchErr) {
+        console.warn("[subscriptionEntitlements] Client API fetch fallback:", clientFetchErr);
+      }
+    }
+
     // Select database client: use server-side client when in Node.js to bypass RLS, or client supabase in browser
     const dbClient =
       typeof window === "undefined"

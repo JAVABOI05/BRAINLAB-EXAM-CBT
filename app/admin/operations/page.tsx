@@ -27,7 +27,8 @@ type SessionItem = {
 };
 
 type FlaggedItem = {
-  id: number;
+  id: string | number;
+  session_id?: string;
   subject: string;
   topic: string;
   question_text: string;
@@ -36,6 +37,7 @@ type FlaggedItem = {
   candidate_note: string;
   reported_at: string;
   status: "pending" | "resolved";
+  tab_switch_count?: number;
 };
 
 type SubjectHealth = {
@@ -47,42 +49,6 @@ type SubjectHealth = {
   high_yield_status: "optimal" | "warning";
   reading_text?: string;
 };
-
-const INITIAL_FLAGGED: FlaggedItem[] = [
-  {
-    id: 1042,
-    subject: "Mathematics",
-    topic: "Vectors & Mechanics",
-    question_text: "A force of 12N acts in the direction N30°E while a second force of 5N acts due East. Find the magnitude of the resultant force to 1 d.p.",
-    correct_answer: "B",
-    flag_reason: "Ambiguous Vector Angle Reference",
-    candidate_note: "Question prompt mentions N30°E without clarifying whether bearing or Cartesian angle standard is used.",
-    reported_at: "12 mins ago",
-    status: "pending",
-  },
-  {
-    id: 1189,
-    subject: "Use of English",
-    topic: "The Life Changer (Novel)",
-    question_text: "In the novel 'The Life Changer', what reason did Salma give for leaving the interview room abruptly?",
-    correct_answer: "C",
-    flag_reason: "Answer Key Discrepancy",
-    candidate_note: "Textbook Chapter 3 cites Option A (unjust interrogation) as the primary textual justification.",
-    reported_at: "28 mins ago",
-    status: "pending",
-  },
-  {
-    id: 1304,
-    subject: "Physics",
-    topic: "Electric Fields & Capacitance",
-    question_text: "Three capacitors of capacitance 2µF, 4µF, and 6µF are connected in series across a 120V supply. Calculate the charge on the 2µF capacitor.",
-    correct_answer: "A",
-    flag_reason: "Unit Clarification Needed",
-    candidate_note: "Option labels displayed in micro-Coulombs (µC) without explicit symbol rendering on mobile screen.",
-    reported_at: "1 hour ago",
-    status: "pending",
-  },
-];
 
 export default function InstitutionalOperationsPage() {
   const router = useRouter();
@@ -100,13 +66,7 @@ export default function InstitutionalOperationsPage() {
   const [liveStats, setLiveStats] = useState({ total: 0, active: 0, flagged: 0, completed: 0 });
 
   // Curriculum Health State
-  const [subjectsHealth] = useState<SubjectHealth[]>([
-    { name: "Use of English", compulsory: true, question_count: 1250, blueprint_status: "60 Qs • 90 Raw Marks (100 Converted)", syllabus_coverage: 100, high_yield_status: "optimal", reading_text: "The Life Changer Active" },
-    { name: "General Mathematics", compulsory: false, question_count: 1420, blueprint_status: "40 Qs • 2.5 Marks/Q (100 Max)", syllabus_coverage: 98, high_yield_status: "optimal" },
-    { name: "Physics", compulsory: false, question_count: 980, blueprint_status: "40 Qs • 2.5 Marks/Q (100 Max)", syllabus_coverage: 95, high_yield_status: "optimal" },
-    { name: "Chemistry", compulsory: false, question_count: 1050, blueprint_status: "40 Qs • 2.5 Marks/Q (100 Max)", syllabus_coverage: 96, high_yield_status: "optimal" },
-    { name: "Biology", compulsory: false, question_count: 1120, blueprint_status: "40 Qs • 2.5 Marks/Q (100 Max)", syllabus_coverage: 94, high_yield_status: "optimal" },
-  ]);
+  const [subjectsHealth, setSubjectsHealth] = useState<SubjectHealth[]>([]);
 
   // PIN Generator Form State
   const [cohortName, setCohortName] = useState("BrainLab Apex 2027 Cohort");
@@ -120,7 +80,7 @@ export default function InstitutionalOperationsPage() {
   const [showBatchModal, setShowBatchModal] = useState(false);
 
   // Flagged Items State
-  const [flaggedQueue, setFlaggedQueue] = useState<FlaggedItem[]>(INITIAL_FLAGGED);
+  const [flaggedQueue, setFlaggedQueue] = useState<FlaggedItem[]>([]);
   const [resolvedCount, setResolvedCount] = useState(188);
 
   // Authenticated fetch helper attaching Bearer token
@@ -130,7 +90,7 @@ export default function InstitutionalOperationsPage() {
     if (session?.access_token) {
       headers.set("Authorization", `Bearer ${session.access_token}`);
     }
-    return fetch(input, { ...init, headers });
+    return fetch(input, { ...init, headers, credentials: "include" });
   }, []);
 
   // Real Live Session Telemetry Fetcher
@@ -142,47 +102,55 @@ export default function InstitutionalOperationsPage() {
         : "/api/admin/sessions/live";
       const res = await authFetch(url);
       const data = await res.json();
-      if (res.ok && data.ok && Array.isArray(data.sessions)) {
-        setSessions(
-          data.sessions.map((s: {
-            id: string;
-            candidate_name?: string | null;
-            phone?: string | null;
-            access_code?: string | null;
-            subject?: string | null;
-            status?: string | null;
-            progress_percent?: number | null;
-            questions_answered?: number | null;
-            total_questions?: number | null;
-            time_left_formatted?: string | null;
-            time_left_seconds?: number | null;
-            network_state?: string | null;
-            network_carrier?: string | null;
-            tab_switch_count?: number | null;
-            is_flagged?: boolean | null;
-            started_at: string;
-          }) => ({
-            id: s.id,
-            candidate_name: s.candidate_name || "Direct Candidate",
-            phone: s.phone || "N/A",
-            hub_location: s.access_code ? `PIN: ${s.access_code}` : "Direct Online Candidate",
-            subject_combination: s.subject || "Full CBT Assessment",
-            progress_percent: typeof s.progress_percent === "number" ? s.progress_percent : 0,
-            questions_answered: typeof s.questions_answered === "number" ? s.questions_answered : 0,
-            total_questions: typeof s.total_questions === "number" ? s.total_questions : 180,
-            time_left_formatted: s.time_left_formatted || "00:00:00",
-            time_left_seconds: s.time_left_seconds || 0,
-            network_state: (s.network_state as SessionItem["network_state"]) || "online",
-            network_carrier: s.network_carrier || "Edge Telemetry Active",
-            tab_switch_count: s.tab_switch_count || 0,
-            is_flagged: Boolean(s.is_flagged),
-            status: s.status || "started",
-            started_at: s.started_at ? new Date(s.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Active",
-          }))
-        );
+      if (res.ok && data.ok) {
+        if (Array.isArray(data.sessions)) {
+          setSessions(
+            data.sessions.map((s: {
+              id: string;
+              candidate_name?: string | null;
+              phone?: string | null;
+              access_code?: string | null;
+              subject?: string | null;
+              status?: string | null;
+              progress_percent?: number | null;
+              questions_answered?: number | null;
+              total_questions?: number | null;
+              time_left_formatted?: string | null;
+              time_left_seconds?: number | null;
+              network_state?: string | null;
+              network_carrier?: string | null;
+              tab_switch_count?: number | null;
+              is_flagged?: boolean | null;
+              started_at: string;
+            }) => ({
+              id: s.id,
+              candidate_name: s.candidate_name || "Direct Candidate",
+              phone: s.phone || "N/A",
+              hub_location: s.access_code ? `PIN: ${s.access_code}` : "Direct Online Candidate",
+              subject_combination: s.subject || "Full CBT Assessment",
+              progress_percent: typeof s.progress_percent === "number" ? s.progress_percent : 0,
+              questions_answered: typeof s.questions_answered === "number" ? s.questions_answered : 0,
+              total_questions: typeof s.total_questions === "number" ? s.total_questions : 180,
+              time_left_formatted: s.time_left_formatted || "00:00:00",
+              time_left_seconds: s.time_left_seconds || 0,
+              network_state: (s.network_state as SessionItem["network_state"]) || "online",
+              network_carrier: s.network_carrier || "Edge Telemetry Active",
+              tab_switch_count: s.tab_switch_count || 0,
+              is_flagged: Boolean(s.is_flagged),
+              status: s.status || "started",
+              started_at: s.started_at ? new Date(s.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Active",
+            }))
+          );
+        }
 
         if (data.stats) {
           setLiveStats(data.stats);
+        }
+        if (Array.isArray(data.subjects_health)) {
+          setSubjectsHealth(data.subjects_health);
+        }
+        if (Array.isArray(data.flagged_items)) {
+          setFlaggedQueue(data.flagged_items);
         }
         setLastSyncedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       }
@@ -316,8 +284,8 @@ export default function InstitutionalOperationsPage() {
           cohort: cohortName,
           subject: examPreset === "utme_4_subjects" ? "UTME Standard" : examPreset === "speed_sprint" ? "Speed Mock" : "Specialist Drill",
           plan_id: targetPlan,
-          validityDays,
-          prefix: customPrefix || "BL-2027-",
+          validity_days: validityDays,
+          prefix: customPrefix || "BL-2027",
         }),
       });
 
@@ -333,30 +301,7 @@ export default function InstitutionalOperationsPage() {
         setShowBatchModal(true);
         await fetchLiveSessions();
       } else {
-        // Fallback: client generation with BL-2027-
-        const newCodes: string[] = [];
-        const prefix = "BL-2027-";
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        for (let i = 0; i < batchQuantity; i++) {
-          let code = prefix;
-          for (let j = 0; j < 6; j++) {
-            code += chars.charAt(Math.floor(Math.random() * chars.length));
-          }
-          newCodes.push(code);
-        }
-        const payload = newCodes.map((c) => ({
-          code: c,
-          subject: examPreset === "utme_4_subjects" ? "UTME Standard" : "Speed Mock",
-          is_used: false,
-          is_exported: true,
-        }));
-        await supabase.from("access_codes").insert(payload);
-        setGeneratedBatch({
-          cohort: cohortName,
-          codes: newCodes,
-          timestamp: new Date().toLocaleDateString("en-NG", { dateStyle: "medium", timeStyle: "short" }),
-        });
-        setShowBatchModal(true);
+        setMessage(`PIN generation failed: ${data.error || "Permission denied or database error"}`);
       }
     } catch (err) {
       setMessage(`Network error generating PIN batch: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -383,10 +328,29 @@ export default function InstitutionalOperationsPage() {
   };
 
   // Flagged Review Actions
-  const handleResolveFlag = (flagId: number, resolution: string) => {
-    setFlaggedQueue((prev) => prev.filter((f) => f.id !== flagId));
-    setResolvedCount((c) => c + 1);
-    setMessage(`Flag #${flagId} resolved: ${resolution}. Recorded to audit trail.`);
+  const handleResolveFlag = async (item: FlaggedItem, resolution: string) => {
+    try {
+      if (item.session_id) {
+        const res = await authFetch(`/api/admin/sessions/${item.session_id}/action`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "reset_switches" }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          setMessage(`Malpractice cleared for session ${item.session_id}: ${resolution}`);
+        } else {
+          setMessage(`Resolution failed: ${data.error || "Unknown error"}`);
+        }
+      } else {
+        setMessage(`Flag #${item.id} resolved: ${resolution}. Recorded to audit trail.`);
+      }
+      setFlaggedQueue((prev) => prev.filter((f) => f.id !== item.id));
+      setResolvedCount((c) => c + 1);
+      await fetchLiveSessions();
+    } catch {
+      setMessage("Network error resolving flag.");
+    }
   };
 
   const filteredSessions = useMemo(() => {
@@ -507,8 +471,7 @@ onClick={() => setAutoPolling((prev) => !prev)}
                 className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 font-bold text-xs sm:text-sm transition active:scale-95 flex items-center gap-1.5"
                 title="Activate emergency CBT maintenance"
               >
-                <span className={`w-2 h-2 rounded-full ${autoPolling ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
-                <span>{autoPolling ? "Auto-Poll: ON (6s)" : "Auto-Poll: Paused"}</span>
+                <span>🚨 Emergency CBT Pause</span>
               </button>
             </div>
           </div>
@@ -1027,57 +990,88 @@ onClick={() => setAutoPolling((prev) => !prev)}
           </div>
 
           {/* Flagged Interactive Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            {flaggedQueue.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between space-y-3"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-extrabold text-blue-900 bg-blue-100 px-2 py-0.5 rounded">
-                      {item.subject} • Q#{item.id}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-semibold">{item.reported_at}</span>
-                  </div>
-
-                  <p className="text-xs font-bold text-slate-800 leading-snug">
-                    {item.question_text}
-                  </p>
-
-                  <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-950 space-y-1">
-                    <span className="font-black uppercase tracking-wider text-[10px] text-amber-900 block">
-                      ⚠️ {item.flag_reason}
-                    </span>
-                    <p className="italic font-medium">{item.candidate_note}</p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleResolveFlag(item.id, `Confirmed key ${item.correct_answer} is valid`)}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition"
-                  >
-                    ✓ Verify
-                  </button>
-                  <Link
-                    href={`/admin/questions/edit/${item.id}`}
-                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition"
-                  >
-                    ✏️ Edit Stem
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleResolveFlag(item.id, "Question retired to archive for author revision")}
-                    className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition"
-                  >
-                    Archive
-                  </button>
-                </div>
+          {flaggedQueue.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-slate-50/70 border border-slate-200 text-center space-y-2 mt-4">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl font-black">
+                🛡️
               </div>
-            ))}
-          </div>
+              <h3 className="text-sm font-bold text-slate-800">No Active Malpractice or Flagged Violations</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                All active candidate examinations are currently complying with anti-cheating policies. Real-time tab switch alerts and question review escalations will appear here automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {flaggedQueue.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between space-y-3"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-extrabold text-blue-900 bg-blue-100 px-2 py-0.5 rounded truncate max-w-[200px]">
+                        {item.subject} • #{String(item.id).slice(0, 8)}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-semibold shrink-0">{item.reported_at}</span>
+                    </div>
+
+                    <p className="text-xs font-bold text-slate-800 leading-snug">
+                      {item.question_text}
+                    </p>
+
+                    <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200/80 text-[11px] text-amber-950 space-y-1">
+                      <span className="font-black uppercase tracking-wider text-[10px] text-amber-900 block">
+                        ⚠️ {item.flag_reason}
+                      </span>
+                      <p className="italic font-medium">{item.candidate_note}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleResolveFlag(item, "Cleared malpractice flag and verified candidate session")}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+                    >
+                      ✓ Clear Flag
+                    </button>
+                    {item.session_id ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm(`Force-submit exam session ${item.session_id}?`)) return;
+                          try {
+                            const res = await authFetch(`/api/admin/sessions/${item.session_id}/action`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ action: "force_submit" }),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.ok) {
+                              setMessage(`Session ${item.session_id} force-submitted.`);
+                              await fetchLiveSessions();
+                            }
+                          } catch {
+                            setMessage("Network error force-submitting session.");
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition cursor-pointer"
+                      >
+                        Force Submit
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/admin/questions/edit/${item.id}`}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition"
+                      >
+                        Inspect
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* SECTION 6: Modal Dialog for Generated PIN Batch */}

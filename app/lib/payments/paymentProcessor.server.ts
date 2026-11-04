@@ -233,6 +233,54 @@ export async function recordSuccessfulPayment(
       }
     }
 
+    // 6b. Authoritative Synchronous Learning Entitlements Activation
+    try {
+      const normalizedPlan = (tx.plan_id || "").toLowerCase();
+      const maxQuestions = normalizedPlan === "pro" ? 500 : normalizedPlan === "plus" ? 400 : 250;
+      const planDisplayName =
+        normalizedPlan === "pro"
+          ? "BrainLab Pro"
+          : normalizedPlan === "plus"
+          ? "BrainLab Plus"
+          : "Premium Study";
+
+      // Revoke any previous membership
+      await supabase
+        .from("learning_entitlements")
+        .update({ status: "revoked", revoked_at: paidAt })
+        .eq("user_id", tx.user_id)
+        .eq("entitlement_type", "membership")
+        .eq("status", "active");
+
+      // Insert new active membership row
+      const { error: entInsertErr } = await supabase.from("learning_entitlements").insert({
+        user_id: tx.user_id,
+        entitlement_type: "membership",
+        membership_type: normalizedPlan,
+        max_questions: maxQuestions,
+        status: "active",
+        permanent: false,
+        starts_at: paidAt,
+        expires_at: periodEnd.toISOString(),
+      });
+
+      if (entInsertErr) {
+        console.warn("[paymentProcessor] Learning entitlement insert notice:", entInsertErr.message);
+      }
+
+      // Deliver user confirmation notification
+      await supabase.from("notifications").insert({
+        user_id: tx.user_id,
+        title: `🎉 Account Upgraded to ${planDisplayName}`,
+        message: `Your payment was confirmed. Full CBT corrections, solutions, unlimited practice, and AI tutoring are unlocked until ${periodEnd.toLocaleDateString("en-NG", { dateStyle: "medium" })}.`,
+        type: "subscription",
+        is_read: false,
+        created_at: paidAt,
+      });
+    } catch (entErr) {
+      console.warn("[paymentProcessor] Learning entitlement bookkeeping warning:", entErr);
+    }
+
     // 7. Immutable audit logging
     try {
       await supabase.from("configuration_audit_logs").insert({

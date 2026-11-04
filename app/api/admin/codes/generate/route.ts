@@ -35,9 +35,8 @@ export async function POST(request: NextRequest) {
     const grantsPlan = rawPlan === "none" || rawPlan === "exam_only" || rawPlan === "null" ? null : rawPlan;
     const validityDays = Math.max(1, parseInt(body.validity_days || body.validityDays || "60", 10));
 
-    const customPrefix = body.prefix && typeof body.prefix === "string" && /^[A-Z0-9_-]{2,12}$/i.test(body.prefix)
-      ? `${body.prefix.toUpperCase().trim()}-`
-      : "BL-2027-";
+    const rawPrefix = String(body.prefix || "BL-2027").trim().replace(/[-_]+$/, "").toUpperCase();
+    const customPrefix = /^[A-Z0-9_-]{2,12}$/.test(rawPrefix) ? `${rawPrefix}-` : "BL-2027-";
 
     const supabase = getSupabaseServerClient();
 
