@@ -387,6 +387,403 @@ export class QuadraticGraphAdapter implements IStemLiveboardAdapter<QuadraticSta
 }
 
 // ----------------------------------------------------------------------------
+// 6. BOOLEAN LOGIC GATES & CIRCUITS ADAPTER (Engineering & Computer Studies)
+// ----------------------------------------------------------------------------
+
+export type LogicGateType = "AND" | "OR" | "NOT" | "NAND" | "NOR" | "XOR";
+
+export interface LogicGatesState {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  active: boolean;
+}
+
+export const DEFAULT_LOGIC_GATES_STATE: LogicGatesState = {
+  gateType: "AND",
+  inputA: 1,
+  inputB: 0,
+  active: true,
+};
+
+export interface TruthTableRow {
+  a: 0 | 1;
+  b: 0 | 1;
+  q: 0 | 1;
+  active: boolean;
+}
+
+export interface LogicGatesTelemetry {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  outputQ: 0 | 1;
+  booleanExpression: string;
+  truthTable: TruthTableRow[];
+  statusText: string;
+}
+
+export function evaluateGate(gate: LogicGateType, a: 0 | 1, b: 0 | 1): 0 | 1 {
+  switch (gate) {
+    case "AND":
+      return (a && b) ? 1 : 0;
+    case "OR":
+      return (a || b) ? 1 : 0;
+    case "NOT":
+      return a === 0 ? 1 : 0;
+    case "NAND":
+      return !(a && b) ? 1 : 0;
+    case "NOR":
+      return !(a || b) ? 1 : 0;
+    case "XOR":
+      return a !== b ? 1 : 0;
+  }
+}
+
+export function computeLogicGatesTelemetry(
+  state: Pick<LogicGatesState, "gateType" | "inputA" | "inputB">
+): LogicGatesTelemetry {
+  const { gateType, inputA, inputB } = state;
+  const outputQ = evaluateGate(gateType, inputA, inputB);
+
+  let booleanExpression = "Q = A · B";
+  if (gateType === "OR") booleanExpression = "Q = A + B";
+  else if (gateType === "NOT") booleanExpression = "Q = ¬A (A')";
+  else if (gateType === "NAND") booleanExpression = "Q = ¬(A · B)";
+  else if (gateType === "NOR") booleanExpression = "Q = ¬(A + B)";
+  else if (gateType === "XOR") booleanExpression = "Q = A ⊕ B";
+
+  const inputs: Array<[0 | 1, 0 | 1]> = [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ];
+
+  const truthTable: TruthTableRow[] = inputs.map(([a, b]) => ({
+    a,
+    b,
+    q: evaluateGate(gateType, a, b),
+    active: a === inputA && (gateType === "NOT" || b === inputB),
+  }));
+
+  return {
+    gateType,
+    inputA,
+    inputB,
+    outputQ,
+    booleanExpression,
+    truthTable,
+    statusText: outputQ === 1 ? "HIGH (Logic 1 / 5V)" : "LOW (Logic 0 / 0V)",
+  };
+}
+
+export class LogicGatesAdapter
+  implements IStemLiveboardAdapter<LogicGatesState, Partial<LogicGatesState>>
+{
+  readonly capabilities: StemAdapterCapabilities = {
+    supportsSnapshot: true,
+    supportsStudentParameters: false,
+    requiresWebGl: false,
+    recordingMetadata: {
+      title: "Boolean Logic Gates & Digital Circuits",
+      category: "Engineering & Computer Studies",
+    },
+  };
+
+  private state: LogicGatesState = { ...DEFAULT_LOGIC_GATES_STATE };
+  private sequenceNumber: number = 0;
+  private isHost: boolean = false;
+  private processedEventIds = new Set<string>();
+
+  getSimulationId(): string {
+    return "eng-logic-gates-bench";
+  }
+
+  getVersion(): string {
+    return "1.0.0";
+  }
+
+  init(initialState?: Partial<LogicGatesState>, isHost: boolean = false): void {
+    this.state = { ...DEFAULT_LOGIC_GATES_STATE, ...initialState };
+    this.isHost = isHost;
+    this.sequenceNumber = 0;
+    this.processedEventIds.clear();
+  }
+
+  createParamChangeEvent(
+    sessionId: string,
+    actorId: string,
+    updates: Partial<LogicGatesState>
+  ): StemSynchronizedEvent<Partial<LogicGatesState>> {
+    this.sequenceNumber += 1;
+    const eventId = `stem-evt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const event: StemSynchronizedEvent<Partial<LogicGatesState>> = {
+      sessionId,
+      sequenceNumber: this.sequenceNumber,
+      eventId,
+      idempotencyKey: eventId,
+      actorId,
+      actorRole: this.isHost ? "tutor" : "student",
+      eventType: "STEM_PARAM_CHANGE",
+      payloadSchemaVersion: 1,
+      version: "1.0.0",
+      payload: updates,
+      timestamp: Date.now(),
+    };
+
+    this.applyEvent(event);
+    return event;
+  }
+
+  applyEvent(event: StemSynchronizedEvent<Partial<LogicGatesState>>): boolean {
+    const key = event?.idempotencyKey || event?.eventId;
+    if (!key) return false;
+    if (this.processedEventIds.has(key)) return false;
+    if (event.sequenceNumber < this.sequenceNumber && !this.isHost) return false;
+
+    this.processedEventIds.add(key);
+    if (event.sequenceNumber > this.sequenceNumber) {
+      this.sequenceNumber = event.sequenceNumber;
+    }
+
+    this.state = { ...this.state, ...event.payload };
+    return true;
+  }
+
+  getSnapshot(): LogicGatesState {
+    return { ...this.state };
+  }
+
+  getTelemetry(): LogicGatesTelemetry {
+    return computeLogicGatesTelemetry(this.state);
+  }
+
+  getSequenceNumber(): number {
+    return this.sequenceNumber;
+  }
+
+  serialize(): Record<string, unknown> {
+    return {
+      state: this.getSnapshot(),
+      telemetry: this.getTelemetry(),
+      timestamp: Date.now(),
+    };
+  }
+
+  renderToCanvas(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    theme: "dark" | "light" = "dark"
+  ): void {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#f8fafc";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#334155" : "#94a3b8";
+    const gateBorder = isDark ? "#38bdf8" : "#0284c7";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+
+    ctx.save();
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+
+    const telemetry = this.getTelemetry();
+
+    const gateX = 220;
+    const gateY = height / 2;
+
+    const wireAColor = this.state.inputA === 1 ? wireHigh : wireLow;
+    const wireBColor = this.state.inputB === 1 ? wireHigh : wireLow;
+    const outColor = telemetry.outputQ === 1 ? wireHigh : wireLow;
+
+    // Input A line
+    const inAy = gateY - 25;
+    ctx.strokeStyle = wireAColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(80, inAy);
+    ctx.lineTo(gateX, inAy);
+    ctx.stroke();
+
+    ctx.fillStyle = this.state.inputA === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.roundRect(40, inAy - 14, 35, 28, 6);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 13px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`${this.state.inputA}`, 57, inAy + 5);
+
+    // Input B line
+    if (this.state.gateType !== "NOT") {
+      const inBy = gateY + 25;
+      ctx.strokeStyle = wireBColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(80, inBy);
+      ctx.lineTo(gateX, inBy);
+      ctx.stroke();
+
+      ctx.fillStyle = this.state.inputB === 1 ? "#10b981" : "#475569";
+      ctx.beginPath();
+      ctx.roundRect(40, inBy - 14, 35, 28, 6);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`${this.state.inputB}`, 57, inBy + 5);
+    }
+
+    // Gate symbol
+    ctx.strokeStyle = gateBorder;
+    ctx.fillStyle = isDark ? "#0B1536" : "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    if (this.state.gateType === "AND" || this.state.gateType === "NAND") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.lineTo(gateX + 50, gateY - 45);
+      ctx.arc(gateX + 50, gateY, 45, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(gateX, gateY + 45);
+      ctx.closePath();
+    } else if (this.state.gateType === "OR" || this.state.gateType === "NOR" || this.state.gateType === "XOR") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.quadraticCurveTo(gateX + 40, gateY - 40, gateX + 90, gateY);
+      ctx.quadraticCurveTo(gateX + 40, gateY + 40, gateX, gateY + 45);
+      ctx.quadraticCurveTo(gateX + 25, gateY, gateX, gateY - 45);
+      ctx.closePath();
+    } else {
+      ctx.moveTo(gateX, gateY - 40);
+      ctx.lineTo(gateX + 70, gateY);
+      ctx.lineTo(gateX, gateY + 40);
+      ctx.closePath();
+    }
+
+    ctx.fill();
+    ctx.stroke();
+
+    let outStartX = gateX + 95;
+    if (this.state.gateType === "NAND" || this.state.gateType === "NOR") {
+      outStartX = gateX + 105;
+      ctx.beginPath();
+      ctx.arc(gateX + 97, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.state.gateType === "NOT") {
+      outStartX = gateX + 82;
+      ctx.beginPath();
+      ctx.arc(gateX + 76, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = gateBorder;
+    ctx.font = "bold 14px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(this.state.gateType, gateX + 35, gateY + 5);
+
+    // Output Wire
+    ctx.strokeStyle = outColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(outStartX, gateY);
+    ctx.lineTo(gateX + 180, gateY);
+    ctx.stroke();
+
+    // Output LED
+    const ledX = gateX + 200;
+    ctx.fillStyle = telemetry.outputQ === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.arc(ledX, gateY, 18, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = telemetry.outputQ === 1 ? "#34d399" : "#64748b";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText(`Q=${telemetry.outputQ}`, ledX, gateY + 5);
+
+    // Truth Table Card
+    const ttX = width - 240;
+    const ttY = 50;
+    ctx.fillStyle = isDark ? "rgba(11, 21, 54, 0.92)" : "rgba(255, 255, 255, 0.95)";
+    ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0";
+    ctx.beginPath();
+    ctx.roundRect(ttX, ttY, 210, 210, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 12px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`TRUTH TABLE: ${this.state.gateType}`, ttX + 15, ttY + 25);
+    ctx.font = "11px monospace";
+    ctx.fillStyle = textColor;
+    ctx.fillText(telemetry.booleanExpression, ttX + 15, ttY + 45);
+
+    ctx.font = "bold 11px monospace";
+    ctx.fillStyle = isDark ? "#94a3b8" : "#64748b";
+    ctx.fillText(" A   B  |  Q ", ttX + 25, ttY + 70);
+
+    telemetry.truthTable.forEach((row, i) => {
+      const rowY = ttY + 95 + i * 24;
+      if (row.active) {
+        ctx.fillStyle = "rgba(16, 185, 129, 0.18)";
+        ctx.fillRect(ttX + 10, rowY - 14, 190, 20);
+        ctx.strokeStyle = "#10b981";
+        ctx.strokeRect(ttX + 10, rowY - 14, 190, 20);
+      }
+      ctx.fillStyle = row.active ? "#34d399" : textColor;
+      ctx.fillText(` ${row.a}   ${row.b}  |  ${row.q} ${row.active ? " ◄ Active" : ""}`, ttX + 25, rowY);
+    });
+
+    ctx.restore();
+  }
+
+  exportSvg(width = 640, height = 480, theme: "dark" | "light" = "dark"): string {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#ffffff";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#475569" : "#cbd5e1";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+    const gateBorder = "#38bdf8";
+
+    const telemetry = this.getTelemetry();
+    const gateX = 180;
+    const gateY = height / 2;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <rect width="100%" height="100%" fill="${bgColor}" rx="12"/>
+  <line x1="60" y1="${gateY - 25}" x2="${gateX}" y2="${gateY - 25}" stroke="${this.state.inputA === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY - 20}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputA === 1 ? wireHigh : textColor}">A=${this.state.inputA}</text>
+  <line x1="60" y1="${gateY + 25}" x2="${gateX}" y2="${gateY + 25}" stroke="${this.state.inputB === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY + 30}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputB === 1 ? wireHigh : textColor}">B=${this.state.inputB}</text>
+  <rect x="${gateX}" y="${gateY - 45}" width="80" height="90" rx="10" fill="${bgColor}" stroke="${gateBorder}" stroke-width="3"/>
+  <text x="${gateX + 40}" y="${gateY + 5}" font-family="monospace" font-size="16" font-weight="bold" fill="${gateBorder}" text-anchor="middle">${this.state.gateType}</text>
+  <line x1="${gateX + 80}" y1="${gateY}" x2="${gateX + 160}" y2="${gateY}" stroke="${telemetry.outputQ === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <circle cx="${gateX + 180}" cy="${gateY}" r="18" fill="${telemetry.outputQ === 1 ? wireHigh : wireLow}"/>
+  <text x="${gateX + 180}" y="${gateY + 5}" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Q=${telemetry.outputQ}</text>
+  <g font-family="monospace, sans-serif" font-size="12" fill="${textColor}">
+    <rect x="${width - 230}" y="40" width="210" height="180" fill="${bgColor}" fill-opacity="0.85" rx="6" stroke="${gateBorder}"/>
+    <text x="${width - 215}" y="65" font-weight="bold" fill="${gateBorder}">${this.state.gateType} TRUTH TABLE</text>
+    <text x="${width - 215}" y="88">${telemetry.booleanExpression}</text>
+    <text x="${width - 215}" y="112">A  B | Q</text>
+    <text x="${width - 215}" y="132">0  0 | ${evaluateGate(this.state.gateType, 0, 0)}</text>
+    <text x="${width - 215}" y="152">0  1 | ${evaluateGate(this.state.gateType, 0, 1)}</text>
+    <text x="${width - 215}" y="172">1  0 | ${evaluateGate(this.state.gateType, 1, 0)}</text>
+    <text x="${width - 215}" y="192">1  1 | ${evaluateGate(this.state.gateType, 1, 1)}</text>
+  </g>
+</svg>`;
+
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+
+  destroy(): void {
+    this.processedEventIds.clear();
+  }
+}
+
+// ----------------------------------------------------------------------------
 // 2. PROJECTILE MOTION SIMULATION ADAPTER (Physics - WAEC/GCSE/JAMB)
 // ----------------------------------------------------------------------------
 
@@ -734,6 +1131,403 @@ export class ProjectileMotionAdapter
 }
 
 // ----------------------------------------------------------------------------
+// 6. BOOLEAN LOGIC GATES & CIRCUITS ADAPTER (Engineering & Computer Studies)
+// ----------------------------------------------------------------------------
+
+export type LogicGateType = "AND" | "OR" | "NOT" | "NAND" | "NOR" | "XOR";
+
+export interface LogicGatesState {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  active: boolean;
+}
+
+export const DEFAULT_LOGIC_GATES_STATE: LogicGatesState = {
+  gateType: "AND",
+  inputA: 1,
+  inputB: 0,
+  active: true,
+};
+
+export interface TruthTableRow {
+  a: 0 | 1;
+  b: 0 | 1;
+  q: 0 | 1;
+  active: boolean;
+}
+
+export interface LogicGatesTelemetry {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  outputQ: 0 | 1;
+  booleanExpression: string;
+  truthTable: TruthTableRow[];
+  statusText: string;
+}
+
+export function evaluateGate(gate: LogicGateType, a: 0 | 1, b: 0 | 1): 0 | 1 {
+  switch (gate) {
+    case "AND":
+      return (a && b) ? 1 : 0;
+    case "OR":
+      return (a || b) ? 1 : 0;
+    case "NOT":
+      return a === 0 ? 1 : 0;
+    case "NAND":
+      return !(a && b) ? 1 : 0;
+    case "NOR":
+      return !(a || b) ? 1 : 0;
+    case "XOR":
+      return a !== b ? 1 : 0;
+  }
+}
+
+export function computeLogicGatesTelemetry(
+  state: Pick<LogicGatesState, "gateType" | "inputA" | "inputB">
+): LogicGatesTelemetry {
+  const { gateType, inputA, inputB } = state;
+  const outputQ = evaluateGate(gateType, inputA, inputB);
+
+  let booleanExpression = "Q = A · B";
+  if (gateType === "OR") booleanExpression = "Q = A + B";
+  else if (gateType === "NOT") booleanExpression = "Q = ¬A (A')";
+  else if (gateType === "NAND") booleanExpression = "Q = ¬(A · B)";
+  else if (gateType === "NOR") booleanExpression = "Q = ¬(A + B)";
+  else if (gateType === "XOR") booleanExpression = "Q = A ⊕ B";
+
+  const inputs: Array<[0 | 1, 0 | 1]> = [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ];
+
+  const truthTable: TruthTableRow[] = inputs.map(([a, b]) => ({
+    a,
+    b,
+    q: evaluateGate(gateType, a, b),
+    active: a === inputA && (gateType === "NOT" || b === inputB),
+  }));
+
+  return {
+    gateType,
+    inputA,
+    inputB,
+    outputQ,
+    booleanExpression,
+    truthTable,
+    statusText: outputQ === 1 ? "HIGH (Logic 1 / 5V)" : "LOW (Logic 0 / 0V)",
+  };
+}
+
+export class LogicGatesAdapter
+  implements IStemLiveboardAdapter<LogicGatesState, Partial<LogicGatesState>>
+{
+  readonly capabilities: StemAdapterCapabilities = {
+    supportsSnapshot: true,
+    supportsStudentParameters: false,
+    requiresWebGl: false,
+    recordingMetadata: {
+      title: "Boolean Logic Gates & Digital Circuits",
+      category: "Engineering & Computer Studies",
+    },
+  };
+
+  private state: LogicGatesState = { ...DEFAULT_LOGIC_GATES_STATE };
+  private sequenceNumber: number = 0;
+  private isHost: boolean = false;
+  private processedEventIds = new Set<string>();
+
+  getSimulationId(): string {
+    return "eng-logic-gates-bench";
+  }
+
+  getVersion(): string {
+    return "1.0.0";
+  }
+
+  init(initialState?: Partial<LogicGatesState>, isHost: boolean = false): void {
+    this.state = { ...DEFAULT_LOGIC_GATES_STATE, ...initialState };
+    this.isHost = isHost;
+    this.sequenceNumber = 0;
+    this.processedEventIds.clear();
+  }
+
+  createParamChangeEvent(
+    sessionId: string,
+    actorId: string,
+    updates: Partial<LogicGatesState>
+  ): StemSynchronizedEvent<Partial<LogicGatesState>> {
+    this.sequenceNumber += 1;
+    const eventId = `stem-evt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const event: StemSynchronizedEvent<Partial<LogicGatesState>> = {
+      sessionId,
+      sequenceNumber: this.sequenceNumber,
+      eventId,
+      idempotencyKey: eventId,
+      actorId,
+      actorRole: this.isHost ? "tutor" : "student",
+      eventType: "STEM_PARAM_CHANGE",
+      payloadSchemaVersion: 1,
+      version: "1.0.0",
+      payload: updates,
+      timestamp: Date.now(),
+    };
+
+    this.applyEvent(event);
+    return event;
+  }
+
+  applyEvent(event: StemSynchronizedEvent<Partial<LogicGatesState>>): boolean {
+    const key = event?.idempotencyKey || event?.eventId;
+    if (!key) return false;
+    if (this.processedEventIds.has(key)) return false;
+    if (event.sequenceNumber < this.sequenceNumber && !this.isHost) return false;
+
+    this.processedEventIds.add(key);
+    if (event.sequenceNumber > this.sequenceNumber) {
+      this.sequenceNumber = event.sequenceNumber;
+    }
+
+    this.state = { ...this.state, ...event.payload };
+    return true;
+  }
+
+  getSnapshot(): LogicGatesState {
+    return { ...this.state };
+  }
+
+  getTelemetry(): LogicGatesTelemetry {
+    return computeLogicGatesTelemetry(this.state);
+  }
+
+  getSequenceNumber(): number {
+    return this.sequenceNumber;
+  }
+
+  serialize(): Record<string, unknown> {
+    return {
+      state: this.getSnapshot(),
+      telemetry: this.getTelemetry(),
+      timestamp: Date.now(),
+    };
+  }
+
+  renderToCanvas(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    theme: "dark" | "light" = "dark"
+  ): void {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#f8fafc";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#334155" : "#94a3b8";
+    const gateBorder = isDark ? "#38bdf8" : "#0284c7";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+
+    ctx.save();
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+
+    const telemetry = this.getTelemetry();
+
+    const gateX = 220;
+    const gateY = height / 2;
+
+    const wireAColor = this.state.inputA === 1 ? wireHigh : wireLow;
+    const wireBColor = this.state.inputB === 1 ? wireHigh : wireLow;
+    const outColor = telemetry.outputQ === 1 ? wireHigh : wireLow;
+
+    // Input A line
+    const inAy = gateY - 25;
+    ctx.strokeStyle = wireAColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(80, inAy);
+    ctx.lineTo(gateX, inAy);
+    ctx.stroke();
+
+    ctx.fillStyle = this.state.inputA === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.roundRect(40, inAy - 14, 35, 28, 6);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 13px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`${this.state.inputA}`, 57, inAy + 5);
+
+    // Input B line
+    if (this.state.gateType !== "NOT") {
+      const inBy = gateY + 25;
+      ctx.strokeStyle = wireBColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(80, inBy);
+      ctx.lineTo(gateX, inBy);
+      ctx.stroke();
+
+      ctx.fillStyle = this.state.inputB === 1 ? "#10b981" : "#475569";
+      ctx.beginPath();
+      ctx.roundRect(40, inBy - 14, 35, 28, 6);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`${this.state.inputB}`, 57, inBy + 5);
+    }
+
+    // Gate symbol
+    ctx.strokeStyle = gateBorder;
+    ctx.fillStyle = isDark ? "#0B1536" : "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    if (this.state.gateType === "AND" || this.state.gateType === "NAND") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.lineTo(gateX + 50, gateY - 45);
+      ctx.arc(gateX + 50, gateY, 45, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(gateX, gateY + 45);
+      ctx.closePath();
+    } else if (this.state.gateType === "OR" || this.state.gateType === "NOR" || this.state.gateType === "XOR") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.quadraticCurveTo(gateX + 40, gateY - 40, gateX + 90, gateY);
+      ctx.quadraticCurveTo(gateX + 40, gateY + 40, gateX, gateY + 45);
+      ctx.quadraticCurveTo(gateX + 25, gateY, gateX, gateY - 45);
+      ctx.closePath();
+    } else {
+      ctx.moveTo(gateX, gateY - 40);
+      ctx.lineTo(gateX + 70, gateY);
+      ctx.lineTo(gateX, gateY + 40);
+      ctx.closePath();
+    }
+
+    ctx.fill();
+    ctx.stroke();
+
+    let outStartX = gateX + 95;
+    if (this.state.gateType === "NAND" || this.state.gateType === "NOR") {
+      outStartX = gateX + 105;
+      ctx.beginPath();
+      ctx.arc(gateX + 97, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.state.gateType === "NOT") {
+      outStartX = gateX + 82;
+      ctx.beginPath();
+      ctx.arc(gateX + 76, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = gateBorder;
+    ctx.font = "bold 14px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(this.state.gateType, gateX + 35, gateY + 5);
+
+    // Output Wire
+    ctx.strokeStyle = outColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(outStartX, gateY);
+    ctx.lineTo(gateX + 180, gateY);
+    ctx.stroke();
+
+    // Output LED
+    const ledX = gateX + 200;
+    ctx.fillStyle = telemetry.outputQ === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.arc(ledX, gateY, 18, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = telemetry.outputQ === 1 ? "#34d399" : "#64748b";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText(`Q=${telemetry.outputQ}`, ledX, gateY + 5);
+
+    // Truth Table Card
+    const ttX = width - 240;
+    const ttY = 50;
+    ctx.fillStyle = isDark ? "rgba(11, 21, 54, 0.92)" : "rgba(255, 255, 255, 0.95)";
+    ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0";
+    ctx.beginPath();
+    ctx.roundRect(ttX, ttY, 210, 210, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 12px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`TRUTH TABLE: ${this.state.gateType}`, ttX + 15, ttY + 25);
+    ctx.font = "11px monospace";
+    ctx.fillStyle = textColor;
+    ctx.fillText(telemetry.booleanExpression, ttX + 15, ttY + 45);
+
+    ctx.font = "bold 11px monospace";
+    ctx.fillStyle = isDark ? "#94a3b8" : "#64748b";
+    ctx.fillText(" A   B  |  Q ", ttX + 25, ttY + 70);
+
+    telemetry.truthTable.forEach((row, i) => {
+      const rowY = ttY + 95 + i * 24;
+      if (row.active) {
+        ctx.fillStyle = "rgba(16, 185, 129, 0.18)";
+        ctx.fillRect(ttX + 10, rowY - 14, 190, 20);
+        ctx.strokeStyle = "#10b981";
+        ctx.strokeRect(ttX + 10, rowY - 14, 190, 20);
+      }
+      ctx.fillStyle = row.active ? "#34d399" : textColor;
+      ctx.fillText(` ${row.a}   ${row.b}  |  ${row.q} ${row.active ? " ◄ Active" : ""}`, ttX + 25, rowY);
+    });
+
+    ctx.restore();
+  }
+
+  exportSvg(width = 640, height = 480, theme: "dark" | "light" = "dark"): string {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#ffffff";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#475569" : "#cbd5e1";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+    const gateBorder = "#38bdf8";
+
+    const telemetry = this.getTelemetry();
+    const gateX = 180;
+    const gateY = height / 2;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <rect width="100%" height="100%" fill="${bgColor}" rx="12"/>
+  <line x1="60" y1="${gateY - 25}" x2="${gateX}" y2="${gateY - 25}" stroke="${this.state.inputA === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY - 20}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputA === 1 ? wireHigh : textColor}">A=${this.state.inputA}</text>
+  <line x1="60" y1="${gateY + 25}" x2="${gateX}" y2="${gateY + 25}" stroke="${this.state.inputB === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY + 30}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputB === 1 ? wireHigh : textColor}">B=${this.state.inputB}</text>
+  <rect x="${gateX}" y="${gateY - 45}" width="80" height="90" rx="10" fill="${bgColor}" stroke="${gateBorder}" stroke-width="3"/>
+  <text x="${gateX + 40}" y="${gateY + 5}" font-family="monospace" font-size="16" font-weight="bold" fill="${gateBorder}" text-anchor="middle">${this.state.gateType}</text>
+  <line x1="${gateX + 80}" y1="${gateY}" x2="${gateX + 160}" y2="${gateY}" stroke="${telemetry.outputQ === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <circle cx="${gateX + 180}" cy="${gateY}" r="18" fill="${telemetry.outputQ === 1 ? wireHigh : wireLow}"/>
+  <text x="${gateX + 180}" y="${gateY + 5}" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Q=${telemetry.outputQ}</text>
+  <g font-family="monospace, sans-serif" font-size="12" fill="${textColor}">
+    <rect x="${width - 230}" y="40" width="210" height="180" fill="${bgColor}" fill-opacity="0.85" rx="6" stroke="${gateBorder}"/>
+    <text x="${width - 215}" y="65" font-weight="bold" fill="${gateBorder}">${this.state.gateType} TRUTH TABLE</text>
+    <text x="${width - 215}" y="88">${telemetry.booleanExpression}</text>
+    <text x="${width - 215}" y="112">A  B | Q</text>
+    <text x="${width - 215}" y="132">0  0 | ${evaluateGate(this.state.gateType, 0, 0)}</text>
+    <text x="${width - 215}" y="152">0  1 | ${evaluateGate(this.state.gateType, 0, 1)}</text>
+    <text x="${width - 215}" y="172">1  0 | ${evaluateGate(this.state.gateType, 1, 0)}</text>
+    <text x="${width - 215}" y="192">1  1 | ${evaluateGate(this.state.gateType, 1, 1)}</text>
+  </g>
+</svg>`;
+
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+
+  destroy(): void {
+    this.processedEventIds.clear();
+  }
+}
+
+// ----------------------------------------------------------------------------
 // 3. OHM'S LAW & DC CIRCUIT LAB ADAPTER (Physics - BL-STEM-002)
 // ----------------------------------------------------------------------------
 
@@ -1041,6 +1835,403 @@ export class OhmsLawCircuitAdapter
     <text x="${width - 200}" y="106">Current: ${telemetry.currentAmps} A</text>
     <text x="${width - 200}" y="126">Power: ${telemetry.powerWatts} W</text>
     <text x="${width - 200}" y="146">I = V / R</text>
+  </g>
+</svg>`;
+
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+
+  destroy(): void {
+    this.processedEventIds.clear();
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 6. BOOLEAN LOGIC GATES & CIRCUITS ADAPTER (Engineering & Computer Studies)
+// ----------------------------------------------------------------------------
+
+export type LogicGateType = "AND" | "OR" | "NOT" | "NAND" | "NOR" | "XOR";
+
+export interface LogicGatesState {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  active: boolean;
+}
+
+export const DEFAULT_LOGIC_GATES_STATE: LogicGatesState = {
+  gateType: "AND",
+  inputA: 1,
+  inputB: 0,
+  active: true,
+};
+
+export interface TruthTableRow {
+  a: 0 | 1;
+  b: 0 | 1;
+  q: 0 | 1;
+  active: boolean;
+}
+
+export interface LogicGatesTelemetry {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  outputQ: 0 | 1;
+  booleanExpression: string;
+  truthTable: TruthTableRow[];
+  statusText: string;
+}
+
+export function evaluateGate(gate: LogicGateType, a: 0 | 1, b: 0 | 1): 0 | 1 {
+  switch (gate) {
+    case "AND":
+      return (a && b) ? 1 : 0;
+    case "OR":
+      return (a || b) ? 1 : 0;
+    case "NOT":
+      return a === 0 ? 1 : 0;
+    case "NAND":
+      return !(a && b) ? 1 : 0;
+    case "NOR":
+      return !(a || b) ? 1 : 0;
+    case "XOR":
+      return a !== b ? 1 : 0;
+  }
+}
+
+export function computeLogicGatesTelemetry(
+  state: Pick<LogicGatesState, "gateType" | "inputA" | "inputB">
+): LogicGatesTelemetry {
+  const { gateType, inputA, inputB } = state;
+  const outputQ = evaluateGate(gateType, inputA, inputB);
+
+  let booleanExpression = "Q = A · B";
+  if (gateType === "OR") booleanExpression = "Q = A + B";
+  else if (gateType === "NOT") booleanExpression = "Q = ¬A (A')";
+  else if (gateType === "NAND") booleanExpression = "Q = ¬(A · B)";
+  else if (gateType === "NOR") booleanExpression = "Q = ¬(A + B)";
+  else if (gateType === "XOR") booleanExpression = "Q = A ⊕ B";
+
+  const inputs: Array<[0 | 1, 0 | 1]> = [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ];
+
+  const truthTable: TruthTableRow[] = inputs.map(([a, b]) => ({
+    a,
+    b,
+    q: evaluateGate(gateType, a, b),
+    active: a === inputA && (gateType === "NOT" || b === inputB),
+  }));
+
+  return {
+    gateType,
+    inputA,
+    inputB,
+    outputQ,
+    booleanExpression,
+    truthTable,
+    statusText: outputQ === 1 ? "HIGH (Logic 1 / 5V)" : "LOW (Logic 0 / 0V)",
+  };
+}
+
+export class LogicGatesAdapter
+  implements IStemLiveboardAdapter<LogicGatesState, Partial<LogicGatesState>>
+{
+  readonly capabilities: StemAdapterCapabilities = {
+    supportsSnapshot: true,
+    supportsStudentParameters: false,
+    requiresWebGl: false,
+    recordingMetadata: {
+      title: "Boolean Logic Gates & Digital Circuits",
+      category: "Engineering & Computer Studies",
+    },
+  };
+
+  private state: LogicGatesState = { ...DEFAULT_LOGIC_GATES_STATE };
+  private sequenceNumber: number = 0;
+  private isHost: boolean = false;
+  private processedEventIds = new Set<string>();
+
+  getSimulationId(): string {
+    return "eng-logic-gates-bench";
+  }
+
+  getVersion(): string {
+    return "1.0.0";
+  }
+
+  init(initialState?: Partial<LogicGatesState>, isHost: boolean = false): void {
+    this.state = { ...DEFAULT_LOGIC_GATES_STATE, ...initialState };
+    this.isHost = isHost;
+    this.sequenceNumber = 0;
+    this.processedEventIds.clear();
+  }
+
+  createParamChangeEvent(
+    sessionId: string,
+    actorId: string,
+    updates: Partial<LogicGatesState>
+  ): StemSynchronizedEvent<Partial<LogicGatesState>> {
+    this.sequenceNumber += 1;
+    const eventId = `stem-evt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const event: StemSynchronizedEvent<Partial<LogicGatesState>> = {
+      sessionId,
+      sequenceNumber: this.sequenceNumber,
+      eventId,
+      idempotencyKey: eventId,
+      actorId,
+      actorRole: this.isHost ? "tutor" : "student",
+      eventType: "STEM_PARAM_CHANGE",
+      payloadSchemaVersion: 1,
+      version: "1.0.0",
+      payload: updates,
+      timestamp: Date.now(),
+    };
+
+    this.applyEvent(event);
+    return event;
+  }
+
+  applyEvent(event: StemSynchronizedEvent<Partial<LogicGatesState>>): boolean {
+    const key = event?.idempotencyKey || event?.eventId;
+    if (!key) return false;
+    if (this.processedEventIds.has(key)) return false;
+    if (event.sequenceNumber < this.sequenceNumber && !this.isHost) return false;
+
+    this.processedEventIds.add(key);
+    if (event.sequenceNumber > this.sequenceNumber) {
+      this.sequenceNumber = event.sequenceNumber;
+    }
+
+    this.state = { ...this.state, ...event.payload };
+    return true;
+  }
+
+  getSnapshot(): LogicGatesState {
+    return { ...this.state };
+  }
+
+  getTelemetry(): LogicGatesTelemetry {
+    return computeLogicGatesTelemetry(this.state);
+  }
+
+  getSequenceNumber(): number {
+    return this.sequenceNumber;
+  }
+
+  serialize(): Record<string, unknown> {
+    return {
+      state: this.getSnapshot(),
+      telemetry: this.getTelemetry(),
+      timestamp: Date.now(),
+    };
+  }
+
+  renderToCanvas(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    theme: "dark" | "light" = "dark"
+  ): void {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#f8fafc";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#334155" : "#94a3b8";
+    const gateBorder = isDark ? "#38bdf8" : "#0284c7";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+
+    ctx.save();
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+
+    const telemetry = this.getTelemetry();
+
+    const gateX = 220;
+    const gateY = height / 2;
+
+    const wireAColor = this.state.inputA === 1 ? wireHigh : wireLow;
+    const wireBColor = this.state.inputB === 1 ? wireHigh : wireLow;
+    const outColor = telemetry.outputQ === 1 ? wireHigh : wireLow;
+
+    // Input A line
+    const inAy = gateY - 25;
+    ctx.strokeStyle = wireAColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(80, inAy);
+    ctx.lineTo(gateX, inAy);
+    ctx.stroke();
+
+    ctx.fillStyle = this.state.inputA === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.roundRect(40, inAy - 14, 35, 28, 6);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 13px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`${this.state.inputA}`, 57, inAy + 5);
+
+    // Input B line
+    if (this.state.gateType !== "NOT") {
+      const inBy = gateY + 25;
+      ctx.strokeStyle = wireBColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(80, inBy);
+      ctx.lineTo(gateX, inBy);
+      ctx.stroke();
+
+      ctx.fillStyle = this.state.inputB === 1 ? "#10b981" : "#475569";
+      ctx.beginPath();
+      ctx.roundRect(40, inBy - 14, 35, 28, 6);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`${this.state.inputB}`, 57, inBy + 5);
+    }
+
+    // Gate symbol
+    ctx.strokeStyle = gateBorder;
+    ctx.fillStyle = isDark ? "#0B1536" : "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    if (this.state.gateType === "AND" || this.state.gateType === "NAND") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.lineTo(gateX + 50, gateY - 45);
+      ctx.arc(gateX + 50, gateY, 45, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(gateX, gateY + 45);
+      ctx.closePath();
+    } else if (this.state.gateType === "OR" || this.state.gateType === "NOR" || this.state.gateType === "XOR") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.quadraticCurveTo(gateX + 40, gateY - 40, gateX + 90, gateY);
+      ctx.quadraticCurveTo(gateX + 40, gateY + 40, gateX, gateY + 45);
+      ctx.quadraticCurveTo(gateX + 25, gateY, gateX, gateY - 45);
+      ctx.closePath();
+    } else {
+      ctx.moveTo(gateX, gateY - 40);
+      ctx.lineTo(gateX + 70, gateY);
+      ctx.lineTo(gateX, gateY + 40);
+      ctx.closePath();
+    }
+
+    ctx.fill();
+    ctx.stroke();
+
+    let outStartX = gateX + 95;
+    if (this.state.gateType === "NAND" || this.state.gateType === "NOR") {
+      outStartX = gateX + 105;
+      ctx.beginPath();
+      ctx.arc(gateX + 97, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.state.gateType === "NOT") {
+      outStartX = gateX + 82;
+      ctx.beginPath();
+      ctx.arc(gateX + 76, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = gateBorder;
+    ctx.font = "bold 14px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(this.state.gateType, gateX + 35, gateY + 5);
+
+    // Output Wire
+    ctx.strokeStyle = outColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(outStartX, gateY);
+    ctx.lineTo(gateX + 180, gateY);
+    ctx.stroke();
+
+    // Output LED
+    const ledX = gateX + 200;
+    ctx.fillStyle = telemetry.outputQ === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.arc(ledX, gateY, 18, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = telemetry.outputQ === 1 ? "#34d399" : "#64748b";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText(`Q=${telemetry.outputQ}`, ledX, gateY + 5);
+
+    // Truth Table Card
+    const ttX = width - 240;
+    const ttY = 50;
+    ctx.fillStyle = isDark ? "rgba(11, 21, 54, 0.92)" : "rgba(255, 255, 255, 0.95)";
+    ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0";
+    ctx.beginPath();
+    ctx.roundRect(ttX, ttY, 210, 210, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 12px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`TRUTH TABLE: ${this.state.gateType}`, ttX + 15, ttY + 25);
+    ctx.font = "11px monospace";
+    ctx.fillStyle = textColor;
+    ctx.fillText(telemetry.booleanExpression, ttX + 15, ttY + 45);
+
+    ctx.font = "bold 11px monospace";
+    ctx.fillStyle = isDark ? "#94a3b8" : "#64748b";
+    ctx.fillText(" A   B  |  Q ", ttX + 25, ttY + 70);
+
+    telemetry.truthTable.forEach((row, i) => {
+      const rowY = ttY + 95 + i * 24;
+      if (row.active) {
+        ctx.fillStyle = "rgba(16, 185, 129, 0.18)";
+        ctx.fillRect(ttX + 10, rowY - 14, 190, 20);
+        ctx.strokeStyle = "#10b981";
+        ctx.strokeRect(ttX + 10, rowY - 14, 190, 20);
+      }
+      ctx.fillStyle = row.active ? "#34d399" : textColor;
+      ctx.fillText(` ${row.a}   ${row.b}  |  ${row.q} ${row.active ? " ◄ Active" : ""}`, ttX + 25, rowY);
+    });
+
+    ctx.restore();
+  }
+
+  exportSvg(width = 640, height = 480, theme: "dark" | "light" = "dark"): string {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#ffffff";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#475569" : "#cbd5e1";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+    const gateBorder = "#38bdf8";
+
+    const telemetry = this.getTelemetry();
+    const gateX = 180;
+    const gateY = height / 2;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <rect width="100%" height="100%" fill="${bgColor}" rx="12"/>
+  <line x1="60" y1="${gateY - 25}" x2="${gateX}" y2="${gateY - 25}" stroke="${this.state.inputA === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY - 20}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputA === 1 ? wireHigh : textColor}">A=${this.state.inputA}</text>
+  <line x1="60" y1="${gateY + 25}" x2="${gateX}" y2="${gateY + 25}" stroke="${this.state.inputB === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY + 30}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputB === 1 ? wireHigh : textColor}">B=${this.state.inputB}</text>
+  <rect x="${gateX}" y="${gateY - 45}" width="80" height="90" rx="10" fill="${bgColor}" stroke="${gateBorder}" stroke-width="3"/>
+  <text x="${gateX + 40}" y="${gateY + 5}" font-family="monospace" font-size="16" font-weight="bold" fill="${gateBorder}" text-anchor="middle">${this.state.gateType}</text>
+  <line x1="${gateX + 80}" y1="${gateY}" x2="${gateX + 160}" y2="${gateY}" stroke="${telemetry.outputQ === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <circle cx="${gateX + 180}" cy="${gateY}" r="18" fill="${telemetry.outputQ === 1 ? wireHigh : wireLow}"/>
+  <text x="${gateX + 180}" y="${gateY + 5}" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Q=${telemetry.outputQ}</text>
+  <g font-family="monospace, sans-serif" font-size="12" fill="${textColor}">
+    <rect x="${width - 230}" y="40" width="210" height="180" fill="${bgColor}" fill-opacity="0.85" rx="6" stroke="${gateBorder}"/>
+    <text x="${width - 215}" y="65" font-weight="bold" fill="${gateBorder}">${this.state.gateType} TRUTH TABLE</text>
+    <text x="${width - 215}" y="88">${telemetry.booleanExpression}</text>
+    <text x="${width - 215}" y="112">A  B | Q</text>
+    <text x="${width - 215}" y="132">0  0 | ${evaluateGate(this.state.gateType, 0, 0)}</text>
+    <text x="${width - 215}" y="152">0  1 | ${evaluateGate(this.state.gateType, 0, 1)}</text>
+    <text x="${width - 215}" y="172">1  0 | ${evaluateGate(this.state.gateType, 1, 0)}</text>
+    <text x="${width - 215}" y="192">1  1 | ${evaluateGate(this.state.gateType, 1, 1)}</text>
   </g>
 </svg>`;
 
@@ -1428,6 +2619,403 @@ export class AcidBaseTitrationAdapter
 }
 
 // ----------------------------------------------------------------------------
+// 6. BOOLEAN LOGIC GATES & CIRCUITS ADAPTER (Engineering & Computer Studies)
+// ----------------------------------------------------------------------------
+
+export type LogicGateType = "AND" | "OR" | "NOT" | "NAND" | "NOR" | "XOR";
+
+export interface LogicGatesState {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  active: boolean;
+}
+
+export const DEFAULT_LOGIC_GATES_STATE: LogicGatesState = {
+  gateType: "AND",
+  inputA: 1,
+  inputB: 0,
+  active: true,
+};
+
+export interface TruthTableRow {
+  a: 0 | 1;
+  b: 0 | 1;
+  q: 0 | 1;
+  active: boolean;
+}
+
+export interface LogicGatesTelemetry {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  outputQ: 0 | 1;
+  booleanExpression: string;
+  truthTable: TruthTableRow[];
+  statusText: string;
+}
+
+export function evaluateGate(gate: LogicGateType, a: 0 | 1, b: 0 | 1): 0 | 1 {
+  switch (gate) {
+    case "AND":
+      return (a && b) ? 1 : 0;
+    case "OR":
+      return (a || b) ? 1 : 0;
+    case "NOT":
+      return a === 0 ? 1 : 0;
+    case "NAND":
+      return !(a && b) ? 1 : 0;
+    case "NOR":
+      return !(a || b) ? 1 : 0;
+    case "XOR":
+      return a !== b ? 1 : 0;
+  }
+}
+
+export function computeLogicGatesTelemetry(
+  state: Pick<LogicGatesState, "gateType" | "inputA" | "inputB">
+): LogicGatesTelemetry {
+  const { gateType, inputA, inputB } = state;
+  const outputQ = evaluateGate(gateType, inputA, inputB);
+
+  let booleanExpression = "Q = A · B";
+  if (gateType === "OR") booleanExpression = "Q = A + B";
+  else if (gateType === "NOT") booleanExpression = "Q = ¬A (A')";
+  else if (gateType === "NAND") booleanExpression = "Q = ¬(A · B)";
+  else if (gateType === "NOR") booleanExpression = "Q = ¬(A + B)";
+  else if (gateType === "XOR") booleanExpression = "Q = A ⊕ B";
+
+  const inputs: Array<[0 | 1, 0 | 1]> = [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ];
+
+  const truthTable: TruthTableRow[] = inputs.map(([a, b]) => ({
+    a,
+    b,
+    q: evaluateGate(gateType, a, b),
+    active: a === inputA && (gateType === "NOT" || b === inputB),
+  }));
+
+  return {
+    gateType,
+    inputA,
+    inputB,
+    outputQ,
+    booleanExpression,
+    truthTable,
+    statusText: outputQ === 1 ? "HIGH (Logic 1 / 5V)" : "LOW (Logic 0 / 0V)",
+  };
+}
+
+export class LogicGatesAdapter
+  implements IStemLiveboardAdapter<LogicGatesState, Partial<LogicGatesState>>
+{
+  readonly capabilities: StemAdapterCapabilities = {
+    supportsSnapshot: true,
+    supportsStudentParameters: false,
+    requiresWebGl: false,
+    recordingMetadata: {
+      title: "Boolean Logic Gates & Digital Circuits",
+      category: "Engineering & Computer Studies",
+    },
+  };
+
+  private state: LogicGatesState = { ...DEFAULT_LOGIC_GATES_STATE };
+  private sequenceNumber: number = 0;
+  private isHost: boolean = false;
+  private processedEventIds = new Set<string>();
+
+  getSimulationId(): string {
+    return "eng-logic-gates-bench";
+  }
+
+  getVersion(): string {
+    return "1.0.0";
+  }
+
+  init(initialState?: Partial<LogicGatesState>, isHost: boolean = false): void {
+    this.state = { ...DEFAULT_LOGIC_GATES_STATE, ...initialState };
+    this.isHost = isHost;
+    this.sequenceNumber = 0;
+    this.processedEventIds.clear();
+  }
+
+  createParamChangeEvent(
+    sessionId: string,
+    actorId: string,
+    updates: Partial<LogicGatesState>
+  ): StemSynchronizedEvent<Partial<LogicGatesState>> {
+    this.sequenceNumber += 1;
+    const eventId = `stem-evt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const event: StemSynchronizedEvent<Partial<LogicGatesState>> = {
+      sessionId,
+      sequenceNumber: this.sequenceNumber,
+      eventId,
+      idempotencyKey: eventId,
+      actorId,
+      actorRole: this.isHost ? "tutor" : "student",
+      eventType: "STEM_PARAM_CHANGE",
+      payloadSchemaVersion: 1,
+      version: "1.0.0",
+      payload: updates,
+      timestamp: Date.now(),
+    };
+
+    this.applyEvent(event);
+    return event;
+  }
+
+  applyEvent(event: StemSynchronizedEvent<Partial<LogicGatesState>>): boolean {
+    const key = event?.idempotencyKey || event?.eventId;
+    if (!key) return false;
+    if (this.processedEventIds.has(key)) return false;
+    if (event.sequenceNumber < this.sequenceNumber && !this.isHost) return false;
+
+    this.processedEventIds.add(key);
+    if (event.sequenceNumber > this.sequenceNumber) {
+      this.sequenceNumber = event.sequenceNumber;
+    }
+
+    this.state = { ...this.state, ...event.payload };
+    return true;
+  }
+
+  getSnapshot(): LogicGatesState {
+    return { ...this.state };
+  }
+
+  getTelemetry(): LogicGatesTelemetry {
+    return computeLogicGatesTelemetry(this.state);
+  }
+
+  getSequenceNumber(): number {
+    return this.sequenceNumber;
+  }
+
+  serialize(): Record<string, unknown> {
+    return {
+      state: this.getSnapshot(),
+      telemetry: this.getTelemetry(),
+      timestamp: Date.now(),
+    };
+  }
+
+  renderToCanvas(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    theme: "dark" | "light" = "dark"
+  ): void {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#f8fafc";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#334155" : "#94a3b8";
+    const gateBorder = isDark ? "#38bdf8" : "#0284c7";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+
+    ctx.save();
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+
+    const telemetry = this.getTelemetry();
+
+    const gateX = 220;
+    const gateY = height / 2;
+
+    const wireAColor = this.state.inputA === 1 ? wireHigh : wireLow;
+    const wireBColor = this.state.inputB === 1 ? wireHigh : wireLow;
+    const outColor = telemetry.outputQ === 1 ? wireHigh : wireLow;
+
+    // Input A line
+    const inAy = gateY - 25;
+    ctx.strokeStyle = wireAColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(80, inAy);
+    ctx.lineTo(gateX, inAy);
+    ctx.stroke();
+
+    ctx.fillStyle = this.state.inputA === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.roundRect(40, inAy - 14, 35, 28, 6);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 13px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`${this.state.inputA}`, 57, inAy + 5);
+
+    // Input B line
+    if (this.state.gateType !== "NOT") {
+      const inBy = gateY + 25;
+      ctx.strokeStyle = wireBColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(80, inBy);
+      ctx.lineTo(gateX, inBy);
+      ctx.stroke();
+
+      ctx.fillStyle = this.state.inputB === 1 ? "#10b981" : "#475569";
+      ctx.beginPath();
+      ctx.roundRect(40, inBy - 14, 35, 28, 6);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`${this.state.inputB}`, 57, inBy + 5);
+    }
+
+    // Gate symbol
+    ctx.strokeStyle = gateBorder;
+    ctx.fillStyle = isDark ? "#0B1536" : "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    if (this.state.gateType === "AND" || this.state.gateType === "NAND") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.lineTo(gateX + 50, gateY - 45);
+      ctx.arc(gateX + 50, gateY, 45, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(gateX, gateY + 45);
+      ctx.closePath();
+    } else if (this.state.gateType === "OR" || this.state.gateType === "NOR" || this.state.gateType === "XOR") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.quadraticCurveTo(gateX + 40, gateY - 40, gateX + 90, gateY);
+      ctx.quadraticCurveTo(gateX + 40, gateY + 40, gateX, gateY + 45);
+      ctx.quadraticCurveTo(gateX + 25, gateY, gateX, gateY - 45);
+      ctx.closePath();
+    } else {
+      ctx.moveTo(gateX, gateY - 40);
+      ctx.lineTo(gateX + 70, gateY);
+      ctx.lineTo(gateX, gateY + 40);
+      ctx.closePath();
+    }
+
+    ctx.fill();
+    ctx.stroke();
+
+    let outStartX = gateX + 95;
+    if (this.state.gateType === "NAND" || this.state.gateType === "NOR") {
+      outStartX = gateX + 105;
+      ctx.beginPath();
+      ctx.arc(gateX + 97, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.state.gateType === "NOT") {
+      outStartX = gateX + 82;
+      ctx.beginPath();
+      ctx.arc(gateX + 76, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = gateBorder;
+    ctx.font = "bold 14px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(this.state.gateType, gateX + 35, gateY + 5);
+
+    // Output Wire
+    ctx.strokeStyle = outColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(outStartX, gateY);
+    ctx.lineTo(gateX + 180, gateY);
+    ctx.stroke();
+
+    // Output LED
+    const ledX = gateX + 200;
+    ctx.fillStyle = telemetry.outputQ === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.arc(ledX, gateY, 18, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = telemetry.outputQ === 1 ? "#34d399" : "#64748b";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText(`Q=${telemetry.outputQ}`, ledX, gateY + 5);
+
+    // Truth Table Card
+    const ttX = width - 240;
+    const ttY = 50;
+    ctx.fillStyle = isDark ? "rgba(11, 21, 54, 0.92)" : "rgba(255, 255, 255, 0.95)";
+    ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0";
+    ctx.beginPath();
+    ctx.roundRect(ttX, ttY, 210, 210, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 12px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`TRUTH TABLE: ${this.state.gateType}`, ttX + 15, ttY + 25);
+    ctx.font = "11px monospace";
+    ctx.fillStyle = textColor;
+    ctx.fillText(telemetry.booleanExpression, ttX + 15, ttY + 45);
+
+    ctx.font = "bold 11px monospace";
+    ctx.fillStyle = isDark ? "#94a3b8" : "#64748b";
+    ctx.fillText(" A   B  |  Q ", ttX + 25, ttY + 70);
+
+    telemetry.truthTable.forEach((row, i) => {
+      const rowY = ttY + 95 + i * 24;
+      if (row.active) {
+        ctx.fillStyle = "rgba(16, 185, 129, 0.18)";
+        ctx.fillRect(ttX + 10, rowY - 14, 190, 20);
+        ctx.strokeStyle = "#10b981";
+        ctx.strokeRect(ttX + 10, rowY - 14, 190, 20);
+      }
+      ctx.fillStyle = row.active ? "#34d399" : textColor;
+      ctx.fillText(` ${row.a}   ${row.b}  |  ${row.q} ${row.active ? " ◄ Active" : ""}`, ttX + 25, rowY);
+    });
+
+    ctx.restore();
+  }
+
+  exportSvg(width = 640, height = 480, theme: "dark" | "light" = "dark"): string {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#ffffff";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#475569" : "#cbd5e1";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+    const gateBorder = "#38bdf8";
+
+    const telemetry = this.getTelemetry();
+    const gateX = 180;
+    const gateY = height / 2;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <rect width="100%" height="100%" fill="${bgColor}" rx="12"/>
+  <line x1="60" y1="${gateY - 25}" x2="${gateX}" y2="${gateY - 25}" stroke="${this.state.inputA === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY - 20}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputA === 1 ? wireHigh : textColor}">A=${this.state.inputA}</text>
+  <line x1="60" y1="${gateY + 25}" x2="${gateX}" y2="${gateY + 25}" stroke="${this.state.inputB === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY + 30}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputB === 1 ? wireHigh : textColor}">B=${this.state.inputB}</text>
+  <rect x="${gateX}" y="${gateY - 45}" width="80" height="90" rx="10" fill="${bgColor}" stroke="${gateBorder}" stroke-width="3"/>
+  <text x="${gateX + 40}" y="${gateY + 5}" font-family="monospace" font-size="16" font-weight="bold" fill="${gateBorder}" text-anchor="middle">${this.state.gateType}</text>
+  <line x1="${gateX + 80}" y1="${gateY}" x2="${gateX + 160}" y2="${gateY}" stroke="${telemetry.outputQ === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <circle cx="${gateX + 180}" cy="${gateY}" r="18" fill="${telemetry.outputQ === 1 ? wireHigh : wireLow}"/>
+  <text x="${gateX + 180}" y="${gateY + 5}" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Q=${telemetry.outputQ}</text>
+  <g font-family="monospace, sans-serif" font-size="12" fill="${textColor}">
+    <rect x="${width - 230}" y="40" width="210" height="180" fill="${bgColor}" fill-opacity="0.85" rx="6" stroke="${gateBorder}"/>
+    <text x="${width - 215}" y="65" font-weight="bold" fill="${gateBorder}">${this.state.gateType} TRUTH TABLE</text>
+    <text x="${width - 215}" y="88">${telemetry.booleanExpression}</text>
+    <text x="${width - 215}" y="112">A  B | Q</text>
+    <text x="${width - 215}" y="132">0  0 | ${evaluateGate(this.state.gateType, 0, 0)}</text>
+    <text x="${width - 215}" y="152">0  1 | ${evaluateGate(this.state.gateType, 0, 1)}</text>
+    <text x="${width - 215}" y="172">1  0 | ${evaluateGate(this.state.gateType, 1, 0)}</text>
+    <text x="${width - 215}" y="192">1  1 | ${evaluateGate(this.state.gateType, 1, 1)}</text>
+  </g>
+</svg>`;
+
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+
+  destroy(): void {
+    this.processedEventIds.clear();
+  }
+}
+
+// ----------------------------------------------------------------------------
 // 5. GENETICS PUNNETT SQUARE LAB ADAPTER (Biology - BL-STEM-002)
 // ----------------------------------------------------------------------------
 
@@ -1712,6 +3300,403 @@ export class GeneticsPunnettAdapter
     <text x="${width - 225}" y="90">Dominant:  ${telemetry.dominantPhenotypePct}%</text>
     <text x="${width - 225}" y="110">Recessive: ${telemetry.recessivePhenotypePct}%</text>
     <text x="${width - 225}" y="130">${telemetry.genotypicRatio}</text>
+  </g>
+</svg>`;
+
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+
+  destroy(): void {
+    this.processedEventIds.clear();
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 6. BOOLEAN LOGIC GATES & CIRCUITS ADAPTER (Engineering & Computer Studies)
+// ----------------------------------------------------------------------------
+
+export type LogicGateType = "AND" | "OR" | "NOT" | "NAND" | "NOR" | "XOR";
+
+export interface LogicGatesState {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  active: boolean;
+}
+
+export const DEFAULT_LOGIC_GATES_STATE: LogicGatesState = {
+  gateType: "AND",
+  inputA: 1,
+  inputB: 0,
+  active: true,
+};
+
+export interface TruthTableRow {
+  a: 0 | 1;
+  b: 0 | 1;
+  q: 0 | 1;
+  active: boolean;
+}
+
+export interface LogicGatesTelemetry {
+  gateType: LogicGateType;
+  inputA: 0 | 1;
+  inputB: 0 | 1;
+  outputQ: 0 | 1;
+  booleanExpression: string;
+  truthTable: TruthTableRow[];
+  statusText: string;
+}
+
+export function evaluateGate(gate: LogicGateType, a: 0 | 1, b: 0 | 1): 0 | 1 {
+  switch (gate) {
+    case "AND":
+      return (a && b) ? 1 : 0;
+    case "OR":
+      return (a || b) ? 1 : 0;
+    case "NOT":
+      return a === 0 ? 1 : 0;
+    case "NAND":
+      return !(a && b) ? 1 : 0;
+    case "NOR":
+      return !(a || b) ? 1 : 0;
+    case "XOR":
+      return a !== b ? 1 : 0;
+  }
+}
+
+export function computeLogicGatesTelemetry(
+  state: Pick<LogicGatesState, "gateType" | "inputA" | "inputB">
+): LogicGatesTelemetry {
+  const { gateType, inputA, inputB } = state;
+  const outputQ = evaluateGate(gateType, inputA, inputB);
+
+  let booleanExpression = "Q = A · B";
+  if (gateType === "OR") booleanExpression = "Q = A + B";
+  else if (gateType === "NOT") booleanExpression = "Q = ¬A (A')";
+  else if (gateType === "NAND") booleanExpression = "Q = ¬(A · B)";
+  else if (gateType === "NOR") booleanExpression = "Q = ¬(A + B)";
+  else if (gateType === "XOR") booleanExpression = "Q = A ⊕ B";
+
+  const inputs: Array<[0 | 1, 0 | 1]> = [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ];
+
+  const truthTable: TruthTableRow[] = inputs.map(([a, b]) => ({
+    a,
+    b,
+    q: evaluateGate(gateType, a, b),
+    active: a === inputA && (gateType === "NOT" || b === inputB),
+  }));
+
+  return {
+    gateType,
+    inputA,
+    inputB,
+    outputQ,
+    booleanExpression,
+    truthTable,
+    statusText: outputQ === 1 ? "HIGH (Logic 1 / 5V)" : "LOW (Logic 0 / 0V)",
+  };
+}
+
+export class LogicGatesAdapter
+  implements IStemLiveboardAdapter<LogicGatesState, Partial<LogicGatesState>>
+{
+  readonly capabilities: StemAdapterCapabilities = {
+    supportsSnapshot: true,
+    supportsStudentParameters: false,
+    requiresWebGl: false,
+    recordingMetadata: {
+      title: "Boolean Logic Gates & Digital Circuits",
+      category: "Engineering & Computer Studies",
+    },
+  };
+
+  private state: LogicGatesState = { ...DEFAULT_LOGIC_GATES_STATE };
+  private sequenceNumber: number = 0;
+  private isHost: boolean = false;
+  private processedEventIds = new Set<string>();
+
+  getSimulationId(): string {
+    return "eng-logic-gates-bench";
+  }
+
+  getVersion(): string {
+    return "1.0.0";
+  }
+
+  init(initialState?: Partial<LogicGatesState>, isHost: boolean = false): void {
+    this.state = { ...DEFAULT_LOGIC_GATES_STATE, ...initialState };
+    this.isHost = isHost;
+    this.sequenceNumber = 0;
+    this.processedEventIds.clear();
+  }
+
+  createParamChangeEvent(
+    sessionId: string,
+    actorId: string,
+    updates: Partial<LogicGatesState>
+  ): StemSynchronizedEvent<Partial<LogicGatesState>> {
+    this.sequenceNumber += 1;
+    const eventId = `stem-evt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const event: StemSynchronizedEvent<Partial<LogicGatesState>> = {
+      sessionId,
+      sequenceNumber: this.sequenceNumber,
+      eventId,
+      idempotencyKey: eventId,
+      actorId,
+      actorRole: this.isHost ? "tutor" : "student",
+      eventType: "STEM_PARAM_CHANGE",
+      payloadSchemaVersion: 1,
+      version: "1.0.0",
+      payload: updates,
+      timestamp: Date.now(),
+    };
+
+    this.applyEvent(event);
+    return event;
+  }
+
+  applyEvent(event: StemSynchronizedEvent<Partial<LogicGatesState>>): boolean {
+    const key = event?.idempotencyKey || event?.eventId;
+    if (!key) return false;
+    if (this.processedEventIds.has(key)) return false;
+    if (event.sequenceNumber < this.sequenceNumber && !this.isHost) return false;
+
+    this.processedEventIds.add(key);
+    if (event.sequenceNumber > this.sequenceNumber) {
+      this.sequenceNumber = event.sequenceNumber;
+    }
+
+    this.state = { ...this.state, ...event.payload };
+    return true;
+  }
+
+  getSnapshot(): LogicGatesState {
+    return { ...this.state };
+  }
+
+  getTelemetry(): LogicGatesTelemetry {
+    return computeLogicGatesTelemetry(this.state);
+  }
+
+  getSequenceNumber(): number {
+    return this.sequenceNumber;
+  }
+
+  serialize(): Record<string, unknown> {
+    return {
+      state: this.getSnapshot(),
+      telemetry: this.getTelemetry(),
+      timestamp: Date.now(),
+    };
+  }
+
+  renderToCanvas(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    theme: "dark" | "light" = "dark"
+  ): void {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#f8fafc";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#334155" : "#94a3b8";
+    const gateBorder = isDark ? "#38bdf8" : "#0284c7";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+
+    ctx.save();
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+
+    const telemetry = this.getTelemetry();
+
+    const gateX = 220;
+    const gateY = height / 2;
+
+    const wireAColor = this.state.inputA === 1 ? wireHigh : wireLow;
+    const wireBColor = this.state.inputB === 1 ? wireHigh : wireLow;
+    const outColor = telemetry.outputQ === 1 ? wireHigh : wireLow;
+
+    // Input A line
+    const inAy = gateY - 25;
+    ctx.strokeStyle = wireAColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(80, inAy);
+    ctx.lineTo(gateX, inAy);
+    ctx.stroke();
+
+    ctx.fillStyle = this.state.inputA === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.roundRect(40, inAy - 14, 35, 28, 6);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 13px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`${this.state.inputA}`, 57, inAy + 5);
+
+    // Input B line
+    if (this.state.gateType !== "NOT") {
+      const inBy = gateY + 25;
+      ctx.strokeStyle = wireBColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(80, inBy);
+      ctx.lineTo(gateX, inBy);
+      ctx.stroke();
+
+      ctx.fillStyle = this.state.inputB === 1 ? "#10b981" : "#475569";
+      ctx.beginPath();
+      ctx.roundRect(40, inBy - 14, 35, 28, 6);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`${this.state.inputB}`, 57, inBy + 5);
+    }
+
+    // Gate symbol
+    ctx.strokeStyle = gateBorder;
+    ctx.fillStyle = isDark ? "#0B1536" : "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    if (this.state.gateType === "AND" || this.state.gateType === "NAND") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.lineTo(gateX + 50, gateY - 45);
+      ctx.arc(gateX + 50, gateY, 45, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(gateX, gateY + 45);
+      ctx.closePath();
+    } else if (this.state.gateType === "OR" || this.state.gateType === "NOR" || this.state.gateType === "XOR") {
+      ctx.moveTo(gateX, gateY - 45);
+      ctx.quadraticCurveTo(gateX + 40, gateY - 40, gateX + 90, gateY);
+      ctx.quadraticCurveTo(gateX + 40, gateY + 40, gateX, gateY + 45);
+      ctx.quadraticCurveTo(gateX + 25, gateY, gateX, gateY - 45);
+      ctx.closePath();
+    } else {
+      ctx.moveTo(gateX, gateY - 40);
+      ctx.lineTo(gateX + 70, gateY);
+      ctx.lineTo(gateX, gateY + 40);
+      ctx.closePath();
+    }
+
+    ctx.fill();
+    ctx.stroke();
+
+    let outStartX = gateX + 95;
+    if (this.state.gateType === "NAND" || this.state.gateType === "NOR") {
+      outStartX = gateX + 105;
+      ctx.beginPath();
+      ctx.arc(gateX + 97, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.state.gateType === "NOT") {
+      outStartX = gateX + 82;
+      ctx.beginPath();
+      ctx.arc(gateX + 76, gateY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = gateBorder;
+    ctx.font = "bold 14px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(this.state.gateType, gateX + 35, gateY + 5);
+
+    // Output Wire
+    ctx.strokeStyle = outColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(outStartX, gateY);
+    ctx.lineTo(gateX + 180, gateY);
+    ctx.stroke();
+
+    // Output LED
+    const ledX = gateX + 200;
+    ctx.fillStyle = telemetry.outputQ === 1 ? "#10b981" : "#475569";
+    ctx.beginPath();
+    ctx.arc(ledX, gateY, 18, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = telemetry.outputQ === 1 ? "#34d399" : "#64748b";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 14px monospace";
+    ctx.fillText(`Q=${telemetry.outputQ}`, ledX, gateY + 5);
+
+    // Truth Table Card
+    const ttX = width - 240;
+    const ttY = 50;
+    ctx.fillStyle = isDark ? "rgba(11, 21, 54, 0.92)" : "rgba(255, 255, 255, 0.95)";
+    ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0";
+    ctx.beginPath();
+    ctx.roundRect(ttX, ttY, 210, 210, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 12px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`TRUTH TABLE: ${this.state.gateType}`, ttX + 15, ttY + 25);
+    ctx.font = "11px monospace";
+    ctx.fillStyle = textColor;
+    ctx.fillText(telemetry.booleanExpression, ttX + 15, ttY + 45);
+
+    ctx.font = "bold 11px monospace";
+    ctx.fillStyle = isDark ? "#94a3b8" : "#64748b";
+    ctx.fillText(" A   B  |  Q ", ttX + 25, ttY + 70);
+
+    telemetry.truthTable.forEach((row, i) => {
+      const rowY = ttY + 95 + i * 24;
+      if (row.active) {
+        ctx.fillStyle = "rgba(16, 185, 129, 0.18)";
+        ctx.fillRect(ttX + 10, rowY - 14, 190, 20);
+        ctx.strokeStyle = "#10b981";
+        ctx.strokeRect(ttX + 10, rowY - 14, 190, 20);
+      }
+      ctx.fillStyle = row.active ? "#34d399" : textColor;
+      ctx.fillText(` ${row.a}   ${row.b}  |  ${row.q} ${row.active ? " ◄ Active" : ""}`, ttX + 25, rowY);
+    });
+
+    ctx.restore();
+  }
+
+  exportSvg(width = 640, height = 480, theme: "dark" | "light" = "dark"): string {
+    const isDark = theme === "dark";
+    const bgColor = isDark ? "#070d1e" : "#ffffff";
+    const wireHigh = "#10b981";
+    const wireLow = isDark ? "#475569" : "#cbd5e1";
+    const textColor = isDark ? "#e2e8f0" : "#1e293b";
+    const gateBorder = "#38bdf8";
+
+    const telemetry = this.getTelemetry();
+    const gateX = 180;
+    const gateY = height / 2;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <rect width="100%" height="100%" fill="${bgColor}" rx="12"/>
+  <line x1="60" y1="${gateY - 25}" x2="${gateX}" y2="${gateY - 25}" stroke="${this.state.inputA === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY - 20}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputA === 1 ? wireHigh : textColor}">A=${this.state.inputA}</text>
+  <line x1="60" y1="${gateY + 25}" x2="${gateX}" y2="${gateY + 25}" stroke="${this.state.inputB === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <text x="45" y="${gateY + 30}" font-family="monospace" font-size="14" font-weight="bold" fill="${this.state.inputB === 1 ? wireHigh : textColor}">B=${this.state.inputB}</text>
+  <rect x="${gateX}" y="${gateY - 45}" width="80" height="90" rx="10" fill="${bgColor}" stroke="${gateBorder}" stroke-width="3"/>
+  <text x="${gateX + 40}" y="${gateY + 5}" font-family="monospace" font-size="16" font-weight="bold" fill="${gateBorder}" text-anchor="middle">${this.state.gateType}</text>
+  <line x1="${gateX + 80}" y1="${gateY}" x2="${gateX + 160}" y2="${gateY}" stroke="${telemetry.outputQ === 1 ? wireHigh : wireLow}" stroke-width="4"/>
+  <circle cx="${gateX + 180}" cy="${gateY}" r="18" fill="${telemetry.outputQ === 1 ? wireHigh : wireLow}"/>
+  <text x="${gateX + 180}" y="${gateY + 5}" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Q=${telemetry.outputQ}</text>
+  <g font-family="monospace, sans-serif" font-size="12" fill="${textColor}">
+    <rect x="${width - 230}" y="40" width="210" height="180" fill="${bgColor}" fill-opacity="0.85" rx="6" stroke="${gateBorder}"/>
+    <text x="${width - 215}" y="65" font-weight="bold" fill="${gateBorder}">${this.state.gateType} TRUTH TABLE</text>
+    <text x="${width - 215}" y="88">${telemetry.booleanExpression}</text>
+    <text x="${width - 215}" y="112">A  B | Q</text>
+    <text x="${width - 215}" y="132">0  0 | ${evaluateGate(this.state.gateType, 0, 0)}</text>
+    <text x="${width - 215}" y="152">0  1 | ${evaluateGate(this.state.gateType, 0, 1)}</text>
+    <text x="${width - 215}" y="172">1  0 | ${evaluateGate(this.state.gateType, 1, 0)}</text>
+    <text x="${width - 215}" y="192">1  1 | ${evaluateGate(this.state.gateType, 1, 1)}</text>
   </g>
 </svg>`;
 
