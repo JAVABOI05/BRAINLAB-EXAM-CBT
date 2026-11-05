@@ -26,6 +26,21 @@ import {
   VIRTUAL_CANVAS_WIDTH,
   VIRTUAL_CANVAS_HEIGHT,
 } from "./classroom/whiteboard/geometry";
+import {
+  RulerState,
+  ProtractorState,
+  CartesianPlaneConfig,
+  createDefaultRuler,
+  createDefaultProtractor,
+  createDefaultCartesianPlane,
+  clampPointToRulerEdge,
+  renderRuler,
+  renderProtractor,
+  hitTestRuler,
+  hitTestProtractor,
+  generateCartesianElements,
+  eraseElementsAlongPath,
+} from "./classroom/whiteboard/educationalTools";
 
 export interface WhiteboardElement {
   id: string;
@@ -86,6 +101,9 @@ export interface SmartWhiteboardHandle {
   nextPage: () => void;
   prevPage: () => void;
   setActivePage: (index: number) => void;
+  toggleRuler: () => void;
+  toggleProtractor: () => void;
+  insertCartesianPlane: (config?: CartesianPlaneConfig) => void;
 }
 
 const PRESET_COLORS = [
@@ -157,13 +175,29 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       marqueeBoxRef.current = marqueeBox;
     }, [marqueeBox]);
 
+    // Educational Geometry Tools State (Stage 3: Ruler, Protractor)
+    const [ruler, setRuler] = useState<RulerState>(createDefaultRuler);
+    const rulerRef = useRef<RulerState>(ruler);
+    useEffect(() => {
+      rulerRef.current = ruler;
+    }, [ruler]);
+
+    const [protractor, setProtractor] = useState<ProtractorState>(createDefaultProtractor);
+    const protractorRef = useRef<ProtractorState>(protractor);
+    useEffect(() => {
+      protractorRef.current = protractor;
+    }, [protractor]);
+
     const dragActionRef = useRef<{
-      mode: "move" | "resize" | "rotate" | "marquee";
+      mode: "move" | "resize" | "rotate" | "marquee" | "ruler" | "protractor";
       handle?: TransformHandle;
+      toolPart?: string;
       startX: number;
       startY: number;
       initialElements: WhiteboardElement[];
       origBox?: BoundingBox;
+      initialRuler?: RulerState;
+      initialProtractor?: ProtractorState;
     } | null>(null);
 
     // Panels visibility (Responsive)
@@ -672,6 +706,14 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.restore();
       }
 
+      // 5.5. Educational Geometry Tools: Ruler & Protractor (Stage 3)
+      if (rulerRef.current.visible) {
+        renderRuler(ctx, rulerRef.current);
+      }
+      if (protractorRef.current.visible) {
+        renderProtractor(ctx, protractorRef.current);
+      }
+
       ctx.restore(); // Undo zoom scale
 
       // 6. Watermark (BrainLab Academy)
@@ -919,6 +961,37 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         return;
       }
 
+      // 0. Interactive Educational Geometry Tools Hit-Test (Stage 3)
+      if (rulerRef.current.visible) {
+        const rulerPart = hitTestRuler(x, y, rulerRef.current, 14 / zoom);
+        if (rulerPart) {
+          dragActionRef.current = {
+            mode: "ruler",
+            toolPart: rulerPart,
+            startX: x,
+            startY: y,
+            initialElements: [],
+            initialRuler: { ...rulerRef.current },
+          };
+          return;
+        }
+      }
+
+      if (protractorRef.current.visible) {
+        const protPart = hitTestProtractor(x, y, protractorRef.current, 16 / zoom);
+        if (protPart) {
+          dragActionRef.current = {
+            mode: "protractor",
+            toolPart: protPart,
+            startX: x,
+            startY: y,
+            initialElements: [],
+            initialProtractor: { ...protractorRef.current },
+          };
+          return;
+        }
+      }
+
       const currentElements = elementsRef.current;
       const currentSelected = currentElements.filter((el) => selectedIdsRef.current.includes(el.id));
 
@@ -1007,13 +1080,23 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       isDrawingRef.current = true;
       const newElId = `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
+      let drawX = x;
+      let drawY = y;
+      if (rulerRef.current.visible) {
+        const snap = clampPointToRulerEdge(x, y, rulerRef.current, 28 / zoom);
+        if (snap.clamped) {
+          drawX = snap.point.x;
+          drawY = snap.point.y;
+        }
+      }
+
       if (tool === "pen" || tool === "highlighter") {
         activeElementRef.current = {
           id: newElId,
           type: tool,
           color,
           width: strokeWidth,
-          points: [{ x, y }],
+          points: [{ x: drawX, y: drawY }],
         };
       } else if (tool === "line" || tool === "arrow" || tool === "rect" || tool === "circle") {
         activeElementRef.current = {
@@ -1021,10 +1104,10 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           type: tool,
           color,
           width: strokeWidth,
-          startX: x,
-          startY: y,
-          endX: x,
-          endY: y,
+          startX: drawX,
+          startY: drawY,
+          endX: drawX,
+          endY: drawY,
         };
       }
     };
@@ -1041,9 +1124,51 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         return;
       }
 
-      // 1. Handle Active Drag Action (Move, Resize, Rotate, Marquee)
+      // 1. Handle Active Drag Action (Move, Resize, Rotate, Marquee, Ruler, Protractor)
       if (dragActionRef.current) {
         const action = dragActionRef.current;
+
+        if (action.mode === "ruler" && action.initialRuler) {
+          const init = action.initialRuler;
+          if (action.toolPart === "body") {
+            const dx = x - action.startX;
+            const dy = y - action.startY;
+            setRuler((prev) => ({ ...prev, x: init.x + dx, y: init.y + dy }));
+          } else if (action.toolPart === "rotate") {
+            const cx = init.x + init.width / 2;
+            const cy = init.y + init.height / 2;
+            const curAngle = Math.atan2(y - cy, x - cx);
+            const newRot = curAngle + Math.PI / 2;
+            setRuler((prev) => ({ ...prev, rotation: newRot }));
+          } else if (action.toolPart === "resize") {
+            const dx = x - action.startX;
+            const newW = Math.max(180, init.width + dx);
+            setRuler((prev) => ({ ...prev, width: newW }));
+          }
+          redrawCanvas();
+          return;
+        }
+
+        if (action.mode === "protractor" && action.initialProtractor) {
+          const init = action.initialProtractor;
+          if (action.toolPart === "body") {
+            const dx = x - action.startX;
+            const dy = y - action.startY;
+            setProtractor((prev) => ({ ...prev, cx: init.cx + dx, cy: init.cy + dy }));
+          } else if (action.toolPart === "rotate") {
+            const angle = Math.atan2(y - init.cy, x - init.cx) + Math.PI / 2;
+            setProtractor((prev) => ({ ...prev, rotation: angle }));
+          } else if (action.toolPart === "needle") {
+            const rad = -Math.atan2(y - init.cy, x - init.cx) - init.rotation;
+            let normRad = ((rad % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            if (init.mode === "180" && normRad > Math.PI) {
+              normRad = normRad > Math.PI * 1.5 ? 0 : Math.PI;
+            }
+            setProtractor((prev) => ({ ...prev, measuringAngle: normRad }));
+          }
+          redrawCanvas();
+          return;
+        }
 
         if (action.mode === "move") {
           const dx = x - action.startX;
@@ -1182,8 +1307,18 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       // 2. Handle Drawing Active Element
       if (isDrawingRef.current && activeElementRef.current) {
         const current = activeElementRef.current;
+        let drawX = x;
+        let drawY = y;
+        if (rulerRef.current.visible) {
+          const snap = clampPointToRulerEdge(x, y, rulerRef.current, 28 / zoom);
+          if (snap.clamped) {
+            drawX = snap.point.x;
+            drawY = snap.point.y;
+          }
+        }
+
         if (current.type === "pen" || current.type === "highlighter") {
-          current.points?.push({ x, y });
+          current.points?.push({ x: drawX, y: drawY });
           redrawCanvas();
           const canvas = canvasRef.current;
           if (canvas) {
@@ -1197,8 +1332,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             }
           }
         } else if (["line", "arrow", "rect", "circle"].includes(current.type)) {
-          current.endX = x;
-          current.endY = y;
+          current.endX = drawX;
+          current.endY = drawY;
           redrawCanvas();
           const canvas = canvasRef.current;
           if (canvas) {
@@ -1216,7 +1351,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       }
 
       if (tool === "eraser" && e.buttons > 0) {
-        eraseElementsAt(x, y, 20);
+        eraseElementsAt(x, y, 22);
         return;
       }
 
@@ -1302,20 +1437,29 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       setHoveredHandle(null);
     };
 
-    // Erase strokes intersecting target point
-    const eraseElementsAt = (x: number, y: number, radius = 20) => {
-      setElements((prev) =>
-        prev.filter((el) => {
-          if (el.points) {
-            return !el.points.some((p) => Math.hypot(p.x - x, p.y - y) <= radius);
+    // Erase strokes intersecting target point (Stage 3: Full stroke-crossing vector erasure)
+    const eraseElementsAt = (x: number, y: number, radius = 22) => {
+      setElements((prev) => {
+        const { remaining, erasedCount } = eraseElementsAlongPath(prev, x, y, radius / zoom);
+        if (erasedCount > 0) {
+          const removed = prev.filter((el) => !remaining.includes(el));
+          if (removed.length > 0) {
+            setRedoStack((r) => [...r, ...removed]);
           }
-          if (el.startX !== undefined && el.startY !== undefined) {
-            return Math.hypot(el.startX - x, el.startY - y) > radius;
-          }
-          return true;
-        })
-      );
+        }
+        return remaining;
+      });
     };
+
+    // Insert Cartesian Graphing Coordinate System (Stage 3)
+    const insertCartesianPlane = useCallback((customConfig?: CartesianPlaneConfig) => {
+      const config = customConfig || createDefaultCartesianPlane();
+      const elementsToAdd = generateCartesianElements(config);
+      setElements((prev) => [...prev, ...elementsToAdd]);
+      setRedoStack([]);
+      toast.success("Inserted Cartesian Coordinate Grid (x, y)");
+      redrawCanvas();
+    }, [setElements, redrawCanvas]);
 
     // History controls
     const handleUndo = () => {
@@ -1469,6 +1613,15 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       setActivePage: (idx: number) => {
         if (idx >= 0 && idx < pages.length) setActivePageIndex(idx);
       },
+      toggleRuler: () => {
+        setRuler((r) => ({ ...r, visible: !r.visible }));
+        redrawCanvas();
+      },
+      toggleProtractor: () => {
+        setProtractor((p) => ({ ...p, visible: !p.visible }));
+        redrawCanvas();
+      },
+      insertCartesianPlane,
     }));
 
     // Calculate aspect ratio CSS
@@ -1727,6 +1880,56 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   <span>🧹</span>
                   <span className="hidden md:inline">Eraser</span>
                 </button>
+
+                {/* Stage 3: Educational Geometry Suite (Ruler, Protractor, Cartesian Plane) */}
+                <div className="flex items-center gap-1 border-l border-white/10 pl-1.5 ml-0.5">
+                  {/* Digital Ruler */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRuler((r) => ({ ...r, visible: !r.visible }));
+                      redrawCanvas();
+                    }}
+                    className={`rounded-xl px-2 py-1.5 text-xs font-bold transition flex items-center gap-1 ${
+                      ruler.visible
+                        ? "bg-amber-400 text-slate-950 font-black shadow-md ring-1 ring-amber-300"
+                        : "text-slate-300 hover:bg-white/10"
+                    }`}
+                    title="Interactive Digital Ruler (Click to snap straight lines along edge)"
+                  >
+                    <span>📐</span>
+                    <span className="hidden xl:inline">Ruler</span>
+                  </button>
+
+                  {/* Protractor */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProtractor((p) => ({ ...p, visible: !p.visible }));
+                      redrawCanvas();
+                    }}
+                    className={`rounded-xl px-2 py-1.5 text-xs font-bold transition flex items-center gap-1 ${
+                      protractor.visible
+                        ? "bg-sky-400 text-slate-950 font-black shadow-md ring-1 ring-sky-300"
+                        : "text-slate-300 hover:bg-white/10"
+                    }`}
+                    title="Interactive Protractor (Angle measurement arm ±0.5° precision)"
+                  >
+                    <span>🧭</span>
+                    <span className="hidden xl:inline">Protractor</span>
+                  </button>
+
+                  {/* Cartesian Plane Grid Generator */}
+                  <button
+                    type="button"
+                    onClick={() => insertCartesianPlane()}
+                    className="rounded-xl px-2 py-1.5 text-xs font-bold transition text-slate-300 hover:bg-white/10 flex items-center gap-1 border border-white/10"
+                    title="Insert Cartesian Coordinate Axes (X, Y Grid Vectors)"
+                  >
+                    <span>📈</span>
+                    <span className="hidden xl:inline">Graph Grid</span>
+                  </button>
+                </div>
               </div>
 
               {/* Group C: Color Palette & Stroke Widths */}
