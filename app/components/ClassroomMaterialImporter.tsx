@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Papa from "papaparse";
 import type { WhiteboardPage, WhiteboardElement } from "./SmartWhiteboard";
+import { detectDocumentAspectRatio } from "./classroom/whiteboard/pdfService";
 
 export interface LessonAttachment {
   id: string;
@@ -44,7 +45,7 @@ export default function ClassroomMaterialImporter({
   const [replaceExisting, setReplaceExisting] = useState(false);
 
   // Slide Images State
-  const [slideImages, setSlideImages] = useState<{ name: string; dataUrl: string }[]>([]);
+  const [slideImages, setSlideImages] = useState<{ name: string; dataUrl: string; aspectRatio: "16 / 9" | "4 / 3" | "9 / 16" | "free" }[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
 
   // Outline State
@@ -241,7 +242,7 @@ export default function ClassroomMaterialImporter({
         generated.push({
           id: `page-tbl-${Date.now()}-${idx}`,
           title: String(titleVal || `Slide ${idx + 1}`),
-          aspectRatio: "16 / 9",
+          aspectRatio: "free",
           backgroundMode: "blackboard",
           elements,
         });
@@ -260,13 +261,14 @@ export default function ClassroomMaterialImporter({
     if (files.length === 0) return;
 
     setLoadingImages(true);
-    const loaded: { name: string; dataUrl: string }[] = [];
+    const loaded: { name: string; dataUrl: string; aspectRatio: "16 / 9" | "4 / 3" | "9 / 16" | "free" }[] = [];
 
     // Sort files naturally by filename so slide1, slide2, slide3 stay in order
     files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
 
     for (const f of files) {
       if (!f.type.startsWith("image/")) continue;
+      let finalUrl = "";
       try {
         const formData = new FormData();
         formData.append("file", f);
@@ -282,20 +284,36 @@ export default function ClassroomMaterialImporter({
         if (res.ok) {
           const json = await res.json();
           if (json.url) {
-            loaded.push({ name: f.name, dataUrl: json.url });
-            continue;
+            finalUrl = json.url;
           }
         }
       } catch (err) {
         console.warn("Storage upload failed for slide, using fallback URL:", err);
       }
 
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(f);
-      });
-      loaded.push({ name: f.name, dataUrl });
+      if (!finalUrl) {
+        finalUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(f);
+        });
+      }
+
+      // Detect natural aspect ratio to avoid distortion
+      let detectedAspect: "16 / 9" | "4 / 3" | "9 / 16" | "free" = "free";
+      if (typeof Image !== "undefined") {
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            detectedAspect = detectDocumentAspectRatio(img.naturalWidth, img.naturalHeight);
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = finalUrl;
+        });
+      }
+
+      loaded.push({ name: f.name, dataUrl: finalUrl, aspectRatio: detectedAspect });
     }
 
     setSlideImages(loaded);
@@ -308,8 +326,8 @@ export default function ClassroomMaterialImporter({
     const newPages: WhiteboardPage[] = slideImages.map((s, idx) => ({
       id: `page-slide-${Date.now()}-${idx}`,
       title: `Slide ${idx + 1} (${s.name.replace(/\.[^/.]+$/, "")})`,
-      aspectRatio: "16 / 9",
-      backgroundMode: "blackboard",
+      aspectRatio: s.aspectRatio || "free",
+      backgroundMode: "whiteboard",
       backgroundImage: s.dataUrl,
       elements: [],
     }));
@@ -367,7 +385,7 @@ export default function ClassroomMaterialImporter({
       return {
         id: `page-outline-${Date.now()}-${idx}`,
         title: titleLine.slice(0, 30),
-        aspectRatio: "16 / 9",
+        aspectRatio: "free",
         backgroundMode: "blackboard",
         elements,
       };

@@ -221,6 +221,14 @@ export default function ClassroomStudioPage() {
     setShowStudioBoard(true);
   };
 
+  // Duplicate lesson as a reusable template (Stage 5)
+  const duplicateAsTemplate = () => {
+    setLessonId(null);
+    setTitle(`Copy of ${title}`);
+    setStatus("draft");
+    toast.success("Created new draft copy as a template!");
+  };
+
   // --------------------------------------------------------------------------
   // CAMERA & MICROPHONE PERMISSIONS MANAGEMENT
   // --------------------------------------------------------------------------
@@ -690,6 +698,17 @@ export default function ClassroomStudioPage() {
             className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-200 disabled:opacity-40 transition"
           >
             {saving ? "Saving…" : "Save Draft"}
+          </button>
+
+          {/* Duplicate as Template (Stage 5) */}
+          <button
+            type="button"
+            onClick={duplicateAsTemplate}
+            className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition flex items-center gap-1"
+            title="Duplicate this lesson deck as a reusable template"
+          >
+            <span>📑</span>
+            <span>Duplicate Deck</span>
           </button>
 
           {/* Go Live */}

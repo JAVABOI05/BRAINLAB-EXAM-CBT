@@ -52,6 +52,7 @@ import {
   renderFormulaElement,
   createFormulaElement,
 } from "./classroom/whiteboard/formulaEngine";
+import { downloadWhiteboardPdf } from "./classroom/whiteboard/pdfService";
 import "katex/dist/katex.min.css";
 
 export interface WhiteboardElement {
@@ -119,6 +120,7 @@ export interface SmartWhiteboardHandle {
   insertCartesianPlane: (config?: CartesianPlaneConfig) => void;
   insertDiagramPreset: (preset: ScienceDiagramPreset) => void;
   insertFormula: (latex: string) => void;
+  downloadPdf: () => void;
 }
 
 const PRESET_COLORS = [
@@ -1649,6 +1651,17 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       toast.success("Whiteboard lecture notes saved to your device!");
     }, [activePage.title]);
 
+    const handleExportPdf = useCallback(async () => {
+      toast.info("Generating multi-page PDF lecture notes...");
+      const filename = `brainlab-notes-${(activePage.title || "lecture").toLowerCase().replace(/\s+/g, "_")}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      const ok = await downloadWhiteboardPdf(pages, filename);
+      if (ok) {
+        toast.success(`Exported ${pages.length} page(s) to ${filename}!`);
+      } else {
+        toast.error("Failed to generate PDF document.");
+      }
+    }, [pages, activePage.title]);
+
     useImperativeHandle(ref, () => ({
       getCanvasDataUrl: () => {
         const canvas = canvasRef.current;
@@ -1659,6 +1672,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       undo: handleUndo,
       redo: handleRedo,
       downloadImage: handleExportImage,
+      downloadPdf: handleExportPdf,
       addPage: handleAddPage,
       duplicateCurrentPage: handleDuplicatePage,
       deleteCurrentPage: handleDeletePage,
@@ -1765,6 +1779,17 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               >
                 <span>📸</span>
                 <span className="hidden sm:inline">Save Page Notes</span>
+              </button>
+
+              {/* Student Action: Multi-Page PDF Notes */}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/20 hover:bg-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-200 transition active:scale-95 shadow-sm"
+                title="Download all lecture pages as a consolidated PDF document"
+              >
+                <span>📄</span>
+                <span className="hidden sm:inline">Export PDF ({pages.length})</span>
               </button>
 
               {/* Zoom Controls for Students */}
@@ -2453,6 +2478,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   title="Download current page as image"
                 >
                   💾 Save
+                </button>
+
+                {/* Export Multi-Page PDF Notes */}
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  className="rounded-xl border border-white/10 bg-[#0B1536]/90 hover:bg-[#1356E8] px-2.5 py-1 text-[11px] font-bold text-slate-200 transition backdrop-blur shadow-lg flex items-center gap-1"
+                  title="Download all whiteboard pages as a multi-page PDF document"
+                >
+                  📄 PDF Notes
                 </button>
 
                 {onShareToChat && (
