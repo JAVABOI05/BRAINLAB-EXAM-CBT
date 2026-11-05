@@ -68,7 +68,7 @@ async function runPhase1Verification() {
   assert.equal(quadRes.tier, 2, "Quadratic Graph Explorer must be Tier 2 interactive simulation");
   assert.equal(quadRes.subject?.slug, "mathematics");
   assert.ok(quadRes.current_version !== null, "Must have pinned current version");
-  assert.equal(quadRes.current_version.adapter_type, "canvas_quadratic");
+  assert.equal(quadRes.current_version?.adapter_type, "canvas_quadratic");
 
   // Verify projectile motion
   const projRes = await getStemResourceBySlug("projectile-motion-simulator");

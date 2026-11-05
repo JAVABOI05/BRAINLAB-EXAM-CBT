@@ -53,13 +53,20 @@ import {
   createFormulaElement,
 } from "./classroom/whiteboard/formulaEngine";
 import { downloadWhiteboardPdf } from "./classroom/whiteboard/pdfService";
+import StemLiveboardPresenter from "./classroom/whiteboard/StemLiveboardPresenter";
 import "katex/dist/katex.min.css";
 
 export interface WhiteboardElement {
   id: string;
-  type: "pen" | "highlighter" | "line" | "arrow" | "rect" | "circle" | "text" | "eraser";
+  type: "pen" | "highlighter" | "line" | "arrow" | "rect" | "circle" | "text" | "eraser" | "image";
   color: string;
   width: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  strokeWidth?: number;
+  creatorId?: string;
+  createdAt?: number;
   points?: { x: number; y: number }[];
   startX?: number;
   startY?: number;
@@ -74,6 +81,7 @@ export interface WhiteboardElement {
   opacity?: number;
   fillColor?: string;
   isFormula?: boolean;
+  imageUrl?: string;
 }
 
 export type BoardAspectRatio = "16 / 9" | "4 / 3" | "9 / 16" | "free";
@@ -224,8 +232,9 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     // Stage 4: Science & STEM Diagram / Formula Studio State
     const [showStemModal, setShowStemModal] = useState(false);
-    const [stemTab, setStemTab] = useState<"formulas" | "physics" | "chemistry" | "biology">("formulas");
+    const [stemTab, setStemTab] = useState<"formulas" | "physics" | "chemistry" | "biology" | "simulations">("formulas");
     const [customLatex, setCustomLatex] = useState("x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}");
+    const [showStemLivePresenter, setShowStemLivePresenter] = useState(false);
 
     // Authoritative pages collection
     const [pages, setPages] = useState<WhiteboardPage[]>(() => {
@@ -639,6 +648,19 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         } else {
           ctx.font = `600 ${el.fontSize || 22}px ${el.fontFamily || "Inter, sans-serif"}`;
           ctx.fillText(el.text, el.startX, el.startY);
+        }
+      } else if (el.type === "image" && el.imageUrl && el.startX !== undefined && el.startY !== undefined) {
+        let cachedImg = (globalThis as any).__wbImgCache?.get(el.imageUrl);
+        if (!cachedImg && typeof window !== "undefined") {
+          if (!(globalThis as any).__wbImgCache) (globalThis as any).__wbImgCache = new Map();
+          const img = new Image();
+          img.src = el.imageUrl;
+          img.onload = () => redrawCanvas();
+          (globalThis as any).__wbImgCache.set(el.imageUrl, img);
+          cachedImg = img;
+        }
+        if (cachedImg && cachedImg.complete) {
+          ctx.drawImage(cachedImg, el.startX, el.startY, el.width || 720, el.height || 380);
         }
       }
 
@@ -1115,12 +1137,26 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         }
       };
 
+      const handleRemoteStemPresenterToggle = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (typeof payload.open === "boolean") {
+          setShowStemLivePresenter(payload.open);
+        }
+      };
+
+      const handleRemoteStemAutoOpen = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        setShowStemLivePresenter(true);
+      };
+
       channel.on?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteElementsSync);
       channel.on?.("broadcast", { event: "whiteboard_draw" }, handleRemoteDraw);
       channel.on?.("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
       channel.on?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
       channel.on?.("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
       channel.on?.("broadcast", { event: "whiteboard_request_sync" }, handleRemoteRequestSync);
+      channel.on?.("broadcast", { event: "stem_presenter_toggle" }, handleRemoteStemPresenterToggle);
+      channel.on?.("broadcast", { event: "stem_event" }, handleRemoteStemAutoOpen);
 
       // If learner joins, request full authoritative state hydration from host
       if (!isHost) {
@@ -1142,6 +1178,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         channel.off?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
         channel.off?.("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
         channel.off?.("broadcast", { event: "whiteboard_request_sync" }, handleRemoteRequestSync);
+        channel.off?.("broadcast", { event: "stem_presenter_toggle" }, handleRemoteStemPresenterToggle);
+        channel.off?.("broadcast", { event: "stem_event" }, handleRemoteStemAutoOpen);
       };
     }, [channel, currentUserId, activePageIndex, pages, isHost, onPagesChange, setElements]);
 
@@ -1724,6 +1762,66 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       setShowStemModal(false);
       redrawCanvas();
     }, [color, setElements, redrawCanvas, channel, activePageIndex, currentUserId]);
+
+    // Liveboard Mode A: STEM Interactive Presenter Controls (BL-STEM-002)
+    const toggleStemLivePresenter = useCallback(
+      (open: boolean) => {
+        setShowStemLivePresenter(open);
+        if (channel && isHost) {
+          try {
+            channel.send({
+              type: "broadcast",
+              event: "stem_presenter_toggle",
+              payload: { open, senderId: currentUserId },
+            });
+          } catch {
+            // Non-blocking
+          }
+        }
+      },
+      [channel, isHost, currentUserId]
+    );
+
+    const handleStemSnapshotToBoard = useCallback(
+      (svgDataUrl: string) => {
+        const cx = 960;
+        const cy = 540;
+        const w = 640;
+        const h = 480;
+        const newElement: WhiteboardElement = {
+          id: `stem-snap-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          type: "image",
+          startX: cx - w / 2,
+          startY: cy - h / 2,
+          endX: cx + w / 2,
+          endY: cy + h / 2,
+          width: w,
+          height: h,
+          imageUrl: svgDataUrl,
+          color: "#ffffff",
+        };
+
+        setElements((prev) => {
+          const next = [...prev, newElement];
+          if (channel) {
+            try {
+              channel.send({
+                type: "broadcast",
+                event: "whiteboard_draw",
+                payload: { element: newElement, pageIndex: activePageIndex, senderId: currentUserId },
+              });
+            } catch {
+              // Non-blocking
+            }
+          }
+          return next;
+        });
+        setRedoStack([]);
+        toast.success("Stamped STEM Lab snapshot onto board!");
+        redrawCanvas();
+      },
+      [setElements, redrawCanvas, channel, activePageIndex, currentUserId]
+    );
 
     // History controls
     const handleUndo = () => {
@@ -2607,6 +2705,20 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   <span>Viewing Tutor's Whiteboard</span>
                 </div>
               )}
+
+              {/* STEM Studio Interactive Presenter Overlay (Mode A Synchronized) */}
+              {showStemLivePresenter && (
+                <div className="absolute inset-0 z-40 bg-[#070d1e]/95 backdrop-blur-md p-2 sm:p-4 flex flex-col animate-in fade-in duration-200">
+                  <StemLiveboardPresenter
+                    channel={channel}
+                    currentUserId={currentUserId}
+                    isHost={isHost}
+                    theme="dark"
+                    onClose={() => toggleStemLivePresenter(false)}
+                    onSnapshotToBoard={handleStemSnapshotToBoard}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Floating Quick Controls (Tutor Only: Ratio, Board Surface, Zoom, Export) */}
@@ -2893,6 +3005,18 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   <span>🧬</span>
                   <span>Biology &amp; Cells</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setStemTab("simulations")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    stemTab === "simulations"
+                      ? "bg-[#1356E8] text-white shadow"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span>📈</span>
+                  <span>Simulations (Liveboard)</span>
+                </button>
               </div>
 
               {/* Tab Content */}
@@ -2967,7 +3091,50 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   </div>
                 )}
 
-                {stemTab !== "formulas" && (
+                {stemTab === "simulations" && (
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-white/10 bg-[#070d1e] p-5 flex flex-col justify-between hover:border-blue-500/50 transition">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-lg">📈</span>
+                            <span className="text-base font-black text-white">Quadratic Function &amp; Graph Explorer</span>
+                            <span className="rounded-md bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                              Mode A Synced
+                            </span>
+                            <span className="rounded-md bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
+                              v1.0.0
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+                            Full interactive parabolic explorer for y = ax² + bx + c. Live discriminant calculation (Δ), real and complex roots detection, vertex tracking, and 20fps throttled realtime tutor-to-student synchronization with late-joiner recovery.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-[11px] text-slate-400">
+                          Curriculum: <span className="text-cyan-300 font-medium">WAEC / JAMB / GCSE Mathematics</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowStemModal(false);
+                              toggleStemLivePresenter(true);
+                            }}
+                            className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg flex items-center gap-2"
+                          >
+                            <span>🚀</span>
+                            <span>Launch Live Interactive Simulation</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {stemTab !== "formulas" && stemTab !== "simulations" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {SCIENCE_DIAGRAM_PRESETS.filter((d) => d.category === stemTab).map(
                       (diagram) => (
