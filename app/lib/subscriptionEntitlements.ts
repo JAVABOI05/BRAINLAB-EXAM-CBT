@@ -121,6 +121,16 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
           return true;
         }
       }
+      const sessionCache = sessionStorage.getItem("brainlab_admin_session_cache");
+      if (sessionCache) {
+        const parsedSession = JSON.parse(sessionCache);
+        if (parsedSession?.user?.role) {
+          return true;
+        }
+      }
+      if (sessionStorage.getItem("brainlab_admin_pin_verified") === "true") {
+        return true;
+      }
     } catch {
       // ignore
     }

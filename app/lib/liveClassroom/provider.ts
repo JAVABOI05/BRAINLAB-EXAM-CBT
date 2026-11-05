@@ -265,12 +265,30 @@ export function getVideoProvider(
   credentials?: LiveServicesCredentials
 ): IVideoProvider {
   switch (providerType) {
-    case "livekit":
-      return new LiveKitProvider(credentials);
-    case "agora":
-      return new AgoraProvider(credentials);
-    case "daily":
-      return new DailyProvider(credentials);
+    case "livekit": {
+      const provider = new LiveKitProvider(credentials);
+      if (!provider.isConfigured()) {
+        console.warn("[liveClassroom] LiveKit selected but credentials incomplete. Falling back to Standard WebRTC.");
+        return new StandardWebRTCProvider(credentials);
+      }
+      return provider;
+    }
+    case "agora": {
+      const provider = new AgoraProvider(credentials);
+      if (!provider.isConfigured()) {
+        console.warn("[liveClassroom] Agora selected but credentials incomplete. Falling back to Standard WebRTC.");
+        return new StandardWebRTCProvider(credentials);
+      }
+      return provider;
+    }
+    case "daily": {
+      const provider = new DailyProvider(credentials);
+      if (!provider.isConfigured()) {
+        console.warn("[liveClassroom] Daily selected but credentials incomplete. Falling back to Standard WebRTC.");
+        return new StandardWebRTCProvider(credentials);
+      }
+      return provider;
+    }
     case "webrtc":
     default:
       return new StandardWebRTCProvider(credentials);

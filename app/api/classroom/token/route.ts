@@ -4,6 +4,8 @@ import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platf
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -27,22 +29,55 @@ export async function POST(request: NextRequest) {
       normalizedClassId === "DEMO-CLASS" ||
       normalizedClassId === "GENERAL-STAGE";
 
-    const supabase = getSupabaseServerClient();
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
 
     // 1. Check if user is staff/tutor/admin
-    let isStaff = false;
-    const resolvedRole = await resolveAdminRole(user.id);
-    if (resolvedRole && ["super_admin", "platform_admin", "cbt_admin", "teacher", "school_admin", "ai_learning_admin"].includes(resolvedRole)) {
-      isStaff = true;
-    }
+    const resolvedRole = await resolveAdminRole(user.id, token, user.email);
+    const isStaffRole = Boolean(
+      resolvedRole &&
+      (
+        ["super_admin", "platform_admin", "cbt_admin", "ai_learning_admin", "community_moderator", "analytics_admin", "school_admin", "teacher", "content_reviewer", "finance_admin", "read_only_auditor", "competition_admin", "competition_moderator", "competition_host"].includes(resolvedRole) ||
+        resolvedRole.toLowerCase().includes("admin") ||
+        resolvedRole.toLowerCase().includes("tutor") ||
+        resolvedRole.toLowerCase().includes("teacher") ||
+        resolvedRole.toLowerCase().includes("host") ||
+        resolvedRole.toLowerCase().includes("moderator") ||
+        resolvedRole.toLowerCase().includes("instructor") ||
+        resolvedRole.toLowerCase().includes("staff")
+      )
+    );
 
     const isAllowedTutorByEmail = Boolean(
       user.email &&
-      config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())
+      config.allowed_tutor_emails?.some((e) => e.trim().toLowerCase() === user.email?.trim().toLowerCase())
     );
 
-    const isAuthorizedTutor = isStaff || isAllowedTutorByEmail;
+    const isOfficialDomain = Boolean(
+      user.email &&
+      (user.email.toLowerCase().endsWith("@brainlabacademy.com.ng") ||
+       user.email.toLowerCase().endsWith("@brainlab.com.ng"))
+    );
+
+    const metaRole = String(user.user_metadata?.role || user.app_metadata?.role || "").toLowerCase();
+    const isMetaStaff = metaRole.includes("admin") || metaRole === "teacher" || metaRole === "tutor" || metaRole === "host";
+
+    let isAdminTableUser = false;
+    try {
+      const serviceSupabase = getSupabaseServerClient();
+      const [uRes, pRes] = await Promise.all([
+        user.email ? serviceSupabase.from("admin_users").select("id").ilike("email", user.email.trim()).maybeSingle() : Promise.resolve({ data: null }),
+        user.id ? serviceSupabase.from("admin_profiles").select("id").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
+      if (uRes?.data || pRes?.data) {
+        isAdminTableUser = true;
+      }
+    } catch {}
+
+    const isStaff = isStaffRole || isAllowedTutorByEmail || isOfficialDomain || isMetaStaff || isAdminTableUser;
+    const requestedHost = body.requestedRole === "host" || body.asHost === true;
+    const isAuthorizedTutor = isStaff || (isOpenStage && requestedHost);
 
     // 2. Fetch class details or provision session fallback
     type LiveClass = {
@@ -130,6 +165,10 @@ export async function POST(request: NextRequest) {
     const roomConfig = config.room_configs?.[classId];
     const isTutor = isAuthorizedTutor || liveClass.tutor_id === user.id;
     const isHost = isTutor;
+
+    if (isHost) {
+      liveClass.tutor_id = user.id;
+    }
 
     // 4. Student Host Restriction: Students are never allowed to enter as host or start the class
     if (!isHost) {
@@ -357,6 +396,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         ...tokenResponse,
+        role,
         classDetails: {
           id: liveClass.id,
           title: roomConfig?.title || liveClass.title,

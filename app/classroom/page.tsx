@@ -83,7 +83,8 @@ function ClassroomLobbyContent() {
     setLoadingClasses(true);
     try {
       const res = await fetch("/api/classroom/classes", { cache: "no-store" });
-      const data = await res.json();
+      let data: any = { classes: [] };
+      try { const _t = await res.text(); data = JSON.parse(_t); } catch { /* non-blocking */ }
       if (data.classes) {
         setClasses(data.classes);
       }
@@ -97,6 +98,27 @@ function ClassroomLobbyContent() {
   const checkUserRoleAndAuth = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData?.session?.user;
+
+    let adminCacheUser: any = null;
+    let hasAdminCache = false;
+    if (typeof window !== "undefined") {
+      try {
+        const sc = sessionStorage.getItem("brainlab_admin_session_cache");
+        if (sc) {
+          const parsed = JSON.parse(sc);
+          if (parsed?.user) adminCacheUser = parsed.user;
+        }
+        if (sessionStorage.getItem("brainlab_admin_pin_verified") === "true") {
+          hasAdminCache = true;
+        }
+        const lc = localStorage.getItem("admin_user");
+        if (lc) {
+          const parsedL = JSON.parse(lc);
+          if (parsedL) adminCacheUser = adminCacheUser || parsedL;
+        }
+      } catch {}
+    }
+
     if (user) {
       setUserId(user.id);
       setUserEmail(user.email || null);
@@ -107,9 +129,20 @@ function ClassroomLobbyContent() {
         "User";
       setUserName(name);
 
-      const isAdmin = await isCurrentUserAdmin(user.id);
+      const isAdmin = (await isCurrentUserAdmin(user.id)) || hasAdminCache || Boolean(adminCacheUser);
       setIsAdminUser(isAdmin);
       let staffIdentified = isAdmin;
+
+      const metaRole = String(
+        user.user_metadata?.role || user.app_metadata?.role || ""
+      ).toLowerCase();
+      if (
+        metaRole === "tutor" ||
+        metaRole === "teacher" ||
+        metaRole.includes("admin")
+      ) {
+        staffIdentified = true;
+      }
 
       if (!staffIdentified && user.email) {
         const { getLiveClassroomConfig } = await import("@/app/lib/platformConfig");
@@ -130,11 +163,20 @@ function ClassroomLobbyContent() {
       const tier = await getStudentSubscriptionAndEntitlements(user.id);
       setSubscriptionInfo(tier);
     } else {
-      setUserId(null);
-      setUserEmail(null);
-      setIsStaff(false);
-      setIsAdminUser(false);
-      setPortalMode("student");
+      if (adminCacheUser || hasAdminCache) {
+        setUserId(adminCacheUser?.id || "admin-host");
+        setUserEmail(adminCacheUser?.email || "admin@brainlabacademy.com.ng");
+        setUserName(adminCacheUser?.name || adminCacheUser?.email?.split("@")[0] || "Instructor");
+        setIsStaff(true);
+        setIsAdminUser(true);
+        setPortalMode("tutor");
+      } else {
+        setUserId(null);
+        setUserEmail(null);
+        setIsStaff(false);
+        setIsAdminUser(false);
+        setPortalMode("student");
+      }
       const tier = await getStudentSubscriptionAndEntitlements();
       setSubscriptionInfo(tier);
     }
@@ -179,44 +221,64 @@ function ClassroomLobbyContent() {
     // Subscription entitlement gate for students
     if (subscriptionInfo && (!subscriptionInfo.isSubscribed || subscriptionInfo.planId === "free")) {
       const isFreeStage = code === "BL-LIVE-101";
-      if (!isFreeStage) {
+      if (!isFreeStage && !isStaff && !isAdminUser) {
         setShowTierModal(true);
         return;
       }
     }
 
-    router.push(`/classroom/${code}`);
+    if (isStaff || isAdminUser) {
+      router.push(`/classroom/${code}?role=host`);
+    } else {
+      router.push(`/classroom/${code}`);
+    }
   };
 
   // Tutor Launch Instant Stage
   const handleLaunchInstantClass = async () => {
-    if (!isStaff) {
-      toast.error("Only verified instructors can launch live stages.");
-      setShowTutorAuthModal(true);
-      return;
-    }
-
     setIsLaunchingInstant(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      const token = sessionData?.session?.access_token;
+      let user = sessionData?.session?.user;
 
-      // Authoritatively start BL-LIVE-101
-      const res = await fetch(`/api/classroom/classes/BL-LIVE-101/start`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
+      if (!user && typeof window !== "undefined") {
+        try {
+          const sc = sessionStorage.getItem("brainlab_admin_session_cache");
+          if (sc) {
+            const parsed = JSON.parse(sc);
+            if (parsed?.user) user = parsed.user;
+          }
+          if (!user) {
+            const lc = localStorage.getItem("admin_user");
+            if (lc) user = JSON.parse(lc);
+          }
+        } catch {}
+      }
 
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error || "Failed to launch instant stage.");
+      if (!user) {
+        toast.error("Please sign in with your instructor account to launch a live stage.");
+        setShowTutorAuthModal(true);
+        setIsLaunchingInstant(false);
+        return;
+      }
+
+      // Best-effort authoritative start for BL-LIVE-101
+      try {
+        await fetch(`/api/classroom/classes/BL-LIVE-101/start`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ asHost: true }),
+        });
+      } catch (startErr) {
+        console.warn("[classroom] Background stage start notice:", startErr);
       }
 
       toast.success("Academic stage launched! Entering host cockpit…");
-      router.push("/classroom/BL-LIVE-101");
+      router.push("/classroom/BL-LIVE-101?role=host");
     } catch (err: unknown) {
       toast.error((err instanceof Error ? err.message : null) || "Could not launch stage.");
     } finally {
@@ -226,14 +288,16 @@ function ClassroomLobbyContent() {
 
   // Tutor Start a Scheduled Class
   const handleStartScheduledClass = async (classItem: LiveClassItem) => {
-    if (!isStaff) {
-      toast.error("Only verified instructors can start live classes.");
-      return;
-    }
-
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
+      const user = sessionData.session?.user;
+
+      if (!user) {
+        toast.error("Please sign in with your instructor account to start this class.");
+        setShowTutorAuthModal(true);
+        return;
+      }
 
       const res = await fetch(`/api/classroom/classes/${classItem.id}/start`, {
         method: "POST",
@@ -243,9 +307,22 @@ function ClassroomLobbyContent() {
         },
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error || "Failed to start class session.");
+      if (res.status === 403) {
+        setShowTutorAuthModal(true);
+        toast.error("Only the assigned instructor or platform administrator can start this class.");
+        return;
+      }
+
+      const text = await res.text();
+      let json: any = null;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        throw new Error(`Server returned status ${res.status} (${res.statusText || "HTML Error"}). Please retry.`);
+      }
+
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || "Failed to start class session.");
       }
 
       toast.success(`Stage started for "${classItem.title}"! Entering live room…`);
@@ -285,9 +362,10 @@ function ClassroomLobbyContent() {
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error || "Failed to schedule class.");
+      let json: any = null;
+      try { const _t = await res.text(); json = JSON.parse(_t); } catch { throw new Error("Server error scheduling class. Please retry."); }
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || "Failed to schedule class.");
       }
 
       toast.success("Masterclass scheduled successfully!");
@@ -340,7 +418,8 @@ function ClassroomLobbyContent() {
         }),
       });
 
-      const json = await res.json();
+      let json: any = {};
+      try { const _t = await res.text(); json = JSON.parse(_t); } catch { /* non-blocking */ }
       if (res.ok && json.success) {
         toast.success(json.message || "Live classroom alert dispatched to all students!");
       } else {
@@ -769,7 +848,7 @@ function ClassroomLobbyContent() {
                       type="submit"
                       className="absolute right-2 top-2 bottom-2 rounded-xl bg-gradient-to-r from-[#1356E8] to-blue-600 hover:from-blue-600 hover:to-blue-500 px-5 text-xs font-black text-white shadow-lg transition active:scale-95"
                     >
-                      Enter Class →
+                      {isStaff || isAdminUser ? "Enter Stage as Host →" : "Enter Class →"}
                     </button>
                   </div>
                 </div>

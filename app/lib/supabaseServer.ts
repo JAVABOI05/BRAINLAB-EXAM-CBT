@@ -190,7 +190,7 @@ export async function resolveAdminRole(
         const { data: adminUser } = await serviceSupabase
           .from("admin_users")
           .select("role")
-          .eq("id", userId)
+          .or(`id.eq.${userId},user_id.eq.${userId}`)
           .maybeSingle();
         if (adminUser && typeof adminUser.role === "string" && adminUser.role.trim().length > 0) {
           return adminUser.role.trim();
@@ -200,10 +200,18 @@ export async function resolveAdminRole(
         const { data: adminByEmail } = await serviceSupabase
           .from("admin_users")
           .select("role")
-          .eq("email", userEmail)
+          .ilike("email", userEmail.trim())
           .maybeSingle();
         if (adminByEmail && typeof adminByEmail.role === "string" && adminByEmail.role.trim().length > 0) {
           return adminByEmail.role.trim();
+        }
+        const { data: profByEmail } = await serviceSupabase
+          .from("admin_profiles")
+          .select("role")
+          .ilike("email", userEmail.trim())
+          .maybeSingle();
+        if (profByEmail && typeof profByEmail.role === "string" && profByEmail.role.trim().length > 0) {
+          return profByEmail.role.trim();
         }
       }
     } catch {

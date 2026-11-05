@@ -39,6 +39,8 @@ export interface LiveRoomTokenResponse {
   expiresAt: string;
   identity: string;
   permissions: RoomPermissions;
+  role?: ParticipantRole;
+  classDetails?: any;
 }
 
 export interface Participant {

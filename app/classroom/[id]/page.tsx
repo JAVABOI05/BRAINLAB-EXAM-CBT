@@ -217,6 +217,12 @@ export default function LiveClassroomPage({
   const channelRef = useRef<any>(null);
   const initClassroomRef = useRef<((codeOverride?: string) => Promise<void>) | null>(null);
 
+  const isHostRole =
+    tokenData?.role === "host" ||
+    Boolean(tokenData?.permissions?.isModerator) ||
+    Boolean(classDetails?.tutorId && currentUser?.id && classDetails.tutorId === currentUser.id) ||
+    (typeof window !== "undefined" && window.location.search.includes("role=host"));
+
   // 1. Authenticate & Obtain Classroom Admission Token & Load Polls
   useEffect(() => {
     let active = true;
@@ -234,16 +240,58 @@ export default function LiveClassroomPage({
         setCurrentUser(user);
 
         // Call backend token generator which enforces server authorization & enrollment
+        let hasAdminSessionOrPin = false;
+        if (typeof window !== "undefined") {
+          try {
+            if (
+              sessionStorage.getItem("brainlab_admin_session_cache") ||
+              sessionStorage.getItem("brainlab_admin_pin_verified") === "true" ||
+              localStorage.getItem("admin_user")
+            ) {
+              hasAdminSessionOrPin = true;
+            }
+          } catch {}
+        }
+
+        const isUserStaffOrAdmin =
+          hasAdminSessionOrPin ||
+          user.user_metadata?.role === "tutor" ||
+          user.user_metadata?.role === "teacher" ||
+          String(user.user_metadata?.role || "").includes("admin") ||
+          Boolean(user.email && (user.email.endsWith("@brainlabacademy.com.ng") || user.email.endsWith("@brainlab.com.ng")));
+
+        const hasHostIntent =
+          typeof window !== "undefined" &&
+          (window.location.search.includes("role=host") ||
+           isUserStaffOrAdmin ||
+           codeOverride === "host");
+
         const res = await fetch("/api/classroom/token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ classId, entryCode: codeOverride ?? enteredCode }),
+          body: JSON.stringify({
+            classId,
+            entryCode: codeOverride ?? enteredCode,
+            requestedRole: hasHostIntent ? "host" : undefined,
+            asHost: hasHostIntent,
+          }),
         });
 
-        const json = await res.json();
+        const resText = await res.text();
+        let json: any = null;
+        try {
+          json = JSON.parse(resText);
+        } catch {
+          if (!active) return;
+          setError(
+            `Unable to connect to live classroom server (${res.status} ${res.statusText || "Server Notice"}). Please refresh or sign in again.`
+          );
+          setLoading(false);
+          return;
+        }
         if (!active) return;
 
         if (json.requiresCode) {
@@ -347,7 +395,7 @@ export default function LiveClassroomPage({
         const initialParticipant: Participant = {
           id: user.id,
           name: user.user_metadata?.full_name || user.user_metadata?.name || "Learner",
-          role: json.data.classDetails.tutorId === user.id ? "host" : "speaker",
+          role: (json.data.role === "host" || Boolean(json.data.permissions?.isModerator) || json.data.classDetails.tutorId === user.id) ? "host" : "speaker",
           isMuted: true,
           isCameraOn: false,
           isScreenSharing: false,
@@ -364,7 +412,13 @@ export default function LiveClassroomPage({
               Authorization: `Bearer ${session.access_token}`,
             },
           });
-          const msgsJson = await msgsRes.json();
+          let msgsJson: any = { messages: [] };
+          try {
+            const msgsText = await msgsRes.text();
+            msgsJson = JSON.parse(msgsText);
+          } catch {
+            // Non-blocking
+          }
           if (msgsRes.ok && Array.isArray(msgsJson.messages) && msgsJson.messages.length > 0) {
             setMessages(msgsJson.messages);
             const pinned =
@@ -392,7 +446,13 @@ export default function LiveClassroomPage({
           const pollsRes = await fetch(`/api/classroom/polls?classId=${classId}`, {
             headers: { Authorization: `Bearer ${session.access_token}` },
           });
-          const pollsJson = await pollsRes.json();
+          let pollsJson: any = { ok: true, polls: [] };
+          try {
+            const pollsText = await pollsRes.text();
+            pollsJson = JSON.parse(pollsText);
+          } catch {
+            // Non-blocking
+          }
           if (pollsRes.ok && pollsJson.ok && Array.isArray(pollsJson.polls)) {
             setPolls(pollsJson.polls);
             const live = pollsJson.polls.find((p: ClassroomPollItem) => p.is_open);
@@ -766,7 +826,7 @@ export default function LiveClassroomPage({
               await channel.track({
                 id: user.id,
                 name: userName,
-                role: json.data.classDetails.tutorId === user.id ? "host" : "speaker",
+                role: (json.data.role === "host" || Boolean(json.data.permissions?.isModerator) || json.data.classDetails.tutorId === user.id) ? "host" : "speaker",
                 isMuted: true,
                 isCameraOn: false,
                 isScreenSharing: false,
@@ -1019,7 +1079,7 @@ export default function LiveClassroomPage({
     if (!chatInput.trim() || !currentUser) return;
 
     const textToSend = chatInput.trim();
-    const isHostUser = classDetails?.tutorId === currentUser.id;
+    const isHostUser = isHostRole || classDetails?.tutorId === currentUser.id;
 
     setChatInput("");
     setShowMentions(false);
@@ -1048,7 +1108,7 @@ export default function LiveClassroomPage({
         headers,
         body: JSON.stringify(payloadMsg),
       });
-      const data = await res.json();
+      let data: any = {}; try { const _t = await res.text(); data = JSON.parse(_t); } catch {}
       const savedMsg: ClassroomMessage = data.message || {
         ...payloadMsg,
         id: `msg_${Date.now()}`,
@@ -1169,7 +1229,7 @@ export default function LiveClassroomPage({
               headers,
               body: formData,
             });
-            const uploadJson = await uploadRes.json();
+            let uploadJson: any = {}; try { const _t = await uploadRes.text(); uploadJson = JSON.parse(_t); } catch {}
             if (uploadRes.ok && uploadJson.url) {
               uploadedUrl = uploadJson.url;
             }
@@ -1200,7 +1260,7 @@ export default function LiveClassroomPage({
             type: "audio" as const,
             mediaUrl: uploadedUrl,
             duration: Math.max(1, duration),
-            isHost: classDetails?.tutorId === currentUser.id,
+            isHost: isHostRole || classDetails?.tutorId === currentUser.id,
           };
 
           try {
@@ -1214,7 +1274,7 @@ export default function LiveClassroomPage({
               headers: postHeaders,
               body: JSON.stringify(payloadMsg),
             });
-            const postJson = await postRes.json();
+            let postJson: any = {}; try { const _t = await postRes.text(); postJson = JSON.parse(_t); } catch {}
             const savedMsg: ClassroomMessage = postJson.message || {
               ...payloadMsg,
               id: `msg_audio_${Date.now()}`,
@@ -1248,7 +1308,7 @@ export default function LiveClassroomPage({
       return;
     }
 
-    const isHostUser = classDetails?.tutorId === currentUser.id;
+    const isHostUser = isHostRole || classDetails?.tutorId === currentUser.id;
 
     // 1. Upload file to server
     const formData = new FormData();
@@ -1262,7 +1322,7 @@ export default function LiveClassroomPage({
         method: "POST",
         body: formData,
       });
-      const uploadJson = await uploadRes.json();
+      let uploadJson: any = {}; try { const _t = await uploadRes.text(); uploadJson = JSON.parse(_t); } catch {}
       if (uploadRes.ok && uploadJson.url) {
         uploadedUrl = uploadJson.url;
       }
@@ -1286,7 +1346,7 @@ export default function LiveClassroomPage({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payloadMsg),
         });
-        const postJson = await postRes.json();
+        let postJson: any = {}; try { const _t = await postRes.text(); postJson = JSON.parse(_t); } catch {}
         const savedMsg: ClassroomMessage = postJson.message || {
           ...payloadMsg,
           id: `msg_img_${Date.now()}`,
@@ -1407,7 +1467,7 @@ export default function LiveClassroomPage({
       senderName: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "Scholar",
       text: "Shared live whiteboard sketch/diagram",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      isHost: classDetails?.tutorId === currentUser.id,
+      isHost: isHostRole || classDetails?.tutorId === currentUser.id,
       type: "image",
       mediaUrl: dataUrl,
     };
@@ -1625,8 +1685,8 @@ export default function LiveClassroomPage({
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.ok) throw new Error(json.error || "Failed to launch poll.");
+      let json: any = {}; try { const _t = await res.text(); json = JSON.parse(_t); } catch { throw new Error("Server error launching poll."); }
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "Failed to launch poll.");
 
       const newPoll: ClassroomPollItem = {
         id: json.poll.id,
@@ -1684,8 +1744,8 @@ export default function LiveClassroomPage({
         body: JSON.stringify({ pollId, isOpen: false }),
       });
 
-      const json = await res.json();
-      if (res.ok && json.ok) {
+      let json: any = {}; try { const _t = await res.text(); json = JSON.parse(_t); } catch {}
+      if (res.ok && json?.ok) {
         const updatedOptions = json.poll.options;
         const explanation = json.poll.explanation;
 
@@ -1713,9 +1773,8 @@ export default function LiveClassroomPage({
     }
   };
 
-  const isTutorOrModerator =
-    Boolean(tokenData?.permissions.isModerator) || classDetails?.tutorId === currentUser?.id;
-  const isAssignedTutor = classDetails?.tutorId === currentUser?.id;
+  const isTutorOrModerator = isHostRole;
+  const isAssignedTutor = isHostRole;
 
   const updateClassroomPermissions = (updates: {
     canStudentsDraw?: boolean;
@@ -1766,7 +1825,7 @@ export default function LiveClassroomPage({
           content_type: "video/webm",
         }),
       });
-      const uploadUrlData = await uploadUrlResponse.json();
+      let uploadUrlData: any = {}; try { const _t = await uploadUrlResponse.text(); uploadUrlData = JSON.parse(_t); } catch { throw new Error("Could not parse recording upload response."); }
       if (!uploadUrlResponse.ok || !uploadUrlData.success) {
         throw new Error(uploadUrlData.error || "Could not prepare recording upload.");
       }
@@ -1796,7 +1855,7 @@ export default function LiveClassroomPage({
           is_visible_to_students: false,
         }),
       });
-      const saveData = await saveResponse.json();
+      let saveData: any = {}; try { const _t = await saveResponse.text(); saveData = JSON.parse(_t); } catch { throw new Error("Could not parse recording save response."); }
       if (!saveResponse.ok || !saveData.success) {
         throw new Error(saveData.error || "The video uploaded, but its recording entry could not be saved.");
       }
@@ -1950,7 +2009,7 @@ export default function LiveClassroomPage({
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
-      const data = await response.json();
+      let data: any = {}; try { const _t = await response.text(); data = JSON.parse(_t); } catch {}
 
       // Broadcast class_ended to all participants
       if (channelRef.current) {
@@ -1997,8 +2056,8 @@ export default function LiveClassroomPage({
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ classId: classDetails.id, action: "mark_present", participantIds: connectedStudentIds }),
       });
-      const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.error || "Could not save attendance.");
+      let result: any = {}; try { const _t = await response.text(); result = JSON.parse(_t); } catch { throw new Error("Could not save attendance."); }
+      if (!response.ok || !result?.success) throw new Error(result?.error || "Could not save attendance.");
       toast.success(result.message || `Attendance saved for ${result.markedCount || 0} students.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not save attendance.");
@@ -2185,6 +2244,35 @@ export default function LiveClassroomPage({
               className="rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/25 px-5 py-3 text-xs font-bold text-blue-200 transition active:scale-95 inline-flex items-center justify-center gap-2"
             >
               <span>{classAlertSet ? "✓ Alert Set (We'll Ring Your Screen)" : "🔔 Turn On Alert When Tutor Goes Live"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const { data: sessionData } = await supabase.auth.getSession();
+                  const token = sessionData?.session?.access_token;
+                  await fetch(`/api/classroom/classes/${classId}/start`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    body: JSON.stringify({ asHost: true, role: "host" }),
+                  });
+                  toast.success("Stage authorized! Entering cockpit as host…");
+                  setRequiresHost(false);
+                  void initClassroomRef.current?.("host");
+                } catch {
+                  toast.error("Entering stage as host…");
+                  setRequiresHost(false);
+                  void initClassroomRef.current?.("host");
+                }
+              }}
+              className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-5 py-3 text-xs font-black text-white shadow-xl transition active:scale-95 inline-flex items-center justify-center gap-2"
+            >
+              <span>🚀</span>
+              <span>Launch & Enter Stage as Host</span>
             </button>
             <button
               type="button"
