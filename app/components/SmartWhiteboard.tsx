@@ -249,6 +249,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       }
     }, [initialPages, initialActivePageIndex]);
 
+    const pagesRef = useRef<WhiteboardPage[]>(pages);
+    useEffect(() => {
+      pagesRef.current = pages;
+    }, [pages]);
+
+    const activePageIndexRef = useRef<number>(activePageIndex);
+    useEffect(() => {
+      activePageIndexRef.current = activePageIndex;
+    }, [activePageIndex]);
+
     const activePage = pages[activePageIndex] || pages[0] || {
       id: "page-1",
       title: "Page 1",
@@ -275,20 +285,65 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [redoStack, setRedoStack] = useState<WhiteboardElement[]>([]);
     const imageCacheRef = useRef<Record<string, HTMLImageElement>>({});
 
-    // Notify parent whenever pages change
+    // Notify parent and broadcast authoritative pages change
     const updatePagesAndNotify = useCallback(
       (updater: (prev: WhiteboardPage[]) => WhiteboardPage[], nextActiveIndex?: number) => {
         setPages((prev) => {
           const next = updater(prev);
           const targetIndex = nextActiveIndex !== undefined ? nextActiveIndex : activePageIndex;
           onPagesChange?.(next, targetIndex);
+          if (channel && isHost) {
+            try {
+              channel.send({
+                type: "broadcast",
+                event: "whiteboard_pages_sync",
+                payload: { pages: next, activePageIndex: targetIndex, senderId: currentUserId },
+              });
+            } catch {
+              // Non-blocking
+            }
+          }
           return next;
         });
         if (nextActiveIndex !== undefined) {
           setActivePageIndex(nextActiveIndex);
+          if (channel && isHost) {
+            try {
+              channel.send({
+                type: "broadcast",
+                event: "whiteboard_page_change",
+                payload: { activePageIndex: nextActiveIndex, senderId: currentUserId },
+              });
+            } catch {
+              // Non-blocking
+            }
+          }
         }
       },
-      [activePageIndex, onPagesChange]
+      [activePageIndex, onPagesChange, channel, isHost, currentUserId]
+    );
+
+    // Synchronized active page switcher
+    const switchActivePage = useCallback(
+      (nextIndexOrFn: number | ((prev: number) => number)) => {
+        setActivePageIndex((prev) => {
+          const next = typeof nextIndexOrFn === "function" ? nextIndexOrFn(prev) : nextIndexOrFn;
+          const bounded = Math.max(0, Math.min(pages.length - 1, next));
+          if (bounded !== prev && channel && isHost) {
+            try {
+              channel.send({
+                type: "broadcast",
+                event: "whiteboard_page_change",
+                payload: { activePageIndex: bounded, senderId: currentUserId },
+              });
+            } catch {
+              // Non-blocking
+            }
+          }
+          return bounded;
+        });
+      },
+      [pages.length, channel, isHost, currentUserId]
     );
 
     const setElements = useCallback(
@@ -965,21 +1020,109 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       };
     }, [deleteSelected, duplicateSelected, setElements]);
 
-    // Remote elements full sync listener
+    // Remote classroom real-time synchronization listeners
     useEffect(() => {
       if (!channel) return;
-      const handleRemoteSync = ({ payload }: { payload: any }) => {
+
+      const handleRemoteElementsSync = ({ payload }: { payload: any }) => {
         if (!payload || payload.senderId === currentUserId) return;
         if (payload.pageIndex === activePageIndex && Array.isArray(payload.elements)) {
           setElements(payload.elements);
         }
       };
 
-      channel.on?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteSync);
-      return () => {
-        channel.off?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteSync);
+      const handleRemoteDraw = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (payload.pageIndex === activePageIndex && payload.element) {
+          setElements((prev) => {
+            if (prev.some((el) => el.id === payload.element.id)) return prev;
+            return [...prev, payload.element];
+          });
+        }
       };
-    }, [channel, currentUserId, activePageIndex, setElements]);
+
+      const handleRemotePageChange = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (
+          typeof payload.activePageIndex === "number" &&
+          payload.activePageIndex >= 0 &&
+          payload.activePageIndex < pages.length
+        ) {
+          setActivePageIndex(payload.activePageIndex);
+        }
+      };
+
+      const handleRemoteClear = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (payload.pageIndex === activePageIndex) {
+          setElements([]);
+          setRedoStack([]);
+        }
+      };
+
+      const handleRemotePagesSync = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (Array.isArray(payload.pages) && payload.pages.length > 0) {
+          setPages(payload.pages);
+          if (
+            typeof payload.activePageIndex === "number" &&
+            payload.activePageIndex >= 0 &&
+            payload.activePageIndex < payload.pages.length
+          ) {
+            setActivePageIndex(payload.activePageIndex);
+          }
+          onPagesChange?.(payload.pages, payload.activePageIndex ?? activePageIndex);
+        }
+      };
+
+      const handleRemoteRequestSync = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (isHost && channel) {
+          try {
+            channel.send({
+              type: "broadcast",
+              event: "whiteboard_pages_sync",
+              payload: {
+                pages: pagesRef.current,
+                activePageIndex: activePageIndexRef.current,
+                senderId: currentUserId,
+              },
+            });
+          } catch {
+            // Non-blocking
+          }
+        }
+      };
+
+      channel.on?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteElementsSync);
+      channel.on?.("broadcast", { event: "whiteboard_draw" }, handleRemoteDraw);
+      channel.on?.("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
+      channel.on?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
+      channel.on?.("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
+      channel.on?.("broadcast", { event: "whiteboard_request_sync" }, handleRemoteRequestSync);
+
+      // If learner joins, request full authoritative state hydration from host
+      if (!isHost) {
+        try {
+          channel.send({
+            type: "broadcast",
+            event: "whiteboard_request_sync",
+            payload: { senderId: currentUserId },
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
+
+      return () => {
+        channel.off?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteElementsSync);
+        channel.off?.("broadcast", { event: "whiteboard_draw" }, handleRemoteDraw);
+        channel.off?.("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
+        channel.off?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
+        channel.off?.("broadcast", { event: "whiteboard_pages_sync" }, handleRemotePagesSync);
+        channel.off?.("broadcast", { event: "whiteboard_request_sync" }, handleRemoteRequestSync);
+      };
+    }, [channel, currentUserId, activePageIndex, pages, isHost, onPagesChange, setElements]);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (readOnly || !canDraw) return;
@@ -1502,12 +1645,26 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       const cx = 960;
       const cy = 540;
       const elementsToAdd = preset.generate(cx, cy, 1);
-      setElements((prev) => [...prev, ...elementsToAdd]);
+      setElements((prev) => {
+        const next = [...prev, ...elementsToAdd];
+        if (channel) {
+          try {
+            channel.send({
+              type: "broadcast",
+              event: "whiteboard_elements_sync",
+              payload: { elements: next, pageIndex: activePageIndex, senderId: currentUserId },
+            });
+          } catch {
+            // Non-blocking
+          }
+        }
+        return next;
+      });
       setRedoStack([]);
       toast.success(`Inserted ${preset.name} onto board!`);
       setShowStemModal(false);
       redrawCanvas();
-    }, [setElements, redrawCanvas]);
+    }, [setElements, redrawCanvas, channel, activePageIndex, currentUserId]);
 
     // Insert Mathematical Formula (Stage 4)
     const insertFormula = useCallback((latex: string) => {
@@ -1516,10 +1673,21 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       const el = createFormulaElement(latex, cx, cy, color || "#38bdf8", 26);
       setElements((prev) => [...prev, el]);
       setRedoStack([]);
+      if (channel) {
+        try {
+          channel.send({
+            type: "broadcast",
+            event: "whiteboard_draw",
+            payload: { element: el, pageIndex: activePageIndex, senderId: currentUserId },
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
       toast.success("Inserted mathematical formula onto board!");
       setShowStemModal(false);
       redrawCanvas();
-    }, [color, setElements, redrawCanvas]);
+    }, [color, setElements, redrawCanvas, channel, activePageIndex, currentUserId]);
 
     // History controls
     const handleUndo = () => {
@@ -1541,6 +1709,17 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       if (!window.confirm("Clear all drawings and annotations on this page?")) return;
       setElements([]);
       setRedoStack([]);
+      if (channel) {
+        try {
+          channel.send({
+            type: "broadcast",
+            event: "whiteboard_clear",
+            payload: { pageIndex: activePageIndex, senderId: currentUserId },
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
     };
 
     // Text Submission
@@ -1566,6 +1745,18 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       setTextInput("");
       setPendingTextPos(null);
       setTextPromptOpen(false);
+
+      if (channel) {
+        try {
+          channel.send({
+            type: "broadcast",
+            event: "whiteboard_draw",
+            payload: { element: textEl, pageIndex: activePageIndex, senderId: currentUserId },
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
     };
 
     // ------------------------------------------------------------------------
@@ -1677,13 +1868,13 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       duplicateCurrentPage: handleDuplicatePage,
       deleteCurrentPage: handleDeletePage,
       nextPage: () => {
-        if (activePageIndex < pages.length - 1) setActivePageIndex(activePageIndex + 1);
+        if (activePageIndex < pages.length - 1) switchActivePage(activePageIndex + 1);
       },
       prevPage: () => {
-        if (activePageIndex > 0) setActivePageIndex(activePageIndex - 1);
+        if (activePageIndex > 0) switchActivePage(activePageIndex - 1);
       },
       setActivePage: (idx: number) => {
-        if (idx >= 0 && idx < pages.length) setActivePageIndex(idx);
+        if (idx >= 0 && idx < pages.length) switchActivePage(idx);
       },
       toggleRuler: () => {
         setRuler((r) => ({ ...r, visible: !r.visible }));
@@ -1737,7 +1928,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               <button
                 type="button"
                 disabled={activePageIndex === 0}
-                onClick={() => setActivePageIndex((p) => Math.max(0, p - 1))}
+                onClick={() => switchActivePage((p) => Math.max(0, p - 1))}
                 className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-white/10 disabled:opacity-30 transition"
                 title="Previous Page"
               >
@@ -1746,7 +1937,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               <button
                 type="button"
                 disabled={activePageIndex >= pages.length - 1}
-                onClick={() => setActivePageIndex((p) => Math.min(pages.length - 1, p + 1))}
+                onClick={() => switchActivePage((p) => Math.min(pages.length - 1, p + 1))}
                 className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-white/10 disabled:opacity-30 transition"
                 title="Next Page"
               >
@@ -2118,7 +2309,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 {pages.map((p, idx) => (
                   <div
                     key={p.id}
-                    onClick={() => setActivePageIndex(idx)}
+                    onClick={() => switchActivePage(idx)}
                     className={`group relative rounded-xl border p-2.5 cursor-pointer transition ${
                       idx === activePageIndex
                         ? "border-[#1356E8] bg-[#1356E8]/20 shadow-md ring-1 ring-blue-400"
