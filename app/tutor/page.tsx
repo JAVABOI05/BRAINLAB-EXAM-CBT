@@ -70,7 +70,7 @@ export default function TutorHomePage() {
 
       <ActivePresenceBar activityContext="Tutor Management Portal" variant="banner" className="mt-6" />
 
-      {!signedIn && !loading && <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-7"><h2 className="text-xl font-extrabold text-slate-950">Sign in to access authoring tools</h2><p className="mt-2 leading-7 text-slate-600">Tutor access is assigned by a BrainLab administrator. Signing in alone does not grant permission to edit learning content.</p><Link href="/account" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Sign in</Link></section>}
+      {!signedIn && !loading && <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-7"><h2 className="text-xl font-extrabold text-slate-950">Sign in to access authoring tools</h2><p className="mt-2 leading-7 text-slate-600">Tutor access is assigned by a BrainLab administrator. Signing in alone does not grant permission to edit learning content.</p><Link href="/login?redirect=/tutor" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#012153] px-5 py-3 font-bold text-white">Sign in</Link></section>}
 
       {loading && (
         <div className="mt-8 animate-fade-in-up">

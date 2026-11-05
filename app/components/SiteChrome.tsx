@@ -11,16 +11,37 @@ import GlobalAnnouncementBanner from "./GlobalAnnouncementBanner";
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
+
+  // Portal Environment Identifiers
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isStudentArea =
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
+    pathname === "/student" ||
+    pathname.startsWith("/student/");
+  const isInstructorArea =
+    pathname === "/tutor" ||
+    pathname.startsWith("/tutor/") ||
+    pathname === "/instructor" ||
+    pathname.startsWith("/instructor/");
+  const isAuthArea =
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
+    pathname === "/auth" ||
+    pathname.startsWith("/auth/");
+
+  // Task-oriented interactive environments
   const isActiveExam = pathname === "/exam" || pathname.startsWith("/exam/");
   const isInstructions = pathname === "/instructions" || pathname.startsWith("/instructions/");
-  // Active live video room or studio has its own dedicated full-viewport controls.
-  // The classroom lobby (/classroom) retains standard public brand navigation and light/dark theme controls.
-  const isClassroomSession = (pathname.startsWith("/classroom/") && pathname !== "/classroom/") || pathname === "/classroom/studio";
+  const isClassroomSession =
+    (pathname.startsWith("/classroom/") && pathname !== "/classroom/") ||
+    pathname === "/classroom/studio";
   const isMessages = pathname === "/messages" || pathname.startsWith("/messages/");
 
   // Intercept any Supabase PKCE authentication code or error landing on an arbitrary route
-  // (e.g. root '/' or '/account') and automatically route it to the dedicated callback handler.
+  // and automatically route it to the dedicated callback handler.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const searchParams = new URLSearchParams(window.location.search);
@@ -31,9 +52,16 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // The active exam, instructions briefing, and live room sessions have their own focused task-oriented interfaces.
-  // Admin pages retain their own dedicated dashboard navigation.
-  const hidePublicChrome = isAdminArea || isActiveExam || isInstructions || isClassroomSession;
+  // Isolate authenticated portals, auth gateway, and immersive test/classroom environments
+  // completely from the public marketing header, learner toolbar, and footer.
+  const hidePublicChrome =
+    isAdminArea ||
+    isStudentArea ||
+    isInstructorArea ||
+    isAuthArea ||
+    isActiveExam ||
+    isInstructions ||
+    isClassroomSession;
 
   return (
     <>

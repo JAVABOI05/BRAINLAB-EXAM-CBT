@@ -112,7 +112,7 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
       permissions={permissions}
       onLogout={async () => {
         await adminSignOut();
-        router.replace("/account");
+        router.replace("/login");
       }}
     >
       {children}

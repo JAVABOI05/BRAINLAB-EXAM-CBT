@@ -491,7 +491,7 @@ function ClassroomLobbyContent() {
                   👨‍🏫 Instructor Sign In
                 </button>
                 <Link
-                  href="/account?redirect=/classroom"
+                  href="/login?redirect=/classroom"
                   className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md transition active:scale-95"
                 >
                   🎓 Student Sign In

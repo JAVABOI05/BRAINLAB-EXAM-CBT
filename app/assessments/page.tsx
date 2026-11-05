@@ -37,7 +37,7 @@ export default function AssessmentsPage() {
       const { data: auth, error: authError } = await supabase.auth.getUser();
       if (!active) return;
       if (authError || !auth.user) {
-        router.replace("/account");
+        router.replace("/login?redirect=/assessments");
         return;
       }
 

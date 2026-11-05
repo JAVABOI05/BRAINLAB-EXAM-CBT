@@ -176,7 +176,7 @@ export default function LearnerDashboardPage() {
 
       if (!active) return;
       if (error || !currentUser) {
-        router.replace("/account");
+        router.replace("/login?redirect=/dashboard");
         return;
       }
 

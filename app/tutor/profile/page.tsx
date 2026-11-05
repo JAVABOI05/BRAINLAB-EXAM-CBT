@@ -49,7 +49,7 @@ export default function TutorProfileEditorPage() {
     let active = true;
     async function load() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) { router.replace("/account"); return; }
+      if (authError || !user) { router.replace("/login?redirect=/tutor/profile"); return; }
       const { data: role } = await supabase.rpc("get_admin_role");
       if (role !== "teacher") {
         setError("This profile workspace is available to BrainLab tutor accounts only. If you are a tutor, ask an administrator to activate your tutor role.");

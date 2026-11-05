@@ -92,7 +92,7 @@ export default function TutorAssignmentsPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
       if (!session?.user) {
-        router.replace("/account?redirect=/tutor/assignments");
+        router.replace("/login?redirect=/tutor/assignments");
         return;
       }
       if (!active) return;

@@ -29,7 +29,7 @@ export default function NotificationsPage() {
     async function loadNotifications() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session?.user) {
-        router.replace("/account?redirect=/notifications");
+        router.replace("/login?redirect=/notifications");
         return;
       }
 

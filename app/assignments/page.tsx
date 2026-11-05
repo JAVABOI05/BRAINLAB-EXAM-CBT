@@ -65,7 +65,7 @@ export default function StudentAssignmentsPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
       if (!session?.user) {
-        router.replace("/account?redirect=/assignments");
+        router.replace("/login?redirect=/assignments");
         return;
       }
       if (!active) return;

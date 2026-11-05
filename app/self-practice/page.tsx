@@ -95,7 +95,7 @@ export default function SelfPracticePage() {
     async function load() {
       const { data: auth, error: authError } = await supabase.auth.getUser();
       if (!active) return;
-      if (authError || !auth.user) { router.replace("/account"); return; }
+      if (authError || !auth.user) { router.replace("/login?redirect=/self-practice"); return; }
       const { data, error: catalogError } = await supabase.rpc("get_self_practice_catalog");
       if (!active) return;
       if (catalogError || !data?.ok) setError(catalogError?.message || (data as ApiFailure | null)?.message || "Could not load practice options.");

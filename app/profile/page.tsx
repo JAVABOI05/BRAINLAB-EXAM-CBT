@@ -51,7 +51,7 @@ export default function LearnerProfilePage() {
 
       if (!active) return;
       if (userError || !currentUser) {
-        router.replace("/account");
+        router.replace("/login?redirect=/profile");
         return;
       }
 

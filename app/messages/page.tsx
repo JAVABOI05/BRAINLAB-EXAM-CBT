@@ -131,7 +131,7 @@ export default function MessagesPage() {
       const session = sessionData.session;
       const user = session?.user;
       if (!session || !user) {
-        router.replace("/account?redirect=/messages");
+        router.replace("/login?redirect=/messages");
         return;
       }
       if (!active) return;
