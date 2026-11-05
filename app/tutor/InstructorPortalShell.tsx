@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { isGovernanceAdminRole, isInstructorRole } from "../lib/adminRoles";
 import { useLearnerTheme, type AppearancePreference } from "../components/LearnerThemeProvider";
 
 const INSTRUCTOR_NAV_LINKS = [
@@ -28,14 +29,45 @@ export default function InstructorPortalShell({ children }: { children: React.Re
 
   useEffect(() => {
     let active = true;
-    async function fetchUser() {
+
+    async function fetchUserAndVerifyRole() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!active) return;
-      if (session?.user) {
-        setUser(session.user);
+
+      if (!session?.user) {
+        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+        return;
+      }
+
+      setUser(session.user);
+
+      // Authoritative role check: verify instructor or administrator status
+      const { data: role } = await supabase.rpc("get_admin_role");
+      if (!active) return;
+
+      const roleStr = typeof role === "string" ? role.trim() : null;
+      const isInstructor = isInstructorRole(roleStr);
+      const isAdmin = isGovernanceAdminRole(roleStr);
+
+      if (!isInstructor && !isAdmin) {
+        // Check if user has active subject authoring memberships
+        const { data: memberships } = await supabase
+          .from("learning_subject_memberships")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .limit(1);
+
+        if (!active) return;
+
+        if (!memberships || memberships.length === 0) {
+          // Regular candidate/student — redirect to student workspace
+          router.replace("/dashboard");
+          return;
+        }
       }
     }
-    void fetchUser();
+
+    void fetchUserAndVerifyRole();
 
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -43,11 +75,12 @@ export default function InstructorPortalShell({ children }: { children: React.Re
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       active = false;
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [pathname, router]);
 
   async function handleSignOut() {
     setDropdownOpen(false);
