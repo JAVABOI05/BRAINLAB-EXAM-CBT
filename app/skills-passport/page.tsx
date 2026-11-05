@@ -465,13 +465,13 @@ export default function SkillsPassportPage() {
             <svg className="h-4 w-4 text-slate-600 inline mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print / Save PDF Report
           </button>
           <Link
-            href="/account"
+            href="/login"
             className="rounded-xl border border-blue-600 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-xs"
           >
             Sign In / Register
           </Link>
           <Link
-            href="/login"
+            href="/cbt"
             className="rounded-xl bg-emerald-600 px-5 py-2 text-xs font-extrabold text-white hover:bg-emerald-700 transition shadow"
           >
             Practise CBT Questions →

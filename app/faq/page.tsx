@@ -172,9 +172,9 @@ const FAQ_DATABASE: FAQItem[] = [
     category: "account",
     categoryLabel: "Account & Help",
     question: "How do I reset my password or recover my account?",
-    answer: "Visit /account, click 'Forgot Password', and enter your registered email. You will receive an instant password reset link. If you signed up via phone number or cannot access your email, message our WhatsApp helpline for identity verification.",
-    actionHref: "/account",
-    actionLabel: "Account Portal",
+    answer: "Visit /login, click 'Forgot password?', and enter your registered email. You will receive an instant password reset link. If you signed up via phone number or cannot access your email, message our WhatsApp helpline for identity verification.",
+    actionHref: "/login",
+    actionLabel: "Sign In & Password Recovery",
   },
   {
     id: "acc-contact",

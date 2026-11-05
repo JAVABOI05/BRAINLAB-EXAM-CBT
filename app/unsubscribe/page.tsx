@@ -206,7 +206,7 @@ function UnsubscribeContent() {
             <span className="text-base font-black tracking-tight text-white">BrainLab Academy</span>
           </Link>
           <Link
-            href="/account"
+            href="/login"
             className="text-xs font-bold text-blue-300 hover:text-white transition"
           >
             Learner Account &rarr;
