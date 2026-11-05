@@ -10,6 +10,22 @@ import React, {
   forwardRef,
 } from "react";
 import { toast } from "../lib/toast";
+import {
+  BoundingBox,
+  TransformHandle,
+  getElementBoundingBox,
+  getElementsBoundingBox,
+  hitTestElement,
+  getBoundingBoxHandles,
+  hitTestHandle,
+  translateElement,
+  scaleElement,
+  boxesIntersect,
+  getVirtualDimensions,
+  screenToVirtualPoint,
+  VIRTUAL_CANVAS_WIDTH,
+  VIRTUAL_CANVAS_HEIGHT,
+} from "./classroom/whiteboard/geometry";
 
 export interface WhiteboardElement {
   id: string;
@@ -24,6 +40,11 @@ export interface WhiteboardElement {
   text?: string;
   fontSize?: number;
   fontFamily?: string;
+  rotation?: number;
+  locked?: boolean;
+  groupId?: string;
+  opacity?: number;
+  fillColor?: string;
 }
 
 export type BoardAspectRatio = "16 / 9" | "4 / 3" | "9 / 16" | "free";
@@ -114,13 +135,36 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     // Active tool state
     const [tool, setTool] = useState<
-      "pen" | "highlighter" | "line" | "arrow" | "rect" | "circle" | "text" | "eraser" | "laser"
+      "select" | "pen" | "highlighter" | "line" | "arrow" | "rect" | "circle" | "text" | "eraser" | "laser"
     >("pen");
     const [color, setColor] = useState<string>("#06b6d4");
     const [strokeWidth, setStrokeWidth] = useState<number>(4);
     const [backgroundMode, setBackgroundMode] = useState<"blackboard" | "whiteboard" | "grid" | "lines">("blackboard");
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [zoom, setZoom] = useState<number>(1);
+
+    // Object Selection & Transformation State (Stage 2)
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const selectedIdsRef = useRef<string[]>([]);
+    useEffect(() => {
+      selectedIdsRef.current = selectedIds;
+    }, [selectedIds]);
+
+    const [hoveredHandle, setHoveredHandle] = useState<TransformHandle | null>(null);
+    const [marqueeBox, setMarqueeBox] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+    const marqueeBoxRef = useRef<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+    useEffect(() => {
+      marqueeBoxRef.current = marqueeBox;
+    }, [marqueeBox]);
+
+    const dragActionRef = useRef<{
+      mode: "move" | "resize" | "rotate" | "marquee";
+      handle?: TransformHandle;
+      startX: number;
+      startY: number;
+      initialElements: WhiteboardElement[];
+      origBox?: BoundingBox;
+    } | null>(null);
 
     // Panels visibility (Responsive)
     const [showPagesDrawer, setShowPagesDrawer] = useState(false);
@@ -412,8 +456,19 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
 
+      if (el.opacity !== undefined) {
+        ctx.globalAlpha = el.opacity;
+      }
+
+      if (el.rotation) {
+        const box = getElementBoundingBox(el);
+        ctx.translate(box.centerX, box.centerY);
+        ctx.rotate(el.rotation);
+        ctx.translate(-box.centerX, -box.centerY);
+      }
+
       if (el.type === "highlighter") {
-        ctx.globalAlpha = 0.38;
+        ctx.globalAlpha = (el.opacity ?? 1) * 0.38;
         ctx.lineWidth = el.width * 2.8;
       }
 
@@ -490,6 +545,83 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       const currentElements = elementsRef.current || [];
       for (const el of currentElements) {
         drawElement(ctx, el);
+      }
+
+      // 3.5. DRAW SELECTION BOUNDING BOX & HANDLES (Stage 2)
+      const currentSelectedIds = selectedIdsRef.current || [];
+      if (currentSelectedIds.length > 0) {
+        const selectedEls = currentElements.filter((el) => currentSelectedIds.includes(el.id));
+        const box = getElementsBoundingBox(selectedEls);
+        if (box) {
+          const isLocked = selectedEls.every((e) => e.locked);
+          ctx.save();
+
+          // Selection Box highlight
+          ctx.fillStyle = isLocked ? "rgba(245, 158, 11, 0.08)" : "rgba(19, 86, 232, 0.08)";
+          ctx.fillRect(box.minX, box.minY, box.width, box.height);
+
+          // Dashed border
+          ctx.strokeStyle = isLocked ? "#f59e0b" : "#1356E8";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([5, 4]);
+          ctx.strokeRect(box.minX, box.minY, box.width, box.height);
+          ctx.setLineDash([]);
+
+          if (!isLocked) {
+            // Rotation stem & handle
+            const rotY = box.minY - 24;
+            ctx.beginPath();
+            ctx.strokeStyle = "#1356E8";
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(box.centerX, box.minY);
+            ctx.lineTo(box.centerX, rotY);
+            ctx.stroke();
+
+            // Rotation handle circle
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#1356E8";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(box.centerX, rotY, 5.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 8 resize handles
+            const handles = getBoundingBoxHandles(box).filter((h) => h.type !== "rot");
+            for (const h of handles) {
+              ctx.fillStyle = "#ffffff";
+              ctx.strokeStyle = "#1356E8";
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.rect(h.x - 4.5, h.y - 4.5, 9, 9);
+              ctx.fill();
+              ctx.stroke();
+            }
+          } else {
+            // Lock indicator
+            ctx.fillStyle = "#f59e0b";
+            ctx.font = "14px sans-serif";
+            ctx.fillText("🔒", box.maxX - 16, box.minY - 6);
+          }
+          ctx.restore();
+        }
+      }
+
+      // Marquee Selection Box
+      const curMarquee = marqueeBoxRef.current;
+      if (curMarquee) {
+        ctx.save();
+        const mx = Math.min(curMarquee.startX, curMarquee.currentX);
+        const my = Math.min(curMarquee.startY, curMarquee.currentY);
+        const mw = Math.abs(curMarquee.currentX - curMarquee.startX);
+        const mh = Math.abs(curMarquee.currentY - curMarquee.startY);
+        ctx.fillStyle = "rgba(19, 86, 232, 0.12)";
+        ctx.fillRect(mx, my, mw, mh);
+        ctx.strokeStyle = "#1356E8";
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(mx, my, mw, mh);
+        ctx.restore();
       }
 
       // 4. DRAW ✍️ LASER TRAIL & POINTER (Rendered onto canvas so video recorder captures it!)
@@ -574,6 +706,203 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       return { x, y };
     };
 
+    // Z-Index and Object Manipulation Operations (Stage 2)
+    const bringToFront = useCallback(() => {
+      if (selectedIds.length === 0) return;
+      setElements((prev) => [
+        ...prev.filter((e) => !selectedIds.includes(e.id)),
+        ...prev.filter((e) => selectedIds.includes(e.id)),
+      ]);
+      toast.info("Brought selected element(s) to front");
+    }, [selectedIds, setElements]);
+
+    const sendToBack = useCallback(() => {
+      if (selectedIds.length === 0) return;
+      setElements((prev) => [
+        ...prev.filter((e) => selectedIds.includes(e.id)),
+        ...prev.filter((e) => !selectedIds.includes(e.id)),
+      ]);
+      toast.info("Sent selected element(s) to back");
+    }, [selectedIds, setElements]);
+
+    const bringForward = useCallback(() => {
+      if (selectedIds.length === 0) return;
+      setElements((prev) => {
+        const next = [...prev];
+        for (let i = next.length - 2; i >= 0; i--) {
+          if (selectedIds.includes(next[i].id) && !selectedIds.includes(next[i + 1].id)) {
+            const temp = next[i];
+            next[i] = next[i + 1];
+            next[i + 1] = temp;
+          }
+        }
+        return next;
+      });
+    }, [selectedIds, setElements]);
+
+    const sendBackward = useCallback(() => {
+      if (selectedIds.length === 0) return;
+      setElements((prev) => {
+        const next = [...prev];
+        for (let i = 1; i < next.length; i++) {
+          if (selectedIds.includes(next[i].id) && !selectedIds.includes(next[i - 1].id)) {
+            const temp = next[i];
+            next[i] = next[i - 1];
+            next[i - 1] = temp;
+          }
+        }
+        return next;
+      });
+    }, [selectedIds, setElements]);
+
+    const duplicateSelected = useCallback(() => {
+      if (selectedIds.length === 0) return;
+      const current = elementsRef.current;
+      const toDuplicate = current.filter((e) => selectedIds.includes(e.id));
+      const duplicates = toDuplicate.map((el) => {
+        const translated = translateElement(el, 24, 24);
+        return {
+          ...translated,
+          id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        };
+      });
+      setElements((prev) => [...prev, ...duplicates]);
+      setSelectedIds(duplicates.map((d) => d.id));
+      setRedoStack([]);
+      toast.success(`Duplicated ${duplicates.length} object${duplicates.length > 1 ? "s" : ""}`);
+    }, [selectedIds, setElements]);
+
+    const deleteSelected = useCallback(() => {
+      if (selectedIds.length === 0) return;
+      const count = selectedIds.length;
+      setElements((prev) => prev.filter((e) => !selectedIds.includes(e.id)));
+      setSelectedIds([]);
+      setRedoStack([]);
+      toast.info(`Deleted ${count} object${count > 1 ? "s" : ""}`);
+    }, [selectedIds, setElements]);
+
+    const toggleLockSelected = useCallback(() => {
+      if (selectedIds.length === 0) return;
+      const current = elementsRef.current;
+      const currentlyAllLocked = current.filter((e) => selectedIds.includes(e.id)).every((e) => e.locked);
+      setElements((prev) =>
+        prev.map((e) => (selectedIds.includes(e.id) ? { ...e, locked: !currentlyAllLocked } : e))
+      );
+      toast.info(currentlyAllLocked ? "Unlocked object(s)" : "Locked object(s)");
+    }, [selectedIds, setElements]);
+
+    const toggleGroupSelected = useCallback(() => {
+      if (selectedIds.length < 2) {
+        toast.info("Select 2 or more elements to group them.");
+        return;
+      }
+      const current = elementsRef.current;
+      const selected = current.filter((e) => selectedIds.includes(e.id));
+      const isAlreadyGrouped = selected.every((e) => e.groupId && e.groupId === selected[0]?.groupId);
+      if (isAlreadyGrouped) {
+        setElements((prev) =>
+          prev.map((e) => (selectedIds.includes(e.id) ? { ...e, groupId: undefined } : e))
+        );
+        toast.info("Ungrouped elements");
+      } else {
+        const newGroupId = `grp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        setElements((prev) =>
+          prev.map((e) => (selectedIds.includes(e.id) ? { ...e, groupId: newGroupId } : e))
+        );
+        toast.success("Grouped elements together");
+      }
+    }, [selectedIds, setElements]);
+
+    const recolorSelected = useCallback(
+      (newColor: string) => {
+        setColor(newColor);
+        if (selectedIds.length > 0) {
+          setElements((prev) =>
+            prev.map((e) => (selectedIds.includes(e.id) ? { ...e, color: newColor } : e))
+          );
+        }
+      },
+      [selectedIds, setElements]
+    );
+
+    const restrokeSelected = useCallback(
+      (newWidth: number) => {
+        setStrokeWidth(newWidth);
+        if (selectedIds.length > 0) {
+          setElements((prev) =>
+            prev.map((e) => (selectedIds.includes(e.id) ? { ...e, width: newWidth } : e))
+          );
+        }
+      },
+      [selectedIds, setElements]
+    );
+
+    // Keyboard Shortcuts Hook
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+        if (tag === "input" || tag === "textarea" || (e.target as HTMLElement)?.isContentEditable) {
+          return;
+        }
+
+        if (e.key === "Delete" || e.key === "Backspace") {
+          if (selectedIdsRef.current.length > 0) {
+            e.preventDefault();
+            deleteSelected();
+          }
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === "d" || e.key === "D")) {
+          if (selectedIdsRef.current.length > 0) {
+            e.preventDefault();
+            duplicateSelected();
+          }
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
+          e.preventDefault();
+          setSelectedIds(elementsRef.current.map((el) => el.id));
+        } else if (e.key === "Escape") {
+          setSelectedIds([]);
+        } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+          if (selectedIdsRef.current.length > 0) {
+            e.preventDefault();
+            const step = e.shiftKey ? 10 : 2;
+            const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+            const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+            setElements((prev) =>
+              prev.map((el) => (selectedIdsRef.current.includes(el.id) ? translateElement(el, dx, dy) : el))
+            );
+          }
+        } else if (e.key === "v" || e.key === "V") {
+          setTool("select");
+        } else if (e.key === "p" || e.key === "P") {
+          setTool("pen");
+        } else if (e.key === "m" || e.key === "M") {
+          setTool("highlighter");
+        } else if (e.key === "l" || e.key === "L") {
+          setTool("laser");
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [deleteSelected, duplicateSelected, setElements]);
+
+    // Remote elements full sync listener
+    useEffect(() => {
+      if (!channel) return;
+      const handleRemoteSync = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (payload.pageIndex === activePageIndex && Array.isArray(payload.elements)) {
+          setElements(payload.elements);
+        }
+      };
+
+      channel.on?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteSync);
+      return () => {
+        channel.off?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteSync);
+      };
+    }, [channel, currentUserId, activePageIndex, setElements]);
+
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (readOnly || !canDraw) return;
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -590,6 +919,91 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         return;
       }
 
+      const currentElements = elementsRef.current;
+      const currentSelected = currentElements.filter((el) => selectedIdsRef.current.includes(el.id));
+
+      // 1. Check if clicking on an active selection handle (resize or rotate)
+      if (currentSelected.length > 0) {
+        const box = getElementsBoundingBox(currentSelected);
+        if (box) {
+          const handles = getBoundingBoxHandles(box);
+          const clickedHandle = hitTestHandle(handles, x, y, 10 / zoom);
+          if (clickedHandle) {
+            const isLocked = currentSelected.every((e) => e.locked);
+            if (!isLocked) {
+              dragActionRef.current = {
+                mode: clickedHandle.type === "rot" ? "rotate" : "resize",
+                handle: clickedHandle,
+                startX: x,
+                startY: y,
+                initialElements: currentSelected.map((el) => JSON.parse(JSON.stringify(el))),
+                origBox: box,
+              };
+              return;
+            }
+          }
+        }
+      }
+
+      // 2. Hit test existing elements (top-most first)
+      const hitEl = [...currentElements].reverse().find((el) => hitTestElement(el, x, y, 10 / zoom));
+
+      if (tool === "select") {
+        if (hitEl) {
+          const groupEls = hitEl.groupId
+            ? currentElements.filter((e) => e.groupId === hitEl.groupId)
+            : [hitEl];
+          const targetIds = groupEls.map((e) => e.id);
+
+          if (e.shiftKey) {
+            setSelectedIds((prev) =>
+              prev.some((id) => targetIds.includes(id))
+                ? prev.filter((id) => !targetIds.includes(id))
+                : [...prev, ...targetIds]
+            );
+          } else {
+            if (!selectedIdsRef.current.includes(hitEl.id)) {
+              setSelectedIds(targetIds);
+            }
+          }
+
+          if (!hitEl.locked) {
+            const effectiveSelected = currentElements.filter(
+              (e) => selectedIdsRef.current.includes(e.id) || targetIds.includes(e.id)
+            );
+            dragActionRef.current = {
+              mode: "move",
+              startX: x,
+              startY: y,
+              initialElements: effectiveSelected.map((el) => JSON.parse(JSON.stringify(el))),
+              origBox: getElementsBoundingBox(effectiveSelected) || undefined,
+            };
+          }
+          return;
+        } else {
+          // Clicked empty space with Select tool
+          if (!e.shiftKey) {
+            setSelectedIds([]);
+          }
+          dragActionRef.current = {
+            mode: "marquee",
+            startX: x,
+            startY: y,
+            initialElements: [],
+          };
+          setMarqueeBox({ startX: x, startY: y, currentX: x, currentY: y });
+          return;
+        }
+      }
+
+      // 3. Eraser tool
+      if (tool === "eraser") {
+        eraseElementsAt(x, y, 20);
+        return;
+      }
+
+      // 4. Drawing Tools (pen, highlighter, line, arrow, rect, circle)
+      setSelectedIds([]);
       isDrawingRef.current = true;
       const newElId = `el-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -612,9 +1026,6 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           endX: x,
           endY: y,
         };
-      } else if (tool === "eraser") {
-        // Erase elements within radius
-        eraseElementsAt(x, y, 20);
       }
     };
 
@@ -630,47 +1041,226 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         return;
       }
 
-      if (!isDrawingRef.current || !activeElementRef.current) return;
+      // 1. Handle Active Drag Action (Move, Resize, Rotate, Marquee)
+      if (dragActionRef.current) {
+        const action = dragActionRef.current;
 
-      const current = activeElementRef.current;
-      if (current.type === "pen" || current.type === "highlighter") {
-        current.points?.push({ x, y });
-        redrawCanvas();
-        // Also draw live active element preview
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            const dpr = Math.max(1, window.devicePixelRatio || 1);
-            ctx.save();
-            ctx.scale(dpr * zoom, dpr * zoom);
-            drawElement(ctx, current);
-            ctx.restore();
-          }
+        if (action.mode === "move") {
+          const dx = x - action.startX;
+          const dy = y - action.startY;
+          const moved = action.initialElements.map((el) => translateElement(el, dx, dy));
+          const movedMap = new Map(moved.map((m) => [m.id, m]));
+          setElements((prev) => prev.map((el) => movedMap.get(el.id) || el));
+          redrawCanvas();
+          return;
         }
-      } else if (["line", "arrow", "rect", "circle"].includes(current.type)) {
-        current.endX = x;
-        current.endY = y;
-        redrawCanvas();
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            const dpr = Math.max(1, window.devicePixelRatio || 1);
-            ctx.save();
-            ctx.scale(dpr * zoom, dpr * zoom);
-            drawElement(ctx, current);
-            ctx.restore();
+
+        if (action.mode === "resize" && action.origBox && action.handle) {
+          const orig = action.origBox;
+          let newMinX = orig.minX;
+          let newMinY = orig.minY;
+          let newMaxX = orig.maxX;
+          let newMaxY = orig.maxY;
+
+          switch (action.handle.type) {
+            case "nw":
+              newMinX = x;
+              newMinY = y;
+              break;
+            case "n":
+              newMinY = y;
+              break;
+            case "ne":
+              newMaxX = x;
+              newMinY = y;
+              break;
+            case "e":
+              newMaxX = x;
+              break;
+            case "se":
+              newMaxX = x;
+              newMaxY = y;
+              break;
+            case "s":
+              newMaxY = y;
+              break;
+            case "sw":
+              newMinX = x;
+              newMaxY = y;
+              break;
+            case "w":
+              newMinX = x;
+              break;
           }
+
+          if (newMaxX - newMinX < 15) {
+            if (action.handle.type.includes("w")) newMinX = newMaxX - 15;
+            else newMaxX = newMinX + 15;
+          }
+          if (newMaxY - newMinY < 15) {
+            if (action.handle.type.includes("n")) newMinY = newMaxY - 15;
+            else newMaxY = newMinY + 15;
+          }
+
+          if (e.shiftKey && orig.width > 0 && orig.height > 0) {
+            const aspect = orig.width / orig.height;
+            const curW = newMaxX - newMinX;
+            const curH = newMaxY - newMinY;
+            if (curW / curH > aspect) {
+              const adjH = curW / aspect;
+              if (action.handle.type.includes("n")) newMinY = newMaxY - adjH;
+              else newMaxY = newMinY + adjH;
+            } else {
+              const adjW = curH * aspect;
+              if (action.handle.type.includes("w")) newMinX = newMaxX - adjW;
+              else newMaxX = newMinX + adjW;
+            }
+          }
+
+          const newBox: BoundingBox = {
+            minX: newMinX,
+            minY: newMinY,
+            maxX: newMaxX,
+            maxY: newMaxY,
+            width: newMaxX - newMinX,
+            height: newMaxY - newMinY,
+            centerX: (newMinX + newMaxX) / 2,
+            centerY: (newMinY + newMaxY) / 2,
+          };
+
+          const scaled = action.initialElements.map((el) => scaleElement(el, orig, newBox));
+          const scaledMap = new Map(scaled.map((s) => [s.id, s]));
+          setElements((prev) => prev.map((el) => scaledMap.get(el.id) || el));
+          redrawCanvas();
+          return;
         }
-      } else if (tool === "eraser") {
-        eraseElementsAt(x, y, 20);
+
+        if (action.mode === "rotate" && action.origBox) {
+          const cx = action.origBox.centerX;
+          const cy = action.origBox.centerY;
+          const initAngle = Math.atan2(action.startY - cy, action.startX - cx);
+          const currAngle = Math.atan2(y - cy, x - cx);
+          let delta = currAngle - initAngle;
+
+          if (e.shiftKey) {
+            const step = Math.PI / 12;
+            delta = Math.round(delta / step) * step;
+          }
+
+          const rotated = action.initialElements.map((el) => ({
+            ...el,
+            rotation: (el.rotation || 0) + delta,
+          }));
+          const rotatedMap = new Map(rotated.map((r) => [r.id, r]));
+          setElements((prev) => prev.map((el) => rotatedMap.get(el.id) || el));
+          redrawCanvas();
+          return;
+        }
+
+        if (action.mode === "marquee") {
+          setMarqueeBox({
+            startX: action.startX,
+            startY: action.startY,
+            currentX: x,
+            currentY: y,
+          });
+          const mBox = {
+            minX: Math.min(action.startX, x),
+            minY: Math.min(action.startY, y),
+            maxX: Math.max(action.startX, x),
+            maxY: Math.max(action.startY, y),
+          };
+          const hits = elementsRef.current
+            .filter((el) => boxesIntersect(getElementBoundingBox(el), mBox))
+            .map((el) => el.id);
+          setSelectedIds(hits);
+          redrawCanvas();
+          return;
+        }
       }
+
+      // 2. Handle Drawing Active Element
+      if (isDrawingRef.current && activeElementRef.current) {
+        const current = activeElementRef.current;
+        if (current.type === "pen" || current.type === "highlighter") {
+          current.points?.push({ x, y });
+          redrawCanvas();
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              const dpr = Math.max(1, window.devicePixelRatio || 1);
+              ctx.save();
+              ctx.scale(dpr * zoom, dpr * zoom);
+              drawElement(ctx, current);
+              ctx.restore();
+            }
+          }
+        } else if (["line", "arrow", "rect", "circle"].includes(current.type)) {
+          current.endX = x;
+          current.endY = y;
+          redrawCanvas();
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              const dpr = Math.max(1, window.devicePixelRatio || 1);
+              ctx.save();
+              ctx.scale(dpr * zoom, dpr * zoom);
+              drawElement(ctx, current);
+              ctx.restore();
+            }
+          }
+        }
+        return;
+      }
+
+      if (tool === "eraser" && e.buttons > 0) {
+        eraseElementsAt(x, y, 20);
+        return;
+      }
+
+      // 3. Hover Feedback for Handles and Objects
+      if (selectedIdsRef.current.length > 0) {
+        const selectedEls = elementsRef.current.filter((e) => selectedIdsRef.current.includes(e.id));
+        const box = getElementsBoundingBox(selectedEls);
+        if (box) {
+          const handles = getBoundingBoxHandles(box);
+          const handle = hitTestHandle(handles, x, y, 10 / zoom);
+          setHoveredHandle(handle);
+          return;
+        }
+      }
+      setHoveredHandle(null);
     };
 
     const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (tool === "laser") {
         clearLaser();
+        return;
+      }
+
+      // Finalize Drag Action
+      if (dragActionRef.current) {
+        const action = dragActionRef.current;
+        dragActionRef.current = null;
+        setMarqueeBox(null);
+
+        if (action.mode === "move" || action.mode === "resize" || action.mode === "rotate") {
+          setRedoStack([]);
+          if (channel) {
+            try {
+              channel.send({
+                type: "broadcast",
+                event: "whiteboard_elements_sync",
+                payload: { elements: elementsRef.current, pageIndex: activePageIndex, senderId: currentUserId },
+              });
+            } catch {
+              // Non-blocking
+            }
+          }
+        }
+        redrawCanvas();
         return;
       }
 
@@ -702,8 +1292,14 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       if (tool === "laser") {
         clearLaser();
       }
+      if (dragActionRef.current) {
+        dragActionRef.current = null;
+        setMarqueeBox(null);
+        redrawCanvas();
+      }
       isDrawingRef.current = false;
       activeElementRef.current = null;
+      setHoveredHandle(null);
     };
 
     // Erase strokes intersecting target point
@@ -996,6 +1592,21 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             <>
               {/* Group B: Drawing Tools Center Strip */}
               <div className="flex flex-wrap items-center gap-1">
+                {/* Select & Transform Tool (Stage 2) */}
+                <button
+                  type="button"
+                  onClick={() => setTool("select")}
+                  className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    tool === "select"
+                      ? "bg-[#1356E8] text-white shadow-md ring-1 ring-blue-400 font-black"
+                      : "text-slate-300 hover:bg-white/10"
+                  }`}
+                  title="Select, Move, Scale & Rotate Objects (V)"
+                >
+                  <span>↖️</span>
+                  <span className="hidden sm:inline">Select</span>
+                </button>
+
                 {/* Pen */}
                 <button
                   type="button"
@@ -1005,7 +1616,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       ? "bg-[#1356E8] text-white shadow-md ring-1 ring-blue-400"
                       : "text-slate-300 hover:bg-white/10"
                   }`}
-                  title="Freehand Vector Pen"
+                  title="Freehand Vector Pen (P)"
                 >
                   <span>✏️</span>
                   <span className="hidden sm:inline">Pen</span>
@@ -1318,7 +1929,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               } ${getAspectRatioClass()}`}
               style={{
                 cursor:
-                  tool === "laser"
+                  hoveredHandle
+                    ? hoveredHandle.cursor
+                    : tool === "select"
+                    ? "default"
+                    : tool === "laser"
                     ? 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'><text y=\'24\' font-size=\'24\'>✍️</text></svg>") 4 28, crosshair'
                     : tool === "eraser"
                     ? "crosshair"
@@ -1335,6 +1950,129 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 onPointerLeave={handlePointerLeave}
                 className="w-full h-full touch-none block"
               />
+
+              {/* Floating Contextual Action Bar for Selected Objects (Stage 2) */}
+              {selectedIds.length > 0 && !readOnly && canDraw && (() => {
+                const currentElements = elementsRef.current || [];
+                const selectedEls = currentElements.filter((e) => selectedIds.includes(e.id));
+                const selBox = getElementsBoundingBox(selectedEls);
+                if (!selBox) return null;
+                const isAllLocked = selectedEls.every((e) => e.locked);
+                const hasGroup = selectedEls.some((e) => e.groupId);
+
+                return (
+                  <div
+                    className="absolute z-30 flex flex-wrap items-center gap-1 rounded-2xl border border-blue-500/30 bg-[#0B1536]/95 px-2.5 py-1.5 shadow-2xl backdrop-blur-md animate-in fade-in duration-150"
+                    style={{
+                      left: `${Math.max(16, Math.min((selBox.centerX * zoom) - 150, (boardSurfaceRef.current?.clientWidth || 600) - 340))}px`,
+                      top: `${Math.max(12, (selBox.minY * zoom) - 52)}px`,
+                    }}
+                  >
+                    {/* Badge: Count of selected items */}
+                    <span className="rounded-lg bg-[#1356E8]/30 border border-blue-400/30 px-2 py-0.5 text-[10px] font-black text-blue-200">
+                      {selectedEls.length} selected
+                    </span>
+
+                    <div className="h-4 w-[1px] bg-white/15 mx-0.5" />
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={deleteSelected}
+                      className="rounded-lg p-1.5 text-xs text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition"
+                      title="Delete selected (Del / Backspace)"
+                    >
+                      🗑️
+                    </button>
+
+                    {/* Duplicate */}
+                    <button
+                      type="button"
+                      onClick={duplicateSelected}
+                      className="rounded-lg p-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition"
+                      title="Duplicate selected (Ctrl+D)"
+                    >
+                      📑
+                    </button>
+
+                    {/* Lock / Unlock */}
+                    <button
+                      type="button"
+                      onClick={toggleLockSelected}
+                      className={`rounded-lg p-1.5 text-xs transition ${
+                        isAllLocked ? "bg-amber-500/20 text-amber-300 font-bold" : "text-slate-300 hover:bg-white/10"
+                      }`}
+                      title={isAllLocked ? "Unlock object(s)" : "Lock object(s)"}
+                    >
+                      {isAllLocked ? "🔒" : "🔓"}
+                    </button>
+
+                    {/* Group / Ungroup */}
+                    {(selectedEls.length >= 2 || hasGroup) && (
+                      <button
+                        type="button"
+                        onClick={toggleGroupSelected}
+                        className="rounded-lg p-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition"
+                        title={hasGroup ? "Ungroup elements" : "Group elements together"}
+                      >
+                        {hasGroup ? "⛓️" : "🔗"}
+                      </button>
+                    )}
+
+                    <div className="h-4 w-[1px] bg-white/15 mx-0.5" />
+
+                    {/* Z-Index Controls */}
+                    <button
+                      type="button"
+                      onClick={bringForward}
+                      className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
+                      title="Bring Forward"
+                    >
+                      🔼
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendBackward}
+                      className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
+                      title="Send Backward"
+                    >
+                      🔽
+                    </button>
+                    <button
+                      type="button"
+                      onClick={bringToFront}
+                      className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
+                      title="Bring to Front"
+                    >
+                      ⏫
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendToBack}
+                      className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
+                      title="Send to Back"
+                    >
+                      ⏬
+                    </button>
+
+                    <div className="h-4 w-[1px] bg-white/15 mx-0.5" />
+
+                    {/* Quick Recoloring Dots */}
+                    <div className="flex items-center gap-1 pl-0.5">
+                      {PRESET_COLORS.slice(0, 5).map((c) => (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() => recolorSelected(c.value)}
+                          className="h-3.5 w-3.5 rounded-full border border-white/20 hover:scale-125 transition"
+                          style={{ backgroundColor: c.value }}
+                          title={`Recolor to ${c.name}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Read-Only Badge for Students */}
               {(readOnly || !canDraw) && (
