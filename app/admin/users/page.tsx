@@ -43,7 +43,7 @@ export default function AdminUsersPage() {
       const admin = await getAdminSession();
       if (!active) return;
       if (!admin) {
-        router.replace("/account");
+        router.replace("/login");
         return;
       }
       if (admin.role !== "super_admin") {
