@@ -32,6 +32,7 @@ export const ADMIN_VIP_ENTITLEMENTS: PlanEntitlements = {
   certificates_issued: true,
   calculator_type: "scientific",
   vip_support: true,
+  stem_studio_access: true,
 };
 
 export const ADMIN_VIP_PLAN: SubscriptionPlan = {

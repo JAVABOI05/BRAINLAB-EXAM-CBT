@@ -396,6 +396,11 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all text-cyan-300 font-semibold" href="/classroom/stem">
+                  STEM Virtual Labs
+                </Link>
+              </li>
+              <li>
                 <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/ai-learning">
                   AI Study Studio
                 </Link>

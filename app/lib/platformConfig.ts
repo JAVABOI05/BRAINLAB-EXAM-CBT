@@ -21,6 +21,7 @@ export interface PlanEntitlements {
   certificates_issued: boolean; // Verified digital certificates upon score threshold
   calculator_type: "none" | "standard" | "scientific"; // Allowed exam calculator type
   vip_support: boolean; // 24/7 priority resolution and tutor direct dispatch
+  stem_studio_access?: boolean; // Interactive STEM simulations & formula lab access
 }
 
 export interface SubscriptionPlan {
@@ -46,6 +47,7 @@ export interface FeatureFlags {
   calculator_enabled: boolean;
   certificates_enabled: boolean;
   negative_marking: boolean;
+  stem_studio_enabled?: boolean;
 }
 
 export interface ExamSettings {
@@ -250,6 +252,7 @@ export const DEFAULT_FREE_ENTITLEMENTS: PlanEntitlements = {
   certificates_issued: false,
   calculator_type: "standard",
   vip_support: false,
+  stem_studio_access: true,
 };
 
 export function normalizePlanEntitlements(
@@ -445,6 +448,7 @@ const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   calculator_enabled: true,
   certificates_enabled: true,
   negative_marking: false,
+  stem_studio_enabled: true,
 };
 
 const DEFAULT_EXAM_SETTINGS: ExamSettings = {

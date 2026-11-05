@@ -13,6 +13,7 @@ const INSTRUCTOR_NAV_LINKS = [
   { href: "/tutor", label: "My Subjects", icon: "📖" },
   { href: "/calendar", label: "Timetable & Classes", icon: "📅" },
   { href: "/classroom/studio", label: "Lesson Studio", icon: "🎬" },
+  { href: "/classroom/stem", label: "STEM Studio", icon: "🧪" },
   { href: "/tutor/assignments", label: "Assignments", icon: "📝" },
   { href: "/recordings", label: "Recordings", icon: "🎥" },
   { href: "/messages", label: "Learner Chat", icon: "💬" },

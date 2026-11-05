@@ -189,6 +189,12 @@ export const ADMIN_PERMISSION_KEYS = [
   "question_bank.link_main_bank",
   "competition.manage_roles",
   "competition.view_audit_logs",
+  // STEM Studio permissions
+  "stem.resource.view",
+  "stem.resource.manage",
+  "stem.resource.publish",
+  "stem.resource.review",
+  "stem.experiments.grade",
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSION_KEYS)[number];

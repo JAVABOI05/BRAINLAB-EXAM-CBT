@@ -593,6 +593,14 @@ function ClassroomLobbyContent() {
                   </Link>
 
                   <Link
+                    href="/classroom/stem"
+                    className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 px-5 py-3 text-xs font-bold text-cyan-200 transition active:scale-95 backdrop-blur"
+                  >
+                    <span>🧪</span>
+                    <span>STEM Studio &amp; Labs</span>
+                  </Link>
+
+                  <Link
                     href="/classroom/library"
                     className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition active:scale-95 backdrop-blur"
                   >
