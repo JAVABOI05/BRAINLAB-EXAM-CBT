@@ -17,10 +17,13 @@ import {
   GeneticsPunnettAdapter,
   GeneticsState,
   DEFAULT_GENETICS_STATE,
+  LogicGatesAdapter,
+  LogicGatesState,
+  DEFAULT_LOGIC_GATES_STATE,
   type StemSynchronizedEvent,
 } from "./stemAdapter";
 
-export type StemSimType = "quadratic" | "projectile" | "circuit" | "titration" | "genetics";
+export type StemSimType = "quadratic" | "projectile" | "circuit" | "titration" | "genetics" | "logic";
 
 export interface StemLiveboardPresenterProps {
   channel?: any;
@@ -44,12 +47,16 @@ export default function StemLiveboardPresenter({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [activeSim, setActiveSim] = useState<StemSimType>(initialSim);
 
+  // Interaction Mode: Mode A (Demonstration / Tutor Only) vs Mode B (Guided / Students Can Manipulate)
+  const [interactionMode, setInteractionMode] = useState<"demonstration" | "guided">("demonstration");
+
   // Active Simulation Adapter References
   const quadAdapterRef = useRef<QuadraticGraphAdapter | null>(null);
   const projAdapterRef = useRef<ProjectileMotionAdapter | null>(null);
   const circuitAdapterRef = useRef<OhmsLawCircuitAdapter | null>(null);
   const titrAdapterRef = useRef<AcidBaseTitrationAdapter | null>(null);
   const genAdapterRef = useRef<GeneticsPunnettAdapter | null>(null);
+  const logicAdapterRef = useRef<LogicGatesAdapter | null>(null);
 
   // Local state for re-rendering
   const [quadState, setQuadState] = useState<QuadraticState>({ ...DEFAULT_QUADRATIC_STATE });
@@ -57,6 +64,7 @@ export default function StemLiveboardPresenter({
   const [circuitState, setCircuitState] = useState<OhmsLawState>({ ...DEFAULT_OHMS_LAW_STATE });
   const [titrState, setTitrState] = useState<TitrationState>({ ...DEFAULT_TITRATION_STATE });
   const [genState, setGenState] = useState<GeneticsState>({ ...DEFAULT_GENETICS_STATE });
+  const [logicState, setLogicState] = useState<LogicGatesState>({ ...DEFAULT_LOGIC_GATES_STATE });
 
   const lastBroadcastRef = useRef<number>(0);
 
@@ -82,17 +90,23 @@ export default function StemLiveboardPresenter({
     gen.init(DEFAULT_GENETICS_STATE, isHost);
     genAdapterRef.current = gen;
 
+    const logic = new LogicGatesAdapter();
+    logic.init(DEFAULT_LOGIC_GATES_STATE, isHost);
+    logicAdapterRef.current = logic;
+
     return () => {
       quad.destroy();
       proj.destroy();
       circ.destroy();
       titr.destroy();
       gen.destroy();
+      logic.destroy();
       quadAdapterRef.current = null;
       projAdapterRef.current = null;
       circuitAdapterRef.current = null;
       titrAdapterRef.current = null;
       genAdapterRef.current = null;
+      logicAdapterRef.current = null;
     };
   }, [isHost]);
 
@@ -109,6 +123,8 @@ export default function StemLiveboardPresenter({
         return titrAdapterRef.current;
       case "genetics":
         return genAdapterRef.current;
+      case "logic":
+        return logicAdapterRef.current;
     }
   }, [activeSim]);
 
@@ -122,12 +138,14 @@ export default function StemLiveboardPresenter({
     if (!ctx) return;
 
     adapter.renderToCanvas(ctx, canvas.width, canvas.height, theme);
-  }, [activeSim, quadState, projState, circuitState, titrState, genState, theme, getActiveAdapter]);
+  }, [activeSim, quadState, projState, circuitState, titrState, genState, logicState, theme, getActiveAdapter]);
 
   // Throttled Broadcast of Parameter Updates (20fps = 50ms)
+  const canControl = isHost || interactionMode === "guided";
+
   const broadcastParamChange = useCallback(
     (sim: StemSimType, updates: Record<string, any>) => {
-      if (!isHost || !channel) return;
+      if (!channel || (!isHost && interactionMode !== "guided")) return;
       const adapter = getActiveAdapter();
       if (!adapter) return;
 
@@ -149,7 +167,7 @@ export default function StemLiveboardPresenter({
         }
       }
     },
-    [channel, currentUserId, isHost, getActiveAdapter]
+    [channel, currentUserId, isHost, interactionMode, getActiveAdapter]
   );
 
   // Switch Simulation (Host Authoritative)
@@ -164,6 +182,24 @@ export default function StemLiveboardPresenter({
           payload: { sim, senderId: currentUserId },
         });
       } catch {}
+    }
+  };
+
+  // Toggle Mode A (Tutor Only) vs Mode B (Guided Student Interaction)
+  const handleToggleMode = () => {
+    if (!isHost) return;
+    const nextMode = interactionMode === "demonstration" ? "guided" : "demonstration";
+    setInteractionMode(nextMode);
+    if (channel) {
+      try {
+        channel.send({
+          type: "broadcast",
+          event: "stem_mode_change",
+          payload: { mode: nextMode, senderId: currentUserId },
+        });
+      } catch (err) {
+        console.warn("[StemPresenter] Failed to broadcast mode change:", err);
+      }
     }
   };
 
@@ -199,6 +235,10 @@ export default function StemLiveboardPresenter({
         if (genAdapterRef.current.applyEvent(payload)) {
           setGenState(genAdapterRef.current.getSnapshot());
         }
+      } else if (sim === "logic" && logicAdapterRef.current) {
+        if (logicAdapterRef.current.applyEvent(payload)) {
+          setLogicState(logicAdapterRef.current.getSnapshot());
+        }
       }
     };
 
@@ -209,9 +249,17 @@ export default function StemLiveboardPresenter({
       }
     };
 
+    const handleRemoteModeChange = ({ payload }: { payload: any }) => {
+      if (!payload || !payload.mode) return;
+      setInteractionMode(payload.mode);
+    };
+
     const handleRemoteStemSnapshot = ({ payload }: { payload: any }) => {
       if (!payload || !payload.sim) return;
       setActiveSim(payload.sim);
+      if (payload.mode) {
+        setInteractionMode(payload.mode);
+      }
       if (payload.sim === "quadratic" && quadAdapterRef.current) {
         quadAdapterRef.current.init(payload.snapshot, isHost);
         setQuadState(quadAdapterRef.current.getSnapshot());
@@ -227,6 +275,9 @@ export default function StemLiveboardPresenter({
       } else if (payload.sim === "genetics" && genAdapterRef.current) {
         genAdapterRef.current.init(payload.snapshot, isHost);
         setGenState(genAdapterRef.current.getSnapshot());
+      } else if (payload.sim === "logic" && logicAdapterRef.current) {
+        logicAdapterRef.current.init(payload.snapshot, isHost);
+        setLogicState(logicAdapterRef.current.getSnapshot());
       }
     };
 
@@ -240,6 +291,7 @@ export default function StemLiveboardPresenter({
               event: "stem_snapshot",
               payload: {
                 sim: activeSim,
+                mode: interactionMode,
                 snapshot: adapter.getSnapshot(),
                 sequenceNumber: (adapter as any).getSequenceNumber?.() || 0,
               },
@@ -251,6 +303,7 @@ export default function StemLiveboardPresenter({
 
     channel.on?.("broadcast", { event: "stem_event" }, handleRemoteStemEvent);
     channel.on?.("broadcast", { event: "stem_sim_switch" }, handleRemoteSimSwitch);
+    channel.on?.("broadcast", { event: "stem_mode_change" }, handleRemoteModeChange);
     channel.on?.("broadcast", { event: "stem_snapshot" }, handleRemoteStemSnapshot);
     channel.on?.("broadcast", { event: "stem_request_sync" }, handleRemoteStemRequestSync);
 
@@ -267,10 +320,11 @@ export default function StemLiveboardPresenter({
     return () => {
       channel.off?.("broadcast", { event: "stem_event" }, handleRemoteStemEvent);
       channel.off?.("broadcast", { event: "stem_sim_switch" }, handleRemoteSimSwitch);
+      channel.off?.("broadcast", { event: "stem_mode_change" }, handleRemoteModeChange);
       channel.off?.("broadcast", { event: "stem_snapshot" }, handleRemoteStemSnapshot);
       channel.off?.("broadcast", { event: "stem_request_sync" }, handleRemoteStemRequestSync);
     };
-  }, [channel, currentUserId, isHost, activeSim, getActiveAdapter]);
+  }, [channel, currentUserId, isHost, activeSim, interactionMode, getActiveAdapter]);
 
   // Export current simulation as Vector SVG for Whiteboard Stamping
   const handleExportSnapshot = () => {
@@ -296,18 +350,43 @@ export default function StemLiveboardPresenter({
               <h2 className="text-sm sm:text-base font-black text-white">
                 STEM Interactive Simulation Lab
               </h2>
-              <span className="rounded-md bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
-                Mode A Synced
-              </span>
+              {interactionMode === "guided" ? (
+                <span className="rounded-md bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300 flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Mode B (Guided Student Interaction)
+                </span>
+              ) : (
+                <span className="rounded-md bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
+                  Mode A (Tutor Authoritative)
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-slate-400">
-              Live authoring, parameter modeling, and real-time student viewport broadcast
+              {interactionMode === "guided"
+                ? "Students can freely manipulate sliders, test hypotheses, and verify mathematical behaviors."
+                : "Live authoring, parameter modeling, and real-time student viewport broadcast."}
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 self-end sm:self-auto">
+          {/* Tutor Mode Toggle */}
+          {isHost && (
+            <button
+              type="button"
+              onClick={handleToggleMode}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                interactionMode === "guided"
+                  ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                  : "bg-blue-600/30 hover:bg-blue-600/50 text-cyan-300 border border-blue-400/30"
+              }`}
+              title="Toggle student interaction permissions"
+            >
+              <span>{interactionMode === "guided" ? "🔓 Mode B: Active" : "🔒 Mode A: Locked"}</span>
+            </button>
+          )}
+
           {isHost && onSnapshotToBoard && (
             <button
               type="button"
@@ -340,6 +419,7 @@ export default function StemLiveboardPresenter({
             { id: "circuit", label: "⚡ Ohm's Law Circuit", cat: "Physics" },
             { id: "titration", label: "🧪 Acid-Base Titration", cat: "Chemistry" },
             { id: "genetics", label: "🧬 Punnett Square", cat: "Biology" },
+            { id: "logic", label: "🔲 Logic Gates & Circuits", cat: "Engineering" },
           ] as const
         ).map((sim) => (
           <button
@@ -363,22 +443,29 @@ export default function StemLiveboardPresenter({
         ))}
       </div>
 
-      {/* Canvas Surface Area */}
-      <div className="my-auto w-full max-w-4xl mx-auto flex flex-col items-center">
-        <div className="relative rounded-2xl border border-white/15 bg-[#070d1e] overflow-hidden shadow-2xl flex flex-col items-center w-full">
-          <canvas
-            ref={canvasRef}
-            width={720}
-            height={380}
-            className="w-full max-h-[380px] object-contain block"
-          />
-        </div>
+      {/* Main Canvas Viewport */}
+      <div className="w-full max-w-4xl mx-auto flex-1 min-h-[300px] sm:min-h-[380px] relative flex items-center justify-center p-2">
+        <canvas
+          ref={canvasRef}
+          width={720}
+          height={400}
+          className="w-full h-auto max-h-[400px] rounded-2xl border border-white/10 bg-[#070d1e] shadow-2xl object-contain"
+        />
       </div>
 
-      {/* Authoritative Control Panel (Host Only) */}
-      <div className="w-full max-w-4xl mx-auto pt-2">
-        {isHost ? (
-          <div className="rounded-2xl border border-white/15 bg-[#0B1536] p-4 shadow-xl space-y-3">
+      {/* Active Control Panel (Available to Host in Mode A, or to All in Mode B) */}
+      <div className="w-full max-w-4xl mx-auto pt-3">
+        {canControl ? (
+          <div className="rounded-2xl border border-white/10 bg-[#0B1536]/90 p-4 space-y-4">
+            {!isHost && interactionMode === "guided" && (
+              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 text-[11px] text-emerald-300 flex items-center gap-2">
+                <span>✨</span>
+                <span>
+                  <strong>Mode B Active:</strong> Your tutor enabled guided interaction. Adjust sliders and observe real-time circuit and mathematical changes!
+                </span>
+              </div>
+            )}
+
             {/* Quadratic Controls */}
             {activeSim === "quadratic" && (
               <div className="space-y-2">
@@ -387,13 +474,12 @@ export default function StemLiveboardPresenter({
                   <button
                     type="button"
                     onClick={() => {
-                      const reset = { ...DEFAULT_QUADRATIC_STATE };
-                      setQuadState(reset);
-                      broadcastParamChange("quadratic", reset);
+                      setQuadState(DEFAULT_QUADRATIC_STATE);
+                      broadcastParamChange("quadratic", DEFAULT_QUADRATIC_STATE);
                     }}
-                    className="text-[11px] text-cyan-400 hover:underline"
+                    className="text-cyan-400 hover:underline text-[11px]"
                   >
-                    Reset (x² - 2x - 3)
+                    Reset Defaults
                   </button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -404,12 +490,12 @@ export default function StemLiveboardPresenter({
                     </div>
                     <input
                       type="range"
-                      min={-3}
-                      max={3}
-                      step={0.25}
+                      min={-4}
+                      max={4}
+                      step={0.5}
                       value={quadState.a}
                       onChange={(e) => {
-                        const val = Number(e.target.value) || 0.25;
+                        const val = Number(e.target.value) || 0.5;
                         setQuadState((p) => ({ ...p, a: val }));
                         broadcastParamChange("quadratic", { a: val });
                       }}
@@ -418,7 +504,7 @@ export default function StemLiveboardPresenter({
                   </div>
                   <div>
                     <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-slate-400">b (linear shift):</span>
+                      <span className="text-slate-400">b (linear slope):</span>
                       <span className="text-cyan-300 font-bold">{quadState.b}</span>
                     </div>
                     <input
@@ -442,8 +528,8 @@ export default function StemLiveboardPresenter({
                     </div>
                     <input
                       type="range"
-                      min={-6}
-                      max={6}
+                      min={-8}
+                      max={8}
                       step={0.5}
                       value={quadState.c}
                       onChange={(e) => {
@@ -462,33 +548,30 @@ export default function StemLiveboardPresenter({
             {activeSim === "projectile" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                  <span>Projectile Parameters: Launch Velocity &amp; Angle</span>
+                  <span>Projectile Parameters (Kinematics & Gravity)</span>
                   <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className="text-slate-400">Gravity:</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProjState((p) => ({ ...p, gravity: 9.8 }));
-                        broadcastParamChange("projectile", { gravity: 9.8 });
-                      }}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        projState.gravity === 9.8 ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
-                      }`}
-                    >
-                      Earth (9.8)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProjState((p) => ({ ...p, gravity: 1.62 }));
-                        broadcastParamChange("projectile", { gravity: 1.62 });
-                      }}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        projState.gravity === 1.62 ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
-                      }`}
-                    >
-                      Moon (1.62)
-                    </button>
+                    <span className="text-slate-400">Environment:</span>
+                    {(
+                      [
+                        { label: "Earth (9.8m/s²)", g: 9.8 },
+                        { label: "Moon (1.62m/s²)", g: 1.62 },
+                        { label: "Mars (3.71m/s²)", g: 3.71 },
+                      ] as const
+                    ).map((env) => (
+                      <button
+                        key={env.label}
+                        type="button"
+                        onClick={() => {
+                          setProjState((p) => ({ ...p, gravity: env.g }));
+                          broadcastParamChange("projectile", { gravity: env.g });
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          projState.gravity === env.g ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
+                        }`}
+                      >
+                        {env.label.split(" ")[0]}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -672,31 +755,20 @@ export default function StemLiveboardPresenter({
                     <button
                       type="button"
                       onClick={() => {
-                        const val = Math.max(0, titrState.titrantAddedMl - 5);
-                        setTitrState((p) => ({ ...p, titrantAddedMl: val }));
-                        broadcastParamChange("titration", { titrantAddedMl: val });
+                        const next = Math.min(50, titrState.titrantAddedMl + 1);
+                        setTitrState((p) => ({ ...p, titrantAddedMl: next }));
+                        broadcastParamChange("titration", { titrantAddedMl: next });
                       }}
                       className="px-2 py-1 rounded bg-white/10 text-xs font-mono hover:bg-white/20"
                     >
-                      -5 mL
+                      +1 mL
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        const val = Math.min(50, titrState.titrantAddedMl + 1);
-                        setTitrState((p) => ({ ...p, titrantAddedMl: val }));
-                        broadcastParamChange("titration", { titrantAddedMl: val });
-                      }}
-                      className="px-2 py-1 rounded bg-white/10 text-xs font-mono hover:bg-white/20"
-                    >
-                      +1 mL (Dropwise)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const val = Math.min(50, titrState.titrantAddedMl + 5);
-                        setTitrState((p) => ({ ...p, titrantAddedMl: val }));
-                        broadcastParamChange("titration", { titrantAddedMl: val });
+                        const next = Math.min(50, titrState.titrantAddedMl + 5);
+                        setTitrState((p) => ({ ...p, titrantAddedMl: next }));
+                        broadcastParamChange("titration", { titrantAddedMl: next });
                       }}
                       className="px-2 py-1 rounded bg-white/10 text-xs font-mono hover:bg-white/20"
                     >
@@ -787,6 +859,74 @@ export default function StemLiveboardPresenter({
                       ))}
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Boolean Logic Gates Controls */}
+            {activeSim === "logic" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>Boolean Logic Gate & Binary Input Signals</span>
+                  <span className="text-[11px] text-emerald-400 font-mono">
+                    Output Q = {logicAdapterRef.current?.getTelemetry()?.outputQ ?? 0}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400 font-bold mr-1">Gate:</span>
+                  {(["AND", "OR", "NOT", "NAND", "NOR", "XOR"] as const).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => {
+                        setLogicState((p) => ({ ...p, gateType: g }));
+                        broadcastParamChange("logic", { gateType: g });
+                      }}
+                      className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition ${
+                        logicState.gateType === g
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                          : "bg-white/10 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-6 pt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-slate-400">Input A:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = logicState.inputA === 1 ? 0 : 1;
+                        setLogicState((p) => ({ ...p, inputA: next }));
+                        broadcastParamChange("logic", { inputA: next });
+                      }}
+                      className={`w-12 py-1 rounded text-xs font-mono font-bold transition ${
+                        logicState.inputA === 1 ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"
+                      }`}
+                    >
+                      {logicState.inputA === 1 ? "1 (HIGH)" : "0 (LOW)"}
+                    </button>
+                  </div>
+                  {logicState.gateType !== "NOT" && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-slate-400">Input B:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = logicState.inputB === 1 ? 0 : 1;
+                          setLogicState((p) => ({ ...p, inputB: next }));
+                          broadcastParamChange("logic", { inputB: next });
+                        }}
+                        className={`w-12 py-1 rounded text-xs font-mono font-bold transition ${
+                          logicState.inputB === 1 ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"
+                        }`}
+                      >
+                        {logicState.inputB === 1 ? "1 (HIGH)" : "0 (LOW)"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

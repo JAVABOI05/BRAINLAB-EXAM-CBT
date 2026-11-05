@@ -18,6 +18,7 @@ import {
   OhmsLawCircuitAdapter,
   AcidBaseTitrationAdapter,
   GeneticsPunnettAdapter,
+  LogicGatesAdapter,
 } from "@/app/components/classroom/whiteboard/stemAdapter";
 
 type Lesson = {

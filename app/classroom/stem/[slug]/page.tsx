@@ -18,6 +18,8 @@ import {
   DEFAULT_TITRATION_STATE,
   GeneticsPunnettAdapter,
   DEFAULT_GENETICS_STATE,
+  LogicGatesAdapter,
+  DEFAULT_LOGIC_GATES_STATE,
 } from "@/app/components/classroom/whiteboard/stemAdapter";
 
 export default function StemPlayerPage({
@@ -42,6 +44,7 @@ export default function StemPlayerPage({
   const [circState, setCircState] = useState({ ...DEFAULT_OHMS_LAW_STATE });
   const [titrState, setTitrState] = useState({ ...DEFAULT_TITRATION_STATE });
   const [genState, setGenState] = useState({ ...DEFAULT_GENETICS_STATE });
+  const [logicState, setLogicState] = useState({ ...DEFAULT_LOGIC_GATES_STATE });
   const [selectedOrganelle, setSelectedOrganelle] = useState<string>("nucleus");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,7 +106,7 @@ export default function StemPlayerPage({
       adapter.init(genState, false);
       adapter.renderToCanvas(ctx, canvas.width, canvas.height, "dark");
     }
-  }, [slug, quadState, projState, circState, titrState, genState]);
+  }, [slug, quadState, projState, circState, titrState, genState, logicState]);
 
   const handleSaveObservation = async () => {
     setSavedStatus("Submitting experiment attempt…");
@@ -428,6 +431,54 @@ export default function StemPlayerPage({
                         >
                           Reset Buret
                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {slug === "logic-gates-circuits" && (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-300 mr-2">Gate Type:</span>
+                        {(["AND", "OR", "NOT", "NAND", "NOR", "XOR"] as const).map((g) => (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => setLogicState((p: any) => ({ ...p, gateType: g }))}
+                            className={`px-3 py-1 rounded text-xs font-mono font-bold transition ${
+                              logicState.gateType === g ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" : "bg-white/10 text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            {g}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-6 pt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-slate-300">Input A:</span>
+                          <button
+                            type="button"
+                            onClick={() => setLogicState((p: any) => ({ ...p, inputA: p.inputA === 1 ? 0 : 1 }))}
+                            className={`w-14 py-1.5 rounded text-xs font-mono font-bold transition ${
+                              logicState.inputA === 1 ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"
+                            }`}
+                          >
+                            {logicState.inputA === 1 ? "1 (HIGH)" : "0 (LOW)"}
+                          </button>
+                        </div>
+                        {logicState.gateType !== "NOT" && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-slate-300">Input B:</span>
+                            <button
+                              type="button"
+                              onClick={() => setLogicState((p: any) => ({ ...p, inputB: p.inputB === 1 ? 0 : 1 }))}
+                              className={`w-14 py-1.5 rounded text-xs font-mono font-bold transition ${
+                                logicState.inputB === 1 ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"
+                              }`}
+                            >
+                              {logicState.inputB === 1 ? "1 (HIGH)" : "0 (LOW)"}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
