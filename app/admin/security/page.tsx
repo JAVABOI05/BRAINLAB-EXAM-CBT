@@ -76,7 +76,7 @@ export default function AdminSecurityPage() {
       if (!active) return;
 
       if (!admin) {
-        router.replace("/account");
+        router.replace("/login");
         return;
       }
 
@@ -102,7 +102,7 @@ export default function AdminSecurityPage() {
     setMessage("");
     const admin = await getAdminSession();
     if (!admin) {
-      router.replace("/account");
+      router.replace("/login");
       return;
     }
     setAdminUser(admin);

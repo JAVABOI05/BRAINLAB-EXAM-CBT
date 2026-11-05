@@ -63,7 +63,7 @@ export default function AdminPaymentGatewaysPage() {
       const admin = await getAdminSession();
       if (!active) return;
       if (!admin) {
-        router.replace("/account");
+        router.replace("/login");
         return;
       }
       setAdminUser(admin);

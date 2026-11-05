@@ -118,6 +118,10 @@ export default function AdminUsersPage() {
 
   return (
     <main id="main" className="mx-auto min-h-screen max-w-6xl px-4 py-10 sm:px-6">
+      <AdminPinGuard
+        title="Administrator Roles & Security Authorization"
+        description="This workspace modifies database-level administrator roles and platform governance privileges. Enter your Admin Security PIN to continue."
+      >
       <header className="rounded-3xl bg-[#012153] p-7 text-white sm:p-10">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Restricted · Super Admin only</p>
         <h1 className="mt-3 text-3xl font-extrabold sm:text-4xl">Administrator access</h1>
@@ -173,6 +177,7 @@ export default function AdminUsersPage() {
           <p className="mt-2 text-sm leading-6 text-slate-600">{ADMIN_ROLE_DETAILS[role].summary}</p>
         </article>)}
       </section>
+      </AdminPinGuard>
     </main>
   );
 }
