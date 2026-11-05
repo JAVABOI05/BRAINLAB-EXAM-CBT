@@ -807,11 +807,32 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
       ctx.restore(); // Undo zoom scale
 
-      // 6. Watermark (BrainLab Academy)
+      // 6. Enterprise Dynamic Forensic Watermark (Stage 8)
       if (showWatermark) {
         ctx.save();
+        const isWhiteboard = activePage?.backgroundMode === "whiteboard" || backgroundMode === "whiteboard";
+        const forensicText = `BrainLab Academy • ${currentUserName} (${currentUserId}) • ${classId || "Live"}`;
+
+        // Semi-transparent tiled diagonal forensic watermark
+        ctx.save();
         ctx.font = "bold 13px Inter, sans-serif";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.fillStyle = isWhiteboard ? "rgba(15, 23, 42, 0.055)" : "rgba(255, 255, 255, 0.065)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.rotate((-22 * Math.PI) / 180);
+
+        const stepX = 360;
+        const stepY = 180;
+        for (let wx = -logicalWidth * 0.5; wx < logicalWidth * 1.5; wx += stepX) {
+          for (let wy = -logicalHeight * 0.5; wy < logicalHeight * 1.5; wy += stepY) {
+            ctx.fillText(forensicText, wx, wy);
+          }
+        }
+        ctx.restore();
+
+        // Corner anchor brand
+        ctx.font = "bold 12px Inter, sans-serif";
+        ctx.fillStyle = isWhiteboard ? "rgba(15, 23, 42, 0.35)" : "rgba(255, 255, 255, 0.35)";
         ctx.textAlign = "right";
         ctx.fillText("BRAINLAB ACADEMY", logicalWidth - 20, logicalHeight - 16);
         ctx.restore();
@@ -1126,8 +1147,23 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (readOnly || !canDraw) return;
+
+      // Stylus Palm Rejection (Stage 9): Ignore broad contact area accidental palm touches
+      if (e.pointerType === "touch") {
+        const contactArea = (e.width || 0) * (e.height || 0);
+        if (contactArea > 750 || ((e.width || 0) > 28 && (e.height || 0) > 28)) {
+          return;
+        }
+      }
+
       e.currentTarget.setPointerCapture(e.pointerId);
       const { x, y } = getCanvasCoordinates(e);
+
+      // Stylus Pressure Sensitivity (Stage 9)
+      let effectiveStrokeWidth = strokeWidth;
+      if (e.pointerType === "pen" && typeof e.pressure === "number" && e.pressure > 0) {
+        effectiveStrokeWidth = Math.max(1.5, Math.min(strokeWidth * 2.2, strokeWidth * e.pressure * 1.8));
+      }
 
       if (tool === "laser") {
         addLaserPoint(x, y, color || "#ff5238");
@@ -1274,7 +1310,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           id: newElId,
           type: tool,
           color,
-          width: strokeWidth,
+          width: effectiveStrokeWidth,
           points: [{ x: drawX, y: drawY }],
         };
       } else if (tool === "line" || tool === "arrow" || tool === "rect" || tool === "circle") {
