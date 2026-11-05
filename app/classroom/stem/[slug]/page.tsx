@@ -105,12 +105,44 @@ export default function StemPlayerPage({
     }
   }, [slug, quadState, projState, circState, titrState, genState]);
 
-  const handleSaveObservation = () => {
-    setSavedStatus("Saving experiment attempt…");
-    setTimeout(() => {
-      setSavedStatus("Saved to student academic log! ✓");
-      setTimeout(() => setSavedStatus(""), 3000);
-    }, 400);
+  const handleSaveObservation = async () => {
+    setSavedStatus("Submitting experiment attempt…");
+    try {
+      const activeState =
+        slug === "quadratic-graph-explorer"
+          ? quadState
+          : slug === "projectile-motion-simulator"
+          ? projState
+          : slug === "ohms-law-dc-circuit"
+          ? circState
+          : slug === "acid-base-titration-curve"
+          ? titrState
+          : slug === "genetics-punnett-square-lab"
+          ? genState
+          : { selectedOrganelle };
+
+      const res = await fetch("/api/stem/attempts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resource_version_id: resource?.current_version?.id || resource?.id,
+          observations: { notes: observations, state: activeState },
+          measurements: [activeState],
+          conclusion: observations,
+        }),
+      });
+
+      if (res.ok) {
+        setSavedStatus("Submitted to tutor academic log! ✓");
+      } else {
+        localStorage.setItem(`stem-attempt-${slug}`, JSON.stringify({ activeState, observations, at: Date.now() }));
+        setSavedStatus("Saved to your local laboratory portfolio! ✓");
+      }
+    } catch {
+      localStorage.setItem(`stem-attempt-${slug}`, JSON.stringify({ observations, at: Date.now() }));
+      setSavedStatus("Saved to your local laboratory portfolio! ✓");
+    }
+    setTimeout(() => setSavedStatus(""), 4000);
   };
 
   if (loading && !resource) {
@@ -170,7 +202,7 @@ export default function StemPlayerPage({
               <span>Import to Prep Studio</span>
             </Link>
             <Link
-              href="/classroom"
+              href={`/classroom/BL-LIVE-101?role=host&stem=${resource.slug}`}
               className="px-4 py-2 rounded-xl bg-[#1356E8] hover:bg-blue-600 text-white text-xs font-black transition flex items-center gap-1.5 shadow-lg shadow-blue-600/20"
             >
               <span>📡</span>

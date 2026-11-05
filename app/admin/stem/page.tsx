@@ -32,6 +32,16 @@ export default function AdminStemStudioPage() {
   const [publishBusy, setPublishBusy] = useState(false);
   const [publishMessage, setPublishMessage] = useState("");
 
+  // Tab State & Grading Workflow (Phase 4)
+  const [mainTab, setMainTab] = useState<"catalog" | "grading">("catalog");
+  const [attempts, setAttempts] = useState<any[]>([]);
+  const [attemptsLoading, setAttemptsLoading] = useState(false);
+  const [selectedAttemptForGrading, setSelectedAttemptForGrading] = useState<any | null>(null);
+  const [gradeScore, setGradeScore] = useState<number>(85);
+  const [gradeFeedback, setGradeFeedback] = useState<string>("");
+  const [gradingBusy, setGradingBusy] = useState(false);
+  const [gradeSuccessMessage, setGradeSuccessMessage] = useState("");
+
   const loadResources = useCallback(async (authToken?: string) => {
     try {
       setLoading(true);
@@ -151,6 +161,62 @@ export default function AdminStemStudioPage() {
       setPublishMessage(err instanceof Error ? err.message : "Failed to publish");
     } finally {
       setPublishBusy(false);
+    }
+  }
+
+  const loadAttempts = useCallback(async (authToken?: string) => {
+    try {
+      setAttemptsLoading(true);
+      const headers: Record<string, string> = {};
+      if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+      const res = await fetch("/api/stem/attempts", { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.attempts)) {
+          setAttempts(data.attempts);
+        }
+      }
+    } catch {
+      // Non-blocking
+    } finally {
+      setAttemptsLoading(false);
+    }
+  }, []);
+
+  async function handleGradeAttempt(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedAttemptForGrading) return;
+    setGradingBusy(true);
+    setGradeSuccessMessage("");
+
+    try {
+      const res = await fetch(`/api/stem/attempts/${selectedAttemptForGrading.id}/grade`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tutor_score: Number(gradeScore),
+          tutor_feedback: gradeFeedback,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Grading failed.");
+      }
+
+      setGradeSuccessMessage("Experiment attempt successfully graded and updated!");
+      await loadAttempts(token);
+      setTimeout(() => {
+        setSelectedAttemptForGrading(null);
+        setGradeSuccessMessage("");
+      }, 1500);
+    } catch (err: any) {
+      alert(err.message || "Failed to grade attempt");
+    } finally {
+      setGradingBusy(false);
     }
   }
 

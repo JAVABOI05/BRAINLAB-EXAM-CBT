@@ -39,6 +39,7 @@ function ClassroomLobbyContent() {
 
   // URL query pre-fills
   const initialCode = searchParams.get("code") || "BL-LIVE-101";
+  const initialRole = searchParams.get("role");
 
   const [classCode, setClassCode] = useState(initialCode);
   const [isStaff, setIsStaff] = useState(false);
@@ -50,7 +51,7 @@ function ClassroomLobbyContent() {
   const [showTierModal, setShowTierModal] = useState(false);
 
   // Portal View Mode: "tutor" | "student"
-  const [portalMode, setPortalMode] = useState<"tutor" | "student">("student");
+  const [portalMode, setPortalMode] = useState<"tutor" | "student">(initialRole === "host" ? "tutor" : "student");
 
   // Inline Tutor Sign-In Modal
   const [showTutorAuthModal, setShowTutorAuthModal] = useState(false);
@@ -227,7 +228,13 @@ function ClassroomLobbyContent() {
       }
     }
 
-    if (isStaff || isAdminUser) {
+    const isEnteringAsHost =
+      isStaff ||
+      isAdminUser ||
+      portalMode === "tutor" ||
+      (typeof window !== "undefined" && window.location.search.includes("role=host"));
+
+    if (isEnteringAsHost) {
       router.push(`/classroom/${code}?role=host`);
     } else {
       router.push(`/classroom/${code}`);
@@ -852,12 +859,23 @@ function ClassroomLobbyContent() {
                       className="w-full rounded-2xl border-2 border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-[#070d1e] px-4 py-3.5 text-sm sm:text-base font-black text-slate-900 dark:text-white outline-none focus:border-[#1356E8] tracking-widest placeholder:tracking-normal placeholder:font-normal"
                       required
                     />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-2 bottom-2 rounded-xl bg-gradient-to-r from-[#1356E8] to-blue-600 hover:from-blue-600 hover:to-blue-500 px-5 text-xs font-black text-white shadow-lg transition active:scale-95"
-                    >
-                      {isStaff || isAdminUser ? "Enter Stage as Host →" : "Enter Class →"}
-                    </button>
+                    <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/classroom/${(classCode || "BL-LIVE-101").trim()}?role=host`)}
+                        className="rounded-xl bg-amber-500 hover:bg-amber-400 px-3.5 py-2 text-[11px] font-black text-slate-950 shadow-md transition active:scale-95 flex items-center gap-1"
+                        title="Launch or enter session with host privileges"
+                      >
+                        <span>👑</span>
+                        <span>Host Entry</span>
+                      </button>
+                      <button
+                        type="submit"
+                        className="rounded-xl bg-gradient-to-r from-[#1356E8] to-blue-600 hover:from-blue-600 hover:to-blue-500 px-4 py-2 text-xs font-black text-white shadow-lg transition active:scale-95"
+                      >
+                        {isStaff || isAdminUser ? "Enter Stage as Host →" : "Enter Class →"}
+                      </button>
+                    </div>
                   </div>
                 </div>
 

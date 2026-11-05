@@ -11,6 +11,14 @@ import PictureInPictureCamera, { type PipCorner, type PipSize } from "@/app/comp
 import RecordingCountdown from "@/app/components/classroom/media/RecordingCountdown";
 import VideoPreviewEditor from "@/app/components/classroom/media/VideoPreviewEditor";
 import { toast } from "@/app/lib/toast";
+import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
+import {
+  QuadraticGraphAdapter,
+  ProjectileMotionAdapter,
+  OhmsLawCircuitAdapter,
+  AcidBaseTitrationAdapter,
+  GeneticsPunnettAdapter,
+} from "@/app/components/classroom/whiteboard/stemAdapter";
 
 type Lesson = {
   id: string;
@@ -30,6 +38,7 @@ export default function ClassroomStudioPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedId = searchParams.get("id");
+  const importStem = searchParams.get("importStem");
 
   // Authentication & Lesson State
   const [token, setToken] = useState("");
@@ -156,6 +165,68 @@ export default function ClassroomStudioPage() {
       alive = false;
     };
   }, [router, requestedId, loadLessons, loadOne]);
+
+  // Handle STEM Studio Import (?importStem=slug)
+  const importedStemRef = useRef(false);
+  useEffect(() => {
+    if (!importStem || importedStemRef.current || busy) return;
+    const resource = INITIAL_STEM_RESOURCES.find((r) => r.slug === importStem);
+    if (!resource) return;
+
+    importedStemRef.current = true;
+    let svgDataUrl = "";
+    if (importStem === "quadratic-graph-explorer") {
+      const ad = new QuadraticGraphAdapter();
+      ad.init();
+      svgDataUrl = ad.exportSvg(720, 480, "dark");
+    } else if (importStem === "projectile-motion-simulator") {
+      const ad = new ProjectileMotionAdapter();
+      ad.init();
+      svgDataUrl = ad.exportSvg(720, 480, "dark");
+    } else if (importStem === "ohms-law-dc-circuit") {
+      const ad = new OhmsLawCircuitAdapter();
+      ad.init();
+      svgDataUrl = ad.exportSvg(720, 480, "dark");
+    } else if (importStem === "acid-base-titration-curve") {
+      const ad = new AcidBaseTitrationAdapter();
+      ad.init();
+      svgDataUrl = ad.exportSvg(720, 480, "dark");
+    } else if (importStem === "genetics-punnett-square-lab") {
+      const ad = new GeneticsPunnettAdapter();
+      ad.init();
+      svgDataUrl = ad.exportSvg(720, 480, "dark");
+    }
+
+    if (svgDataUrl) {
+      const stemElement = {
+        id: `stem-elem-${Date.now()}`,
+        type: "image" as const,
+        startX: 600,
+        startY: 300,
+        endX: 1320,
+        endY: 780,
+        width: 720,
+        height: 480,
+        imageUrl: svgDataUrl,
+        color: "#ffffff",
+      };
+
+      const stemPage: PageData = {
+        id: `stem-page-${Date.now()}`,
+        title: `[STEM] ${resource.title}`,
+        aspectRatio: "16 / 9",
+        backgroundMode: "blackboard",
+        elements: [stemElement],
+      };
+
+      setPages((prev) => [...prev, stemPage]);
+      setActivePageIndex((prev) => prev + 1);
+      setTitle((prev) => (prev === "Untitled lesson" ? `${resource.title} - Prep Lesson` : prev));
+      if (resource.subject?.name) setSubject(resource.subject.name);
+      if (resource.summary) setDescription(resource.summary);
+      toast.success(`Imported ${resource.title} into Prep Studio lesson deck!`);
+    }
+  }, [importStem, busy]);
 
   // Autosave Lesson Draft
   const saveLesson = useCallback(

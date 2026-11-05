@@ -233,7 +233,7 @@ export default function LiveClassroomPage({
         const session = sessionData.session;
         const user = session?.user;
         if (!session || !user) {
-          router.replace(`/account?redirect=/classroom/${classId}`);
+          router.replace(`/login?redirect=/classroom/${classId}${typeof window !== "undefined" && window.location.search ? window.location.search.replace(/^\?/, "&") : ""}`);
           return;
         }
         if (!active) return;
@@ -2293,7 +2293,7 @@ export default function LiveClassroomPage({
               Return to My Learning
             </Link>
             <Link
-              href={`/account?redirect=/classroom/${classId}&role=tutor`}
+              href={`/login?redirect=/classroom/${classId}&role=host`}
               className="pt-2 text-xs font-bold text-amber-400 hover:text-amber-300 underline"
             >
               👨‍🏫 Are you the instructor? Sign in with tutor account →

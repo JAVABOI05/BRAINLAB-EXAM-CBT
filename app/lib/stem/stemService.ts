@@ -309,3 +309,110 @@ export async function publishStemResourceVersion(
     return { ok: false, error: err instanceof Error ? err.message : "Publish failed" };
   }
 }
+
+export async function recordStemExperimentAttempt(
+  payload: {
+    resource_version_id: string;
+    student_id: string;
+    class_id?: string | null;
+    assignment_id?: string | null;
+    observations?: Record<string, unknown>;
+    measurements?: unknown[];
+    conclusion?: string | null;
+    status?: "in_progress" | "completed";
+  },
+  client: SupabaseClient = supabase
+): Promise<{ attempt: StemExperimentAttempt | null; error: string | null }> {
+  try {
+    const { data, error } = await client
+      .from("stem_experiment_attempts")
+      .insert([
+        {
+          resource_version_id: payload.resource_version_id,
+          student_id: payload.student_id,
+          class_id: payload.class_id || null,
+          assignment_id: payload.assignment_id || null,
+          observations: payload.observations || {},
+          measurements: payload.measurements || [],
+          conclusion: payload.conclusion || null,
+          status: payload.status || "completed",
+          submitted_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) return { attempt: null, error: error.message };
+    return { attempt: data as StemExperimentAttempt, error: null };
+  } catch (err) {
+    return { attempt: null, error: err instanceof Error ? err.message : "Attempt submission failed" };
+  }
+}
+
+export async function listStemExperimentAttempts(
+  options: {
+    student_id?: string;
+    class_id?: string;
+    status?: "in_progress" | "completed" | "graded";
+    limit?: number;
+  } = {},
+  client: SupabaseClient = supabase
+): Promise<StemExperimentAttempt[]> {
+  try {
+    let query = client
+      .from("stem_experiment_attempts")
+      .select(`
+        *,
+        resource_version:stem_resource_versions (
+          id,
+          version_number,
+          adapter_type,
+          resource:stem_resources (
+            id,
+            title,
+            slug,
+            subject:subjects (id, name, slug)
+          )
+        )
+      `)
+      .order("started_at", { ascending: false });
+
+    if (options.student_id) query = query.eq("student_id", options.student_id);
+    if (options.class_id) query = query.eq("class_id", options.class_id);
+    if (options.status) query = query.eq("status", options.status);
+    if (options.limit) query = query.limit(options.limit);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []) as StemExperimentAttempt[];
+  } catch (err) {
+    console.error("[STEM Service] Error listing attempts:", err);
+    return [];
+  }
+}
+
+export async function gradeStemExperimentAttempt(
+  attemptId: string,
+  grading: {
+    tutor_score: number;
+    tutor_feedback: string;
+  },
+  client: SupabaseClient = supabase
+): Promise<{ ok: boolean; error: string | null }> {
+  try {
+    const { error } = await client
+      .from("stem_experiment_attempts")
+      .update({
+        tutor_score: grading.tutor_score,
+        tutor_feedback: grading.tutor_feedback,
+        status: "graded",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", attemptId);
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, error: null };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Grading failed" };
+  }
+}
