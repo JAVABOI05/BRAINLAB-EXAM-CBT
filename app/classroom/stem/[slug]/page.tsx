@@ -21,6 +21,7 @@ import {
   LogicGatesAdapter,
   DEFAULT_LOGIC_GATES_STATE,
 } from "@/app/components/classroom/whiteboard/stemAdapter";
+import { getCbtSubjectKey } from "@/app/lib/curriculumData";
 
 export default function StemPlayerPage({
   params,
@@ -644,6 +645,27 @@ export default function StemPlayerPage({
                   <span className="font-bold text-white">WAEC / UTME / GCSE / NECO</span>
                 </div>
               </div>
+            </div>
+
+            {/* Direct CBT Exam Practice Connection */}
+            <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-[#0e275c] to-[#0B1536] p-5 shadow-lg space-y-3">
+              <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs uppercase tracking-wider">
+                <span>🎯</span>
+                <span>Exam Connection &amp; CBT Drills</span>
+              </div>
+              <h4 className="text-sm font-black text-white">
+                Practice {resource.subject?.name || "Subject"} Exam Questions
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Connect your laboratory experiment findings directly to standardized UTME &amp; WAEC past examination questions.
+              </p>
+              <Link
+                href={`/cbt?subject=${encodeURIComponent(getCbtSubjectKey(resource.subject?.slug || resource.subject_id))}&source=stem`}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-900/30 transition group"
+              >
+                <span>Launch {resource.subject?.name || "Subject"} CBT Practice</span>
+                <span className="group-hover:translate-x-0.5 transition">→</span>
+              </Link>
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import BrandHeader from "@/app/components/BrandHeader";
 import BrandFooter from "@/app/components/BrandFooter";
 import type { StemResource, StemResourceType, StemExperimentAttempt } from "@/app/lib/stem/stemService";
 import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
+import { getCbtSubjectKey } from "@/app/lib/curriculumData";
 
 const SUBJECT_TABS = [
   { id: "all", label: "All Subjects", icon: "🌐" },
@@ -471,10 +472,13 @@ export default function StemStudioHubPage() {
 
                       {/* Actions Footer */}
                       <div className="pt-5 mt-4 border-t border-white/10 flex items-center justify-between">
-                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                        <Link
+                          href={`/cbt?subject=${encodeURIComponent(getCbtSubjectKey(res.subject?.slug || res.subject_id))}&source=stem`}
+                          className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-bold transition hover:underline"
+                        >
                           <span>🎯</span>
-                          <span>JAMB / WAEC</span>
-                        </span>
+                          <span>Practice CBT</span>
+                        </Link>
                         <Link
                           href={`/classroom/stem/${res.slug}`}
                           className="px-4 py-2 rounded-xl bg-[#1356E8] hover:bg-blue-600 text-white text-xs font-black shadow transition flex items-center gap-1.5"

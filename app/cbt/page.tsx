@@ -134,6 +134,39 @@ export default function CBTExamPortalPage() {
               setSelectedSubjects(["English", "Mathematics", "Physics", parsedSaved.subject]);
             }
           }
+
+          // Check URL search parameters for preselected subject (e.g. from STEM Studio or Syllabus)
+          if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const rawSubj = params.get("subject")?.trim();
+            if (rawSubj) {
+              const canonical = rawSubj;
+              const matched =
+                availableSubjects.find(
+                  (s) =>
+                    s.toLowerCase() === canonical.toLowerCase() ||
+                    (canonical.toLowerCase().includes("physic") && s.toLowerCase().includes("physic")) ||
+                    (canonical.toLowerCase().includes("math") && s.toLowerCase().includes("math")) ||
+                    (canonical.toLowerCase().includes("chem") && s.toLowerCase().includes("chem")) ||
+                    (canonical.toLowerCase().includes("bio") && s.toLowerCase().includes("bio")) ||
+                    (canonical.toLowerCase().includes("econ") && s.toLowerCase().includes("econ")) ||
+                    (canonical.toLowerCase().includes("gov") && s.toLowerCase().includes("gov")) ||
+                    (canonical.toLowerCase().includes("lit") && s.toLowerCase().includes("lit"))
+                ) || canonical;
+
+              setSelectedSubjects((prev) => {
+                const base = prev.filter((s) => s.toLowerCase() !== matched.toLowerCase());
+                const hasEnglish = base.some((s) => s.toLowerCase().includes("english"));
+                return hasEnglish
+                  ? ["English", matched, ...base.filter((s) => !s.toLowerCase().includes("english"))].slice(0, 4)
+                  : [matched, ...base].slice(0, 4);
+              });
+
+              if (params.get("source") === "stem") {
+                toast.success(`CBT mock configured with ${matched} for your STEM experiment!`);
+              }
+            }
+          }
         }
 
         // 3. Check public exam settings

@@ -716,3 +716,156 @@ export function getCurriculumSubjects(): SyllabusSubject[] {
 export function getSubjectBySlug(slug: string): SyllabusSubject | undefined {
   return DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === slug);
 }
+
+export interface CanonicalSubject {
+  id: string;
+  name: string;
+  slug: string;
+  cbtKey: string;
+  learningHubSlug: string;
+  stemSubjectId: string;
+  category: "Compulsory" | "Science" | "Arts & Humanities" | "Commercial & Social Sciences" | "Technology";
+  icon: string;
+  description: string;
+  displayOrder: number;
+}
+
+export const CANONICAL_SUBJECT_REGISTRY: CanonicalSubject[] = [
+  {
+    id: "english",
+    name: "Use of English",
+    slug: "use-of-english",
+    cbtKey: "English",
+    learningHubSlug: "use-of-english",
+    stemSubjectId: "subj-english",
+    category: "Compulsory",
+    icon: "📖",
+    description: "Universal compulsory examination subject assessing comprehension, lexis, structure, and oral English forms.",
+    displayOrder: 1,
+  },
+  {
+    id: "mathematics",
+    name: "Mathematics",
+    slug: "mathematics",
+    cbtKey: "Mathematics",
+    learningHubSlug: "mathematics",
+    stemSubjectId: "subj-math",
+    category: "Science",
+    icon: "📐",
+    description: "Core mathematical sciences covering algebra, calculus, trigonometry, coordinate geometry, and statistics.",
+    displayOrder: 2,
+  },
+  {
+    id: "physics",
+    name: "Physics",
+    slug: "physics",
+    cbtKey: "Physics",
+    learningHubSlug: "physics",
+    stemSubjectId: "subj-physics",
+    category: "Science",
+    icon: "⚡",
+    description: "Physical sciences investigating mechanics, kinematics, thermodynamics, electromagnetism, and modern quantum physics.",
+    displayOrder: 3,
+  },
+  {
+    id: "chemistry",
+    name: "Chemistry",
+    slug: "chemistry",
+    cbtKey: "Chemistry",
+    learningHubSlug: "chemistry",
+    stemSubjectId: "subj-chem",
+    category: "Science",
+    icon: "🧪",
+    description: "Chemical sciences covering stoichiometry, chemical equilibrium, organic reactions, redox titration, and atomic structure.",
+    displayOrder: 4,
+  },
+  {
+    id: "biology",
+    name: "Biology",
+    slug: "biology",
+    cbtKey: "Biology",
+    learningHubSlug: "biology",
+    stemSubjectId: "subj-bio",
+    category: "Science",
+    icon: "🧬",
+    description: "Life sciences spanning cell biology, genetics, ecology, plant physiology, animal nutrition, and evolutionary adaptations.",
+    displayOrder: 5,
+  },
+  {
+    id: "economics",
+    name: "Economics",
+    slug: "economics",
+    cbtKey: "Economics",
+    learningHubSlug: "economics",
+    stemSubjectId: "subj-econ",
+    category: "Commercial & Social Sciences",
+    icon: "📊",
+    description: "Economic theory, microeconomics, macroeconomic indicators, monetary policies, and fiscal public finance.",
+    displayOrder: 6,
+  },
+  {
+    id: "government",
+    name: "Government",
+    slug: "government",
+    cbtKey: "Government",
+    learningHubSlug: "government",
+    stemSubjectId: "subj-gov",
+    category: "Commercial & Social Sciences",
+    icon: "🏛️",
+    description: "Political science, constitutional evolution, electoral institutions, public administration, and international relations.",
+    displayOrder: 7,
+  },
+  {
+    id: "literature",
+    name: "Literature in English",
+    slug: "literature",
+    cbtKey: "Literature in English",
+    learningHubSlug: "literature",
+    stemSubjectId: "subj-lit",
+    category: "Arts & Humanities",
+    icon: "🎭",
+    description: "Literary appreciation, African drama, non-African prose, poetic devices, and analytical literary commentary.",
+    displayOrder: 8,
+  },
+  {
+    id: "engineering",
+    name: "Engineering & Computer Studies",
+    slug: "engineering",
+    cbtKey: "Engineering",
+    learningHubSlug: "engineering",
+    stemSubjectId: "subj-engineering",
+    category: "Technology",
+    icon: "🤖",
+    description: "Applied technology, digital logic circuits, algorithmic problem solving, Boolean algebra, and computer systems.",
+    displayOrder: 9,
+  },
+];
+
+export function resolveCanonicalSubject(input?: string | null): CanonicalSubject | undefined {
+  if (!input) return undefined;
+  const clean = input.trim().toLowerCase();
+  return CANONICAL_SUBJECT_REGISTRY.find(
+    (s) =>
+      s.id === clean ||
+      s.slug === clean ||
+      s.cbtKey.toLowerCase() === clean ||
+      s.learningHubSlug.toLowerCase() === clean ||
+      s.stemSubjectId.toLowerCase() === clean ||
+      s.name.toLowerCase() === clean ||
+      (clean.includes("math") && s.id === "mathematics") ||
+      (clean.includes("physic") && s.id === "physics") ||
+      (clean.includes("chem") && s.id === "chemistry") ||
+      (clean.includes("bio") && s.id === "biology") ||
+      (clean.includes("english") && s.id === "english") ||
+      (clean.includes("econ") && s.id === "economics") ||
+      (clean.includes("gov") && s.id === "government") ||
+      (clean.includes("lit") && s.id === "literature") ||
+      (clean.includes("engin") && s.id === "engineering")
+  );
+}
+
+export function getCbtSubjectKey(input?: string | null): string {
+  const resolved = resolveCanonicalSubject(input);
+  return resolved ? resolved.cbtKey : (input || "General");
+}
+
