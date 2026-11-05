@@ -504,6 +504,25 @@ export default function ClassroomStudioPage() {
 
     const resData = await response.json();
     if (!response.ok) throw new Error(resData.error || "Failed to save recording record.");
+
+    // 3. Trigger server-side trimmer job if video was trimmed (Stage 7)
+    if (meta.trimmedStart > 0 || meta.trimmedEnd > 0) {
+      try {
+        await fetch("/api/classroom/trim", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            videoUrl: finalVideoUrl,
+            startSec: meta.trimmedStart,
+            endSec: meta.trimmedEnd,
+            lessonId,
+            recordingId: resData.recording?.id,
+          }),
+        });
+      } catch (trimErr) {
+        console.warn("Background trimmer notification failed:", trimErr);
+      }
+    }
   };
 
   const startLiveClassFromLesson = async () => {
