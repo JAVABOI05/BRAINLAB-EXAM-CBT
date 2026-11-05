@@ -165,19 +165,7 @@ export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
     // proceed
   }
 
-  // 7. Check admin_user_roles table
-  try {
-    const { data: userRole } = await supabase
-      .from("admin_user_roles")
-      .select("role")
-      .eq("user_id", targetId)
-      .maybeSingle();
-    if (userRole && typeof userRole.role === "string" && userRole.role.trim().length > 0) {
-      return true;
-    }
-  } catch {
-    // proceed
-  }
+  // 7. (admin_user_roles check removed: table consolidated into admin_profiles & admin_users)
 
   // 8. Check admin_users table
   try {

@@ -168,23 +168,7 @@ export async function resolveAdminRole(
       }
     }
 
-    // 3. Check admin_user_roles table
-    if (userId) {
-      try {
-        const { data: userRole } = await serviceSupabase
-          .from("admin_user_roles")
-          .select("role")
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (userRole && typeof userRole.role === "string" && userRole.role.trim().length > 0) {
-          return userRole.role.trim();
-        }
-      } catch {
-        // proceed
-      }
-    }
-
-    // 4. Check admin_users table (by id or email)
+    // 3. Check admin_users table (by id or email)
     try {
       if (userId) {
         const { data: adminUser } = await serviceSupabase

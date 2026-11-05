@@ -19,6 +19,37 @@ export const ADMIN_ROLES = [
 
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 
+export const GOVERNANCE_ADMIN_ROLES = [
+  "super_admin",
+  "platform_admin",
+  "cbt_admin",
+  "ai_learning_admin",
+  "finance_admin",
+  "analytics_admin",
+  "school_admin",
+  "content_reviewer",
+  "read_only_auditor",
+] as const;
+
+export type GovernanceAdminRole = (typeof GOVERNANCE_ADMIN_ROLES)[number];
+
+export const INSTRUCTOR_ROLES = [
+  "teacher",
+  "competition_host",
+  "competition_moderator",
+] as const;
+
+export function isGovernanceAdminRole(role?: string | null): boolean {
+  if (!role || typeof role !== "string") return false;
+  return (GOVERNANCE_ADMIN_ROLES as readonly string[]).includes(role.trim());
+}
+
+export function isInstructorRole(role?: string | null): boolean {
+  if (!role || typeof role !== "string") return false;
+  const clean = role.trim().toLowerCase();
+  return clean === "teacher" || clean === "tutor" || clean === "competition_host" || clean === "competition_moderator";
+}
+
 export const ADMIN_ROLE_DETAILS: Record<
   AdminRole,
   { label: string; summary: string; level: number }
@@ -215,16 +246,7 @@ export async function adminHasPermission(permission: AdminPermission, role?: Adm
   // 1. super_admin has universal access to all permissions by definition
   if (role === "super_admin") return true;
 
-  // If role is omitted, check client-side session cache for super_admin
-  if (typeof window !== "undefined") {
-    try {
-      const rawUser = window.sessionStorage.getItem("brainlab_admin_session_cache");
-      if (rawUser) {
-        const parsed = JSON.parse(rawUser);
-        if (parsed?.user?.role === "super_admin") return true;
-      }
-    } catch {}
-  }
+  // Note: Client-side sessionStorage is never trusted for super_admin authorization bypass.
 
   // 2. Check cached permissions
   const cached = getCachedAdminPermissions();

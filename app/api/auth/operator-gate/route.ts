@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isGovernanceAdminRole } from "@/app/lib/adminRoles";
 
 export const dynamic = "force-dynamic";
 

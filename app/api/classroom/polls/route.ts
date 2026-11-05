@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     const { data: adminRole1 } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();

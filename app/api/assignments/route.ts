@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     if (mode === "tutor") {
       // Check if tutor or admin
       const { data: adminRole } = await supabase
-        .from("admin_user_roles")
+        .from("admin_profiles")
         .select("role")
         .eq("user_id", user.id)
         .maybeSingle();
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
 
     // Verify Tutor / Admin authorization
     const { data: adminRole } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();

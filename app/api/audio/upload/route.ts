@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Role Verification & Permission Enforcing
     const { data: adminRole } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();

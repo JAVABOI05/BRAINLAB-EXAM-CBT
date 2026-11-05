@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Check tutor authorization
     const { data: adminRole } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();

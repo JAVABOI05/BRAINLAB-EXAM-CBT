@@ -219,21 +219,7 @@ export async function getAdminSession(req?: NextRequest, forceRefresh = false): 
     } catch {}
   }
 
-  // 4d. Fallback to admin_user_roles table
-  if (!resolvedRole) {
-    try {
-      const userRolesTimeout = new Promise<{ data: null }>((resolve) =>
-        setTimeout(() => resolve({ data: null }), 2000)
-      );
-      const { data: userRole } = await Promise.race([
-        supabase.from("admin_user_roles").select("role").eq("user_id", user.id).maybeSingle(),
-        userRolesTimeout,
-      ]);
-      if (userRole && typeof userRole.role === "string" && ADMIN_ROLES.includes(userRole.role as AdminRole)) {
-        resolvedRole = userRole.role;
-      }
-    } catch {}
-  }
+  // 4d. (admin_user_roles check removed)
 
   if (!resolvedRole) {
     setCachedAdminSession(null);

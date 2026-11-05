@@ -6,7 +6,6 @@ import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
 export const dynamic = "force-dynamic";
 
 const PIN_CONFIG_KEY = "admin_security_pin";
-const DEFAULT_PIN = "1234";
 const PIN_COOKIE_NAME = "brainlab_admin_pin_session";
 const PIN_COOKIE_MAX_AGE = 60 * 60 * 4; // 4 hours
 
@@ -14,11 +13,11 @@ const PIN_COOKIE_MAX_AGE = 60 * 60 * 4; // 4 hours
 const attemptTracker = new Map<string, { count: number; lockedUntil: number }>();
 
 function getSecretKey(): string {
-  return (
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "brainlab-admin-security-pin-secret-key-2026"
-  );
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!secret) {
+    throw new Error("Missing cryptographic key for Admin PIN verification.");
+  }
+  return secret;
 }
 
 function hashPin(pin: string, salt: string): string {
@@ -78,11 +77,9 @@ async function getStoredPinRecord(): Promise<{ hash: string; salt: string; isSet
     console.warn("[adminPin] Error reading PIN record from exam_config:", err);
   }
 
-  // Fallback to default PIN (salt = "brainlab_default_salt", hash of "1234")
-  const defaultSalt = "brainlab_default_salt";
   return {
-    hash: hashPin(DEFAULT_PIN, defaultSalt),
-    salt: defaultSalt,
+    hash: null as any,
+    salt: null as any,
     isSet: false,
   };
 }
@@ -161,6 +158,12 @@ export async function POST(request: NextRequest) {
       }
 
       const pinRecord = await getStoredPinRecord();
+      if (!pinRecord.isSet || !pinRecord.hash || !pinRecord.salt) {
+        return NextResponse.json(
+          { ok: false, error: "Security PIN has not been initialized. Please have a Super Administrator set up the initial Security PIN.", setupRequired: true },
+          { status: 400 }
+        );
+      }
       const inputHash = hashPin(pin, pinRecord.salt);
 
       const isValid = crypto.timingSafeEqual(Buffer.from(inputHash), Buffer.from(pinRecord.hash));
@@ -202,6 +205,42 @@ export async function POST(request: NextRequest) {
         maxAge: PIN_COOKIE_MAX_AGE,
       });
 
+      return response;
+    }
+
+    // 2b. ACTION: SETUP (Initialize PIN if not set)
+    if (action === "setup") {
+      if (admin.role !== "super_admin") {
+        return NextResponse.json({ ok: false, error: "Only Super Admin can initialize the Security PIN." }, { status: 403 });
+      }
+      const newPin = String(body.newPin || "").trim();
+      if (!newPin || newPin.length < 4) {
+        return NextResponse.json({ ok: false, error: "PIN must be at least 4 digits." }, { status: 400 });
+      }
+      const pinRecord = await getStoredPinRecord();
+      if (pinRecord.isSet) {
+        return NextResponse.json({ ok: false, error: "PIN is already initialized. Use update action to change it." }, { status: 400 });
+      }
+      const newSalt = crypto.randomBytes(16).toString("hex");
+      const newHash = hashPin(newPin, newSalt);
+      const supabase = getSupabaseServerClient();
+      const { error: upsertErr } = await supabase.from("exam_config").upsert({
+        config_key: PIN_CONFIG_KEY,
+        config_value: { hash: newHash, salt: newSalt, updated_at: new Date().toISOString(), updated_by: admin.id },
+        updated_at: new Date().toISOString(),
+      });
+      if (upsertErr) {
+        return NextResponse.json({ ok: false, error: "Failed to initialize PIN: " + upsertErr.message }, { status: 500 });
+      }
+      const token = createSessionToken(admin.id, admin.role);
+      const response = NextResponse.json({ ok: true, verified: true, message: "Security PIN initialized successfully." });
+      response.cookies.set(PIN_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: PIN_COOKIE_MAX_AGE,
+      });
       return response;
     }
 

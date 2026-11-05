@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
     const { data: adminRole, error: roleError } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();

@@ -85,7 +85,7 @@ export default function SubjectFeedPage({
           .maybeSingle();
 
         const { data: adminRole } = await supabase
-          .from("admin_user_roles")
+          .from("admin_profiles")
           .select("role")
           .eq("user_id", user.id)
           .maybeSingle();

@@ -6,7 +6,7 @@ const ADMIN_ROLES = ["super_admin", "platform_admin"];
 
 async function isPlatformAdmin(supabase: any, userId: string) {
   const { data } = await supabase
-    .from("admin_user_roles")
+    .from("admin_profiles")
     .select("role")
     .eq("user_id", userId)
     .maybeSingle();

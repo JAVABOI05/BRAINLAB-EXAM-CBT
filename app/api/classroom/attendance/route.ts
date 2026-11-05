@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // 1. Check if user is staff/tutor/admin or student checking own status
     const { data: adminRole } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
         .eq("id", classId)
         .maybeSingle();
       const { data: adminRole } = await supabase
-        .from("admin_user_roles")
+        .from("admin_profiles")
         .select("role")
         .eq("user_id", user.id)
         .maybeSingle();
@@ -311,7 +311,7 @@ export async function PATCH(request: NextRequest) {
 
     const isTutor = record.live_classes?.tutor_id === user.id;
     const { data: adminRole } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();

@@ -44,9 +44,9 @@ async function verifyAdmin(request: NextRequest) {
     return { isAuthorized: true, user, role: adminUser.role };
   }
 
-  // 3. Check admin_user_roles
+  // 3. Check admin_profiles
   const { data: adminUserRole } = await supabase
-    .from("admin_user_roles")
+    .from("admin_profiles")
     .select("role")
     .eq("user_id", user.id)
     .maybeSingle();

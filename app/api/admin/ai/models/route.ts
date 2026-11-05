@@ -51,7 +51,7 @@ async function verifySuperAdmin(request: NextRequest): Promise<{
     };
   }
 
-  // 2. Fallback check admin_users / admin_user_roles via server client
+  // 2. Fallback check admin_users / admin_profiles via server client
   const serverSupabase = getSupabaseServerClient();
   const { data: adminRecord } = await serverSupabase
     .from("admin_users")
@@ -67,7 +67,7 @@ async function verifySuperAdmin(request: NextRequest): Promise<{
   }
 
   const { data: roleRecord } = await serverSupabase
-    .from("admin_user_roles")
+    .from("admin_profiles")
     .select("role")
     .eq("user_id", authUser.user.id)
     .maybeSingle();

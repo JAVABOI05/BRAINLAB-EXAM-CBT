@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
+import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
 import { getLiveClassroomConfig, logAdminAction } from "@/app/lib/platformConfig";
 
 export async function GET(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     const { data: adminRole } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();
@@ -177,7 +178,7 @@ export async function PATCH(request: NextRequest) {
 
     const isTutor = existingClass.tutor_id === user.id;
     const { data: adminRole } = await supabase
-      .from("admin_user_roles")
+      .from("admin_profiles")
       .select("role")
       .eq("user_id", user.id)
       .maybeSingle();

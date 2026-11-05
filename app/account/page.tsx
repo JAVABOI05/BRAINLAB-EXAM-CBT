@@ -8,6 +8,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getAuthRedirectUrl } from "../lib/authRedirect";
 import { isAdminPinLocallyVerified } from "../lib/adminPinAuth";
+import { isGovernanceAdminRole, isInstructorRole } from "../lib/adminRoles";
 
 type Mode = "signin" | "signup";
 
