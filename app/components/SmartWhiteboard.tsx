@@ -41,6 +41,18 @@ import {
   generateCartesianElements,
   eraseElementsAlongPath,
 } from "./classroom/whiteboard/educationalTools";
+import {
+  SCIENCE_DIAGRAM_PRESETS,
+  ScienceDiagramPreset,
+} from "./classroom/whiteboard/scienceDiagrams";
+import {
+  STEM_FORMULA_PRESETS,
+  MathFormulaPreset,
+  renderLatexToHtml,
+  renderFormulaElement,
+  createFormulaElement,
+} from "./classroom/whiteboard/formulaEngine";
+import "katex/dist/katex.min.css";
 
 export interface WhiteboardElement {
   id: string;
@@ -60,6 +72,7 @@ export interface WhiteboardElement {
   groupId?: string;
   opacity?: number;
   fillColor?: string;
+  isFormula?: boolean;
 }
 
 export type BoardAspectRatio = "16 / 9" | "4 / 3" | "9 / 16" | "free";
@@ -104,6 +117,8 @@ export interface SmartWhiteboardHandle {
   toggleRuler: () => void;
   toggleProtractor: () => void;
   insertCartesianPlane: (config?: CartesianPlaneConfig) => void;
+  insertDiagramPreset: (preset: ScienceDiagramPreset) => void;
+  insertFormula: (latex: string) => void;
 }
 
 const PRESET_COLORS = [
@@ -204,6 +219,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [showPagesDrawer, setShowPagesDrawer] = useState(false);
     const [showToolsDrawer, setShowToolsDrawer] = useState(false);
     const [showPropertiesDrawer, setShowPropertiesDrawer] = useState(false);
+
+    // Stage 4: Science & STEM Diagram / Formula Studio State
+    const [showStemModal, setShowStemModal] = useState(false);
+    const [stemTab, setStemTab] = useState<"formulas" | "physics" | "chemistry" | "biology">("formulas");
+    const [customLatex, setCustomLatex] = useState("x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}");
 
     // Authoritative pages collection
     const [pages, setPages] = useState<WhiteboardPage[]>(() => {
@@ -537,7 +557,12 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         const y = Math.min(el.startY, el.endY);
         const w = Math.abs(el.endX - el.startX);
         const h = Math.abs(el.endY - el.startY);
-        ctx.strokeRect(x, y, w, h);
+        if (el.fillColor && el.fillColor !== "transparent") {
+          ctx.fillStyle = el.fillColor;
+          ctx.fillRect(x, y, w, h);
+          ctx.fillStyle = el.color;
+        }
+        if (el.width > 0) ctx.strokeRect(x, y, w, h);
       } else if (el.type === "circle" && el.startX !== undefined && el.startY !== undefined && el.endX !== undefined && el.endY !== undefined) {
         const radiusX = Math.abs(el.endX - el.startX) / 2;
         const radiusY = Math.abs(el.endY - el.startY) / 2;
@@ -545,10 +570,19 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         const centerY = Math.min(el.startY, el.endY) + radiusY;
         ctx.beginPath();
         ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-        ctx.stroke();
+        if (el.fillColor && el.fillColor !== "transparent") {
+          ctx.fillStyle = el.fillColor;
+          ctx.fill();
+          ctx.fillStyle = el.color;
+        }
+        if (el.width > 0) ctx.stroke();
       } else if (el.type === "text" && el.startX !== undefined && el.startY !== undefined && el.text) {
-        ctx.font = `600 ${el.fontSize || 22}px Inter, sans-serif`;
-        ctx.fillText(el.text, el.startX, el.startY);
+        if (el.text.includes("\\") || el.fontFamily?.includes("Math") || el.isFormula) {
+          renderFormulaElement(ctx, el, () => redrawCanvas());
+        } else {
+          ctx.font = `600 ${el.fontSize || 22}px ${el.fontFamily || "Inter, sans-serif"}`;
+          ctx.fillText(el.text, el.startX, el.startY);
+        }
       }
 
       ctx.restore();
@@ -1461,6 +1495,30 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       redrawCanvas();
     }, [setElements, redrawCanvas]);
 
+    // Insert STEM Science Diagram Preset (Stage 4)
+    const insertDiagramPreset = useCallback((preset: ScienceDiagramPreset) => {
+      const cx = 960;
+      const cy = 540;
+      const elementsToAdd = preset.generate(cx, cy, 1);
+      setElements((prev) => [...prev, ...elementsToAdd]);
+      setRedoStack([]);
+      toast.success(`Inserted ${preset.name} onto board!`);
+      setShowStemModal(false);
+      redrawCanvas();
+    }, [setElements, redrawCanvas]);
+
+    // Insert Mathematical Formula (Stage 4)
+    const insertFormula = useCallback((latex: string) => {
+      const cx = 800;
+      const cy = 500;
+      const el = createFormulaElement(latex, cx, cy, color || "#38bdf8", 26);
+      setElements((prev) => [...prev, el]);
+      setRedoStack([]);
+      toast.success("Inserted mathematical formula onto board!");
+      setShowStemModal(false);
+      redrawCanvas();
+    }, [color, setElements, redrawCanvas]);
+
     // History controls
     const handleUndo = () => {
       if (elements.length === 0) return;
@@ -1622,6 +1680,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         redrawCanvas();
       },
       insertCartesianPlane,
+      insertDiagramPreset,
+      insertFormula,
     }));
 
     // Calculate aspect ratio CSS
@@ -1928,6 +1988,17 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   >
                     <span>📈</span>
                     <span className="hidden xl:inline">Graph Grid</span>
+                  </button>
+
+                  {/* STEM Science & Math Studio (Stage 4) */}
+                  <button
+                    type="button"
+                    onClick={() => setShowStemModal(true)}
+                    className="rounded-xl px-2.5 py-1.5 text-xs font-bold transition bg-[#1356E8]/20 hover:bg-[#1356E8]/40 text-blue-200 border border-blue-500/30 flex items-center gap-1 shadow-sm"
+                    title="Open STEM Studio (LaTeX Math Formulas, Circuit Components, Chemical Apparatus, Biology Cells)"
+                  >
+                    <span>🧪</span>
+                    <span className="hidden md:inline">STEM Studio</span>
                   </button>
                 </div>
               </div>
@@ -2482,6 +2553,188 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     Insert on Board
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================== */}
+        {/* STEM SCIENCE & MATHEMATICS STUDIO MODAL (Stage 4) */}
+        {/* ================================================================== */}
+        {showStemModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-md p-4">
+            <div className="w-full max-w-2xl rounded-2xl border border-white/15 bg-[#0B1536] p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🧪</span>
+                  <h3 className="text-base font-black text-white">
+                    STEM &amp; Science Teaching Studio
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowStemModal(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-white/10"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex items-center gap-1 border-b border-white/10 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setStemTab("formulas")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    stemTab === "formulas"
+                      ? "bg-[#1356E8] text-white shadow"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span>➗</span>
+                  <span>Formulas (KaTeX)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStemTab("physics")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    stemTab === "physics"
+                      ? "bg-[#1356E8] text-white shadow"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span>⚡</span>
+                  <span>Physics &amp; Circuits</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStemTab("chemistry")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    stemTab === "chemistry"
+                      ? "bg-[#1356E8] text-white shadow"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span>🧪</span>
+                  <span>Chemistry</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStemTab("biology")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+                    stemTab === "biology"
+                      ? "bg-[#1356E8] text-white shadow"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span>🧬</span>
+                  <span>Biology &amp; Cells</span>
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+                {stemTab === "formulas" && (
+                  <div className="space-y-4">
+                    {/* Live Rendered LaTeX Box */}
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        Live LaTeX Equation Preview
+                      </span>
+                      <div className="min-h-16 rounded-xl border border-white/10 bg-[#070d1e] p-4 flex items-center justify-center text-cyan-300 overflow-x-auto text-lg shadow-inner">
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: renderLatexToHtml(customLatex || "x"),
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Formula Editor Input */}
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        LaTeX Code Input
+                      </span>
+                      <textarea
+                        value={customLatex}
+                        onChange={(e) => setCustomLatex(e.target.value)}
+                        rows={2}
+                        placeholder="e.g. x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
+                        className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-3 text-xs font-mono text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Quick STEM Presets */}
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Standard Academic STEM Presets (Click to load)
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {STEM_FORMULA_PRESETS.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setCustomLatex(p.latex)}
+                            className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-left hover:bg-white/10 hover:border-blue-500/50 transition group"
+                          >
+                            <div className="text-xs font-bold text-white group-hover:text-cyan-400 flex items-center justify-between">
+                              <span>{p.name}</span>
+                              <span className="text-[10px] uppercase text-slate-400">
+                                {p.category}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
+                              {p.latex}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => insertFormula(customLatex)}
+                        className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-5 py-2 text-xs font-black text-white shadow-lg flex items-center gap-2"
+                      >
+                        <span>➗</span>
+                        <span>Insert Formula on Liveboard</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {stemTab !== "formulas" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {SCIENCE_DIAGRAM_PRESETS.filter((d) => d.category === stemTab).map(
+                      (diagram) => (
+                        <div
+                          key={diagram.id}
+                          className="rounded-xl border border-white/10 bg-[#070d1e] p-4 flex flex-col justify-between hover:border-blue-500/50 transition"
+                        >
+                          <div>
+                            <div className="text-sm font-black text-white mb-1">
+                              {diagram.name}
+                            </div>
+                            <p className="text-xs text-slate-400">
+                              {diagram.description}
+                            </p>
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-white/5 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => insertDiagramPreset(diagram)}
+                              className="rounded-xl bg-blue-600 hover:bg-blue-500 px-3.5 py-1.5 text-xs font-bold text-white shadow"
+                            >
+                              Insert Diagram
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
