@@ -162,9 +162,141 @@ export const ADMIN_PERMISSION_KEYS = [
 
 export type AdminPermission = (typeof ADMIN_PERMISSION_KEYS)[number];
 
-export async function adminHasPermission(permission: AdminPermission): Promise<boolean> {
-  const { data, error } = await supabase.rpc("admin_has_permission", {
-    permission_key: permission,
-  });
-  return !error && data === true;
+// Client-side cache and in-flight request deduplication
+let memoryPermsCache: Record<string, boolean> = {};
+let permsCacheExpiresAt = 0;
+const PERM_CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes TTL
+const inFlightPermRequests = new Map<AdminPermission, Promise<boolean>>();
+
+export function getCachedAdminPermissions(): Partial<Record<AdminPermission, boolean>> {
+  if (typeof window === "undefined") return {};
+  const now = Date.now();
+  if (permsCacheExpiresAt > now && Object.keys(memoryPermsCache).length > 0) {
+    return { ...memoryPermsCache };
+  }
+  try {
+    const raw = window.sessionStorage.getItem("brainlab_admin_permissions_cache");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.expiresAt === "number" && parsed.expiresAt > now && parsed.permissions) {
+        memoryPermsCache = parsed.permissions;
+        permsCacheExpiresAt = parsed.expiresAt;
+        return { ...parsed.permissions };
+      }
+    }
+  } catch {}
+  return {};
+}
+
+export function setCachedAdminPermissions(perms: Partial<Record<AdminPermission, boolean>>): void {
+  if (typeof window === "undefined") return;
+  memoryPermsCache = { ...memoryPermsCache, ...perms };
+  permsCacheExpiresAt = Date.now() + PERM_CACHE_TTL_MS;
+  try {
+    window.sessionStorage.setItem(
+      "brainlab_admin_permissions_cache",
+      JSON.stringify({ permissions: memoryPermsCache, expiresAt: permsCacheExpiresAt })
+    );
+  } catch {}
+}
+
+export function clearAdminPermissionsCache(): void {
+  memoryPermsCache = {};
+  permsCacheExpiresAt = 0;
+  inFlightPermRequests.clear();
+  if (typeof window !== "undefined") {
+    try {
+      window.sessionStorage.removeItem("brainlab_admin_permissions_cache");
+    } catch {}
+  }
+}
+
+export async function adminHasPermission(permission: AdminPermission, role?: AdminRole): Promise<boolean> {
+  // 1. super_admin has universal access to all permissions by definition
+  if (role === "super_admin") return true;
+
+  // If role is omitted, check client-side session cache for super_admin
+  if (typeof window !== "undefined") {
+    try {
+      const rawUser = window.sessionStorage.getItem("brainlab_admin_session_cache");
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser);
+        if (parsed?.user?.role === "super_admin") return true;
+      }
+    } catch {}
+  }
+
+  // 2. Check cached permissions
+  const cached = getCachedAdminPermissions();
+  if (typeof cached[permission] === "boolean") {
+    return cached[permission]!;
+  }
+
+  // 3. Deduplicate in-flight requests for the same permission
+  if (inFlightPermRequests.has(permission)) {
+    return inFlightPermRequests.get(permission)!;
+  }
+
+  const reqPromise = (async () => {
+    try {
+      // 2500ms timeout guard to prevent indefinite hanging
+      const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error("RPC timeout") }), 2500)
+      );
+
+      const rpcCall = supabase.rpc("admin_has_permission", {
+        permission_key: permission,
+      });
+
+      const { data, error } = await Promise.race([rpcCall, timeoutPromise]);
+      const allowed = !error && data === true;
+
+      setCachedAdminPermissions({ [permission]: allowed });
+      return allowed;
+    } catch {
+      return false;
+    } finally {
+      inFlightPermRequests.delete(permission);
+    }
+  })();
+
+  inFlightPermRequests.set(permission, reqPromise);
+  return reqPromise;
+}
+
+export async function adminResolvePermissions(
+  permissions: AdminPermission[],
+  role?: AdminRole
+): Promise<Partial<Record<AdminPermission, boolean>>> {
+  // Super admin fast bypass: zero network requests
+  if (role === "super_admin") {
+    const allTrue = Object.fromEntries(permissions.map((p) => [p, true])) as Partial<Record<AdminPermission, boolean>>;
+    setCachedAdminPermissions(allTrue);
+    return allTrue;
+  }
+
+  const cached = getCachedAdminPermissions();
+  const missing = permissions.filter((p) => typeof cached[p] !== "boolean");
+
+  if (missing.length === 0) {
+    const result: Partial<Record<AdminPermission, boolean>> = {};
+    for (const p of permissions) {
+      result[p] = cached[p];
+    }
+    return result;
+  }
+
+  // Fetch only missing permissions with de-duplication and timeout guards
+  const fetchedEntries = await Promise.all(
+    missing.map(async (perm) => [perm, await adminHasPermission(perm, role)] as const)
+  );
+
+  const newPermissions = Object.fromEntries(fetchedEntries);
+  setCachedAdminPermissions(newPermissions);
+
+  const combined: Partial<Record<AdminPermission, boolean>> = {};
+  for (const p of permissions) {
+    combined[p] = cached[p] ?? newPermissions[p] ?? false;
+  }
+  return combined;
 }

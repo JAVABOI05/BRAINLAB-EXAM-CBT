@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { adminSignOut, getAdminSession, type AdminUser } from "../../lib/adminAuth";
-import { adminHasPermission, type AdminPermission } from "../../lib/adminRoles";
+import { adminSignOut, getAdminSession, getCachedAdminSession, type AdminUser } from "../../lib/adminAuth";
+import {
+  adminResolvePermissions,
+  getCachedAdminPermissions,
+  type AdminPermission,
+} from "../../lib/adminRoles";
 import AdminWorkspaceShell from "../AdminWorkspaceShell";
 
 type Access = Partial<Record<AdminPermission, boolean>>;
@@ -47,9 +51,9 @@ const PERMISSIONS: AdminPermission[] = [
 
 export default function AdminSettingsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<AdminUser | null>(null);
-  const [permissions, setPermissions] = useState<Access>({});
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AdminUser | null>(() => getCachedAdminSession());
+  const [permissions, setPermissions] = useState<Access>(() => getCachedAdminPermissions());
+  const [loading, setLoading] = useState(() => !getCachedAdminSession());
 
   useEffect(() => {
     let active = true;
@@ -58,9 +62,10 @@ export default function AdminSettingsPage() {
       if (!active) return;
       if (!admin) { router.replace("/account"); return; }
       setUser(admin);
-      const entries = await Promise.all(PERMISSIONS.map(async (permission) => [permission, await adminHasPermission(permission)] as const));
+
+      const access = await adminResolvePermissions(PERMISSIONS, admin.role);
       if (!active) return;
-      setPermissions(Object.fromEntries(entries) as Access);
+      setPermissions(access);
       setLoading(false);
     }
     void initialise().catch(() => { if (active) router.replace("/account"); });

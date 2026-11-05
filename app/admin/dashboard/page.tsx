@@ -3,8 +3,14 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { adminSignOut, getAdminSession, type AdminUser } from "../../lib/adminAuth";
-import { adminHasPermission, ADMIN_ROLE_DETAILS, type AdminPermission } from "../../lib/adminRoles";
+import { adminSignOut, getAdminSession, getCachedAdminSession, type AdminUser } from "../../lib/adminAuth";
+import {
+  adminHasPermission,
+  adminResolvePermissions,
+  getCachedAdminPermissions,
+  ADMIN_ROLE_DETAILS,
+  type AdminPermission,
+} from "../../lib/adminRoles";
 import { supabase } from "../../lib/supabase";
 import AdminWorkspaceShell from "../AdminWorkspaceShell";
 
@@ -273,12 +279,12 @@ function MetricCard({
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<AdminUser | null>(null);
-  const [permissions, setPermissions] = useState<Access>({});
+  const [user, setUser] = useState<AdminUser | null>(() => getCachedAdminSession());
+  const [permissions, setPermissions] = useState<Access>(() => getCachedAdminPermissions());
   const [metrics, setMetrics] = useState<Metrics>({ questions: null, results: null, codes: null, sessions: null });
   const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
   const [studentStatsError, setStudentStatsError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !getCachedAdminSession());
   const [loadError, setLoadError] = useState("");
   const [settings, setSettings] = useState<SettingsMap>(DEFAULT_SETTINGS);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -298,11 +304,8 @@ export default function AdminDashboardPage() {
         verifiedAdmin = true;
         setUser(admin);
 
-        const entries = await Promise.all(
-          PERMISSIONS.map(async (permission) => [permission, await adminHasPermission(permission)] as const)
-        );
+        const access = await adminResolvePermissions(PERMISSIONS, admin.role);
         if (!active) return;
-        const access = Object.fromEntries(entries) as Access;
         setPermissions(access);
 
         const [questions, results, codes, activeSessions] = await Promise.all([
