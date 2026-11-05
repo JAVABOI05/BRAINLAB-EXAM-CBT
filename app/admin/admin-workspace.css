@@ -882,46 +882,51 @@
   letter-spacing: 0.04em;
 }
 .admin-kpi-icon {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 11px;
   transition: transform 0.2s ease;
+}
+.admin-kpi-icon svg {
+  display: block;
+  stroke: currentColor !important;
+  stroke-width: 2.25 !important;
 }
 .admin-kpi-card:hover .admin-kpi-icon {
   transform: scale(1.08);
 }
 .admin-kpi-icon.is-blue {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
+  background: #dbeafe;
+  color: #1d4ed8 !important;
+  border: 1.5px solid #bfdbfe;
 }
 .admin-kpi-icon.is-indigo {
-  background: #eef2ff;
-  color: #4f46e5;
-  border: 1px solid #e0e7ff;
+  background: #e0e7ff;
+  color: #4338ca !important;
+  border: 1.5px solid #c7d2fe;
 }
 .admin-kpi-icon.is-emerald {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #d1fae5;
+  background: #d1fae5;
+  color: #047857 !important;
+  border: 1.5px solid #a7f3d0;
 }
 .admin-kpi-icon.is-amber {
-  background: #fffbeb;
-  color: #d97706;
-  border: 1px solid #fef3c7;
+  background: #fef3c7;
+  color: #b45309 !important;
+  border: 1.5px solid #fde68a;
 }
 .admin-kpi-icon.is-rose {
-  background: #fff1f2;
-  color: #e11d48;
-  border: 1px solid #ffe4e6;
+  background: #ffe4e6;
+  color: #be123c !important;
+  border: 1.5px solid #fecdd3;
 }
 .admin-kpi-icon.is-purple {
-  background: #faf5ff;
-  color: #7c3aed;
-  border: 1px solid #f3e8ff;
+  background: #f3e8ff;
+  color: #6d28d9 !important;
+  border: 1.5px solid #e9d5ff;
 }
 
 .admin-kpi-value {
@@ -1041,23 +1046,28 @@
   box-shadow: 0 6px 18px -2px rgba(37, 99, 235, 0.1);
 }
 .admin-action-icon {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 11px;
   transition: transform 0.18s ease;
+}
+.admin-action-icon svg {
+  display: block;
+  stroke: currentColor !important;
+  stroke-width: 2.25 !important;
 }
 .admin-action-link:hover .admin-action-icon {
   transform: scale(1.08);
 }
-.admin-action-icon.is-blue { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
-.admin-action-icon.is-indigo { background: #eef2ff; color: #4f46e5; border: 1px solid #e0e7ff; }
-.admin-action-icon.is-emerald { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
-.admin-action-icon.is-amber { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
-.admin-action-icon.is-rose { background: #fff1f2; color: #e11d48; border: 1px solid #ffe4e6; }
-.admin-action-icon.is-purple { background: #faf5ff; color: #7c3aed; border: 1px solid #f3e8ff; }
+.admin-action-icon.is-blue { background: #dbeafe; color: #1d4ed8 !important; border: 1.5px solid #bfdbfe; }
+.admin-action-icon.is-indigo { background: #e0e7ff; color: #4338ca !important; border: 1.5px solid #c7d2fe; }
+.admin-action-icon.is-emerald { background: #d1fae5; color: #047857 !important; border: 1.5px solid #a7f3d0; }
+.admin-action-icon.is-amber { background: #fef3c7; color: #b45309 !important; border: 1.5px solid #fde68a; }
+.admin-action-icon.is-rose { background: #ffe4e6; color: #be123c !important; border: 1.5px solid #fecdd3; }
+.admin-action-icon.is-purple { background: #f3e8ff; color: #6d28d9 !important; border: 1.5px solid #e9d5ff; }
 
 .admin-action-content {
   display: flex;
@@ -1100,18 +1110,26 @@
   gap: 10px;
 }
 .admin-connection-card {
-  padding: 13px 15px;
+  padding: 14px 16px;
   border: 1px solid #edf2f7;
-  border-radius: 12px;
+  border-radius: 14px;
   background: #f8fafc;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  transition: border-color 0.16s ease;
+  gap: 5px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.18s ease;
+  position: relative;
 }
-.admin-connection-card:hover {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
+.admin-connection-card.is-interactive {
+  cursor: pointer;
+}
+.admin-connection-card.is-interactive:hover {
+  border-color: #93c5fd;
+  background: #f0f7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px -2px rgba(37, 99, 235, 0.12);
 }
 .admin-connection-header {
   display: flex;
@@ -1125,12 +1143,37 @@
   gap: 8px;
 }
 .admin-connection-title strong {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 750;
   color: #0b1536;
 }
-.admin-connection-card p {
+.admin-connection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-connection-cta {
   font-size: 11px;
+  font-weight: 800;
+  color: #2563eb;
+  transition: all 0.16s ease;
+}
+.admin-connection-arrow {
+  font-size: 14px;
+  font-weight: 800;
+  color: #94a3b8;
+  transition: all 0.16s ease;
+}
+.admin-connection-card:hover .admin-connection-cta {
+  color: #1d4ed8;
+  transform: translateX(3px);
+}
+.admin-connection-card:hover .admin-connection-arrow {
+  color: #2563eb;
+  transform: translateX(3px);
+}
+.admin-connection-card p {
+  font-size: 11.5px;
   line-height: 1.5;
   color: #64748b;
   margin: 0;
@@ -1773,4 +1816,81 @@
   background-color: #132137 !important;
   border-color: #3a4d68 !important;
   color: #dbe7f7 !important;
+}
+
+/* ==========================================================================
+   EXPLICIT HIGH-CONTRAST DARK-MODE ICON & TELEMETRY STYLING
+   Fixes the washed-out / invisible white-on-white SVG icons and makes cards interactive
+   ========================================================================== */
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-kpi-icon.is-blue,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-action-icon.is-blue {
+  background: rgba(37, 99, 235, 0.22) !important;
+  color: #60a5fa !important;
+  border: 1.5px solid rgba(96, 165, 250, 0.45) !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-kpi-icon.is-indigo,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-action-icon.is-indigo {
+  background: rgba(79, 70, 229, 0.22) !important;
+  color: #818cf8 !important;
+  border: 1.5px solid rgba(129, 140, 248, 0.45) !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-kpi-icon.is-emerald,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-action-icon.is-emerald {
+  background: rgba(5, 150, 105, 0.22) !important;
+  color: #34d399 !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.45) !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-kpi-icon.is-amber,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-action-icon.is-amber {
+  background: rgba(217, 119, 6, 0.22) !important;
+  color: #fbbf24 !important;
+  border: 1.5px solid rgba(251, 191, 36, 0.45) !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-kpi-icon.is-rose,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-action-icon.is-rose {
+  background: rgba(225, 29, 72, 0.22) !important;
+  color: #fb7185 !important;
+  border: 1.5px solid rgba(251, 113, 133, 0.45) !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-kpi-icon.is-purple,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-action-icon.is-purple {
+  background: rgba(124, 58, 237, 0.22) !important;
+  color: #c084fc !important;
+  border: 1.5px solid rgba(192, 132, 252, 0.45) !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-action-icon svg,
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-kpi-icon svg {
+  stroke: currentColor !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.15));
+}
+
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-connection-card.is-interactive:hover {
+  background-color: #17263d !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 6px 18px -2px rgba(96, 165, 250, 0.2) !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-connection-cta {
+  color: #60a5fa !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-connection-card:hover .admin-connection-cta {
+  color: #93c5fd !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-tag-pill.is-success {
+  background: rgba(5, 150, 105, 0.2) !important;
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.4) !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-tag-pill.is-warning {
+  background: rgba(217, 119, 6, 0.2) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+}
+:is(html[data-theme="dark"], html.dark) .admin-workspace .admin-workspace-content .admin-tag-pill.is-subtle {
+  background: rgba(148, 163, 184, 0.16) !important;
+  color: #94a3b8 !important;
+  border-color: rgba(148, 163, 184, 0.3) !important;
 }

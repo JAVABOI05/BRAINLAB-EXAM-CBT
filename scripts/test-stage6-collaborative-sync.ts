@@ -91,7 +91,7 @@ async function runStage6Verification() {
   // --------------------------------------------------------------------------
   let studentPages: WhiteboardPage[] = [];
   let studentActivePageIndex = 0;
-  let studentHydrated = false;
+  let studentHydrated: any = false;
 
   sharedChannel.on("broadcast", { event: "whiteboard_pages_sync" }, ({ payload }) => {
     if (payload.senderId === studentId) return;
@@ -118,8 +118,8 @@ async function runStage6Verification() {
   // --------------------------------------------------------------------------
   // TEST 3: Incremental Stroke Broadcast ('whiteboard_draw')
   // --------------------------------------------------------------------------
-  let strokeReceived = false;
-  let receivedElement: WhiteboardElement | null = null;
+  let strokeReceived: any = false;
+  let receivedElement: any = null;
 
   sharedChannel.on("broadcast", { event: "whiteboard_draw" }, ({ payload }) => {
     if (payload.senderId === studentId) return;
@@ -186,7 +186,7 @@ async function runStage6Verification() {
   // --------------------------------------------------------------------------
   // TEST 5: Whiteboard Clear Broadcast ('whiteboard_clear')
   // --------------------------------------------------------------------------
-  let cleared = false;
+  let cleared: any = false;
   sharedChannel.on("broadcast", { event: "whiteboard_clear" }, ({ payload }) => {
     if (payload.senderId === studentId) return;
     if (payload.pageIndex === studentActivePageIndex) {

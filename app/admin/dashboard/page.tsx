@@ -84,7 +84,7 @@ function DashboardIcon({
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 2,
+    strokeWidth: 2.25,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     className,
@@ -927,49 +927,61 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="admin-connections-list">
-            <div className="admin-connection-card">
+            <Link href="/admin/security" className="admin-connection-card is-interactive" title="Configure Database & RLS Security">
               <div className="admin-connection-header">
                 <div className="admin-connection-title">
                   <span className="admin-status-dot is-online" />
                   <strong>Database &amp; RLS Policies</strong>
                 </div>
-                <span className="admin-tag-pill is-success">Connected</span>
+                <div className="admin-connection-actions">
+                  <span className="admin-tag-pill is-success">Connected</span>
+                  <span className="admin-connection-arrow" aria-hidden="true">→</span>
+                </div>
               </div>
               <p>PostgreSQL cluster verified with row-level security boundaries and RPC grants.</p>
-            </div>
+            </Link>
 
-            <div className="admin-connection-card">
+            <Link href="/admin/users" className="admin-connection-card is-interactive" title="Manage Administrator Roles & Operator Gate">
               <div className="admin-connection-header">
                 <div className="admin-connection-title">
                   <span className="admin-status-dot is-online" />
                   <strong>Supabase Auth &amp; Operator Gate</strong>
                 </div>
-                <span className="admin-tag-pill is-success">Verified</span>
+                <div className="admin-connection-actions">
+                  <span className="admin-tag-pill is-success">Verified</span>
+                  <span className="admin-connection-arrow" aria-hidden="true">→</span>
+                </div>
               </div>
               <p>Candidate session encryption and multi-tier operator verification active.</p>
-            </div>
+            </Link>
 
-            <div className="admin-connection-card">
+            <Link href="/admin/ai" className="admin-connection-card is-interactive" title="Click to Configure AI Models, Keys, and Quotas">
               <div className="admin-connection-header">
                 <div className="admin-connection-title">
                   <span className="admin-status-dot is-pending" />
                   <strong>AI Engine (Gemini / Groq)</strong>
                 </div>
-                <span className="admin-tag-pill is-warning">Telemetry Ready</span>
+                <div className="admin-connection-actions">
+                  <span className="admin-tag-pill is-warning">Telemetry Ready</span>
+                  <span className="admin-connection-cta">Configure AI →</span>
+                </div>
               </div>
               <p>AI authoring and explanation APIs online; latency aggregation awaiting traffic stream.</p>
-            </div>
+            </Link>
 
-            <div className="admin-connection-card">
+            <Link href="/admin/payment-gateways#bachs" className="admin-connection-card is-interactive" title="Click to Configure Bachs and Payment Webhooks">
               <div className="admin-connection-header">
                 <div className="admin-connection-title">
                   <span className="admin-status-dot is-pending" />
                   <strong>Payment Webhooks (BACHS)</strong>
                 </div>
-                <span className="admin-tag-pill is-subtle">Configured</span>
+                <div className="admin-connection-actions">
+                  <span className="admin-tag-pill is-subtle">Configured</span>
+                  <span className="admin-connection-cta">Configure BACHS →</span>
+                </div>
               </div>
               <p>Signed cryptographic webhook endpoints deployed; automated ledger reconciliation active.</p>
-            </div>
+            </Link>
           </div>
         </section>
       </div>

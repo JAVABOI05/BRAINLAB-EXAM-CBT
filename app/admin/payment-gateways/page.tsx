@@ -275,28 +275,28 @@ export default function AdminPaymentGatewaysPage() {
                 {
                   id: "paystack",
                   name: "Paystack",
-                  icon: "",
+                  icon: "💳",
                   desc: "Nigerian standard. Cards, Bank Transfer, USSD, Apple Pay.",
                   color: "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20",
                 },
                 {
                   id: "flutterwave",
                   name: "Flutterwave",
-                  icon: "",
+                  icon: "🌐",
                   desc: "Pan-African & International cards, Barter, Mobile Money.",
                   color: "border-purple-500 bg-purple-50/30 dark:bg-purple-950/20",
                 },
                 {
                   id: "bachs",
                   name: "Bachs",
-                  icon: "",
+                  icon: "⚡",
                   desc: "Direct collections & automated settlement checkout.",
                   color: "border-blue-500 bg-blue-50/30 dark:bg-blue-950/20",
                 },
                 {
                   id: "bank_transfer",
                   name: "Manual Bank Transfer",
-                  icon: "",
+                  icon: "🏛️",
                   desc: "Direct Nigerian bank deposits with proof of payment.",
                   color: "border-amber-500 bg-amber-50/30 dark:bg-amber-950/20",
                 },
@@ -532,7 +532,7 @@ export default function AdminPaymentGatewaysPage() {
           </section>
 
           {/* SECTION 4: BACHS CONFIGURATION */}
-          <section className="admin-section admin-card border-l-4 border-l-blue-500">
+          <section id="bachs" className="admin-section admin-card border-l-4 border-l-blue-500 scroll-mt-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">

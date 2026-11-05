@@ -14,7 +14,6 @@ import {
   type LiveClassroomConfig,
 } from "../../lib/platformConfig";
 import { getAllVideoProvidersStatus } from "../../lib/liveClassroom/provider";
-import { DEFAULT_JAMB_SYLLABUS } from "../../lib/curriculumData";
 import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import "../admin.css";
 
@@ -25,24 +24,16 @@ export default function AdminLiveClassroomControlPage() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
 
-  // Instant Live Class Launcher State
-  const [sessionTitle, setSessionTitle] = useState("JAMB CBT Live Speed Drill & Audio Masterclass");
-  const [sessionTopic, setSessionTopic] = useState("Mathematics & Physics Speed Strategies");
-  const [sessionRoomId, setSessionRoomId] = useState("BL-LIVE-101");
-  const [sessionFormat, setSessionFormat] = useState<"interactive" | "quiz" | "broadcast">("interactive");
-  const [sessionClassType, setSessionClassType] = useState<"open" | "masterclass">("open");
-  const [sessionEntryCode, setSessionEntryCode] = useState("BL-MASTER-2026");
-  const [sessionRequirePermission, setSessionRequirePermission] = useState(true);
+  // Instant Live Class Launcher & Dispatch State
+  const [sessionTitle] = useState("JAMB CBT Live Speed Drill & Audio Masterclass");
+  const [sessionTopic] = useState("Mathematics & Physics Speed Strategies");
+  const [sessionRoomId] = useState("BL-LIVE-101");
   const [allowedTutorsList, setAllowedTutorsList] = useState<string[]>([]);
   const [newTutorEmail, setNewTutorEmail] = useState("");
   const [savingTutors, setSavingTutors] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastFeedback, setBroadcastFeedback] = useState("");
-
-  // Curriculum integration states
-  const [curriculumSubjectSlug, setCurriculumSubjectSlug] = useState<string>("");
-  const [curriculumTopicId, setCurriculumTopicId] = useState<string>("");
 
   const handleWhatsAppShare = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://brainlabexam-cbt.vercel.app";
@@ -146,12 +137,6 @@ export default function AdminLiveClassroomControlPage() {
         setConfig(currentConfig);
         if (currentConfig.allowed_tutor_emails) {
           setAllowedTutorsList(currentConfig.allowed_tutor_emails);
-        }
-        const existingRoom = currentConfig.room_configs?.["BL-LIVE-101"];
-        if (existingRoom) {
-          setSessionClassType(existingRoom.class_type || "open");
-          if (existingRoom.entry_code) setSessionEntryCode(existingRoom.entry_code);
-          if (typeof existingRoom.require_permission === "boolean") setSessionRequirePermission(existingRoom.require_permission);
         }
         setWhiteboardWatermarkEnabled(await getPlatformConfig<boolean>("whiteboard_watermark_enabled", true));
         setProviderStatuses(getAllVideoProvidersStatus(currentConfig.provider_credentials));
@@ -313,35 +298,6 @@ export default function AdminLiveClassroomControlPage() {
     }
   };
 
-  const handleLaunchStage = async () => {
-    if (!adminUser) return;
-    try {
-      const roomSlug = sessionRoomId.trim() || "BL-LIVE-101";
-      const currentConfig = await getLiveClassroomConfig();
-      const updatedRooms = { ...(currentConfig.room_configs || {}) };
-      updatedRooms[roomSlug] = {
-        class_type: sessionClassType,
-        entry_code: sessionClassType === "masterclass" ? sessionEntryCode.trim().toUpperCase() : undefined,
-        require_permission: sessionClassType === "masterclass" ? sessionRequirePermission : false,
-        is_active: true,
-        title: sessionTitle,
-        topic: sessionTopic,
-        started_at: new Date().toISOString(),
-        active_host_id: adminUser.id,
-        active_host_name: adminUser.email,
-        admitted_students: updatedRooms[roomSlug]?.admitted_students || [],
-      };
-      await saveLiveClassroomConfig(
-        { room_configs: updatedRooms },
-        { id: adminUser.id, email: adminUser.email },
-        `Admin configured live session ${roomSlug} as ${sessionClassType}`
-      );
-      router.push(`/classroom/${roomSlug}`);
-    } catch {
-      router.push(`/classroom/${sessionRoomId.trim() || "BL-LIVE-101"}`);
-    }
-  };
-
   const handleAddAllowedTutor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminUser || !newTutorEmail.trim()) return;
@@ -428,7 +384,7 @@ export default function AdminLiveClassroomControlPage() {
 
         <div className="flex items-center gap-2">
           <AdminNotificationBell />
-          <Link href="/classroom/BL-LIVE-101" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition">Live Room (BL-LIVE-101)</Link>
+          <Link href="/classroom" className="rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-black text-white shadow-sm transition flex items-center gap-1.5">🚀 Live Classroom Hub →</Link>
           <Link
             href="/admin/dashboard"
             className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
@@ -455,65 +411,107 @@ export default function AdminLiveClassroomControlPage() {
         <p className="p-8 text-center text-xs text-slate-500">Loading classroom configuration…</p>
       ) : (
         <>
-          {/* 1-Click Instant Live Class Stage Launcher */}
-          <section className="mt-6 rounded-3xl border-2 border-blue-500/30 bg-gradient-to-br from-slate-900 via-[#012153] to-slate-950 p-6 sm:p-8 text-white shadow-xl">
+          {/* Unified Live Classroom Operations Hub Card */}
+          <section className="mt-6 rounded-3xl border border-blue-500/30 bg-gradient-to-br from-slate-900 via-[#012153] to-slate-950 p-6 sm:p-8 text-white shadow-xl">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
               <div>
                 <span className="rounded-full bg-cyan-400/20 border border-cyan-400/40 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-cyan-300">
-                  Live Interactive Classroom Launcher
+                  Unified Live Classroom Operations Hub
                 </span>
-                <h2 className="mt-2 text-2xl font-black text-white">Start &amp; Host an Academic Stage</h2>
+                <h2 className="mt-2 text-2xl font-black text-white">Live Classroom Command Center</h2>
                 <p className="mt-1 text-xs text-slate-300 max-w-xl">
-                  Launch instant sessions with interactive audio, voice note recordings, diagram sharing, live in-chat checkpoint polls, and screen-sharing. Zero complex setup required.
+                  BrainLab Live Classrooms, whiteboard collaboration, video lesson studios, and masterclass sessions are managed and launched through the unified Classroom Hub.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href="/classroom"
+                  className="rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-2 active:scale-95"
+                >
+                  <span>🚀 Open Live Classroom Hub →</span>
+                </Link>
+                <Link
+                  href="/classroom/studio"
+                  className="rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-2.5 text-xs font-bold text-white transition flex items-center gap-1.5 backdrop-blur"
+                >
+                  <span>🎥 Video Studio</span>
+                </Link>
+                <Link
+                  href="/classroom/library"
+                  className="rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-2.5 text-xs font-bold text-white transition flex items-center gap-1.5 backdrop-blur"
+                >
+                  <span>📚 Teaching Library</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Quick Admin Dispatch & Attendance Bar */}
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300 block">Default Room</span>
+                <p className="mt-1 text-sm font-black font-mono text-white">BL-LIVE-101</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">Primary academic stage</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = `${window.location.origin}/classroom/BL-LIVE-101`;
+                      navigator.clipboard.writeText(link);
+                      setIsCopied(true);
+                      setTimeout(() => setIsCopied(false), 2500);
+                    }}
+                    className="rounded-lg border border-cyan-400/40 bg-cyan-950/60 hover:bg-cyan-900/60 px-2.5 py-1.5 text-[11px] font-bold text-cyan-300 transition"
+                  >
+                    {isCopied ? "✓ Copied" : "Copy Link"}
+                  </button>
+                  <Link
+                    href="/classroom/BL-LIVE-101"
+                    className="rounded-lg bg-blue-600 hover:bg-blue-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition"
+                  >
+                    Enter Stage →
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 block">Social Outreach</span>
+                <p className="mt-1 text-sm font-black text-white">WhatsApp Broadcast</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">Share invite directly to student groups</p>
                 <button
                   type="button"
                   onClick={handleWhatsAppShare}
-                  className="rounded-xl border border-emerald-400/40 bg-emerald-950/60 hover:bg-emerald-900/60 px-3.5 py-2.5 text-xs font-bold text-emerald-300 transition flex items-center gap-2"
-                  title="Share invitation with prefilled details directly to WhatsApp class group"
+                  className="mt-3 w-full rounded-lg border border-emerald-400/40 bg-emerald-950/60 hover:bg-emerald-900/60 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 transition text-center"
                 >
-                  <span>Broadcast to WhatsApp</span>
+                  📢 Broadcast to WhatsApp
                 </button>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">Push Notifications</span>
+                <p className="mt-1 text-sm font-black text-white">In-App Alert</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">Dispatch banner to all active learners</p>
                 <button
                   type="button"
                   onClick={handleBroadcastAlert}
                   disabled={isBroadcasting}
-                  className="rounded-xl border border-amber-400/40 bg-amber-950/60 hover:bg-amber-900/60 px-3.5 py-2.5 text-xs font-bold text-amber-300 transition flex items-center gap-2 disabled:opacity-50"
-                  title="Dispatch in-app notifications and banner to all logged-in students"
+                  className="mt-3 w-full rounded-lg border border-amber-400/40 bg-amber-950/60 hover:bg-amber-900/60 px-2.5 py-1.5 text-[11px] font-bold text-amber-300 transition text-center disabled:opacity-50"
                 >
-                  <span>{isBroadcasting ? "Sending..." : "In-App Alert to Students"}</span>
+                  {isBroadcasting ? "Sending..." : "🔔 Dispatch Alert"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const link = `${window.location.origin}/classroom/${sessionRoomId.trim() || "live-session"}`;
-                    navigator.clipboard.writeText(link);
-                    setIsCopied(true);
-                    setTimeout(() => setIsCopied(false), 2500);
-                  }}
-                  className="rounded-xl border border-cyan-400/40 bg-cyan-950/60 hover:bg-cyan-900/60 px-3.5 py-2.5 text-xs font-bold text-cyan-300 transition flex items-center gap-2"
-                >
-                  <span>{isCopied ? "Link Copied!" : "Copy Link"}</span>
-                </button>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 block">Attendance &amp; Audit</span>
+                <p className="mt-1 text-sm font-black text-white">Verified Records</p>
+                <p className="mt-0.5 text-[11px] text-slate-400">Export student attendance log</p>
                 <a
-                  href={`/api/classroom/attendance?classId=${sessionRoomId || "BL-LIVE-101"}&format=csv`}
-                  download={`attendance-${sessionRoomId || "BL-LIVE-101"}.csv`}
-                  className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/60 px-4 py-2.5 text-xs font-bold text-emerald-300 transition flex items-center gap-1.5 active-press"
-                  title="Download verified attendance report CSV"
+                  href="/api/classroom/attendance?classId=BL-LIVE-101&format=csv"
+                  download="attendance-BL-LIVE-101.csv"
+                  className="mt-3 block w-full rounded-lg border border-purple-400/40 bg-purple-950/60 hover:bg-purple-900/60 px-2.5 py-1.5 text-[11px] font-bold text-purple-300 transition text-center"
                 >
-                  <span>📥</span>
-                  <span>Export Attendance CSV</span>
+                  📥 Export CSV
                 </a>
-                <button
-                  type="button"
-                  onClick={handleLaunchStage}
-                  className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center gap-2"
-                >
-                  <span>Launch Live Stage →</span>
-                </button>
               </div>
             </div>
 
@@ -529,244 +527,20 @@ export default function AdminLiveClassroomControlPage() {
               </div>
             )}
 
-            {/* Quick Curriculum Selector */}
-            <div className="mt-5 rounded-2xl border border-blue-500/30 bg-blue-950/40 p-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-cyan-300">
-                  Select From Official Curriculum
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  Auto-fill title, topic, and subtopics directly from the syllabus
-                </span>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-400">
-                    Curriculum Subject
-                  </label>
-                  <select
-                    value={curriculumSubjectSlug}
-                    onChange={(e) => {
-                      const slug = e.target.value;
-                      setCurriculumSubjectSlug(slug);
-                      setCurriculumTopicId("");
-                      const subj = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === slug);
-                      if (subj && subj.topics.length > 0) {
-                        const top = subj.topics[0];
-                        setCurriculumTopicId(top.id);
-                        setSessionTitle(`JAMB UTME ${subj.name}: ${top.title}`);
-                        setSessionTopic(top.subtopics.slice(0, 3).join(", "));
-                      }
-                    }}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
-                  >
-                    <option value="">-- Choose Curriculum Subject --</option>
-                    {DEFAULT_JAMB_SYLLABUS.map((subj) => (
-                      <option key={subj.slug} value={subj.slug}>
-                        {subj.name} ({subj.topics.length} topics)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-400">
-                    Syllabus Topic
-                  </label>
-                  <select
-                    value={curriculumTopicId}
-                    disabled={!curriculumSubjectSlug}
-                    onChange={(e) => {
-                      const topId = e.target.value;
-                      setCurriculumTopicId(topId);
-                      const subj = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === curriculumSubjectSlug);
-                      const top = subj?.topics.find((t) => t.id === topId);
-                      if (subj && top) {
-                        setSessionTitle(`JAMB UTME ${subj.name}: ${top.title}`);
-                        setSessionTopic(top.subtopics.slice(0, 3).join(", "));
-                      }
-                    }}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 disabled:opacity-50"
-                  >
-                    <option value="">-- Choose Syllabus Topic --</option>
-                    {DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === curriculumSubjectSlug)?.topics.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.order_index}. {t.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Quick Subtopic Focus Tags */}
-              {curriculumTopicId && (
-                <div className="pt-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
-                    Click subtopic to append to session focus:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === curriculumSubjectSlug)
-                      ?.topics.find((t) => t.id === curriculumTopicId)
-                      ?.subtopics.map((st, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => {
-                            if (!sessionTopic.includes(st)) {
-                              setSessionTopic((prev) => (prev ? `${prev} • ${st}` : st));
-                            }
-                          }}
-                          className="rounded-lg border border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/60 px-2.5 py-1 text-[11px] text-cyan-300 transition"
-                        >
-                          + {st}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
-                  Class Session Title
-                </label>
-                <input
-                  type="text"
-                  value={sessionTitle}
-                  onChange={(e) => setSessionTitle(e.target.value)}
-                  placeholder="E.g., JAMB CBT Physics &amp; Math Speed Drill"
-                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
-                  Subject / Topic Focus
-                </label>
-                <input
-                  type="text"
-                  value={sessionTopic}
-                  onChange={(e) => setSessionTopic(e.target.value)}
-                  placeholder="E.g., Wave Optics, Calculus &amp; Exam Hacks"
-                  className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
-                  Classroom Room Slug / ID
-                </label>
-                <div className="mt-1.5 flex gap-2">
-                  <input
-                    type="text"
-                    value={sessionRoomId}
-                    onChange={(e) => setSessionRoomId(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-                    placeholder="room-slug-123"
-                    className="flex-1 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-mono text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setSessionRoomId(`live-${Math.random().toString(36).substring(2, 8)}`)}
-                    title="Generate new ID"
-                    className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700"
-                  >
-                    🔄
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Masterclass vs Open Class Controls */}
-            <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/60 p-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">Classroom Access Mode</span>
-                  <p className="text-xs text-slate-300">
-                    Choose whether this is a general open class or a protected masterclass.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSessionClassType("open")}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
-                      sessionClassType === "open"
-                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400"
-                        : "bg-slate-800 text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    Open Class (No Code)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSessionClassType("masterclass")}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
-                      sessionClassType === "masterclass"
-                        ? "bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-2 ring-amber-400"
-                        : "bg-slate-800 text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    Masterclass (Restricted)
-                  </button>
-                </div>
-              </div>
-
-              {sessionClassType === "masterclass" && (
-                <div className="mt-3 pt-3 border-t border-white/10 grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-300">
-                      Masterclass Access Code (Optional)
-                    </label>
-                    <div className="mt-1 flex gap-2">
-                      <input
-                        type="text"
-                        value={sessionEntryCode}
-                        onChange={(e) => setSessionEntryCode(e.target.value.toUpperCase())}
-                        placeholder="e.g. BL-MASTER-2026"
-                        className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-amber-300 placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setSessionEntryCode(`MC-${Math.floor(1000 + Math.random() * 9000)}`)}
-                        className="rounded-xl border border-amber-500/40 bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-900/60"
-                        title="Generate random 4-digit code"
-                      >
-                        🎲 Code
-                      </button>
-                    </div>
-                    <p className="mt-1 text-[10px] text-slate-400">
-                      Learners must enter this exact code to enter the masterclass.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col justify-center">
-                    <label className="flex items-start gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={sessionRequirePermission}
-                        onChange={(e) => setSessionRequirePermission(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded accent-amber-500"
-                      />
-                      <div>
-                        <span className="text-xs font-bold text-white">Require Tutor Permission (Waiting Room)</span>
-                        <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                          Students wait in waiting room until host clicks &quot;Admit / Grant Permission&quot;.
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-
             <div className="mt-4 flex flex-wrap items-center gap-3 pt-3 border-t border-white/10 text-xs text-slate-300">
-              <span className="font-bold text-slate-400">Classroom Features Active:</span>
-              <span className="inline-flex items-center gap-1 text-emerald-400">✓ Audio &amp; Voice Notes</span>
-              <span className="inline-flex items-center gap-1 text-cyan-400">✓ Multimedia Diagram Sharing</span>
-              <span className="inline-flex items-center gap-1 text-amber-400">✓ In-Chat Quizzes &amp; Polls</span>
-              <span className="inline-flex items-center gap-1 text-blue-300">✓ Nigerian 3G/4G Bandwidth Optimized</span>
+              <span className="font-bold text-slate-400">Infrastructure Telemetry:</span>
+              <span className="inline-flex items-center gap-1 text-cyan-400">
+                ⚡ Active Provider: {config.provider.toUpperCase()}
+              </span>
+              <span className="inline-flex items-center gap-1 text-emerald-400">
+                🔒 Anti-Leak Watermark: {whiteboardWatermarkEnabled ? "Active" : "Disabled"}
+              </span>
+              <span className="inline-flex items-center gap-1 text-amber-400">
+                👨‍🏫 Allowed Hosts: {allowedTutorsList.length} verified
+              </span>
+              <span className="inline-flex items-center gap-1 text-blue-300">
+                👥 Max Capacity: {config.max_capacity_default} learners
+              </span>
             </div>
           </section>
 

@@ -30,7 +30,7 @@ function NavIcon({ name }: { name: string }) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 2,
+    strokeWidth: 2.2,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };
@@ -698,22 +698,19 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
               <span>Cloud Online</span>
             </div>
 
-            {/* Direct Switch to Student Learner Dashboard */}
+            {/* Unified Student Learner Portal Entry Point */}
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-600 hover:text-white px-3 py-1.5 text-xs font-black text-blue-300 transition shadow-sm active:scale-95"
-              title="Switch to Student Dashboard (Preview learner portal with Admin VIP privileges)"
+              target="_blank"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-600 hover:text-white px-3.5 py-1.5 text-xs font-black text-blue-300 transition shadow-sm active:scale-95"
+              title="Open Learner Portal (Experience platform from student perspective with Admin VIP privileges)"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
                 <polyline points="10 2 10 10 13 7 16 10 16 2" />
               </svg>
-              <span>Student Dashboard</span>
-            </Link>
-
-            <Link href="/" target="_blank" className="admin-view-site-btn" title="View live student portal">
-              <span>Live Portal</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <span>Student Portal</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" x2="21" y1="14" y2="3" />

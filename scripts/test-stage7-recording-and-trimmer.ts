@@ -1,6 +1,7 @@
 /**
  * BrainLab Professional Liveboard - Stage 7 Studio Recording & Server-Side Trimmer Suite
  */
+export {};
 
 function assert(condition: boolean, message: string) {
   if (!condition) {

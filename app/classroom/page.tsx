@@ -16,6 +16,7 @@ import {
   isCurrentUserAdmin,
   type StudentEntitlementsResult,
 } from "@/app/lib/subscriptionEntitlements";
+import { DEFAULT_JAMB_SYLLABUS } from "@/app/lib/curriculumData";
 
 interface LiveClassItem {
   id: string;
@@ -41,6 +42,7 @@ function ClassroomLobbyContent() {
 
   const [classCode, setClassCode] = useState(initialCode);
   const [isStaff, setIsStaff] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("Learner");
@@ -72,6 +74,9 @@ function ClassroomLobbyContent() {
   const [createRecording, setCreateRecording] = useState(true);
   const [isSubmittingClass, setIsSubmittingClass] = useState(false);
   const [isLaunchingInstant, setIsLaunchingInstant] = useState(false);
+  const [isBroadcastingAlert, setIsBroadcastingAlert] = useState(false);
+  const [selectedCurriculumSubject, setSelectedCurriculumSubject] = useState("");
+  const [selectedCurriculumTopic, setSelectedCurriculumTopic] = useState("");
 
   // Load Classes from API
   const fetchClasses = useCallback(async () => {
@@ -103,6 +108,7 @@ function ClassroomLobbyContent() {
       setUserName(name);
 
       const isAdmin = await isCurrentUserAdmin(user.id);
+      setIsAdminUser(isAdmin);
       let staffIdentified = isAdmin;
 
       if (!staffIdentified && user.email) {
@@ -127,6 +133,7 @@ function ClassroomLobbyContent() {
       setUserId(null);
       setUserEmail(null);
       setIsStaff(false);
+      setIsAdminUser(false);
       setPortalMode("student");
       const tier = await getStudentSubscriptionAndEntitlements();
       setSubscriptionInfo(tier);
@@ -302,6 +309,50 @@ function ClassroomLobbyContent() {
     toast.success(`Class code "${code}" copied to clipboard! Share with your students.`);
   };
 
+  const handleWhatsAppShare = (roomCode = "BL-LIVE-101", title = "Academic Masterclass") => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://brainlabexam-cbt.vercel.app";
+    const link = `${origin}/classroom/${roomCode.trim()}`;
+    const text = `🎓 *BrainLab Live Academic Masterclass*\n📌 *Topic:* ${title}\n🎙️ *Format:* Interactive Audio, Whiteboard Derivations & Live Quizzes\n🔗 *Join Room Now:* ${link}\n\n_Works directly in phone or PC browser. No download required._`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
+  const handleBroadcastAlert = async (roomCode = "BL-LIVE-101", title = "Live Class In Session") => {
+    setIsBroadcastingAlert(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        toast.error("Please sign in before sending a classroom alert.");
+        return;
+      }
+
+      const res = await fetch("/api/classroom/broadcast", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          roomId: roomCode.trim(),
+          title: title,
+          topic: "Interactive Classroom with Instructor",
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        toast.success(json.message || "Live classroom alert dispatched to all students!");
+      } else {
+        toast.error(json.error || "Could not dispatch alert.");
+      }
+    } catch {
+      toast.error("Network error dispatching alert.");
+    } finally {
+      setIsBroadcastingAlert(false);
+    }
+  };
+
   const filteredClasses = classes.filter((c) => {
     if (classFilter === "live") return c.status === "live";
     if (classFilter === "scheduled") return c.status === "scheduled";
@@ -392,6 +443,16 @@ function ClassroomLobbyContent() {
                 >
                   <span>🎓 Student View</span>
                 </button>
+                {isAdminUser && (
+                  <Link
+                    href="/admin/classroom"
+                    className="rounded-lg border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 px-2.5 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 transition flex items-center gap-1"
+                    title="Open Live Classroom Platform Governance & LiveKit Settings"
+                  >
+                    <span>⚙️</span>
+                    <span className="hidden sm:inline">Governance</span>
+                  </Link>
+                )}
               </div>
             ) : (
               <button
@@ -492,6 +553,179 @@ function ClassroomLobbyContent() {
                   Launch &amp; Enter as Host →
                 </button>
               </div>
+            </div>
+
+            {/* Tutor Broadcast, Outreach & Attendance Utilities */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              {/* WhatsApp Broadcast Card */}
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📢</span>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      WhatsApp Broadcast
+                    </h4>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Invite students directly via WhatsApp groups with formatted stage link &amp; topic summary.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleWhatsAppShare("BL-LIVE-101", "JAMB Speed Drill Masterclass")}
+                  className="mt-3.5 w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition text-center"
+                >
+                  Share to WhatsApp Group →
+                </button>
+              </div>
+
+              {/* In-App Alert Card */}
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🔔</span>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      In-App Student Alert
+                    </h4>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Push an urgent live banner alert to all learners currently online on the platform.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isBroadcastingAlert}
+                  onClick={() => handleBroadcastAlert("BL-LIVE-101", "Live Academic Stage Now Active")}
+                  className="mt-3.5 w-full rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 transition text-center disabled:opacity-50"
+                >
+                  {isBroadcastingAlert ? "Dispatching…" : "Send In-App Alert →"}
+                </button>
+              </div>
+
+              {/* Attendance Records Card */}
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📥</span>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                      Attendance Records
+                    </h4>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Download verified attendance CSV logs showing join/leave timestamps and active minutes.
+                  </p>
+                </div>
+                <a
+                  href="/api/classroom/attendance?classId=BL-LIVE-101&format=csv"
+                  download="attendance-BL-LIVE-101.csv"
+                  className="mt-3.5 block w-full rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 px-3 py-2 text-xs font-bold text-purple-700 dark:text-purple-300 transition text-center"
+                >
+                  Download CSV Log →
+                </a>
+              </div>
+            </div>
+
+            {/* Official JAMB UTME Syllabus Fast-Track Selector */}
+            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-5 shadow-sm space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    Curriculum Integration
+                  </span>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                    Official JAMB UTME Syllabus Fast-Track
+                  </h4>
+                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Select a topic to quickly launch or prefill a scheduled masterclass
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Subject
+                  </label>
+                  <select
+                    value={selectedCurriculumSubject}
+                    onChange={(e) => {
+                      const slug = e.target.value;
+                      setSelectedCurriculumSubject(slug);
+                      setSelectedCurriculumTopic("");
+                      const subj = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === slug);
+                      if (subj && subj.topics.length > 0) {
+                        setSelectedCurriculumTopic(subj.topics[0].id);
+                        setCreateTitle(`JAMB UTME ${subj.name}: ${subj.topics[0].title}`);
+                        setCreateDescription(subj.topics[0].subtopics.slice(0, 3).join(", "));
+                      }
+                    }}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">-- Choose Syllabus Subject --</option>
+                    {DEFAULT_JAMB_SYLLABUS.map((subj) => (
+                      <option key={subj.slug} value={subj.slug}>
+                        {subj.name} ({subj.topics.length} topics)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Syllabus Topic
+                  </label>
+                  <select
+                    value={selectedCurriculumTopic}
+                    disabled={!selectedCurriculumSubject}
+                    onChange={(e) => {
+                      const topId = e.target.value;
+                      setSelectedCurriculumTopic(topId);
+                      const subj = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === selectedCurriculumSubject);
+                      const top = subj?.topics.find((t) => t.id === topId);
+                      if (subj && top) {
+                        setCreateTitle(`JAMB UTME ${subj.name}: ${top.title}`);
+                        setCreateDescription(top.subtopics.slice(0, 3).join(", "));
+                      }
+                    }}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                  >
+                    <option value="">-- Choose Syllabus Topic --</option>
+                    {DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === selectedCurriculumSubject)?.topics.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.order_index}. {t.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {selectedCurriculumTopic && (
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-white/5">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Ready to teach this topic?
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateModal(true)}
+                      className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
+                    >
+                      Schedule as Masterclass →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const subj = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === selectedCurriculumSubject);
+                        const top = subj?.topics.find((t) => t.id === selectedCurriculumTopic);
+                        handleWhatsAppShare("BL-LIVE-101", `JAMB UTME ${subj?.name}: ${top?.title}`);
+                      }}
+                      className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 transition"
+                    >
+                      Share Topic to WhatsApp
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}

@@ -1,6 +1,7 @@
 /**
  * BrainLab Professional Liveboard - Stage 8 Forensic Watermark & Stage 9 Mobile/Stylus Suite
  */
+export {};
 
 function assert(condition: boolean, message: string) {
   if (!condition) {

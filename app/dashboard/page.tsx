@@ -104,10 +104,10 @@ const spaces = [
   {
     number: "04",
     eyebrow: "LIVE INTERACTIVE CLASSES",
-    title: "Live Classroom & Timetable",
+    title: "Live Academic Classroom",
     description: "Join scheduled tutor sessions, participate with audio/chat, and watch lecture recordings.",
-    href: "/learn?tab=timetable",
-    action: "Open Calendar & Classes",
+    href: "/classroom",
+    action: "Enter Classroom Hub →",
   },
   {
     number: "05",
