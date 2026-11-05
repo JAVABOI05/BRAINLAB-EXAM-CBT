@@ -5,15 +5,29 @@ import {
   QuadraticGraphAdapter,
   QuadraticState,
   DEFAULT_QUADRATIC_STATE,
-  computeQuadraticTelemetry,
+  ProjectileMotionAdapter,
+  ProjectileState,
+  DEFAULT_PROJECTILE_STATE,
+  OhmsLawCircuitAdapter,
+  OhmsLawState,
+  DEFAULT_OHMS_LAW_STATE,
+  AcidBaseTitrationAdapter,
+  TitrationState,
+  DEFAULT_TITRATION_STATE,
+  GeneticsPunnettAdapter,
+  GeneticsState,
+  DEFAULT_GENETICS_STATE,
   type StemSynchronizedEvent,
 } from "./stemAdapter";
 
-interface StemLiveboardPresenterProps {
+export type StemSimType = "quadratic" | "projectile" | "circuit" | "titration" | "genetics";
+
+export interface StemLiveboardPresenterProps {
   channel?: any;
   currentUserId?: string;
   isHost?: boolean;
   theme?: "dark" | "light";
+  initialSim?: StemSimType;
   onClose?: () => void;
   onSnapshotToBoard?: (svgDataUrl: string) => void;
 }
@@ -23,131 +37,223 @@ export default function StemLiveboardPresenter({
   currentUserId = "user",
   isHost = false,
   theme = "dark",
+  initialSim = "quadratic",
   onClose,
   onSnapshotToBoard,
 }: StemLiveboardPresenterProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const adapterRef = useRef<QuadraticGraphAdapter | null>(null);
+  const [activeSim, setActiveSim] = useState<StemSimType>(initialSim);
 
-  const [state, setState] = useState<QuadraticState>({ ...DEFAULT_QUADRATIC_STATE });
+  // Active Simulation Adapter References
+  const quadAdapterRef = useRef<QuadraticGraphAdapter | null>(null);
+  const projAdapterRef = useRef<ProjectileMotionAdapter | null>(null);
+  const circuitAdapterRef = useRef<OhmsLawCircuitAdapter | null>(null);
+  const titrAdapterRef = useRef<AcidBaseTitrationAdapter | null>(null);
+  const genAdapterRef = useRef<GeneticsPunnettAdapter | null>(null);
+
+  // Local state for re-rendering
+  const [quadState, setQuadState] = useState<QuadraticState>({ ...DEFAULT_QUADRATIC_STATE });
+  const [projState, setProjState] = useState<ProjectileState>({ ...DEFAULT_PROJECTILE_STATE });
+  const [circuitState, setCircuitState] = useState<OhmsLawState>({ ...DEFAULT_OHMS_LAW_STATE });
+  const [titrState, setTitrState] = useState<TitrationState>({ ...DEFAULT_TITRATION_STATE });
+  const [genState, setGenState] = useState<GeneticsState>({ ...DEFAULT_GENETICS_STATE });
+
   const lastBroadcastRef = useRef<number>(0);
-  const pendingUpdatesRef = useRef<Partial<QuadraticState>>({});
 
-  // Initialize Adapter
+  // Initialize all adapters once
   useEffect(() => {
-    const adapter = new QuadraticGraphAdapter();
-    adapter.init(DEFAULT_QUADRATIC_STATE, isHost);
-    adapterRef.current = adapter;
+    const quad = new QuadraticGraphAdapter();
+    quad.init(DEFAULT_QUADRATIC_STATE, isHost);
+    quadAdapterRef.current = quad;
+
+    const proj = new ProjectileMotionAdapter();
+    proj.init(DEFAULT_PROJECTILE_STATE, isHost);
+    projAdapterRef.current = proj;
+
+    const circ = new OhmsLawCircuitAdapter();
+    circ.init(DEFAULT_OHMS_LAW_STATE, isHost);
+    circuitAdapterRef.current = circ;
+
+    const titr = new AcidBaseTitrationAdapter();
+    titr.init(DEFAULT_TITRATION_STATE, isHost);
+    titrAdapterRef.current = titr;
+
+    const gen = new GeneticsPunnettAdapter();
+    gen.init(DEFAULT_GENETICS_STATE, isHost);
+    genAdapterRef.current = gen;
 
     return () => {
-      adapter.destroy();
-      adapterRef.current = null;
+      quad.destroy();
+      proj.destroy();
+      circ.destroy();
+      titr.destroy();
+      gen.destroy();
+      quadAdapterRef.current = null;
+      projAdapterRef.current = null;
+      circuitAdapterRef.current = null;
+      titrAdapterRef.current = null;
+      genAdapterRef.current = null;
     };
   }, [isHost]);
 
-  // Redraw Canvas whenever state changes
+  // Current active adapter helper
+  const getActiveAdapter = useCallback(() => {
+    switch (activeSim) {
+      case "quadratic":
+        return quadAdapterRef.current;
+      case "projectile":
+        return projAdapterRef.current;
+      case "circuit":
+        return circuitAdapterRef.current;
+      case "titration":
+        return titrAdapterRef.current;
+      case "genetics":
+        return genAdapterRef.current;
+    }
+  }, [activeSim]);
+
+  // Redraw Canvas whenever active sim or corresponding state changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    const adapter = adapterRef.current;
+    const adapter = getActiveAdapter();
     if (!canvas || !adapter) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     adapter.renderToCanvas(ctx, canvas.width, canvas.height, theme);
-  }, [state, theme]);
+  }, [activeSim, quadState, projState, circuitState, titrState, genState, theme, getActiveAdapter]);
 
-  // Host: Broadcast throttled parameter change event (Max 20fps = 50ms interval)
+  // Throttled Broadcast of Parameter Updates (20fps = 50ms)
   const broadcastParamChange = useCallback(
-    (updates: Partial<QuadraticState>) => {
-      const adapter = adapterRef.current;
-      if (!adapter || !isHost || !channel) return;
+    (sim: StemSimType, updates: Record<string, any>) => {
+      if (!isHost || !channel) return;
+      const adapter = getActiveAdapter();
+      if (!adapter) return;
 
-      Object.assign(pendingUpdatesRef.current, updates);
       const now = Date.now();
-
       if (now - lastBroadcastRef.current > 50) {
         lastBroadcastRef.current = now;
-        const currentBatch = { ...pendingUpdatesRef.current };
-        pendingUpdatesRef.current = {};
-
-        const event = adapter.createParamChangeEvent("live-room", currentUserId, currentBatch);
+        const event = (adapter as any).createParamChangeEvent("live-room", currentUserId, updates);
         try {
           channel.send({
             type: "broadcast",
             event: "stem_event",
-            payload: event,
+            payload: {
+              ...event,
+              sim,
+            },
           });
         } catch (err) {
           console.warn("[StemPresenter] Failed to broadcast event:", err);
         }
       }
     },
-    [channel, currentUserId, isHost]
+    [channel, currentUserId, isHost, getActiveAdapter]
   );
 
-  // Parameter Adjustment Handlers (Host Only)
-  const handleParamA = (val: number) => {
-    const nextA = val === 0 ? 0.25 : val;
-    setState((prev) => ({ ...prev, a: nextA }));
-    broadcastParamChange({ a: nextA });
-  };
-
-  const handleParamB = (val: number) => {
-    setState((prev) => ({ ...prev, b: val }));
-    broadcastParamChange({ b: val });
-  };
-
-  const handleParamC = (val: number) => {
-    setState((prev) => ({ ...prev, c: val }));
-    broadcastParamChange({ c: val });
+  // Switch Simulation (Host Authoritative)
+  const handleSwitchSim = (sim: StemSimType) => {
+    if (!isHost) return;
+    setActiveSim(sim);
+    if (channel) {
+      try {
+        channel.send({
+          type: "broadcast",
+          event: "stem_sim_switch",
+          payload: { sim, senderId: currentUserId },
+        });
+      } catch {}
+    }
   };
 
   // Realtime Listeners
   useEffect(() => {
     if (!channel) return;
 
-    const handleRemoteStemEvent = ({ payload }: { payload: StemSynchronizedEvent<Partial<QuadraticState>> }) => {
+    const handleRemoteStemEvent = ({ payload }: { payload: any }) => {
       if (!payload || payload.actorId === currentUserId) return;
-      const adapter = adapterRef.current;
-      if (!adapter) return;
 
-      const applied = adapter.applyEvent(payload);
-      if (applied) {
-        setState(adapter.getSnapshot());
+      const sim = payload.sim as StemSimType;
+      if (sim && sim !== activeSim) {
+        setActiveSim(sim);
+      }
+
+      if (sim === "quadratic" && quadAdapterRef.current) {
+        if (quadAdapterRef.current.applyEvent(payload)) {
+          setQuadState(quadAdapterRef.current.getSnapshot());
+        }
+      } else if (sim === "projectile" && projAdapterRef.current) {
+        if (projAdapterRef.current.applyEvent(payload)) {
+          setProjState(projAdapterRef.current.getSnapshot());
+        }
+      } else if (sim === "circuit" && circuitAdapterRef.current) {
+        if (circuitAdapterRef.current.applyEvent(payload)) {
+          setCircuitState(circuitAdapterRef.current.getSnapshot());
+        }
+      } else if (sim === "titration" && titrAdapterRef.current) {
+        if (titrAdapterRef.current.applyEvent(payload)) {
+          setTitrState(titrAdapterRef.current.getSnapshot());
+        }
+      } else if (sim === "genetics" && genAdapterRef.current) {
+        if (genAdapterRef.current.applyEvent(payload)) {
+          setGenState(genAdapterRef.current.getSnapshot());
+        }
       }
     };
 
-    const handleRemoteStemSnapshot = ({ payload }: { payload: { snapshot: QuadraticState; sequenceNumber: number } }) => {
-      if (!payload || !payload.snapshot) return;
-      const adapter = adapterRef.current;
-      if (!adapter) return;
+    const handleRemoteSimSwitch = ({ payload }: { payload: any }) => {
+      if (!payload || payload.senderId === currentUserId) return;
+      if (payload.sim) {
+        setActiveSim(payload.sim);
+      }
+    };
 
-      adapter.init(payload.snapshot, isHost);
-      setState(adapter.getSnapshot());
+    const handleRemoteStemSnapshot = ({ payload }: { payload: any }) => {
+      if (!payload || !payload.sim) return;
+      setActiveSim(payload.sim);
+      if (payload.sim === "quadratic" && quadAdapterRef.current) {
+        quadAdapterRef.current.init(payload.snapshot, isHost);
+        setQuadState(quadAdapterRef.current.getSnapshot());
+      } else if (payload.sim === "projectile" && projAdapterRef.current) {
+        projAdapterRef.current.init(payload.snapshot, isHost);
+        setProjState(projAdapterRef.current.getSnapshot());
+      } else if (payload.sim === "circuit" && circuitAdapterRef.current) {
+        circuitAdapterRef.current.init(payload.snapshot, isHost);
+        setCircuitState(circuitAdapterRef.current.getSnapshot());
+      } else if (payload.sim === "titration" && titrAdapterRef.current) {
+        titrAdapterRef.current.init(payload.snapshot, isHost);
+        setTitrState(titrAdapterRef.current.getSnapshot());
+      } else if (payload.sim === "genetics" && genAdapterRef.current) {
+        genAdapterRef.current.init(payload.snapshot, isHost);
+        setGenState(genAdapterRef.current.getSnapshot());
+      }
     };
 
     const handleRemoteStemRequestSync = () => {
-      // If we are host, respond with latest snapshot
-      if (isHost && adapterRef.current) {
-        try {
-          channel.send({
-            type: "broadcast",
-            event: "stem_snapshot",
-            payload: {
-              snapshot: adapterRef.current.getSnapshot(),
-              sequenceNumber: adapterRef.current.getSequenceNumber(),
-            },
-          });
-        } catch {}
+      if (isHost) {
+        const adapter = getActiveAdapter();
+        if (adapter) {
+          try {
+            channel.send({
+              type: "broadcast",
+              event: "stem_snapshot",
+              payload: {
+                sim: activeSim,
+                snapshot: adapter.getSnapshot(),
+                sequenceNumber: (adapter as any).getSequenceNumber?.() || 0,
+              },
+            });
+          } catch {}
+        }
       }
     };
 
     channel.on?.("broadcast", { event: "stem_event" }, handleRemoteStemEvent);
+    channel.on?.("broadcast", { event: "stem_sim_switch" }, handleRemoteSimSwitch);
     channel.on?.("broadcast", { event: "stem_snapshot" }, handleRemoteStemSnapshot);
     channel.on?.("broadcast", { event: "stem_request_sync" }, handleRemoteStemRequestSync);
 
-    // If client is not host, request immediate hydration from tutor
     if (!isHost) {
       try {
         channel.send({
@@ -160,51 +266,54 @@ export default function StemLiveboardPresenter({
 
     return () => {
       channel.off?.("broadcast", { event: "stem_event" }, handleRemoteStemEvent);
+      channel.off?.("broadcast", { event: "stem_sim_switch" }, handleRemoteSimSwitch);
       channel.off?.("broadcast", { event: "stem_snapshot" }, handleRemoteStemSnapshot);
       channel.off?.("broadcast", { event: "stem_request_sync" }, handleRemoteStemRequestSync);
     };
-  }, [channel, currentUserId, isHost]);
+  }, [channel, currentUserId, isHost, activeSim, getActiveAdapter]);
 
-  // Export current graph snapshot to Whiteboard as an image element
+  // Export current simulation as Vector SVG for Whiteboard Stamping
   const handleExportSnapshot = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !onSnapshotToBoard) return;
-    const dataUrl = canvas.toDataURL("image/png");
-    onSnapshotToBoard(dataUrl);
+    if (!onSnapshotToBoard) return;
+    const adapter = getActiveAdapter();
+    if (adapter && typeof (adapter as any).exportSvg === "function") {
+      const svg = (adapter as any).exportSvg(720, 480, theme);
+      onSnapshotToBoard(svg);
+    } else if (canvasRef.current) {
+      const dataUrl = canvasRef.current.toDataURL("image/png");
+      onSnapshotToBoard(dataUrl);
+    }
   };
 
-  const telemetry = computeQuadraticTelemetry(state);
-
   return (
-    <div className="absolute inset-0 z-40 bg-black/85 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 overflow-y-auto">
-      {/* Top Header Bar */}
-      <div className="w-full max-w-4xl flex items-center justify-between border-b border-white/10 pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="text-xl">📐</span>
+    <div className="absolute inset-0 z-40 bg-black/90 backdrop-blur-md flex flex-col justify-between p-3 sm:p-5 overflow-y-auto font-sans">
+      {/* Header Bar & Lab Switcher */}
+      <div className="w-full max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/10 pb-3 gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🧪</span>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm sm:text-base font-black text-white">
-                Quadratic Function &amp; Graph Explorer
+                STEM Interactive Simulation Lab
               </h2>
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 text-[10px] font-mono font-bold">
-                Mode A · {isHost ? "Authoritative Host" : "Student View"}
+              <span className="rounded-md bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
+                Mode A Synced
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              {isHost
-                ? "Adjusting parameters broadcasts real-time mathematical curve sync to all students."
-                : "Tutor is presenting quadratic parabola curvature, roots and discriminant telemetry."}
+              Live authoring, parameter modeling, and real-time student viewport broadcast
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           {isHost && onSnapshotToBoard && (
             <button
               type="button"
               onClick={handleExportSnapshot}
-              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow transition flex items-center gap-1.5"
-              title="Stamp current curve snapshot onto Whiteboard for annotation"
+              className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow transition flex items-center gap-1.5"
+              title="Stamp current lab vector diagram onto Whiteboard"
             >
               <span>📷</span>
               <span>Stamp on Board</span>
@@ -222,134 +331,472 @@ export default function StemLiveboardPresenter({
         </div>
       </div>
 
-      {/* Main Canvas & Live Math Telemetry */}
-      <div className="my-auto w-full max-w-3xl flex flex-col items-center space-y-3">
+      {/* Lab Tabs (Tutor Only can switch; Students follow) */}
+      <div className="w-full max-w-4xl mx-auto flex flex-wrap items-center gap-1.5 py-2">
+        {(
+          [
+            { id: "quadratic", label: "📈 Quadratic Parabola", cat: "Math" },
+            { id: "projectile", label: "🚀 Projectile Motion", cat: "Physics" },
+            { id: "circuit", label: "⚡ Ohm's Law Circuit", cat: "Physics" },
+            { id: "titration", label: "🧪 Acid-Base Titration", cat: "Chemistry" },
+            { id: "genetics", label: "🧬 Punnett Square", cat: "Biology" },
+          ] as const
+        ).map((sim) => (
+          <button
+            key={sim.id}
+            type="button"
+            disabled={!isHost}
+            onClick={() => handleSwitchSim(sim.id)}
+            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+              activeSim === sim.id
+                ? "bg-[#1356E8] text-white shadow-lg shadow-blue-600/30 border border-blue-400/40"
+                : isHost
+                ? "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                : "bg-white/5 text-slate-500 opacity-60 cursor-default"
+            }`}
+          >
+            <span>{sim.label}</span>
+            <span className="text-[9px] uppercase px-1 rounded bg-black/40 text-slate-400">
+              {sim.cat}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Canvas Surface Area */}
+      <div className="my-auto w-full max-w-4xl mx-auto flex flex-col items-center">
         <div className="relative rounded-2xl border border-white/15 bg-[#070d1e] overflow-hidden shadow-2xl flex flex-col items-center w-full">
           <canvas
             ref={canvasRef}
             width={720}
             height={380}
-            className="w-full max-h-[380px] object-contain"
+            className="w-full max-h-[380px] object-contain block"
           />
-
-          {/* Equation Badge Overlay */}
-          <div className="absolute top-3 left-3 rounded-xl border border-white/15 bg-black/70 backdrop-blur px-3 py-1.5 font-mono text-xs sm:text-sm text-cyan-300 shadow">
-            y = {state.a === 1 ? "" : state.a === -1 ? "-" : `${state.a}`}x²{" "}
-            {state.b >= 0 ? `+ ${state.b}` : `- ${Math.abs(state.b)}`}x{" "}
-            {state.c >= 0 ? `+ ${state.c}` : `- ${Math.abs(state.c)}`}
-          </div>
-
-          {/* Roots Telemetry Badge Overlay */}
-          <div className="absolute top-3 right-3 rounded-xl border border-white/15 bg-black/70 backdrop-blur px-3 py-1 text-[11px] font-mono text-white shadow flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                telemetry.natureOfRoots === "complex" ? "bg-rose-400" : "bg-emerald-400"
-              }`}
-            />
-            <span>
-              {telemetry.natureOfRoots === "complex"
-                ? "Complex Roots (Δ < 0)"
-                : telemetry.natureOfRoots === "coincident"
-                ? `Coincident: x = ${telemetry.roots.r1}`
-                : `x₁ = ${telemetry.roots.r1}, x₂ = ${telemetry.roots.r2}`}
-            </span>
-          </div>
-        </div>
-
-        {/* Live Mathematical Telemetry Row */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-          <div className="p-2.5 rounded-xl bg-[#0B1536] border border-white/10 text-center">
-            <span className="block text-[10px] font-bold uppercase text-slate-400">Discriminant (Δ)</span>
-            <span className="font-mono text-sm font-black text-cyan-300">{telemetry.discriminant}</span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-[#0B1536] border border-white/10 text-center">
-            <span className="block text-[10px] font-bold uppercase text-slate-400">Vertex (Xv, Yv)</span>
-            <span className="font-mono text-xs font-black text-white">
-              ({telemetry.vertex.x}, {telemetry.vertex.y})
-            </span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-[#0B1536] border border-white/10 text-center">
-            <span className="block text-[10px] font-bold uppercase text-slate-400">Curvature</span>
-            <span className="font-mono text-xs font-black text-amber-400 capitalize">
-              {telemetry.curvature.replace("_", " ")}
-            </span>
-          </div>
-          <div className="p-2.5 rounded-xl bg-[#0B1536] border border-white/10 text-center">
-            <span className="block text-[10px] font-bold uppercase text-slate-400">Y-Intercept</span>
-            <span className="font-mono text-sm font-black text-emerald-400">(0, {telemetry.yIntercept})</span>
-          </div>
         </div>
       </div>
 
-      {/* Tutor Authoritative Control Panel (Host Only) */}
-      {isHost ? (
-        <div className="w-full max-w-3xl rounded-2xl border border-white/15 bg-[#0B1536] p-4 shadow-xl space-y-3">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-            <span>Authoritative Parameter Controls (Tutor)</span>
-            <button
-              type="button"
-              onClick={() => {
-                setState({ ...DEFAULT_QUADRATIC_STATE });
-                broadcastParamChange(DEFAULT_QUADRATIC_STATE);
-              }}
-              className="text-[11px] text-cyan-400 hover:text-cyan-300 transition"
-            >
-              Reset to Standard (x² - 2x - 3)
-            </button>
+      {/* Authoritative Control Panel (Host Only) */}
+      <div className="w-full max-w-4xl mx-auto pt-2">
+        {isHost ? (
+          <div className="rounded-2xl border border-white/15 bg-[#0B1536] p-4 shadow-xl space-y-3">
+            {/* Quadratic Controls */}
+            {activeSim === "quadratic" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>Quadratic Coefficients: y = ax² + bx + c</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const reset = { ...DEFAULT_QUADRATIC_STATE };
+                      setQuadState(reset);
+                      broadcastParamChange("quadratic", reset);
+                    }}
+                    className="text-[11px] text-cyan-400 hover:underline"
+                  >
+                    Reset (x² - 2x - 3)
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">a (curvature):</span>
+                      <span className="text-cyan-300 font-bold">{quadState.a}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-3}
+                      max={3}
+                      step={0.25}
+                      value={quadState.a}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 0.25;
+                        setQuadState((p) => ({ ...p, a: val }));
+                        broadcastParamChange("quadratic", { a: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">b (linear shift):</span>
+                      <span className="text-cyan-300 font-bold">{quadState.b}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-6}
+                      max={6}
+                      step={0.5}
+                      value={quadState.b}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setQuadState((p) => ({ ...p, b: val }));
+                        broadcastParamChange("quadratic", { b: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">c (y-intercept):</span>
+                      <span className="text-cyan-300 font-bold">{quadState.c}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-6}
+                      max={6}
+                      step={0.5}
+                      value={quadState.c}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setQuadState((p) => ({ ...p, c: val }));
+                        broadcastParamChange("quadratic", { c: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Projectile Controls */}
+            {activeSim === "projectile" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>Projectile Parameters: Launch Velocity &amp; Angle</span>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <span className="text-slate-400">Gravity:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjState((p) => ({ ...p, gravity: 9.8 }));
+                        broadcastParamChange("projectile", { gravity: 9.8 });
+                      }}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        projState.gravity === 9.8 ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
+                      }`}
+                    >
+                      Earth (9.8)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjState((p) => ({ ...p, gravity: 1.62 }));
+                        broadcastParamChange("projectile", { gravity: 1.62 });
+                      }}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        projState.gravity === 1.62 ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
+                      }`}
+                    >
+                      Moon (1.62)
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">Initial Velocity (v₀):</span>
+                      <span className="text-cyan-300 font-bold">{projState.v0} m/s</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={10}
+                      max={55}
+                      step={1}
+                      value={projState.v0}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setProjState((p) => ({ ...p, v0: val }));
+                        broadcastParamChange("projectile", { v0: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">Launch Angle (θ):</span>
+                      <span className="text-cyan-300 font-bold">{projState.angleDeg}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={15}
+                      max={85}
+                      step={1}
+                      value={projState.angleDeg}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setProjState((p) => ({ ...p, angleDeg: val }));
+                        broadcastParamChange("projectile", { angleDeg: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">Launch Height (h₀):</span>
+                      <span className="text-cyan-300 font-bold">{projState.h0} m</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={25}
+                      step={1}
+                      value={projState.h0}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setProjState((p) => ({ ...p, h0: val }));
+                        broadcastParamChange("projectile", { h0: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Circuit Controls */}
+            {activeSim === "circuit" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>DC Circuit Parameters: Ohm's Law (V = IR)</span>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <span className="text-slate-400">Circuit Type:</span>
+                    {(["single", "series", "parallel"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          setCircuitState((p) => ({ ...p, circuitType: t }));
+                          broadcastParamChange("circuit", { circuitType: t });
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize ${
+                          circuitState.circuitType === t ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">DC Voltage (V):</span>
+                      <span className="text-cyan-300 font-bold">{circuitState.voltage} V</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={36}
+                      step={1}
+                      value={circuitState.voltage}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCircuitState((p) => ({ ...p, voltage: val }));
+                        broadcastParamChange("circuit", { voltage: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                      <span className="text-slate-400">Resistance (R):</span>
+                      <span className="text-cyan-300 font-bold">{circuitState.resistance} Ω</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={50}
+                      step={1}
+                      value={circuitState.resistance}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCircuitState((p) => ({ ...p, resistance: val }));
+                        broadcastParamChange("circuit", { resistance: val });
+                      }}
+                      className="w-full accent-blue-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Titration Controls */}
+            {activeSim === "titration" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>Acid-Base Titration: 25 mL 0.1M HCl with 0.1M NaOH</span>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <span className="text-slate-400">Indicator:</span>
+                    {(
+                      [
+                        { id: "phenolphthalein", label: "Phenolphthalein" },
+                        { id: "methyl_orange", label: "Methyl Orange" },
+                        { id: "bromothymol_blue", label: "Bromothymol Blue" },
+                      ] as const
+                    ).map((ind) => (
+                      <button
+                        key={ind.id}
+                        type="button"
+                        onClick={() => {
+                          setTitrState((p) => ({ ...p, indicator: ind.id }));
+                          broadcastParamChange("titration", { indicator: ind.id });
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          titrState.indicator === ind.id ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
+                        }`}
+                      >
+                        {ind.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-mono">
+                    <span className="text-slate-400">Buret Titrant Added (NaOH):</span>
+                    <span className="text-cyan-300 font-bold">{titrState.titrantAddedMl} mL (Equiv at 25.0 mL)</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={50}
+                    step={0.5}
+                    value={titrState.titrantAddedMl}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setTitrState((p) => ({ ...p, titrantAddedMl: val }));
+                      broadcastParamChange("titration", { titrantAddedMl: val });
+                    }}
+                    className="w-full accent-blue-500 cursor-pointer"
+                  />
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = Math.max(0, titrState.titrantAddedMl - 5);
+                        setTitrState((p) => ({ ...p, titrantAddedMl: val }));
+                        broadcastParamChange("titration", { titrantAddedMl: val });
+                      }}
+                      className="px-2 py-1 rounded bg-white/10 text-xs font-mono hover:bg-white/20"
+                    >
+                      -5 mL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = Math.min(50, titrState.titrantAddedMl + 1);
+                        setTitrState((p) => ({ ...p, titrantAddedMl: val }));
+                        broadcastParamChange("titration", { titrantAddedMl: val });
+                      }}
+                      className="px-2 py-1 rounded bg-white/10 text-xs font-mono hover:bg-white/20"
+                    >
+                      +1 mL (Dropwise)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = Math.min(50, titrState.titrantAddedMl + 5);
+                        setTitrState((p) => ({ ...p, titrantAddedMl: val }));
+                        broadcastParamChange("titration", { titrantAddedMl: val });
+                      }}
+                      className="px-2 py-1 rounded bg-white/10 text-xs font-mono hover:bg-white/20"
+                    >
+                      +5 mL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTitrState((p) => ({ ...p, titrantAddedMl: 0 }));
+                        broadcastParamChange("titration", { titrantAddedMl: 0 });
+                      }}
+                      className="ml-auto text-xs text-rose-400 hover:underline"
+                    >
+                      Reset to 0 mL
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Genetics Controls */}
+            {activeSim === "genetics" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>Monohybrid Cross: Allele Combinations</span>
+                  <span className="text-[11px] text-cyan-300 font-mono">B = Brown, b = Blue</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <span className="block text-[11px] text-slate-400 font-bold mb-1.5">
+                      Maternal Genotype (♀):
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {(
+                        [
+                          { alleles: ["B", "B"] as [string, string], label: "BB (Homozygous Dom)" },
+                          { alleles: ["B", "b"] as [string, string], label: "Bb (Heterozygous)" },
+                          { alleles: ["b", "b"] as [string, string], label: "bb (Homozygous Rec)" },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => {
+                            setGenState((p) => ({ ...p, maternalAlleles: opt.alleles }));
+                            broadcastParamChange("genetics", { maternalAlleles: opt.alleles });
+                          }}
+                          className={`px-2 py-1 rounded text-xs font-bold font-mono ${
+                            genState.maternalAlleles[0] === opt.alleles[0] &&
+                            genState.maternalAlleles[1] === opt.alleles[1]
+                              ? "bg-pink-600 text-white"
+                              : "bg-white/10 text-slate-400"
+                          }`}
+                        >
+                          {opt.alleles.join("")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-[11px] text-slate-400 font-bold mb-1.5">
+                      Paternal Genotype (♂):
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {(
+                        [
+                          { alleles: ["B", "B"] as [string, string], label: "BB (Homozygous Dom)" },
+                          { alleles: ["B", "b"] as [string, string], label: "Bb (Heterozygous)" },
+                          { alleles: ["b", "b"] as [string, string], label: "bb (Homozygous Rec)" },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => {
+                            setGenState((p) => ({ ...p, paternalAlleles: opt.alleles }));
+                            broadcastParamChange("genetics", { paternalAlleles: opt.alleles });
+                          }}
+                          className={`px-2 py-1 rounded text-xs font-bold font-mono ${
+                            genState.paternalAlleles[0] === opt.alleles[0] &&
+                            genState.paternalAlleles[1] === opt.alleles[1]
+                              ? "bg-blue-600 text-white"
+                              : "bg-white/10 text-slate-400"
+                          }`}
+                        >
+                          {opt.alleles.join("")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <div className="flex justify-between text-xs font-mono mb-1">
-                <span className="text-slate-400">a (curvature):</span>
-                <span className="text-cyan-300 font-bold">{state.a}</span>
-              </div>
-              <input
-                type="range"
-                min={-3}
-                max={3}
-                step={0.25}
-                value={state.a}
-                onChange={(e) => handleParamA(Number(e.target.value))}
-                className="w-full accent-blue-500 cursor-pointer"
-              />
-            </div>
-            <div>
-              <div className="flex justify-between text-xs font-mono mb-1">
-                <span className="text-slate-400">b (linear shift):</span>
-                <span className="text-cyan-300 font-bold">{state.b}</span>
-              </div>
-              <input
-                type="range"
-                min={-6}
-                max={6}
-                step={0.5}
-                value={state.b}
-                onChange={(e) => handleParamB(Number(e.target.value))}
-                className="w-full accent-blue-500 cursor-pointer"
-              />
-            </div>
-            <div>
-              <div className="flex justify-between text-xs font-mono mb-1">
-                <span className="text-slate-400">c (intercept):</span>
-                <span className="text-cyan-300 font-bold">{state.c}</span>
-              </div>
-              <input
-                type="range"
-                min={-6}
-                max={6}
-                step={0.5}
-                value={state.c}
-                onChange={(e) => handleParamC(Number(e.target.value))}
-                className="w-full accent-blue-500 cursor-pointer"
-              />
-            </div>
+        ) : (
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center text-xs text-slate-400">
+            Viewing authoritative Liveboard STEM presentation. Any adjustments or lab changes made by your instructor reflect here automatically.
           </div>
-        </div>
-      ) : (
-        <div className="w-full max-w-3xl rounded-xl border border-white/10 bg-white/5 p-3 text-center text-xs text-slate-400">
-          Viewing authoritative Liveboard STEM presentation. Any adjustments made by your instructor reflect here automatically.
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -1,252 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef, use } from "react";
+import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BrandHeader from "@/app/components/BrandHeader";
 import BrandFooter from "@/app/components/BrandFooter";
 import type { StemResource } from "@/app/lib/stem/stemService";
 import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
-
-// Interactive 2D Quadratic Function Graph Canvas
-function QuadraticCanvas({
-  a,
-  b,
-  c,
-  onChangeA,
-  onChangeB,
-  onChangeC,
-}: {
-  a: number;
-  b: number;
-  c: number;
-  onChangeA: (v: number) => void;
-  onChangeB: (v: number) => void;
-  onChangeC: (v: number) => void;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // Discriminant and roots calculation
-  const discriminant = useMemo(() => b * b - 4 * a * c, [a, b, c]);
-  const vertex = useMemo(() => {
-    const vx = -b / (2 * a);
-    const vy = a * vx * vx + b * vx + c;
-    return { x: vx, y: vy };
-  }, [a, b, c]);
-
-  const roots = useMemo(() => {
-    if (discriminant < 0) return { type: "complex", r1: null, r2: null };
-    if (discriminant === 0) {
-      const r = -b / (2 * a);
-      return { type: "coincident", r1: r, r2: r };
-    }
-    const sqrtD = Math.sqrt(discriminant);
-    const r1 = (-b + sqrtD) / (2 * a);
-    const r2 = (-b - sqrtD) / (2 * a);
-    return { type: "real_distinct", r1: Math.min(r1, r2), r2: Math.max(r1, r2) };
-  }, [a, b, c, discriminant]);
-
-  // Redraw Canvas on parameter update
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-    ctx.clearRect(0, 0, width, height);
-
-    // Background grid
-    ctx.fillStyle = "#070d1e";
-    ctx.fillRect(0, 0, width, height);
-
-    const originX = width / 2;
-    const originY = height / 2;
-    const scale = 32; // 32 pixels per Cartesian unit
-
-    // Draw Grid Lines
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-    ctx.lineWidth = 1;
-
-    for (let x = originX % scale; x < width; x += scale) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    }
-    for (let y = originY % scale; y < height; y += scale) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
-    }
-
-    // Axes
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-    ctx.lineWidth = 1.5;
-
-    // X-Axis
-    ctx.beginPath();
-    ctx.moveTo(0, originY);
-    ctx.lineTo(width, originY);
-    ctx.stroke();
-
-    // Y-Axis
-    ctx.beginPath();
-    ctx.moveTo(originX, 0);
-    ctx.lineTo(originX, height);
-    ctx.stroke();
-
-    // Plot Parabola: y = ax^2 + bx + c
-    ctx.strokeStyle = "#38bdf8"; // Cyan
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-
-    let started = false;
-    for (let px = 0; px <= width; px += 2) {
-      const x = (px - originX) / scale;
-      const y = a * x * x + b * x + c;
-      const py = originY - y * scale;
-
-      if (!started) {
-        ctx.moveTo(px, py);
-        started = true;
-      } else {
-        ctx.lineTo(px, py);
-      }
-    }
-    ctx.stroke();
-
-    // Vertex Marker
-    const pvx = originX + vertex.x * scale;
-    const pvy = originY - vertex.y * scale;
-    if (pvx >= 0 && pvx <= width && pvy >= 0 && pvy <= height) {
-      ctx.fillStyle = "#f59e0b"; // Amber
-      ctx.beginPath();
-      ctx.arc(pvx, pvy, 5, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-
-    // Roots Markers
-    if (roots.type !== "complex") {
-      ctx.fillStyle = "#10b981"; // Emerald
-      if (roots.r1 !== null) {
-        const pr1x = originX + roots.r1 * scale;
-        ctx.beginPath();
-        ctx.arc(pr1x, originY, 5, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-      if (roots.r2 !== null && roots.type === "real_distinct") {
-        const pr2x = originX + roots.r2 * scale;
-        ctx.beginPath();
-        ctx.arc(pr2x, originY, 5, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
-  }, [a, b, c, vertex, roots]);
-
-  return (
-    <div className="space-y-6">
-      {/* Simulation Screen */}
-      <div className="relative rounded-2xl border border-white/10 bg-[#070d1e] overflow-hidden shadow-2xl flex flex-col items-center">
-        <canvas
-          ref={canvasRef}
-          width={760}
-          height={420}
-          className="w-full max-h-[420px] object-contain cursor-crosshair"
-        />
-
-        {/* Live Equation Badge Overlay */}
-        <div className="absolute top-4 left-4 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md px-4 py-2 font-mono text-sm text-cyan-300 shadow">
-          y = {a === 1 ? "" : a === -1 ? "-" : `${a}`}x² {b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`}x{" "}
-          {c >= 0 ? `+ ${c}` : `- ${Math.abs(c)}`}
-        </div>
-
-        {/* Live Roots Overlay */}
-        <div className="absolute top-4 right-4 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md px-3.5 py-1.5 text-xs font-mono text-white shadow flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-          <span>
-            {roots.type === "complex"
-              ? "No Real Roots (Δ < 0)"
-              : roots.type === "coincident"
-              ? `Coincident Root: x = ${roots.r1?.toFixed(2)}`
-              : `Roots: x₁ = ${roots.r1?.toFixed(2)}, x₂ = ${roots.r2?.toFixed(2)}`}
-          </span>
-        </div>
-      </div>
-
-      {/* Parameter Adjustment Sliders */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow">
-        {/* Coefficient a */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-slate-300">Leading Coefficient (a):</span>
-            <span className="font-mono text-cyan-300">{a.toFixed(2)}</span>
-          </div>
-          <input
-            type="range"
-            min={-4}
-            max={4}
-            step={0.25}
-            value={a}
-            onChange={(e) => {
-              const val = Number(e.target.value);
-              onChangeA(val === 0 ? 0.25 : val);
-            }}
-            className="w-full accent-blue-500 cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-            <span>-4 (Concave Down)</span>
-            <span>+4 (Concave Up)</span>
-          </div>
-        </div>
-
-        {/* Coefficient b */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-slate-300">Linear Coefficient (b):</span>
-            <span className="font-mono text-cyan-300">{b.toFixed(2)}</span>
-          </div>
-          <input
-            type="range"
-            min={-6}
-            max={6}
-            step={0.5}
-            value={b}
-            onChange={(e) => onChangeB(Number(e.target.value))}
-            className="w-full accent-blue-500 cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-            <span>-6</span>
-            <span>+6</span>
-          </div>
-        </div>
-
-        {/* Coefficient c */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-slate-300">Constant / Intercept (c):</span>
-            <span className="font-mono text-cyan-300">{c.toFixed(2)}</span>
-          </div>
-          <input
-            type="range"
-            min={-8}
-            max={8}
-            step={0.5}
-            value={c}
-            onChange={(e) => onChangeC(Number(e.target.value))}
-            className="w-full accent-blue-500 cursor-pointer"
-          />
-          <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-            <span>-8 (Y-intercept)</span>
-            <span>+8</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import {
+  QuadraticGraphAdapter,
+  DEFAULT_QUADRATIC_STATE,
+  ProjectileMotionAdapter,
+  DEFAULT_PROJECTILE_STATE,
+  OhmsLawCircuitAdapter,
+  DEFAULT_OHMS_LAW_STATE,
+  AcidBaseTitrationAdapter,
+  DEFAULT_TITRATION_STATE,
+  GeneticsPunnettAdapter,
+  DEFAULT_GENETICS_STATE,
+} from "@/app/components/classroom/whiteboard/stemAdapter";
 
 export default function StemPlayerPage({
   params,
@@ -259,15 +31,22 @@ export default function StemPlayerPage({
   const [resource, setResource] = useState<StemResource | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Quadratic Simulation Parameters State
-  const [paramA, setParamA] = useState(1);
-  const [paramB, setParamB] = useState(-2);
-  const [paramC, setParamC] = useState(-3);
-
-  // Student Observation State
+  // Student Observations & Lab Attempts
   const [observations, setObservations] = useState("");
   const [savedStatus, setSavedStatus] = useState("");
+  const [activeTab, setActiveTab] = useState<"workspace" | "instructions" | "assessment">("workspace");
 
+  // Simulation Parameter States
+  const [quadState, setQuadState] = useState({ ...DEFAULT_QUADRATIC_STATE });
+  const [projState, setProjState] = useState({ ...DEFAULT_PROJECTILE_STATE });
+  const [circState, setCircState] = useState({ ...DEFAULT_OHMS_LAW_STATE });
+  const [titrState, setTitrState] = useState({ ...DEFAULT_TITRATION_STATE });
+  const [genState, setGenState] = useState({ ...DEFAULT_GENETICS_STATE });
+  const [selectedOrganelle, setSelectedOrganelle] = useState<string>("nucleus");
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Fetch or fallback resource
   useEffect(() => {
     let active = true;
     async function load() {
@@ -281,11 +60,8 @@ export default function StemPlayerPage({
             return;
           }
         }
-        // Fallback to seed
         const fallback = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug);
-        if (active && fallback) {
-          setResource(fallback);
-        }
+        if (active && fallback) setResource(fallback);
       } catch {
         const fallback = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug);
         if (active && fallback) setResource(fallback);
@@ -298,6 +74,44 @@ export default function StemPlayerPage({
       active = false;
     };
   }, [slug]);
+
+  // Redraw Canvas on any parameter update
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    if (slug === "quadratic-graph-explorer") {
+      const adapter = new QuadraticGraphAdapter();
+      adapter.init(quadState, false);
+      adapter.renderToCanvas(ctx, canvas.width, canvas.height, "dark");
+    } else if (slug === "projectile-motion-simulator") {
+      const adapter = new ProjectileMotionAdapter();
+      adapter.init(projState, false);
+      adapter.renderToCanvas(ctx, canvas.width, canvas.height, "dark");
+    } else if (slug === "ohms-law-dc-circuit") {
+      const adapter = new OhmsLawCircuitAdapter();
+      adapter.init(circState, false);
+      adapter.renderToCanvas(ctx, canvas.width, canvas.height, "dark");
+    } else if (slug === "acid-base-titration-curve") {
+      const adapter = new AcidBaseTitrationAdapter();
+      adapter.init(titrState, false);
+      adapter.renderToCanvas(ctx, canvas.width, canvas.height, "dark");
+    } else if (slug === "genetics-punnett-square-lab") {
+      const adapter = new GeneticsPunnettAdapter();
+      adapter.init(genState, false);
+      adapter.renderToCanvas(ctx, canvas.width, canvas.height, "dark");
+    }
+  }, [slug, quadState, projState, circState, titrState, genState]);
+
+  const handleSaveObservation = () => {
+    setSavedStatus("Saving experiment attempt…");
+    setTimeout(() => {
+      setSavedStatus("Saved to student academic log! ✓");
+      setTimeout(() => setSavedStatus(""), 3000);
+    }, 400);
+  };
 
   if (loading && !resource) {
     return (
@@ -369,118 +183,386 @@ export default function StemPlayerPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Central Lab Canvas (2 Columns) */}
           <div className="lg:col-span-2 space-y-6">
-            <QuadraticCanvas
-              a={paramA}
-              b={paramB}
-              c={paramC}
-              onChangeA={setParamA}
-              onChangeB={setParamB}
-              onChangeC={setParamC}
-            />
+            {slug !== "cell-ultrastructure-guide" ? (
+              <div className="space-y-4">
+                <div className="relative rounded-2xl border border-white/10 bg-[#070d1e] overflow-hidden shadow-2xl flex flex-col items-center">
+                  <canvas
+                    ref={canvasRef}
+                    width={760}
+                    height={420}
+                    className="w-full max-h-[420px] object-contain cursor-crosshair block"
+                  />
+                </div>
 
-            {/* Live Quantitative Telemetry Card */}
-            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 space-y-3 shadow">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <span>📊</span>
-                <span>Quantitative Analysis &amp; Discriminant Telemetry</span>
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-[#070d1e] border border-white/5">
-                  <span className="block text-slate-400 text-[10px] uppercase font-bold">Discriminant (Δ)</span>
-                  <span className="font-mono text-base font-black text-cyan-300">
-                    {(paramB * paramB - 4 * paramA * paramC).toFixed(2)}
-                  </span>
+                {/* Simulation Parameter Controls */}
+                <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-4">
+                  {slug === "quadratic-graph-explorer" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">Leading (a):</span>
+                          <span className="font-mono text-cyan-300">{quadState.a}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-3}
+                          max={3}
+                          step={0.25}
+                          value={quadState.a}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0.25;
+                            setQuadState((p) => ({ ...p, a: val }));
+                          }}
+                          className="w-full accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">Linear (b):</span>
+                          <span className="font-mono text-cyan-300">{quadState.b}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-6}
+                          max={6}
+                          step={0.5}
+                          value={quadState.b}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setQuadState((p) => ({ ...p, b: val }));
+                          }}
+                          className="w-full accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">Constant (c):</span>
+                          <span className="font-mono text-cyan-300">{quadState.c}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-6}
+                          max={6}
+                          step={0.5}
+                          value={quadState.c}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setQuadState((p) => ({ ...p, c: val }));
+                          }}
+                          className="w-full accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {slug === "projectile-motion-simulator" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">Launch Velocity (v₀):</span>
+                          <span className="font-mono text-cyan-300">{projState.v0} m/s</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={10}
+                          max={55}
+                          step={1}
+                          value={projState.v0}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setProjState((p) => ({ ...p, v0: val }));
+                          }}
+                          className="w-full accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">Launch Angle (θ):</span>
+                          <span className="font-mono text-cyan-300">{projState.angleDeg}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={15}
+                          max={85}
+                          step={1}
+                          value={projState.angleDeg}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setProjState((p) => ({ ...p, angleDeg: val }));
+                          }}
+                          className="w-full accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">Gravity (g):</span>
+                          <span className="font-mono text-cyan-300">{projState.gravity} m/s²</span>
+                        </div>
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setProjState((p) => ({ ...p, gravity: 9.8 }))}
+                            className={`px-2 py-1 rounded text-xs font-bold ${
+                              projState.gravity === 9.8 ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
+                            }`}
+                          >
+                            Earth (9.8)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProjState((p) => ({ ...p, gravity: 1.62 }))}
+                            className={`px-2 py-1 rounded text-xs font-bold ${
+                              projState.gravity === 1.62 ? "bg-blue-600 text-white" : "bg-white/10 text-slate-400"
+                            }`}
+                          >
+                            Moon (1.62)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {slug === "ohms-law-dc-circuit" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">DC Voltage (V):</span>
+                          <span className="font-mono text-cyan-300">{circState.voltage} V</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={36}
+                          step={1}
+                          value={circState.voltage}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setCircState((p) => ({ ...p, voltage: val }));
+                          }}
+                          className="w-full accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                          <span className="text-slate-300">Load Resistance (R):</span>
+                          <span className="font-mono text-cyan-300">{circState.resistance} Ω</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={50}
+                          step={1}
+                          value={circState.resistance}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setCircState((p) => ({ ...p, resistance: val }));
+                          }}
+                          className="w-full accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {slug === "acid-base-titration-curve" && (
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-slate-300">Buret Titrant Added (0.1M NaOH):</span>
+                        <span className="font-mono text-cyan-300">{titrState.titrantAddedMl} mL</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={50}
+                        step={0.5}
+                        value={titrState.titrantAddedMl}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setTitrState((p) => ({ ...p, titrantAddedMl: val }));
+                        }}
+                        className="w-full accent-blue-500 cursor-pointer"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setTitrState((p) => ({ ...p, titrantAddedMl: Math.min(50, p.titrantAddedMl + 1) }))}
+                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold"
+                        >
+                          +1 mL Dropwise
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTitrState((p) => ({ ...p, titrantAddedMl: 0 }))}
+                          className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold"
+                        >
+                          Reset Buret
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {slug === "genetics-punnett-square-lab" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-xs font-bold text-slate-300 mb-1.5">Maternal Alleles:</span>
+                        <div className="flex items-center gap-2">
+                          {(
+                            [
+                              { alleles: ["B", "B"] as [string, string], label: "BB" },
+                              { alleles: ["B", "b"] as [string, string], label: "Bb" },
+                              { alleles: ["b", "b"] as [string, string], label: "bb" },
+                            ] as const
+                          ).map((opt) => (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() => setGenState((p) => ({ ...p, maternalAlleles: opt.alleles }))}
+                              className={`px-3 py-1 rounded text-xs font-bold font-mono ${
+                                genState.maternalAlleles[0] === opt.alleles[0] &&
+                                genState.maternalAlleles[1] === opt.alleles[1]
+                                  ? "bg-pink-600 text-white"
+                                  : "bg-white/10 text-slate-400"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-slate-300 mb-1.5">Paternal Alleles:</span>
+                        <div className="flex items-center gap-2">
+                          {(
+                            [
+                              { alleles: ["B", "B"] as [string, string], label: "BB" },
+                              { alleles: ["B", "b"] as [string, string], label: "Bb" },
+                              { alleles: ["b", "b"] as [string, string], label: "bb" },
+                            ] as const
+                          ).map((opt) => (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() => setGenState((p) => ({ ...p, paternalAlleles: opt.alleles }))}
+                              className={`px-3 py-1 rounded text-xs font-bold font-mono ${
+                                genState.paternalAlleles[0] === opt.alleles[0] &&
+                                genState.paternalAlleles[1] === opt.alleles[1]
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-white/10 text-slate-400"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="p-3 rounded-xl bg-[#070d1e] border border-white/5">
-                  <span className="block text-slate-400 text-[10px] uppercase font-bold">Parabola Apex</span>
-                  <span className="font-mono text-base font-black text-amber-400">
-                    {paramA > 0 ? "Minimum" : "Maximum"}
-                  </span>
+              </div>
+            ) : (
+              /* Cell Structure Biology Interactive View */
+              <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <h3 className="text-base font-bold text-white">Eukaryotic Cell Ultrastructure</h3>
+                  <span className="text-xs text-cyan-300 font-mono">JAMB Biology Syllabus</span>
                 </div>
-                <div className="p-3 rounded-xl bg-[#070d1e] border border-white/5">
-                  <span className="block text-slate-400 text-[10px] uppercase font-bold">Vertex (Xv, Yv)</span>
-                  <span className="font-mono text-xs font-black text-white truncate">
-                    {(-paramB / (2 * paramA)).toFixed(2)}, {-(paramB * paramB - 4 * paramA * paramC) / (4 * paramA) ? (-(paramB * paramB - 4 * paramA * paramC) / (4 * paramA)).toFixed(2) : "0.00"}
-                  </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {(
+                    [
+                      { id: "nucleus", name: "Nucleus", desc: "Contains genomic DNA and directs transcription" },
+                      { id: "mitochondria", name: "Mitochondria", desc: "Site of aerobic cellular respiration & ATP production" },
+                      { id: "ribosome", name: "Ribosomes", desc: "Translate mRNA into polypeptide chains" },
+                      { id: "chloroplast", name: "Chloroplast", desc: "Thylakoid membranes convert solar energy to glucose (Plant)" },
+                      { id: "plasma_membrane", name: "Plasma Membrane", desc: "Fluid mosaic lipid bilayer with selective permeability" },
+                      { id: "golgi", name: "Golgi Apparatus", desc: "Modifies, packages, and sorts secretory proteins" },
+                    ] as const
+                  ).map((org) => (
+                    <button
+                      key={org.id}
+                      type="button"
+                      onClick={() => setSelectedOrganelle(org.id)}
+                      className={`p-3 rounded-xl border text-left transition ${
+                        selectedOrganelle === org.id
+                          ? "border-cyan-400 bg-cyan-950/40 text-white shadow-lg"
+                          : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                      }`}
+                    >
+                      <div className="text-xs font-bold text-cyan-300">{org.name}</div>
+                      <div className="text-[11px] text-slate-300 mt-1 line-clamp-2">{org.desc}</div>
+                    </button>
+                  ))}
                 </div>
-                <div className="p-3 rounded-xl bg-[#070d1e] border border-white/5">
-                  <span className="block text-slate-400 text-[10px] uppercase font-bold">Y-Axis Intercept</span>
-                  <span className="font-mono text-base font-black text-emerald-400">
-                    (0, {paramC.toFixed(2)})
-                  </span>
-                </div>
+              </div>
+            )}
+
+            {/* Experiment Findings Logger */}
+            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>📝</span>
+                  <span>Student Experiment Log &amp; Scientific Hypotheses</span>
+                </h3>
+                {savedStatus && <span className="text-xs font-bold text-emerald-400 animate-pulse">{savedStatus}</span>}
+              </div>
+              <textarea
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                rows={3}
+                placeholder="Record your observations, mathematical deductions, or hypothesis tests here..."
+                className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500"
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveObservation}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition shadow"
+                >
+                  Save Experiment Attempt
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Right Panel: Theory, Objectives & Observations */}
-          <aside className="space-y-6">
-            {/* Learning Objectives */}
-            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 space-y-3 shadow">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          {/* Right Sidebar: Learning Objectives, Curriculum & Theory (1 Column) */}
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-4">
+              <h3 className="text-sm font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
                 <span>🎯</span>
                 <span>Learning Objectives</span>
               </h3>
-              <ul className="space-y-2 text-xs text-slate-300">
+              <ul className="space-y-2 text-xs text-slate-300 list-disc list-inside">
                 {(version?.learning_objectives || [
-                  "Relate the sign of leading coefficient 'a' to parabolic curvature",
-                  "Compute discriminant Δ = b² - 4ac to predict root multiplicity",
-                  "Solve standard UTME and WAEC algebra questions visually",
+                  "Analyze parameter interactions dynamically",
+                  "Formulate deductive hypotheses based on mathematical models",
+                  "Solve standard WAEC/JAMB examination questions with empirical proof",
                 ]).map((obj, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-emerald-400 font-bold">✓</span>
-                    <span>{obj}</span>
+                  <li key={i} className="leading-relaxed">
+                    {obj}
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Official Curriculum Mapping */}
-            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 space-y-2 text-xs shadow">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Syllabus Alignment
-              </span>
-              <p className="font-bold text-white">JAMB UTME: Mathematics — Section II: Algebra</p>
-              <p className="text-slate-400 leading-relaxed">
-                Topic: Quadratic Equations, Simultaneous linear &amp; quadratic equations, roots and coefficients.
-              </p>
-              <Link
-                href="/cbt?subject=mathematics"
-                className="mt-2 inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 font-bold transition"
-              >
-                <span>Practice related CBT questions</span>
-                <span>→</span>
-              </Link>
-            </div>
-
-            {/* Student Observation & Workspace */}
-            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 space-y-3 shadow">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <span>📝</span>
-                <span>My Lab Observations</span>
+            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-3">
+              <h3 className="text-sm font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
+                <span>📚</span>
+                <span>Official Curriculum Alignment</span>
               </h3>
-              <textarea
-                value={observations}
-                onChange={(e) => setObservations(e.target.value)}
-                placeholder="Record your observations here (e.g. When a < 0, the curve is concave down; when Δ = 0, the parabola touches the x-axis exactly once)..."
-                rows={4}
-                className="w-full rounded-xl border border-white/10 bg-[#070d1e] p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-emerald-400 font-medium">{savedStatus}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSavedStatus("Saved to personal workspace!");
-                    setTimeout(() => setSavedStatus(""), 3000);
-                  }}
-                  className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow transition"
-                >
-                  Save Notes
-                </button>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Subject:</span>
+                  <span className="font-bold text-white">{resource.subject?.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Syllabus Topic:</span>
+                  <span className="font-bold text-cyan-300 text-right">{resource.topic?.title}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Target Exams:</span>
+                  <span className="font-bold text-white">WAEC / UTME / GCSE / NECO</span>
+                </div>
               </div>
             </div>
-          </aside>
+          </div>
         </div>
       </main>
 

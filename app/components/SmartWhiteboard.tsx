@@ -235,6 +235,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [stemTab, setStemTab] = useState<"formulas" | "physics" | "chemistry" | "biology" | "simulations">("formulas");
     const [customLatex, setCustomLatex] = useState("x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}");
     const [showStemLivePresenter, setShowStemLivePresenter] = useState(false);
+    const [stemPresenterInitialSim, setStemPresenterInitialSim] = useState<"quadratic" | "projectile" | "circuit" | "titration" | "genetics">("quadratic");
 
     // Authoritative pages collection
     const [pages, setPages] = useState<WhiteboardPage[]>(() => {
@@ -2714,6 +2715,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     currentUserId={currentUserId}
                     isHost={isHost}
                     theme="dark"
+                    initialSim={stemPresenterInitialSim}
                     onClose={() => toggleStemLivePresenter(false)}
                     onSnapshotToBoard={handleStemSnapshotToBoard}
                   />
@@ -3092,45 +3094,84 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 )}
 
                 {stemTab === "simulations" && (
-                  <div className="space-y-4">
-                    <div className="rounded-xl border border-white/10 bg-[#070d1e] p-5 flex flex-col justify-between hover:border-blue-500/50 transition">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <span className="text-lg">📈</span>
-                            <span className="text-base font-black text-white">Quadratic Function &amp; Graph Explorer</span>
-                            <span className="rounded-md bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                              Mode A Synced
+                  <div className="space-y-3">
+                    {(
+                      [
+                        {
+                          id: "quadratic" as const,
+                          icon: "📈",
+                          title: "Quadratic Function & Graph Explorer",
+                          subject: "Mathematics",
+                          curriculum: "WAEC / JAMB / GCSE Mathematics",
+                          desc: "Parabolic curve explorer for y = ax² + bx + c. Live discriminant calculation (Δ), roots, vertex tracking, and 20fps tutor-to-student synchronization.",
+                        },
+                        {
+                          id: "projectile" as const,
+                          icon: "🚀",
+                          title: "Projectile Motion Simulator",
+                          subject: "Physics",
+                          curriculum: "WAEC / JAMB / GCSE Physics",
+                          desc: "Two-dimensional kinematic trajectory simulation with customizable velocity, launch angle, elevation, and Earth/Moon/Mars gravity presets.",
+                        },
+                        {
+                          id: "circuit" as const,
+                          icon: "⚡",
+                          title: "Ohm's Law & DC Circuit Lab",
+                          subject: "Physics",
+                          curriculum: "WAEC / JAMB / GCSE Physics",
+                          desc: "Interactive DC circuit loop modeling V = IR and power dissipation P = VI across single, series, and parallel resistor configurations.",
+                        },
+                        {
+                          id: "titration" as const,
+                          icon: "🧪",
+                          title: "Acid-Base Titration Simulator",
+                          subject: "Chemistry",
+                          curriculum: "WAEC / JAMB / GCSE Chemistry",
+                          desc: "Volumetric titration modeling neutralization curves (pH vs. V_NaOH), equivalence points, and indicator color transitions.",
+                        },
+                        {
+                          id: "genetics" as const,
+                          icon: "🧬",
+                          title: "Mendelian Genetics & Punnett Square Lab",
+                          subject: "Biology",
+                          curriculum: "WAEC / JAMB / GCSE Biology",
+                          desc: "2x2 monohybrid cross modeling Mendel's Law of Segregation, genotypic 1:2:1 ratios, and phenotypic percentage probability distributions.",
+                        },
+                      ]
+                    ).map((sim) => (
+                      <div
+                        key={sim.id}
+                        className="rounded-xl border border-white/10 bg-[#070d1e] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-blue-500/50 transition"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{sim.icon}</span>
+                            <span className="text-sm font-bold text-white">{sim.title}</span>
+                            <span className="rounded bg-blue-500/20 text-cyan-300 text-[10px] font-bold px-1.5 py-0.5">
+                              {sim.subject}
                             </span>
-                            <span className="rounded-md bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-300">
-                              v1.0.0
+                            <span className="rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-1.5 py-0.5">
+                              Mode A
                             </span>
                           </div>
-                          <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
-                            Full interactive parabolic explorer for y = ax² + bx + c. Live discriminant calculation (Δ), real and complex roots detection, vertex tracking, and 20fps throttled realtime tutor-to-student synchronization with late-joiner recovery.
-                          </p>
+                          <p className="text-xs text-slate-300 max-w-xl leading-relaxed">{sim.desc}</p>
+                          <div className="text-[10px] text-slate-400">Curriculum: {sim.curriculum}</div>
                         </div>
-                      </div>
 
-                      <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-[11px] text-slate-400">
-                          Curriculum: <span className="text-cyan-300 font-medium">WAEC / JAMB / GCSE Mathematics</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowStemModal(false);
-                              toggleStemLivePresenter(true);
-                            }}
-                            className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-lg flex items-center gap-2"
-                          >
-                            <span>🚀</span>
-                            <span>Launch Live Interactive Simulation</span>
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStemPresenterInitialSim(sim.id);
+                            setShowStemModal(false);
+                            toggleStemLivePresenter(true);
+                          }}
+                          className="self-end sm:self-center shrink-0 rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-2 text-xs font-black text-white shadow-lg flex items-center gap-1.5 transition"
+                        >
+                          <span>🚀</span>
+                          <span>Present on Liveboard</span>
+                        </button>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 )}
 
