@@ -5,24 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLearnerTheme } from "@/app/components/LearnerThemeProvider";
 import type { StemResource, StemResourceType, StemExperimentAttempt } from "@/app/lib/stem/stemService";
-import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
 import { getCbtSubjectKey } from "@/app/lib/curriculumData";
-
-const SUBJECT_TABS = [
-  { id: "all", label: "All Subjects", icon: "🌐" },
-  { id: "subj-math", label: "Mathematics", icon: "📐" },
-  { id: "subj-physics", label: "Physics", icon: "⚡" },
-  { id: "subj-chem", label: "Chemistry", icon: "🧪" },
-  { id: "subj-bio", label: "Biology", icon: "🧬" },
-  { id: "subj-eng", label: "Engineering & Logic", icon: "🤖" },
-];
 
 export default function StemStudioHubPage() {
   const router = useRouter();
   const { resolvedTheme } = useLearnerTheme();
 
   const [activeHubTab, setActiveHubTab] = useState<"catalog" | "workspace">("catalog");
-  const [resources, setResources] = useState<StemResource[]>(INITIAL_STEM_RESOURCES);
+  const [resources, setResources] = useState<StemResource[]>([]);
   const [selectedSubject, setSelectedSubject] = useState("all");
   const [selectedTier, setSelectedTier] = useState<number | "all">("all");
   const [selectedType, setSelectedType] = useState<StemResourceType | "all">("all");
@@ -41,12 +31,14 @@ export default function StemStudioHubPage() {
         const res = await fetch("/api/stem/resources?status=published");
         if (res.ok) {
           const data = await res.json();
-          if (active && data.ok && Array.isArray(data.resources) && data.resources.length > 0) {
+          if (active && data.ok && Array.isArray(data.resources)) {
             setResources(data.resources);
           }
+        } else if (active) {
+          setResources([]);
         }
       } catch {
-        // Fallback already pre-set to INITIAL_STEM_RESOURCES
+        if (active) setResources([]);
       } finally {
         if (active) setLoading(false);
       }
@@ -88,8 +80,7 @@ export default function StemStudioHubPage() {
       if (
         selectedSubject !== "all" &&
         res.subject_id !== selectedSubject &&
-        res.subject?.slug !== selectedSubject &&
-        !(selectedSubject === "subj-eng" && res.subject_id === "subj-engineering")
+        res.subject?.slug !== selectedSubject
       ) {
         return false;
       }
@@ -111,7 +102,20 @@ export default function StemStudioHubPage() {
   }, [resources, selectedSubject, selectedTier, selectedType, searchQuery]);
 
   const featured = useMemo(() => {
-    return resources.find((r) => r.is_featured) || resources[0];
+    return resources.find((r) => r.is_featured) || resources[0] || null;
+  }, [resources]);
+
+  const subjectTabs = useMemo(() => {
+    const subjects = new Map<string, { id: string; label: string; icon: string }>();
+    resources.forEach((resource) => {
+      const id = resource.subject_id || resource.subject?.slug;
+      const label = resource.subject?.name;
+      if (!id || !label || subjects.has(id)) return;
+      const slug = (resource.subject?.slug || label).toLowerCase();
+      const icon = slug.includes("math") ? "📐" : slug.includes("phys") ? "⚡" : slug.includes("chem") ? "🧪" : slug.includes("bio") ? "🧬" : "🔬";
+      subjects.set(id, { id, label, icon });
+    });
+    return [{ id: "all", label: "All Subjects", icon: "🌐" }, ...Array.from(subjects.values())];
   }, [resources]);
 
   return (
@@ -142,13 +146,19 @@ export default function StemStudioHubPage() {
               Explore parameterised 2D physics simulations, dynamic algebraic graphing, digital electronics logic, and virtual chemistry apparatus aligned with the official Nigerian JAMB UTME, WAEC, and NECO syllabi.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link
-                href={`/classroom/stem/${featured.slug}`}
-                className="px-5 py-2.5 rounded-xl bg-[#1356E8] hover:bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition flex items-center gap-2"
-              >
-                <span>🚀</span>
-                <span>Launch Featured: {featured.title}</span>
-              </Link>
+              {featured ? (
+                <Link
+                  href={`/classroom/stem/${featured.slug}`}
+                  className="px-5 py-2.5 rounded-xl bg-[#1356E8] hover:bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition flex items-center gap-2"
+                >
+                  <span>🚀</span>
+                  <span>Launch Featured: {featured.title}</span>
+                </Link>
+              ) : (
+                <span className="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm text-slate-300">
+                  STEM resources are being prepared
+                </span>
+              )}
               <Link
                 href="/classroom/studio"
                 className="px-5 py-2.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-sm transition flex items-center gap-2"
@@ -389,7 +399,7 @@ export default function StemStudioHubPage() {
 
               {/* Subject Tabs */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/10 scrollbar-none">
-                {SUBJECT_TABS.map((tab) => {
+                {subjectTabs.map((tab) => {
                   const active = selectedSubject === tab.id;
                   return (
                     <button
@@ -423,9 +433,11 @@ export default function StemStudioHubPage() {
               {filteredResources.length === 0 ? (
                 <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-12 text-center space-y-3">
                   <span className="text-4xl">🔭</span>
-                  <h3 className="text-base font-bold text-white">No STEM resources match your criteria</h3>
+                  <h3 className="text-base font-bold text-white">{resources.length === 0 ? "The STEM catalogue is being prepared" : "No STEM resources match your criteria"}</h3>
                   <p className="text-sm text-slate-400 max-w-md mx-auto">
-                    Try clearing your search query or selecting another subject to discover interactive formulas and virtual laboratories.
+                    {resources.length === 0
+                      ? "Interactive models, experiments and learning resources will appear here as they are reviewed and published."
+                      : "Try clearing your search query or selecting another subject to discover interactive formulas and virtual laboratories."}
                   </p>
                   <button
                     type="button"
