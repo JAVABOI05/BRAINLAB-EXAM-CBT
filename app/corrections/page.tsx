@@ -596,7 +596,7 @@ export default function CorrectionsPage() {
                     {pinError}
                     {pinError.includes("sign in") && (
                       <div className="mt-1 font-bold">
-                        <Link href={`/account?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "/corrections")}`} className="underline text-blue-600 dark:text-blue-400">
+                        <Link href={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "/corrections")}`} className="underline text-blue-600 dark:text-blue-400">
                           Click here to Sign In →
                         </Link>
                       </div>

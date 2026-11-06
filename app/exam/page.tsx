@@ -114,10 +114,12 @@ export default function ExamPage() {
   useEffect(() => {
     const handleOnline = () => {
       setSyncStatus("syncing");
+      setError("");
       if (sessionId && sessionToken) {
         void saveProgress(sessionId, sessionToken, answers).then((saved) => {
           if (!isError(saved)) {
             setSyncStatus("synced");
+            setError("");
           }
         });
       }
@@ -376,6 +378,7 @@ export default function ExamPage() {
           else if (saved.error === "network") {
             queueProgress(sessionId, sessionToken, answers);
             setSyncStatus("offline");
+            setError("");
           } else {
             setSyncStatus("error");
             setError(saved.message || "Your answers could not be confirmed by the server.");
@@ -578,10 +581,11 @@ export default function ExamPage() {
         if (saved.error === "network") {
           queueProgress(sessionId, sessionToken, nextAnswers);
           setSyncStatus("offline");
+          setError("");
         } else {
           setSyncStatus("error");
+          setError(saved.message || "Your answer could not be confirmed by the server. You can continue manually and retry saving.");
         }
-        setError(saved.message || "Your answer could not be confirmed by the server. You can continue manually and retry saving.");
         return;
       }
 
