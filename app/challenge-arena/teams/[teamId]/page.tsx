@@ -226,6 +226,26 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
     }
   };
 
+  const handleFinalizeElection = async () => {
+    if (!activeElection) return;
+    try {
+      setSubmittingAction(true);
+      const response = await fetch("/api/competition/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "finalize_election", election_id: activeElection.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to finalise election.");
+      await fetchTeam();
+      alert("Election finalisation processed. The updated team leadership and ballot result are now available.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Unable to finalise election.");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center p-6 ${isDark ? "bg-[#060B18] text-white" : "bg-slate-50 text-slate-900"}`}>
@@ -360,6 +380,19 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
                 </h3>
                 <p className="text-xs text-slate-400">All active team members are eligible for one confidential ballot.</p>
               </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/20 bg-slate-950/5 dark:bg-slate-950/30 p-3">
+              <p className="text-xs text-slate-500">Ballot deadline: {new Date(activeElection.end_time).toLocaleString()}</p>
+              {isMyTeam && (
+                <button
+                  onClick={handleFinalizeElection}
+                  disabled={submittingAction}
+                  className="rounded-lg border border-amber-500/50 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 disabled:opacity-50"
+                >
+                  Finalise after deadline
+                </button>
+              )}
             </div>
 
             {voteSubmitted ? (
