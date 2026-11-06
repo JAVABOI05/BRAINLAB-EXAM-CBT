@@ -424,6 +424,7 @@ export default function ChallengeArenaPage() {
           <Link href="/challenge-arena/appeals" className="hidden sm:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-300 transition">
             Appeals Centre
           </Link>
+          <Link href="/challenge-arena/rating-history" className="hidden md:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">Rating History</Link>
           <ArenaThemeToggle />
         </div>
       </header>
