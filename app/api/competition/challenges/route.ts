@@ -301,6 +301,9 @@ export async function PATCH(req: NextRequest) {
       if (challenge.subject && challenge.subject !== "General") {
         questionsQuery = questionsQuery.eq("subject", challenge.subject);
       }
+      if (challenge.difficulty && challenge.difficulty !== "mixed") {
+        questionsQuery = questionsQuery.eq("difficulty", challenge.difficulty);
+      }
 
       const { data: rawQuestions, error: qErr } = await questionsQuery.limit(5000);
       if (qErr) throw qErr;
