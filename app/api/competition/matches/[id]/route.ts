@@ -114,6 +114,24 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
     const { action } = body;
     const supabase = getSupabaseServerClient();
 
+    const { data: globalControls } = await supabase
+      .from("competition_emergency_controls")
+      .select("is_paused, maintenance_mode")
+      .eq("scope", "global")
+      .eq("target_id", "all")
+      .maybeSingle();
+    const { data: matchControls } = await supabase
+      .from("competition_emergency_controls")
+      .select("is_paused, maintenance_mode")
+      .eq("scope", "match")
+      .eq("target_id", matchId)
+      .maybeSingle();
+    if (action !== "heartbeat" &&
+        (globalControls?.is_paused || globalControls?.maintenance_mode ||
+         matchControls?.is_paused || matchControls?.maintenance_mode)) {
+      return NextResponse.json({ error: "This match is temporarily paused by Arena administration." }, { status: 423 });
+    }
+
     // Fetch match
     const { data: match, error: matchErr } = await supabase
       .from("competition_matches")
