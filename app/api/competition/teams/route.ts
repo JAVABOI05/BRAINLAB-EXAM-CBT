@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
       // If captain or co-captain, fetch pending applications
       let applications: Array<{ id: string; user_id: string; message: string; created_at: string; profile?: unknown }> = [];
-      const isLeader = members?.some((m) => m.user_id === user?.id && (m.role === "captain" || m.role === "co_captain"));
+      const isLeader = members?.some((m) => m.user_id === user?.id && m.is_active === true && (m.role === "captain" || m.role === "co_captain"));
       if (isLeader) {
         const { data: apps } = await supabase
           .from("competition_team_applications")
@@ -96,8 +96,8 @@ export async function GET(req: NextRequest) {
         activeElection,
         has_voted: hasVoted,
         applications,
-        is_my_team: members?.some((m) => m.user_id === user?.id) || false,
-        my_role: members?.find((m) => m.user_id === user?.id)?.role || null,
+        is_my_team: members?.some((m) => m.user_id === user?.id && m.is_active === true) || false,
+        my_role: members?.find((m) => m.user_id === user?.id && m.is_active === true)?.role || null,
       });
     }
 
