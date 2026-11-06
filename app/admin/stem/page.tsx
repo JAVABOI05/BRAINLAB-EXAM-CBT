@@ -24,6 +24,7 @@ export default function AdminStemStudioPage() {
   const [createSubjectId, setCreateSubjectId] = useState("");
   const [createType, setCreateType] = useState<StemResourceType>("simulation");
   const [createTier, setCreateTier] = useState<1 | 2 | 3>(2);
+  const [createEntitlementTier, setCreateEntitlementTier] = useState<"free" | "premium" | "vip">("free");
   const [createTags, setCreateTags] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -122,6 +123,7 @@ export default function AdminStemStudioPage() {
           subject_id: createSubjectId,
           tier: createTier,
           resource_type: createType,
+          entitlement_tier: createEntitlementTier,
           tags: tagsArray,
         }),
       });
@@ -136,6 +138,7 @@ export default function AdminStemStudioPage() {
       setCreateSlug("");
       setCreateTitle("");
       setCreateSummary("");
+      setCreateEntitlementTier("free");
       setCreateTags("");
       await loadResources(token);
     } catch (err) {
@@ -622,6 +625,20 @@ export default function AdminStemStudioPage() {
                     <option value="diagram">Annotated Diagram (Tier 1)</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">Minimum STEM Plan Access</label>
+                <select
+                  value={createEntitlementTier}
+                  onChange={(e) => setCreateEntitlementTier(e.target.value as "free" | "premium" | "vip")}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                >
+                  <option value="free">Discover — Free Learner</option>
+                  <option value="premium">Practise — Premium Study and above</option>
+                  <option value="vip">Complete — BrainLab Pro only</option>
+                </select>
+                <p className="text-[10px] text-slate-500">The learner’s configured plan access level must meet this resource’s minimum level.</p>
               </div>
 
               <div className="space-y-1">
