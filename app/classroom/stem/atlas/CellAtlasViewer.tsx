@@ -66,6 +66,16 @@ function modelMatrix(position: number[], scale: number[], rx: number, ry: number
     position[0], position[1], position[2], 1
   ];
 }
+function projectPoint(mvp: number[], point: number[], width: number, height: number) {
+  const [x, y, z] = point;
+  const cx = mvp[0]*x + mvp[4]*y + mvp[8]*z + mvp[12];
+  const cy = mvp[1]*x + mvp[5]*y + mvp[9]*z + mvp[13];
+  const cw = mvp[3]*x + mvp[7]*y + mvp[11]*z + mvp[15];
+  if (cw <= 0) return null;
+  const nx = cx / cw, ny = cy / cw;
+  if (Math.abs(nx) > 1.15 || Math.abs(ny) > 1.15) return null;
+  return { x: (nx + 1) * width / 2, y: (1 - ny) * height / 2 };
+}
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const shader=gl.createShader(type); if(!shader) throw new Error("WebGL shader unavailable");
   gl.shaderSource(shader,source); gl.compileShader(shader);
@@ -91,6 +101,8 @@ export default function CellAtlasViewer() {
   const visibleRef=useRef(visibleOrganelles); visibleRef.current=visibleOrganelles;
   const isolateRef=useRef(isolateSelected); isolateRef.current=isolateSelected;
   const membraneOpacityRef=useRef(membraneOpacity); membraneOpacityRef.current=membraneOpacity;
+  const showLabelsRef=useRef(showLabels); showLabelsRef.current=showLabels;
+  const labelRefs=useRef<Record<string,HTMLSpanElement|null>>({});
 
   useEffect(()=>{
     const canvas=canvasRef.current; if(!canvas) return;
@@ -131,6 +143,16 @@ export default function CellAtlasViewer() {
           const visible=visibleRef.current.includes(o.id);
           const isolated=isolateRef.current && selectedRef.current!==o.id;
           if(visible && !isolated) draw(o.position,o.scale,o.color,selectedRef.current===o.id?1:0.88,rotationRef.current.x,rotationRef.current.y);
+          const label=labelRefs.current[o.id];
+          if(label){
+            const model=modelMatrix(o.position,[1,1,1],rotationRef.current.x,rotationRef.current.y);
+            const view=identity(); view[14]=-zoomRef.current;
+            const aspect=canvas.clientWidth/Math.max(1,canvas.clientHeight);
+            const mvp=multiply(perspective(Math.PI/4,aspect,0.1,30),multiply(view,model));
+            const point=projectPoint(mvp,[0,o.scale[1]+0.12,0],canvas.clientWidth,canvas.clientHeight);
+            label.style.display=showLabelsRef.current && visible && !isolated && point ? "block" : "none";
+            if(point) label.style.transform=`translate(${point.x}px,${point.y}px) translate(-50%,-100%)`;
+          }
         });
         frame=requestAnimationFrame(render);
       };
@@ -156,7 +178,7 @@ export default function CellAtlasViewer() {
           </div>
           <label className="flex items-center gap-2 rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs text-slate-200"><input type="checkbox" checked={showLabels} onChange={e=>setShowLabels(e.target.checked)}/> Show labels</label>
         </div>
-        {showLabels && !webglError && <div className="pointer-events-none absolute right-4 top-4 flex max-w-[150px] flex-col gap-1">{ORGANELLES.slice(0,4).map(o=><span key={o.id} className="rounded-md border border-white/10 bg-[#071027]/75 px-2 py-1 text-[9px] text-slate-200">{o.name}</span>)}</div>}
+        {showLabels && !webglError && <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">{ORGANELLES.map(o=><span key={o.id} ref={node=>{labelRefs.current[o.id]=node;}} className="absolute left-0 top-0 hidden max-w-[130px] rounded-md border border-cyan-300/30 bg-[#071027]/90 px-2 py-1 text-[9px] font-semibold text-cyan-100 shadow-lg">{o.name}</span>)}</div>}
       </div>
       <div className="border-t border-white/10 px-5 py-4">
         <div className="mb-2 flex items-center justify-between text-xs text-slate-300"><span>Outer membrane opacity</span><span>{membraneOpacity}%</span></div>
