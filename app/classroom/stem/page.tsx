@@ -168,6 +168,14 @@ export default function StemStudioHubPage() {
           </div>
         </section>
 
+        {/* Interactive pathway explorer */}
+        <section className="relative overflow-hidden rounded-2xl border border-emerald-400/25 bg-gradient-to-r from-[#103a39] via-[#0b1838] to-[#101a3a] p-5 sm:p-6">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="max-w-2xl"><p className="text-[10px] font-black uppercase tracking-[.22em] text-emerald-300">Pathway explorer · Biology</p><h2 className="mt-2 text-xl font-black text-white">Follow the Krebs cycle, reaction by reaction.</h2><p className="mt-1 text-sm leading-relaxed text-slate-300">Explore all eight enzyme-catalysed stages, track carbon atoms and understand where NADH, FADH₂, GTP and CO₂ are produced.</p></div>
+            <Link href="/classroom/stem/pathways/krebs-cycle" className="shrink-0 rounded-xl bg-emerald-400 px-5 py-3 text-xs font-black text-[#062321] shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">Explore Krebs cycle →</Link>
+          </div>
+        </section>
+
         {/* STEM Arena Callout Card */}
         <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-[#0B1536] to-[#070d1e] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
           <div className="flex items-center gap-4">
