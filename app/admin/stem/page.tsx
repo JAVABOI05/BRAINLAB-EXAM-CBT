@@ -167,7 +167,7 @@ export default function AdminStemStudioPage() {
       "ohms-law-dc-circuit": { adapter: "circuit_dc", state: { voltage: 12, resistance: 4 }, payload: { formula: "V = I · R", powerFormula: "P = V · I" } },
       "logic-gates-circuits": { adapter: "canvas_logic", state: { gateType: "AND", inputA: 1, inputB: 0, active: true }, payload: { schematic: "standard-iec" } },
     };
-    const fallback = slugDefaults[resource.slug] || { adapter: "phet_embed", state: {}, payload: { embedUrl: "", instructions: [] } };
+    const fallback = slugDefaults[resource.slug] || { adapter: "", state: {}, payload: {} };
     setVersionAdapter(existing?.adapter_type || fallback.adapter);
     setVersionInitialState(JSON.stringify(existing?.initial_state || fallback.state, null, 2));
     setVersionPayload(JSON.stringify(existing?.content_payload || fallback.payload, null, 2));
@@ -772,13 +772,13 @@ export default function AdminStemStudioPage() {
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 dark:text-slate-300">Interactive renderer / adapter</label>
                 <select value={versionAdapter} onChange={(e) => setVersionAdapter(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-2.5 text-slate-900 dark:text-white">
-                  <option value="canvas_quadratic">Quadratic graph canvas</option>
-                  <option value="canvas_kinematics">Kinematics / projectile canvas</option>
-                  <option value="circuit_dc">DC circuit model</option>
-                  <option value="canvas_logic">Logic gates</option>
-                  <option value="phet_embed">PhET interactive simulation (HTTPS embed)</option>
-                  <option value="molecular_3d">Molecular 3D viewer</option>
-                  <option value="circuit_workbench">Circuit workbench</option>
+                  {versionResource.slug === "quadratic-graph-explorer" && <option value="canvas_quadratic">Quadratic graph canvas</option>}
+                  {versionResource.slug === "projectile-motion-simulator" && <option value="canvas_kinematics">Kinematics / projectile canvas</option>}
+                  {versionResource.slug === "ohms-law-dc-circuit" && <option value="circuit_dc">DC circuit model</option>}
+                  {versionResource.slug === "acid-base-titration-curve" && <option value="chem_titration">Acid-base titration model</option>}
+                  {versionResource.slug === "cell-ultrastructure-guide" && <option value="vector_cell">Cell structure illustration (2D)</option>}
+                  {versionResource.slug === "genetics-punnett-square-lab" && <option value="canvas_genetics">Genetics / Punnett square</option>}
+                  {versionResource.slug === "logic-gates-circuits" && <option value="canvas_logic">Logic gates</option>}
                 </select>
                 <p className="text-[10px] text-slate-500">Only select a renderer that matches the content and is supported by the student player.</p>
               </div>
@@ -792,8 +792,7 @@ export default function AdminStemStudioPage() {
                   <textarea required rows={12} spellCheck={false} value={versionPayload} onChange={(e) => setVersionPayload(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 font-mono text-[11px] text-slate-900 dark:text-white" />
                 </div>
               </div>
-              {versionAdapter === "phet_embed" && <p className="text-[11px] text-amber-600 dark:text-amber-300">Payload must include an approved HTTPS PhET embedUrl and concise instructions. Check licensing and attribution before publication.</p>}
-              {versionAdapter === "molecular_3d" && <p className="text-[11px] text-amber-600 dark:text-amber-300">The current molecular viewer is not a general cell/organelle GLB viewer. Do not use this adapter for the animal cell until a dedicated 3D model viewer and validated asset pipeline are implemented.</p>}
+              {versionResource.slug === "cell-ultrastructure-guide" && <p className="text-[11px] text-amber-600 dark:text-amber-300">This is currently a 2D cell-content adapter. A high-quality GLB/glTF 3D cell viewer and validated model asset pipeline are still pending; do not publish this as a 3D experience.</p>}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 dark:text-slate-300">Learning objectives (one per line)</label>
                 <textarea rows={3} value={versionObjectives} onChange={(e) => setVersionObjectives(e.target.value)} placeholder={"Identify the key structures\nExplain their functions\nInterpret the model accurately"} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 text-slate-900 dark:text-white" />
