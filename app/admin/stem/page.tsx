@@ -147,10 +147,14 @@ export default function AdminStemStudioPage() {
 
   // Handle Publish Resource
   async function handlePublishResource(resource: StemResource) {
+    if (!resource.current_version?.id) {
+      setPublishMessage("This resource has no saved content version. Add and save a version before publishing.");
+      return;
+    }
     setPublishBusy(true);
     setPublishMessage("");
     try {
-      const versionId = resource.current_version?.id || "seed-ver-01";
+      const versionId = resource.current_version.id;
       const res = await fetch(`/api/stem/resources/${resource.slug}/publish`, {
         method: "POST",
         headers: {
@@ -677,7 +681,7 @@ export default function AdminStemStudioPage() {
                 <div>Subject: {selectedForReview.subject?.name}</div>
                 <div>Slug: {selectedForReview.slug}</div>
                 <div>Tier: Tier {selectedForReview.tier}</div>
-                <div>Status: Ready for Publication</div>
+                <div>Status: {selectedForReview.current_version?.id ? "Ready for Publication" : "Content version required before publication"}</div>
               </div>
               {publishMessage && (
                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold">
@@ -696,7 +700,7 @@ export default function AdminStemStudioPage() {
               </button>
               <button
                 type="button"
-                disabled={publishBusy}
+                disabled={publishBusy || !selectedForReview.current_version?.id}
                 onClick={() => handlePublishResource(selectedForReview)}
                 className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow disabled:opacity-50"
               >
