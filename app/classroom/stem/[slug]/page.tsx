@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import BrandHeader from "@/app/components/BrandHeader";
-import BrandFooter from "@/app/components/BrandFooter";
 import type { StemResource } from "@/app/lib/stem/stemService";
 import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
 import {
@@ -175,8 +173,7 @@ export default function StemPlayerPage({
 
   return (
     <div className="min-h-screen bg-[#070d1e] text-slate-100 flex flex-col font-sans">
-      <BrandHeader />
-
+      
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Navigation Breadcrumb & Toolbar */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b border-white/10 pb-4">
@@ -187,14 +184,14 @@ export default function StemPlayerPage({
               </Link>
               <span>/</span>
               <span className="text-cyan-400 font-bold">{resource.subject?.name || "STEM"}</span>
-            </div>
+      </div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-black text-white">{resource.title}</h1>
               <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-mono font-bold">
                 Tier {resource.tier} · v{version?.version_number || 1}.0
               </span>
-            </div>
-          </div>
+      </div>
+    </div>
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2.5">
@@ -212,7 +209,7 @@ export default function StemPlayerPage({
               <span>📡</span>
               <span>Present in Liveboard</span>
             </Link>
-          </div>
+    </div>
         </div>
 
         {/* Main Workspace Grid */}
@@ -228,7 +225,7 @@ export default function StemPlayerPage({
                     height={420}
                     className="w-full max-h-[420px] object-contain cursor-crosshair block"
                   />
-                </div>
+          </div>
 
                 {/* Simulation Parameter Controls */}
                 <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-4">
@@ -238,7 +235,7 @@ export default function StemPlayerPage({
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">Leading (a):</span>
                           <span className="font-mono text-cyan-300">{quadState.a}</span>
-                        </div>
+                  </div>
                         <input
                           type="range"
                           min={-3}
@@ -251,12 +248,12 @@ export default function StemPlayerPage({
                           }}
                           className="w-full accent-blue-500 cursor-pointer"
                         />
-                      </div>
+                </div>
                       <div>
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">Linear (b):</span>
                           <span className="font-mono text-cyan-300">{quadState.b}</span>
-                        </div>
+                  </div>
                         <input
                           type="range"
                           min={-6}
@@ -269,12 +266,12 @@ export default function StemPlayerPage({
                           }}
                           className="w-full accent-blue-500 cursor-pointer"
                         />
-                      </div>
+                </div>
                       <div>
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">Constant (c):</span>
                           <span className="font-mono text-cyan-300">{quadState.c}</span>
-                        </div>
+                  </div>
                         <input
                           type="range"
                           min={-6}
@@ -287,8 +284,8 @@ export default function StemPlayerPage({
                           }}
                           className="w-full accent-blue-500 cursor-pointer"
                         />
-                      </div>
-                    </div>
+                </div>
+              </div>
                   )}
 
                   {slug === "projectile-motion-simulator" && (
@@ -297,7 +294,7 @@ export default function StemPlayerPage({
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">Launch Velocity (v₀):</span>
                           <span className="font-mono text-cyan-300">{projState.v0} m/s</span>
-                        </div>
+                  </div>
                         <input
                           type="range"
                           min={10}
@@ -310,12 +307,12 @@ export default function StemPlayerPage({
                           }}
                           className="w-full accent-blue-500 cursor-pointer"
                         />
-                      </div>
+                </div>
                       <div>
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">Launch Angle (θ):</span>
                           <span className="font-mono text-cyan-300">{projState.angleDeg}°</span>
-                        </div>
+                  </div>
                         <input
                           type="range"
                           min={15}
@@ -328,12 +325,12 @@ export default function StemPlayerPage({
                           }}
                           className="w-full accent-blue-500 cursor-pointer"
                         />
-                      </div>
+                </div>
                       <div>
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">Gravity (g):</span>
                           <span className="font-mono text-cyan-300">{projState.gravity} m/s²</span>
-                        </div>
+                  </div>
                         <div className="flex items-center gap-2 pt-1">
                           <button
                             type="button"
@@ -353,9 +350,9 @@ export default function StemPlayerPage({
                           >
                             Moon (1.62)
                           </button>
-                        </div>
-                      </div>
-                    </div>
+                  </div>
+                </div>
+              </div>
                   )}
 
                   {slug === "ohms-law-dc-circuit" && (
@@ -364,7 +361,7 @@ export default function StemPlayerPage({
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">DC Voltage (V):</span>
                           <span className="font-mono text-cyan-300">{circState.voltage} V</span>
-                        </div>
+                  </div>
                         <input
                           type="range"
                           min={1}
@@ -377,12 +374,12 @@ export default function StemPlayerPage({
                           }}
                           className="w-full accent-blue-500 cursor-pointer"
                         />
-                      </div>
+                </div>
                       <div>
                         <div className="flex justify-between text-xs font-bold mb-1">
                           <span className="text-slate-300">Load Resistance (R):</span>
                           <span className="font-mono text-cyan-300">{circState.resistance} Ω</span>
-                        </div>
+                  </div>
                         <input
                           type="range"
                           min={1}
@@ -395,8 +392,8 @@ export default function StemPlayerPage({
                           }}
                           className="w-full accent-blue-500 cursor-pointer"
                         />
-                      </div>
-                    </div>
+                </div>
+              </div>
                   )}
 
                   {slug === "acid-base-titration-curve" && (
@@ -404,7 +401,7 @@ export default function StemPlayerPage({
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-slate-300">Buret Titrant Added (0.1M NaOH):</span>
                         <span className="font-mono text-cyan-300">{titrState.titrantAddedMl} mL</span>
-                      </div>
+                </div>
                       <input
                         type="range"
                         min={0}
@@ -432,8 +429,8 @@ export default function StemPlayerPage({
                         >
                           Reset Buret
                         </button>
-                      </div>
-                    </div>
+                </div>
+              </div>
                   )}
 
                   {slug === "logic-gates-circuits" && (
@@ -452,7 +449,7 @@ export default function StemPlayerPage({
                             {g}
                           </button>
                         ))}
-                      </div>
+                </div>
                       <div className="flex items-center gap-6 pt-2">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-slate-300">Input A:</span>
@@ -465,7 +462,7 @@ export default function StemPlayerPage({
                           >
                             {logicState.inputA === 1 ? "1 (HIGH)" : "0 (LOW)"}
                           </button>
-                        </div>
+                  </div>
                         {logicState.gateType !== "NOT" && (
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-mono text-slate-300">Input B:</span>
@@ -478,10 +475,10 @@ export default function StemPlayerPage({
                             >
                               {logicState.inputB === 1 ? "1 (HIGH)" : "0 (LOW)"}
                             </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
+                        )}
+                </div>
+              </div>
                   )}
 
                   {slug === "genetics-punnett-square-lab" && (
@@ -510,8 +507,8 @@ export default function StemPlayerPage({
                               {opt.label}
                             </button>
                           ))}
-                        </div>
-                      </div>
+                  </div>
+                </div>
                       <div>
                         <span className="block text-xs font-bold text-slate-300 mb-1.5">Paternal Alleles:</span>
                         <div className="flex items-center gap-2">
@@ -536,19 +533,19 @@ export default function StemPlayerPage({
                               {opt.label}
                             </button>
                           ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
+                  )}
+          </div>
+        </div>
             ) : (
               /* Cell Structure Biology Interactive View */
               <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <h3 className="text-base font-bold text-white">Eukaryotic Cell Ultrastructure</h3>
                   <span className="text-xs text-cyan-300 font-mono">JAMB Biology Syllabus</span>
-                </div>
+          </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {(
                     [
@@ -574,8 +571,8 @@ export default function StemPlayerPage({
                       <div className="text-[11px] text-slate-300 mt-1 line-clamp-2">{org.desc}</div>
                     </button>
                   ))}
-                </div>
-              </div>
+          </div>
+        </div>
             )}
 
             {/* Experiment Findings Logger */}
@@ -586,7 +583,7 @@ export default function StemPlayerPage({
                   <span>Student Experiment Log &amp; Scientific Hypotheses</span>
                 </h3>
                 {savedStatus && <span className="text-xs font-bold text-emerald-400 animate-pulse">{savedStatus}</span>}
-              </div>
+        </div>
               <textarea
                 value={observations}
                 onChange={(e) => setObservations(e.target.value)}
@@ -602,9 +599,9 @@ export default function StemPlayerPage({
                 >
                   Save Experiment Attempt
                 </button>
-              </div>
-            </div>
-          </div>
+        </div>
+      </div>
+    </div>
 
           {/* Right Sidebar: Learning Objectives, Curriculum & Theory (1 Column) */}
           <div className="space-y-6">
@@ -624,7 +621,7 @@ export default function StemPlayerPage({
                   </li>
                 ))}
               </ul>
-            </div>
+      </div>
 
             <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-3">
               <h3 className="text-sm font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
@@ -635,24 +632,24 @@ export default function StemPlayerPage({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Subject:</span>
                   <span className="font-bold text-white">{resource.subject?.name}</span>
-                </div>
+          </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Syllabus Topic:</span>
                   <span className="font-bold text-cyan-300 text-right">{resource.topic?.title}</span>
-                </div>
+          </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Target Exams:</span>
                   <span className="font-bold text-white">WAEC / UTME / GCSE / NECO</span>
-                </div>
-              </div>
-            </div>
+          </div>
+        </div>
+      </div>
 
             {/* Direct CBT Exam Practice Connection */}
             <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-[#0e275c] to-[#0B1536] p-5 shadow-lg space-y-3">
               <div className="flex items-center gap-2 text-cyan-300 font-bold text-xs uppercase tracking-wider">
                 <span>🎯</span>
                 <span>Exam Connection &amp; CBT Drills</span>
-              </div>
+        </div>
               <h4 className="text-sm font-black text-white">
                 Practice {resource.subject?.name || "Subject"} Exam Questions
               </h4>
@@ -666,12 +663,11 @@ export default function StemPlayerPage({
                 <span>Launch {resource.subject?.name || "Subject"} CBT Practice</span>
                 <span className="group-hover:translate-x-0.5 transition">→</span>
               </Link>
-            </div>
-          </div>
+      </div>
+    </div>
         </div>
       </main>
 
-      <BrandFooter />
     </div>
   );
 }

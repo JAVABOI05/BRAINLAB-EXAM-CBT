@@ -4,8 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLearnerTheme } from "@/app/components/LearnerThemeProvider";
-import BrandHeader from "@/app/components/BrandHeader";
-import BrandFooter from "@/app/components/BrandFooter";
 import type { StemResource, StemResourceType, StemExperimentAttempt } from "@/app/lib/stem/stemService";
 import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
 import { getCbtSubjectKey } from "@/app/lib/curriculumData";
@@ -118,8 +116,7 @@ export default function StemStudioHubPage() {
 
   return (
     <div className="min-h-screen bg-[#070d1e] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      <BrandHeader />
-
+      
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Navigation Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-400">
@@ -496,7 +493,6 @@ export default function StemStudioHubPage() {
         )}
       </main>
 
-      <BrandFooter />
-    </div>
+          </div>
   );
 }

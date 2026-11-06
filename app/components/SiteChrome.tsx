@@ -4,41 +4,81 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import BrandFooter from "./BrandFooter";
 import BrandHeader from "./BrandHeader";
-import GlobalLearnerToolbar from "./GlobalLearnerToolbar";
 import ToastContainer from "./Toast";
 import OfflineSyncManager from "./OfflineSyncManager";
 import GlobalAnnouncementBanner from "./GlobalAnnouncementBanner";
+import StudentPortalShell from "./StudentPortalShell";
+
+// All authenticated student portal path prefixes (Experience B)
+const STUDENT_PORTAL_PREFIXES = [
+  "/dashboard",
+  "/student",
+  "/learn",
+  "/learning",
+  "/learning-hub",
+  "/learning-dna",
+  "/cbt",
+  "/result",
+  "/results",
+  "/self-practice",
+  "/quizzes",
+  "/assessments",
+  "/assignments",
+  "/corrections",
+  "/revision",
+  "/ai-learning",
+  "/classroom",
+  "/arena",
+  "/challenge-arena",
+  "/leaderboard",
+  "/messages",
+  "/calendar",
+  "/achievements",
+  "/skills-passport",
+  "/profile",
+  "/settings",
+  "/notifications",
+  "/redeem-access",
+  "/study-groups",
+  "/recordings",
+];
 
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
 
-  // Portal Environment Identifiers
+  // 1. Admin / Operator Portal (Admin layout provides its own shell)
   const isAdminArea = pathname === "/admin" || pathname.startsWith("/admin/");
-  const isStudentArea =
-    pathname === "/dashboard" ||
-    pathname.startsWith("/dashboard/") ||
-    pathname === "/student" ||
-    pathname.startsWith("/student/");
+
+  // 2. Tutor / Instructor Portal (Tutor layout provides its own shell)
   const isInstructorArea =
     pathname === "/tutor" ||
     pathname.startsWith("/tutor/") ||
     pathname === "/instructor" ||
     pathname.startsWith("/instructor/");
+
+  // 3. Centralized Authentication Gateway (Dedicated auth card layout)
   const isAuthArea =
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/account" ||
     pathname.startsWith("/account/") ||
     pathname === "/auth" ||
-    pathname.startsWith("/auth/");
+    pathname.startsWith("/auth/") ||
+    pathname === "/verify" ||
+    pathname.startsWith("/verify/");
 
-  // Task-oriented interactive environments
+  // 4. Immersive Fullscreen Interactive Tasks (No navigation chrome)
   const isActiveExam = pathname === "/exam" || pathname.startsWith("/exam/");
   const isInstructions = pathname === "/instructions" || pathname.startsWith("/instructions/");
-  const isClassroomSession =
-    (pathname.startsWith("/classroom/") && pathname !== "/classroom/") ||
-    pathname === "/classroom/studio";
-  const isMessages = pathname === "/messages" || pathname.startsWith("/messages/");
+  const isStudioCanvas = pathname === "/classroom/studio";
+  const isImmersiveTask = isActiveExam || isInstructions || isStudioCanvas;
+
+  // 5. Dedicated Authenticated Student Portal Workspace (Experience B)
+  const isStudentPortal =
+    !isImmersiveTask &&
+    STUDENT_PORTAL_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+    );
 
   // Intercept any Supabase PKCE authentication code or error landing on an arbitrary route
   // and automatically route it to the dedicated callback handler.
@@ -52,26 +92,70 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Isolate authenticated portals, auth gateway, and immersive test/classroom environments
-  // completely from the public marketing header, learner toolbar, and footer.
-  const hidePublicChrome =
-    isAdminArea ||
-    isStudentArea ||
-    isInstructorArea ||
-    isAuthArea ||
-    isActiveExam ||
-    isInstructions ||
-    isClassroomSession;
+  // Dedicated Shell: Admin Area
+  if (isAdminArea) {
+    return (
+      <>
+        <ToastContainer />
+        <OfflineSyncManager />
+        {children}
+      </>
+    );
+  }
 
+  // Dedicated Shell: Instructor Area
+  if (isInstructorArea) {
+    return (
+      <>
+        <ToastContainer />
+        <OfflineSyncManager />
+        {children}
+      </>
+    );
+  }
+
+  // Dedicated Shell: Auth Gateway
+  if (isAuthArea) {
+    return (
+      <>
+        <ToastContainer />
+        <OfflineSyncManager />
+        {children}
+      </>
+    );
+  }
+
+  // Dedicated Shell: Immersive Fullscreen Interactive Tasks
+  if (isImmersiveTask) {
+    return (
+      <>
+        <ToastContainer />
+        <OfflineSyncManager />
+        {children}
+      </>
+    );
+  }
+
+  // Experience B: Dedicated Authenticated Student Portal Shell
+  if (isStudentPortal) {
+    return (
+      <>
+        <ToastContainer />
+        <OfflineSyncManager />
+        <StudentPortalShell>{children}</StudentPortalShell>
+      </>
+    );
+  }
+
+  // Experience A: Dedicated Public Website Experience (Marketing Navigation & Footer)
   return (
     <>
       <ToastContainer />
       <OfflineSyncManager />
-      {!hidePublicChrome && <GlobalLearnerToolbar />}
-      {!hidePublicChrome && <GlobalAnnouncementBanner />}
-      {!hidePublicChrome && <BrandHeader />}
-      {children}
-      {!hidePublicChrome && !isMessages && <BrandFooter />}
+      <GlobalAnnouncementBanner />
+      <BrandHeader />
+      <main id="main">{children}</main>
+      <BrandFooter />
     </>
   );
 }

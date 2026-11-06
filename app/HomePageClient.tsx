@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import InteractiveSampleQuestion from "./components/InteractiveSampleQuestion";
 import { DEFAULT_FOOTER_CONFIG } from "./lib/platformConfig";
+import { supabase } from "./lib/supabase";
+
 
 interface FaqItem {
   question: string;
@@ -234,8 +236,27 @@ const PLATFORM_BENEFITS = [
 
 export default function HomePage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
+    async function checkAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (active && session?.user) {
+          setIsAuthenticated(true);
+        }
+      } catch {}
+    }
+    void checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active) {
+        setIsAuthenticated(!!session?.user);
+      }
+    });
+
     if (typeof window === "undefined") return;
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
@@ -243,6 +264,11 @@ export default function HomePage() {
     if (code || error) {
       window.location.replace(`/auth/callback${window.location.search}${window.location.hash}`);
     }
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const toggleFaq = (index: number) => {
@@ -281,12 +307,21 @@ export default function HomePage() {
             </p>
 
             <div className="mt-8 flex flex-col justify-center gap-3.5 sm:flex-row">
-              <Link
-                href="/login"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-7 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
-              >
-                Start Free Practice Test <span aria-hidden="true" className="ml-2">→</span>
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-7 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
+                >
+                  Go to My Student Dashboard <span aria-hidden="true" className="ml-2">→</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-7 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
+                >
+                  Start Free Practice Test <span aria-hidden="true" className="ml-2">→</span>
+                </Link>
+              )}
               <a
                 href="#ecosystem"
                 className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-6 py-3.5 text-sm font-bold text-slate-800 transition hover:border-slate-400"
@@ -1034,12 +1069,21 @@ export default function HomePage() {
             Join thousands of candidates preparing with purpose. Build speed, conceptual mastery, and the exam confidence needed to secure university admission.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3.5 sm:flex-row">
-            <Link
-              href="/login"
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
-            >
-              Start Free Practice Test <span aria-hidden="true" className="ml-2">→</span>
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
+              >
+                Go to My Student Dashboard <span aria-hidden="true" className="ml-2">→</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#012153] hover:bg-blue-950 px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 active:scale-95"
+              >
+                Start Free Practice Test <span aria-hidden="true" className="ml-2">→</span>
+              </Link>
+            )}
             <Link
               href="/learn"
               className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-6 py-3.5 text-sm font-bold text-slate-800 transition"

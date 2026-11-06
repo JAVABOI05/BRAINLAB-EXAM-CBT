@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import StudentPortalShell from "./StudentPortalShell";
 
 export const metadata: Metadata = {
   title: "Student Portal · BrainLab Academy",
@@ -8,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <StudentPortalShell>{children}</StudentPortalShell>;
+  return <>{children}</>;
 }

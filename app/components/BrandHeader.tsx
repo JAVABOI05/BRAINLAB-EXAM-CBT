@@ -17,12 +17,12 @@ interface NavLinkItem {
 }
 
 const NAV_LINKS: NavLinkItem[] = [
-  { href: "/cbt", label: "CBT Practice" },
+  { href: "/about", label: "About" },
   { href: "/syllabus", label: "Syllabus" },
-  { href: "/learn", label: "Curriculum" },
-  { href: "/classroom", label: "Live Classes", isLiveIndicator: true },
-  { href: "/challenge-arena", label: "Challenge Arena" },
-  { href: "/resources", label: "Resources" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/schools", label: "For Schools" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/contact", label: "Contact" },
 ];
 
 function displayName(user: User) {
@@ -327,7 +327,7 @@ export default function BrandHeader() {
                   <rect width="7" height="9" x="14" y="12" rx="1.5" />
                   <rect width="7" height="5" x="3" y="16" rx="1.5" />
                 </svg>
-                <span>Dashboard</span>
+                <span>Student Portal →</span>
               </Link>
 
               {/* User Dropdown Pill */}
@@ -526,9 +526,7 @@ export default function BrandHeader() {
                     href="/dashboard"
                     onClick={closeAllMenus}
                     className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
-                  >
-                    Dashboard →
-                  </Link>
+                  >Student Portal →</Link>
                   <Link
                     href="/pricing"
                     onClick={closeAllMenus}
