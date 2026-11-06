@@ -155,7 +155,7 @@ $$;
 -- Content authors are authenticated teachers/tutors mapped to the teacher
 -- role. Reviewer/admin privileges remain separate and can manage all content.
 CREATE OR REPLACE FUNCTION public.can_author_stem_resources()
-RETURNS BOOLEAN LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $
+RETURNS BOOLEAN LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF auth.uid() IS NULL THEN
     RETURN FALSE;
@@ -170,7 +170,7 @@ BEGIN
       WHERE t.user_id = auth.uid() AND t.profile_status = 'approved'
     );
 END;
-$;
+$$;
 
 -- RLS: stem_resources
 DROP POLICY IF EXISTS "Public and students can view published STEM resources" ON public.stem_resources;
@@ -278,7 +278,7 @@ CREATE POLICY "Students create own STEM attempts"
   ON public.stem_experiment_attempts FOR INSERT
   WITH CHECK (
     student_id = auth.uid()
-    AND status = 'in_progress'
+    AND status IN ('in_progress', 'completed')
     AND tutor_score IS NULL
     AND tutor_feedback IS NULL
   );
