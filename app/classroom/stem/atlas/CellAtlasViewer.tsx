@@ -169,13 +169,20 @@ export default function CellAtlasViewer() {
     <aside className="space-y-4">
       <div className="rounded-[24px] border border-white/10 bg-[#0b1838] p-5">
         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-cyan-300">Explore structures</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">{ORGANELLES.map(o=><div key={o.id} className="flex min-w-0 items-stretch gap-1">
-          <button onClick={()=>setSelected(o.id)} className={`min-w-0 flex-1 rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}><span className="mb-2 block h-2 w-2 rounded-full" style={{background:`rgb(${o.color.map(c=>Math.round(c*255)).join(",")})`}}/>{o.name}</button>
-          <button type="button" aria-label={`${visibleOrganelles.includes(o.id)?"Hide":"Show"} ${o.name}`} aria-pressed={visibleOrganelles.includes(o.id)} onClick={()=>setVisibleOrganelles(v=>v.includes(o.id)?v.filter(id=>id!==o.id):[...v,o.id])} className="rounded-lg border border-white/10 px-2 text-[10px] text-slate-300 hover:bg-white/10">{visibleOrganelles.includes(o.id)?"●":"○"}</button>
-        </div>)}</div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {ORGANELLES.map(o=>(
+            <div key={o.id} className="flex min-w-0 items-stretch gap-1">
+              <button type="button" onClick={()=>setSelected(o.id)} className={`min-w-0 flex-1 rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}>
+                <span className="mb-2 block h-2 w-2 rounded-full" style={{background:`rgb(${o.color.map(c=>Math.round(c*255)).join(",")})`}}/>
+                {o.name}
+              </button>
+              <button type="button" aria-label={`${visibleOrganelles.includes(o.id)?"Hide":"Show"} ${o.name}`} aria-pressed={visibleOrganelles.includes(o.id)} onClick={()=>setVisibleOrganelles(v=>v.includes(o.id)?v.filter(id=>id!==o.id):[...v,o.id])} className="rounded-lg border border-white/10 px-2 text-[10px] text-slate-300 hover:bg-white/10">
+                {visibleOrganelles.includes(o.id)?"●":"○"}
+              </button>
+            </div>
+          ))}
+        </div>
         <p className="mt-3 text-[10px] leading-relaxed text-slate-500">Use the dot controls to hide or restore structures. Isolate selected hides the other visible organelles.</p>
-      </div>
-      <div className="rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-[#10234b] to-[#0b1838] p-5"> className={`rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}><span className="mb-2 block h-2 w-2 rounded-full" style={{background:`rgb(${o.color.map(c=>Math.round(c*255)).join(",")})`}}/>{o.name}</button>)}</div>
       </div>
       <div className="rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-[#10234b] to-[#0b1838] p-5">
         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-cyan-300">Selected structure</p>
