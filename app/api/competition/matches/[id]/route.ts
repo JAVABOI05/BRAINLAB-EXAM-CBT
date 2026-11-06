@@ -91,11 +91,16 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
         (isParticipant && resultsVisibility === "after_completion" && match.status === "completed"));
 
     // Enriched participants. Hidden results are not sent to the browser.
-    const enrichedParticipants = (participants || []).map((p) => ({
-      ...p,
-      score: canSeeScores ? p.score : null,
-      profile: profilesMap[p.user_id] || { full_name: p.display_name || "Private player" },
-    }));
+    const enrichedParticipants = (participants || []).map((participant) => {
+      const { user_id: _privateUserId, ...publicParticipant } = participant;
+      return {
+        ...publicParticipant,
+        seat: participant.user_id === match.participant_a_id ? "A" : "B",
+        is_me: Boolean(user && participant.user_id === user.id),
+        score: canSeeScores ? participant.score : null,
+        profile: profilesMap[participant.user_id] || { full_name: participant.display_name || "Private player" },
+      };
+    });
 
     // Calculate server authoritative remaining time
     let remainingSeconds = match.duration_seconds;
@@ -147,8 +152,16 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       return safeItem;
     });
 
+    const {
+      participant_a_id: _participantAId,
+      participant_b_id: _participantBId,
+      winner_id: _privateWinnerId,
+      ...publicMatch
+    } = match;
     const safeMatch = {
-      ...match,
+      ...publicMatch,
+      winner_is_me: Boolean(canSeeScores && user && match.winner_id && match.winner_id === user.id),
+      has_winner: Boolean(canSeeScores && match.winner_id),
       score_a: canSeeScores ? match.score_a : null,
       score_b: canSeeScores ? match.score_b : null,
       questions_snapshot: safeQuestions,
@@ -159,7 +172,6 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       match: safeMatch,
       participants: enrichedParticipants,
       my_answers: myAnswers,
-      current_user_id: user?.id || null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error loading match";
