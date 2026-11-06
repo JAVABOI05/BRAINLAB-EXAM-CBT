@@ -5,12 +5,11 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { getAdminSession, type AdminUser } from "@/app/lib/adminAuth";
 import type { StemResource, StemResourceType } from "@/app/lib/stem/stemService";
-import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
 
 export default function AdminStemStudioPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [token, setToken] = useState<string>("");
-  const [resources, setResources] = useState<StemResource[]>(INITIAL_STEM_RESOURCES);
+  const [resources, setResources] = useState<StemResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -51,14 +50,14 @@ export default function AdminStemStudioPage() {
       const res = await fetch("/api/stem/resources?status=all", { headers });
       if (res.ok) {
         const data = await res.json();
-        if (data.ok && Array.isArray(data.resources) && data.resources.length > 0) {
+        if (data.ok && Array.isArray(data.resources)) {
           setResources(data.resources);
           return;
         }
       }
-      setResources(INITIAL_STEM_RESOURCES);
+      setResources([]);
     } catch {
-      setResources(INITIAL_STEM_RESOURCES);
+      setResources([]);
     } finally {
       setLoading(false);
     }
