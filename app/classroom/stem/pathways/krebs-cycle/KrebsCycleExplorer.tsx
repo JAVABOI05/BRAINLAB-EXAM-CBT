@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 type Stage = {
   id: number; name: string; enzyme: string; reaction: string; detail: string;
@@ -26,10 +27,10 @@ export default function KrebsCycleExplorer() {
   const progress=useMemo(()=>Math.round(((active+1)/8)*100),[active]);
   return <main className="min-h-screen bg-[#070d1e] px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
     <div className="mx-auto max-w-7xl space-y-7">
-      <nav className="text-xs text-slate-400"><a href="/classroom/stem" className="hover:text-white">STEM Studio</a> / <a href="/classroom/stem/atlas" className="hover:text-white">3D Atlas</a> / <span className="text-cyan-300">Krebs Cycle</span></nav>
+      <nav className="text-xs text-slate-400"><Link href="/classroom/stem" className="hover:text-white">STEM Studio</Link> / <Link href="/classroom/stem/atlas" className="hover:text-white">3D Atlas</Link> / <span className="text-cyan-300">Krebs Cycle</span></nav>
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.24em] text-cyan-300">Pathway &amp; Process Explorer</p><h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">The Krebs cycle, one reaction at a time.</h1><p className="mt-3 text-sm leading-relaxed text-slate-300">Explore the eight enzyme-catalysed reactions of the citric acid cycle. Follow the carbon count, electron carriers and energy yield for one acetyl-CoA.</p></div>
-        <a href="/classroom/stem" className="w-fit rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-bold text-white hover:bg-white/10">← STEM Studio</a>
+        <Link href="/classroom/stem" className="w-fit rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-bold text-white hover:bg-white/10">← STEM Studio</Link>
       </header>
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
         <div className="rounded-[28px] border border-white/10 bg-[#0b1838] p-4 sm:p-6">
@@ -54,7 +55,7 @@ export default function KrebsCycleExplorer() {
             <p className="mt-4 text-[10px] text-slate-400">Location: {stage.location} · Carbon atoms in product: {stage.carbon}</p>
           </article>
           <article className="rounded-[24px] border border-white/10 bg-[#0b1838] p-5"><h3 className="font-bold text-white">Net yield per acetyl-CoA</h3><div className="mt-3 grid grid-cols-2 gap-2">{[["3","NADH"],["1","FADH₂"],["1","GTP / ATP"],["2","CO₂"]].map(([n,label])=><div key={label} className="rounded-xl border border-white/10 bg-white/[.03] p-3"><p className="text-2xl font-black text-cyan-300">{n}</p><p className="text-[10px] font-bold text-slate-300">{label}</p></div>)}</div><p className="mt-3 text-[10px] leading-relaxed text-slate-500">One turn uses one acetyl-CoA. Oxaloacetate is regenerated rather than consumed overall. GTP or ATP depends on the succinyl-CoA synthetase isoenzyme.</p></article>
-          <article className="rounded-[24px] border border-white/10 bg-[#0b1838] p-5"><h3 className="font-bold text-white">Check your understanding</h3><p className="mt-2 text-xs leading-relaxed text-slate-300">Which reaction produces FADH₂?</p><div className="mt-3 grid grid-cols-2 gap-2">{["Succinate oxidation","Citrate formation","Hydration","Oxaloacetate regeneration"].map((answer,i)=><button key={answer} onClick={()=>setActive(answer==="Succinate oxidation"?5:active)} className={`rounded-lg border px-3 py-2 text-left text-[10px] font-bold ${answer==="Succinate oxidation"?"border-white/10 bg-white/[.03] text-slate-200 hover:border-emerald-400/40":"border-white/10 bg-white/[.03] text-slate-300 hover:border-cyan-400/30"}`}>{answer}</button>)}</div><p aria-live="polite" className="mt-2 text-[10px] text-slate-400">{quizAnswer===null?"Choose an answer to check your understanding.":quizAnswer==="Succinate oxidation"?"Correct. Succinate dehydrogenase transfers electrons to FAD, forming FADH₂.":"Not quite. FADH₂ is formed when succinate is oxidised to fumarate by succinate dehydrogenase."}</p></article>
+          <article className="rounded-[24px] border border-white/10 bg-[#0b1838] p-5"><h3 className="font-bold text-white">Check your understanding</h3><p className="mt-2 text-xs leading-relaxed text-slate-300">Which reaction produces FADH₂?</p><div className="mt-3 grid grid-cols-2 gap-2">{["Succinate oxidation","Citrate formation","Hydration","Oxaloacetate regeneration"].map(answer=><button key={answer} onClick={()=>setQuizAnswer(answer)} className={`rounded-lg border px-3 py-2 text-left text-[10px] font-bold ${quizAnswer===answer?(answer==="Succinate oxidation"?"border-emerald-400/50 bg-emerald-400/10 text-emerald-200":"border-rose-400/50 bg-rose-400/10 text-rose-200"):"border-white/10 bg-white/[.03] text-slate-300 hover:border-cyan-400/30"}`}>{answer}</button>)}</div><p aria-live="polite" className="mt-2 text-[10px] text-slate-400">{quizAnswer===null?"Choose an answer to check your understanding.":quizAnswer==="Succinate oxidation"?"Correct. Succinate dehydrogenase transfers electrons to FAD, forming FADH₂.":"Not quite. FADH₂ is formed when succinate is oxidised to fumarate by succinate dehydrogenase."}</p></article>
         </aside>
       </section>
       <p className="text-[10px] leading-relaxed text-slate-500">*Succinate dehydrogenase is embedded in the inner mitochondrial membrane (Complex II); the other cycle enzymes are located in the mitochondrial matrix. The diagram is a pathway schematic, not a molecular-scale structure.</p>
