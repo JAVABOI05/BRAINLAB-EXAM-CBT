@@ -81,7 +81,8 @@ export async function POST(
       let mqQuery = supabase
         .from("questions")
         .select("*")
-        .eq("is_archived", false);
+        .eq("is_archived", false)
+        .eq("is_active", true);
 
       if (mainSubject !== "General") {
         mqQuery = mqQuery.ilike("subject", `%${mainSubject}%`);
@@ -89,26 +90,30 @@ export async function POST(
 
       const { data: mq } = await mqQuery.limit(100);
 
-      mainQuestions = (mq || []).map((row) => ({
-        id: `main_${row.id}`,
-        bank_id: "main_cbt_bank",
-        question: row.question,
-        subject: row.subject,
-        topic: row.topic || row.category,
-        subtopic: row.subtopic,
-        difficulty: (row.difficulty || "medium") as CompetitionQuestionItem["difficulty"],
-        question_type: "multiple_choice",
-        option_a: row.option_a,
-        option_b: row.option_b,
-        option_c: row.option_c,
-        option_d: row.option_d,
-        option_e: row.option_e,
-        correct_answer: (row.answer || "A").trim().toUpperCase(),
-        explanation: row.explanation,
-        marks: row.marks > 0 ? row.marks : 1.0,
-        status: "published",
-        created_by: "system_main",
-      }));
+      mainQuestions = (mq || [])
+        // Never manufacture an answer key. Ignore malformed source rows instead
+        // of silently treating option A as correct.
+        .filter((row) => typeof row.correct_answer === "string" && /^[A-D]$/i.test(row.correct_answer.trim()))
+        .map((row) => ({
+          id: `main_${row.id}`,
+          bank_id: "main_cbt_bank",
+          question: row.question,
+          subject: row.subject,
+          topic: row.topic || row.category,
+          subtopic: row.subtopic,
+          difficulty: (row.difficulty || "medium") as CompetitionQuestionItem["difficulty"],
+          question_type: "multiple_choice",
+          option_a: row.option_a,
+          option_b: row.option_b,
+          option_c: row.option_c,
+          option_d: row.option_d,
+          option_e: row.option_e,
+          correct_answer: row.correct_answer.trim().toUpperCase(),
+          explanation: row.explanation,
+          marks: row.marks > 0 ? row.marks : 1.0,
+          status: "published",
+          created_by: "system_main",
+        }));
     }
 
     const sessionId = crypto.randomUUID();
