@@ -77,11 +77,6 @@ export async function GET(req: NextRequest) {
 
         if (apps && apps.length > 0) {
           const appUserIds = apps.map((a) => a.user_id);
-          const { data: appProfiles } = await supabase
-            .from("user_profiles")
-            .select("id, full_name, username, avatar_url")
-            .in("id", appUserIds);
-
           const { data: publicAppProfiles } = await supabase
             .from("competition_public_profiles")
             .select("user_id, display_name, avatar_url")
