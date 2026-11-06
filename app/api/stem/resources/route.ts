@@ -6,7 +6,6 @@ import {
   resolveAdminRole,
 } from "@/app/lib/supabaseServer";
 import { listStemResources, createStemResource } from "@/app/lib/stem/stemService";
-import { isGovernanceAdminRole } from "@/app/lib/adminRoles";
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +26,14 @@ export async function GET(request: NextRequest) {
     let isAuthorizedReviewer = false;
     if (user) {
       const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
-      isAuthorizedReviewer = role === "teacher" || role === "tutor" || isGovernanceAdminRole(role);
+      const isStemGovernanceRole = ["super_admin", "platform_admin", "content_reviewer", "ai_learning_admin", "admin"].includes(role || "");
+      const { data: approvedTutor } = await getSupabaseServerClient(token)
+        .from("tutor_profiles")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .eq("profile_status", "approved")
+        .maybeSingle();
+      isAuthorizedReviewer = role === "teacher" || Boolean(approvedTutor) || isStemGovernanceRole;
     }
 
     // Public / unauthenticated callers can ONLY view published resources
@@ -66,7 +72,14 @@ export async function POST(request: NextRequest) {
     const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
     const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
 
-    const isPermitted = role === "teacher" || role === "tutor" || isGovernanceAdminRole(role);
+    const isStemGovernanceRole = ["super_admin", "platform_admin", "content_reviewer", "ai_learning_admin", "admin"].includes(role || "");
+    const { data: approvedTutor } = await getSupabaseServerClient(token)
+      .from("tutor_profiles")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("profile_status", "approved")
+      .maybeSingle();
+    const isPermitted = role === "teacher" || Boolean(approvedTutor) || isStemGovernanceRole;
     if (!isPermitted) {
       return NextResponse.json(
         { ok: false, error: "Only tutors, instructors and administrators can author STEM resources." },
