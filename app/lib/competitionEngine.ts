@@ -131,8 +131,10 @@ export function shuffleQuestionOptions(
   if (question.option_d_image_url) rawImages.D = question.option_d_image_url;
   if (question.option_e_image_url) rawImages.E = question.option_e_image_url;
 
-  const originalCorrectKey = (question.correct_answer || "A").trim().toUpperCase();
-  const correctText = rawOptions[originalCorrectKey] || rawOptions.A;
+  const originalCorrectKey = (question.correct_answer || "").trim().toUpperCase();
+  if (!letters.includes(originalCorrectKey) || !rawOptions[originalCorrectKey]) {
+    throw new Error(`Question ${question.id || "unknown"} has an invalid or missing correct answer key.`);
+  }
 
   // Pair up options and shuffle their display order
   const pairs = letters.map((k) => ({
@@ -151,7 +153,7 @@ export function shuffleQuestionOptions(
     const pair = shuffledPairs[idx];
     shuffledOptions[newLetter] = pair.text;
     if (pair.imageUrl) shuffledImages[newLetter] = pair.imageUrl;
-    if (pair.text === correctText) {
+    if (pair.originalKey === originalCorrectKey) {
       newCorrectAnswer = newLetter;
     }
   });
@@ -230,7 +232,13 @@ export function formatQuestionForSnapshot(
       marks: q.marks > 0 ? q.marks : 1.0,
       explanation: q.explanation,
     },
-    correctOption: (q.correct_answer || "A").trim().toUpperCase(),
+    correctOption: (() => {
+      const answer = (q.correct_answer || "").trim().toUpperCase();
+      if (!["A", "B", "C", "D", "E"].includes(answer)) {
+        throw new Error(`Question ${q.id || "unknown"} has an invalid or missing correct answer key.`);
+      }
+      return answer;
+    })(),
   };
 }
 
