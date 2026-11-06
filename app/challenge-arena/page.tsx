@@ -67,7 +67,7 @@ interface Team {
 
 interface LeaderboardEntry {
   rank: number | string;
-  user_id: string;
+  is_me: boolean;
   elo_rating: number;
   peak_elo: number;
   matches_played: number;
@@ -793,10 +793,10 @@ export default function ChallengeArenaPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-800/40">
                     {leaderboard.map((item) => {
-                      const isMe = item.user_id === currentUser?.id;
+                      const isMe = item.is_me;
                       return (
                         <tr
-                          key={item.user_id}
+                          key={item.rank}
                           className={`transition ${
                             isMe
                               ? "bg-blue-500/10 font-bold"
@@ -809,7 +809,7 @@ export default function ChallengeArenaPage() {
                             {item.rank === 1 ? "🥇 1" : item.rank === 2 ? "🥈 2" : item.rank === 3 ? "🥉 3" : `#${item.rank}`}
                           </td>
                           <td className="py-3.5 px-4 font-semibold">
-                            {item.profile?.full_name || item.profile?.username || "Candidate"}
+                            {item.profile?.full_name || item.profile?.username || "Private player"}
                             {isMe && <span className="text-xs text-blue-400 ml-1.5">(You)</span>}
                           </td>
                           <td className="py-3.5 px-4">
