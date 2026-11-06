@@ -79,7 +79,12 @@ export async function POST(req: NextRequest) {
       question_count = 10,
       duration_minutes = 5,
       difficulty = "medium",
+      match_mode = "ranked",
     } = body;
+
+    if (!["ranked", "friendly"].includes(match_mode)) {
+      return NextResponse.json({ error: "Challenge mode must be ranked or friendly." }, { status: 400 });
+    }
 
     if (challenged_id && challenged_id === user.id) {
       return NextResponse.json({ error: "You cannot challenge yourself." }, { status: 400 });
@@ -107,6 +112,7 @@ export async function POST(req: NextRequest) {
         question_count: Math.min(Math.max(Number(question_count) || 10, 5), 30),
         duration_minutes: Math.min(Math.max(Number(duration_minutes) || 5, 2), 20),
         difficulty,
+        match_mode,
         status: "pending",
       })
       .select()
@@ -310,6 +316,7 @@ export async function PATCH(req: NextRequest) {
             question_count: challenge.question_count,
             player_a_name: challengerName,
             player_b_name: acceptingName,
+            match_mode: challenge.match_mode || "ranked",
           },
         })
         .select()
