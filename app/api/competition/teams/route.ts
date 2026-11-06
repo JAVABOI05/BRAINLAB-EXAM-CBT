@@ -449,6 +449,64 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ ok: true, election });
     }
 
+    // ACTION: FINALISE AN EXPIRED TEAM ELECTION
+    if (action === "finalize_election") {
+      const { election_id } = body;
+      if (!election_id) return NextResponse.json({ error: "Missing election_id." }, { status: 400 });
+
+      const { data: election, error: electionError } = await supabase
+        .from("competition_team_elections")
+        .select("id, team_id, status, end_time")
+        .eq("id", election_id)
+        .maybeSingle();
+      if (electionError) throw electionError;
+      if (!election) return NextResponse.json({ error: "Election not found." }, { status: 404 });
+      if (new Date(election.end_time) > new Date()) {
+        return NextResponse.json({ error: "This election is still open." }, { status: 409 });
+      }
+
+      const { data: member } = await supabase
+        .from("competition_team_members")
+        .select("id")
+        .eq("team_id", election.team_id)
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!member) return NextResponse.json({ error: "Only active team members can finalise an expired election." }, { status: 403 });
+
+      const { data: resultRows, error: finalizeError } = await supabase.rpc("finalize_competition_team_election", {
+        p_election_id: election_id,
+      });
+      if (finalizeError) throw finalizeError;
+      const result = Array.isArray(resultRows) ? resultRows[0] : resultRows;
+
+      const { data: members } = await supabase
+        .from("competition_team_members")
+        .select("user_id")
+        .eq("team_id", election.team_id)
+        .eq("is_active", true);
+      const message = result?.election_status === "completed"
+        ? "The team captain election has concluded. The elected captain is now in office."
+        : result?.election_status === "passed"
+          ? "The no-confidence motion passed. An interim captain has been appointed and a new captaincy election is open."
+          : result?.election_status === "tied"
+            ? "The captaincy vote was tied. A runoff election has opened."
+            : result?.election_status === "failed"
+              ? "The team election concluded without a successful outcome."
+              : "The team election has been finalised.";
+      if (members?.length) {
+        await supabase.from("notifications").insert(members.map((item) => ({
+          user_id: item.user_id,
+          title: "Team election finalised",
+          message,
+          type: "competition_team_election_result",
+          metadata: { team_id: election.team_id, election_id, status: result?.election_status, followup_election_id: result?.followup_election_id },
+        })));
+      }
+
+      return NextResponse.json({ ok: true, result });
+    }
+
     // ACTION: CAST A CONFIDENTIAL TEAM BALLOT
     if (action === "vote") {
       const { election_id, candidate_id } = body;
