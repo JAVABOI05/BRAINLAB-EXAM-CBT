@@ -33,6 +33,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       },
       rating,
       gamification,
+      is_owner: user?.id === profile.user_id,
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load Arena profile." }, { status: 500 });
