@@ -16,6 +16,10 @@ export interface CompetitionQuestionItem {
   subject: string;
   topic?: string;
   subtopic?: string;
+  passage_id?: string | null;
+  passage_title?: string | null;
+  passage_text?: string | null;
+  reading_text_id?: string | null;
   difficulty: QuestionDifficulty;
   question_type: string;
   option_a: string;
