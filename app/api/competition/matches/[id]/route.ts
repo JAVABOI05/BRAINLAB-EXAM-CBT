@@ -289,52 +289,29 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
       const basePoints = Number.isFinite(configuredMarks) && configuredMarks > 0 ? configuredMarks : 10;
       const pointsAwarded = isCorrect ? basePoints : 0;
 
-      // The database unique index is the final concurrency guard. Do not update
-      // participant totals if this insert loses a duplicate-submission race.
-      const { error: answerInsertError } = await supabase.from("competition_match_answers").insert({
-        match_id: matchId,
-        participant_id: myParticipant.id,
-        user_id: user.id,
-        question_id: String(question_id),
-        selected_option: studentAnswer,
-        is_correct: isCorrect,
-        points_awarded: pointsAwarded,
-        time_taken_seconds: timeTaken,
+      // One database transaction inserts the answer and atomically advances the
+      // participant and match scores. Duplicate submissions roll back completely.
+      const { data: progressRows, error: progressError } = await supabase.rpc("record_competition_match_answer", {
+        p_match_id: matchId,
+        p_participant_id: myParticipant.id,
+        p_user_id: user.id,
+        p_question_id: String(question_id),
+        p_selected_option: studentAnswer,
+        p_is_correct: isCorrect,
+        p_points_awarded: pointsAwarded,
+        p_time_taken_seconds: timeTaken,
       });
-      if (answerInsertError) {
-        if (answerInsertError.code === "23505") {
+      if (progressError) {
+        if (progressError.code === "23505") {
           return NextResponse.json({ error: "Question already answered" }, { status: 409 });
         }
-        throw answerInsertError;
+        if (progressError.message?.includes("Match is not accepting answers")) {
+          return NextResponse.json({ error: progressError.message }, { status: 409 });
+        }
+        throw progressError;
       }
-
-      // Update participant score & progress
-      const newScore = (Number(myParticipant.score) || 0) + pointsAwarded;
-      const nextIndex = (myParticipant.current_question_index || 0) + 1;
-      const totalTime = previousTime + timeTaken;
-
-      await supabase
-        .from("competition_match_participants")
-        .update({
-          score: newScore,
-          current_question_index: nextIndex,
-          total_time_spent_seconds: totalTime,
-        })
-        .eq("id", myParticipant.id);
-
-      // Update match score_a or score_b
-      const isPlayerA = match.participant_a_id === user.id;
-      if (isPlayerA) {
-        await supabase
-          .from("competition_matches")
-          .update({ score_a: newScore })
-          .eq("id", matchId);
-      } else {
-        await supabase
-          .from("competition_matches")
-          .update({ score_b: newScore })
-          .eq("id", matchId);
-      }
+      const progress = Array.isArray(progressRows) ? progressRows[0] : progressRows;
+      const nextIndex = Number(progress?.current_question_index) || 0;
 
       // Check if both players have answered all questions
       const totalQuestionsCount = Array.isArray(match.questions_snapshot) ? match.questions_snapshot.length : 10;
