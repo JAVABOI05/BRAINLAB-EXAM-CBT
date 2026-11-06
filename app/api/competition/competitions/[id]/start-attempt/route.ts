@@ -35,6 +35,22 @@ export async function POST(
       );
     }
 
+    const { data: emergencyControls } = await supabase
+      .from("competition_emergency_controls")
+      .select("target_id, is_paused, maintenance_mode")
+      .eq("scope", "competition")
+      .in("target_id", ["all", id]);
+    const { data: globalControls } = await supabase
+      .from("competition_emergency_controls")
+      .select("is_paused, maintenance_mode")
+      .eq("scope", "global")
+      .eq("target_id", "all")
+      .maybeSingle();
+    if (globalControls?.is_paused || globalControls?.maintenance_mode ||
+        emergencyControls?.some((control) => control.is_paused || control.maintenance_mode)) {
+      return NextResponse.json({ error: "This competition is temporarily paused by Arena administration." }, { status: 423 });
+    }
+
     // Check status
     if (comp.status !== "published" && comp.status !== "active") {
       return NextResponse.json(
