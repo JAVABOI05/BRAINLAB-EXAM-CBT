@@ -1,25 +1,37 @@
-import Link from "next/link";
+"use client";
 
-type Params = { params: Promise<{ slug: string }> };
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
 type ProfileResponse = {
   profile: { display_name: string; avatar_url: string | null; bio: string | null; slug: string; is_available: boolean };
   rating: { elo_rating: number; peak_elo: number; matches_played: number; matches_won: number; matches_drawn: number; matches_lost: number; tier: string } | null;
   gamification: { lifetime_xp: number; current_level: number; level_name: string } | null;
 };
 
-async function loadProfile(slug: string): Promise<ProfileResponse | null> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}` || "https://www.brainlabacademy.com.ng";
-  const response = await fetch(`${base}/api/competition/profiles/${encodeURIComponent(slug)}`, { cache: "no-store" });
-  if (!response.ok) return null;
-  return response.json();
-}
+export default function PublicArenaPlayerPage() {
+  const params = useParams<{ slug: string }>();
+  const [data, setData] = useState<ProfileResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
 
-export default async function PublicArenaPlayerPage({ params }: Params) {
-  const { slug } = await params;
-  const data = await loadProfile(slug);
-  if (!data) {
-    return <main className="min-h-screen bg-slate-50 px-4 py-16 text-slate-900 dark:bg-[#060b18] dark:text-white"><div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-[#0d172e]"><h1 className="text-2xl font-black">Profile unavailable</h1><p className="mt-2 text-sm text-slate-500">This player profile is private or does not exist.</p><Link href="/challenge-arena" className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white">Return to Arena</Link></div></main>;
-  }
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/competition/profiles/${encodeURIComponent(params.slug)}`)
+      .then(async response => {
+        if (!response.ok) throw new Error("Profile unavailable");
+        return response.json();
+      })
+      .then(result => { if (active) setData(result); })
+      .catch(() => { if (active) setUnavailable(true); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [params.slug]);
+
+  if (loading) return <main className="min-h-screen bg-slate-50 p-8 dark:bg-[#060b18]"><div className="mx-auto max-w-xl rounded-2xl bg-white p-6 text-sm dark:bg-[#0d172e]">Loading player profile…</div></main>;
+  if (unavailable || !data) return <main className="min-h-screen bg-slate-50 px-4 py-16 text-slate-900 dark:bg-[#060b18] dark:text-white"><div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-[#0d172e]"><h1 className="text-2xl font-black">Profile unavailable</h1><p className="mt-2 text-sm text-slate-500">This player profile is private or does not exist.</p><Link href="/challenge-arena" className="mt-5 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white">Return to Arena</Link></div></main>;
+
   const { profile, rating, gamification } = data;
   const winRate = rating && rating.matches_played ? Math.round((rating.matches_won / rating.matches_played) * 100) : 0;
   return <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 dark:bg-[#060b18] dark:text-slate-100 sm:px-6"><div className="mx-auto max-w-4xl space-y-6">
