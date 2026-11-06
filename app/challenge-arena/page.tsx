@@ -16,7 +16,10 @@ interface Competition {
   status: "draft" | "pending_approval" | "scheduled" | "published" | "active" | "paused" | "cancelled" | "concluded";
   start_time: string | null;
   end_time: string | null;
-  entry_fee: number;
+  entry_fee?: number;
+  entry_fee_kobo?: number;
+  access_mode?: "free" | "code" | "request" | "paid";
+  approval_mode?: "automatic" | "manual";
   prize_pool?: string;
   current_participants?: number;
   max_participants?: number;
@@ -321,9 +324,21 @@ export default function ChallengeArenaPage() {
       setRegisteringCompId(competitionId);
       setRegistrationMessage(null);
 
+      const competition = competitions.find((item) => item.id === competitionId);
+      let accessCode: string | undefined;
+      if (competition?.access_mode === "code") {
+        const enteredCode = window.prompt("Enter the access code supplied by the competition organiser:");
+        if (!enteredCode?.trim()) {
+          setRegisteringCompId(null);
+          return;
+        }
+        accessCode = enteredCode.trim().toUpperCase();
+      }
+
       const res = await fetch(`/api/competition/competitions/${competitionId}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessCode }),
       });
 
       const data = await res.json();
@@ -335,7 +350,12 @@ export default function ChallengeArenaPage() {
         return;
       }
 
-      setRegistrationMessage({ text: "✓ Registered successfully for this competition!", ok: true });
+      setRegistrationMessage({
+        text: data.message || (competition?.access_mode === "request" || competition?.approval_mode === "manual"
+          ? "✓ Registration request submitted for organiser approval."
+          : "✓ Registered successfully for this competition!"),
+        ok: true,
+      });
       loadArenaData();
     } catch (err: unknown) {
       setRegistrationMessage({ text: err instanceof Error ? err.message : "Registration failed", ok: false });
