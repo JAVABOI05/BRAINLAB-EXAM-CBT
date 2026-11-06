@@ -71,7 +71,10 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   const isActiveExam = pathname === "/exam" || pathname.startsWith("/exam/");
   const isInstructions = pathname === "/instructions" || pathname.startsWith("/instructions/");
   const isStudioCanvas = pathname === "/classroom/studio";
-  const isImmersiveTask = isActiveExam || isInstructions || isStudioCanvas;
+  const isAssessmentRunner =
+    pathname.startsWith("/assessments/") && !pathname.endsWith("/leaderboard");
+  const isImmersiveTask =
+    isActiveExam || isInstructions || isStudioCanvas || isAssessmentRunner;
 
   // 5. Dedicated Authenticated Student Portal Workspace (Experience B)
   const isStudentPortal =
