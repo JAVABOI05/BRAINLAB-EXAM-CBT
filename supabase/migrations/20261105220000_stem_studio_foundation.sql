@@ -244,7 +244,9 @@ CREATE POLICY "Authors and admins manage curriculum mappings"
     public.is_stem_reviewer_or_admin()
     OR EXISTS (
       SELECT 1 FROM public.stem_resources r
-      WHERE r.id = stem_curriculum_mappings.resource_id AND r.author_id = auth.uid()
+      WHERE r.id = stem_curriculum_mappings.resource_id
+          AND r.author_id = auth.uid()
+          AND public.can_author_stem_resources()
     )
   );
 
