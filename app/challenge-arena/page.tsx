@@ -303,7 +303,14 @@ export default function ChallengeArenaPage() {
   };
 
   const addFoundingMember = (player: FounderSearchResult) => {
-    setSelectedFounders(current => current.some(item => item.slug === player.slug) ? current : [...current, player]);
+    setSelectedFounders(current => {
+      if (current.some(item => item.slug === player.slug)) return current;
+      if (current.length >= 9) {
+        alert("A team request can invite up to nine other founding members.");
+        return current;
+      }
+      return [...current, player];
+    });
     setFounderSearchResults([]);
     setFounderSearch("");
   };
