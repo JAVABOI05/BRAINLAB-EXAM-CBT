@@ -126,3 +126,29 @@ The workflow should offer to create/link a tutor profile only when needed, then 
 - No automatic premium/subscription grants.
 - No broad access based only on frontend role labels.
 - No production schema/data mutation during design or staging development without explicit approval.
+
+
+## Expanded authorization dependency audit (2026-11-06)
+
+A broader repository search found that the permission engine is a shared security dependency, not a self-contained admin feature.
+
+### Additional verified consumers
+
+- `get_admin_role()` is consumed by login/account routing, the operator-gate endpoint, admin session resolution, Coming Soon route gating, tutor pages, dashboards, subscription helpers, AI monitoring/model routes, and multiple API handlers.
+- `admin_has_permission(text)` is referenced by many RLS policies and security-definer RPCs across CBT, access codes, notifications, question media, Learning Hub and tutor profile management.
+- Numerous route handlers read `admin_profiles` directly. Some also inspect the legacy `admin_users` table. Examples include assignments grading, audio upload, classroom classes/attendance, Learning Hub media upload, recordings, communications, and AI model routes.
+- `resolveAdminRole()` in `app/lib/supabaseServer.ts` checks the RPC, then `admin_profiles`, then legacy `admin_users` by id/email. This compatibility chain must be inventoried and migrated deliberately.
+- `app/api/auth/operator-gate/route.ts` currently grants the private-entry cookie to any account for which `get_admin_role()` returns a non-empty string. That remains a role-presence gate, not a fine-grained permission check.
+- `app/lib/adminAuth.ts` can accept role strings from Auth metadata before checking the database. Client-side role caches are also used for navigation. These may improve UX but must never become authoritative for protected actions.
+- `app/lib/subscriptionEntitlements.ts` currently treats any administrator role as an all-feature VIP entitlement. This is a separate product-entitlement policy and must be reviewed so custom staff roles do not accidentally receive paid student entitlements or conflate staff access with learner subscriptions.
+- The latest checked-in migration `20261106040000_grant_instructor_academic_permissions.sql` overrides the earlier permission CASE mapping. It adds academic/authoring grants for `teacher` and `competition_host`, STEM permissions and Competition-related permissions. The final seed mapping must be derived from the latest effective function and the TypeScript catalogue, not only the earlier migration.
+
+### Critical migration implications
+
+1. Do not change `get_admin_role()` semantics in isolation. Many existing consumers expect one fixed role string and use equality checks such as `role === 'teacher'` or membership in a fixed role list.
+2. Introduce a new authoritative permission/session contract (for example `get_access_context()`) that can return staff status, role assignments and permission keys without leaking internal Auth UUIDs to the UI. Keep `get_admin_role()` as a compatibility shim while consumers are migrated.
+3. Replace direct `admin_profiles` checks with central server-side permission checks only after classifying each route as governance admin, instructor/tutor, moderator, or ordinary learner.
+4. Preserve resource-level checks in Learning Hub and classroom membership. A custom role's broad module permission must not bypass assigned subject/class boundaries.
+5. Audit and remove trust in user-editable `user_metadata.role` as an authorization source. JWT metadata may be used only if it is set exclusively by a trusted server and is promptly invalidated on role changes; database authorization remains authoritative.
+6. Treat `admin_users` as legacy until every consumer is identified and its purpose is verified. Do not assume its `id` is a Supabase Auth user id.
+7. The custom Role Builder must not grant broad permissions simply because a role name contains words such as `admin`, `teacher`, or `moderator`. Names are display labels only.
