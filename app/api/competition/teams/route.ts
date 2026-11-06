@@ -78,10 +78,23 @@ export async function GET(req: NextRequest) {
         }
       }
 
+      let hasVoted = false;
+      if (user && activeElection) {
+        const { data: ownBallot, error: ballotError } = await supabase
+          .from("competition_team_votes")
+          .select("id")
+          .eq("election_id", activeElection.id)
+          .eq("voter_id", user.id)
+          .maybeSingle();
+        if (ballotError) throw ballotError;
+        hasVoted = Boolean(ownBallot);
+      }
+
       return NextResponse.json({
         team,
         members: enrichedMembers,
         activeElection,
+        has_voted: hasVoted,
         applications,
         is_my_team: members?.some((m) => m.user_id === user?.id) || false,
         my_role: members?.find((m) => m.user_id === user?.id)?.role || null,
