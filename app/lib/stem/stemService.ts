@@ -32,6 +32,7 @@ export interface StemResource {
   subject?: { id: string; name: string; slug: string };
   topic?: { id: string; title: string; slug: string };
   current_version?: StemResourceVersion | null;
+  stem_access?: { locked: boolean; requiredLevel: "none" | "discover" | "explore" | "practise" | "advanced" | "complete"; currentLevel: "none" | "discover" | "explore" | "practise" | "advanced" | "complete" };
 }
 
 export interface StemResourceVersion {

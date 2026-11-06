@@ -102,7 +102,7 @@ export default function StemStudioHubPage() {
   }, [resources, selectedSubject, selectedTier, selectedType, searchQuery]);
 
   const featured = useMemo(() => {
-    return resources.find((r) => r.is_featured) || resources[0] || null;
+    return resources.find((r) => r.is_featured && !r.stem_access?.locked) || resources.find((r) => !r.stem_access?.locked) || null;
   }, [resources]);
 
   const subjectTabs = useMemo(() => {
@@ -504,13 +504,23 @@ export default function StemStudioHubPage() {
                           <span>🎯</span>
                           <span>Practice CBT</span>
                         </Link>
-                        <Link
-                          href={`/classroom/stem/${res.slug}`}
-                          className="px-4 py-2 rounded-xl bg-[#1356E8] hover:bg-blue-600 text-white text-xs font-black shadow transition flex items-center gap-1.5"
-                        >
-                          <span>Open Lab</span>
-                          <span>→</span>
-                        </Link>
+                        {res.stem_access?.locked ? (
+                          <Link
+                            href="/pricing?feature=stem"
+                            className="px-4 py-2 rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-200 text-xs font-black transition flex items-center gap-1.5"
+                          >
+                            <span>Unlock STEM</span>
+                            <span>↗</span>
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/classroom/stem/${res.slug}`}
+                            className="px-4 py-2 rounded-xl bg-[#1356E8] hover:bg-blue-600 text-white text-xs font-black shadow transition flex items-center gap-1.5"
+                          >
+                            <span>Open Lab</span>
+                            <span>→</span>
+                          </Link>
+                        )}
                       </div>
                     </article>
                   ))}
