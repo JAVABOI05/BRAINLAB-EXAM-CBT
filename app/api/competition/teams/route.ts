@@ -30,19 +30,26 @@ export async function GET(req: NextRequest) {
       let profilesMap: Record<string, { full_name?: string; username?: string; avatar_url?: string }> = {};
 
       if (memberUserIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("user_profiles")
-          .select("id, full_name, username, avatar_url")
-          .in("id", memberUserIds);
+        let profileQuery = supabase
+          .from("competition_public_profiles")
+          .select("user_id, display_name, avatar_url, visibility")
+          .in("user_id", memberUserIds)
+          .eq("visibility", "public");
+        if (user) profileQuery = profileQuery.or(`visibility.eq.public,user_id.eq.${user.id}`);
+        const { data: profiles } = await profileQuery;
 
         if (profiles) {
-          profilesMap = Object.fromEntries(profiles.map((p) => [p.id, p]));
+          profilesMap = Object.fromEntries(profiles.map((profile) => [profile.user_id, {
+            full_name: profile.display_name,
+            username: profile.display_name,
+            avatar_url: profile.avatar_url || undefined,
+          }]));
         }
       }
 
-      const enrichedMembers = (members || []).map((m) => ({
-        ...m,
-        profile: profilesMap[m.user_id] || { full_name: "Member" },
+      const enrichedMembers = (members || []).map((member) => ({
+        ...member,
+        profile: profilesMap[member.user_id] || { full_name: "Private member" },
       }));
 
       // Fetch active elections
