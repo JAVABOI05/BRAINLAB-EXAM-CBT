@@ -476,7 +476,7 @@ export async function PATCH(req: NextRequest) {
 
       const { data: activeMembers, error: memberListError } = await supabase
         .from("competition_team_members")
-        .select("user_id")
+        .select("user_id, public_member_id")
         .eq("team_id", team_id)
         .eq("is_active", true);
       if (memberListError) throw memberListError;
@@ -514,7 +514,18 @@ export async function PATCH(req: NextRequest) {
         metadata: { team_id, election_id: election.id, election_type },
       })));
 
-      return NextResponse.json({ ok: true, election });
+      return NextResponse.json({
+        ok: true,
+        election: {
+          id: election.id,
+          team_id: election.team_id,
+          election_type: election.election_type,
+          status: election.status,
+          start_time: election.start_time,
+          end_time: election.end_time,
+          candidate_member_ids: activeMembers.map((item) => item.public_member_id),
+        },
+      });
     }
 
     // ACTION: FINALISE AN EXPIRED TEAM ELECTION
@@ -572,15 +583,26 @@ export async function PATCH(req: NextRequest) {
         })));
       }
 
-      return NextResponse.json({ ok: true, result });
+      const { data: winnerMember } = result?.winner_id
+        ? await supabase.from("competition_team_members")
+            .select("public_member_id")
+            .eq("team_id", election.team_id)
+            .eq("user_id", result.winner_id)
+            .maybeSingle()
+        : { data: null };
+      const { winner_id: _privateWinnerId, ...safeResult } = result || {};
+      return NextResponse.json({
+        ok: true,
+        result: { ...safeResult, winner_member_id: winnerMember?.public_member_id || null },
+      });
     }
 
     // ACTION: CAST A CONFIDENTIAL TEAM BALLOT
     if (action === "vote") {
-      const { election_id, candidate_id } = body;
+      const { election_id, candidate_member_id } = body;
       const voteChoice = body.vote_choice === "support" || body.vote_choice === "oppose" ? body.vote_choice : "candidate";
-      if (!election_id || !candidate_id) {
-        return NextResponse.json({ error: "Missing election_id or candidate_id." }, { status: 400 });
+      if (!election_id || !candidate_member_id) {
+        return NextResponse.json({ error: "Missing election_id or candidate member." }, { status: 400 });
       }
 
       const { data: election, error: electionError } = await supabase
@@ -612,19 +634,29 @@ export async function PATCH(req: NextRequest) {
         .maybeSingle();
       if (!team) return NextResponse.json({ error: "Team not found." }, { status: 404 });
 
+      const { data: candidateMember } = await supabase
+        .from("competition_team_members")
+        .select("user_id, public_member_id")
+        .eq("team_id", election.team_id)
+        .eq("public_member_id", candidate_member_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!candidateMember) return NextResponse.json({ error: "The selected team member is no longer eligible." }, { status: 400 });
+      const candidateId = candidateMember.user_id;
+
       if (election.election_type === "captaincy" &&
-          (voteChoice !== "candidate" || !(election.candidate_ids || []).includes(candidate_id))) {
+          (voteChoice !== "candidate" || !(election.candidate_ids || []).includes(candidateId))) {
         return NextResponse.json({ error: "Select a valid active candidate." }, { status: 400 });
       }
       if (election.election_type === "no_confidence" &&
-          (candidate_id !== team.captain_id || !["support", "oppose"].includes(voteChoice))) {
+          (candidateId !== team.captain_id || !["support", "oppose"].includes(voteChoice))) {
         return NextResponse.json({ error: "Choose support or oppose for the current captain." }, { status: 400 });
       }
 
       const { data: tallyRows, error: voteError } = await supabase.rpc("cast_competition_team_election_vote", {
         p_election_id: election_id,
         p_voter_id: user.id,
-        p_candidate_id: candidate_id,
+        p_candidate_id: candidateId,
         p_vote_choice: voteChoice,
       });
       if (voteError) {
