@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       // Fetch members
       const { data: members } = await supabase
         .from("competition_team_members")
-        .select("id, user_id, role, joined_at, is_active")
+        .select("id, public_member_id, user_id, role, joined_at, is_active")
         .eq("team_id", teamId);
 
       const memberUserIds = members?.map((m) => m.user_id) || [];
@@ -47,10 +47,15 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      const enrichedMembers = (members || []).map((member) => ({
-        ...member,
-        profile: profilesMap[member.user_id] || { full_name: "Private member" },
-      }));
+      const publicMemberByUserId = new Map((members || []).map((member) => [member.user_id, member.public_member_id]));
+      const enrichedMembers = (members || []).map((member) => {
+        const { user_id: _privateUserId, ...safeMember } = member;
+        return {
+          ...safeMember,
+          is_me: Boolean(user && member.user_id === user.id),
+          profile: profilesMap[member.user_id] || { full_name: "Private member" },
+        };
+      });
 
       // Fetch active elections
       const { data: activeElection } = await supabase
@@ -77,11 +82,22 @@ export async function GET(req: NextRequest) {
             .select("id, full_name, username, avatar_url")
             .in("id", appUserIds);
 
-          const appProfilesMap = Object.fromEntries((appProfiles || []).map((p) => [p.id, p]));
-          applications = apps.map((a) => ({
-            ...a,
-            profile: appProfilesMap[a.user_id] || { full_name: "Applicant" },
-          }));
+          const { data: publicAppProfiles } = await supabase
+            .from("competition_public_profiles")
+            .select("user_id, display_name, avatar_url")
+            .in("user_id", appUserIds)
+            .eq("visibility", "public");
+          const appProfilesMap = Object.fromEntries((publicAppProfiles || []).map((profile) => [profile.user_id, profile]));
+          applications = apps.map((application) => {
+            const { user_id: _privateApplicantId, ...safeApplication } = application;
+            const profile = appProfilesMap[application.user_id];
+            return {
+              ...safeApplication,
+              profile: profile
+                ? { full_name: profile.display_name, username: profile.display_name, avatar_url: profile.avatar_url }
+                : { full_name: "Private player" },
+            };
+          });
         }
       }
 
@@ -97,14 +113,28 @@ export async function GET(req: NextRequest) {
         hasVoted = Boolean(ownBallot);
       }
 
+      const { captain_id: _privateCaptainId, co_captain_id: _privateCoCaptainId, ...safeTeam } = team;
+      const safeElection = activeElection ? (() => {
+        const { candidate_ids: _privateCandidateIds, winner_id: _privateWinnerId, ...publicElection } = activeElection;
+        return {
+          ...publicElection,
+          candidate_member_ids: (activeElection.candidate_ids || []).map((id: string) => publicMemberByUserId.get(id)).filter(Boolean),
+          winner_member_id: activeElection.winner_id ? publicMemberByUserId.get(activeElection.winner_id) || null : null,
+        };
+      })() : null;
+
       return NextResponse.json({
-        team,
+        team: {
+          ...safeTeam,
+          captain_member_id: publicMemberByUserId.get(team.captain_id) || null,
+          co_captain_member_id: team.co_captain_id ? publicMemberByUserId.get(team.co_captain_id) || null : null,
+        },
         members: enrichedMembers,
-        activeElection,
+        activeElection: safeElection,
         has_voted: hasVoted,
         applications,
-        is_my_team: members?.some((m) => m.user_id === user?.id && m.is_active === true) || false,
-        my_role: members?.find((m) => m.user_id === user?.id && m.is_active === true)?.role || null,
+        is_my_team: members?.some((member) => member.user_id === user?.id && member.is_active === true) || false,
+        my_role: members?.find((member) => member.user_id === user?.id && member.is_active === true)?.role || null,
       });
     }
 
