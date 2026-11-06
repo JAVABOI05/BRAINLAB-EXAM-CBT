@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest } from "@/app/lib/supabaseServer";
+import { selectPassageSafeQuestions } from "@/app/lib/competitionEngine";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,12 +20,13 @@ export async function GET(req: NextRequest) {
 
     if (filter === "open") {
       query = query.is("challenged_id", null).eq("status", "pending");
-    } else if (user) {
+    } else {
+      if (!user) return NextResponse.json({ error: "Sign in to view your challenge centre." }, { status: 401 });
       if (filter === "incoming") {
         query = query.eq("challenged_id", user.id).eq("status", "pending");
       } else if (filter === "outgoing") {
         query = query.eq("challenger_id", user.id);
-      } else if (filter === "my") {
+      } else {
         query = query.or(`challenger_id.eq.${user.id},challenged_id.eq.${user.id}`);
       }
     }
@@ -39,24 +41,34 @@ export async function GET(req: NextRequest) {
       if (c.challenged_id) userIds.add(c.challenged_id);
     });
 
-    let profilesMap: Record<string, { full_name?: string; username?: string; avatar_url?: string }> = {};
+    let profilesMap: Record<string, { display_name?: string; avatar_url?: string }> = {};
     if (userIds.size > 0) {
-      const { data: profiles } = await supabase
-        .from("user_profiles")
-        .select("id, full_name, username, avatar_url")
-        .in("id", Array.from(userIds));
-
+      let profileQuery = supabase
+        .from("competition_public_profiles")
+        .select("user_id, display_name, avatar_url, visibility")
+        .in("user_id", Array.from(userIds))
+        .eq("visibility", "public");
+      if (user) profileQuery = profileQuery.or(`visibility.eq.public,user_id.eq.${user.id}`);
+      const { data: profiles } = await profileQuery;
       if (profiles) {
-        profilesMap = Object.fromEntries(profiles.map((p) => [p.id, p]));
+        profilesMap = Object.fromEntries(profiles.map((profile) => [profile.user_id, profile]));
       }
     }
 
-    // Attach profile data
-    const enriched = (challenges || []).map((c) => ({
-      ...c,
-      challenger: profilesMap[c.challenger_id] || { full_name: "Challenger" },
-      challenged: c.challenged_id ? profilesMap[c.challenged_id] || { full_name: "Challenged" } : null,
-    }));
+    const enriched = (challenges || []).map((challenge) => {
+      const isOutgoing = Boolean(user && challenge.challenger_id === user.id);
+      const challengerProfile = profilesMap[challenge.challenger_id];
+      const challengedProfile = challenge.challenged_id ? profilesMap[challenge.challenged_id] : null;
+      const { challenger_id: _challengerId, challenged_id: _challengedId, ...safeChallenge } = challenge;
+      return {
+        ...safeChallenge,
+        is_outgoing: isOutgoing,
+        challenger: { display_name: challengerProfile?.display_name || "Private player", avatar_url: challengerProfile?.avatar_url || null },
+        challenged: challenge.challenged_id
+          ? { display_name: challengedProfile?.display_name || "Private player", avatar_url: challengedProfile?.avatar_url || null }
+          : null,
+      };
+    });
 
     return NextResponse.json({ challenges: enriched });
   } catch (err: unknown) {
@@ -91,6 +103,31 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
+
+    if (challenged_id) {
+      const { data: targetProfile, error: targetProfileError } = await supabase
+        .from("competition_public_profiles")
+        .select("user_id, challenge_availability, is_available")
+        .eq("user_id", challenged_id)
+        .maybeSingle();
+      if (targetProfileError) throw targetProfileError;
+      if (targetProfile?.challenge_availability === "nobody") {
+        return NextResponse.json({ error: "This player is not accepting direct challenges." }, { status: 403 });
+      }
+      if (targetProfile?.challenge_availability === "available_only" && !targetProfile.is_available) {
+        return NextResponse.json({ error: "This player is currently unavailable for challenges." }, { status: 409 });
+      }
+      if (targetProfile?.challenge_availability === "approved_only") {
+        const { data: connection } = await supabase
+          .from("competition_player_connections")
+          .select("id")
+          .eq("user_id", challenged_id)
+          .eq("connected_user_id", user.id)
+          .eq("status", "approved")
+          .maybeSingle();
+        if (!connection) return NextResponse.json({ error: "This player accepts challenges only from approved connections." }, { status: 403 });
+      }
+    }
 
     // Check emergency controls
     const { data: emergency } = await supabase
@@ -130,12 +167,12 @@ export async function POST(req: NextRequest) {
     // If direct challenge, send notification to challenged user
     if (challenged_id) {
       const { data: myProfile } = await supabase
-        .from("user_profiles")
-        .select("full_name, username")
-        .eq("id", user.id)
+        .from("competition_public_profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
         .maybeSingle();
 
-      const challengerName = myProfile?.full_name || myProfile?.username || "A student";
+      const challengerName = myProfile?.display_name || "A BrainLab player";
 
       await supabase.from("notifications").insert({
         user_id: challenged_id,
@@ -219,43 +256,48 @@ export async function PATCH(req: NextRequest) {
 
       const acceptingUserId = user.id;
 
-      // Draw questions from questions bank matching subject
+      // Load a full, valid source pool and preserve every linked passage as an indivisible unit.
       let questionsQuery = supabase
         .from("questions")
-        .select("id, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, question_image_url, passage_id, passage_title, passage_text")
-        .eq("is_active", true);
+        .select("id, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, question_image_url, passage_id, passage_title, passage_text, reading_text_id, marks")
+        .eq("is_active", true)
+        .eq("is_archived", false);
 
       if (challenge.subject && challenge.subject !== "General") {
         questionsQuery = questionsQuery.eq("subject", challenge.subject);
       }
 
-      const { data: rawQuestions, error: qErr } = await questionsQuery.limit(100);
-      if (qErr || !rawQuestions || rawQuestions.length === 0) {
-        // Fallback to any active questions if specific subject is empty
-        const { data: fallbackQuestions } = await supabase
-          .from("questions")
-          .select("id, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, question_image_url, passage_id, passage_title, passage_text")
-          .eq("is_active", true)
-          .limit(100);
+      const { data: rawQuestions, error: qErr } = await questionsQuery.limit(5000);
+      if (qErr) throw qErr;
+      const validPool = (rawQuestions || []).filter((question) =>
+        typeof question.correct_answer === "string" &&
+        ["A", "B", "C", "D", "E"].includes(question.correct_answer.trim().toUpperCase()) &&
+        Boolean(question[ `option_${question.correct_answer.trim().toLowerCase()}` as keyof typeof question ])
+      );
+      const selection = selectPassageSafeQuestions(validPool.map((question) => ({
+        ...question,
+        id: String(question.id),
+        bank_id: "main_cbt_bank",
+        subject: challenge.subject || "General",
+        difficulty: (question as { difficulty?: string }).difficulty === "hard" ? "hard" : (question as { difficulty?: string }).difficulty === "easy" ? "easy" : "medium",
+        question_type: "multiple_choice",
+        option_a: question.option_a || "",
+        option_b: question.option_b || "",
+        option_c: question.option_c || "",
+        option_d: question.option_d || "",
+        correct_answer: question.correct_answer.trim().toUpperCase(),
+        marks: Number(question.marks) > 0 ? Number(question.marks) : 10,
+        status: "published",
+        created_by: "system_main",
+      })), Number(challenge.question_count) || 10);
 
-        if (!fallbackQuestions || fallbackQuestions.length === 0) {
-          return NextResponse.json({ error: "No active questions available in the Question Bank" }, { status: 500 });
-        }
+      if (!selection.ok) {
+        return NextResponse.json({ error: selection.error }, { status: 409 });
       }
 
-      const pool = (rawQuestions && rawQuestions.length >= challenge.question_count)
-        ? rawQuestions
-        : await supabase
-            .from("questions")
-            .select("id, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, question_image_url, passage_id, passage_title, passage_text")
-            .eq("is_active", true)
-            .limit(100)
-            .then(res => res.data || []);
+      const shuffled = selection.questions;
 
-      // Shuffle pool and select question_count
-      const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, challenge.question_count);
-
-      // Create client snapshot (WITHOUT correct_answer) and server keys snapshot
+      // Client snapshot omits answer keys; the server retains the immutable key map.
       const questionsSnapshot: Array<{
         id: string;
         question: string;
@@ -273,36 +315,34 @@ export async function PATCH(req: NextRequest) {
 
       const answerKeysSnapshot: Record<string, string> = {};
 
-      shuffled.forEach((q, idx) => {
-        const qId = String(q.id || `q_${idx + 1}`);
+      shuffled.forEach((question) => {
+        const qId = String(question.id);
         questionsSnapshot.push({
           id: qId,
-          question: q.question,
-          option_a: q.option_a,
-          option_b: q.option_b,
-          option_c: q.option_c,
-          option_d: q.option_d,
-          option_e: q.option_e || null,
-          question_image_url: q.question_image_url || null,
-          passage_id: q.passage_id || null,
-          passage_title: q.passage_title || null,
-          passage_text: q.passage_text || null,
-          marks: 10,
+          question: question.question,
+          option_a: question.option_a,
+          option_b: question.option_b,
+          option_c: question.option_c,
+          option_d: question.option_d,
+          option_e: question.option_e || null,
+          question_image_url: question.question_image_url || null,
+          passage_id: question.passage_id || null,
+          passage_title: question.passage_title || null,
+          passage_text: question.passage_text || null,
+          marks: Number(question.marks) > 0 ? Number(question.marks) : 10,
         });
-        answerKeysSnapshot[qId] = String(q.correct_answer || "").trim().toUpperCase();
+        answerKeysSnapshot[qId] = question.correct_answer.trim().toUpperCase();
       });
 
-      // Get profile names
-      const { data: userProfiles } = await supabase
-        .from("user_profiles")
-        .select("id, full_name, username")
-        .in("id", [challenge.challenger_id, acceptingUserId]);
-
-      const challengerProfile = userProfiles?.find((p) => p.id === challenge.challenger_id);
-      const acceptingProfile = userProfiles?.find((p) => p.id === acceptingUserId);
-
-      const challengerName = challengerProfile?.full_name || challengerProfile?.username || "Player 1";
-      const acceptingName = acceptingProfile?.full_name || acceptingProfile?.username || "Player 2";
+      // Resolve only public display identities. No email, phone or auth UUID is returned to clients.
+      const { data: publicProfiles } = await supabase
+        .from("competition_public_profiles")
+        .select("user_id, display_name")
+        .in("user_id", [challenge.challenger_id, acceptingUserId])
+        .eq("visibility", "public");
+      const publicName = (id: string) => publicProfiles?.find((profile) => profile.user_id === id)?.display_name || "Private player";
+      const challengerName = publicName(challenge.challenger_id);
+      const acceptingName = publicName(acceptingUserId);
 
       // 1. Create Match row
       const durationSeconds = (challenge.duration_minutes || 5) * 60;
