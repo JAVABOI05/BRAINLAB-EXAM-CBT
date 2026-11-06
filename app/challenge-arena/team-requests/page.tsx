@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 
-type TeamRequest = { id: string; requested_by: string; proposed_name: string; motto?: string | null; status: string; submitted_at: string; review_notes?: string | null; created_team_id?: string | null };
-type Membership = { id: string; request_id: string; user_id: string; status: string };
+type TeamRequest = { id: string; is_requester: boolean; proposed_name: string; motto?: string | null; status: string; submitted_at: string; review_notes?: string | null; created_team_id?: string | null; founding_member_count: number };
+type Membership = { id: string; request_id: string; is_me: boolean; status: string };
 
 export default function ArenaTeamRequestsPage() {
   const router = useRouter();
@@ -59,7 +59,7 @@ export default function ArenaTeamRequestsPage() {
         {requests.length === 0 && <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d172e] p-7 text-sm text-slate-500">You have no pending team invitations or requests.</div>}
         {requests.map(request => {
           const membership = memberships.find(item => item.request_id === request.id);
-          const isRequester = membership?.user_id ? request.requested_by === membership.user_id : false;
+          const isRequester = request.is_requester;
           const canRespond = membership?.status === "pending" && request.status === "pending";
           return <article key={request.id} className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d172e] p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-black">{request.proposed_name}</h2><p className="mt-1 text-sm text-slate-500">{request.motto || "Permanent BrainLab Arena team"}</p><p className="mt-2 text-xs text-slate-500">Submitted {new Date(request.submitted_at).toLocaleString()}</p></div><span className="rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-bold uppercase">{request.status.replace("_", " ")}</span></div>
