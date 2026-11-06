@@ -17,11 +17,12 @@ interface NavLinkItem {
 }
 
 const NAV_LINKS: NavLinkItem[] = [
-  { href: "/about", label: "About" },
+  { href: "/products", label: "Products" },
   { href: "/syllabus", label: "Syllabus" },
+  { href: "/resources", label: "Resources" },
   { href: "/pricing", label: "Pricing" },
   { href: "/schools", label: "For Schools" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
 

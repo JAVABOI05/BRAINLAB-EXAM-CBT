@@ -52,8 +52,8 @@ const ECOSYSTEM_MODULES = [
     badge: "Core CBT Engine",
     description:
       "Sit authentic 4-subject combination practice tests under strict 2-hour examination conditions with standard question counts, automatic scoring out of 400, and offline answer caching.",
-    action: "Start CBT Practice",
-    href: "/login",
+    action: "Explore CBT Simulator",
+    href: "/products/cbt",
     statusBadge: "Active & Available",
   },
   {
@@ -62,8 +62,8 @@ const ECOSYSTEM_MODULES = [
     badge: "Official Syllabus",
     description:
       "Review official JAMB UTME syllabus modules, subtopic breakdowns, specific learning objectives, and recommended reading texts across Science, Commercial, and Art disciplines.",
-    action: "Explore Syllabus Modules",
-    href: "/syllabus",
+    action: "Explore Curriculum Hub",
+    href: "/products/learning-hub",
     statusBadge: "Active & Available",
   },
   {
@@ -72,8 +72,8 @@ const ECOSYSTEM_MODULES = [
     badge: "Interactive Labs",
     description:
       "Conduct virtual experiments in Physics mechanics, Chemistry titrations, and Biology cellular models with real-time parameter tweaking, calculations, and direct CBT practice links.",
-    action: "Enter STEM Studio",
-    href: "/classroom/stem",
+    action: "Explore STEM Studio",
+    href: "/products/stem-studio",
     statusBadge: "Active & Available",
   },
   {
@@ -82,8 +82,8 @@ const ECOSYSTEM_MODULES = [
     badge: "Adaptive Drills",
     description:
       "Analyze your mock exam mistakes automatically. Identify conceptual topic weaknesses and generate targeted 5-question reinforcement drills to close knowledge gaps before exam day.",
-    action: "Try Diagnostic Drills",
-    href: "/learning/revision",
+    action: "Explore AI Diagnostics",
+    href: "/products/ai-learning",
     statusBadge: "Active & Available",
   },
   {
@@ -92,8 +92,8 @@ const ECOSYSTEM_MODULES = [
     badge: "Live Classroom",
     description:
       "Join scheduled tutor sessions featuring real-time audio/video, synchronized digital whiteboard explanations, and checkpoint quizzes to tackle difficult syllabus concepts.",
-    action: "Join Live Classroom",
-    href: "/classroom",
+    action: "Explore Live Stage",
+    href: "/products/live-classroom",
     statusBadge: "Active & Available",
   },
   {
@@ -102,8 +102,8 @@ const ECOSYSTEM_MODULES = [
     badge: "Competitive Arena",
     description:
       "Compete head-to-head in real-time 1v1 academic challenges, climb school and national leaderboards, and test your speed under competitive countdown conditions.",
-    action: "Enter Challenge Arena",
-    href: "/challenge-arena",
+    action: "Explore Challenge Arena",
+    href: "/products/challenge-arena",
     statusBadge: "Active & Available",
   },
 ];
@@ -172,8 +172,8 @@ const AUDIENCES = [
       "Targeted AI revision drills on weak topics",
       "Integrated formula sheets and scientific tools",
     ],
-    ctaText: "Start Free Practice",
-    ctaHref: "/login",
+    ctaText: "Explore Student Guide",
+    ctaHref: "/for-students",
   },
   {
     role: "For Tutors & Instructors",
@@ -187,8 +187,8 @@ const AUDIENCES = [
       "Automated assessment authoring and distribution",
       "Student completion and performance diagnostics",
     ],
-    ctaText: "Instructor Portal",
-    ctaHref: "/login",
+    ctaText: "Explore Educator Tools",
+    ctaHref: "/for-tutors",
   },
   {
     role: "For Schools & Principals",
@@ -202,7 +202,7 @@ const AUDIENCES = [
       "Cohort subject pass-rate and performance reports",
       "Dedicated institutional account support",
     ],
-    ctaText: "School Solutions",
+    ctaText: "Explore School Solutions",
     ctaHref: "/schools",
   },
 ];

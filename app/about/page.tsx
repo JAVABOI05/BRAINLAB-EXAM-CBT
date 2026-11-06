@@ -59,36 +59,54 @@ const CAPABILITIES = [
     title: "Practise with Purpose",
     description:
       "Prepare with rigorous UTME, WASSCE, and Post-UTME simulations. Featuring official 4-subject combinations, real examination timers, calculator integration, high-resolution diagram zoom, and offline answer autosave.",
-    linkHref: "/login",
-    linkText: "Launch CBT Practice",
+    linkHref: "/products/cbt",
+    linkText: "Explore CBT Simulator",
     highlights: ["180-Question UTME standard", "Offline PWA queue & sync", "Topic-by-topic corrections"],
+  },
+  {
+    badge: "Curriculum & Syllabus",
+    title: "Master Subject Foundations",
+    description:
+      "Study structured syllabus notes, specific learning goals, and recommended textbooks across Science, Commercial, and Art disciplines, deep-linked directly to past exam questions.",
+    linkHref: "/products/learning-hub",
+    linkText: "Explore Learning Hub",
+    highlights: ["Official exam board alignment", "Science, Commercial & Arts", "Direct CBT question links"],
   },
   {
     badge: "AI Diagnostics & Memory",
     title: "Understand Difficult Concepts",
     description:
       "Go beyond rote memorization. Generate targeted 5-question AI revision drills tailored to your test weaknesses, review step-by-step worked solutions, and retain critical formulas with our daily 10-minute SM-2 Spaced Repetition deck.",
-    linkHref: "/learning/revision",
-    linkText: "Try AI Revision Drills",
-    highlights: ["Step-by-step worked solutions", "SM-2 spaced review algorithm", "High-frequency formula sheets"],
+    linkHref: "/products/ai-learning",
+    linkText: "Explore AI Diagnostics",
+    highlights: ["Step-by-step worked solutions", "SM-2 spaced review algorithm", "Targeted 5-question drills"],
   },
   {
     badge: "Live Interactive Masterclasses",
     title: "Learn with Expert Tutors",
     description:
       "Attend structured virtual classes featuring the BrainLab Smart Academic Whiteboard. Switch seamlessly between chalkboard, coordinate grid, and ruled notebook styles with live student polls and low-data audio notes.",
-    linkHref: "/learn",
-    linkText: "Browse Class Schedule",
+    linkHref: "/products/live-classroom",
+    linkText: "Explore Live Stage",
     highlights: ["Mobile-first lecture stage", "Interactive vector whiteboard", "Classroom audio recordings"],
   },
   {
-    badge: "Cognitive Mastery & Recognition",
-    title: "Measure Genuine Progress",
+    badge: "STEM Virtual Laboratories",
+    title: "Conduct Practical Experiments",
     description:
-      "Track your syllabus mastery across subjects with multi-dimensional progress tracking, national leaderboard benchmarking, and verifiable digital certificates that showcase true concept proficiency.",
-    linkHref: "/learning",
-    linkText: "Explore Learning Hub",
-    highlights: ["National candidate leaderboard", "Cognitive radar analytics", "Verifiable digital credentials"],
+      "Bridge textbook theory with interactive 2D simulations covering physics kinematics, DC electrical circuits, acid-base pH titration, genetics Punnett crosses, and Boolean logic gates.",
+    linkHref: "/products/stem-studio",
+    linkText: "Explore STEM Studio",
+    highlights: ["5 interactive lab benches", "Real-time telemetry sliders", "UTME exam past-paper links"],
+  },
+  {
+    badge: "Academic Challenge Arena",
+    title: "Build Decisive Test Speed",
+    description:
+      "Sharpen mental agility with daily 10-question speed sprints, real-time 1v1 candidate duels, daily revision streak milestones, and the verified national merit leaderboard.",
+    linkHref: "/products/challenge-arena",
+    linkText: "Explore Challenge Arena",
+    highlights: ["Daily 10-question sprints", "1v1 live candidate duels", "National merit leaderboard"],
   },
 ];
 

@@ -340,30 +340,64 @@ export default function BrandFooter() {
             </div>
           </div>
 
-          {/* Column 2: CBT Examination (lg:col-span-2) */}
+          {/* Column 2: Products & Practice (lg:col-span-2) */}
           <div className="lg:col-span-2 space-y-3 sm:pt-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-white">
-              CBT Practice
+              Products
             </h3>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/cbt">
-                  JAMB UTME CBT
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/products/cbt">
+                  JAMB UTME CBT Simulator
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/access">
-                  Enter Access Code
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/products/learning-hub">
+                  Curriculum Learning Hub
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/self-practice">
-                  Self-Paced Practice
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/products/ai-learning">
+                  AI Study Studio
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/challenge-arena">
-                  1v1 Academic Arena
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all text-cyan-300 font-semibold" href="/products/stem-studio">
+                  STEM Virtual Labs
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/products/live-classroom">
+                  Live Classroom Stage
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/products/challenge-arena">
+                  1v1 Challenge Arena
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all text-cyan-400 font-bold" href="/products">
+                  All Products Overview →
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Academics & Syllabus (lg:col-span-2) */}
+          <div className="lg:col-span-2 space-y-3 sm:pt-2">
+            <h3 className="text-xs font-black uppercase tracking-wider text-white">
+              Academics
+            </h3>
+            <ul className="space-y-2.5 text-xs text-slate-400">
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/syllabus">
+                  Official JAMB Syllabus
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/resources">
+                  Formula Sheets &amp; Notes
                 </Link>
               </li>
               <li>
@@ -372,86 +406,57 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/access">
+                  Redeem Access Code
+                </Link>
+              </li>
+              <li>
                 <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/instructions">
-                  Exam Guidelines
+                  Candidate Exam Rules
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/knowledge-base">
+                  Knowledge Base Directory
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Learning & Masterclasses (lg:col-span-2) */}
-          <div className="lg:col-span-2 space-y-3 sm:pt-2">
-            <h3 className="text-xs font-black uppercase tracking-wider text-white">
-              Learning Hub
-            </h3>
-            <ul className="space-y-2.5 text-xs text-slate-400">
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/learn">
-                  Subject Curriculum
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/classroom">
-                  Live Masterclasses
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all text-cyan-300 font-semibold" href="/classroom/stem">
-                  STEM Virtual Labs
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/ai-learning">
-                  AI Study Studio
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/syllabus">
-                  Official Syllabus
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/resources">
-                  Formulas &amp; Notes
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/learn?tab=timetable">
-                  Revision Timetable
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Support & Institutional Trust (lg:col-span-3) */}
+          {/* Column 4: Audience & Support (lg:col-span-3) */}
           <div className="lg:col-span-3 space-y-3 sm:pt-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-white">
-              Institutional &amp; Support
+              Audience &amp; Support
             </h3>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/support">
-                  Help Centre &amp; FAQs
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all font-semibold text-slate-300" href="/for-students">
+                  For Students &amp; Candidates
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all font-semibold text-slate-300" href="/for-tutors">
+                  For Educators &amp; Tutors
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all font-semibold text-slate-300" href="/schools">
+                  For Schools &amp; Centres
                 </Link>
               </li>
               <li>
                 <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/pricing">
-                  Subscription Plans
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/verify">
-                  Verify Certificate
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/schools">
-                  For Schools &amp; Centres
+                  Pricing &amp; Plans
                 </Link>
               </li>
               <li>
                 <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/about">
                   About Our Academy
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/faq">
+                  Frequently Asked Questions
                 </Link>
               </li>
               <li>
