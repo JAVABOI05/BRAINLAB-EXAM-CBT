@@ -108,6 +108,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     if (!["free", "code", "request", "paid"].includes(accessMode)) {
       return NextResponse.json({ error: "This competition has an unsupported access configuration." }, { status: 409 });
     }
+    if (accessMode === "paid" && entryFeeKobo < 1 && !isAdmin) {
+      return NextResponse.json({ error: "This paid competition has no valid BACHS entry fee configured. Contact the organiser." }, { status: 409 });
+    }
 
     // Get user profile for display name
     const { data: profile } = await supabase
