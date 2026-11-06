@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { useLearnerTheme } from "@/app/components/LearnerThemeProvider";
 import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
+import ArenaSpectatorChat from "@/app/components/arena/ArenaSpectatorChat";
 
 interface QuestionSnapshot {
   id: string;
@@ -27,7 +28,7 @@ interface Participant {
   user_id: string;
   display_name: string;
   is_ready: boolean;
-  score: number;
+  score: number | null;
   current_question_index: number;
   ping_ms: number;
   profile?: {
@@ -63,6 +64,8 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   const resolvedParams = use(params);
   const matchId = resolvedParams.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isSpectator = searchParams.get("spectator") === "true";
   const { isDark } = useLearnerTheme();
 
   const [loading, setLoading] = useState(true);
@@ -89,7 +92,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   // Fetch match details
   const fetchMatch = useCallback(async () => {
     try {
-      const res = await fetch(`/api/competition/matches/${matchId}`);
+      const res = await fetch(`/api/competition/matches/${matchId}${isSpectator ? "?spectator=true" : ""}`);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error || "Failed to load match room");
@@ -111,7 +114,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
     } finally {
       setLoading(false);
     }
-  }, [matchId]);
+  }, [matchId, isSpectator]);
 
   useEffect(() => {
     fetchMatch();
@@ -136,7 +139,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
 
   // Send periodic heartbeat
   useEffect(() => {
-    if (!matchId) return;
+    if (!matchId || isSpectator) return;
     const pingStart = Date.now();
     const hb = setInterval(async () => {
       const ping = Date.now() - pingStart;
@@ -147,7 +150,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
       }).catch(() => {});
     }, 10000);
     return () => clearInterval(hb);
-  }, [matchId]);
+  }, [matchId, isSpectator]);
 
   // Handle Ready Up
   const handleToggleReady = async () => {
@@ -247,8 +250,10 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const myParticipant = participants.find((p) => p.user_id === currentUserId);
-  const opponentParticipant = participants.find((p) => p.user_id !== currentUserId);
+  const participantA = participants.find((p) => p.user_id === match?.participant_a_id) || participants[0];
+  const participantB = participants.find((p) => p.user_id === match?.participant_b_id) || participants[1];
+  const myParticipant = isSpectator ? participantA : participants.find((p) => p.user_id === currentUserId);
+  const opponentParticipant = isSpectator ? participantB : participants.find((p) => p.user_id !== currentUserId);
 
   // Formatting time display
   const formatTime = (secs: number) => {
@@ -329,14 +334,15 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
 
           <ArenaThemeToggle />
 
+          {isSpectator && <span className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-[10px] font-black tracking-wider text-cyan-500">SPECTATOR VIEW</span>}
           {/* Report / Dispute Button */}
-          <button
+          {!isSpectator && <button
             onClick={() => setShowDisputeModal(true)}
             title="Report Match Issue"
             className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-          </button>
+          </button>}
         </div>
       </header>
 
@@ -346,7 +352,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
         {/* =========================================================================
             STATE 1: MATCH LOBBY (WAITING FOR READINESS)
            ========================================================================= */}
-        {match.status === "lobby" && (
+        {!isSpectator && match.status === "lobby" && (
           <div className="flex flex-col items-center justify-center flex-1 my-auto">
             <div className={`max-w-2xl w-full rounded-3xl p-8 border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
               <div className="text-center mb-8">
@@ -456,7 +462,13 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
             </div>
 
             {/* WAITING FOR OPPONENT OR ACTIVE QUESTION CARD */}
-            {isFinishedMyQuestions ? (
+            {isSpectator && questions.length === 0 ? (
+              <div className={`rounded-3xl border p-10 text-center ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
+                <div className="text-4xl mb-3">👁️</div>
+                <h3 className="text-xl font-black">Live match in progress</h3>
+                <p className="mt-2 text-sm text-slate-400">The organiser has hidden live questions from spectators. Follow the match status and permitted reactions below.</p>
+              </div>
+            ) : isFinishedMyQuestions && !isSpectator ? (
               <div className={`p-12 rounded-3xl border text-center shadow-xl flex flex-col items-center gap-4 ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
                 <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-3xl">✓</div>
                 <h3 className="text-2xl font-black">All Questions Completed!</h3>
@@ -496,7 +508,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                       <button
                         key={key}
                         onClick={() => handleSubmitAnswer(key)}
-                        disabled={submitting || !!myAnswers[currentQ.id]}
+                        disabled={isSpectator || submitting || !!myAnswers[currentQ.id]}
                         className={`w-full p-4 rounded-2xl border text-left flex items-center gap-4 font-semibold text-sm transition-all transform active:scale-99 ${
                           isChosen
                             ? "border-blue-500 bg-blue-500/15 text-blue-400 shadow-md ring-2 ring-blue-500/20"
@@ -570,9 +582,11 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 <span className="flex items-center gap-1.5 text-emerald-400">
                   <span>★</span> +{match.winner_id === currentUserId ? "50" : "20"} Arena XP
                 </span>
-                <span className="flex items-center gap-1.5 text-blue-400">
-                  <span>⚡</span> Rating Updated
-                </span>
+                {match.metadata?.match_mode === "friendly" ? (
+                  <span className="flex items-center gap-1.5 text-slate-400"><span>🤝</span> Friendly match · No rating change</span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-blue-400"><span>⚡</span> Rating Updated</span>
+                )}
               </div>
 
               {/* ACTION BUTTONS */}
@@ -593,10 +607,11 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
             </div>
           </div>
         )}
+        {(isSpectator || myParticipant) && <div className="mx-auto w-full max-w-5xl px-4 pb-8"><ArenaSpectatorChat matchId={match.id} /></div>}
       </main>
 
       {/* DISPUTE / APPEAL MODAL */}
-      {showDisputeModal && (
+      {!isSpectator && showDisputeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className={`max-w-md w-full p-6 rounded-3xl border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
             <h3 className="text-xl font-black mb-1">File Official Match Dispute</h3>
