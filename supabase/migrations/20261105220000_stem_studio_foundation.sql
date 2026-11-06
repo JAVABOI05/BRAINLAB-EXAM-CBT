@@ -321,7 +321,7 @@ GRANT SELECT ON public.stem_resources TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.stem_resources TO authenticated;
 
 GRANT SELECT ON public.stem_resource_versions TO anon, authenticated;
-GRANT INSERT, UPDATE ON public.stem_resource_versions TO authenticated;
+GRANT INSERT ON public.stem_resource_versions TO authenticated;
 
 GRANT SELECT ON public.stem_curriculum_mappings TO anon, authenticated;
 GRANT ALL ON public.stem_curriculum_mappings TO authenticated;
