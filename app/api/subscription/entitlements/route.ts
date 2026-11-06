@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
+import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
 import {
   ADMIN_VIP_PLAN,
   ADMIN_VIP_ENTITLEMENTS,
@@ -15,14 +15,14 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  return handleResolution(request);
+  return handleResolution(request, false);
 }
 
 export async function POST(request: NextRequest) {
-  return handleResolution(request);
+  return handleResolution(request, true);
 }
 
-async function handleResolution(request: NextRequest) {
+async function handleResolution(request: NextRequest, allowRepair: boolean) {
   try {
     const supabase = getSupabaseServerClient();
     const plans = await getSubscriptionPlans();
@@ -40,36 +40,19 @@ async function handleResolution(request: NextRequest) {
       display_order: 1,
     };
 
-    // 1. Resolve Target User ID
-    let targetUserId: string | null = null;
+    // Resolve identity from a verified Supabase session. Never trust a caller-supplied
+    // userId when using the service-role client.
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     const url = new URL(request.url);
     const queryUserId = url.searchParams.get("userId")?.trim();
-
-    if (queryUserId) {
-      targetUserId = queryUserId;
-    } else {
-      // Try resolving from Authorization header
-      const authHeader = request.headers.get("authorization");
-      if (authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.substring(7);
-        const { data: authData } = await supabase.auth.getUser(token);
-        if (authData?.user?.id) {
-          targetUserId = authData.user.id;
-        }
-      }
+    if (queryUserId && queryUserId !== user.id) {
+      return NextResponse.json({ error: "You may only resolve your own subscription." }, { status: 403 });
     }
-
-    if (!targetUserId) {
-      return NextResponse.json({
-        userId: null,
-        planId: freePlan.id,
-        planName: freePlan.name,
-        plan: freePlan,
-        entitlements: normalizePlanEntitlements(freePlan.entitlements, true),
-        isSubscribed: false,
-        expiresAt: null,
-      });
-    }
+    const targetUserId = user.id;
 
     // 2. Administrator VIP Check (by ID or Email to guarantee Super Admins never pay)
     let userEmail: string | undefined;
@@ -138,35 +121,50 @@ async function handleResolution(request: NextRequest) {
       return e.permanent || expiresAt > Date.now();
     });
 
-    // =========================================================================
-    // 4. AUTOMATIC SELF-HEALING & REPAIR FOR PAID USERS
-    // If user has a successful payment in payment_transactions but lacks an active
-    // subscription row or active entitlement, ACTIVATE IT NOW ON-THE-FLY!
-    // =========================================================================
-    const recentTx = txRes.data;
-    if (recentTx && recentTx.plan_id && ["premium", "plus", "pro"].includes(recentTx.plan_id.toLowerCase())) {
-      const txPlanId = recentTx.plan_id.toLowerCase();
-      const txPaidAt = recentTx.paid_at || recentTx.created_at || nowIso;
-      const txExpiry = new Date(new Date(txPaidAt).getTime() + 30 * 24 * 60 * 60 * 1000);
-
-      if (txExpiry.getTime() > Date.now()) {
-        const isSubMissing = !activeSub || new Date(activeSub.current_period_end).getTime() <= Date.now();
-        const isEntMissing = !activeEnts.some((e) => e.entitlement_type === "membership");
-
-        if (isSubMissing || isEntMissing) {
-          const maxQuestions = txPlanId === "pro" ? 500 : txPlanId === "plus" ? 400 : 250;
-
-          // Upsert user_subscriptions safely (avoiding onConflict on table without unique constraint)
-          const { data: existingSubRows } = await supabase
-            .from("user_subscriptions")
-            .select("id")
-            .eq("user_id", targetUserId)
-            .order("updated_at", { ascending: false });
-
-          if (existingSubRows && existingSubRows.length > 0) {
-            await supabase
+    if (allowRepair) {
+      // =========================================================================
+      // 4. AUTOMATIC SELF-HEALING & REPAIR FOR PAID USERS
+      // If user has a successful payment in payment_transactions but lacks an active
+      // subscription row or active entitlement, ACTIVATE IT NOW ON-THE-FLY!
+      // =========================================================================
+      const recentTx = txRes.data;
+      if (recentTx && recentTx.plan_id && ["premium", "plus", "pro"].includes(recentTx.plan_id.toLowerCase())) {
+        const txPlanId = recentTx.plan_id.toLowerCase();
+        const txPaidAt = recentTx.paid_at || recentTx.created_at || nowIso;
+        const txExpiry = new Date(new Date(txPaidAt).getTime() + 30 * 24 * 60 * 60 * 1000);
+  
+        if (txExpiry.getTime() > Date.now()) {
+          const isSubMissing = !activeSub || new Date(activeSub.current_period_end).getTime() <= Date.now();
+          const isEntMissing = !activeEnts.some((e) => e.entitlement_type === "membership");
+  
+          if (isSubMissing || isEntMissing) {
+            const maxQuestions = txPlanId === "pro" ? 500 : txPlanId === "plus" ? 400 : 250;
+  
+            // Upsert user_subscriptions safely (avoiding onConflict on table without unique constraint)
+            const { data: existingSubRows } = await supabase
               .from("user_subscriptions")
-              .update({
+              .select("id")
+              .eq("user_id", targetUserId)
+              .order("updated_at", { ascending: false });
+  
+            if (existingSubRows && existingSubRows.length > 0) {
+              await supabase
+                .from("user_subscriptions")
+                .update({
+                  plan_id: txPlanId,
+                  status: "active",
+                  current_period_start: txPaidAt,
+                  current_period_end: txExpiry.toISOString(),
+                  payment_provider: recentTx.provider || "payment_gateway",
+                  price_paid_kobo: recentTx.amount_kobo || 0,
+                  currency: recentTx.currency || "NGN",
+                  provider_subscription_id: recentTx.reference,
+                  updated_at: nowIso,
+                })
+                .eq("id", existingSubRows[0].id);
+            } else {
+              await supabase.from("user_subscriptions").insert({
+                user_id: targetUserId,
                 plan_id: txPlanId,
                 status: "active",
                 current_period_start: txPaidAt,
@@ -176,61 +174,49 @@ async function handleResolution(request: NextRequest) {
                 currency: recentTx.currency || "NGN",
                 provider_subscription_id: recentTx.reference,
                 updated_at: nowIso,
-              })
-              .eq("id", existingSubRows[0].id);
-          } else {
-            await supabase.from("user_subscriptions").insert({
+              });
+            }
+  
+            // Upsert learning_entitlements
+            await supabase
+              .from("learning_entitlements")
+              .update({ status: "revoked", revoked_at: nowIso })
+              .eq("user_id", targetUserId)
+              .eq("entitlement_type", "membership")
+              .eq("status", "active");
+  
+            await supabase.from("learning_entitlements").insert({
               user_id: targetUserId,
+              entitlement_type: "membership",
+              membership_type: txPlanId,
+              max_questions: maxQuestions,
+              status: "active",
+              permanent: false,
+              starts_at: txPaidAt,
+              expires_at: txExpiry.toISOString(),
+            });
+  
+            activeSub = {
               plan_id: txPlanId,
               status: "active",
               current_period_start: txPaidAt,
               current_period_end: txExpiry.toISOString(),
-              payment_provider: recentTx.provider || "payment_gateway",
-              price_paid_kobo: recentTx.amount_kobo || 0,
-              currency: recentTx.currency || "NGN",
-              provider_subscription_id: recentTx.reference,
-              updated_at: nowIso,
+            };
+            activeEnts.push({
+              entitlement_type: "membership",
+              membership_type: txPlanId,
+              max_questions: maxQuestions,
+              status: "active",
+              permanent: false,
+              starts_at: txPaidAt,
+              expires_at: txExpiry.toISOString(),
+              revoked_at: null,
             });
           }
-
-          // Upsert learning_entitlements
-          await supabase
-            .from("learning_entitlements")
-            .update({ status: "revoked", revoked_at: nowIso })
-            .eq("user_id", targetUserId)
-            .eq("entitlement_type", "membership")
-            .eq("status", "active");
-
-          await supabase.from("learning_entitlements").insert({
-            user_id: targetUserId,
-            entitlement_type: "membership",
-            membership_type: txPlanId,
-            max_questions: maxQuestions,
-            status: "active",
-            permanent: false,
-            starts_at: txPaidAt,
-            expires_at: txExpiry.toISOString(),
-          });
-
-          activeSub = {
-            plan_id: txPlanId,
-            status: "active",
-            current_period_start: txPaidAt,
-            current_period_end: txExpiry.toISOString(),
-          };
-          activeEnts.push({
-            entitlement_type: "membership",
-            membership_type: txPlanId,
-            max_questions: maxQuestions,
-            status: "active",
-            permanent: false,
-            starts_at: txPaidAt,
-            expires_at: txExpiry.toISOString(),
-            revoked_at: null,
-          });
         }
       }
-    }
+  
+      }
 
     // 5. Resolve Highest Effective Tier
     const tierRank = (t?: string | null): number => {
