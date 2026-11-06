@@ -123,6 +123,81 @@ CREATE TRIGGER trg_stem_attempts_updated_at
   BEFORE UPDATE ON public.stem_experiment_attempts
   FOR EACH ROW EXECUTE FUNCTION public.set_stem_updated_at();
 
+-- Prevent students and class tutors from rewriting attempt ownership or identity.
+-- Students may edit their own learning work while in progress; assigned tutors
+-- may only grade/leave feedback and mark the attempt graded. Governance admins
+-- retain full corrective access for audited administrative intervention.
+CREATE OR REPLACE FUNCTION public.guard_stem_attempt_updates()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_is_reviewer BOOLEAN := public.is_stem_reviewer_or_admin();
+  v_is_assigned_tutor BOOLEAN := FALSE;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required to update STEM attempts';
+  END IF;
+
+  IF v_is_reviewer THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.id IS DISTINCT FROM OLD.id
+    OR NEW.resource_version_id IS DISTINCT FROM OLD.resource_version_id
+    OR NEW.student_id IS DISTINCT FROM OLD.student_id
+    OR NEW.class_id IS DISTINCT FROM OLD.class_id
+    OR NEW.assignment_id IS DISTINCT FROM OLD.assignment_id
+    OR NEW.attempt_number IS DISTINCT FROM OLD.attempt_number
+    OR NEW.started_at IS DISTINCT FROM OLD.started_at
+  THEN
+    RAISE EXCEPTION 'STEM attempt identity and ownership fields are immutable';
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.live_classes c
+    WHERE c.id = OLD.class_id AND c.tutor_id = v_user_id
+  ) INTO v_is_assigned_tutor;
+
+  IF v_is_assigned_tutor THEN
+    IF NEW.observations IS DISTINCT FROM OLD.observations
+      OR NEW.measurements IS DISTINCT FROM OLD.measurements
+      OR NEW.conclusion IS DISTINCT FROM OLD.conclusion
+      OR NEW.submitted_at IS DISTINCT FROM OLD.submitted_at
+    THEN
+      RAISE EXCEPTION 'Tutors may grade STEM attempts but cannot alter student submissions';
+    END IF;
+    IF NEW.status IS DISTINCT FROM OLD.status AND NEW.status <> 'graded' THEN
+      RAISE EXCEPTION 'Tutors may only mark an eligible STEM attempt as graded';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF OLD.student_id = v_user_id THEN
+    IF NEW.tutor_score IS DISTINCT FROM OLD.tutor_score
+      OR NEW.tutor_feedback IS DISTINCT FROM OLD.tutor_feedback
+    THEN
+      RAISE EXCEPTION 'Students cannot change STEM grading fields';
+    END IF;
+    IF OLD.status <> 'in_progress' OR NEW.status NOT IN ('in_progress', 'completed') THEN
+      RAISE EXCEPTION 'Students may only edit an in-progress STEM attempt';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  RAISE EXCEPTION 'Not authorized to update this STEM attempt';
+END;
+$;
+
+DROP TRIGGER IF EXISTS trg_stem_attempts_guard_updates ON public.stem_experiment_attempts;
+CREATE TRIGGER trg_stem_attempts_guard_updates
+  BEFORE UPDATE ON public.stem_experiment_attempts
+  FOR EACH ROW EXECUTE FUNCTION public.guard_stem_attempt_updates();
+
+
 -- 5. Row Level Security Policies
 ALTER TABLE public.stem_resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stem_resource_versions ENABLE ROW LEVEL SECURITY;
