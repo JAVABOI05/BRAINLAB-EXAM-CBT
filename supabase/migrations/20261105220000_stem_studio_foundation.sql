@@ -137,14 +137,17 @@ BEGIN
     RETURN FALSE;
   END IF;
 
+  -- admin_profiles is the canonical user-to-role mapping. The legacy
+  -- admin_users table has its own generated row id, so match it by the
+  -- authenticated email rather than incorrectly comparing unrelated UUIDs.
   RETURN EXISTS (
-    SELECT 1 FROM public.admin_users a
-    WHERE a.id = auth.uid()
-      AND a.role IN ('super_admin', 'platform_admin', 'content_reviewer', 'teacher', 'ai_learning_admin')
-  ) OR EXISTS (
     SELECT 1 FROM public.admin_profiles p
     WHERE p.user_id = auth.uid()
-      AND p.role IN ('super_admin', 'platform_admin', 'content_reviewer', 'teacher', 'ai_learning_admin')
+      AND p.role IN ('super_admin', 'platform_admin', 'content_reviewer', 'ai_learning_admin')
+  ) OR EXISTS (
+    SELECT 1 FROM public.admin_users a
+    WHERE lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+      AND a.role IN ('super_admin', 'admin')
   );
 END;
 $$;
