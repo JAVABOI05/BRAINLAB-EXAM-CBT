@@ -192,9 +192,13 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
-    const founderSlugs = Array.isArray(body.founding_member_slugs)
-      ? Array.from(new Set(body.founding_member_slugs.filter((slug: unknown): slug is string => typeof slug === "string" && slug.length <= 80))).slice(0, 9)
+    const submittedFounderSlugs = Array.isArray(body.founding_member_slugs)
+      ? body.founding_member_slugs.filter((slug: unknown): slug is string => typeof slug === "string" && slug.length <= 80)
       : [];
+    if (submittedFounderSlugs.length > 9) {
+      return NextResponse.json({ error: "A team request may include at most nine invited founders plus the requester." }, { status: 400 });
+    }
+    const founderSlugs = Array.from(new Set(submittedFounderSlugs));
     if (founderSlugs.length < 1) {
       return NextResponse.json({ error: "Invite at least one other public Arena player as a founding member. All founders must accept before approval." }, { status: 400 });
     }
