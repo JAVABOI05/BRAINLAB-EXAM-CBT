@@ -208,6 +208,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "One or more selected founding players are unavailable or have private profiles." }, { status: 400 });
     }
     const founderIds = Array.from(new Set([user.id, ...invitedProfiles.map((profile) => profile.user_id)]));
+    if (founderIds.length < 2) {
+      return NextResponse.json({ error: "Invite at least one other player. A permanent team requires at least two consenting founders." }, { status: 400 });
+    }
 
     const { data: existingMember } = await supabase
       .from("competition_team_members")
