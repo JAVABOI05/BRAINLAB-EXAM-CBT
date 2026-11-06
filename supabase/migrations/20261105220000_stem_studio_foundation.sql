@@ -152,6 +152,22 @@ BEGIN
 END;
 $$;
 
+-- Content authors are authenticated teachers/tutors mapped to the teacher
+-- role. Reviewer/admin privileges remain separate and can manage all content.
+CREATE OR REPLACE FUNCTION public.can_author_stem_resources()
+RETURNS BOOLEAN LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  RETURN public.is_stem_reviewer_or_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.admin_profiles p
+      WHERE p.user_id = auth.uid() AND p.role = 'teacher'
+    );
+END;
+$;
+
 -- RLS: stem_resources
 DROP POLICY IF EXISTS "Public and students can view published STEM resources" ON public.stem_resources;
 CREATE POLICY "Public and students can view published STEM resources"
@@ -167,7 +183,7 @@ DROP POLICY IF EXISTS "Tutors and admins can create STEM resources" ON public.st
 CREATE POLICY "Tutors and admins can create STEM resources"
   ON public.stem_resources FOR INSERT
   WITH CHECK (
-    auth.uid() = author_id
+    (auth.uid() = author_id AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
@@ -175,7 +191,7 @@ DROP POLICY IF EXISTS "Authors and admins can update STEM resources" ON public.s
 CREATE POLICY "Authors and admins can update STEM resources"
   ON public.stem_resources FOR UPDATE
   USING (
-    author_id = auth.uid()
+    (author_id = auth.uid() AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
@@ -183,7 +199,7 @@ DROP POLICY IF EXISTS "Authors can delete draft resources and admins can delete 
 CREATE POLICY "Authors can delete draft resources and admins can delete any"
   ON public.stem_resources FOR DELETE
   USING (
-    (author_id = auth.uid() AND status = 'draft')
+    (author_id = auth.uid() AND status = 'draft' AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
@@ -207,7 +223,7 @@ DROP POLICY IF EXISTS "Authors and admins can insert resource versions" ON publi
 CREATE POLICY "Authors and admins can insert resource versions"
   ON public.stem_resource_versions FOR INSERT
   WITH CHECK (
-    auth.uid() = created_by
+    (auth.uid() = created_by AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
