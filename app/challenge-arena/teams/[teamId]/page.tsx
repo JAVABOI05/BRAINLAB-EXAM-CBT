@@ -8,7 +8,8 @@ import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
 
 interface Member {
   id: string;
-  user_id: string;
+  public_member_id: string;
+  is_me: boolean;
   role: "captain" | "co_captain" | "member" | "substitute";
   joined_at: string;
   is_active: boolean;
@@ -25,8 +26,8 @@ interface TeamData {
   slug: string;
   motto: string;
   avatar_url: string | null;
-  captain_id: string;
-  co_captain_id: string | null;
+  captain_member_id: string | null;
+  co_captain_member_id: string | null;
   is_recruiting: boolean;
   elo_rating: number;
   matches_played: number;
@@ -42,7 +43,8 @@ interface ElectionData {
   team_id: string;
   election_type: "captaincy" | "no_confidence";
   initiated_by: string;
-  candidate_ids: string[];
+  candidate_member_ids: string[];
+  winner_member_id?: string | null;
   status: string;
   start_time: string;
   end_time: string;
@@ -50,7 +52,6 @@ interface ElectionData {
 
 interface ApplicationData {
   id: string;
-  user_id: string;
   message: string;
   created_at: string;
   profile?: {
@@ -184,7 +185,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
           action: "start_election",
           team_id: teamId,
           election_type: electionType,
-          candidate_ids: members.map((m) => m.user_id),
+          candidate_member_ids: members.map((m) => m.public_member_id),
         }),
       });
       const data = await res.json();
@@ -201,8 +202,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
   // Handle Cast Vote
   const handleVote = async (voteChoice: "candidate" | "support" | "oppose" = "candidate") => {
     if (!activeElection) return;
-    const candidateId = activeElection.election_type === "no_confidence" ? team?.captain_id : selectedCandidate;
-    if (!candidateId) return;
+    const candidateMemberId = activeElection.election_type === "no_confidence" ? team?.captain_member_id : selectedCandidate;
+    if (!candidateMemberId) return;
     try {
       setSubmittingAction(true);
       const res = await fetch("/api/competition/teams", {
@@ -211,7 +212,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
         body: JSON.stringify({
           action: "vote",
           election_id: activeElection.id,
-          candidate_id: candidateId,
+          candidate_member_id: candidateMemberId,
           vote_choice: voteChoice,
         }),
       });
@@ -419,7 +420,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
                   >
                     <option value="">Select candidate nominee...</option>
                     {members.filter(member => member.is_active).map((m) => (
-                      <option key={m.user_id} value={m.user_id}>
+                      <option key={m.public_member_id} value={m.public_member_id}>
                         {m.profile?.full_name || m.profile?.username || "Member"} ({m.role.toUpperCase()})
                       </option>
                     ))}
