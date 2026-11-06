@@ -1,6 +1,5 @@
 import { supabase } from "../supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { INITIAL_STEM_RESOURCES } from "./seedData";
 
 export type StemResourceType =
   | "simulation"
@@ -85,114 +84,45 @@ export interface StemFilterOptions {
   limit?: number;
 }
 
-export async function listStemResources(
-  filter?: StemFilterOptions,
-  client: SupabaseClient = supabase
-): Promise<StemResource[]> {
-  try {
-    let query = client
-      .from("stem_resources")
-      .select(`
-        *,
-        subject:learning_subjects ( id, name, slug ),
-        topic:learning_topics ( id, title, slug ),
-        current_version:stem_resource_versions!fk_stem_current_version (
-          id, version_number, schema_version, adapter_type, initial_state, content_payload, learning_objectives, created_at
-        )
-      `)
-      .order("created_at", { ascending: false });
-
-    if (filter?.status) {
-      query = query.eq("status", filter.status);
-    }
-    if (filter?.subject_id) {
-      query = query.eq("subject_id", filter.subject_id);
-    }
-    if (filter?.topic_id) {
-      query = query.eq("topic_id", filter.topic_id);
-    }
-    if (filter?.tier) {
-      query = query.eq("tier", filter.tier);
-    }
-    if (filter?.resource_type) {
-      query = query.eq("resource_type", filter.resource_type);
-    }
-    if (filter?.featured_only) {
-      query = query.eq("is_featured", true);
-    }
-    if (filter?.search) {
-      query = query.ilike("title", `%${filter.search}%`);
-    }
-    if (filter?.limit) {
-      query = query.limit(filter.limit);
-    }
-
-    const { data, error } = await query;
-    if (data && data.length > 0) {
-      return data as unknown as StemResource[];
-    }
-
-    // Graceful fallback to verified STEM seed catalog if database has not yet been seeded
-    let fallback = [...INITIAL_STEM_RESOURCES];
-    if (filter?.status) {
-      fallback = fallback.filter((r) => r.status === filter.status);
-    }
-    if (filter?.subject_id) {
-      fallback = fallback.filter((r) => r.subject_id === filter.subject_id || r.subject?.slug === filter.subject_id);
-    }
-    if (filter?.tier) {
-      fallback = fallback.filter((r) => r.tier === filter.tier);
-    }
-    if (filter?.resource_type) {
-      fallback = fallback.filter((r) => r.resource_type === filter.resource_type);
-    }
-    if (filter?.search) {
-      const q = filter.search.toLowerCase();
-      fallback = fallback.filter(
-        (r) =>
-          r.title.toLowerCase().includes(q) ||
-          r.summary.toLowerCase().includes(q) ||
-          r.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    }
-    if (filter?.featured_only) {
-      fallback = fallback.filter((r) => r.is_featured);
-    }
-    return fallback;
-  } catch (err) {
-    console.warn("[stemService] Failed to list STEM resources:", err);
-    return INITIAL_STEM_RESOURCES;
+export async function listStemResources(filter?: StemFilterOptions, client: SupabaseClient = supabase): Promise<StemResource[]> {
+  let query = client.from("stem_resources").select(`
+    *,
+    subject:learning_subjects ( id, name, slug ),
+    topic:learning_topics ( id, title, slug ),
+    current_version:stem_resource_versions!fk_stem_current_version (
+      id, version_number, schema_version, adapter_type, initial_state, content_payload, learning_objectives, created_at
+    )
+  `).order("created_at", { ascending: false });
+  if (filter?.status) query = query.eq("status", filter.status);
+  if (filter?.subject_id) query = query.eq("subject_id", filter.subject_id);
+  if (filter?.topic_id) query = query.eq("topic_id", filter.topic_id);
+  if (filter?.tier) query = query.eq("tier", filter.tier);
+  if (filter?.resource_type) query = query.eq("resource_type", filter.resource_type);
+  if (filter?.featured_only) query = query.eq("is_featured", true);
+  if (filter?.search) query = query.ilike("title", `%${filter.search}%`);
+  if (filter?.limit) query = query.limit(filter.limit);
+  const { data, error } = await query;
+  if (error) {
+    console.error("[stemService] Persisted STEM catalogue query failed:", error);
+    throw new Error("STEM resource catalogue is temporarily unavailable.");
   }
+  return (data || []) as unknown as StemResource[];
 }
 
-export async function getStemResourceBySlug(
-  slug: string,
-  client: SupabaseClient = supabase
-): Promise<StemResource | null> {
-  try {
-    const { data, error } = await client
-      .from("stem_resources")
-      .select(`
-        *,
-        subject:learning_subjects ( id, name, slug ),
-        topic:learning_topics ( id, title, slug ),
-        current_version:stem_resource_versions!fk_stem_current_version (
-          id, version_number, schema_version, adapter_type, initial_state, content_payload, learning_objectives, created_at
-        )
-      `)
-      .eq("slug", slug.trim().toLowerCase())
-      .maybeSingle();
-
-    if (data) return data as unknown as StemResource;
-
-    // Check seed fallback
-    const seed = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug.trim().toLowerCase());
-    return seed || null;
-  } catch (err) {
-    console.warn("[stemService] getStemResourceBySlug error:", err);
-    const seed = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug.trim().toLowerCase());
-    return seed || null;
+export async function getStemResourceBySlug(slug: string, client: SupabaseClient = supabase): Promise<StemResource | null> {
+  const { data, error } = await client.from("stem_resources").select(`
+    *,
+    subject:learning_subjects ( id, name, slug ),
+    topic:learning_topics ( id, title, slug ),
+    current_version:stem_resource_versions!fk_stem_current_version (
+      id, version_number, schema_version, adapter_type, initial_state, content_payload, learning_objectives, created_at
+    )
+  `).eq("slug", slug.trim().toLowerCase()).maybeSingle();
+  if (error) {
+    console.error("[stemService] Persisted STEM resource lookup failed:", error);
+    throw new Error("STEM resource is temporarily unavailable.");
   }
+  return (data as unknown as StemResource | null) ?? null;
 }
 
 export async function createStemResource(
