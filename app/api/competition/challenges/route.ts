@@ -59,9 +59,18 @@ export async function GET(req: NextRequest) {
       const isOutgoing = Boolean(user && challenge.challenger_id === user.id);
       const challengerProfile = profilesMap[challenge.challenger_id];
       const challengedProfile = challenge.challenged_id ? profilesMap[challenge.challenged_id] : null;
-      const { challenger_id: _challengerId, challenged_id: _challengedId, ...safeChallenge } = challenge;
+      const { challenger_id: _challengerId, challenged_id: _challengedId, match: privateMatch, ...safeChallenge } = challenge;
+      const safeMatch = privateMatch ? {
+        id: privateMatch.id,
+        status: privateMatch.status,
+        score_a: privateMatch.score_a,
+        score_b: privateMatch.score_b,
+        winner_is_me: Boolean(user && privateMatch.winner_id === user.id),
+        has_winner: Boolean(privateMatch.winner_id),
+      } : null;
       return {
         ...safeChallenge,
+        match: safeMatch,
         is_outgoing: isOutgoing,
         challenger: { display_name: challengerProfile?.display_name || "Private player", avatar_url: challengerProfile?.avatar_url || null },
         challenged: challenge.challenged_id
