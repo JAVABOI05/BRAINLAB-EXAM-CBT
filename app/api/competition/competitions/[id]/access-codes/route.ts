@@ -7,16 +7,16 @@ const ADMIN_ROLES = new Set(["super_admin", "platform_admin", "competition_admin
 
 async function requireArenaAdmin(req: NextRequest) {
   const user = await getUserFromRequest(req);
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
+  if (!user) return { error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }), user: null };
   const role = await resolveAdminRole(user.id);
-  if (!ADMIN_ROLES.has(role || "")) return { error: NextResponse.json({ error: "Arena administrator access is required." }, { status: 403 }) };
-  return { user, role };
+  if (!ADMIN_ROLES.has(role || "")) return { error: NextResponse.json({ error: "Arena administrator access is required." }, { status: 403 }), user: null };
+  return { error: null, user };
 }
 
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const auth = await requireArenaAdmin(req);
-    if (auth.error) return auth.error;
+    if (auth.error || !auth.user) return auth.error || NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     const { id } = await params;
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
