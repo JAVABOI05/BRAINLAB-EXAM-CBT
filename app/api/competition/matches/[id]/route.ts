@@ -36,7 +36,7 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     if (match.competition_id) {
       const { data: competitionRow, error: competitionError } = await supabase
         .from("competitions")
-        .select("id, visibility, allow_spectators, results_visibility, answer_reveal_mode, status")
+        .select("id, visibility, allow_spectators, spectator_questions_visible, spectator_scoreboard_visible, results_visibility, answer_reveal_mode, status")
         .eq("id", match.competition_id)
         .maybeSingle();
       if (competitionError) throw competitionError;
@@ -77,9 +77,10 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     // Apply result visibility before returning participant scores.
     const resultsVisibility = String(competition?.results_visibility || match.metadata?.results_visibility || "after_completion");
     const canSeeScores = isAdmin ||
+      (isSpectator && competition?.spectator_scoreboard_visible === true && resultsVisibility === "public") ||
       resultsVisibility === "public" ||
       (isParticipant && resultsVisibility === "participants") ||
-      (resultsVisibility === "after_completion" && match.status === "completed");
+      (resultsVisibility === "after_completion" && match.status === "completed" && (isParticipant || !isSpectator));
 
     // Enriched participants. Hidden results are not sent to the browser.
     const enrichedParticipants = (participants || []).map((p) => ({
@@ -118,7 +119,9 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
 
     const revealMode = String(competition?.answer_reveal_mode || match.metadata?.answer_reveal_mode || "after_match");
     const competitionCompleted = competition?.status === "concluded";
-    const safeQuestions = (Array.isArray(match.questions_snapshot) ? match.questions_snapshot : []).map((item: Record<string, unknown>) => {
+    const safeQuestions = isSpectator && competition?.spectator_questions_visible !== true
+      ? []
+      : (Array.isArray(match.questions_snapshot) ? match.questions_snapshot : []).map((item: Record<string, unknown>) => {
       const questionId = String(item.id ?? item.question_id ?? "");
       const questionWasAnswered = Boolean(myAnswers[questionId]);
       const canRevealThisQuestion = isAdmin ||
