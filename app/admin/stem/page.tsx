@@ -171,7 +171,7 @@ export default function AdminStemStudioPage() {
     setVersionAdapter(existing?.adapter_type || fallback.adapter);
     setVersionInitialState(JSON.stringify(existing?.initial_state || fallback.state, null, 2));
     setVersionPayload(JSON.stringify(existing?.content_payload || fallback.payload, null, 2));
-    setVersionObjectives((existing?.learning_objectives || []).join("\\n"));
+    setVersionObjectives((existing?.learning_objectives || []).join("\n"));
     setVersionError("");
     setVersionSuccess("");
   }
@@ -205,7 +205,7 @@ export default function AdminStemStudioPage() {
           adapter_type: versionAdapter,
           initial_state: initialState,
           content_payload: contentPayload,
-          learning_objectives: versionObjectives.split("\\n").map((line) => line.trim()).filter(Boolean),
+          learning_objectives: versionObjectives.split("\n").map((line) => line.trim()).filter(Boolean),
         }),
       });
       const data = await res.json();
