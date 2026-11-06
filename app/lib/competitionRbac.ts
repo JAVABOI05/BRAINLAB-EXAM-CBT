@@ -356,7 +356,9 @@ export async function getCompetitionActor(req: NextRequest): Promise<Competition
     else if (resolvedRole === "competition_admin") role = "competition_admin";
     else if (resolvedRole === "community_moderator" || resolvedRole === "competition_moderator") role = "competition_moderator";
     else if (resolvedRole === "competition_host" || resolvedRole === "teacher") role = "competition_host";
-    else role = "platform_admin";
+    // Unknown administrative roles must fail closed. Never convert a role that
+    // is not explicitly mapped to a privileged Arena role.
+    else role = "student";
   }
 
   let scopedPerms: UserScopedPermission[] = [];
