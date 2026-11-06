@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.school_inquiries (
 ALTER TABLE public.school_inquiries ENABLE ROW LEVEL SECURITY;
 
 -- Anonymous public visitors can only INSERT their own enquiry
+DROP POLICY IF EXISTS "Public anonymous visitors can submit school inquiries" ON public.school_inquiries;
 CREATE POLICY "Public anonymous visitors can submit school inquiries"
   ON public.school_inquiries
   FOR INSERT
@@ -27,6 +28,7 @@ CREATE POLICY "Public anonymous visitors can submit school inquiries"
   WITH CHECK (true);
 
 -- Only verified administrators can SELECT or UPDATE inquiries
+DROP POLICY IF EXISTS "Administrators can read and manage school inquiries" ON public.school_inquiries;
 CREATE POLICY "Administrators can read and manage school inquiries"
   ON public.school_inquiries
   FOR ALL
@@ -34,7 +36,7 @@ CREATE POLICY "Administrators can read and manage school inquiries"
   USING (
     EXISTS (
       SELECT 1 FROM public.admin_users
-      WHERE admin_users.id = auth.uid() OR admin_users.user_id = auth.uid()
+      WHERE admin_users.id = auth.uid()
     )
     OR EXISTS (
       SELECT 1 FROM public.admin_profiles
