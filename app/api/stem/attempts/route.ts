@@ -102,10 +102,12 @@ export async function POST(request: NextRequest) {
 
     const quota = accessContext.monthlyLabQuota;
     const isUnlimited = accessContext.isPrivileged || quota >= 999999;
+    let usedThisMonth = 0;
+    let nextMonthStart: string | null = null;
     if (!isUnlimited) {
       const now = new Date();
       const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-      const nextMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
+      nextMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
       const { count, error: countError } = await serviceClient
         .from("stem_experiment_attempts")
         .select("id", { count: "exact", head: true })
@@ -118,6 +120,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: false, error: "Unable to verify your monthly STEM lab allowance. Please try again." }, { status: 503 });
       }
       const used = count || 0;
+      usedThisMonth = used;
       if (used >= quota) {
         return NextResponse.json({
           ok: false,
@@ -152,13 +155,9 @@ export async function POST(request: NextRequest) {
       attempt,
       quota: isUnlimited ? { unlimited: true } : {
         limit: quota,
-        remaining: Math.max(0, quota - ((await serviceClient
-          .from("stem_experiment_attempts")
-          .select("id", { count: "exact", head: true })
-          .eq("student_id", user.id)
-          .in("status", ["completed", "graded"])
-          .gte("started_at", new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString())
-        ).count || 0)),
+        used: usedThisMonth + 1,
+        remaining: Math.max(0, quota - usedThisMonth - 1),
+        resets_at: nextMonthStart,
       },
     }, { status: 201 });
   } catch (err) {

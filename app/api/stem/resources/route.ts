@@ -26,20 +26,6 @@ export async function GET(request: NextRequest) {
 
     const accessContext = await resolveStemAccessContext(user, token);
     const isAuthorizedReviewer = accessContext.isPrivileged;
-    if (user && !isAuthorizedReviewer) {
-      const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
-      const isStemGovernanceRole = ["super_admin", "platform_admin", "content_reviewer", "ai_learning_admin", "admin"].includes(role || "");
-      const { data: approvedTutor } = await getSupabaseServerClient(token)
-        .from("tutor_profiles")
-        .select("user_id")
-        .eq("user_id", user.id)
-        .eq("profile_status", "approved")
-        .maybeSingle();
-      // Keep authoring/review visibility aligned with the existing STEM roles.
-      void isStemGovernanceRole;
-      void approvedTutor;
-    }
-
     // Public / unauthenticated callers can ONLY view published resources
     const effectiveStatus = isAuthorizedReviewer && requestedStatus
       ? (requestedStatus as any)

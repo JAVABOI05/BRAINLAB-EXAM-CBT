@@ -787,10 +787,17 @@ export async function setPlatformConfig<T>(
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const plans = await getPlatformConfig<SubscriptionPlan[]>("subscription_plans", DEFAULT_PLANS);
   return plans
-    .map((p) => ({
-      ...p,
-      entitlements: normalizePlanEntitlements(p.entitlements, p.id === "free"),
-    }))
+    .map((p) => {
+      const defaultPlan = DEFAULT_PLANS.find((defaultItem) => defaultItem.id === p.id);
+      const mergedEntitlements = {
+        ...(defaultPlan?.entitlements || (p.id === "free" ? DEFAULT_FREE_ENTITLEMENTS : {})),
+        ...(p.entitlements || {}),
+      };
+      return {
+        ...p,
+        entitlements: normalizePlanEntitlements(mergedEntitlements, p.id === "free"),
+      };
+    })
     .sort((a, b) => a.display_order - b.display_order);
 }
 

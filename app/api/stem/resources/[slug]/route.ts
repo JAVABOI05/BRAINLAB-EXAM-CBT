@@ -3,10 +3,8 @@ import {
   getSupabasePublicServerClient,
   getSupabaseServerClient,
   getUserFromRequest,
-  resolveAdminRole,
 } from "@/app/lib/supabaseServer";
 import { getStemResourceBySlug } from "@/app/lib/stem/stemService";
-import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
 import { getStemResourceAccess, resolveStemAccessContext } from "@/app/lib/stem/stemAccess";
 
 export async function GET(
@@ -24,11 +22,7 @@ export async function GET(
     const user = await getUserFromRequest(request);
 
     const accessContext = await resolveStemAccessContext(user, token);
-    let isAuthorizedReviewer = accessContext.isPrivileged;
-    if (user && !isAuthorizedReviewer) {
-      const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
-      isAuthorizedReviewer = isInstructorRole(role) || isGovernanceAdminRole(role);
-    }
+    const isAuthorizedReviewer = accessContext.isPrivileged;
 
     const client = isAuthorizedReviewer && token
       ? getSupabaseServerClient(token)
