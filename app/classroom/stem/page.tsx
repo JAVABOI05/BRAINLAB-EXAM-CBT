@@ -160,6 +160,14 @@ export default function StemStudioHubPage() {
           </div>
         </div>
 
+        {/* Interactive 3D Atlas entry point */}
+        <section className="relative overflow-hidden rounded-2xl border border-cyan-400/25 bg-gradient-to-r from-[#10264f] via-[#0b1838] to-[#101a3a] p-5 sm:p-6">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="max-w-2xl"><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">New · 3D Atlas</p><h2 className="mt-2 text-xl font-black text-white">Explore science beyond the diagram.</h2><p className="mt-1 text-sm leading-relaxed text-slate-300">Rotate an interactive animal-cell model, inspect its organelles and connect each structure to its function.</p></div>
+            <Link href="/classroom/stem/atlas" className="shrink-0 rounded-xl bg-cyan-500 px-5 py-3 text-xs font-black text-[#06132c] shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-300">Launch 3D Atlas →</Link>
+          </div>
+        </section>
+
         {/* STEM Arena Callout Card */}
         <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-[#0B1536] to-[#070d1e] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
           <div className="flex items-center gap-4">
