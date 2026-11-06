@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, getUserFromRequest } from "@/app/lib/supabaseServer";
+import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
 
 interface MatchParams {
   params: Promise<{ id: string }>;
@@ -31,6 +31,18 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 
+    // Load competition visibility/reveal policy before exposing any match payload.
+    let competition: Record<string, unknown> | null = null;
+    if (match.competition_id) {
+      const { data: competitionRow, error: competitionError } = await supabase
+        .from("competitions")
+        .select("id, visibility, allow_spectators, results_visibility, answer_reveal_mode, status")
+        .eq("id", match.competition_id)
+        .maybeSingle();
+      if (competitionError) throw competitionError;
+      competition = competitionRow;
+    }
+
     // Fetch participants
     const { data: participants, error: partErr } = await supabase
       .from("competition_match_participants")
@@ -38,6 +50,15 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       .eq("match_id", matchId);
 
     if (partErr) throw partErr;
+
+    const isParticipant = Boolean(user && participants?.some((participant) => participant.user_id === user.id));
+    const adminRole = user ? await resolveAdminRole(user.id) : null;
+    const isAdmin = ["super_admin", "platform_admin", "competition_admin", "competition_moderator"].includes(adminRole || "");
+    if (!isParticipant && !isAdmin) {
+      if (!isSpectator || !competition || competition.visibility !== "public" || competition.allow_spectators !== true) {
+        return NextResponse.json({ error: "You are not authorised to view this match. Spectator access is not enabled for this event." }, { status: 403 });
+      }
+    }
 
     // Fetch profiles for participants
     const userIds = participants?.map((p) => p.user_id) || [];
@@ -53,9 +74,17 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       }
     }
 
-    // Enriched participants
+    // Apply result visibility before returning participant scores.
+    const resultsVisibility = String(competition?.results_visibility || match.metadata?.results_visibility || "after_completion");
+    const canSeeScores = isAdmin ||
+      resultsVisibility === "public" ||
+      (isParticipant && resultsVisibility === "participants") ||
+      (resultsVisibility === "after_completion" && match.status === "completed");
+
+    // Enriched participants. Hidden results are not sent to the browser.
     const enrichedParticipants = (participants || []).map((p) => ({
       ...p,
+      score: canSeeScores ? p.score : null,
       profile: profilesMap[p.user_id] || { full_name: p.display_name },
     }));
 
@@ -87,11 +116,36 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       }
     }
 
+    const revealMode = String(competition?.answer_reveal_mode || match.metadata?.answer_reveal_mode || "after_match");
+    const competitionCompleted = competition?.status === "concluded";
+    const safeQuestions = (Array.isArray(match.questions_snapshot) ? match.questions_snapshot : []).map((item: Record<string, unknown>) => {
+      const questionId = String(item.id ?? item.question_id ?? "");
+      const questionWasAnswered = Boolean(myAnswers[questionId]);
+      const canRevealThisQuestion = isAdmin ||
+        (revealMode === "after_question" && isParticipant && questionWasAnswered) ||
+        (revealMode === "after_match" && match.status === "completed") ||
+        (revealMode === "after_round" && match.status === "completed") ||
+        (revealMode === "after_competition" && competitionCompleted);
+
+      const safeItem = { ...item };
+      if (!canRevealThisQuestion || revealMode === "never") {
+        delete safeItem.correct_answer;
+        delete safeItem.answer;
+        delete safeItem.explanation;
+      }
+      return safeItem;
+    });
+
+    const safeMatch = {
+      ...match,
+      score_a: canSeeScores ? match.score_a : null,
+      score_b: canSeeScores ? match.score_b : null,
+      questions_snapshot: safeQuestions,
+      remaining_seconds: remainingSeconds,
+    };
+
     return NextResponse.json({
-      match: {
-        ...match,
-        remaining_seconds: remainingSeconds,
-      },
+      match: safeMatch,
       participants: enrichedParticipants,
       my_answers: myAnswers,
       current_user_id: user?.id || null,
