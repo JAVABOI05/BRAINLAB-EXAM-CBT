@@ -349,76 +349,9 @@ begin
 end;
 $function$;
 
--- New assignments become the source of truth; legacy profiles remain a compatibility fallback during rollout.
-create or replace function public.admin_has_permission(permission_key text)
-returns boolean language sql stable security definer
-set search_path=public,pg_temp
-as $function$
-  select coalesce((
-    select exists(
-      select 1
-      from public.access_user_role_assignments a
-      join public.access_roles r on r.id=a.role_id and r.is_active
-      join public.access_role_permissions rp on rp.role_id=r.id
-      where a.user_id=auth.uid() and a.revoked_at is null
-        and (a.expires_at is null or a.expires_at>now())
-        and rp.permission_key=admin_has_permission.permission_key
-    )
-    or exists(
-      select 1 from public.admin_profiles ap
-      where ap.user_id=auth.uid() and ap.role='super_admin'
-    )
-  ),false);
-$function$;
-
--- Compatibility shim for existing pages and routes that still expect one fixed role string.
-create or replace function public.get_admin_role()
-returns text language sql stable security definer
-set search_path=public,pg_temp
-as $function$
-  select coalesce(
-    (select r.role_key from public.access_user_role_assignments a
-      join public.access_roles r on r.id=a.role_id and r.is_active
-      where a.user_id=auth.uid() and a.revoked_at is null
-        and (a.expires_at is null or a.expires_at>now())
-      order by case when r.role_key='super_admin' then 0 when r.is_system then 1 else 2 end,
-        a.assigned_at asc limit 1),
-    (select ap.role from public.admin_profiles ap where ap.user_id=auth.uid() limit 1)
-  );
-$function$;
-
-alter table public.access_permissions enable row level security;
-alter table public.access_roles enable row level security;
-alter table public.access_role_permissions enable row level security;
-alter table public.access_user_role_assignments enable row level security;
-
-drop policy if exists access_roles_super_admin_read on public.access_roles;
-create policy access_roles_super_admin_read on public.access_roles for select to authenticated
-using (public.is_super_admin());
-drop policy if exists access_permissions_super_admin_read on public.access_permissions;
-create policy access_permissions_super_admin_read on public.access_permissions for select to authenticated
-using (public.is_super_admin());
-drop policy if exists access_role_permissions_super_admin_read on public.access_role_permissions;
-create policy access_role_permissions_super_admin_read on public.access_role_permissions for select to authenticated
-using (public.is_super_admin());
-drop policy if exists access_assignments_super_admin_read on public.access_user_role_assignments;
-create policy access_assignments_super_admin_read on public.access_user_role_assignments for select to authenticated
-using (public.is_super_admin());
-
-revoke all on public.access_permissions,public.access_roles,public.access_role_permissions,public.access_user_role_assignments from anon,authenticated;
-grant select on public.access_permissions,public.access_roles,public.access_role_permissions,public.access_user_role_assignments to authenticated;
-
-revoke all on function public.access_search_accounts(text) from public,anon;
-revoke all on function public.access_list_role_catalogue() from public,anon;
-revoke all on function public.access_create_custom_role(text,text,text[]) from public,anon;
-revoke all on function public.access_assign_role(uuid,uuid,jsonb,timestamptz) from public,anon;
-revoke all on function public.access_revoke_role(uuid,uuid) from public,anon;
-grant execute on function public.access_search_accounts(text) to authenticated;
-grant execute on function public.access_list_role_catalogue() to authenticated;
-grant execute on function public.access_create_custom_role(text,text,text[]) to authenticated;
-grant execute on function public.access_assign_role(uuid,uuid,jsonb,timestamptz) to authenticated;
-grant execute on function public.access_revoke_role(uuid,uuid) to authenticated;
-grant execute on function public.admin_has_permission(text) to authenticated;
-grant execute on function public.get_admin_role() to authenticated;
+-- IMPORTANT: This phase deliberately does NOT replace get_admin_role() or admin_has_permission().
+-- Existing routes, API handlers, and RLS policies still consume the legacy single-role contract.
+-- The new access catalogue is staged additively; permission-resolution cutover is a separate
+-- migration after the application compatibility layer and route/RLS audit are complete.
 
 commit;
