@@ -377,34 +377,48 @@ export async function PATCH(req: NextRequest) {
 
     // ACTION: START DEMOCRATIC ELECTION (Captaincy or No-Confidence)
     if (action === "start_election") {
-      const { election_type, candidate_ids = [] } = body; // 'captaincy' | 'no_confidence'
-      if (!team_id || !election_type) {
-        return NextResponse.json({ error: "Missing team_id or election_type" }, { status: 400 });
+      const { election_type } = body;
+      if (!team_id || !["captaincy", "no_confidence"].includes(election_type)) {
+        return NextResponse.json({ error: "Choose a valid team election type." }, { status: 400 });
       }
 
-      // Check membership
       const { data: member } = await supabase
         .from("competition_team_members")
         .select("id, role")
         .eq("team_id", team_id)
         .eq("user_id", user.id)
+        .eq("is_active", true)
         .maybeSingle();
+      if (!member) return NextResponse.json({ error: "Only active team members can call an election." }, { status: 403 });
 
-      if (!member) {
-        return NextResponse.json({ error: "Only team members can call an election" }, { status: 403 });
-      }
+      const { data: team } = await supabase
+        .from("competition_teams")
+        .select("id, name, captain_id")
+        .eq("id", team_id)
+        .maybeSingle();
+      if (!team) return NextResponse.json({ error: "Team not found." }, { status: 404 });
 
-      // Check if an election is already active
       const { data: activeElection } = await supabase
         .from("competition_team_elections")
         .select("id")
         .eq("team_id", team_id)
         .eq("status", "active")
         .maybeSingle();
+      if (activeElection) return NextResponse.json({ error: "An election is already active for this team." }, { status: 409 });
 
-      if (activeElection) {
-        return NextResponse.json({ error: "An election is already actively underway for this team" }, { status: 400 });
+      const { data: activeMembers, error: memberListError } = await supabase
+        .from("competition_team_members")
+        .select("user_id")
+        .eq("team_id", team_id)
+        .eq("is_active", true);
+      if (memberListError) throw memberListError;
+      if (!activeMembers?.length || activeMembers.length < 2) {
+        return NextResponse.json({ error: "At least two active members are required to hold a team election." }, { status: 409 });
       }
+
+      const candidateIds = election_type === "captaincy"
+        ? activeMembers.map((item) => item.user_id)
+        : [team.captain_id];
 
       const { data: election, error: electErr } = await supabase
         .from("competition_team_elections")
@@ -412,63 +426,119 @@ export async function PATCH(req: NextRequest) {
           team_id,
           election_type,
           initiated_by: user.id,
-          candidate_ids: candidate_ids.length > 0 ? candidate_ids : [user.id],
+          candidate_ids: candidateIds,
+          eligible_voter_count: activeMembers.length,
+          support_threshold_percent: 50,
           status: "active",
+          end_time: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
         })
         .select()
         .single();
-
       if (electErr) throw electErr;
+
+      await supabase.from("notifications").insert(activeMembers.map((item) => ({
+        user_id: item.user_id,
+        title: election_type === "captaincy" ? "Team captain election opened" : "Team no-confidence vote opened",
+        message: election_type === "captaincy"
+          ? `A confidential captaincy ballot is open for ${team.name}. Each active member has one vote.`
+          : `A confidential no-confidence ballot is open for ${team.name}. Each active member may support or oppose the motion.`,
+        type: "competition_team_election_started",
+        metadata: { team_id, election_id: election.id, election_type },
+      })));
 
       return NextResponse.json({ ok: true, election });
     }
 
-    // ACTION: VOTE IN ELECTION
+    // ACTION: CAST A CONFIDENTIAL TEAM BALLOT
     if (action === "vote") {
       const { election_id, candidate_id } = body;
+      const voteChoice = body.vote_choice === "support" || body.vote_choice === "oppose" ? body.vote_choice : "candidate";
       if (!election_id || !candidate_id) {
-        return NextResponse.json({ error: "Missing election_id or candidate_id" }, { status: 400 });
+        return NextResponse.json({ error: "Missing election_id or candidate_id." }, { status: 400 });
       }
 
-      const { data: election } = await supabase
+      const { data: election, error: electionError } = await supabase
         .from("competition_team_elections")
-        .select("*, team:competition_teams(id, name)")
+        .select("id, team_id, election_type, candidate_ids, end_time, status")
         .eq("id", election_id)
         .eq("status", "active")
         .maybeSingle();
+      if (electionError) throw electionError;
+      if (!election) return NextResponse.json({ error: "No active election found." }, { status: 404 });
 
-      if (!election) {
-        return NextResponse.json({ error: "No active election found" }, { status: 404 });
-      }
-
-      // Verify voter is a member of the team
       const { data: member } = await supabase
         .from("competition_team_members")
         .select("id")
         .eq("team_id", election.team_id)
         .eq("user_id", user.id)
+        .eq("is_active", true)
         .maybeSingle();
+      if (!member) return NextResponse.json({ error: "Only active team members may vote." }, { status: 403 });
 
-      if (!member) {
-        return NextResponse.json({ error: "Only team members can vote in this election" }, { status: 403 });
+      if (new Date(election.end_time) <= new Date()) {
+        return NextResponse.json({ error: "The election deadline has passed. Ask a team administrator to finalise the ballot." }, { status: 409 });
       }
 
-      const { error: voteErr } = await supabase
-        .from("competition_team_votes")
-        .insert({
-          election_id,
-          voter_id: user.id,
-          candidate_id,
-        });
+      const { data: team } = await supabase
+        .from("competition_teams")
+        .select("id, name, captain_id")
+        .eq("id", election.team_id)
+        .maybeSingle();
+      if (!team) return NextResponse.json({ error: "Team not found." }, { status: 404 });
 
-      if (voteErr) {
-        if (voteErr.code === "23505") {
-          return NextResponse.json({ error: "You have already cast your vote in this election" }, { status: 400 });
+      if (election.election_type === "captaincy" &&
+          (voteChoice !== "candidate" || !(election.candidate_ids || []).includes(candidate_id))) {
+        return NextResponse.json({ error: "Select a valid active candidate." }, { status: 400 });
+      }
+      if (election.election_type === "no_confidence" &&
+          (candidate_id !== team.captain_id || !["support", "oppose"].includes(voteChoice))) {
+        return NextResponse.json({ error: "Choose support or oppose for the current captain." }, { status: 400 });
+      }
+
+      const { data: tallyRows, error: voteError } = await supabase.rpc("cast_competition_team_election_vote", {
+        p_election_id: election_id,
+        p_voter_id: user.id,
+        p_candidate_id: candidate_id,
+        p_vote_choice: voteChoice,
+      });
+      if (voteError) {
+        if (voteError.code === "23505") return NextResponse.json({ error: "You have already cast your confidential vote." }, { status: 409 });
+        throw voteError;
+      }
+
+      const tally = Array.isArray(tallyRows) ? tallyRows[0] : tallyRows;
+      if (tally?.election_status && tally.election_status !== "active") {
+        const { data: teamMembers } = await supabase
+          .from("competition_team_members")
+          .select("user_id")
+          .eq("team_id", election.team_id)
+          .eq("is_active", true);
+        const resultMessage = tally.election_status === "completed"
+          ? "The captaincy election is complete. The elected captain is now active."
+          : tally.election_status === "passed"
+            ? "The no-confidence motion passed. A new captaincy ballot has opened."
+            : tally.election_status === "failed"
+              ? "The no-confidence motion did not reach its required support threshold."
+              : "The captaincy ballot ended in a tie. A runoff election has opened.";
+        if (teamMembers?.length) {
+          await supabase.from("notifications").insert(teamMembers.map((item) => ({
+            user_id: item.user_id,
+            title: "Team election result",
+            message: resultMessage,
+            type: "competition_team_election_result",
+            metadata: { team_id: election.team_id, election_id, status: tally.election_status, followup_election_id: tally.followup_election_id },
+          })));
         }
-        throw voteErr;
       }
 
-      return NextResponse.json({ ok: true, message: "Vote cast successfully" });
+      return NextResponse.json({
+        ok: true,
+        message: "Confidential vote recorded.",
+        vote_count: tally?.vote_count ?? null,
+        eligible_count: tally?.eligible_count ?? null,
+        election_status: tally?.election_status ?? "active",
+        followup_election_id: tally?.followup_election_id ?? null,
+      });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
