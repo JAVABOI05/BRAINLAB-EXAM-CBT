@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         .select("elo_rating, peak_elo, matches_played, matches_won, matches_drawn, matches_lost, tier")
         .eq("user_id", profile.user_id).maybeSingle(),
       supabase.from("user_gamification_profiles")
-        .select("total_xp, level")
+        .select("lifetime_xp, current_level, level_name")
         .eq("user_id", profile.user_id).maybeSingle(),
     ]);
     return NextResponse.json({
