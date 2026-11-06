@@ -559,9 +559,18 @@ async function finalizeMatch(matchId: string, supabase: any) {
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
 
+    // Associate verified rating changes with the currently active season.
+    const { data: activeSeason } = await supabase.from("competition_seasons")
+      .select("id")
+      .eq("status", "active")
+      .lte("starts_at", new Date().toISOString())
+      .gte("ends_at", new Date().toISOString())
+      .maybeSingle();
+
     // Preserve durable individual rating history for audit and season views.
     await supabase.from("competition_rating_history").insert([
       {
+        season_id: activeSeason?.id || null,
         user_id: pA.user_id,
         match_id: matchId,
         rating_kind: "individual",
@@ -571,6 +580,7 @@ async function finalizeMatch(matchId: string, supabase: any) {
         reason: "verified_ranked_match",
       },
       {
+        season_id: activeSeason?.id || null,
         user_id: pB.user_id,
         match_id: matchId,
         rating_kind: "individual",
