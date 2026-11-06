@@ -346,7 +346,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
       </header>
 
       {/* MATCH CONTENT AREA */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+      <main className="arena-match-canvas flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
 
         {/* =========================================================================
             STATE 1: MATCH LOBBY (WAITING FOR READINESS)
