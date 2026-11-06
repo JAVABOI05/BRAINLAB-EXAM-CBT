@@ -80,11 +80,17 @@ export default function CellAtlasViewer() {
   const [zoom,setZoom]=useState(3.2);
   const [webglError,setWebglError]=useState(false);
   const [showLabels,setShowLabels]=useState(true);
+  const [visibleOrganelles,setVisibleOrganelles]=useState<string[]>(ORGANELLES.map(o=>o.id));
+  const [isolateSelected,setIsolateSelected]=useState(false);
+  const [membraneOpacity,setMembraneOpacity]=useState(34);
   const [dragging,setDragging]=useState(false);
   const active=ORGANELLES.find(o=>o.id===selected)||ORGANELLES[0];
   const rotationRef=useRef(rotation); rotationRef.current=rotation;
   const zoomRef=useRef(zoom); zoomRef.current=zoom;
   const selectedRef=useRef(selected); selectedRef.current=selected;
+  const visibleRef=useRef(visibleOrganelles); visibleRef.current=visibleOrganelles;
+  const isolateRef=useRef(isolateSelected); isolateRef.current=isolateSelected;
+  const membraneOpacityRef=useRef(membraneOpacity); membraneOpacityRef.current=membraneOpacity;
 
   useEffect(()=>{
     const canvas=canvasRef.current; if(!canvas) return;
@@ -120,8 +126,12 @@ export default function CellAtlasViewer() {
         if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);}
         gl.viewport(0,0,canvas.width,canvas.height); gl.clearColor(0.025,0.055,0.13,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
         draw([0,0,0],[1.22,0.82,0.68],[0.18,0.57,0.78],0.18,rotationRef.current.x,rotationRef.current.y);
-        draw([0,0,0],[1.12,0.74,0.61],[0.12,0.38,0.57],0.34,rotationRef.current.x,rotationRef.current.y);
-        ORGANELLES.forEach(o=>draw(o.position,o.scale,o.color,selectedRef.current===o.id?1:0.88,rotationRef.current.x,rotationRef.current.y));
+        draw([0,0,0],[1.12,0.74,0.61],[0.12,0.38,0.57],membraneOpacityRef.current/100,rotationRef.current.x,rotationRef.current.y);
+        ORGANELLES.forEach(o=>{
+          const visible=visibleRef.current.includes(o.id);
+          const isolated=isolateRef.current && selectedRef.current!==o.id;
+          if(visible && !isolated) draw(o.position,o.scale,o.color,selectedRef.current===o.id?1:0.88,rotationRef.current.x,rotationRef.current.y);
+        });
         frame=requestAnimationFrame(render);
       };
       render();
@@ -140,12 +150,17 @@ export default function CellAtlasViewer() {
         {webglError ? <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center"><span className="text-4xl">🧫</span><p className="font-bold text-white">3D graphics are unavailable on this device</p><p className="max-w-sm text-sm text-slate-400">Your browser or device could not start WebGL. Use the organelle explorer on the right or try a browser with hardware acceleration enabled.</p></div> : <canvas ref={canvasRef} className="h-full w-full touch-none" aria-label="Rotatable schematic 3D animal cell model" onPointerDown={e=>{pointer.current={x:e.clientX,y:e.clientY};setDragging(true);e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={e=>{if(!pointer.current)return;const dx=e.clientX-pointer.current.x,dy=e.clientY-pointer.current.y;pointer.current={x:e.clientX,y:e.clientY};setRotation(r=>({x:Math.max(-1.1,Math.min(1.1,r.x+dy*.008)),y:r.y+dx*.008}));}} onPointerUp={()=>{pointer.current=null;setDragging(false);}} onPointerCancel={()=>{pointer.current=null;setDragging(false);}}/>}
         <div className="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-[#071027]/80 px-3 py-2 text-[10px] text-slate-300">Drag to rotate · Use zoom control below</div>
         <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3">
-          <button onClick={()=>setRotation({x:0.22,y:-0.42})} className="rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs font-bold text-white">Reset view</button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={()=>setRotation({x:0.22,y:-0.42})} className="rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs font-bold text-white">Reset view</button>
+            <button onClick={()=>setIsolateSelected(v=>!v)} aria-pressed={isolateSelected} className="rounded-lg border border-cyan-300/30 bg-[#071027]/85 px-3 py-2 text-xs font-bold text-cyan-200">{isolateSelected?"Show all":"Isolate selected"}</button>
+          </div>
           <label className="flex items-center gap-2 rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs text-slate-200"><input type="checkbox" checked={showLabels} onChange={e=>setShowLabels(e.target.checked)}/> Show labels</label>
         </div>
         {showLabels && !webglError && <div className="pointer-events-none absolute right-4 top-4 flex max-w-[150px] flex-col gap-1">{ORGANELLES.slice(0,4).map(o=><span key={o.id} className="rounded-md border border-white/10 bg-[#071027]/75 px-2 py-1 text-[9px] text-slate-200">{o.name}</span>)}</div>}
       </div>
       <div className="border-t border-white/10 px-5 py-4">
+        <div className="mb-2 flex items-center justify-between text-xs text-slate-300"><span>Outer membrane opacity</span><span>{membraneOpacity}%</span></div>
+        <input aria-label="Outer membrane opacity" type="range" min="5" max="70" step="1" value={membraneOpacity} onChange={e=>setMembraneOpacity(Number(e.target.value))} className="mb-4 w-full accent-cyan-400"/>
         <div className="mb-2 flex items-center justify-between text-xs text-slate-300"><span>Model zoom</span><span>{zoom.toFixed(1)}×</span></div>
         <input aria-label="Model zoom" type="range" min="2.3" max="4.8" step=".1" value={zoom} onChange={e=>setZoom(Number(e.target.value))} className="w-full accent-cyan-400"/>
         <p className="mt-2 text-[10px] leading-relaxed text-slate-500">Educational schematic, not to scale. Organelle placement and proportions are simplified to support introductory exploration.</p>
@@ -154,7 +169,13 @@ export default function CellAtlasViewer() {
     <aside className="space-y-4">
       <div className="rounded-[24px] border border-white/10 bg-[#0b1838] p-5">
         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-cyan-300">Explore structures</p>
-        <div className="mt-3 grid grid-cols-2 gap-2">{ORGANELLES.map(o=><button key={o.id} onClick={()=>setSelected(o.id)} className={`rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}><span className="mb-2 block h-2 w-2 rounded-full" style={{background:`rgb(${o.color.map(c=>Math.round(c*255)).join(",")})`}}/>{o.name}</button>)}</div>
+        <div className="mt-3 grid grid-cols-2 gap-2">{ORGANELLES.map(o=><div key={o.id} className="flex min-w-0 items-stretch gap-1">
+          <button onClick={()=>setSelected(o.id)} className={`min-w-0 flex-1 rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}><span className="mb-2 block h-2 w-2 rounded-full" style={{background:`rgb(${o.color.map(c=>Math.round(c*255)).join(",")})`}}/>{o.name}</button>
+          <button type="button" aria-label={`${visibleOrganelles.includes(o.id)?"Hide":"Show"} ${o.name}`} aria-pressed={visibleOrganelles.includes(o.id)} onClick={()=>setVisibleOrganelles(v=>v.includes(o.id)?v.filter(id=>id!==o.id):[...v,o.id])} className="rounded-lg border border-white/10 px-2 text-[10px] text-slate-300 hover:bg-white/10">{visibleOrganelles.includes(o.id)?"●":"○"}</button>
+        </div>)}</div>
+        <p className="mt-3 text-[10px] leading-relaxed text-slate-500">Use the dot controls to hide or restore structures. Isolate selected hides the other visible organelles.</p>
+      </div>
+      <div className="rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-[#10234b] to-[#0b1838] p-5"> className={`rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}><span className="mb-2 block h-2 w-2 rounded-full" style={{background:`rgb(${o.color.map(c=>Math.round(c*255)).join(",")})`}}/>{o.name}</button>)}</div>
       </div>
       <div className="rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-[#10234b] to-[#0b1838] p-5">
         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-cyan-300">Selected structure</p>
