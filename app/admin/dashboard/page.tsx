@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { adminSignOut, getAdminSession, getCachedAdminSession, type AdminUser } from "../../lib/adminAuth";
+import { adminSignOut, getAdminSession, getCachedAdminSession, setCachedAdminSession, type AdminUser } from "../../lib/adminAuth";
 import {
   adminHasPermission,
   adminResolvePermissions,
@@ -252,12 +252,14 @@ function MetricCard({
   note,
   iconName,
   accent = "blue",
+  loading = false,
 }: {
   label: string;
   value: Metric;
   note: string;
   iconName: "questions" | "results" | "codes" | "students" | "active" | "registrations" | "sessions";
   accent?: "blue" | "emerald" | "amber" | "indigo" | "rose" | "purple";
+  loading?: boolean;
 }) {
   return (
     <article className={`admin-kpi-card is-${accent}`}>
@@ -267,11 +269,17 @@ function MetricCard({
           <DashboardIcon name={iconName} />
         </span>
       </div>
-      <div className={"admin-kpi-value " + (value === null ? "is-unavailable" : "")}>
-        {value === null ? "Unavailable" : value.toLocaleString()}
-      </div>
+      {loading ? (
+        <div className="admin-kpi-value">
+          <div className="h-8 w-28 rounded-lg bg-slate-200/80 dark:bg-slate-700/60 animate-pulse my-1" />
+        </div>
+      ) : (
+        <div className={"admin-kpi-value " + (value === null ? "is-unavailable" : "")}>
+          {value === null ? "Unavailable" : value.toLocaleString()}
+        </div>
+      )}
       <p className="admin-kpi-note">
-        {value === null ? "The data source could not be read. This is not reported as zero." : note}
+        {loading ? "Calculating real-time telemetry…" : value === null ? "The data source could not be read. This is not reported as zero." : note}
       </p>
     </article>
   );
@@ -285,6 +293,7 @@ export default function AdminDashboardPage() {
   const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
   const [studentStatsError, setStudentStatsError] = useState("");
   const [loading, setLoading] = useState(() => !getCachedAdminSession());
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [settings, setSettings] = useState<SettingsMap>(DEFAULT_SETTINGS);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -303,6 +312,9 @@ export default function AdminDashboardPage() {
         }
         verifiedAdmin = true;
         setUser(admin);
+        setCachedAdminSession(admin);
+        // Instant non-blocking mount: display shell and controls immediately
+        setLoading(false);
 
         const access = await adminResolvePermissions(PERMISSIONS, admin.role);
         if (!active) return;
@@ -331,6 +343,7 @@ export default function AdminDashboardPage() {
           sessions:
             access["cbt.sessions.read"] ? (activeSessions && !activeSessions.error ? activeSessions.count ?? 0 : null) : null,
         });
+        setMetricsLoading(false);
 
         // Protected student statistics for platform administrators
         if (admin.role === "super_admin" || admin.role === "platform_admin") {
@@ -399,7 +412,10 @@ export default function AdminDashboardPage() {
           }
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+          setMetricsLoading(false);
+        }
       }
     }
     void initialise();
@@ -452,10 +468,20 @@ export default function AdminDashboardPage() {
 
   if (loading || !user) {
     return (
-      <main className="admin-login-shell">
-        <section className="admin-login-card">
-          <p>{loading ? "Verifying administrator session…" : "Redirecting to sign in…"}</p>
-        </section>
+      <main className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-[#020b18] flex items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-slate-900/90 backdrop-blur-xl p-8 text-center space-y-4 shadow-2xl">
+          <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
+            <div className="absolute inset-0 rounded-2xl bg-cyan-500/20 blur-md animate-pulse" />
+            <div className="absolute inset-1 rounded-xl border-2 border-transparent border-t-cyan-400 border-r-blue-500 animate-spin" />
+            <div className="relative z-10 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 border border-white/10">
+              <span className="text-lg">🛡️</span>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-white tracking-tight">Securing Administrator Workspace</h2>
+            <p className="text-xs text-cyan-400 font-medium mt-1">Connecting session credentials…</p>
+          </div>
+        </div>
       </main>
     );
   }
@@ -695,6 +721,7 @@ export default function AdminDashboardPage() {
             note="Syllabus-aligned questions ready for deployment"
             iconName="questions"
             accent="indigo"
+            loading={metricsLoading}
           />
         )}
         {canOpen("cbt.results.read") && (
@@ -704,6 +731,7 @@ export default function AdminDashboardPage() {
             note="Completed examination candidate submissions"
             iconName="results"
             accent="emerald"
+            loading={metricsLoading}
           />
         )}
         {canOpen("cbt.codes.manage") && (
@@ -713,6 +741,7 @@ export default function AdminDashboardPage() {
             note="Cryptographic exam tokens and access vouchers"
             iconName="codes"
             accent="amber"
+            loading={metricsLoading}
           />
         )}
         {canOpen("cbt.sessions.read") && (
@@ -722,6 +751,7 @@ export default function AdminDashboardPage() {
             note="Concurrent candidates actively testing"
             iconName="sessions"
             accent="blue"
+            loading={metricsLoading}
           />
         )}
       </section>

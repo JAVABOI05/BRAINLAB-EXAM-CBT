@@ -9,6 +9,7 @@ import { supabase } from "../lib/supabase";
 import { getAuthRedirectUrl } from "../lib/authRedirect";
 import { isAdminPinLocallyVerified } from "../lib/adminPinAuth";
 import { isGovernanceAdminRole, isInstructorRole } from "../lib/adminRoles";
+import { setCachedAdminSession, type AdminUser } from "../lib/adminAuth";
 
 type AuthMode = "signin" | "signup";
 
@@ -100,6 +101,12 @@ function CentralLoginForm() {
       }
 
       window.localStorage.removeItem("admin_user");
+      const adminObj: AdminUser = {
+        id: session.user.id,
+        email: session.user.email || "",
+        role: roleStr as any,
+      };
+      setCachedAdminSession(adminObj);
       if (isAdminPinLocallyVerified()) {
         router.replace("/admin/dashboard");
       } else {

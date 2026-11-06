@@ -97,11 +97,15 @@ export default function AdminRouteWorkspace({ children }: { children: ReactNode 
 
   if (!ready || !user) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-600">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-6 h-6 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin" />
-          <p className="text-sm font-medium text-slate-700">Verifying administrator session…</p>
-        </div>
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-6">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.04] p-8 backdrop-blur-xl shadow-2xl flex flex-col items-center text-center">
+          <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+            <div className="absolute inset-0 rounded-2xl blur-lg bg-cyan-400/20 animate-pulse pointer-events-none" />
+          </div>
+          <h2 className="text-lg font-bold tracking-tight text-white mb-1.5">Securing Administrator Workspace</h2>
+          <p className="text-xs text-slate-400 font-medium">Validating security context &amp; operator credentials…</p>
+        </div>
       </main>
     );
   }

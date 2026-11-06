@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminSignIn, adminSignOut, getAdminSession } from "../../lib/adminAuth";
+import { adminSignIn, adminSignOut, getAdminSession, setCachedAdminSession } from "../../lib/adminAuth";
 import { getAuthRedirectUrl } from "../../lib/authRedirect";
 import { supabase } from "../../lib/supabase";
 import {
@@ -46,6 +46,7 @@ function AdminSignInForm() {
 
           if (pinStatus.isVerified || isAdminPinLocallyVerified()) {
             if (!forcePinStep) {
+              setCachedAdminSession(admin);
               router.replace("/admin/dashboard");
               return;
             }
@@ -118,6 +119,11 @@ function AdminSignInForm() {
         return;
       }
 
+      const admin = await getAdminSession();
+      if (admin) {
+        setCachedAdminSession(admin);
+      }
+      setMessage("Security PIN verified. Opening Administrator Workspace…");
       router.replace("/admin/dashboard");
       router.refresh();
     } catch {
