@@ -197,8 +197,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
   };
 
   // Handle Cast Vote
-  const handleVote = async () => {
-    if (!activeElection || !selectedCandidate) return;
+  const handleVote = async (voteChoice: "candidate" | "support" | "oppose" = "candidate") => {
+    if (!activeElection) return;
+    const candidateId = activeElection.election_type === "no_confidence" ? team?.captain_id : selectedCandidate;
+    if (!candidateId) return;
     try {
       setSubmittingAction(true);
       const res = await fetch("/api/competition/teams", {
@@ -207,7 +209,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
         body: JSON.stringify({
           action: "vote",
           election_id: activeElection.id,
-          candidate_id: selectedCandidate,
+          candidate_id: candidateId,
+          vote_choice: voteChoice,
         }),
       });
       const data = await res.json();
@@ -354,39 +357,49 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
                 <h3 className="text-lg font-black text-amber-400">
                   {activeElection.election_type === "captaincy" ? "Democratic Captaincy Election" : "Vote of No-Confidence"}
                 </h3>
-                <p className="text-xs text-slate-400">All registered team members are eligible to cast 1 confidential vote.</p>
+                <p className="text-xs text-slate-400">All active team members are eligible for one confidential ballot.</p>
               </div>
             </div>
 
             {voteSubmitted ? (
               <div className="p-4 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-bold text-center mt-3">
-                ✓ Ballot submitted successfully! Thank you for participating in squad democracy.
+                ✓ Confidential ballot submitted. Thank you for participating in team democracy.
               </div>
             ) : isMyTeam ? (
-              <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
-                <select
-                  value={selectedCandidate || ""}
-                  onChange={(e) => setSelectedCandidate(e.target.value)}
-                  className={`flex-1 p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}
-                >
-                  <option value="">Select candidate nominee...</option>
-                  {members.map((m) => (
-                    <option key={m.user_id} value={m.user_id}>
-                      {m.profile?.full_name || m.profile?.username || "Member"} ({m.role.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={handleVote}
-                  disabled={submittingAction || !selectedCandidate}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-sm transition shadow-lg shadow-amber-500/25"
-                >
-                  Cast Official Vote
-                </button>
-              </div>
+              activeElection.election_type === "no_confidence" ? (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-slate-300">Do you support removing the current captain from office? Your ballot is confidential.</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button onClick={() => handleVote("support")} disabled={submittingAction} className="rounded-xl bg-rose-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50">Support no-confidence</button>
+                    <button onClick={() => handleVote("oppose")} disabled={submittingAction} className="rounded-xl border border-slate-500 px-5 py-3 text-sm font-bold text-slate-200 disabled:opacity-50">Oppose no-confidence</button>
+                  </div>
+                  <p className="text-[11px] text-slate-500">The motion must reach the configured support threshold among eligible members. If it passes, a new captaincy election opens.</p>
+                </div>
+              ) : (
+                <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
+                  <select
+                    value={selectedCandidate || ""}
+                    onChange={(e) => setSelectedCandidate(e.target.value)}
+                    className={`flex-1 p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}
+                  >
+                    <option value="">Select candidate nominee...</option>
+                    {members.filter(member => member.is_active).map((m) => (
+                      <option key={m.user_id} value={m.user_id}>
+                        {m.profile?.full_name || m.profile?.username || "Member"} ({m.role.toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleVote("candidate")}
+                    disabled={submittingAction || !selectedCandidate}
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-sm transition shadow-lg shadow-amber-500/25"
+                  >
+                    Cast Official Vote
+                  </button>
+                </div>
+              )
             ) : (
-              <p className="text-xs text-slate-400 mt-2">Only squad members may cast a ballot in this internal election.</p>
+              <p className="text-xs text-slate-400 mt-2">Only active squad members may cast a confidential ballot.</p>
             )}
           </div>
         )}
