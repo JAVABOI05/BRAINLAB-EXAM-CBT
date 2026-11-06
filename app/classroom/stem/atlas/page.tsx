@@ -1,12 +1,36 @@
 import CellAtlasViewer from "./CellAtlasViewer";
 import Link from "next/link";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { NextRequest } from "next/server";
+import { getUserFromRequest } from "@/app/lib/supabaseServer";
+import { resolveStemAccessContext } from "@/app/lib/stem/stemAccess";
 
 export const metadata = {
   title: "3D Cell Atlas | BrainLab STEM Studio",
   description: "Explore an interactive schematic 3D animal cell and learn the functions of its organelles.",
 };
 
-export default function StemAtlasPage() {
+export const dynamic = "force-dynamic";
+
+export default async function StemAtlasPage() {
+  const requestHeaders = new Headers(await headers());
+  const authRequest = new NextRequest("https://brainlabacademy.com.ng/classroom/stem/atlas", {
+    headers: requestHeaders,
+  });
+  const user = await getUserFromRequest(authRequest);
+
+  if (!user) {
+    redirect("/account?next=%2Fclassroom%2Fstem%2Fatlas");
+  }
+
+  const bearerToken = requestHeaders.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1];
+  const access = await resolveStemAccessContext(user, bearerToken);
+
+  if (access.accessLevel === "none" && !access.isPrivileged) {
+    redirect("/pricing?feature=stem");
+  }
+
   return <main className="min-h-screen bg-[#070d1e] px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
     <div className="mx-auto max-w-7xl space-y-7">
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-400"><Link href="/classroom/stem" className="hover:text-white">STEM Studio</Link><span>/</span><span className="text-cyan-300">3D Atlas</span></nav>
