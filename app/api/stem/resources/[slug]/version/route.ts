@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
 import { getStemResourceBySlug, createStemResourceVersion } from "@/app/lib/stem/stemService";
 import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
+import { isSupportedStemAdapter } from "@/app/lib/stem/stemAdapters";
 
 export async function POST(
   request: NextRequest,
@@ -38,11 +39,23 @@ export async function POST(
     const body = await request.json();
     const { adapter_type, initial_state, content_payload, learning_objectives } = body;
 
-    if (!adapter_type || !content_payload) {
+    if (!adapter_type || !content_payload || typeof adapter_type !== "string" || typeof content_payload !== "object" || Array.isArray(content_payload) || content_payload === null) {
       return NextResponse.json(
-        { ok: false, error: "Missing required version fields: adapter_type, content_payload." },
+        { ok: false, error: "A supported adapter_type and JSON object content_payload are required." },
         { status: 400 }
       );
+    }
+    if (!isSupportedStemAdapter(slug, adapter_type)) {
+      return NextResponse.json(
+        { ok: false, error: "This renderer is not supported for the selected STEM resource." },
+        { status: 422 }
+      );
+    }
+    if (initial_state !== undefined && (typeof initial_state !== "object" || initial_state === null || Array.isArray(initial_state))) {
+      return NextResponse.json({ ok: false, error: "initial_state must be a JSON object." }, { status: 400 });
+    }
+    if (learning_objectives !== undefined && (!Array.isArray(learning_objectives) || learning_objectives.some((item: unknown) => typeof item !== "string"))) {
+      return NextResponse.json({ ok: false, error: "learning_objectives must be an array of strings." }, { status: 400 });
     }
 
     const { version, error } = await createStemResourceVersion(
