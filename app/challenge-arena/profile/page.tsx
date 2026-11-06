@@ -83,6 +83,7 @@ export default function ArenaProfilePage() {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div><Link href="/challenge-arena" className="text-sm font-bold text-blue-600">← Back to Arena</Link><h1 className="mt-2 text-3xl font-black">Competitive Profile</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Choose how other players see you and who can challenge you.</p></div>
           {profile?.visibility === "public" && <Link href={`/challenge-arena/players/${profile.slug}`} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold dark:border-slate-700">View public profile ↗</Link>}
+          <Link href="/challenge-arena/connections" className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold dark:border-slate-700">Connections</Link>
         </header>
 
         {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm dark:border-slate-800 dark:bg-[#0d172e]">Loading profile…</div> : (
