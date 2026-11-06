@@ -192,12 +192,22 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
-    const founderIds = Array.from(new Set([
-      user.id,
-      ...(Array.isArray(body.founding_member_ids)
-        ? body.founding_member_ids.filter((id: unknown): id is string => typeof id === "string")
-        : []),
-    ])).slice(0, 10);
+    const founderSlugs = Array.isArray(body.founding_member_slugs)
+      ? Array.from(new Set(body.founding_member_slugs.filter((slug: unknown): slug is string => typeof slug === "string" && slug.length <= 80))).slice(0, 9)
+      : [];
+    if (founderSlugs.length < 1) {
+      return NextResponse.json({ error: "Invite at least one other public Arena player as a founding member. All founders must accept before approval." }, { status: 400 });
+    }
+    const { data: invitedProfiles, error: invitedProfilesError } = await supabase
+      .from("competition_public_profiles")
+      .select("user_id, slug")
+      .in("slug", founderSlugs)
+      .eq("visibility", "public");
+    if (invitedProfilesError) throw invitedProfilesError;
+    if (!invitedProfiles || invitedProfiles.length !== founderSlugs.length) {
+      return NextResponse.json({ error: "One or more selected founding players are unavailable or have private profiles." }, { status: 400 });
+    }
+    const founderIds = Array.from(new Set([user.id, ...invitedProfiles.map((profile) => profile.user_id)]));
 
     const { data: existingMember } = await supabase
       .from("competition_team_members")
@@ -278,7 +288,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      request: requestRecord,
+      request: {
+        id: requestRecord.id,
+        proposed_name: requestRecord.proposed_name,
+        status: requestRecord.status,
+        submitted_at: requestRecord.submitted_at,
+        founding_member_count: founderIds.length,
+      },
       message: "Team request submitted. Founding members must accept and an Arena administrator must approve it before the permanent team is created.",
     }, { status: 202 });
   } catch (err: unknown) {
