@@ -77,7 +77,7 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       if (myParticipant) {
         const { data: ans } = await supabase
           .from("competition_match_answers")
-          .select("question_id, selected_option, is_correct, points_awarded")
+          .select("question_id, selected_option")
           .eq("match_id", matchId)
           .eq("participant_id", myParticipant.id);
 
@@ -218,9 +218,24 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
         }
       }
 
-      const { question_id, selected_option, time_taken_seconds = 0 } = body;
+      const { question_id, selected_option } = body;
       if (!question_id || !selected_option) {
         return NextResponse.json({ error: "Missing question_id or selected_option" }, { status: 400 });
+      }
+
+      const snapshotQuestions: Record<string, unknown>[] = Array.isArray(match.questions_snapshot)
+        ? match.questions_snapshot
+        : [];
+      const snapshotQuestion = snapshotQuestions.find(
+        (item) => String(item.id ?? item.question_id ?? "") === String(question_id)
+      );
+      if (!snapshotQuestion) {
+        return NextResponse.json({ error: "Question does not belong to this match" }, { status: 403 });
+      }
+
+      const studentAnswer = String(selected_option).trim().toUpperCase();
+      if (!["A", "B", "C", "D", "E"].includes(studentAnswer)) {
+        return NextResponse.json({ error: "Invalid answer option" }, { status: 400 });
       }
 
       // Check if already answered
@@ -239,23 +254,26 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
       // Validate against server answer_keys_snapshot
       const answerKeys: Record<string, string> = match.answer_keys_snapshot || {};
       const correctAnswer = String(answerKeys[String(question_id)] || "").trim().toUpperCase();
-      const studentAnswer = String(selected_option).trim().toUpperCase();
       const isCorrect = correctAnswer.length > 0 && correctAnswer === studentAnswer;
 
-      // Scoring calculation: 10 base points + speed bonus (up to 5 points for under 6 seconds)
-      let pointsAwarded = 0;
-      if (isCorrect) {
-        const basePoints = 10;
-        const timeTaken = Math.max(Number(time_taken_seconds) || 0, 0);
-        let speedBonus = 0;
-        if (timeTaken <= 3) speedBonus = 5;
-        else if (timeTaken <= 6) speedBonus = 3;
-        else if (timeTaken <= 10) speedBonus = 1;
-        pointsAwarded = basePoints + speedBonus;
+      // Time is measured from the server's match clock. Ignore any timing value
+      // supplied by the browser so clients cannot manufacture speed bonuses.
+      if (!match.started_at) {
+        return NextResponse.json({ error: "Match clock has not started" }, { status: 409 });
       }
+      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(match.started_at).getTime()) / 1000));
+      const previousTime = Math.max(0, Math.floor(Number(myParticipant.total_time_spent_seconds) || 0));
+      const timeTaken = Math.max(0, Math.min(Number(match.duration_seconds) || 0, elapsedSeconds - previousTime));
 
-      // Insert answer
-      await supabase.from("competition_match_answers").insert({
+      // Use the marks frozen into this match's question snapshot. No client-side
+      // score or timing input is trusted.
+      const configuredMarks = Number(snapshotQuestion.marks);
+      const basePoints = Number.isFinite(configuredMarks) && configuredMarks > 0 ? configuredMarks : 10;
+      const pointsAwarded = isCorrect ? basePoints : 0;
+
+      // The database unique index is the final concurrency guard. Do not update
+      // participant totals if this insert loses a duplicate-submission race.
+      const { error: answerInsertError } = await supabase.from("competition_match_answers").insert({
         match_id: matchId,
         participant_id: myParticipant.id,
         user_id: user.id,
@@ -263,13 +281,19 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
         selected_option: studentAnswer,
         is_correct: isCorrect,
         points_awarded: pointsAwarded,
-        time_taken_seconds: Number(time_taken_seconds) || 0,
+        time_taken_seconds: timeTaken,
       });
+      if (answerInsertError) {
+        if (answerInsertError.code === "23505") {
+          return NextResponse.json({ error: "Question already answered" }, { status: 409 });
+        }
+        throw answerInsertError;
+      }
 
       // Update participant score & progress
       const newScore = (Number(myParticipant.score) || 0) + pointsAwarded;
       const nextIndex = (myParticipant.current_question_index || 0) + 1;
-      const totalTime = (Number(myParticipant.total_time_spent_seconds) || 0) + (Number(time_taken_seconds) || 0);
+      const totalTime = previousTime + timeTaken;
 
       await supabase
         .from("competition_match_participants")
@@ -309,9 +333,7 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
 
       return NextResponse.json({
         ok: true,
-        is_correct: isCorrect,
-        points_awarded: pointsAwarded,
-        current_score: newScore,
+        submitted: true,
         next_question_index: nextIndex,
       });
     }
