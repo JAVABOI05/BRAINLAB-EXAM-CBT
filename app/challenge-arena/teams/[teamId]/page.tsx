@@ -11,6 +11,7 @@ interface Member {
   user_id: string;
   role: "captain" | "co_captain" | "member" | "substitute";
   joined_at: string;
+  is_active: boolean;
   profile?: {
     full_name?: string;
     username?: string;
