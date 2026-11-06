@@ -336,8 +336,14 @@ export async function getStudentSubscriptionAndEntitlements(
     // =========================================================================
     if (typeof window !== "undefined") {
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
         const res = await fetch(`/api/subscription/entitlements?userId=${encodeURIComponent(targetUserId)}`, {
-          headers: { "Cache-Control": "no-cache" },
+          method: "POST",
+          headers: {
+            "Cache-Control": "no-cache",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
         });
         if (res.ok) {
           const json = await res.json();
