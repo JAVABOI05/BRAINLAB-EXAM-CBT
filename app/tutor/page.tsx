@@ -82,6 +82,67 @@ export default function TutorHomePage() {
 
       {signedIn && !loading && !error && subjects.length > 0 && (
         <>
+          {/* Academic Authoring Suite Quick Launch */}
+          <div className="mt-8 rounded-3xl border border-indigo-200/60 bg-gradient-to-r from-indigo-50/50 via-white to-purple-50/30 p-6 sm:p-7 shadow-xs dark:border-indigo-950/70 dark:from-indigo-950/20 dark:via-slate-900 dark:to-slate-900">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 pb-4 dark:border-indigo-900/50">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  Pedagogical Tools
+                </span>
+                <h2 className="text-xl font-black text-slate-950 dark:text-white">Academic &amp; Content Management</h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Direct access to question bank ingestion, curriculum planning, and multi-block lesson composition.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <Link
+                href="/tutor/questions"
+                className="rounded-2xl border border-slate-200 bg-white p-4 hover:border-indigo-400 hover:shadow-sm transition dark:border-slate-800 dark:bg-slate-950"
+              >
+                <span className="text-2xl">❓</span>
+                <h4 className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">Question Bank</h4>
+                <p className="mt-1 text-[11px] text-slate-500">CBT multiple-choice &amp; CSV ingestion</p>
+              </Link>
+
+              <Link
+                href="/tutor/syllabus"
+                className="rounded-2xl border border-slate-200 bg-white p-4 hover:border-indigo-400 hover:shadow-sm transition dark:border-slate-800 dark:bg-slate-950"
+              >
+                <span className="text-2xl">📜</span>
+                <h4 className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">Curriculum &amp; Syllabus</h4>
+                <p className="mt-1 text-[11px] text-slate-500">JAMB topics &amp; learning objectives</p>
+              </Link>
+
+              <Link
+                href="/tutor/content"
+                className="rounded-2xl border border-slate-200 bg-white p-4 hover:border-indigo-400 hover:shadow-sm transition dark:border-slate-800 dark:bg-slate-950"
+              >
+                <span className="text-2xl">📚</span>
+                <h4 className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">Lessons &amp; Content</h4>
+                <p className="mt-1 text-[11px] text-slate-500">Subject, topic &amp; lesson hierarchy</p>
+              </Link>
+
+              <Link
+                href="/tutor/lesson-blocks"
+                className="rounded-2xl border border-slate-200 bg-white p-4 hover:border-indigo-400 hover:shadow-sm transition dark:border-slate-800 dark:bg-slate-950"
+              >
+                <span className="text-2xl">🧱</span>
+                <h4 className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">Lesson Blocks</h4>
+                <p className="mt-1 text-[11px] text-slate-500">Formulas, proofs &amp; quick checks</p>
+              </Link>
+
+              <Link
+                href="/tutor/academic"
+                className="rounded-2xl border border-slate-200 bg-white p-4 hover:border-indigo-400 hover:shadow-sm transition dark:border-slate-800 dark:bg-slate-950"
+              >
+                <span className="text-2xl">🏛️</span>
+                <h4 className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">Academic Directory</h4>
+                <p className="mt-1 text-[11px] text-slate-500">Subject repository statistics</p>
+              </Link>
+            </div>
+          </div>
           <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/calendar"

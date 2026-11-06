@@ -11,6 +11,11 @@ import { useLearnerTheme, type AppearancePreference } from "../components/Learne
 
 const INSTRUCTOR_NAV_LINKS = [
   { href: "/tutor", label: "My Subjects", icon: "📖" },
+  { href: "/tutor/questions", label: "Question Bank", icon: "❓" },
+  { href: "/tutor/syllabus", label: "Curriculum & Syllabus", icon: "📜" },
+  { href: "/tutor/content", label: "Lessons & Content", icon: "📚" },
+  { href: "/tutor/lesson-blocks", label: "Lesson Blocks", icon: "🧱" },
+  { href: "/tutor/academic", label: "Academic Directory", icon: "🏛️" },
   { href: "/calendar", label: "Timetable & Classes", icon: "📅" },
   { href: "/classroom/studio", label: "Lesson Studio", icon: "🎬" },
   { href: "/classroom/stem", label: "STEM Studio", icon: "🧪" },
@@ -24,6 +29,7 @@ export default function InstructorPortalShell({ children }: { children: React.Re
   const router = useRouter();
   const { resolvedTheme, appearance, setAppearance } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,6 +53,7 @@ export default function InstructorPortalShell({ children }: { children: React.Re
       if (!active) return;
 
       const roleStr = typeof role === "string" ? role.trim() : null;
+      setUserRole(roleStr);
       const isInstructor = isInstructorRole(roleStr);
       const isAdmin = isGovernanceAdminRole(roleStr);
 
@@ -107,6 +114,9 @@ export default function InstructorPortalShell({ children }: { children: React.Re
     user?.email?.split("@")[0] ??
     "Instructor";
 
+  const isSuperAdmin = userRole === "super_admin" || userRole === "platform_admin";
+  const isAdmin = isGovernanceAdminRole(userRole);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-[#070d18] dark:text-slate-100 transition-colors">
       {/* Instructor Portal Top Navigation */}
@@ -158,6 +168,22 @@ export default function InstructorPortalShell({ children }: { children: React.Re
 
           {/* Right Controls: Theme & Profile Dropdown */}
           <div className="flex items-center gap-2.5">
+            {isAdmin && (
+              <Link
+                href="/admin/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-600 hover:text-white px-3 py-1.5 text-xs font-black text-amber-700 dark:text-amber-300 transition shadow-xs active:scale-95"
+                title="Return to Admin Command Console"
+              >
+                <span>👑</span> Admin Console
+              </Link>
+            )}
+            <Link
+              href="/dashboard"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-600 hover:text-white px-3 py-1.5 text-xs font-black text-blue-700 dark:text-blue-300 transition shadow-xs active:scale-95"
+              title="Switch to Student Portal View"
+            >
+              <span>🎓</span> Student View
+            </Link>
             {/* Theme Toggle Button */}
             <button
               type="button"
@@ -189,10 +215,19 @@ export default function InstructorPortalShell({ children }: { children: React.Re
                     <p className="font-extrabold text-slate-900 dark:text-white truncate">{displayName}</p>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
                     <span className="mt-1 inline-block rounded-md bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300">
-                      Author / Tutor
+                      {isSuperAdmin ? "👑 Super Admin (Full Author Access)" : isAdmin ? "🛡️ Administrator" : "Author / Tutor"}
                     </span>
                   </div>
                   <div className="py-1 space-y-0.5">
+                    {isAdmin && (
+                      <Link
+                        href="/admin/dashboard"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-bold text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 dark:text-amber-300 transition"
+                      >
+                        <span>👑</span> Return to Admin Console
+                      </Link>
+                    )}
                     <Link
                       href="/tutor/profile"
                       onClick={() => setDropdownOpen(false)}

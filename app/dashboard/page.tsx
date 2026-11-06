@@ -419,6 +419,12 @@ export default function LearnerDashboardPage() {
               >
                 <span>← Return to Admin Portal</span>
               </Link>
+              <Link
+                href="/tutor"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-black px-4 py-2.5 text-xs shadow-md transition active:scale-95 shrink-0"
+              >
+                <span>👨‍🏫 Open Instructor Studio</span>
+              </Link>
             </div>
           </div>
         )}

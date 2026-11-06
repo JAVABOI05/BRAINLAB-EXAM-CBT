@@ -50,6 +50,22 @@ export function isInstructorRole(role?: string | null): boolean {
   return clean === "teacher" || clean === "tutor" || clean === "competition_host" || clean === "competition_moderator";
 }
 
+export const INSTRUCTOR_PERMISSIONS = [
+  "learning.content.manage",
+  "student.support",
+  "cbt.questions.manage",
+  "cbt.questions.delete",
+  "cbt.results.read",
+  "ai.content.manage",
+  "question_bank.create",
+  "question_bank.view",
+  "question_bank.edit_own",
+  "question_bank.import_csv",
+  "question_builder.use",
+  "stem.resource.view",
+  "stem.resource.manage",
+] as const;
+
 export const ADMIN_ROLE_DETAILS: Record<
   AdminRole,
   { label: string; summary: string; level: number }
@@ -251,6 +267,11 @@ export function clearAdminPermissionsCache(): void {
 export async function adminHasPermission(permission: AdminPermission, role?: AdminRole): Promise<boolean> {
   // 1. super_admin has universal access to all permissions by definition
   if (role === "super_admin") return true;
+
+  // 1b. Instructors / Teachers have immediate academic & content authoring permissions
+  if (isInstructorRole(role) && (INSTRUCTOR_PERMISSIONS as readonly string[]).includes(permission)) {
+    return true;
+  }
 
   // Note: Client-side sessionStorage is never trusted for super_admin authorization bypass.
 

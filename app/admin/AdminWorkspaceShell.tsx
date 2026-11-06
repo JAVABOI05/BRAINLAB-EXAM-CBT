@@ -699,6 +699,22 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
               <span>Cloud Online</span>
             </div>
 
+            {/* Unified Instructor Studio Entry Point */}
+            <Link
+              href="/tutor"
+              target="_blank"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-indigo-500/15 hover:bg-indigo-600 hover:text-white px-3.5 py-1.5 text-xs font-black text-indigo-300 transition shadow-sm active:scale-95"
+              title="Open Instructor Studio (Author questions, curriculum, syllabus and lessons with Super Admin read/write privileges)"
+            >
+              <span>👨‍🏫</span>
+              <span>Instructor Studio</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" x2="21" y1="14" y2="3" />
+              </svg>
+            </Link>
+
             {/* Unified Student Learner Portal Entry Point */}
             <Link
               href="/dashboard"

@@ -378,6 +378,16 @@ export default function BrandHeader() {
                           <span>Admin Portal Command</span>
                         </Link>
                       )}
+                      {isAdmin && (
+                        <Link
+                          href="/tutor"
+                          onClick={closeAllMenus}
+                          className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-black text-indigo-700 dark:text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500 hover:text-white transition mb-1"
+                        >
+                          <span>👨‍🏫</span>
+                          <span>Instructor Studio</span>
+                        </Link>
+                      )}
                       <Link
                         href="/profile"
                         onClick={closeAllMenus}
@@ -519,6 +529,16 @@ export default function BrandHeader() {
                   >
                     <svg className="h-4 w-4 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     <span>Open Admin Portal →</span>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
+                    href="/tutor"
+                    onClick={closeAllMenus}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 py-2.5 text-xs font-black text-indigo-700 dark:text-indigo-300 shadow-xs mb-2 active:scale-95 transition"
+                  >
+                    <span>👨‍🏫</span>
+                    <span>Open Instructor Studio →</span>
                   </Link>
                 )}
 
