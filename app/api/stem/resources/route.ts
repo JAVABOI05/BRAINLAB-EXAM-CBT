@@ -6,7 +6,7 @@ import {
   resolveAdminRole,
 } from "@/app/lib/supabaseServer";
 import { listStemResources, createStemResource } from "@/app/lib/stem/stemService";
-import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
+import { isGovernanceAdminRole } from "@/app/lib/adminRoles";
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     let isAuthorizedReviewer = false;
     if (user) {
       const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
-      isAuthorizedReviewer = isInstructorRole(role) || isGovernanceAdminRole(role);
+      isAuthorizedReviewer = role === "teacher" || role === "tutor" || isGovernanceAdminRole(role);
     }
 
     // Public / unauthenticated callers can ONLY view published resources
