@@ -25,8 +25,9 @@ interface QuestionSnapshot {
 
 interface Participant {
   id: string;
-  user_id: string;
   display_name: string;
+  seat: "A" | "B";
+  is_me: boolean;
   is_ready: boolean;
   score: number | null;
   current_question_index: number;
@@ -42,11 +43,10 @@ interface MatchState {
   id: string;
   match_type: string;
   status: "waiting" | "lobby" | "in_progress" | "paused" | "completed" | "cancelled" | "disputed";
-  participant_a_id: string;
-  participant_b_id: string;
+  winner_is_me: boolean;
+  has_winner: boolean;
   score_a: number;
   score_b: number;
-  winner_id: string | null;
   duration_seconds: number;
   remaining_seconds: number;
   started_at: string | null;
@@ -73,7 +73,6 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   const [error, setError] = useState<string | null>(null);
   const [match, setMatch] = useState<MatchState | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [myAnswers, setMyAnswers] = useState<Record<string, string>>({});
 
   // Active game play state
@@ -101,12 +100,11 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
       const data = await res.json();
       setMatch(data.match);
       setParticipants(data.participants || []);
-      setCurrentUserId(data.current_user_id);
       setMyAnswers(data.my_answers || {});
       setTimeLeft(data.match.remaining_seconds);
 
       // Set user's current question index if in_progress
-      const me = (data.participants || []).find((p: Participant) => p.user_id === data.current_user_id);
+      const me = (data.participants || []).find((participant: Participant) => participant.is_me);
       if (me && me.current_question_index !== undefined) {
         setCurrentQIndex(me.current_question_index);
       }
@@ -251,10 +249,10 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const participantA = participants.find((p) => p.user_id === match?.participant_a_id) || participants[0];
-  const participantB = participants.find((p) => p.user_id === match?.participant_b_id) || participants[1];
-  const myParticipant = isSpectator ? participantA : participants.find((p) => p.user_id === currentUserId);
-  const opponentParticipant = isSpectator ? participantB : participants.find((p) => p.user_id !== currentUserId);
+  const participantA = participants.find((participant) => participant.seat === "A") || participants[0];
+  const participantB = participants.find((participant) => participant.seat === "B") || participants[1];
+  const myParticipant = isSpectator ? participantA : participants.find((participant) => participant.is_me);
+  const opponentParticipant = isSpectator ? participantB : participants.find((participant) => !participant.is_me);
 
   // Formatting time display
   const formatTime = (secs: number) => {
@@ -546,7 +544,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                   <h2 className="text-3xl font-black text-blue-400 tracking-tight">MATCH CONCLUDED</h2>
                   <p className="text-slate-400 text-sm">The official result is displayed according to the organiser&apos;s spectator visibility settings.</p>
                 </div>
-              ) : match.winner_id === currentUserId ? (
+              ) : match.winner_is_me ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 text-white flex items-center justify-center text-4xl shadow-xl shadow-amber-500/20 animate-bounce">
                     🏆
@@ -554,7 +552,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                   <h2 className="text-3xl font-black text-amber-400 tracking-tight">VICTORY!</h2>
                   <p className="text-slate-400 text-sm">Phenomenal performance! You emerged victorious in the Arena.</p>
                 </div>
-              ) : match.winner_id ? (
+              ) : match.has_winner ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-slate-600 to-slate-800 text-white flex items-center justify-center text-4xl shadow-xl">
                     ⚔️
