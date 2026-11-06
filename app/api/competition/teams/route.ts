@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
       const publicMemberByUserId = new Map((members || []).map((member) => [member.user_id, member.public_member_id]));
       const enrichedMembers = (members || []).map((member) => {
-        const { user_id: _privateUserId, ...safeMember } = member;
+        const { user_id: _privateUserId, id: _privateMembershipId, ...safeMember } = member;
         return {
           ...safeMember,
           is_me: Boolean(user && member.user_id === user.id),
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
 
       const { captain_id: _privateCaptainId, co_captain_id: _privateCoCaptainId, ...safeTeam } = team;
       const safeElection = activeElection ? (() => {
-        const { candidate_ids: _privateCandidateIds, winner_id: _privateWinnerId, ...publicElection } = activeElection;
+        const { candidate_ids: _privateCandidateIds, winner_id: _privateWinnerId, initiated_by: _privateInitiatorId, ...publicElection } = activeElection;
         return {
           ...publicElection,
           candidate_member_ids: (activeElection.candidate_ids || []).map((id: string) => publicMemberByUserId.get(id)).filter(Boolean),
