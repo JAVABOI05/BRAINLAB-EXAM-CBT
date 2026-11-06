@@ -113,7 +113,7 @@ export async function POST(
       mainQuestions = (mq || [])
         // Never manufacture an answer key. Ignore malformed source rows instead
         // of silently treating option A as correct.
-        .filter((row) => typeof row.correct_answer === "string" && /^[A-D]$/i.test(row.correct_answer.trim()))
+        .filter((row) => typeof row.correct_answer === "string" && /^[A-E]$/i.test(row.correct_answer.trim()))
         .map((row) => ({
           id: `main_${row.id}`,
           bank_id: "main_cbt_bank",
