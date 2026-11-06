@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 
 type TeamRequest = {
-  id: string; requested_by: string; proposed_name: string; proposed_slug: string;
-  motto?: string | null; description?: string | null; founding_member_ids: string[];
+  id: string; proposed_name: string; proposed_slug: string; requester_display_name: string;
+  motto?: string | null; description?: string | null; founding_member_count: number;
   recruitment_mode: string; status: string; submitted_at: string; review_notes?: string | null;
 };
-type Founder = { id: string; request_id: string; user_id: string; status: string };
+type Founder = { id: string; request_id: string; display_name: string; avatar_url: string | null; is_requester: boolean; status: string };
 
 export default function ArenaTeamRequestsPage() {
   const router = useRouter();
@@ -77,7 +77,7 @@ export default function ArenaTeamRequestsPage() {
               </div>
               {request.description && <p className="mt-4 text-sm">{request.description}</p>}
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {members.map(member => <div key={member.id} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3"><p className="text-xs text-slate-500">Founder</p><p className="mt-1 break-all text-sm font-semibold">{member.user_id}</p><p className={`mt-1 text-xs font-bold ${member.status === "accepted" ? "text-emerald-600" : member.status === "declined" ? "text-rose-600" : "text-amber-600"}`}>{member.status}</p></div>)}
+                {members.map(member => <div key={member.id} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3"><p className="text-xs text-slate-500">Founder</p><p className="mt-1 text-sm font-semibold">{member.display_name}{member.is_requester ? " · Requester" : ""}</p><p className={`mt-1 text-xs font-bold ${member.status === "accepted" ? "text-emerald-600" : member.status === "declined" ? "text-rose-600" : "text-amber-600"}`}>{member.status}</p></div>)}
               </div>
               {request.review_notes && <p className="mt-3 rounded-xl bg-slate-100 dark:bg-slate-900 p-3 text-sm">{request.review_notes}</p>}
               {["pending", "needs_changes"].includes(request.status) && <div className="mt-5 flex flex-wrap gap-2">
