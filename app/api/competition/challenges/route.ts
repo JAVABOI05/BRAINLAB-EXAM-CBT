@@ -97,9 +97,16 @@ export async function POST(req: NextRequest) {
       .from("competition_emergency_controls")
       .select("is_paused, maintenance_mode")
       .eq("scope", "global")
+      .eq("target_id", "all")
+      .maybeSingle();
+    const { data: challengeEmergency } = await supabase
+      .from("competition_emergency_controls")
+      .select("is_paused, maintenance_mode")
+      .eq("scope", "challenge")
+      .eq("target_id", "all")
       .maybeSingle();
 
-    if (emergency?.is_paused || emergency?.maintenance_mode) {
+    if (emergency?.is_paused || emergency?.maintenance_mode || challengeEmergency?.is_paused || challengeEmergency?.maintenance_mode) {
       return NextResponse.json({ error: "Competition Arena is temporarily paused for maintenance." }, { status: 503 });
     }
 
