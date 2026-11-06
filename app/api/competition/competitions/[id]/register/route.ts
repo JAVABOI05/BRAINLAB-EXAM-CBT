@@ -123,6 +123,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     // If paid and not admin -> Initialize BACHS payment
     if (entryFeeKobo > 0 && !isAdmin) {
+      const payerEmail = user.email?.trim();
+      if (!payerEmail) {
+        return NextResponse.json({ error: "A verified email address is required for BACHS entry payment." }, { status: 400 });
+      }
       const bachs = new BachsPaymentProvider();
       const reference = `COMP_${competitionId.slice(0, 8)}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
@@ -131,7 +135,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       const paymentResult = await bachs.initializePayment({
         reference,
         amountKobo: entryFeeKobo,
-        email: user.email || profile?.email || "",
+        email: payerEmail,
         callbackUrl,
         planId: `competition_${competitionId}`,
         userId: user.id,
