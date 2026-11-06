@@ -543,7 +543,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-4xl shadow-xl">🏁</div>
                   <h2 className="text-3xl font-black text-blue-400 tracking-tight">MATCH CONCLUDED</h2>
-                  <p className="text-slate-400 text-sm">The official result is displayed according to the organiser's spectator visibility settings.</p>
+                  <p className="text-slate-400 text-sm">The official result is displayed according to the organiser&apos;s spectator visibility settings.</p>
                 </div>
               ) : match.winner_id === currentUserId ? (
                 <div className="flex flex-col items-center gap-3">
