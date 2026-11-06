@@ -370,11 +370,14 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
       let scoringConfig = matchMetadata.scoring_config && typeof matchMetadata.scoring_config === "object"
         ? matchMetadata.scoring_config as Record<string, unknown>
         : {};
-      if (Object.keys(scoringConfig).length === 0 && typeof matchMetadata.competition_id === "string") {
+      const competitionIdForScoring = typeof match.competition_id === "string"
+        ? match.competition_id
+        : typeof matchMetadata.competition_id === "string" ? matchMetadata.competition_id : null;
+      if (Object.keys(scoringConfig).length === 0 && competitionIdForScoring) {
         const { data: competitionConfig } = await supabase
           .from("competitions")
           .select("scoring_config")
-          .eq("id", matchMetadata.competition_id)
+          .eq("id", competitionIdForScoring)
           .maybeSingle();
         if (competitionConfig?.scoring_config && typeof competitionConfig.scoring_config === "object") {
           scoringConfig = competitionConfig.scoring_config as Record<string, unknown>;
