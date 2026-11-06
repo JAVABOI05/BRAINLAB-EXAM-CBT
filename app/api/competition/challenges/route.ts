@@ -253,7 +253,14 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (challenge.status !== "pending") {
-      return NextResponse.json({ error: `Challenge is already ${challenge.status}` }, { status: 400 });
+      if (action === "accept" && challenge.status === "accepted" && challenge.challenged_id === user.id && challenge.match_id) {
+        return NextResponse.json({ ok: true, match_id: challenge.match_id, message: "Challenge already accepted. Rejoining the existing match." });
+      }
+      return NextResponse.json({ error: `Challenge is already ${challenge.status}` }, { status: 409 });
+    }
+    if (new Date(challenge.expires_at).getTime() <= Date.now()) {
+      await supabase.from("competition_challenges").update({ status: "expired" }).eq("id", challenge_id).eq("status", "pending");
+      return NextResponse.json({ error: "This challenge has expired." }, { status: 410 });
     }
 
     // 1. CANCEL ACTION
@@ -261,10 +268,15 @@ export async function PATCH(req: NextRequest) {
       if (challenge.challenger_id !== user.id) {
         return NextResponse.json({ error: "Only the challenger can cancel this challenge" }, { status: 403 });
       }
-      await supabase
+      const { data: cancelled, error: cancelError } = await supabase
         .from("competition_challenges")
         .update({ status: "cancelled" })
-        .eq("id", challenge_id);
+        .eq("id", challenge_id)
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle();
+      if (cancelError) throw cancelError;
+      if (!cancelled) return NextResponse.json({ error: "Challenge was already acted on." }, { status: 409 });
       return NextResponse.json({ ok: true, message: "Challenge cancelled" });
     }
 
@@ -273,10 +285,15 @@ export async function PATCH(req: NextRequest) {
       if (challenge.challenged_id && challenge.challenged_id !== user.id) {
         return NextResponse.json({ error: "Only the challenged student can decline this challenge" }, { status: 403 });
       }
-      await supabase
+      const { data: declined, error: declineError } = await supabase
         .from("competition_challenges")
         .update({ status: "declined" })
-        .eq("id", challenge_id);
+        .eq("id", challenge_id)
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle();
+      if (declineError) throw declineError;
+      if (!declined) return NextResponse.json({ error: "Challenge was already acted on." }, { status: 409 });
       return NextResponse.json({ ok: true, message: "Challenge declined" });
     }
 
@@ -290,6 +307,28 @@ export async function PATCH(req: NextRequest) {
       }
 
       const acceptingUserId = user.id;
+
+      const { data: globalEmergency } = await supabase
+        .from("competition_emergency_controls")
+        .select("is_paused, maintenance_mode")
+        .eq("scope", "global")
+        .eq("target_id", "all")
+        .maybeSingle();
+      const { data: challengeEmergency } = await supabase
+        .from("competition_emergency_controls")
+        .select("is_paused, maintenance_mode")
+        .eq("scope", "challenge")
+        .eq("target_id", "all")
+        .maybeSingle();
+      const { data: matchEmergency } = await supabase
+        .from("competition_emergency_controls")
+        .select("is_paused, maintenance_mode")
+        .eq("scope", "match")
+        .eq("target_id", "all")
+        .maybeSingle();
+      if ([globalEmergency, challengeEmergency, matchEmergency].some(control => control?.is_paused || control?.maintenance_mode)) {
+        return NextResponse.json({ error: "Challenge acceptance and match creation are temporarily paused." }, { status: 503 });
+      }
 
       // Load a full, valid source pool and preserve every linked passage as an indivisible unit.
       let questionsQuery = supabase
@@ -383,64 +422,34 @@ export async function PATCH(req: NextRequest) {
       const challengerName = publicName(challenge.challenger_id);
       const acceptingName = publicName(acceptingUserId);
 
-      // 1. Create Match row
+      // Atomically create the match, participants and challenge transition.
       const durationSeconds = (challenge.duration_minutes || 5) * 60;
-      const { data: match, error: matchErr } = await supabase
-        .from("competition_matches")
-        .insert({
-          match_type: "1v1",
-          status: "lobby",
-          participant_a_id: challenge.challenger_id,
-          participant_b_id: acceptingUserId,
-          score_a: 0,
-          score_b: 0,
-          questions_snapshot: questionsSnapshot,
-          answer_keys_snapshot: answerKeysSnapshot,
-          duration_seconds: durationSeconds,
-          metadata: {
-            subject: challenge.subject,
-            question_count: challenge.question_count,
-            player_a_name: challengerName,
-            player_b_name: acceptingName,
-            match_mode: challenge.match_mode || "ranked",
-          },
-        })
-        .select()
-        .single();
-
-      if (matchErr || !match) {
-        throw new Error(matchErr?.message || "Failed to create match");
+      const { data: matchId, error: acceptError } = await supabase.rpc("accept_competition_challenge_atomic", {
+        p_challenge_id: challenge_id,
+        p_accepting_user_id: acceptingUserId,
+        p_questions_snapshot: questionsSnapshot,
+        p_answer_keys_snapshot: answerKeysSnapshot,
+        p_duration_seconds: durationSeconds,
+        p_metadata: {
+          subject: challenge.subject,
+          question_count: challenge.question_count,
+          player_a_name: challengerName,
+          player_b_name: acceptingName,
+          match_mode: challenge.match_mode || "ranked",
+        },
+        p_challenger_display_name: challengerName,
+        p_accepting_display_name: acceptingName,
+      });
+      if (acceptError) {
+        if (acceptError.message?.includes("no longer pending")) {
+          return NextResponse.json({ error: "Another player has already accepted this challenge." }, { status: 409 });
+        }
+        if (acceptError.message?.includes("expired")) {
+          return NextResponse.json({ error: "This challenge has expired." }, { status: 410 });
+        }
+        throw acceptError;
       }
-
-      // 2. Insert match participants
-      await supabase.from("competition_match_participants").insert([
-        {
-          match_id: match.id,
-          user_id: challenge.challenger_id,
-          display_name: challengerName,
-          is_ready: false,
-          current_question_index: 0,
-          score: 0,
-        },
-        {
-          match_id: match.id,
-          user_id: acceptingUserId,
-          display_name: acceptingName,
-          is_ready: false,
-          current_question_index: 0,
-          score: 0,
-        },
-      ]);
-
-      // 3. Update Challenge status
-      await supabase
-        .from("competition_challenges")
-        .update({
-          status: "accepted",
-          challenged_id: acceptingUserId,
-          match_id: match.id,
-        })
-        .eq("id", challenge_id);
+      const createdMatchId = matchId as string;
 
       // 4. Notify challenger
       await supabase.from("notifications").insert({
@@ -448,12 +457,12 @@ export async function PATCH(req: NextRequest) {
         title: "⚡ Challenge Accepted!",
         message: `${acceptingName} accepted your challenge! Click to enter the Arena Match Lobby.`,
         type: "competition_match_lobby",
-        metadata: { match_id: match.id, opponent_name: acceptingName },
+        metadata: { match_id: createdMatchId, opponent_name: acceptingName },
       });
 
       return NextResponse.json({
         ok: true,
-        match_id: match.id,
+        match_id: createdMatchId,
         message: "Challenge accepted. Match created.",
       });
     }
