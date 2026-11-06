@@ -74,6 +74,6 @@ export default function PublicArenaPlayerPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#0d172e]"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Win rate</p><p className="mt-2 text-3xl font-black">{winRate}%</p><p className="text-xs text-slate-500">{rating?.matches_drawn ?? 0} draws</p></div>
       <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#0d172e]"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Lifetime XP</p><p className="mt-2 text-3xl font-black">{gamification?.lifetime_xp ?? 0}</p><p className="text-xs text-slate-500">{gamification?.level_name || `Level ${gamification?.current_level ?? 1}`}</p></div>
     </section>
-    <p className="text-center text-xs text-slate-500">This profile shows only the competitor's chosen public display information and Arena statistics. Account email, phone number and internal user identifiers are not displayed.</p>
+    <p className="text-center text-xs text-slate-500">This profile shows only the competitor&apos;s chosen public display information and Arena statistics. Account email, phone number and internal user identifiers are not displayed.</p>
   </div></main>;
 }
