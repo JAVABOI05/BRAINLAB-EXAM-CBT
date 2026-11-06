@@ -24,7 +24,7 @@ export default async function StemAtlasPage() {
     redirect("/account?next=%2Fclassroom%2Fstem%2Fatlas");
   }
 
-  const bearerToken = requestHeaders.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1];
+  const bearerToken = requestHeaders.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   const access = await resolveStemAccessContext(user, bearerToken);
 
   if (access.accessLevel === "none" && !access.isPrivileged) {
