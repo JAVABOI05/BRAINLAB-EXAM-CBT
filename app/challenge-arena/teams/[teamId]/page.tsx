@@ -7,7 +7,6 @@ import { useLearnerTheme } from "@/app/components/LearnerThemeProvider";
 import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
 
 interface Member {
-  id: string;
   public_member_id: string;
   is_me: boolean;
   role: "captain" | "co_captain" | "member" | "substitute";
@@ -498,7 +497,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
               return (
                 <div
-                  key={m.id}
+                  key={m.public_member_id}
                   className={`p-4 rounded-2xl border flex items-center gap-3.5 transition-all ${
                     isCap
                       ? "border-amber-500/40 bg-amber-500/5 shadow-md"
