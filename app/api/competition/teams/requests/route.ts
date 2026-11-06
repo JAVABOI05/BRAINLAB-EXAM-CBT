@@ -114,42 +114,27 @@ export async function PATCH(req: NextRequest) {
           return NextResponse.json({ error: "A proposed founder has joined another active team since the request was submitted." }, { status: 409 });
         }
 
-        const { data: team, error: teamError } = await supabase
+        const { data: createdTeamId, error: approvalError } = await supabase.rpc("approve_competition_team_request", {
+          p_request_id: requestId,
+          p_reviewed_by: user.id,
+        });
+        if (approvalError) throw approvalError;
+
+        const { data: team, error: teamLoadError } = await supabase
           .from("competition_teams")
-          .insert({
-            name: requestRecord.proposed_name,
-            slug: requestRecord.proposed_slug,
-            motto: requestRecord.motto || "Rise Together, Win Together",
-            avatar_url: requestRecord.avatar_url,
-            captain_id: requestRecord.requested_by,
-            is_recruiting: requestRecord.recruitment_mode === "open",
-            elo_rating: 1200,
-          })
-          .select()
+          .select("*")
+          .eq("id", createdTeamId)
           .single();
-        if (teamError) throw teamError;
-
-        const memberRows = founderIds.map((userId) => ({
-          team_id: team.id,
-          user_id: userId,
-          role: userId === requestRecord.requested_by ? "captain" : "member",
-          is_active: true,
-        }));
-        const { error: addMembersError } = await supabase.from("competition_team_members").insert(memberRows);
-        if (addMembersError) throw addMembersError;
-
-        const { error: updateError } = await supabase
-          .from("competition_team_requests")
-          .update({ status: "approved", reviewed_by: user.id, review_notes: body.review_notes || null, created_team_id: team.id, reviewed_at: new Date().toISOString() })
-          .eq("id", requestId);
-        if (updateError) throw updateError;
+        if (teamLoadError) throw teamLoadError;
 
         await supabase.from("notifications").insert(founderIds.map((userId) => ({
-          user_id: userId, title: "Permanent team approved",
-          message: `${team.name} has been approved and is now active in Competition Arena.`,
-          type: "competition_team_approved", metadata: { team_id: team.id, team_request_id: requestId },
+          user_id: userId,
+          title: "Permanent team approved",
+          message: `${team.name} has been approved. The founding members' democratic captain election is now open.`,
+          type: "competition_team_approved",
+          metadata: { team_id: team.id, team_request_id: requestId },
         })));
-        return NextResponse.json({ ok: true, team });
+        return NextResponse.json({ ok: true, team, election_open: true });
       }
 
       const { data: updated, error } = await supabase
