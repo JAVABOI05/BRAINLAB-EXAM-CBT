@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
         .maybeSingle();
 
       // If captain or co-captain, fetch pending applications
-      let applications: Array<{ id: string; user_id: string; message: string; created_at: string; profile?: unknown }> = [];
+      let applications: Array<{ id: string; message: string; created_at: string; profile?: unknown }> = [];
       const isLeader = members?.some((m) => m.user_id === user?.id && m.is_active === true && (m.role === "captain" || m.role === "co_captain"));
       if (isLeader) {
         const { data: apps } = await supabase
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
     const { data: teams, error: listErr } = await supabase
       .from("competition_teams")
       .select(`
-        id, name, slug, motto, avatar_url, captain_id, co_captain_id,
+        id, name, slug, motto, avatar_url,
         is_recruiting, elo_rating, matches_played, matches_won, matches_drawn, matches_lost, total_xp,
         created_at
       `)
@@ -397,19 +397,29 @@ export async function PATCH(req: NextRequest) {
         }
       }
 
-      await supabase
-        .from("competition_team_applications")
-        .update({ status: decision })
-        .eq("id", application_id);
-
       if (decision === "approved") {
-        await supabase.from("competition_team_members").insert({
+        const { error: memberInsertError } = await supabase.from("competition_team_members").insert({
           team_id: app.team_id,
           user_id: app.user_id,
           role: "member",
           is_active: true,
         });
+        if (memberInsertError) {
+          if (memberInsertError.code === "23505") {
+            return NextResponse.json({ error: "This player is already an active member of another team." }, { status: 409 });
+          }
+          throw memberInsertError;
+        }
+      }
 
+      const { error: applicationUpdateError } = await supabase
+        .from("competition_team_applications")
+        .update({ status: decision })
+        .eq("id", application_id)
+        .eq("status", "pending");
+      if (applicationUpdateError) throw applicationUpdateError;
+
+      if (decision === "approved") {
         await supabase.from("notifications").insert({
           user_id: app.user_id,
           title: "🎉 Team Application Accepted!",
@@ -426,9 +436,10 @@ export async function PATCH(req: NextRequest) {
     if (action === "leave") {
       const { data: member } = await supabase
         .from("competition_team_members")
-        .select("id, role, team_id")
+         .select("id, role, team_id, is_active")
         .eq("team_id", team_id)
         .eq("user_id", user.id)
+        .eq("is_active", true)
         .maybeSingle();
 
       if (!member) {
