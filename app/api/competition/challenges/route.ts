@@ -259,7 +259,7 @@ export async function PATCH(req: NextRequest) {
       // Load a full, valid source pool and preserve every linked passage as an indivisible unit.
       let questionsQuery = supabase
         .from("questions")
-        .select("id, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, question_image_url, passage_id, passage_title, passage_text, reading_text_id, marks")
+        .select("id, subject, difficulty, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, question_image_url, passage_id, passage_title, passage_text, reading_text_id, marks")
         .eq("is_active", true)
         .eq("is_archived", false);
 
@@ -269,17 +269,18 @@ export async function PATCH(req: NextRequest) {
 
       const { data: rawQuestions, error: qErr } = await questionsQuery.limit(5000);
       if (qErr) throw qErr;
-      const validPool = (rawQuestions || []).filter((question) =>
-        typeof question.correct_answer === "string" &&
-        ["A", "B", "C", "D", "E"].includes(question.correct_answer.trim().toUpperCase()) &&
-        Boolean(question[ `option_${question.correct_answer.trim().toLowerCase()}` as keyof typeof question ])
-      );
+      const validPool = (rawQuestions || []).filter((question) => {
+        const answer = typeof question.correct_answer === "string" ? question.correct_answer.trim().toUpperCase() : "";
+        const options = [question.option_a, question.option_b, question.option_c, question.option_d, question.option_e];
+        const optionIndex = ["A", "B", "C", "D", "E"].indexOf(answer);
+        return optionIndex >= 0 && Boolean(options[optionIndex]);
+      });
       const selection = selectPassageSafeQuestions(validPool.map((question) => ({
         ...question,
         id: String(question.id),
         bank_id: "main_cbt_bank",
-        subject: challenge.subject || "General",
-        difficulty: (question as { difficulty?: string }).difficulty === "hard" ? "hard" : (question as { difficulty?: string }).difficulty === "easy" ? "easy" : "medium",
+        subject: question.subject || challenge.subject || "General",
+        difficulty: question.difficulty === "hard" ? "hard" : question.difficulty === "easy" ? "easy" : "medium",
         question_type: "multiple_choice",
         option_a: question.option_a || "",
         option_b: question.option_b || "",
