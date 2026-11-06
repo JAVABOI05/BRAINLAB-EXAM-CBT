@@ -406,8 +406,9 @@ async function finalizeMatch(matchId: string, supabase: any) {
     actualScoreB = 1.0;
   }
 
-  // Update match record
-  await supabase
+  // Claim finalisation exactly once. Concurrent finish/timeout requests cannot
+  // both proceed to award rating changes or XP.
+  const { data: completionClaim, error: completionClaimError } = await supabase
     .from("competition_matches")
     .update({
       status: "completed",
@@ -416,7 +417,12 @@ async function finalizeMatch(matchId: string, supabase: any) {
       score_b: scoreB,
       winner_id: winnerId,
     })
-    .eq("id", matchId);
+    .eq("id", matchId)
+    .neq("status", "completed")
+    .select("id")
+    .maybeSingle();
+  if (completionClaimError) throw completionClaimError;
+  if (!completionClaim) return;
 
   // Friendly matches contribute experience but never change competitive rating.
   const isRankedMatch = match.metadata?.match_mode !== "friendly" && match.metadata?.ranked !== false;
@@ -494,8 +500,28 @@ async function finalizeMatch(matchId: string, supabase: any) {
       tier: tierFromElo(newEloB),
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
-  
-  
+
+    // Preserve durable individual rating history for audit and season views.
+    await supabase.from("competition_rating_history").insert([
+      {
+        user_id: pA.user_id,
+        match_id: matchId,
+        rating_kind: "individual",
+        rating_before: currentEloA,
+        rating_after: newEloA,
+        rating_delta: newEloA - currentEloA,
+        reason: "verified_ranked_match",
+      },
+      {
+        user_id: pB.user_id,
+        match_id: matchId,
+        rating_kind: "individual",
+        rating_before: currentEloB,
+        rating_after: newEloB,
+        rating_delta: newEloB - currentEloB,
+        reason: "verified_ranked_match",
+      },
+    ]);
   }
 
   // Award XP to gamification ledger
