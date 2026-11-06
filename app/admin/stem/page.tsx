@@ -29,6 +29,16 @@ export default function AdminStemStudioPage() {
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState("");
 
+  // Append-only STEM content version authoring
+  const [versionResource, setVersionResource] = useState<StemResource | null>(null);
+  const [versionAdapter, setVersionAdapter] = useState("canvas_quadratic");
+  const [versionInitialState, setVersionInitialState] = useState("{}");
+  const [versionPayload, setVersionPayload] = useState("{}");
+  const [versionObjectives, setVersionObjectives] = useState("");
+  const [versionBusy, setVersionBusy] = useState(false);
+  const [versionError, setVersionError] = useState("");
+  const [versionSuccess, setVersionSuccess] = useState("");
+
   // Review & Publish Modal State
   const [selectedForReview, setSelectedForReview] = useState<StemResource | null>(null);
   const [publishBusy, setPublishBusy] = useState(false);
@@ -145,6 +155,67 @@ export default function AdminStemStudioPage() {
       setCreateError(err instanceof Error ? err.message : "Creation request failed.");
     } finally {
       setCreateBusy(false);
+    }
+  }
+
+  function openVersionEditor(resource: StemResource) {
+    setVersionResource(resource);
+    const existing = resource.current_version;
+    const slugDefaults: Record<string, { adapter: string; state: Record<string, unknown>; payload: Record<string, unknown> }> = {
+      "quadratic-graph-explorer": { adapter: "canvas_quadratic", state: { a: 2, b: 0, c: -4 }, payload: { equation: "y = ax² + bx + c" } },
+      "projectile-motion-simulator": { adapter: "canvas_kinematics", state: { velocity: 25, angle: 45, gravity: 9.8, initialHeight: 0 }, payload: { formulas: { range: "u²sin(2θ)/g", maxHeight: "u²sin²(θ)/(2g)" } } },
+      "ohms-law-dc-circuit": { adapter: "circuit_dc", state: { voltage: 12, resistance: 4 }, payload: { formula: "V = I · R", powerFormula: "P = V · I" } },
+      "logic-gates-circuits": { adapter: "canvas_logic", state: { gateType: "AND", inputA: 1, inputB: 0, active: true }, payload: { schematic: "standard-iec" } },
+    };
+    const fallback = slugDefaults[resource.slug] || { adapter: "phet_embed", state: {}, payload: { embedUrl: "", instructions: [] } };
+    setVersionAdapter(existing?.adapter_type || fallback.adapter);
+    setVersionInitialState(JSON.stringify(existing?.initial_state || fallback.state, null, 2));
+    setVersionPayload(JSON.stringify(existing?.content_payload || fallback.payload, null, 2));
+    setVersionObjectives((existing?.learning_objectives || []).join("\\n"));
+    setVersionError("");
+    setVersionSuccess("");
+  }
+
+  async function handleSaveVersion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!versionResource) return;
+    setVersionError("");
+    setVersionSuccess("");
+    let initialState: Record<string, unknown>;
+    let contentPayload: Record<string, unknown>;
+    try {
+      initialState = JSON.parse(versionInitialState);
+      contentPayload = JSON.parse(versionPayload);
+      if (!initialState || Array.isArray(initialState) || typeof initialState !== "object") throw new Error("Initial state must be a JSON object.");
+      if (!contentPayload || Array.isArray(contentPayload) || typeof contentPayload !== "object") throw new Error("Content payload must be a JSON object.");
+    } catch (error) {
+      setVersionError(error instanceof Error ? error.message : "Check the JSON fields.");
+      return;
+    }
+    if (versionAdapter === "phet_embed" && !String(contentPayload.embedUrl || "").startsWith("https://")) {
+      setVersionError("PhET embeds require a valid HTTPS embedUrl.");
+      return;
+    }
+    setVersionBusy(true);
+    try {
+      const res = await fetch(`/api/stem/resources/${versionResource.slug}/version`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          adapter_type: versionAdapter,
+          initial_state: initialState,
+          content_payload: contentPayload,
+          learning_objectives: versionObjectives.split("\\n").map((line) => line.trim()).filter(Boolean),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Could not save this content version.");
+      setVersionSuccess(`Version ${data.version?.version_number || "new"} saved as an immutable draft. Review it before publishing.`);
+      await loadResources(token);
+    } catch (error) {
+      setVersionError(error instanceof Error ? error.message : "Version save failed.");
+    } finally {
+      setVersionBusy(false);
     }
   }
 
@@ -416,6 +487,13 @@ export default function AdminStemStudioPage() {
                     v{item.current_version?.version_number || 1}.0
                   </td>
                   <td className="p-4 text-right space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => openVersionEditor(item)}
+                      className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] transition"
+                    >
+                      {item.current_version ? "New Version" : "Add Content"}
+                    </button>
                     <Link
                       href={`/classroom/stem/${item.slug}`}
                       className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/10 hover:bg-slate-200 text-slate-800 dark:text-white font-bold text-[11px] transition inline-block"
@@ -667,6 +745,65 @@ export default function AdminStemStudioPage() {
                 >
                   {createBusy ? "Creating Draft..." : "Create Resource Draft"}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* STEM Content Version Editor */}
+      {versionResource && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-6">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#0B1536] p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">STEM Content Version Editor</h3>
+                <p className="text-xs text-slate-500 mt-1">{versionResource.title} · {versionResource.slug}</p>
+              </div>
+              <button type="button" onClick={() => setVersionResource(null)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+              <strong className="text-cyan-600 dark:text-cyan-300">Authoring standard</strong>
+              <p>Save a complete, tested content version. Use high-resolution, scientifically accurate source media and verified labels. A 3D adapter must have a real supported 3D viewer and asset; do not label a flat illustration as 3D. Saving creates a new immutable version and does not publish it.</p>
+            </div>
+            <form onSubmit={handleSaveVersion} className="space-y-4 text-xs">
+              {versionError && <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-rose-500">{versionError}</div>}
+              {versionSuccess && <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3 text-emerald-500">{versionSuccess}</div>}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Interactive renderer / adapter</label>
+                <select value={versionAdapter} onChange={(e) => setVersionAdapter(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-2.5 text-slate-900 dark:text-white">
+                  <option value="canvas_quadratic">Quadratic graph canvas</option>
+                  <option value="canvas_kinematics">Kinematics / projectile canvas</option>
+                  <option value="circuit_dc">DC circuit model</option>
+                  <option value="canvas_logic">Logic gates</option>
+                  <option value="phet_embed">PhET interactive simulation (HTTPS embed)</option>
+                  <option value="molecular_3d">Molecular 3D viewer</option>
+                  <option value="circuit_workbench">Circuit workbench</option>
+                </select>
+                <p className="text-[10px] text-slate-500">Only select a renderer that matches the content and is supported by the student player.</p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Initial interactive state (JSON object)</label>
+                  <textarea required rows={12} spellCheck={false} value={versionInitialState} onChange={(e) => setVersionInitialState(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 font-mono text-[11px] text-slate-900 dark:text-white" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Content payload (JSON object)</label>
+                  <textarea required rows={12} spellCheck={false} value={versionPayload} onChange={(e) => setVersionPayload(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 font-mono text-[11px] text-slate-900 dark:text-white" />
+                </div>
+              </div>
+              {versionAdapter === "phet_embed" && <p className="text-[11px] text-amber-600 dark:text-amber-300">Payload must include an approved HTTPS PhET embedUrl and concise instructions. Check licensing and attribution before publication.</p>}
+              {versionAdapter === "molecular_3d" && <p className="text-[11px] text-amber-600 dark:text-amber-300">The current molecular viewer is not a general cell/organelle GLB viewer. Do not use this adapter for the animal cell until a dedicated 3D model viewer and validated asset pipeline are implemented.</p>}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Learning objectives (one per line)</label>
+                <textarea rows={3} value={versionObjectives} onChange={(e) => setVersionObjectives(e.target.value)} placeholder={"Identify the key structures\nExplain their functions\nInterpret the model accurately"} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 text-slate-900 dark:text-white" />
+              </div>
+              <div className="flex flex-wrap justify-between gap-2 border-t border-slate-200 dark:border-white/10 pt-3">
+                <p className="self-center text-[10px] text-slate-500">Versions are append-only. Publishing remains a separate review action.</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setVersionResource(null)} className="rounded-lg px-4 py-2 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white font-bold">Close</button>
+                  <button type="submit" disabled={versionBusy} className="rounded-lg px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold disabled:opacity-50">{versionBusy ? "Saving version…" : "Save Draft Version"}</button>
+                </div>
               </div>
             </form>
           </div>
