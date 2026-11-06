@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
     if (overlapError) throw overlapError;
     if (overlaps?.length) return NextResponse.json({ error: `This season overlaps with ${overlaps[0].name}.` }, { status: 409 });
 
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const slugBase = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const slug = `${slugBase}-${startsAt.toISOString().slice(0, 10)}`;
     const { data, error } = await supabase.from("competition_seasons").insert({
       name, slug, description: typeof body.description === "string" ? body.description.trim().slice(0, 1000) : null,
       starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(),
