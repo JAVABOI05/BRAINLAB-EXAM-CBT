@@ -74,12 +74,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "You are already registered for this competition." }, { status: 400 });
     }
 
-    // 3. Resolve configured access mode. Legacy entry_fee remains a read-only fallback
-    // for older competition records until all existing records are migrated.
+    // 3. Resolve configured access mode and the canonical fee in kobo.
     const isAdmin = await isCurrentUserAdmin(user.id);
-    const accessMode = comp.access_mode || ((Number(comp.entry_fee) || 0) > 0 ? "paid" : "free");
+    const accessMode = comp.access_mode || "free";
     const entryFeeKobo = accessMode === "paid"
-      ? Math.max(0, Math.round(Number(comp.entry_fee_kobo) || Math.round((Number(comp.entry_fee) || 0) * 100)))
+      ? Math.max(0, Math.round(Number(comp.entry_fee_kobo) || 0))
       : 0;
 
     let validatedAccessCode: { id: string; used_count: number; max_uses: number | null } | null = null;
