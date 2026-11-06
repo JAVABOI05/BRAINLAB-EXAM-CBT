@@ -154,6 +154,8 @@ export default function CompetitionArenaAdminPage() {
   const [newCompMaxParticipants, setNewCompMaxParticipants] = useState("");
   const [newCompAllowSpectators, setNewCompAllowSpectators] = useState(true);
   const [newCompSpectatorMode, setNewCompSpectatorMode] = useState<"view_only" | "reactions" | "moderated_chat">("view_only");
+  const [newCompSpectatorQuestions, setNewCompSpectatorQuestions] = useState(false);
+  const [newCompSpectatorScoreboard, setNewCompSpectatorScoreboard] = useState(true);
   const [newCompResultsVisibility, setNewCompResultsVisibility] = useState<"hidden" | "participants" | "public" | "after_completion">("after_completion");
   const [newCompAnswerReveal, setNewCompAnswerReveal] = useState<"never" | "after_question" | "after_round" | "after_match" | "after_competition">("after_match");
 
@@ -444,6 +446,8 @@ export default function CompetitionArenaAdminPage() {
           max_participants: newCompMaxParticipants ? Number(newCompMaxParticipants) : null,
           allow_spectators: newCompAllowSpectators,
           spectator_mode: newCompSpectatorMode,
+          spectator_questions_visible: newCompSpectatorQuestions,
+          spectator_scoreboard_visible: newCompSpectatorScoreboard,
           results_visibility: newCompResultsVisibility,
           answer_reveal_mode: newCompAnswerReveal,
           rules: {
@@ -1715,6 +1719,10 @@ export default function CompetitionArenaAdminPage() {
               <div className="border-t border-gray-100 pt-3 space-y-3">
                 <h4 className="font-bold text-gray-900">Spectator & Result Rules</h4>
                 <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={newCompAllowSpectators} onChange={e => setNewCompAllowSpectators(e.target.checked)} />Allow spectators</label>
+                {newCompAllowSpectators && <>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={newCompSpectatorQuestions} onChange={e => setNewCompSpectatorQuestions(e.target.checked)} />Allow spectators to view live questions</label>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={newCompSpectatorScoreboard} onChange={e => setNewCompSpectatorScoreboard(e.target.checked)} />Allow spectators to view live scoreboard</label>
+                </>}
                 {newCompAllowSpectators && <label className="block text-xs font-semibold text-gray-700">Spectator interaction
                   <select value={newCompSpectatorMode} onChange={e => setNewCompSpectatorMode(e.target.value as typeof newCompSpectatorMode)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
                     <option value="view_only">View only</option><option value="reactions">Reactions</option><option value="moderated_chat">Moderated chat</option>
