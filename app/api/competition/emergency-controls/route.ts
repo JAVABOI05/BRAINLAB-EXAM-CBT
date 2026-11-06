@@ -5,22 +5,20 @@ import { verifyAdminPin } from "@/app/lib/adminPinServer";
 export async function GET() {
   try {
     const supabase = getSupabaseServerClient();
-    const { data: controls, error } = await supabase
+    const { data: allControls, error } = await supabase
       .from("competition_emergency_controls")
       .select("*")
-      .eq("scope", "global")
-      .maybeSingle();
+      .order("scope", { ascending: true });
 
     if (error) throw error;
+    const controls = allControls?.find((item) => item.scope === "global" && item.target_id === "all") || {
+      scope: "global", target_id: "all", is_paused: false, freeze_leaderboards: false,
+      maintenance_mode: false, announcement: "",
+    };
 
     return NextResponse.json({
-      controls: controls || {
-        scope: "global",
-        is_paused: false,
-        freeze_leaderboards: false,
-        maintenance_mode: false,
-        announcement: "",
-      },
+      controls,
+      scopedControls: (allControls || []).filter((item) => item.scope !== "global"),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error fetching emergency controls";
@@ -36,12 +34,25 @@ export async function POST(req: NextRequest) {
     }
 
     const adminRole = await resolveAdminRole(user.id);
-    if (!adminRole || (adminRole !== "super_admin" && adminRole !== "platform_admin" && adminRole !== "competition_admin")) {
-      return NextResponse.json({ error: "Forbidden: Super Admin, Platform Admin, or Competition Admin access required." }, { status: 403 });
+    if (adminRole !== "super_admin") {
+      return NextResponse.json({ error: "Forbidden: only Super Admin may operate Arena emergency controls." }, { status: 403 });
     }
 
     const body = await req.json();
-    const { is_paused, freeze_leaderboards, maintenance_mode, announcement, pin } = body;
+    const {
+      scope = "global", target_id = "all",
+      is_paused, freeze_leaderboards, maintenance_mode, announcement, pin,
+    } = body;
+
+    if (!["global", "competition", "match", "challenge", "registration"].includes(scope)) {
+      return NextResponse.json({ error: "Invalid emergency-control scope." }, { status: 400 });
+    }
+    if (scope === "global" && target_id !== "all") {
+      return NextResponse.json({ error: "Global emergency controls must target 'all'." }, { status: 400 });
+    }
+    if (scope !== "global" && (!target_id || target_id === "all")) {
+      return NextResponse.json({ error: "A specific target ID is required for scoped emergency controls." }, { status: 400 });
+    }
 
     // Verify Admin Security PIN
     if (!pin) {
@@ -58,15 +69,15 @@ export async function POST(req: NextRequest) {
     const { data: updated, error } = await supabase
       .from("competition_emergency_controls")
       .upsert({
-        scope: "global",
-        target_id: "all",
+        scope,
+        target_id,
         is_paused: Boolean(is_paused),
         freeze_leaderboards: Boolean(freeze_leaderboards),
         maintenance_mode: Boolean(maintenance_mode),
-        announcement: announcement?.trim() || "",
+        announcement: typeof announcement === "string" ? announcement.trim() : "",
         updated_by: user.id,
         updated_at: new Date().toISOString(),
-      }, { onConflict: "scope" })
+      }, { onConflict: "scope,target_id" })
       .select()
       .single();
 
