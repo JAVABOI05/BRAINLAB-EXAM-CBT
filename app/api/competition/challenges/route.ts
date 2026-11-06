@@ -282,7 +282,10 @@ export async function PATCH(req: NextRequest) {
 
     // 2. DECLINE ACTION
     if (action === "decline") {
-      if (challenge.challenged_id && challenge.challenged_id !== user.id) {
+      if (!challenge.challenged_id) {
+        return NextResponse.json({ error: "Open challenges can be accepted by eligible players, but cannot be declined by other users." }, { status: 403 });
+      }
+      if (challenge.challenged_id !== user.id) {
         return NextResponse.json({ error: "Only the challenged student can decline this challenge" }, { status: 403 });
       }
       const { data: declined, error: declineError } = await supabase
