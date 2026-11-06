@@ -6,6 +6,7 @@ on:
     branches:
       - phase0-hardening
       - fix/learning-hub-assessment-atomicity
+      - arena/full-implementation
 
 permissions:
   contents: read
