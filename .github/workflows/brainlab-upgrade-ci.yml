@@ -8,6 +8,7 @@ on:
       - feature/learning-hub-foundation
       - fix/learning-hub-assessment-atomicity
       - feature/learner-dashboard-profile-on-learning-hub
+      - arena/full-implementation
   pull_request:
     branches:
       - main
