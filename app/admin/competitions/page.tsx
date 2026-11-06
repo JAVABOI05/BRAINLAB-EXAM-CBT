@@ -144,6 +144,18 @@ export default function CompetitionArenaAdminPage() {
   const [newCompDuration, setNewCompDuration] = useState(300);
   const [newComp1v1Identical, setNewComp1v1Identical] = useState(false);
   const [newCompVisibility, setNewCompVisibility] = useState("public");
+  const [newCompAccessMode, setNewCompAccessMode] = useState<"free" | "code" | "request" | "paid">("free");
+  const [newCompEntryFeeNaira, setNewCompEntryFeeNaira] = useState("0");
+  const [newCompApprovalMode, setNewCompApprovalMode] = useState<"automatic" | "manual">("automatic");
+  const [newCompRegistrationOpen, setNewCompRegistrationOpen] = useState("");
+  const [newCompRegistrationClose, setNewCompRegistrationClose] = useState("");
+  const [newCompStartTime, setNewCompStartTime] = useState("");
+  const [newCompEndTime, setNewCompEndTime] = useState("");
+  const [newCompMaxParticipants, setNewCompMaxParticipants] = useState("");
+  const [newCompAllowSpectators, setNewCompAllowSpectators] = useState(true);
+  const [newCompSpectatorMode, setNewCompSpectatorMode] = useState<"view_only" | "reactions" | "moderated_chat">("view_only");
+  const [newCompResultsVisibility, setNewCompResultsVisibility] = useState<"hidden" | "participants" | "public" | "after_completion">("after_completion");
+  const [newCompAnswerReveal, setNewCompAnswerReveal] = useState<"never" | "after_question" | "after_round" | "after_match" | "after_competition">("after_match");
 
   // New Bank modal states
   const [showNewBankModal, setShowNewBankModal] = useState(false);
@@ -422,6 +434,18 @@ export default function CompetitionArenaAdminPage() {
           question_source_mode: newCompSourceMode,
           question_bank_id: newCompSourceMode !== "main_bank" ? newCompBankId : null,
           visibility: newCompVisibility,
+          access_mode: newCompAccessMode,
+          entry_fee_kobo: newCompAccessMode === "paid" ? Math.round((Number(newCompEntryFeeNaira) || 0) * 100) : 0,
+          approval_mode: newCompApprovalMode,
+          registration_opens_at: newCompRegistrationOpen || null,
+          registration_closes_at: newCompRegistrationClose || null,
+          start_time: newCompStartTime || null,
+          end_time: newCompEndTime || null,
+          max_participants: newCompMaxParticipants ? Number(newCompMaxParticipants) : null,
+          allow_spectators: newCompAllowSpectators,
+          spectator_mode: newCompSpectatorMode,
+          results_visibility: newCompResultsVisibility,
+          answer_reveal_mode: newCompAnswerReveal,
           rules: {
             question_count: Number(newCompQCount),
             duration_seconds: Number(newCompDuration),
@@ -1546,7 +1570,7 @@ export default function CompetitionArenaAdminPage() {
       {/* ========================================================================= */}
       {showNewCompModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
               <h3 className="text-base font-bold text-gray-900">Create Competition / Challenge</h3>
               <button onClick={() => setShowNewCompModal(false)} className="text-gray-400 hover:text-gray-700 font-bold">&times;</button>
@@ -1649,6 +1673,65 @@ export default function CompetitionArenaAdminPage() {
                 <label htmlFor="chk1v1Identical" className="text-xs text-gray-700 cursor-pointer">
                   Preserve Identical Questions for all participants (Synchronized battle equivalence)
                 </label>
+              </div>
+
+
+              <div className="border-t border-gray-100 pt-3 space-y-3">
+                <h4 className="font-bold text-gray-900">Registration & Access</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Access Mode
+                    <select value={newCompAccessMode} onChange={e => setNewCompAccessMode(e.target.value as typeof newCompAccessMode)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="free">Free entry</option><option value="code">Access code</option><option value="request">Request approval</option><option value="paid">Paid (BACHS)</option>
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Approval
+                    <select value={newCompApprovalMode} onChange={e => setNewCompApprovalMode(e.target.value as typeof newCompApprovalMode)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="automatic">Automatic</option><option value="manual">Manual organiser approval</option>
+                    </select>
+                  </label>
+                </div>
+                {newCompAccessMode === "paid" && <label className="block text-xs font-semibold text-gray-700">Entry fee (₦)
+                  <input type="number" min="1" step="1" required value={newCompEntryFeeNaira} onChange={e => setNewCompEntryFeeNaira(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                </label>}
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Registration opens
+                    <input type="datetime-local" value={newCompRegistrationOpen} onChange={e => setNewCompRegistrationOpen(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Registration closes
+                    <input type="datetime-local" value={newCompRegistrationClose} onChange={e => setNewCompRegistrationClose(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Competition starts
+                    <input type="datetime-local" value={newCompStartTime} onChange={e => setNewCompStartTime(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Competition ends
+                    <input type="datetime-local" value={newCompEndTime} onChange={e => setNewCompEndTime(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                </div>
+                <label className="block text-xs font-semibold text-gray-700">Maximum participants (optional)
+                  <input type="number" min="1" step="1" value={newCompMaxParticipants} onChange={e => setNewCompMaxParticipants(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                </label>
+              </div>
+
+              <div className="border-t border-gray-100 pt-3 space-y-3">
+                <h4 className="font-bold text-gray-900">Spectator & Result Rules</h4>
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={newCompAllowSpectators} onChange={e => setNewCompAllowSpectators(e.target.checked)} />Allow spectators</label>
+                {newCompAllowSpectators && <label className="block text-xs font-semibold text-gray-700">Spectator interaction
+                  <select value={newCompSpectatorMode} onChange={e => setNewCompSpectatorMode(e.target.value as typeof newCompSpectatorMode)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                    <option value="view_only">View only</option><option value="reactions">Reactions</option><option value="moderated_chat">Moderated chat</option>
+                  </select>
+                </label>}
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Results visibility
+                    <select value={newCompResultsVisibility} onChange={e => setNewCompResultsVisibility(e.target.value as typeof newCompResultsVisibility)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="hidden">Hidden</option><option value="participants">Participants</option><option value="public">Public</option><option value="after_completion">After completion</option>
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Answer reveal
+                    <select value={newCompAnswerReveal} onChange={e => setNewCompAnswerReveal(e.target.value as typeof newCompAnswerReveal)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="never">Never</option><option value="after_question">After each question</option><option value="after_round">After round</option><option value="after_match">After match</option><option value="after_competition">After competition</option>
+                    </select>
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
