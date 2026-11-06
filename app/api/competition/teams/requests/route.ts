@@ -16,10 +16,39 @@ export async function GET(req: NextRequest) {
       if (error) throw error;
       const ids = (data || []).map((item) => item.id);
       const { data: members, error: memberError } = ids.length
-        ? await supabase.from("competition_team_request_members").select("*").in("request_id", ids)
+        ? await supabase.from("competition_team_request_members").select("id, request_id, user_id, status, created_at, responded_at").in("request_id", ids)
         : { data: [], error: null };
       if (memberError) throw memberError;
-      return NextResponse.json({ requests: data || [], members: members || [], can_approve: true });
+      const memberUserIds = Array.from(new Set((members || []).map((member) => member.user_id)));
+      const { data: profiles } = memberUserIds.length
+        ? await supabase.from("competition_public_profiles").select("user_id, display_name, avatar_url").in("user_id", memberUserIds)
+        : { data: [] };
+      const profileMap = Object.fromEntries((profiles || []).map((profile) => [profile.user_id, profile]));
+      const requesterIds = Array.from(new Set((data || []).map((item) => item.requested_by)));
+      const { data: requesterProfiles } = requesterIds.length
+        ? await supabase.from("competition_public_profiles").select("user_id, display_name").in("user_id", requesterIds)
+        : { data: [] };
+      const requesterMap = Object.fromEntries((requesterProfiles || []).map((profile) => [profile.user_id, profile.display_name]));
+      const safeRequests = (data || []).map((request) => {
+        const { requested_by: _requesterId, founding_member_ids: _founderIds, ...safeRequest } = request;
+        return {
+          ...safeRequest,
+          requester_display_name: requesterMap[request.requested_by] || "Private player",
+          founding_member_count: (members || []).filter((member) => member.request_id === request.id).length,
+        };
+      });
+      const safeMembers = (members || []).map((member) => {
+        const { user_id: _privateUserId, ...safeMember } = member;
+        const profile = profileMap[member.user_id];
+        const request = (data || []).find((item) => item.id === member.request_id);
+        return {
+          ...safeMember,
+          display_name: profile?.display_name || "Private player",
+          avatar_url: profile?.avatar_url || null,
+          is_requester: request?.requested_by === member.user_id,
+        };
+      });
+      return NextResponse.json({ requests: safeRequests, members: safeMembers, can_approve: true });
     }
 
     const { data: own, error: ownError } = await supabase
@@ -30,10 +59,19 @@ export async function GET(req: NextRequest) {
     if (ownError) throw ownError;
     const ids = (own || []).map((item) => item.id);
     const { data: members, error: memberError } = ids.length
-      ? await supabase.from("competition_team_request_members").select("*").in("request_id", ids).eq("user_id", user.id)
+      ? await supabase.from("competition_team_request_members").select("id, request_id, status, responded_at").in("request_id", ids).eq("user_id", user.id)
       : { data: [], error: null };
     if (memberError) throw memberError;
-    return NextResponse.json({ requests: own || [], members: members || [], can_approve: false });
+    const safeRequests = (own || []).map((request) => {
+      const { requested_by: _requesterId, founding_member_ids: _founderIds, ...safeRequest } = request;
+      return {
+        ...safeRequest,
+        is_requester: request.requested_by === user.id,
+        founding_member_count: Array.isArray(request.founding_member_ids) ? request.founding_member_ids.length : 0,
+      };
+    });
+    const safeMembers = (members || []).map((member) => ({ ...member, is_me: true }));
+    return NextResponse.json({ requests: safeRequests, members: safeMembers, can_approve: false });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load team requests." }, { status: 500 });
   }
@@ -81,7 +119,7 @@ export async function PATCH(req: NextRequest) {
         type: "competition_team_founder_response",
         metadata: { team_request_id: requestId, response: body.decision },
       });
-      return NextResponse.json({ ok: true, member: updated });
+      return NextResponse.json({ ok: true, member: { id: updated.id, request_id: updated.request_id, status: updated.status, responded_at: updated.responded_at } });
     }
 
     if (action === "review") {
@@ -135,7 +173,7 @@ export async function PATCH(req: NextRequest) {
           type: "competition_team_approved",
           metadata: { team_id: team.id, team_request_id: requestId },
         })));
-        return NextResponse.json({ ok: true, team, election_open: true });
+        return NextResponse.json({ ok: true, team: { id: team.id, name: team.name, slug: team.slug, motto: team.motto, avatar_url: team.avatar_url }, election_open: true });
       }
 
       const { data: updated, error } = await supabase
