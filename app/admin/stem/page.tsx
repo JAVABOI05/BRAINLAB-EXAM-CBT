@@ -10,6 +10,8 @@ export default function AdminStemStudioPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [token, setToken] = useState<string>("");
   const [resources, setResources] = useState<StemResource[]>([]);
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -19,7 +21,7 @@ export default function AdminStemStudioPage() {
   const [createSlug, setCreateSlug] = useState("");
   const [createTitle, setCreateTitle] = useState("");
   const [createSummary, setCreateSummary] = useState("");
-  const [createSubjectId, setCreateSubjectId] = useState("subj-math");
+  const [createSubjectId, setCreateSubjectId] = useState("");
   const [createType, setCreateType] = useState<StemResourceType>("simulation");
   const [createTier, setCreateTier] = useState<1 | 2 | 3>(2);
   const [createTags, setCreateTags] = useState("");
@@ -71,6 +73,24 @@ export default function AdminStemStudioPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token || "";
       setToken(authToken);
+
+      const { data: subjectRows, error: subjectError } = await supabase
+        .from("learning_subjects")
+        .select("id, name, slug")
+        .eq("is_published", true)
+        .order("order_index", { ascending: true });
+
+      if (subjectError) {
+        console.error("Failed to load STEM curriculum subjects:", subjectError);
+        setSubjects([]);
+      } else {
+        const availableSubjects = (subjectRows || []).filter(
+          (subject: { id: string; name: string; slug: string }) => subject.id && subject.name && subject.slug
+        );
+        setSubjects(availableSubjects);
+        setCreateSubjectId((current) => current || availableSubjects[0]?.id || "");
+      }
+      setSubjectsLoading(false);
 
       await loadResources(authToken);
     }
@@ -573,13 +593,16 @@ export default function AdminStemStudioPage() {
                   <select
                     value={createSubjectId}
                     onChange={(e) => setCreateSubjectId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                    required
+                    disabled={subjectsLoading || subjects.length === 0}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-white outline-none focus:border-blue-500 disabled:opacity-60"
                   >
-                    <option value="subj-math">Mathematics</option>
-                    <option value="subj-physics">Physics</option>
-                    <option value="subj-chem">Chemistry</option>
-                    <option value="subj-bio">Biology</option>
-                    <option value="subj-eng">Engineering &amp; Logic</option>
+                    <option value="">
+                      {subjectsLoading ? "Loading subjects..." : subjects.length === 0 ? "No published subjects available" : "Select a subject"}
+                    </option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>{subject.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -618,7 +641,7 @@ export default function AdminStemStudioPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createBusy}
+                  disabled={createBusy || subjectsLoading || subjects.length === 0 || !createSubjectId}
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow disabled:opacity-50"
                 >
                   {createBusy ? "Creating Draft..." : "Create Resource Draft"}
