@@ -69,6 +69,7 @@ export async function PATCH(req: NextRequest) {
         .update({ status: body.decision, responded_at: new Date().toISOString() })
         .eq("request_id", requestId)
         .eq("user_id", user.id)
+        .eq("status", "pending")
         .select()
         .maybeSingle();
       if (error) throw error;
