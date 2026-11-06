@@ -104,7 +104,8 @@ export async function POST(
         mqQuery = mqQuery.ilike("subject", `%${mainSubject}%`);
       }
 
-      const { data: mq } = await mqQuery.limit(100);
+      // Load the full filtered source pool so passage groups are never silently truncated.
+      const { data: mq } = await mqQuery.limit(5000);
 
       mainQuestions = (mq || [])
         // Never manufacture an answer key. Ignore malformed source rows instead
@@ -117,6 +118,10 @@ export async function POST(
           subject: row.subject,
           topic: row.topic || row.category,
           subtopic: row.subtopic,
+          passage_id: row.passage_id,
+          passage_title: row.passage_title,
+          passage_text: row.passage_text,
+          reading_text_id: row.reading_text_id,
           difficulty: (row.difficulty || "medium") as CompetitionQuestionItem["difficulty"],
           question_type: "multiple_choice",
           option_a: row.option_a,
@@ -193,6 +198,10 @@ export async function POST(
       id: q.id,
       subject: q.subject,
       topic: q.topic,
+      passage_id: q.passage_id,
+      passage_title: q.passage_title,
+      passage_text: q.passage_text,
+      reading_text_id: q.reading_text_id,
       difficulty: q.difficulty,
       question: q.question,
       options: q.options,
