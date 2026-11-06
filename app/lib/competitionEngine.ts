@@ -234,7 +234,7 @@ export function formatQuestionForSnapshot(
     },
     correctOption: (() => {
       const answer = (q.correct_answer || "").trim().toUpperCase();
-      if (!["A", "B", "C", "D", "E"].includes(answer)) {
+      if (!["A", "B", "C", "D", "E"].includes(answer) || !options[answer]) {
         throw new Error(`Question ${q.id || "unknown"} has an invalid or missing correct answer key.`);
       }
       return answer;
