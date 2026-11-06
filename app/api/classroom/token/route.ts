@@ -27,7 +27,10 @@ export async function POST(request: NextRequest) {
     const isOpenStage =
       normalizedClassId === "BL-LIVE-101" ||
       normalizedClassId === "DEMO-CLASS" ||
-      normalizedClassId === "GENERAL-STAGE";
+      normalizedClassId === "GENERAL-STAGE" ||
+      normalizedClassId.startsWith("BL-ROOM-") ||
+      normalizedClassId.startsWith("BL-LIVE-") ||
+      normalizedClassId.startsWith("BL-STAGE-");
 
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const supabase = getSupabaseServerClient(token);
@@ -103,9 +106,18 @@ export async function POST(request: NextRequest) {
     let liveClass: LiveClass | null = null;
 
     if (isOpenStage) {
+      let stageTitle = "BrainLab Live Academic Stage";
+      if (normalizedClassId === "BL-LIVE-101") {
+        stageTitle = "BrainLab Live Academic Stage (BL-LIVE-101)";
+      } else if (normalizedClassId.startsWith("BL-ROOM-")) {
+        stageTitle = `BrainLab Private Classroom (${normalizedClassId})`;
+      } else {
+        stageTitle = `BrainLab Live Stage (${normalizedClassId})`;
+      }
+
       liveClass = {
         id: classId,
-        title: normalizedClassId === "BL-LIVE-101" ? "BrainLab Live Academic Stage (BL-LIVE-101)" : "BrainLab Live Masterclass & Interactive Stage",
+        title: stageTitle,
         description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
         tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
         status: "live",

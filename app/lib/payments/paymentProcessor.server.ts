@@ -341,6 +341,43 @@ export async function recordSuccessfulPayment(
     } catch {
       // Non-critical audit table catch
     }
+
+    // 8. Immutable Domain Event Emission (Platform Event Sourcing)
+    try {
+      await supabase.from("platform_domain_events").insert([
+        {
+          event_type: "payment.succeeded",
+          aggregate_type: "payment",
+          aggregate_id: tx.reference,
+          payload: {
+            user_id: effectiveUserId,
+            plan_id: effectivePlanId,
+            amount_kobo: tx.amount_kobo,
+            currency: tx.currency,
+            provider: tx.provider,
+            paid_at: paidAt,
+            channel: params.channel,
+            verified_by: params.verifiedBy,
+          },
+          actor_id: effectiveUserId,
+          actor_email: tx.customer_email,
+        },
+        {
+          event_type: "subscription.activated",
+          aggregate_type: "subscription",
+          aggregate_id: effectiveUserId,
+          payload: {
+            plan_id: effectivePlanId,
+            period_end: periodEnd.toISOString(),
+            provider_reference: providerRef,
+          },
+          actor_id: effectiveUserId,
+          actor_email: tx.customer_email,
+        },
+      ]);
+    } catch {
+      // Non-critical domain event catch
+    }
   }
 
   return {

@@ -241,8 +241,8 @@ function ClassroomLobbyContent() {
     }
   };
 
-  // Tutor Launch Instant Stage
-  const handleLaunchInstantClass = async () => {
+  // Tutor Launch Instant Stage (BL-LIVE-101 or Dynamic Room)
+  const handleLaunchInstantClass = async (customRoomCode?: unknown) => {
     setIsLaunchingInstant(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -270,9 +270,14 @@ function ClassroomLobbyContent() {
         return;
       }
 
-      // Best-effort authoritative start for BL-LIVE-101
+      const targetRoom = (typeof customRoomCode === "string" && customRoomCode.trim()
+        ? customRoomCode.trim()
+        : "BL-LIVE-101"
+      ).toUpperCase();
+
+      // Best-effort authoritative start
       try {
-        await fetch(`/api/classroom/classes/BL-LIVE-101/start`, {
+        await fetch(`/api/classroom/classes/${encodeURIComponent(targetRoom)}/start`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -284,8 +289,8 @@ function ClassroomLobbyContent() {
         console.warn("[classroom] Background stage start notice:", startErr);
       }
 
-      toast.success("Academic stage launched! Entering host cockpit…");
-      router.push("/classroom/BL-LIVE-101?role=host");
+      toast.success(`Academic stage ${targetRoom} launched! Entering host cockpit…`);
+      router.push(`/classroom/${targetRoom}?role=host`);
     } catch (err: unknown) {
       toast.error((err instanceof Error ? err.message : null) || "Could not launch stage.");
     } finally {
@@ -631,7 +636,7 @@ function ClassroomLobbyContent() {
                   General stage for quick revisions and open lectures. Entering as instructor automatically opens the room for waiting students.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => copyCodeToClipboard("BL-LIVE-101")}
@@ -641,10 +646,21 @@ function ClassroomLobbyContent() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleLaunchInstantClass}
+                  onClick={() => handleLaunchInstantClass("BL-LIVE-101")}
                   className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-md transition active:scale-95"
                 >
-                  Launch &amp; Enter as Host →
+                  Launch Public Auditorium (BL-LIVE-101) →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dynamicId = `BL-ROOM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                    handleLaunchInstantClass(dynamicId);
+                  }}
+                  className="rounded-xl border border-purple-500/30 bg-purple-600/10 hover:bg-purple-600/20 px-3.5 py-2 text-xs font-black text-purple-600 dark:text-purple-300 shadow-sm transition active:scale-95"
+                  title="Generate a dynamic private room code for a specific class cohort"
+                >
+                  ✨ Generate Dynamic Room →
                 </button>
               </div>
             </div>
