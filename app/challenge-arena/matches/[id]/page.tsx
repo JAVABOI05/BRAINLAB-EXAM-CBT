@@ -436,8 +436,8 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                   {myParticipant?.display_name?.slice(0, 2).toUpperCase() || "YOU"}
                 </div>
                 <div>
-                  <p className="text-xs font-bold">{myParticipant?.display_name || "You"}</p>
-                  <p className="text-lg font-black text-blue-500">{myParticipant?.score || 0} PTS</p>
+                  <p className="text-xs font-bold">{isSpectator ? (participantA?.display_name || "Player 1") : (myParticipant?.display_name || "You")}</p>
+                  <p className="text-lg font-black text-blue-500">{myParticipant?.score ?? (isSpectator ? "Hidden" : 0)} {myParticipant?.score === null && isSpectator ? "" : "PTS"}</p>
                 </div>
               </div>
 
@@ -452,8 +452,8 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
               {/* Opponent */}
               <div className="flex items-center gap-3 text-right">
                 <div>
-                  <p className="text-xs font-bold">{opponentParticipant?.display_name || "Opponent"}</p>
-                  <p className="text-lg font-black text-[#FF5238]">{opponentParticipant?.score || 0} PTS</p>
+                  <p className="text-xs font-bold">{isSpectator ? (participantB?.display_name || "Player 2") : (opponentParticipant?.display_name || "Opponent")}</p>
+                  <p className="text-lg font-black text-[#FF5238]">{opponentParticipant?.score ?? (isSpectator ? "Hidden" : 0)} {opponentParticipant?.score === null && isSpectator ? "" : "PTS"}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-[#FF5238] text-white flex items-center justify-center font-bold text-sm">
                   {opponentParticipant?.display_name?.slice(0, 2).toUpperCase() || "OP"}
@@ -539,7 +539,13 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
           <div className="flex flex-col items-center justify-center my-auto">
             <div className={`max-w-xl w-full p-8 rounded-3xl border text-center shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
               {/* Winner Splash */}
-              {match.winner_id === currentUserId ? (
+              {isSpectator ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-4xl shadow-xl">🏁</div>
+                  <h2 className="text-3xl font-black text-blue-400 tracking-tight">MATCH CONCLUDED</h2>
+                  <p className="text-slate-400 text-sm">The official result is displayed according to the organiser's spectator visibility settings.</p>
+                </div>
+              ) : match.winner_id === currentUserId ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 text-white flex items-center justify-center text-4xl shadow-xl shadow-amber-500/20 animate-bounce">
                     🏆
@@ -569,16 +575,16 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
               <div className={`grid grid-cols-2 gap-4 p-5 rounded-2xl border my-6 ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                 <div className="text-center">
                   <p className="text-xs text-slate-400 uppercase font-bold">{myParticipant?.display_name || "You"}</p>
-                  <p className="text-2xl font-black text-blue-500 mt-1">{match.score_a} PTS</p>
+                  <p className="text-2xl font-black text-blue-500 mt-1">{match.score_a === null ? "Hidden" : `${match.score_a} PTS`}</p>
                 </div>
                 <div className="text-center border-l border-slate-700/40">
                   <p className="text-xs text-slate-400 uppercase font-bold">{opponentParticipant?.display_name || "Opponent"}</p>
-                  <p className="text-2xl font-black text-[#FF5238] mt-1">{match.score_b} PTS</p>
+                  <p className="text-2xl font-black text-[#FF5238] mt-1">{match.score_b === null ? "Hidden" : `${match.score_b} PTS`}</p>
                 </div>
               </div>
 
               {/* XP & RATING REWARDS NOTIFICATION */}
-              <div className="flex items-center justify-center gap-6 text-sm font-bold text-slate-300 mb-8">
+              {!isSpectator && <div className="flex items-center justify-center gap-6 text-sm font-bold text-slate-300 mb-8">
                 <span className="flex items-center gap-1.5 text-emerald-400">
                   <span>★</span> +{match.winner_id === currentUserId ? "50" : "20"} Arena XP
                 </span>
@@ -587,7 +593,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 ) : (
                   <span className="flex items-center gap-1.5 text-blue-400"><span>⚡</span> Rating Updated</span>
                 )}
-              </div>
+              </div>}
 
               {/* ACTION BUTTONS */}
               <div className="flex flex-col sm:flex-row gap-3">
@@ -597,12 +603,12 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 >
                   Return to Arena Hub
                 </Link>
-                <button
+                {!isSpectator && <button
                   onClick={() => setShowDisputeModal(true)}
                   className="px-5 py-3.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 font-bold text-sm transition"
                 >
                   File Dispute / Appeal
-                </button>
+                </button>}
               </div>
             </div>
           </div>
