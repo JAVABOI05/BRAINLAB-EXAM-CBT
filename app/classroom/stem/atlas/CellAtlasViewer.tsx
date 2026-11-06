@@ -151,7 +151,7 @@ export default function CellAtlasViewer() {
         <div className="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-[#071027]/80 px-3 py-2 text-[10px] text-slate-300">Drag to rotate · Use zoom control below</div>
         <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
-            <button onClick={()=>setRotation({x:0.22,y:-0.42})} className="rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs font-bold text-white">Reset view</button>
+            <button onClick={()=>{setRotation({x:0.22,y:-0.42});setZoom(3.2);}} className="rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs font-bold text-white">Reset view</button>
             <button onClick={()=>setIsolateSelected(v=>!v)} aria-pressed={isolateSelected} className="rounded-lg border border-cyan-300/30 bg-[#071027]/85 px-3 py-2 text-xs font-bold text-cyan-200">{isolateSelected?"Show all":"Isolate selected"}</button>
           </div>
           <label className="flex items-center gap-2 rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs text-slate-200"><input type="checkbox" checked={showLabels} onChange={e=>setShowLabels(e.target.checked)}/> Show labels</label>
@@ -172,7 +172,7 @@ export default function CellAtlasViewer() {
         <div className="mt-3 grid grid-cols-2 gap-2">
           {ORGANELLES.map(o=>(
             <div key={o.id} className="flex min-w-0 items-stretch gap-1">
-              <button type="button" onClick={()=>setSelected(o.id)} className={`min-w-0 flex-1 rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}>
+              <button type="button" onClick={()=>{setSelected(o.id);setVisibleOrganelles(v=>v.includes(o.id)?v:[...v,o.id]);}} aria-pressed={selected===o.id} className={`min-w-0 flex-1 rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${selected===o.id?"border-cyan-400/60 bg-cyan-400/10 text-cyan-200":"border-white/10 bg-white/[.03] text-slate-300 hover:bg-white/[.07]"}`}>
                 <span className="mb-2 block h-2 w-2 rounded-full" style={{background:`rgb(${o.color.map(c=>Math.round(c*255)).join(",")})`}}/>
                 {o.name}
               </button>
@@ -182,7 +182,11 @@ export default function CellAtlasViewer() {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[10px] leading-relaxed text-slate-500">Use the dot controls to hide or restore structures. Isolate selected hides the other visible organelles.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" onClick={()=>{setVisibleOrganelles(ORGANELLES.map(o=>o.id));setIsolateSelected(false);}} className="rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-[10px] font-bold text-cyan-200">Show all structures</button>
+          <button type="button" onClick={()=>{setVisibleOrganelles([]);setIsolateSelected(false);}} className="rounded-lg border border-white/10 px-3 py-2 text-[10px] font-bold text-slate-300 hover:bg-white/10">Hide all</button>
+        </div>
+        <p className="mt-3 text-[10px] leading-relaxed text-slate-500">Select a structure to inspect it; selecting a hidden structure automatically makes it visible. Use the dot controls to hide or restore individual structures.</p>
       </div>
       <div className="rounded-[24px] border border-cyan-400/20 bg-gradient-to-br from-[#10234b] to-[#0b1838] p-5">
         <p className="text-[10px] font-bold uppercase tracking-[.2em] text-cyan-300">Selected structure</p>
