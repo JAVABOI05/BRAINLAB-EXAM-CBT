@@ -20,6 +20,10 @@ import {
   DEFAULT_LOGIC_GATES_STATE,
 } from "@/app/components/classroom/whiteboard/stemAdapter";
 import { getCbtSubjectKey } from "@/app/lib/curriculumData";
+import PhetEmbedPlayer from "@/app/components/stem/PhetEmbedPlayer";
+import Molecular3DViewer from "@/app/components/stem/Molecular3DViewer";
+import CircuitSimulatorBench from "@/app/components/stem/CircuitSimulatorBench";
+import StemWorksheetDrawer from "@/app/components/stem/StemWorksheetDrawer";
 
 export default function StemPlayerPage({
   params,
@@ -216,7 +220,21 @@ export default function StemPlayerPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Central Lab Canvas (2 Columns) */}
           <div className="lg:col-span-2 space-y-6">
-            {slug !== "cell-ultrastructure-guide" ? (
+            {version?.adapter_type === "phet_embed" ? (
+              <PhetEmbedPlayer
+                embedUrl={
+                  ((version.content_payload as any)?.embedUrl ||
+                    (version.initial_state as any)?.embedUrl) as string
+                }
+                title={resource.title}
+                instructions={(version.content_payload as any)?.instructions as string[]}
+                learningObjectives={version.learning_objectives}
+              />
+            ) : version?.adapter_type === "molecular_3d" ? (
+              <Molecular3DViewer />
+            ) : version?.adapter_type === "circuit_workbench" ? (
+              <CircuitSimulatorBench />
+            ) : slug !== "cell-ultrastructure-guide" ? (
               <div className="space-y-4">
                 <div className="relative rounded-2xl border border-white/10 bg-[#070d1e] overflow-hidden shadow-2xl flex flex-col items-center">
                   <canvas
@@ -575,32 +593,14 @@ export default function StemPlayerPage({
         </div>
             )}
 
-            {/* Experiment Findings Logger */}
-            <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <span>📝</span>
-                  <span>Student Experiment Log &amp; Scientific Hypotheses</span>
-                </h3>
-                {savedStatus && <span className="text-xs font-bold text-emerald-400 animate-pulse">{savedStatus}</span>}
-        </div>
-              <textarea
-                value={observations}
-                onChange={(e) => setObservations(e.target.value)}
-                rows={3}
-                placeholder="Record your observations, mathematical deductions, or hypothesis tests here..."
-                className="w-full rounded-xl border border-white/15 bg-[#070d1e] p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500"
-              />
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleSaveObservation}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition shadow"
-                >
-                  Save Experiment Attempt
-                </button>
-        </div>
-      </div>
+            {/* Interactive Virtual Lab Worksheet & Submission */}
+            <StemWorksheetDrawer
+              resourceVersionId={version?.id || resource.id}
+              resourceTitle={resource.title}
+              onSubmitted={() => {
+                setSavedStatus("Lab report submitted for grading!");
+              }}
+            />
     </div>
 
           {/* Right Sidebar: Learning Objectives, Curriculum & Theory (1 Column) */}
@@ -623,6 +623,13 @@ export default function StemPlayerPage({
               </ul>
       </div>
 
+            <StemWorksheetDrawer
+              resourceVersionId={version?.id || resource.id}
+              resourceTitle={resource.title}
+              onSubmitted={() => {
+                setSavedStatus("Lab report submitted for grading!");
+              }}
+            />
             <div className="rounded-2xl border border-white/10 bg-[#0B1536] p-5 shadow space-y-3">
               <h3 className="text-sm font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
                 <span>📚</span>
