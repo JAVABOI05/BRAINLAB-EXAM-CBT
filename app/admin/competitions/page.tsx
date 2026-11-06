@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useId } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
 import { getAdminSession, AdminUser } from "@/app/lib/adminAuth";
 import {
   COMPETITION_PERMISSIONS,
@@ -584,7 +585,7 @@ export default function CompetitionArenaAdminPage() {
   };
 
   return (
-    <div className="admin-page-container p-6 max-w-7xl mx-auto space-y-6">
+    <div className="admin-page-container arena-admin p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner / Hero */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-950 text-white rounded-2xl p-6 shadow-xl border border-blue-700/40">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -600,14 +601,22 @@ export default function CompetitionArenaAdminPage() {
               Multi-source question architecture (Dedicated, Main CBT, Combined), 4/5-option MCQs, duplicate intelligence, separation of duties, and immutable attempt snapshots.
             </p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-xs space-y-1">
-            <div className="text-blue-200">Active Operator Identity:</div>
-            <div className="font-semibold text-white truncate max-w-xs">{adminUser?.email || "Checking auth..."}</div>
-            <div className="inline-block bg-emerald-500/30 text-emerald-300 font-mono text-[11px] px-2 py-0.5 rounded border border-emerald-400/30">
-              Role: {adminUser?.role || "authenticated"}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-xs space-y-1">
+              <div className="text-blue-200">Active Operator Identity:</div>
+              <div className="font-semibold text-white truncate max-w-xs">{adminUser?.email || "Checking auth..."}</div>
+              <div className="inline-block bg-emerald-500/30 text-emerald-300 font-mono text-[11px] px-2 py-0.5 rounded border border-emerald-400/30">
+                Role: {adminUser?.role || "authenticated"}
+              </div>
             </div>
+            <ArenaThemeToggle compact />
           </div>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/admin/competitions/team-requests" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Review Permanent Team Requests</Link>
+        <Link href="/challenge-arena/appeals" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Appeals Centre</Link>
       </div>
 
       {/* Alerts */}
