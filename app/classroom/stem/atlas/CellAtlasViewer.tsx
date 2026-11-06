@@ -82,6 +82,9 @@ export default function CellAtlasViewer() {
   const [showLabels,setShowLabels]=useState(true);
   const [dragging,setDragging]=useState(false);
   const active=ORGANELLES.find(o=>o.id===selected)||ORGANELLES[0];
+  const rotationRef=useRef(rotation); rotationRef.current=rotation;
+  const zoomRef=useRef(zoom); zoomRef.current=zoom;
+  const selectedRef=useRef(selected); selectedRef.current=selected;
 
   useEffect(()=>{
     const canvas=canvasRef.current; if(!canvas) return;
@@ -103,7 +106,7 @@ export default function CellAtlasViewer() {
       gl.enable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
       const draw=(position:number[],scale:number[],color:number[],alpha:number,rx:number,ry:number)=>{
         const model=modelMatrix(position,scale,rx,ry);
-        const view=identity(); view[14]=-zoom;
+        const view=identity(); view[14]=-zoomRef.current;
         const aspect=canvas.clientWidth/Math.max(1,canvas.clientHeight);
         const mvp=multiply(perspective(Math.PI/4,aspect,0.1,30),multiply(view,model));
         gl.uniformMatrix4fv(mvpLoc,false,new Float32Array(mvp));
@@ -116,15 +119,15 @@ export default function CellAtlasViewer() {
         const w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(window.devicePixelRatio||1,1.7);
         if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);}
         gl.viewport(0,0,canvas.width,canvas.height); gl.clearColor(0.025,0.055,0.13,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-        draw([0,0,0],[1.22,0.82,0.68],[0.18,0.57,0.78],0.18,rotation.x,rotation.y);
-        draw([0,0,0],[1.12,0.74,0.61],[0.12,0.38,0.57],0.34,rotation.x,rotation.y);
-        ORGANELLES.forEach(o=>draw(o.position,o.scale,o.color,selected===o.id?1:0.88,rotation.x,rotation.y));
+        draw([0,0,0],[1.22,0.82,0.68],[0.18,0.57,0.78],0.18,rotationRef.current.x,rotationRef.current.y);
+        draw([0,0,0],[1.12,0.74,0.61],[0.12,0.38,0.57],0.34,rotationRef.current.x,rotationRef.current.y);
+        ORGANELLES.forEach(o=>draw(o.position,o.scale,o.color,selectedRef.current===o.id?1:0.88,rotationRef.current.x,rotationRef.current.y));
         frame=requestAnimationFrame(render);
       };
       render();
       return ()=>{disposed=true;cancelAnimationFrame(frame);gl.deleteBuffer(vb);gl.deleteBuffer(ib);gl.deleteProgram(program);};
     } catch { setWebglError(true); }
-  },[rotation,zoom,selected]);
+  },[]);
 
   const pointer=useRef<{x:number;y:number}|null>(null);
   return <section className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,.8fr)]">
@@ -134,14 +137,12 @@ export default function CellAtlasViewer() {
         <div className="flex items-center gap-2 text-[10px] text-slate-400"><span className="h-2 w-2 rounded-full bg-emerald-400"/> WebGL renderer</div>
       </div>
       <div className="relative h-[340px] sm:h-[470px]">
-        {webglError ? <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center"><span className="text-4xl">🧫</span><p className="font-bold text-white">3D graphics are unavailable on this device</p><p className="max-w-sm text-sm text-slate-400">Your browser or device could not start WebGL. Use the organelle explorer on the right or try a browser with hardware acceleration enabled.</p></div> : <canvas ref={canvasRef} className="h-full w-full touch-none" aria-label="Rotatable schematic 3D animal cell model"/>}
+        {webglError ? <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center"><span className="text-4xl">🧫</span><p className="font-bold text-white">3D graphics are unavailable on this device</p><p className="max-w-sm text-sm text-slate-400">Your browser or device could not start WebGL. Use the organelle explorer on the right or try a browser with hardware acceleration enabled.</p></div> : <canvas ref={canvasRef} className="h-full w-full touch-none" aria-label="Rotatable schematic 3D animal cell model" onPointerDown={e=>{pointer.current={x:e.clientX,y:e.clientY};setDragging(true);e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={e=>{if(!pointer.current)return;const dx=e.clientX-pointer.current.x,dy=e.clientY-pointer.current.y;pointer.current={x:e.clientX,y:e.clientY};setRotation(r=>({x:Math.max(-1.1,Math.min(1.1,r.x+dy*.008)),y:r.y+dx*.008}));}} onPointerUp={()=>{pointer.current=null;setDragging(false);}} onPointerCancel={()=>{pointer.current=null;setDragging(false);}}/>}
         <div className="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-[#071027]/80 px-3 py-2 text-[10px] text-slate-300">Drag to rotate · Use zoom control below</div>
         <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3">
           <button onClick={()=>setRotation({x:0.22,y:-0.42})} className="rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs font-bold text-white">Reset view</button>
           <label className="flex items-center gap-2 rounded-lg border border-white/15 bg-[#071027]/85 px-3 py-2 text-xs text-slate-200"><input type="checkbox" checked={showLabels} onChange={e=>setShowLabels(e.target.checked)}/> Show labels</label>
         </div>
-        <div className="absolute inset-0" style={{pointerEvents:"none"}} onPointerDown={()=>{}} />
-        <div className="absolute inset-0" style={{touchAction:"none"}} onPointerDown={e=>{pointer.current={x:e.clientX,y:e.clientY};setDragging(true);e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={e=>{if(!pointer.current)return;const dx=e.clientX-pointer.current.x,dy=e.clientY-pointer.current.y;pointer.current={x:e.clientX,y:e.clientY};setRotation(r=>({x:Math.max(-1.1,Math.min(1.1,r.x+dy*.008)),y:r.y+dx*.008}));}} onPointerUp={()=>{pointer.current=null;setDragging(false);}} onPointerCancel={()=>{pointer.current=null;setDragging(false);}} />
         {showLabels && !webglError && <div className="pointer-events-none absolute right-4 top-4 flex max-w-[150px] flex-col gap-1">{ORGANELLES.slice(0,4).map(o=><span key={o.id} className="rounded-md border border-white/10 bg-[#071027]/75 px-2 py-1 text-[9px] text-slate-200">{o.name}</span>)}</div>}
       </div>
       <div className="border-t border-white/10 px-5 py-4">
