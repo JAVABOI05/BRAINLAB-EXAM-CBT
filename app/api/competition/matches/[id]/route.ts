@@ -64,13 +64,20 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     const userIds = participants?.map((p) => p.user_id) || [];
     let profilesMap: Record<string, { full_name?: string; username?: string; avatar_url?: string }> = {};
     if (userIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("user_profiles")
-        .select("id, full_name, username, avatar_url")
-        .in("id", userIds);
+      let profileQuery = supabase
+        .from("competition_public_profiles")
+        .select("user_id, display_name, avatar_url, visibility")
+        .in("user_id", userIds)
+        .eq("visibility", "public");
+      if (user) profileQuery = profileQuery.or(`visibility.eq.public,user_id.eq.${user.id}`);
+      const { data: profiles } = await profileQuery;
 
       if (profiles) {
-        profilesMap = Object.fromEntries(profiles.map((p) => [p.id, p]));
+        profilesMap = Object.fromEntries(profiles.map((profile) => [profile.user_id, {
+          full_name: profile.display_name,
+          username: profile.display_name,
+          avatar_url: profile.avatar_url || undefined,
+        }]));
       }
     }
 
@@ -87,7 +94,7 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     const enrichedParticipants = (participants || []).map((p) => ({
       ...p,
       score: canSeeScores ? p.score : null,
-      profile: profilesMap[p.user_id] || { full_name: p.display_name },
+      profile: profilesMap[p.user_id] || { full_name: p.display_name || "Private player" },
     }));
 
     // Calculate server authoritative remaining time
