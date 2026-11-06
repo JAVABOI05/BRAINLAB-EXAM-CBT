@@ -70,200 +70,120 @@ export const ADMIN_VIP_PLAN: SubscriptionPlan = {
  * 7. Browser client-side session cache
  */
 export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
-  // 1. Check RPC get_admin_role
+  let authUser: { id: string; email?: string } | null = null;
   try {
-    const { data: rpcRole } = await supabase.rpc("get_admin_role");
-    if (typeof rpcRole === "string" && rpcRole.trim().length > 0) {
-      return true;
-    }
+    const { data } = await supabase.auth.getUser();
+    if (data.user) authUser = { id: data.user.id, email: data.user.email };
   } catch {
-    // fallback to table and metadata checks
+    // Treat failed authentication as unauthenticated.
   }
 
-  // 2. Resolve Auth User
-  let targetId = userId;
-  let authUser: { id: string; email?: string; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> } | null = null;
-  try {
-    const { data: authData } = await supabase.auth.getUser();
-    if (authData?.user) {
-      authUser = authData.user;
-      if (!targetId) {
-        targetId = authData.user.id;
-      }
-    }
-  } catch {
-    // fallback
-  }
-
-  // 3. Inspect user auth metadata if available
-  if (authUser) {
-    const appRole = String(authUser.app_metadata?.role || "").toLowerCase();
-    const userRole = String(authUser.user_metadata?.role || "").toLowerCase();
-    const isSuperAdminFlag = Boolean(authUser.app_metadata?.is_super_admin || authUser.user_metadata?.is_super_admin);
-
-    if (
-      isSuperAdminFlag ||
-      appRole.includes("admin") ||
-      userRole.includes("admin") ||
-      appRole === "teacher" ||
-      userRole === "teacher"
-    ) {
-      return true;
-    }
-  }
-
-  // 4. Check client-side cached admin credentials in browser
-  if (typeof window !== "undefined") {
-    try {
-      const cached = localStorage.getItem("admin_user");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed?.role && (String(parsed.role).includes("admin") || parsed.role === "teacher")) {
-          return true;
-        }
-      }
-      const sessionCache = sessionStorage.getItem("brainlab_admin_session_cache");
-      if (sessionCache) {
-        const parsedSession = JSON.parse(sessionCache);
-        if (parsedSession?.user?.role) {
-          return true;
-        }
-      }
-      if (sessionStorage.getItem("brainlab_admin_pin_verified") === "true") {
-        return true;
-      }
-    } catch {
-      // ignore
-    }
-  }
-
+  const targetId = userId || authUser?.id;
   if (!targetId) return false;
 
-  // 5. Server-side authoritative lookup fallback
   if (typeof window === "undefined") {
     try {
       const { resolveAdminRole } = await import("./supabaseServer");
-      const resolved = await resolveAdminRole(targetId, undefined, authUser?.email);
-      if (resolved && resolved.trim().length > 0) {
-        return true;
-      }
+      return Boolean(await resolveAdminRole(
+        targetId,
+        undefined,
+        authUser?.id === targetId ? authUser.email : undefined
+      ));
     } catch {
-      // proceed
+      return false;
     }
   }
 
-  // 6. Check admin_profiles table
+  // The browser may only resolve the currently authenticated account.
+  if (!authUser || authUser.id !== targetId) return false;
+
   try {
-    const { data: profile } = await supabase
+    const { data: rpcRole } = await supabase.rpc("get_admin_role");
+    if (typeof rpcRole === "string" && rpcRole.trim()) return true;
+  } catch {
+    // Continue to database-backed role checks.
+  }
+
+  try {
+    const { data } = await supabase
       .from("admin_profiles")
       .select("role")
       .eq("user_id", targetId)
       .maybeSingle();
-    if (profile && typeof profile.role === "string" && profile.role.trim().length > 0) {
-      return true;
-    }
+    if (typeof data?.role === "string" && data.role.trim()) return true;
   } catch {
-    // proceed
+    // Continue to the consolidated admin table.
   }
 
-  // 7. (admin_user_roles check removed: table consolidated into admin_profiles & admin_users)
-
-  // 8. Check admin_users table
   try {
-    const { data: adminUser } = await supabase
+    const { data } = await supabase
       .from("admin_users")
       .select("role")
       .eq("id", targetId)
       .maybeSingle();
-    if (adminUser && typeof adminUser.role === "string" && adminUser.role.trim().length > 0) {
-      return true;
-    }
-
-    if (authUser?.email) {
-      const { data: adminByEmail } = await supabase
-        .from("admin_users")
-        .select("role")
-        .ilike("email", authUser.email.trim())
-        .maybeSingle();
-      if (adminByEmail && typeof adminByEmail.role === "string" && adminByEmail.role.trim().length > 0) {
-        return true;
-      }
-    }
+    return Boolean(typeof data?.role === "string" && data.role.trim());
   } catch {
-    // proceed
+    return false;
   }
-
-  return false;
 }
 
-/**
- * Specifically checks whether the user is a Super Administrator.
- */
 export async function isCurrentUserSuperAdmin(userId?: string): Promise<boolean> {
+  let authUser: { id: string; email?: string } | null = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) authUser = { id: data.user.id, email: data.user.email };
+  } catch {
+    // Treat failed authentication as unauthenticated.
+  }
+
+  const targetId = userId || authUser?.id;
+  if (!targetId) return false;
+
+  if (typeof window === "undefined") {
+    try {
+      const { resolveAdminRole } = await import("./supabaseServer");
+      return (await resolveAdminRole(
+        targetId,
+        undefined,
+        authUser?.id === targetId ? authUser.email : undefined
+      ))?.toLowerCase() === "super_admin";
+    } catch {
+      return false;
+    }
+  }
+
+  if (!authUser || authUser.id !== targetId) return false;
+
   try {
     const { data: rpcRole } = await supabase.rpc("get_admin_role");
     if (typeof rpcRole === "string" && rpcRole.trim().toLowerCase() === "super_admin") {
       return true;
     }
   } catch {
-    // proceed
+    // Continue to database-backed role checks.
   }
-
-  let targetId = userId;
-  try {
-    const { data: authData } = await supabase.auth.getUser();
-    if (authData?.user) {
-      if (
-        authData.user.app_metadata?.is_super_admin ||
-        authData.user.user_metadata?.is_super_admin ||
-        String(authData.user.app_metadata?.role).toLowerCase() === "super_admin" ||
-        String(authData.user.user_metadata?.role).toLowerCase() === "super_admin"
-      ) {
-        return true;
-      }
-      if (!targetId) targetId = authData.user.id;
-    }
-  } catch {
-    // proceed
-  }
-
-  if (typeof window !== "undefined") {
-    try {
-      const cached = localStorage.getItem("admin_user");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed?.role === "super_admin") return true;
-      }
-    } catch {
-      // proceed
-    }
-  }
-
-  if (!targetId) return false;
 
   try {
-    const { data: profile } = await supabase
+    const { data } = await supabase
       .from("admin_profiles")
       .select("role")
       .eq("user_id", targetId)
       .maybeSingle();
-    if (profile?.role === "super_admin") return true;
+    if (String(data?.role || "").toLowerCase() === "super_admin") return true;
   } catch {
-    // proceed
+    // Continue to the consolidated admin table.
   }
 
   try {
-    const { data: adminUser } = await supabase
+    const { data } = await supabase
       .from("admin_users")
       .select("role")
       .eq("id", targetId)
       .maybeSingle();
-    if (adminUser?.role === "super_admin") return true;
+    return String(data?.role || "").toLowerCase() === "super_admin";
   } catch {
-    // proceed
+    return false;
   }
-
-  return false;
 }
 
 /**
