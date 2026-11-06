@@ -585,7 +585,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
               {/* XP & RATING REWARDS NOTIFICATION */}
               {!isSpectator && <div className="flex items-center justify-center gap-6 text-sm font-bold text-slate-300 mb-8">
                 <span className="flex items-center gap-1.5 text-emerald-400">
-                  <span>★</span> +{match.winner_id === currentUserId ? "50" : "20"} Arena XP
+                  <span>★</span> +{match.winner_is_me ? "50" : "20"} Arena XP
                 </span>
                 {match.metadata?.match_mode === "friendly" ? (
                   <span className="flex items-center gap-1.5 text-slate-400"><span>🤝</span> Friendly match · No rating change</span>
