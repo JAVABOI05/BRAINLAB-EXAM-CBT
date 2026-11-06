@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
 import { gradeStemExperimentAttempt } from "@/app/lib/stem/stemService";
-import { isGovernanceAdminRole } from "@/app/lib/adminRoles";
 
 export async function POST(
   request: NextRequest,
