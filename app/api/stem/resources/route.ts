@@ -61,12 +61,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify role: tutor, instructor, or admin
+    // STEM authoring is limited to verified teachers/tutors and governance administrators.
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
     const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
 
-    const isPermitted = isInstructorRole(role) || isGovernanceAdminRole(role);
+    const isPermitted = role === "teacher" || role === "tutor" || isGovernanceAdminRole(role);
     if (!isPermitted) {
       return NextResponse.json(
         { ok: false, error: "Only tutors, instructors and administrators can author STEM resources." },
