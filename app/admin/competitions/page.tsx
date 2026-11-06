@@ -176,6 +176,9 @@ export default function CompetitionArenaAdminPage() {
   });
   const [emergencyPin, setEmergencyPin] = useState("");
   const [emergencySaving, setEmergencySaving] = useState(false);
+  const [emergencyScope, setEmergencyScope] = useState<"global" | "competition" | "match" | "challenge" | "registration">("global");
+  const [emergencyTargetId, setEmergencyTargetId] = useState("all");
+  const [scopedEmergencyControls, setScopedEmergencyControls] = useState<Record<string, unknown>[]>([]);
 
   const searchInputId = useId();
 
@@ -319,9 +322,50 @@ export default function CompetitionArenaAdminPage() {
       if (res.ok) {
         const d = await res.json();
         if (d.controls) setEmergencyControls(d.controls);
+        setScopedEmergencyControls(d.scopedControls || []);
       }
     } catch {}
   }, []);
+
+  const handleSaveEmergencyControls = async () => {
+    if (adminUser?.role !== "super_admin") {
+      setError("Only Super Admin may change Arena emergency controls.");
+      return;
+    }
+    if (!emergencyPin.trim()) {
+      setError("Enter the Admin Security PIN to continue.");
+      return;
+    }
+    if (emergencyScope !== "global" && !emergencyTargetId.trim()) {
+      setError("Enter the target ID for this scoped emergency control.");
+      return;
+    }
+    setEmergencySaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await authFetch("/api/competition/emergency-controls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scope: emergencyScope,
+          target_id: emergencyScope === "global" ? "all" : emergencyTargetId.trim(),
+          ...emergencyControls,
+          pin: emergencyPin,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to save emergency controls.");
+      setEmergencyControls(data.controls);
+      setEmergencyPin("");
+      setMessage("Arena emergency controls updated and audit recorded.");
+      await loadEmergencyControls();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save emergency controls.");
+    } finally {
+      setEmergencySaving(false);
+    }
+  };
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
@@ -1441,6 +1485,59 @@ export default function CompetitionArenaAdminPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUPER ADMIN EMERGENCY CONTROLS */}
+      {/* ========================================================================= */}
+      {activeTab === "emergency" && (
+        <section className="rounded-2xl border border-rose-200 dark:border-rose-900 bg-white dark:bg-[#0d172e] p-6 space-y-5">
+          <div>
+            <h2 className="text-xl font-black text-rose-700 dark:text-rose-300">Arena Emergency Control Centre</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">Separate controls for the entire Arena, individual competitions, matches, student challenges and registration. Every change requires the Super Admin security PIN.</p>
+          </div>
+          {adminUser?.role !== "super_admin" ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">Emergency controls are restricted to Super Admin. Other Arena administrators may monitor but cannot activate platform-wide or scoped emergency switches.</div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="text-sm font-bold">Control scope
+                  <select value={emergencyScope} onChange={e => { const value = e.target.value as typeof emergencyScope; setEmergencyScope(value); setEmergencyTargetId(value === "global" ? "all" : ""); }} className="mt-1 w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+                    <option value="global">Entire Competition Arena</option>
+                    <option value="competition">Specific competition</option>
+                    <option value="match">Specific match</option>
+                    <option value="challenge">All student challenges</option>
+                    <option value="registration">All competition registration</option>
+                  </select>
+                </label>
+                {emergencyScope !== "global" && <label className="text-sm font-bold">Target ID
+                  <input value={emergencyTargetId} onChange={e => setEmergencyTargetId(e.target.value)} placeholder={emergencyScope === "challenge" || emergencyScope === "registration" ? "all" : "Paste target UUID"} className="mt-1 w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3" />
+                </label>}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <label className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900 p-4"><input type="checkbox" checked={emergencyControls.is_paused} onChange={e => setEmergencyControls(v => ({ ...v, is_paused: e.target.checked }))} /><span><strong className="block text-sm">Pause activity</strong><span className="text-xs text-gray-500">Block new activity in the selected scope</span></span></label>
+                <label className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-900 p-4"><input type="checkbox" checked={emergencyControls.freeze_leaderboards} onChange={e => setEmergencyControls(v => ({ ...v, freeze_leaderboards: e.target.checked }))} /><span><strong className="block text-sm">Freeze leaderboards</strong><span className="text-xs text-gray-500">Suspend ranking updates</span></span></label>
+                <label className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900 p-4"><input type="checkbox" checked={emergencyControls.maintenance_mode} onChange={e => setEmergencyControls(v => ({ ...v, maintenance_mode: e.target.checked }))} /><span><strong className="block text-sm">Maintenance mode</strong><span className="text-xs text-gray-500">Display maintenance state for this scope</span></span></label>
+              </div>
+              <label className="block text-sm font-bold">Emergency announcement
+                <textarea value={emergencyControls.announcement} onChange={e => setEmergencyControls(v => ({ ...v, announcement: e.target.value }))} rows={2} maxLength={500} className="mt-1 w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3" placeholder="Optional notice shown to affected Arena users" />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <input type="password" value={emergencyPin} onChange={e => setEmergencyPin(e.target.value)} placeholder="Admin Security PIN" className="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3" />
+                <button onClick={handleSaveEmergencyControls} disabled={emergencySaving} className="rounded-xl bg-rose-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50">{emergencySaving ? "Applying…" : "Apply emergency control"}</button>
+              </div>
+            </>
+          )}
+          <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+            <h3 className="font-bold text-sm">Active scoped controls</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {scopedEmergencyControls.filter(item => Boolean(item.is_paused || item.maintenance_mode || item.freeze_leaderboards)).map((item, index) => (
+                <span key={String(item.id || index)} className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900">{String(item.scope)} · {String(item.target_id)} · {item.is_paused ? "Paused" : item.maintenance_mode ? "Maintenance" : "Frozen"}</span>
+              ))}
+              {scopedEmergencyControls.every(item => !item.is_paused && !item.maintenance_mode && !item.freeze_leaderboards) && <span className="text-xs text-gray-500">No active scoped emergency switches.</span>}
+            </div>
+          </div>
+        </section>
       )}
 
       {/* ========================================================================= */}
