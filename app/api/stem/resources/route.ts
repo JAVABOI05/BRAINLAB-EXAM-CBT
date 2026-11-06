@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
+import {
+  getSupabasePublicServerClient,
+  getSupabaseServerClient,
+  getUserFromRequest,
+  resolveAdminRole,
+} from "@/app/lib/supabaseServer";
 import { listStemResources, createStemResource } from "@/app/lib/stem/stemService";
 import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
 
@@ -9,18 +14,34 @@ export async function GET(request: NextRequest) {
     const subject_id = searchParams.get("subject_id") || undefined;
     const topic_id = searchParams.get("topic_id") || undefined;
     const tier = searchParams.get("tier") ? Number(searchParams.get("tier")) : undefined;
-    const resource_type = searchParams.get("resource_type") as any || undefined;
-    const status = searchParams.get("status") as any || "published";
+    const resource_type = (searchParams.get("resource_type") as any) || undefined;
+    const requestedStatus = searchParams.get("status");
     const search = searchParams.get("search") || undefined;
     const featured_only = searchParams.get("featured") === "true";
 
-    // Server client with request context
+    // Authentication and authorization check for non-published content access
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
-    const client = getSupabaseServerClient(token);
+    const user = await getUserFromRequest(request);
+
+    let isAuthorizedReviewer = false;
+    if (user) {
+      const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
+      isAuthorizedReviewer = isInstructorRole(role) || isGovernanceAdminRole(role);
+    }
+
+    // Public / unauthenticated callers can ONLY view published resources
+    const effectiveStatus = isAuthorizedReviewer && requestedStatus
+      ? (requestedStatus as any)
+      : "published";
+
+    // Use anon client for public reads to ensure RLS compliance
+    const client = isAuthorizedReviewer && token
+      ? getSupabaseServerClient(token)
+      : getSupabasePublicServerClient();
 
     const resources = await listStemResources(
-      { subject_id, topic_id, tier, resource_type, status, search, featured_only },
+      { subject_id, topic_id, tier, resource_type, status: effectiveStatus, search, featured_only },
       client
     );
 

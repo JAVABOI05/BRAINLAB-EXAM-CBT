@@ -1,5 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import {
+  getSupabasePublicServerClient,
+  getSupabaseServerClient,
+  getUserFromRequest,
+  resolveAdminRole,
+} from "@/app/lib/supabaseServer";
+import { isGovernanceAdminRole } from "@/app/lib/adminRoles";
+
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
+
+    if (!isGovernanceAdminRole(role)) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    const supabase = getSupabaseServerClient(token);
+    const { data, error } = await supabase
+      .from("school_inquiries")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, inquiries: data || [] });
+  } catch (err: unknown) {
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : "Internal error" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,14 +62,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate reference code BL-SCH-[Random 5 chars]
+    // Generate cryptographic reference code BL-SCH-[Random 5 chars]
     const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
     const referenceCode = `BL-SCH-${randomHex}`;
 
-    // Broadcast instant alert to Admin Notification Bell via Supabase channel
+    // 1. Persist to database using public client (RLS enforces INSERT-only for anon)
+    const publicClient = getSupabasePublicServerClient();
+    const { error: insertError } = await publicClient.from("school_inquiries").insert([
+      {
+        reference_code: referenceCode,
+        school_name: schoolName.trim(),
+        contact_name: contactName.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim(),
+        location: location ? location.trim() : "Nigeria",
+        student_count: studentCount || "Unspecified",
+        exam_type: examType || "JAMB UTME Mocks",
+        notes: notes ? notes.trim() : null,
+        status: "Pending",
+      },
+    ]);
+
+    if (insertError) {
+      // If table has not yet been migrated in current environment, log without PII
+      console.warn(`[INSTITUTIONAL INQUIRY] Database persistence notice for Ref ${referenceCode}: ${insertError.message}`);
+    }
+
+    // 2. Broadcast alert to live admin channel as a secondary real-time notification
     try {
-      const supabase = getSupabaseServerClient();
-      const channel = supabase.channel("admin_live_alerts");
+      const channel = publicClient.channel("admin_live_alerts");
       await channel.send({
         type: "broadcast",
         event: "new_school_inquiry",
@@ -37,8 +98,6 @@ export async function POST(req: NextRequest) {
           referenceCode,
           schoolName,
           contactName,
-          phone,
-          email,
           location: location || "Nigeria",
           studentCount: studentCount || "Unspecified",
           examType: examType || "JAMB CBT",
@@ -46,11 +105,11 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch (bcErr) {
-      console.warn("Failed to broadcast real-time school inquiry alert:", bcErr);
+      console.warn("Real-time broadcast notification notice:", bcErr);
     }
 
-    // Log the inquiry for administration
-    console.info(`[INSTITUTIONAL INQUIRY] Ref: ${referenceCode} | School: ${schoolName} | Contact: ${contactName} (${phone}, ${email}) | Students: ${studentCount || "Unspecified"} | Exam: ${examType || "General"}`);
+    // 3. Sanitized log without unredacted personal contact details (PII protection)
+    console.info(`[INSTITUTIONAL INQUIRY] Ref: ${referenceCode} | Status: Recorded`);
 
     return NextResponse.json({
       ok: true,

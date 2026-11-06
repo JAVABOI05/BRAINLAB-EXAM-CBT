@@ -185,12 +185,9 @@ export default function SchoolsPage() {
         });
       }
     } catch {
-      // Local fallback in case of connection drop
-      const localRef = `BL-SCH-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       setSubmitResult({
-        ok: true,
-        ref: localRef,
-        message: "Inquiry saved! A representative will connect with you shortly.",
+        ok: false,
+        message: "Connection failed. We could not automatically transmit your inquiry. Please reach our Academic Partnership Team directly via WhatsApp or email below.",
       });
     } finally {
       setIsSubmitting(false);
