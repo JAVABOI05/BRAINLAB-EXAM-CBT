@@ -660,6 +660,7 @@ export default function CompetitionArenaAdminPage() {
 
       <div className="flex flex-wrap gap-2">
         <Link href="/admin/competitions/team-requests" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Review Permanent Team Requests</Link>
+        <Link href="/admin/competitions/access-codes" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Manage Access Codes</Link>
         <Link href="/challenge-arena/appeals" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Appeals Centre</Link>
       </div>
 
