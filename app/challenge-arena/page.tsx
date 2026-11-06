@@ -126,6 +126,7 @@ export default function ChallengeArenaPage() {
   const [newChallengeQCount, setNewChallengeQCount] = useState(10);
   const [newChallengeDuration, setNewChallengeDuration] = useState(5);
   const [newChallengeDifficulty, setNewChallengeDifficulty] = useState("medium");
+  const [newChallengeMatchMode, setNewChallengeMatchMode] = useState<"ranked" | "friendly">("ranked");
   const [submittingChallenge, setSubmittingChallenge] = useState(false);
 
   // Squad modal
@@ -226,6 +227,7 @@ export default function ChallengeArenaPage() {
           question_count: newChallengeQCount,
           duration_minutes: newChallengeDuration,
           difficulty: newChallengeDifficulty,
+          match_mode: newChallengeMatchMode,
           challenged_id: null,
         }),
       });
@@ -908,6 +910,18 @@ export default function ChallengeArenaPage() {
                     <option value={10}>10 Minutes</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-400 block mb-1">Match Type</label>
+                <select
+                  value={newChallengeMatchMode}
+                  onChange={(e) => setNewChallengeMatchMode(e.target.value as "ranked" | "friendly")}
+                  className={`w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                >
+                  <option value="ranked">Ranked — affects competitive rating</option>
+                  <option value="friendly">Friendly — practice, no rating change</option>
+                </select>
               </div>
 
               <div className="flex gap-2 justify-end mt-2">
