@@ -300,9 +300,7 @@ export default function ChallengeArenaPage() {
       setNewSquadName("");
       setNewSquadMotto("");
       loadArenaData();
-      if (data.team?.id) {
-        router.push(`/challenge-arena/teams/${data.team.id}`);
-      }
+      alert(data.message || "Your team request has been submitted for review.");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Error creating squad");
     } finally {
@@ -401,6 +399,9 @@ export default function ChallengeArenaPage() {
             </Link>
           )}
 
+          <Link href="/challenge-arena/appeals" className="hidden sm:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-300 transition">
+            Appeals Centre
+          </Link>
           <ArenaThemeToggle />
         </div>
       </header>
