@@ -141,60 +141,101 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, motto, avatar_url } = body;
-
-    if (!name || name.trim().length < 3) {
-      return NextResponse.json({ error: "Team name must be at least 3 characters" }, { status: 400 });
+    const { name, motto, avatar_url, description } = body;
+    if (typeof name !== "string" || name.trim().length < 3 || name.trim().length > 60) {
+      return NextResponse.json({ error: "Team name must be between 3 and 60 characters." }, { status: 400 });
     }
 
     const supabase = getSupabaseServerClient();
+    const founderIds = Array.from(new Set([
+      user.id,
+      ...(Array.isArray(body.founding_member_ids)
+        ? body.founding_member_ids.filter((id: unknown): id is string => typeof id === "string")
+        : []),
+    ])).slice(0, 10);
 
-    // Check if user is already in a team
     const { data: existingMember } = await supabase
       .from("competition_team_members")
-      .select("id, team_id")
+      .select("id")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .maybeSingle();
-
     if (existingMember) {
-      return NextResponse.json({ error: "You are already a member of an active team. Leave your current team first." }, { status: 400 });
+      return NextResponse.json({ error: "You are already a member of an active team." }, { status: 409 });
     }
 
-    const slug = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+    const { data: occupiedFounders } = await supabase
+      .from("competition_team_members")
+      .select("user_id")
+      .in("user_id", founderIds)
+      .eq("is_active", true);
+    if (occupiedFounders?.length) {
+      return NextResponse.json({ error: "One or more proposed founding members already belong to an active team." }, { status: 409 });
+    }
 
-    // Insert team
-    const { data: team, error: teamErr } = await supabase
+    const { data: duplicateTeam } = await supabase
       .from("competition_teams")
+      .select("id")
+      .ilike("name", name.trim())
+      .limit(1)
+      .maybeSingle();
+    if (duplicateTeam) {
+      return NextResponse.json({ error: "A team with this name already exists." }, { status: 409 });
+    }
+
+    const { data: pendingRequest } = await supabase
+      .from("competition_team_requests")
+      .select("id")
+      .eq("requested_by", user.id)
+      .in("status", ["pending", "needs_changes"])
+      .limit(1)
+      .maybeSingle();
+    if (pendingRequest) {
+      return NextResponse.json({ error: "You already have a team request awaiting review." }, { status: 409 });
+    }
+
+    const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const { data: requestRecord, error: requestError } = await supabase
+      .from("competition_team_requests")
       .insert({
-        name: name.trim(),
-        slug: `${slug}-${Math.floor(1000 + Math.random() * 9000)}`,
-        motto: motto?.trim() || "Rise Together, Win Together",
-        avatar_url: avatar_url || null,
-        captain_id: user.id,
-        is_recruiting: true,
-        elo_rating: 1200,
+        requested_by: user.id,
+        proposed_name: name.trim(),
+        proposed_slug: `${slug}-${Date.now().toString(36)}`,
+        motto: typeof motto === "string" ? motto.trim().slice(0, 120) : null,
+        avatar_url: typeof avatar_url === "string" ? avatar_url : null,
+        description: typeof description === "string" ? description.trim().slice(0, 1000) : null,
+        founding_member_ids: founderIds,
+        recruitment_mode: ["open", "invitation_only", "closed"].includes(body.recruitment_mode)
+          ? body.recruitment_mode
+          : "invitation_only",
       })
       .select()
       .single();
+    if (requestError || !requestRecord) throw new Error(requestError?.message || "Unable to submit team request.");
 
-    if (teamErr || !team) {
-      throw new Error(teamErr?.message || "Failed to create team. Name might already be taken.");
-    }
+    const memberRows = founderIds.map((userId) => ({
+      request_id: requestRecord.id,
+      user_id: userId,
+      status: userId === user.id ? "accepted" : "pending",
+      responded_at: userId === user.id ? new Date().toISOString() : null,
+    }));
+    const { error: memberError } = await supabase.from("competition_team_request_members").insert(memberRows);
+    if (memberError) throw memberError;
 
-    // Insert captain as first member
-    await supabase.from("competition_team_members").insert({
-      team_id: team.id,
-      user_id: user.id,
-      role: "captain",
-      is_active: true,
-    });
+    const inviteNotifications = founderIds.filter((id) => id !== user.id).map((id) => ({
+      user_id: id,
+      title: "Founding team invitation",
+      message: `You have been invited to become a founding member of ${name.trim()}.`,
+      type: "competition_team_founder_invite",
+      metadata: { team_request_id: requestRecord.id },
+    }));
+    if (inviteNotifications.length) await supabase.from("notifications").insert(inviteNotifications);
 
-    return NextResponse.json({ team }, { status: 201 });
+    return NextResponse.json({
+      ok: true,
+      request: requestRecord,
+      message: "Team request submitted. Founding members must accept and an Arena administrator must approve it before the permanent team is created.",
+    }, { status: 202 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error creating team";
     return NextResponse.json({ error: message }, { status: 500 });
