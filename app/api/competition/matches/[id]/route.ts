@@ -76,11 +76,12 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
 
     // Apply result visibility before returning participant scores.
     const resultsVisibility = String(competition?.results_visibility || match.metadata?.results_visibility || "after_completion");
-    const canSeeScores = isAdmin ||
-      (isSpectator && competition?.spectator_scoreboard_visible === true && resultsVisibility === "public") ||
-      resultsVisibility === "public" ||
-      (isParticipant && resultsVisibility === "participants") ||
-      (resultsVisibility === "after_completion" && match.status === "completed" && (isParticipant || !isSpectator));
+    const canSeeScores = isAdmin || (isSpectator
+      ? competition?.spectator_scoreboard_visible === true &&
+        (resultsVisibility === "public" || (resultsVisibility === "after_completion" && match.status === "completed"))
+      : resultsVisibility === "public" ||
+        (isParticipant && resultsVisibility === "participants") ||
+        (isParticipant && resultsVisibility === "after_completion" && match.status === "completed"));
 
     // Enriched participants. Hidden results are not sent to the browser.
     const enrichedParticipants = (participants || []).map((p) => ({
