@@ -57,6 +57,7 @@ interface MatchState {
     question_count?: number;
     player_a_name?: string;
     player_b_name?: string;
+    match_mode?: "ranked" | "friendly";
   };
 }
 
