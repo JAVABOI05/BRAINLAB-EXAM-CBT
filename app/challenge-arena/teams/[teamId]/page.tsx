@@ -96,6 +96,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
       setTeam(data.team);
       setMembers(data.members || []);
       setActiveElection(data.activeElection || null);
+      setVoteSubmitted(Boolean(data.has_voted));
       setApplications(data.applications || []);
       setIsMyTeam(data.is_my_team);
       setMyRole(data.my_role);
