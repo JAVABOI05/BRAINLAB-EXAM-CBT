@@ -158,6 +158,11 @@ export default function CompetitionArenaAdminPage() {
   const [newCompSpectatorScoreboard, setNewCompSpectatorScoreboard] = useState(true);
   const [newCompResultsVisibility, setNewCompResultsVisibility] = useState<"hidden" | "participants" | "public" | "after_completion">("after_completion");
   const [newCompAnswerReveal, setNewCompAnswerReveal] = useState<"never" | "after_question" | "after_round" | "after_match" | "after_competition">("after_match");
+  const [newCompNegativeMarking, setNewCompNegativeMarking] = useState(false);
+  const [newCompNegativeValue, setNewCompNegativeValue] = useState("0.25");
+  const [newCompSpeedBonus, setNewCompSpeedBonus] = useState(false);
+  const [newCompSpeedBonusMax, setNewCompSpeedBonusMax] = useState("2");
+  const [newCompSpeedBonusWindow, setNewCompSpeedBonusWindow] = useState("30");
 
   // New Bank modal states
   const [showNewBankModal, setShowNewBankModal] = useState(false);
@@ -450,6 +455,13 @@ export default function CompetitionArenaAdminPage() {
           spectator_scoreboard_visible: newCompSpectatorScoreboard,
           results_visibility: newCompResultsVisibility,
           answer_reveal_mode: newCompAnswerReveal,
+          scoring_config: {
+            negative_marking_enabled: newCompNegativeMarking,
+            negative_marking_value: newCompNegativeMarking ? Math.max(0, Number(newCompNegativeValue) || 0) : 0,
+            speed_bonus_enabled: newCompSpeedBonus,
+            speed_bonus_max_points: newCompSpeedBonus ? Math.max(0, Number(newCompSpeedBonusMax) || 0) : 0,
+            speed_bonus_window_seconds: Math.max(1, Number(newCompSpeedBonusWindow) || 30),
+          },
           rules: {
             question_count: Number(newCompQCount),
             duration_seconds: Number(newCompDuration),
@@ -1680,6 +1692,30 @@ export default function CompetitionArenaAdminPage() {
                 </label>
               </div>
 
+
+              <div className="border-t border-gray-100 pt-3 space-y-3">
+                <h4 className="font-bold text-gray-900">Match Scoring Rules</h4>
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                  <input type="checkbox" checked={newCompNegativeMarking} onChange={(e) => setNewCompNegativeMarking(e.target.checked)} />
+                  Enable negative marking for incorrect answers
+                </label>
+                {newCompNegativeMarking && <label className="block text-xs font-semibold text-gray-700">Penalty per incorrect answer (marks)
+                  <input type="number" min="0" step="0.05" value={newCompNegativeValue} onChange={(e) => setNewCompNegativeValue(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                </label>}
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                  <input type="checkbox" checked={newCompSpeedBonus} onChange={(e) => setNewCompSpeedBonus(e.target.checked)} />
+                  Enable server-timed speed bonus for correct answers
+                </label>
+                {newCompSpeedBonus && <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Maximum bonus points
+                    <input type="number" min="0" step="0.25" value={newCompSpeedBonusMax} onChange={(e) => setNewCompSpeedBonusMax(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Speed window (seconds)
+                    <input type="number" min="1" step="1" value={newCompSpeedBonusWindow} onChange={(e) => setNewCompSpeedBonusWindow(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                </div>}
+                <p className="text-[11px] text-gray-500">Answer timing and scoring are calculated on the server. These rules are stored with the competition and cannot be changed for an active match.</p>
+              </div>
 
               <div className="border-t border-gray-100 pt-3 space-y-3">
                 <h4 className="font-bold text-gray-900">Registration & Access</h4>
