@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      challenged_id = null,
+      challenged_slug = null,
       subject = "General",
       question_count = 10,
       duration_minutes = 5,
@@ -106,12 +106,27 @@ export async function POST(req: NextRequest) {
     if (!["ranked", "friendly"].includes(match_mode)) {
       return NextResponse.json({ error: "Challenge mode must be ranked or friendly." }, { status: 400 });
     }
-
-    if (challenged_id && challenged_id === user.id) {
-      return NextResponse.json({ error: "You cannot challenge yourself." }, { status: 400 });
+    if (!["easy", "medium", "hard", "mixed"].includes(difficulty)) {
+      return NextResponse.json({ error: "Choose a valid challenge difficulty." }, { status: 400 });
     }
 
     const supabase = getSupabaseServerClient();
+    let challenged_id: string | null = null;
+    if (challenged_slug) {
+      if (typeof challenged_slug !== "string" || challenged_slug.length > 100) {
+        return NextResponse.json({ error: "Invalid public player profile." }, { status: 400 });
+      }
+      const { data: targetBySlug, error: targetBySlugError } = await supabase
+        .from("competition_public_profiles")
+        .select("user_id, challenge_availability, is_available")
+        .eq("slug", challenged_slug)
+        .eq("visibility", "public")
+        .maybeSingle();
+      if (targetBySlugError) throw targetBySlugError;
+      if (!targetBySlug) return NextResponse.json({ error: "Public player profile not found." }, { status: 404 });
+      challenged_id = targetBySlug.user_id;
+      if (challenged_id === user.id) return NextResponse.json({ error: "You cannot challenge yourself." }, { status: 400 });
+    }
 
     if (challenged_id) {
       const { data: targetProfile, error: targetProfileError } = await supabase
@@ -192,7 +207,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ challenge }, { status: 201 });
+    return NextResponse.json({
+      challenge: {
+        id: challenge.id,
+        subject: challenge.subject,
+        question_count: challenge.question_count,
+        duration_minutes: challenge.duration_minutes,
+        difficulty: challenge.difficulty,
+        match_mode: challenge.match_mode,
+        status: challenge.status,
+        created_at: challenge.created_at,
+      },
+    }, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error creating challenge";
     return NextResponse.json({ error: message }, { status: 500 });
