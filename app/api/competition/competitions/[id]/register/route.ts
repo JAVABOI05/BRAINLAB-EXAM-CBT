@@ -114,12 +114,12 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     // Get user profile for display name
     const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("full_name, username, email")
-      .eq("id", user.id)
+      .from("competition_public_profiles")
+      .select("display_name")
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    const displayName = profile?.full_name || profile?.username || user.email || "Candidate";
+    const displayName = profile?.display_name || `BrainLab Player ${user.id.slice(0, 4).toUpperCase()}`;
 
     // If paid and not admin -> Initialize BACHS payment
     if (entryFeeKobo > 0 && !isAdmin) {
