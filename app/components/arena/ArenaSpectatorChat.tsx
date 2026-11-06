@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 
 type SpectatorMessage = {
@@ -48,7 +48,7 @@ export default function ArenaSpectatorChat({ matchId }: { matchId: string }) {
     return () => clearInterval(interval);
   }, [load, token]);
 
-  const send = async (event: FormEvent, content = message, messageType: "chat" | "reaction" = "chat") => {
+  const send = async (event: { preventDefault: () => void }, content = message, messageType: "chat" | "reaction" = "chat") => {
     event.preventDefault();
     if (!token || !content.trim()) return;
     setBusy(true); setError("");
