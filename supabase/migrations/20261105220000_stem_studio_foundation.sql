@@ -164,6 +164,10 @@ BEGIN
     OR EXISTS (
       SELECT 1 FROM public.admin_profiles p
       WHERE p.user_id = auth.uid() AND p.role = 'teacher'
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.tutor_profiles t
+      WHERE t.user_id = auth.uid() AND t.profile_status = 'approved'
     );
 END;
 $;
