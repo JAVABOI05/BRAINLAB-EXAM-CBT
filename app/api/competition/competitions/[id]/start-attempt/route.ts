@@ -88,7 +88,10 @@ export async function POST(
           .eq("bank_id", comp.question_bank_id)
           .eq("is_archived", false)
           .in("status", ["approved", "published"]);
-        compQuestions = (bq || []) as CompetitionQuestionItem[];
+        compQuestions = (bq || []).filter((row) =>
+          typeof row.correct_answer === "string" &&
+          ["A", "B", "C", "D", "E"].includes(row.correct_answer.trim().toUpperCase())
+        ) as CompetitionQuestionItem[];
       }
     }
 
