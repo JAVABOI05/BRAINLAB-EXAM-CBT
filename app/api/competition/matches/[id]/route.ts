@@ -423,79 +423,85 @@ async function finalizeMatch(matchId: string, supabase: any) {
     })
     .eq("id", matchId);
 
-  // Fetch or initialize ratings for both players
-  const { data: ratingA } = await supabase
-    .from("competition_ratings")
-    .select("*")
-    .eq("user_id", pA.user_id)
-    .maybeSingle();
-
-  const { data: ratingB } = await supabase
-    .from("competition_ratings")
-    .select("*")
-    .eq("user_id", pB.user_id)
-    .maybeSingle();
-
-  const currentEloA = ratingA?.elo_rating || 1200;
-  const currentEloB = ratingB?.elo_rating || 1200;
-
-  // Calculate Elo deltas
-  const { data: deltaA } = await supabase.rpc("calculate_elo_delta", {
-    player_rating: currentEloA,
-    opponent_rating: currentEloB,
-    actual_score: actualScoreA,
-    k_factor: 32,
-  });
-
-  const { data: deltaB } = await supabase.rpc("calculate_elo_delta", {
-    player_rating: currentEloB,
-    opponent_rating: currentEloA,
-    actual_score: actualScoreB,
-    k_factor: 32,
-  });
-
-  const newEloA = Math.max(100, currentEloA + (Number(deltaA) || 0));
-  const newEloB = Math.max(100, currentEloB + (Number(deltaB) || 0));
-
-  const tierFromElo = (elo: number) => {
-    if (elo >= 2200) return "Grandmaster";
-    if (elo >= 1900) return "Master";
-    if (elo >= 1650) return "Diamond";
-    if (elo >= 1450) return "Platinum";
-    if (elo >= 1300) return "Gold";
-    if (elo >= 1150) return "Silver";
-    return "Bronze";
-  };
-
-  // Upsert Player A rating
-  await supabase.from("competition_ratings").upsert({
-    user_id: pA.user_id,
-    elo_rating: newEloA,
-    peak_elo: Math.max(ratingA?.peak_elo || 1200, newEloA),
-    matches_played: (ratingA?.matches_played || 0) + 1,
-    matches_won: (ratingA?.matches_won || 0) + (actualScoreA === 1.0 ? 1 : 0),
-    matches_drawn: (ratingA?.matches_drawn || 0) + (actualScoreA === 0.5 ? 1 : 0),
-    matches_lost: (ratingA?.matches_lost || 0) + (actualScoreA === 0.0 ? 1 : 0),
-    win_streak: actualScoreA === 1.0 ? (ratingA?.win_streak || 0) + 1 : 0,
-    best_streak: Math.max(ratingA?.best_streak || 0, actualScoreA === 1.0 ? (ratingA?.win_streak || 0) + 1 : 0),
-    tier: tierFromElo(newEloA),
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
-
-  // Upsert Player B rating
-  await supabase.from("competition_ratings").upsert({
-    user_id: pB.user_id,
-    elo_rating: newEloB,
-    peak_elo: Math.max(ratingB?.peak_elo || 1200, newEloB),
-    matches_played: (ratingB?.matches_played || 0) + 1,
-    matches_won: (ratingB?.matches_won || 0) + (actualScoreB === 1.0 ? 1 : 0),
-    matches_drawn: (ratingB?.matches_drawn || 0) + (actualScoreB === 0.5 ? 1 : 0),
-    matches_lost: (ratingB?.matches_lost || 0) + (actualScoreB === 0.0 ? 1 : 0),
-    win_streak: actualScoreB === 1.0 ? (ratingB?.win_streak || 0) + 1 : 0,
-    best_streak: Math.max(ratingB?.best_streak || 0, actualScoreB === 1.0 ? (ratingB?.win_streak || 0) + 1 : 0),
-    tier: tierFromElo(newEloB),
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
+  // Friendly matches contribute experience but never change competitive rating.
+  const isRankedMatch = match.metadata?.match_mode !== "friendly" && match.metadata?.ranked !== false;
+  if (isRankedMatch) {
+    // Fetch or initialize ratings for both players
+    const { data: ratingA } = await supabase
+      .from("competition_ratings")
+      .select("*")
+      .eq("user_id", pA.user_id)
+      .maybeSingle();
+  
+    const { data: ratingB } = await supabase
+      .from("competition_ratings")
+      .select("*")
+      .eq("user_id", pB.user_id)
+      .maybeSingle();
+  
+    const currentEloA = ratingA?.elo_rating || 1200;
+    const currentEloB = ratingB?.elo_rating || 1200;
+  
+    // Calculate Elo deltas
+    const { data: deltaA } = await supabase.rpc("calculate_elo_delta", {
+      player_rating: currentEloA,
+      opponent_rating: currentEloB,
+      actual_score: actualScoreA,
+      k_factor: 32,
+    });
+  
+    const { data: deltaB } = await supabase.rpc("calculate_elo_delta", {
+      player_rating: currentEloB,
+      opponent_rating: currentEloA,
+      actual_score: actualScoreB,
+      k_factor: 32,
+    });
+  
+    const newEloA = Math.max(100, currentEloA + (Number(deltaA) || 0));
+    const newEloB = Math.max(100, currentEloB + (Number(deltaB) || 0));
+  
+    const tierFromElo = (elo: number) => {
+      if (elo >= 2200) return "Grandmaster";
+      if (elo >= 1900) return "Master";
+      if (elo >= 1650) return "Diamond";
+      if (elo >= 1450) return "Platinum";
+      if (elo >= 1300) return "Gold";
+      if (elo >= 1150) return "Silver";
+      return "Bronze";
+    };
+  
+    // Upsert Player A rating
+    await supabase.from("competition_ratings").upsert({
+      user_id: pA.user_id,
+      elo_rating: newEloA,
+      peak_elo: Math.max(ratingA?.peak_elo || 1200, newEloA),
+      matches_played: (ratingA?.matches_played || 0) + 1,
+      matches_won: (ratingA?.matches_won || 0) + (actualScoreA === 1.0 ? 1 : 0),
+      matches_drawn: (ratingA?.matches_drawn || 0) + (actualScoreA === 0.5 ? 1 : 0),
+      matches_lost: (ratingA?.matches_lost || 0) + (actualScoreA === 0.0 ? 1 : 0),
+      win_streak: actualScoreA === 1.0 ? (ratingA?.win_streak || 0) + 1 : 0,
+      best_streak: Math.max(ratingA?.best_streak || 0, actualScoreA === 1.0 ? (ratingA?.win_streak || 0) + 1 : 0),
+      tier: tierFromElo(newEloA),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+  
+    // Upsert Player B rating
+    await supabase.from("competition_ratings").upsert({
+      user_id: pB.user_id,
+      elo_rating: newEloB,
+      peak_elo: Math.max(ratingB?.peak_elo || 1200, newEloB),
+      matches_played: (ratingB?.matches_played || 0) + 1,
+      matches_won: (ratingB?.matches_won || 0) + (actualScoreB === 1.0 ? 1 : 0),
+      matches_drawn: (ratingB?.matches_drawn || 0) + (actualScoreB === 0.5 ? 1 : 0),
+      matches_lost: (ratingB?.matches_lost || 0) + (actualScoreB === 0.0 ? 1 : 0),
+      win_streak: actualScoreB === 1.0 ? (ratingB?.win_streak || 0) + 1 : 0,
+      best_streak: Math.max(ratingB?.best_streak || 0, actualScoreB === 1.0 ? (ratingB?.win_streak || 0) + 1 : 0),
+      tier: tierFromElo(newEloB),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+  
+  
+  }
 
   // Award XP to gamification ledger
   const xpWin = 50;
