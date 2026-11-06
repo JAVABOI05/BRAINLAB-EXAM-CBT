@@ -35,6 +35,14 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     }
 
     const now = new Date();
+    const { data: registrationControls } = await supabase
+      .from("competition_emergency_controls")
+      .select("target_id, is_paused, maintenance_mode")
+      .eq("scope", "registration")
+      .in("target_id", ["all", competitionId]);
+    if (registrationControls?.some((control) => control.is_paused || control.maintenance_mode)) {
+      return NextResponse.json({ error: "Arena registration is temporarily paused by Super Admin." }, { status: 423 });
+    }
     if (comp.registration_opens_at && now < new Date(comp.registration_opens_at)) {
       return NextResponse.json({ error: "Registration has not opened yet." }, { status: 400 });
     }
