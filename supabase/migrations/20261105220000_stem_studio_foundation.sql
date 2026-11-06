@@ -163,6 +163,12 @@ BEGIN
   ) INTO v_is_assigned_tutor;
 
   IF v_is_assigned_tutor THEN
+    IF OLD.status NOT IN ('completed', 'graded') OR NEW.status <> 'graded' THEN
+      RAISE EXCEPTION 'Only submitted STEM attempts may be graded';
+    END IF;
+    IF NEW.tutor_score IS NULL OR NEW.tutor_score < 0 OR NEW.tutor_score > 100 THEN
+      RAISE EXCEPTION 'STEM tutor score must be between 0 and 100';
+    END IF;
     IF NEW.observations IS DISTINCT FROM OLD.observations
       OR NEW.measurements IS DISTINCT FROM OLD.measurements
       OR NEW.conclusion IS DISTINCT FROM OLD.conclusion
