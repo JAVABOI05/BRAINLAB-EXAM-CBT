@@ -43,7 +43,6 @@ export default function ArenaSpectatorChat({ matchId }: { matchId: string }) {
   }, [load]);
 
   useEffect(() => {
-    if (!token) return;
     const interval = setInterval(() => load(token).catch(() => {}), 5000);
     return () => clearInterval(interval);
   }, [load, token]);
