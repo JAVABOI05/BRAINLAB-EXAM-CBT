@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.stem_resource_versions (
   initial_state JSONB NOT NULL DEFAULT '{}'::jsonb,
   content_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   learning_objectives TEXT[] DEFAULT '{}',
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT stem_resource_version_unique UNIQUE (resource_id, version_number)
 );
@@ -226,18 +226,72 @@ CREATE POLICY "Authors and admins manage curriculum mappings"
   );
 
 -- RLS: stem_experiment_attempts
+-- Students may read their own work and submit/update learning data while an
+-- attempt is in progress. Grading fields are never writable through student
+-- policies. Tutors can review attempts for their own classes.
 DROP POLICY IF EXISTS "Students view and manage own experiment attempts" ON public.stem_experiment_attempts;
-CREATE POLICY "Students view and manage own experiment attempts"
-  ON public.stem_experiment_attempts FOR ALL
+DROP POLICY IF EXISTS "Students read own STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Students create own STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Students update own in-progress STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Tutors and admins review STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Students delete own in-progress STEM attempts" ON public.stem_experiment_attempts;
+
+CREATE POLICY "Students read own STEM attempts"
+  ON public.stem_experiment_attempts FOR SELECT
   USING (
     student_id = auth.uid()
     OR public.is_stem_reviewer_or_admin()
     OR (
       class_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM public.live_classes c WHERE c.id = class_id AND c.tutor_id = auth.uid()
+        SELECT 1 FROM public.live_classes c
+        WHERE c.id = stem_experiment_attempts.class_id AND c.tutor_id = auth.uid()
       )
     )
   );
+
+CREATE POLICY "Students create own STEM attempts"
+  ON public.stem_experiment_attempts FOR INSERT
+  WITH CHECK (
+    student_id = auth.uid()
+    AND status = 'in_progress'
+    AND tutor_score IS NULL
+    AND tutor_feedback IS NULL
+  );
+
+CREATE POLICY "Students update own in-progress STEM attempts"
+  ON public.stem_experiment_attempts FOR UPDATE
+  USING (student_id = auth.uid() AND status = 'in_progress')
+  WITH CHECK (
+    student_id = auth.uid()
+    AND status IN ('in_progress', 'completed')
+    AND tutor_score IS NULL
+    AND tutor_feedback IS NULL
+  );
+
+CREATE POLICY "Tutors and admins review STEM attempts"
+  ON public.stem_experiment_attempts FOR UPDATE
+  USING (
+    public.is_stem_reviewer_or_admin()
+    OR (
+      class_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.live_classes c
+        WHERE c.id = stem_experiment_attempts.class_id AND c.tutor_id = auth.uid()
+      )
+    )
+  )
+  WITH CHECK (
+    public.is_stem_reviewer_or_admin()
+    OR (
+      class_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.live_classes c
+        WHERE c.id = stem_experiment_attempts.class_id AND c.tutor_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Students delete own in-progress STEM attempts"
+  ON public.stem_experiment_attempts FOR DELETE
+  USING (student_id = auth.uid() AND status = 'in_progress');
 
 -- Grants
 GRANT SELECT ON public.stem_resources TO anon, authenticated;
