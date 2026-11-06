@@ -364,7 +364,39 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
       // score or timing input is trusted.
       const configuredMarks = Number(snapshotQuestion.marks);
       const basePoints = Number.isFinite(configuredMarks) && configuredMarks > 0 ? configuredMarks : 10;
-      const pointsAwarded = isCorrect ? basePoints : 0;
+      const matchMetadata = match.metadata && typeof match.metadata === "object"
+        ? match.metadata as Record<string, unknown>
+        : {};
+      let scoringConfig = matchMetadata.scoring_config && typeof matchMetadata.scoring_config === "object"
+        ? matchMetadata.scoring_config as Record<string, unknown>
+        : {};
+      if (Object.keys(scoringConfig).length === 0 && typeof matchMetadata.competition_id === "string") {
+        const { data: competitionConfig } = await supabase
+          .from("competitions")
+          .select("scoring_config")
+          .eq("id", matchMetadata.competition_id)
+          .maybeSingle();
+        if (competitionConfig?.scoring_config && typeof competitionConfig.scoring_config === "object") {
+          scoringConfig = competitionConfig.scoring_config as Record<string, unknown>;
+        }
+      }
+
+      const negativeMarkingEnabled = scoringConfig.negative_marking_enabled === true;
+      const configuredPenalty = Number(scoringConfig.negative_marking_value);
+      const negativePenalty = Number.isFinite(configuredPenalty) && configuredPenalty > 0
+        ? Math.min(configuredPenalty, basePoints)
+        : 0;
+      const speedBonusEnabled = scoringConfig.speed_bonus_enabled === true;
+      const configuredSpeedBonus = Number(scoringConfig.speed_bonus_max_points);
+      const configuredSpeedWindow = Number(scoringConfig.speed_bonus_window_seconds);
+      const speedBonusMax = Number.isFinite(configuredSpeedBonus) && configuredSpeedBonus > 0 ? configuredSpeedBonus : 0;
+      const speedBonusWindow = Number.isFinite(configuredSpeedWindow) && configuredSpeedWindow > 0 ? configuredSpeedWindow : 30;
+      const speedBonus = speedBonusEnabled && isCorrect && speedBonusMax > 0
+        ? Math.max(0, speedBonusMax * (1 - Math.min(timeTaken, speedBonusWindow) / speedBonusWindow))
+        : 0;
+      const pointsAwarded = isCorrect
+        ? basePoints + speedBonus
+        : negativeMarkingEnabled ? -negativePenalty : 0;
 
       // One database transaction inserts the answer and atomically advances the
       // participant and match scores. Duplicate submissions roll back completely.
