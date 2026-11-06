@@ -313,6 +313,15 @@ function preservePassageUnits(
   return { ok: true, questions: result };
 }
 
+export function selectPassageSafeQuestions(
+  available: CompetitionQuestionItem[],
+  targetCount: number,
+  seed?: number
+): { ok: true; questions: CompetitionQuestionItem[] } | { ok: false; error: string } {
+  const candidates = shuffleArray(available, seed);
+  return preservePassageUnits(candidates.slice(0, targetCount), available, targetCount);
+}
+
 /**
  * Core Assessment Selection Engine
  * Generates an immutable attempt snapshot from the requested sources.
