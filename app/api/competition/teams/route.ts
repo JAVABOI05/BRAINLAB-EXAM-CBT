@@ -337,6 +337,17 @@ export async function PATCH(req: NextRequest) {
       if (app.team.captain_id !== user.id && app.team.co_captain_id !== user.id) {
         return NextResponse.json({ error: "Only team leaders can review applications" }, { status: 403 });
       }
+      if (decision === "approved") {
+        const { data: activeElection } = await supabase
+          .from("competition_team_elections")
+          .select("id")
+          .eq("team_id", app.team_id)
+          .eq("status", "active")
+          .maybeSingle();
+        if (activeElection) {
+          return NextResponse.json({ error: "Team membership is locked while a democratic election is active." }, { status: 409 });
+        }
+      }
 
       await supabase
         .from("competition_team_applications")
@@ -377,15 +388,27 @@ export async function PATCH(req: NextRequest) {
       }
 
       if (member.role === "captain") {
-        return NextResponse.json({ error: "Captains cannot leave their team without transferring leadership or disbanding." }, { status: 400 });
+        return NextResponse.json({ error: "The captain must initiate a leadership transfer or resignation election before leaving." }, { status: 409 });
       }
 
-      await supabase
-        .from("competition_team_members")
-        .delete()
-        .eq("id", member.id);
+      const { data: activeElection } = await supabase
+        .from("competition_team_elections")
+        .select("id")
+        .eq("team_id", member.team_id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (activeElection) {
+        return NextResponse.json({ error: "You cannot leave while a democratic team election is active. Please vote or wait for the election to conclude." }, { status: 409 });
+      }
 
-      return NextResponse.json({ ok: true, message: "Left team" });
+      const { error: leaveError } = await supabase
+        .from("competition_team_members")
+        .update({ is_active: false })
+        .eq("id", member.id)
+        .eq("is_active", true);
+      if (leaveError) throw leaveError;
+
+      return NextResponse.json({ ok: true, message: "You have left the active roster. Your historical team attribution is preserved." });
     }
 
     // ACTION: START DEMOCRATIC ELECTION (Captaincy or No-Confidence)
