@@ -10,7 +10,6 @@ type RatingEntry = { id: string; match_id?: string | null; rating_kind: string; 
 export default function ArenaRatingHistoryPage() {
   const router = useRouter();
   const [history, setHistory] = useState<RatingEntry[]>([]);
-  const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const load = useCallback(async (accessToken: string) => {
     const response = await fetch("/api/competition/ratings/history", { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -22,7 +21,6 @@ export default function ArenaRatingHistoryPage() {
     supabase.auth.getSession().then(async ({ data }) => {
       const accessToken = data.session?.access_token || "";
       if (!accessToken) { router.replace("/auth/signin?redirect=/challenge-arena/rating-history"); return; }
-      setToken(accessToken);
       try { await load(accessToken); } catch (err) { setError(err instanceof Error ? err.message : "Unable to load history."); }
     });
   }, [load, router]);
