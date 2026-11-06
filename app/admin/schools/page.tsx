@@ -113,14 +113,39 @@ export default function AdminSchoolsPage() {
   const [activeBatch, setActiveBatch] = useState<MockPinBatch | null>(null);
   const [voucherModalBatch, setVoucherModalBatch] = useState<MockPinBatch | null>(null);
 
-  const handleQuickApproveAndGenerate = (inq: SchoolInquiry) => {
+  const handleQuickApproveAndGenerate = async (inq: SchoolInquiry) => {
     let parsedCount = 100;
     if (inq.studentCount.includes("101-300")) parsedCount = 200;
     else if (inq.studentCount.includes("301-600")) parsedCount = 400;
     else if (inq.studentCount.includes("601+")) parsedCount = 700;
     else if (inq.studentCount.includes("50-100")) parsedCount = 80;
 
-    const generatedPins = generateCandidatePins(parsedCount);
+    let generatedPins: string[] = [];
+    try {
+      const res = await fetch("/api/admin/codes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          count: parsedCount,
+          cohort: inq.schoolName,
+          subject: inq.examType,
+          prefix: "BL-SCH",
+          validityDays: 45,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.codes) && data.codes.length > 0) {
+          generatedPins = data.codes;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    if (generatedPins.length === 0) {
+      generatedPins = generateCandidatePins(parsedCount);
+    }
 
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 45);
@@ -150,6 +175,33 @@ export default function AdminSchoolsPage() {
         return;
       }
       setAdminUser(admin);
+
+      try {
+        const res = await fetch("/api/schools/inquiry");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.inquiries) && data.inquiries.length > 0) {
+            const liveInqs: SchoolInquiry[] = data.inquiries.map((d: any) => ({
+              id: d.id,
+              referenceCode: d.reference_code,
+              schoolName: d.school_name,
+              contactName: d.contact_name,
+              email: d.email,
+              phone: d.phone,
+              location: d.location || "Nigeria",
+              studentCount: d.student_count || "Unspecified",
+              examType: d.exam_type || "JAMB UTME Mocks",
+              notes: d.notes || "",
+              status: (d.status as any) || "Pending",
+              submittedAt: new Date(d.created_at).toLocaleString(),
+            }));
+            setInquiries(liveInqs);
+          }
+        }
+      } catch {
+        // Retain initial inquiries on offline mode
+      }
+
       setLoading(false);
     }
     void init();
@@ -163,14 +215,39 @@ export default function AdminSchoolsPage() {
   };
 
   // Generate Batch of Mock PINs
-  const handleGenerateBatch = (e: React.FormEvent) => {
+  const handleGenerateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!genSchool.trim()) {
       toast.error("Please enter the school or institution name.");
       return;
     }
 
-    const generatedPins = generateCandidatePins(genCount);
+    let generatedPins: string[] = [];
+    try {
+      const res = await fetch("/api/admin/codes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          count: genCount,
+          cohort: genSchool.trim(),
+          subject: genExamType,
+          prefix: "BL-SCH",
+          validityDays: genExpiryDays,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.codes) && data.codes.length > 0) {
+          generatedPins = data.codes;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    if (generatedPins.length === 0) {
+      generatedPins = generateCandidatePins(genCount);
+    }
 
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + genExpiryDays);

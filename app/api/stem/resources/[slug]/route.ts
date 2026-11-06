@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import {
+  getSupabasePublicServerClient,
+  getSupabaseServerClient,
+  getUserFromRequest,
+  resolveAdminRole,
+} from "@/app/lib/supabaseServer";
 import { getStemResourceBySlug } from "@/app/lib/stem/stemService";
+import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
 
 export async function GET(
   request: NextRequest,
@@ -14,10 +20,25 @@ export async function GET(
 
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
-    const client = getSupabaseServerClient(token);
+    const user = await getUserFromRequest(request);
+
+    let isAuthorizedReviewer = false;
+    if (user) {
+      const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
+      isAuthorizedReviewer = isInstructorRole(role) || isGovernanceAdminRole(role);
+    }
+
+    const client = isAuthorizedReviewer && token
+      ? getSupabaseServerClient(token)
+      : getSupabasePublicServerClient();
 
     const resource = await getStemResourceBySlug(slug, client);
     if (!resource) {
+      return NextResponse.json({ ok: false, error: "STEM resource not found" }, { status: 404 });
+    }
+
+    // Unauthenticated or regular users cannot view draft or archived resources
+    if (!isAuthorizedReviewer && resource.status !== "published") {
       return NextResponse.json({ ok: false, error: "STEM resource not found" }, { status: 404 });
     }
 

@@ -1,13 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_JAMB_SYLLABUS, type SyllabusSubject } from "@/app/lib/curriculumData";
-import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import {
+  getSupabasePublicServerClient,
+  getUserFromRequest,
+  resolveAdminRole,
+} from "@/app/lib/supabaseServer";
+import { isGovernanceAdminRole } from "@/app/lib/adminRoles";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const subjectSlug = searchParams.get("subject");
 
-    const supabase = getSupabaseServerClient();
+    // Strictly use anon public client for curriculum browsing to enforce RLS
+    const supabase = getSupabasePublicServerClient();
     if (!supabase) {
       if (subjectSlug) {
         const found = DEFAULT_JAMB_SYLLABUS.find((s) => s.slug === subjectSlug);
@@ -16,10 +22,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, subjects: DEFAULT_JAMB_SYLLABUS });
     }
 
-    // Try fetching from database
+    // Only fetch published subjects
     const { data: dbSubjects, error: subjErr } = await supabase
       .from("learning_subjects")
       .select("id, name, slug, description, syllabus_overview, general_objectives, recommended_textbooks, is_published")
+      .eq("is_published", true)
       .order("order_index", { ascending: true });
 
     if (subjErr || !dbSubjects || dbSubjects.length === 0) {
@@ -30,14 +37,35 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, subjects: DEFAULT_JAMB_SYLLABUS, source: "default" });
     }
 
-    // Fetch topics
+    // Only fetch published topics
     const { data: dbTopics } = await supabase
       .from("learning_topics")
       .select("id, subject_id, title, slug, description, subtopics, learning_objectives, recommended_texts, order_index, is_published")
+      .eq("is_published", true)
       .order("order_index", { ascending: true });
 
-    type DbTopic = { id: string; subject_id: string; title: string; slug: string; description: string | null; subtopics: unknown; learning_objectives: unknown; recommended_texts: unknown; order_index: number | null; is_published: boolean };
-    type DbSubject = { id: string; name: string; slug: string; description: string | null; syllabus_overview: string | null; general_objectives: unknown; recommended_textbooks: unknown; is_published: boolean };
+    type DbTopic = {
+      id: string;
+      subject_id: string;
+      title: string;
+      slug: string;
+      description: string | null;
+      subtopics: unknown;
+      learning_objectives: unknown;
+      recommended_texts: unknown;
+      order_index: number | null;
+      is_published: boolean;
+    };
+    type DbSubject = {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      syllabus_overview: string | null;
+      general_objectives: unknown;
+      recommended_textbooks: unknown;
+      is_published: boolean;
+    };
     const subjects = dbSubjects as unknown as DbSubject[];
     const topics = (dbTopics || []) as unknown as DbTopic[];
     const merged: SyllabusSubject[] = subjects.map((s) => {
@@ -76,12 +104,31 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, subjects: merged });
   } catch (err: unknown) {
-    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : "Unexpected error", subjects: DEFAULT_JAMB_SYLLABUS }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err instanceof Error ? err.message : "Unexpected error", subjects: DEFAULT_JAMB_SYLLABUS },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
+
+    if (!isGovernanceAdminRole(role)) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: Only administrators can modify curriculum structure." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { action, subjectSlug, topic } = body;
 
@@ -90,7 +137,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Missing required action or subjectSlug" }, { status: 400 });
     }
 
-    // In a real environment with admin permissions, this inserts or updates learning_topics
     return NextResponse.json({
       success: true,
       message: `Curriculum updated successfully for ${subjectSlug}`,
