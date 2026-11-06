@@ -574,11 +574,11 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
               {/* FINAL SCORES SUMMARY */}
               <div className={`grid grid-cols-2 gap-4 p-5 rounded-2xl border my-6 ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                 <div className="text-center">
-                  <p className="text-xs text-slate-400 uppercase font-bold">{myParticipant?.display_name || "You"}</p>
+                  <p className="text-xs text-slate-400 uppercase font-bold">{isSpectator ? (participantA?.display_name || "Player 1") : (myParticipant?.display_name || "You")}</p>
                   <p className="text-2xl font-black text-blue-500 mt-1">{match.score_a === null ? "Hidden" : `${match.score_a} PTS`}</p>
                 </div>
                 <div className="text-center border-l border-slate-700/40">
-                  <p className="text-xs text-slate-400 uppercase font-bold">{opponentParticipant?.display_name || "Opponent"}</p>
+                  <p className="text-xs text-slate-400 uppercase font-bold">{isSpectator ? (participantB?.display_name || "Player 2") : (opponentParticipant?.display_name || "Opponent")}</p>
                   <p className="text-2xl font-black text-[#FF5238] mt-1">{match.score_b === null ? "Hidden" : `${match.score_b} PTS`}</p>
                 </div>
               </div>
