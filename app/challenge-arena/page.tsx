@@ -31,8 +31,7 @@ interface Competition {
 
 interface Challenge {
   id: string;
-  challenger_id: string;
-  challenged_id: string | null;
+  is_outgoing: boolean;
   subject: string;
   question_count: number;
   duration_minutes: number;
@@ -41,12 +40,12 @@ interface Challenge {
   match_id?: string | null;
   created_at: string;
   challenger?: {
-    full_name?: string;
-    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
   };
   challenged?: {
-    full_name?: string;
-    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
   } | null;
 }
 
@@ -169,11 +168,14 @@ export default function ChallengeArenaPage() {
       }
 
       // 4. Fetch Challenges
-      const chalRes = await fetch("/api/competition/challenges?filter=all");
-      if (chalRes.ok) {
-        const chalJson = await chalRes.json();
-        setChallenges(chalJson.challenges || []);
-      }
+      const [chalRes, openChallengeRes] = await Promise.all([
+        fetch("/api/competition/challenges?filter=all"),
+        fetch("/api/competition/challenges?filter=open"),
+      ]);
+      const ownChallengeJson = chalRes.ok ? await chalRes.json() : { challenges: [] };
+      const openChallengeJson = openChallengeRes.ok ? await openChallengeRes.json() : { challenges: [] };
+      const challengeRows = [...(ownChallengeJson.challenges || []), ...(openChallengeJson.challenges || [])];
+      setChallenges(Array.from(new Map(challengeRows.map((challenge) => [challenge.id, challenge])).values()));
 
       // 5. Fetch Teams
       const teamRes = await fetch("/api/competition/teams");
@@ -656,14 +658,14 @@ export default function ChallengeArenaPage() {
                             <span className="text-[11px] text-slate-400">{chal.duration_minutes} Mins</span>
                           </div>
                           <h4 className="font-bold text-sm">
-                            {chal.challenger?.full_name || chal.challenger?.username || "Anonymous Contender"}
+                            {chal.challenger?.display_name || "Private player"}
                           </h4>
                           <p className="text-xs text-slate-400 mt-1">
                             {chal.question_count} Questions • {chal.difficulty.toUpperCase()} Difficulty
                           </p>
                         </div>
 
-                        {chal.challenger_id === currentUser?.id ? (
+                        {chal.is_outgoing ? (
                           <span className="text-xs text-slate-400 italic text-center py-2">Your Open Challenge</span>
                         ) : (
                           <button
