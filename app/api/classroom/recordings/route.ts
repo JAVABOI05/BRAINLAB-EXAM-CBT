@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
           .select("id, expires_at")
           .eq("course_id", courseId)
           .eq("user_id", user.id)
-          .eq("status", "active")
+         .eq("status", "active")
           .maybeSingle();
         if (enrollment && (!enrollment.expires_at || new Date(enrollment.expires_at).getTime() > Date.now())) {
           return recording;
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
           .select("id")
           .eq("user_id", user.id)
           .eq("status", "active")
+          .gt("current_period_end", new Date().toISOString())
           .limit(1)
           .maybeSingle();
         return subscription ? recording : null;
