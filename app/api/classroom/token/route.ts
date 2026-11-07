@@ -120,7 +120,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Check Room Configuration from Platform Config
-    const roomConfig = config.room_configs?.[classId];
+    const roomConfig = config.room_configs?.[classId] || config.room_configs?.[normalizedClassId];
+    const isBuiltInPublicStage = normalizedClassId === "BL-LIVE-101" ||
+      normalizedClassId === "DEMO-CLASS" || normalizedClassId === "GENERAL-STAGE";
+    // Prefixes are identifiers, not proof that a room exists. Only the
+    // built-in public stages or rooms explicitly provisioned by an admin
+    // may receive virtual-stage tokens.
+    if (isOpenStage && !isBuiltInPublicStage && !roomConfig) {
+      return NextResponse.json({ error: "This virtual classroom has not been configured." }, { status: 404 });
+    }
     const isHost = isPlatformStaff || liveClass.tutor_id === user.id || (isOpenStage && staffAccess.isStaff);
 
     if (isHost) {
