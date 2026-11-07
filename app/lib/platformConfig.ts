@@ -1108,6 +1108,22 @@ export async function saveLiveClassroomConfig(
   return await setPlatformConfig("live_classroom_config", updated, adminUser, reason || "Updated Live Classroom policy");
 }
 
+/**
+ * Persist a participant's short-lived admission grant without impersonating
+ * that participant as an administrator in the admin configuration audit log.
+ */
+export async function saveLiveClassroomParticipantGrant(
+  roomConfigs: LiveClassroomConfig["room_configs"]
+): Promise<boolean> {
+  const current = await getLiveClassroomConfig();
+  return await setPlatformConfig(
+    "live_classroom_config",
+    { ...current, room_configs: roomConfigs },
+    undefined,
+    "Participant entry-code grant issued"
+  );
+}
+
 // ----------------------------------------------------------------------------
 // Communication & Messaging Configuration
 // ----------------------------------------------------------------------------
