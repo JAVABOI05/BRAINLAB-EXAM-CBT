@@ -209,7 +209,7 @@ export async function POST(req: NextRequest) {
         title: "⚔️ New 1v1 Arena Challenge!",
         message: `${challengerName} has challenged you to a ${normalizedSubject} showdown (${challenge.question_count} questions)!`,
         type: "competition_challenge",
-        metadata: { challenge_id: challenge.id, challenger_id: user.id, subject },
+        metadata: { challenge_id: challenge.id, subject: normalizedSubject },
       });
     }
 
