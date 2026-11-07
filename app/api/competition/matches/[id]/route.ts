@@ -165,7 +165,9 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     const safeMatch = {
       ...publicMatch,
       winner_is_me: Boolean(canSeeScores && user && match.winner_id && match.winner_id === user.id),
-      has_winner: Boolean(canSeeScores && match.winner_id),
+      winner_team_is_mine: Boolean(canSeeScores && user && match.winner_team_id &&
+        participants?.some((participant) => participant.user_id === user.id && participant.team_id === match.winner_team_id)),
+      has_winner: Boolean(canSeeScores && (match.winner_id || match.winner_team_id)),
       score_a: canSeeScores ? match.score_a : null,
       score_b: canSeeScores ? match.score_b : null,
       questions_snapshot: safeQuestions,
