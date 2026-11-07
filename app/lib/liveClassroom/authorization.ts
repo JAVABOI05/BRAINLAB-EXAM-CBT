@@ -95,7 +95,7 @@ export async function canManageClassroom(
 
   try {
     const config = await getLiveClassroomConfig();
-    const room = config.room_configs?.[classId];
+    const room = config.room_configs?.[classId] || config.room_configs?.[classId.trim().toUpperCase()];
     return Boolean(staff.isStaff && room?.active_host_id === user.id);
   } catch {
     return false;
