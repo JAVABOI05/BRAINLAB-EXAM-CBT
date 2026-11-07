@@ -43,8 +43,6 @@ export async function POST(request: NextRequest) {
     const isAuthorizedTutor = isStaff;
 
 
-    const isAuthorizedTutor = isStaff || (isOpenStage && requestedHost);
-
     // 2. Fetch class details or provision session fallback
     type LiveClass = {
       id: string;
