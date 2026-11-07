@@ -91,3 +91,37 @@ These code changes have not yet been verified by a successful preview build. The
 - Confirm the recording metadata insert works with the configured service-role secret in the deployment environment; without it, the route fails safely.
 - Check the optional trim job: it currently receives a short-lived signed URL and must complete within its expiry. If trimming can be delayed, change it to accept an authorized recording ID and mint its own URL.
 - Review the legacy `/api/recordings` flow and `/api/recordings/[id]/download` separately; they still have a different authorization model and a 4-hour playback URL in the legacy GET handler.
+
+
+## Legacy recording API audit — access fixes and known limitations
+
+The staging schema confirms that `class_recordings` contains `class_id`, `course_id`, `lesson_id`, `created_by`, `storage_path`, `access_policy`, and publication fields. `live_classes` contains its authoritative `course_id` and `tutor_id`.
+
+Code-only fixes committed to the feature branch:
+
+- The legacy scheduled-class recording save route now reads the class's authoritative `course_id`, rejects a mismatched caller-supplied course, and stores the class-linked course ID.
+- Student playback for class-linked `enrolled_only` recordings now calls the shared `canAccessClassroom` authorization helper rather than relying only on a course subscription/enrollment shortcut.
+- An `enrolled_only` recording with neither a class nor course association is no longer exposed to every signed-in user by default.
+- Tutor-owned Studio recordings are included in the tutor's recording-management results and the original-file download endpoint verifies ownership through the linked `classroom_lessons.tutor_id`.
+- The legacy recording GET route still creates a four-hour signed playback URL. Shortening this is deferred until all playback consumers and long-video behavior are tested.
+
+### Trimming behavior correction
+
+The prior `/api/classroom/trim` endpoint did not transcode or cut the uploaded file. It echoed the submitted URL, attempted metadata updates against columns not present in the inspected staging `class_recordings` schema, and returned a successful/completed response regardless. This was misleading.
+
+The feature branch now:
+- Labels the preview controls as preview-only.
+- Stores the complete original recording duration.
+- Does not mint an unnecessary temporary signed URL or call the fake trim job during Studio save.
+- Returns HTTP 501 from the trim endpoint until a real media-processing pipeline is implemented.
+
+The complete original video remains downloadable. Actual trimmed export is not implemented yet.
+
+### Remaining checks
+
+- Confirm the four-hour legacy playback URL can be shortened without breaking long-form playback or the tutor management UI.
+- Reconcile the two recording APIs' publication, visibility, and course-access semantics before consolidating them.
+- Add tests for class admission, course mismatch, no-scope recordings, Studio owner visibility/download, and non-owner denial.
+- Inspect the legacy upload/download routes and all recording UI consumers as part of the compatibility test pass.
+
+No schema, Storage, or production changes were made.
