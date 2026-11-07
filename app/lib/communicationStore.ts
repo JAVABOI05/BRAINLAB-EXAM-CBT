@@ -595,7 +595,7 @@ export async function createGroupChat(
 // Messages Management
 // ----------------------------------------------------------------------------
 
-async function assertConversationParticipant(conversationId: string, userId: string): Promise<void> {
+export async function assertConversationParticipant(conversationId: string, userId: string): Promise<void> {
   const supabase = getSupabaseServerClient();
   const { data: conversation, error: conversationError } = await supabase
     .from("conversations")
@@ -961,6 +961,7 @@ export async function toggleMessageReaction(
   userId: string,
   emoji: string
 ) {
+  await assertConversationParticipant(conversationId, userId);
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
 
