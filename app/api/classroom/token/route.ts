@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Host / Tutor auto-activation: mark room active if needed
-      if (roomConfig && (!roomConfig.is_active || !roomConfig.active_host_id)) {
+      if (isOpenStage && (!roomConfig?.is_active || !roomConfig?.active_host_id)) {
         const savedHostAssignment = await saveLiveClassroomRoomConfig(
           classId,
           {
