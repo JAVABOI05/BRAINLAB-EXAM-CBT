@@ -47,15 +47,7 @@ export async function GET(request: NextRequest) {
         if (enrollment && (!enrollment.expires_at || new Date(enrollment.expires_at).getTime() > Date.now())) {
           return recording;
         }
-        const { data: subscription } = await supabase
-          .from("user_subscriptions")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("status", "active")
-          .gt("current_period_end", new Date().toISOString())
-          .limit(1)
-          .maybeSingle();
-        return subscription ? recording : null;
+        return null;
       }
       if (!recording.class_id) return null;
 
