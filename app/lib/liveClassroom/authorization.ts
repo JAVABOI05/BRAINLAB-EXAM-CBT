@@ -101,3 +101,63 @@ export async function canManageClassroom(
     return false;
   }
 }
+/**
+ * Participant-side authorization for classroom APIs that expose messages or
+ * media. This mirrors the join-token admission checks without trusting client
+ * role flags. A successful login alone is not classroom membership.
+ */
+export async function canAccessClassroom(
+  user: User,
+  classId: string,
+  bearerToken?: string
+): Promise<boolean> {
+  const staff = await resolveClassroomStaffAccess(user, bearerToken);
+  if (staff.isPlatformAdmin || (await canManageClassroom(user, classId, bearerToken))) return true;
+
+  const normalizedId = classId.trim().toUpperCase();
+  const isVirtualStage = normalizedId === "BL-LIVE-101" || normalizedId === "DEMO-CLASS" ||
+    normalizedId === "GENERAL-STAGE" || normalizedId.startsWith("BL-ROOM-") ||
+    normalizedId.startsWith("BL-LIVE-") || normalizedId.startsWith("BL-STAGE-");
+
+  let config;
+  try {
+    config = await getLiveClassroomConfig();
+  } catch {
+    return false;
+  }
+  const room = config.room_configs?.[classId] || config.room_configs?.[normalizedId];
+  if (room?.require_permission && !room.admitted_students?.includes(user.id)) return false;
+
+  if (isVirtualStage) {
+    // Private stages must explicitly admit participants. Public stages remain
+    // available to signed-in learners; host rights are checked separately.
+    return !room?.require_permission || Boolean(room.admitted_students?.includes(user.id));
+  }
+
+  const supabase = getSupabaseServerClient(bearerToken);
+  const { data: liveClass, error } = await supabase
+    .from("live_classes")
+    .select("id, course_id, status, waiting_room_enabled")
+    .eq("id", classId)
+    .maybeSingle();
+  if (error || !liveClass || liveClass.status !== "live") return false;
+  if (liveClass.waiting_room_enabled && !room?.admitted_students?.includes(user.id)) return false;
+
+  if (!liveClass.course_id) return true;
+  const { data: enrollment } = await supabase
+    .from("course_enrollments")
+    .select("id")
+    .eq("course_id", liveClass.course_id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (enrollment) return true;
+
+  const { data: subscription } = await supabase
+    .from("subscription_records")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  return Boolean(subscription);
+}
