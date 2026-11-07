@@ -226,15 +226,8 @@ export async function POST(request: NextRequest) {
 
           // Persist a short-lived server-side grant so the participant can use
           // class-scoped message/media APIs without resending the entry code.
-          const updatedRooms = { ...(config.room_configs || {}) };
-          const currentRoom = updatedRooms[classId] || roomConfig;
-          const now = Date.now();
-          const activeGrants = Object.fromEntries(
-            Object.entries(currentRoom.participant_access || {}).filter(([, expiresAt]) => Number(expiresAt) > now)
-          ) as Record<string, number>;
-          activeGrants[user.id] = now + (config.default_duration_minutes || 60) * 60 * 1000;
-          updatedRooms[classId] = { ...currentRoom, participant_access: activeGrants };
-          const savedGrant = await saveLiveClassroomParticipantGrant(updatedRooms);
+          const expiresAt = Date.now() + (config.default_duration_minutes || 60) * 60 * 1000;
+          const savedGrant = await saveLiveClassroomParticipantGrant(classId, user.id, expiresAt);
           if (!savedGrant) {
             return NextResponse.json({ error: "Unable to establish secure classroom access. Please retry." }, { status: 503 });
           }
