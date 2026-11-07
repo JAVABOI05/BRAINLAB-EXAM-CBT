@@ -22,7 +22,6 @@ interface ClassroomMaterialImporterProps {
   attachments?: LessonAttachment[];
   onRemoveAttachment?: (id: string) => void;
   authToken?: string;
-  lessonId?: string;
 }
 
 export default function ClassroomMaterialImporter({
@@ -33,7 +32,6 @@ export default function ClassroomMaterialImporter({
   attachments = [],
   onRemoveAttachment,
   authToken = "",
-  lessonId = "draft",
 }: ClassroomMaterialImporterProps) {
   const [activeTab, setActiveTab] = useState<"csv" | "slides" | "outline" | "handouts">("csv");
 
@@ -273,7 +271,9 @@ export default function ClassroomMaterialImporter({
         const formData = new FormData();
         formData.append("file", f);
         formData.append("mediaType", "image");
-        formData.append("classId", lessonId || "slides");
+        // These are tutor-owned Studio materials, not uploads to a live class.
+        // The shared-assets scope is restricted to verified teaching staff.
+        formData.append("classId", "classroom-assets");
 
         const res = await fetch("/api/classroom/upload", {
           method: "POST",
@@ -408,7 +408,9 @@ export default function ClassroomMaterialImporter({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("classId", lessonId);
+      // Studio lessons are not live_classes. Use the verified-staff shared-assets
+      // scope; lesson ownership is enforced by the Studio save/read endpoints.
+      formData.append("classId", "classroom-assets");
       formData.append("mediaType", "document");
 
       const res = await fetch("/api/classroom/upload", {
