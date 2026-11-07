@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     let query = supabase
       .from("course_feed_posts")
-      .select("*, audio_assets(*), content_tags(tag_id, official_tags(*))")
+      .select("*, audio_assets(id, title, file_url, duration_seconds, mime_type), content_tags(tag_id, official_tags(*))")
       .eq("status", "published")
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false });
