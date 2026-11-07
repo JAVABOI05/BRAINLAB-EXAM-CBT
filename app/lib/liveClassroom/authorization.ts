@@ -140,7 +140,7 @@ export async function canAccessClassroom(
     .select("id, course_id, status, waiting_room_enabled")
     .eq("id", classId)
     .maybeSingle();
-  if (error || !liveClass || liveClass.status !== "live") return false;
+  if (error || !liveClass || !["live", "completed"].includes(liveClass.status)) return false;
   if (liveClass.waiting_room_enabled && !room?.admitted_students?.includes(user.id)) return false;
 
   if (!liveClass.course_id) return true;
