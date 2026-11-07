@@ -91,13 +91,15 @@ export async function GET(request: NextRequest) {
         videoUrl = signedError ? "" : (signed?.signedUrl || "");
       }
 
-      const canManage = isAdmin || recording.live_classes?.tutor_id === user.id;
+      const ownsClass = recording.live_classes?.tutor_id === user.id;
+      const ownsStudioLesson = !recording.class_id && recording.created_by === user.id && Boolean(recording.lesson_id);
+      const canManage = isAdmin || ownsClass || ownsStudioLesson;
       return {
         ...recording,
         video_url: videoUrl,
         is_downloadable: false,
         canManage,
-        canDownload: recording.live_classes?.tutor_id === user.id && Boolean(recording.storage_path),
+        canDownload: (ownsClass || ownsStudioLesson) && Boolean(recording.storage_path),
       };
     }));
 
