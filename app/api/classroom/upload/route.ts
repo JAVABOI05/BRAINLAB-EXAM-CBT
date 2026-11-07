@@ -68,12 +68,9 @@ export async function POST(request: NextRequest) {
         });
 
       if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage
-          .from("learning-content-media")
-          .getPublicUrl(storagePath);
-        if (publicUrlData?.publicUrl) {
-          finalUrl = publicUrlData.publicUrl;
-        }
+        // Keep the browser URL on the authenticated media proxy. The proxy
+        // issues a short-lived storage URL after checking class membership.
+        finalUrl = `/api/classroom/media/${assetId}`;
       } else {
         console.warn("[classroom/upload] Storage bucket upload warning:", uploadError.message);
       }
