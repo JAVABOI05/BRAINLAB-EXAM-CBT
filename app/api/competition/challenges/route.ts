@@ -177,6 +177,79 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Competition Arena is temporarily paused for maintenance." }, { status: 503 });
     }
 
+    if (body.challenge_type === "team") {
+      const challengerTeamId = typeof body.challenger_team_id === "string" ? body.challenger_team_id : "";
+      const challengedTeamId = typeof body.challenged_team_id === "string" ? body.challenged_team_id : null;
+      const rosterSize = Math.min(5, Math.max(2, Math.floor(Number(body.roster_size) || 2)));
+      if (!challengerTeamId || (challengedTeamId && challengedTeamId === challengerTeamId)) {
+        return NextResponse.json({ error: "Choose a valid opposing team." }, { status: 400 });
+      }
+      const { data: ownTeam, error: ownTeamError } = await supabase
+        .from("competition_teams")
+        .select("id, name, captain_id, co_captain_id")
+        .eq("id", challengerTeamId)
+        .maybeSingle();
+      if (ownTeamError) throw ownTeamError;
+      if (!ownTeam) return NextResponse.json({ error: "Your team could not be found." }, { status: 404 });
+      const { data: leader } = await supabase
+        .from("competition_team_members")
+        .select("id")
+        .eq("team_id", challengerTeamId)
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!leader || (ownTeam.captain_id !== user.id && ownTeam.co_captain_id !== user.id)) {
+        return NextResponse.json({ error: "Only the team captain or co-captain can issue team challenges." }, { status: 403 });
+      }
+      const { count: ownRosterCount, error: ownRosterError } = await supabase
+        .from("competition_team_members")
+        .select("id", { count: "exact", head: true })
+        .eq("team_id", challengerTeamId)
+        .eq("is_active", true);
+      if (ownRosterError) throw ownRosterError;
+      if ((ownRosterCount || 0) < rosterSize) {
+        return NextResponse.json({ error: "Your team does not yet have enough active members for this roster size." }, { status: 409 });
+      }
+      let targetTeam: { id: string; name: string; captain_id: string; co_captain_id: string | null } | null = null;
+      if (challengedTeamId) {
+        const { data, error } = await supabase.from("competition_teams")
+          .select("id, name, captain_id, co_captain_id").eq("id", challengedTeamId).maybeSingle();
+        if (error) throw error;
+        if (!data) return NextResponse.json({ error: "The opposing team was not found." }, { status: 404 });
+        targetTeam = data;
+      }
+      const { data: teamChallenge, error: teamChallengeError } = await supabase
+        .from("competition_challenges")
+        .insert({
+          challenger_id: user.id,
+          challenged_id: null,
+          challenger_team_id: challengerTeamId,
+          challenged_team_id: challengedTeamId,
+          challenge_type: "team",
+          subject: normalizedSubject,
+          question_count: normalizedQuestionCount,
+          duration_minutes: normalizedDurationMinutes,
+          difficulty,
+          match_mode,
+          status: "pending",
+          metadata: { roster_size: rosterSize, team_scoring_mode: "sum" },
+        })
+        .select("id, subject, question_count, duration_minutes, difficulty, match_mode, status, created_at, expires_at")
+        .single();
+      if (teamChallengeError) throw teamChallengeError;
+      if (targetTeam) {
+        const recipients = Array.from(new Set([targetTeam.captain_id, targetTeam.co_captain_id].filter((id): id is string => Boolean(id))));
+        if (recipients.length) await supabase.from("notifications").insert(recipients.map((id) => ({
+          user_id: id,
+          title: "Team battle challenge received",
+          message: `${ownTeam.name} challenged ${targetTeam!.name} to a ${rosterSize}v${rosterSize} ${normalizedSubject} match.`,
+          type: "competition_team_challenge",
+          metadata: { challenge_id: teamChallenge.id, team_id: targetTeam!.id },
+        })));
+      }
+      return NextResponse.json({ challenge: teamChallenge }, { status: 201 });
+    }
+
     const { data: challenge, error } = await supabase
       .from("competition_challenges")
       .insert({
