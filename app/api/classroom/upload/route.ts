@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     } else if (!(await canAccessClassroom(user, classId, token))) {
       return NextResponse.json({ error: "You are not admitted to this classroom." }, { status: 403 });
     }
-    if (mediaType === "document" && !(await canManageClassroom(user, classId, token))) {
+    if (mediaType === "document" && classId !== "classroom-assets" && !(await canManageClassroom(user, classId, token))) {
       return NextResponse.json({ error: "Only the assigned tutor or a platform administrator can upload classroom documents." }, { status: 403 });
     }
 
