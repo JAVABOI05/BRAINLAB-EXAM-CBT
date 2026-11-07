@@ -306,6 +306,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
 // ----------------------------------------------------------------------------
 
 export async function getUserConversations(userId: string): Promise<ChatConversation[]> {
+  await assertConversationParticipant(conversationId, userId);
   const supabase = getSupabaseServerClient();
   const { allPeers } = await getRealPeersAndPresence(userId);
   const peersById = new Map<string, RealPeer>(allPeers.map((p) => [p.user_id, p]));
@@ -594,6 +595,50 @@ export async function createGroupChat(
 // Messages Management
 // ----------------------------------------------------------------------------
 
+async function assertConversationParticipant(conversationId: string, userId: string): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { data: conversation, error: conversationError } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (!conversationError && conversation) {
+    const { data: participant, error: participantError } = await supabase
+      .from("conversation_participants")
+      .select("id")
+      .eq("conversation_id", conversationId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (participantError) throw new Error("Unable to verify conversation membership.");
+    if (!participant) throw new Error("CONVERSATION_ACCESS_DENIED");
+    return;
+  }
+
+  // The legacy exam_config store is used only when no native conversation row
+  // exists (or the native tables are not installed). It must enforce the same
+  // participant check before messages can be read or sent.
+  if (conversationError && !["42P01", "PGRST205", "PGRST204"].includes(conversationError.code || "")) {
+    throw new Error("Unable to verify conversation membership.");
+  }
+
+  const { data: row, error: configError } = await supabase
+    .from("exam_config")
+    .select("config_value")
+    .eq("config_key", "platform_chat_conversations")
+    .maybeSingle();
+  if (configError) throw new Error("Unable to verify conversation membership.");
+
+  const conversationsMap: Record<string, ChatConversation> =
+    row && typeof row.config_value === "object" && row.config_value !== null
+      ? row.config_value as Record<string, ChatConversation>
+      : {};
+  const fallbackConversation = conversationsMap[conversationId];
+  if (!fallbackConversation?.participants?.some((participant) => participant.user_id === userId)) {
+    throw new Error("CONVERSATION_ACCESS_DENIED");
+  }
+}
+
 export async function getConversationMessages(
   conversationId: string,
   userId: string,
@@ -723,6 +768,7 @@ export async function sendChatMessage(
     replyToId?: string | null;
   }
 ): Promise<ChatMessage> {
+  await assertConversationParticipant(conversationId, sender.id);
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
   const senderId = sender.id;
