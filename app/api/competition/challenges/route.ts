@@ -110,6 +110,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Choose a valid challenge difficulty." }, { status: 400 });
     }
 
+    const normalizedSubject = typeof subject === "string" && subject.trim()
+      ? subject.trim().slice(0, 80)
+      : "General";
+    const normalizedQuestionCount = Math.min(Math.max(Math.floor(Number(question_count) || 10), 5), 30);
+    const normalizedDurationMinutes = Math.min(Math.max(Math.floor(Number(duration_minutes) || 5), 2), 20);
+
     const supabase = getSupabaseServerClient();
     let challenged_id: string | null = null;
     if (challenged_slug) {
@@ -176,9 +182,9 @@ export async function POST(req: NextRequest) {
       .insert({
         challenger_id: user.id,
         challenged_id,
-        subject,
-        question_count: Math.min(Math.max(Number(question_count) || 10, 5), 30),
-        duration_minutes: Math.min(Math.max(Number(duration_minutes) || 5, 2), 20),
+        subject: normalizedSubject,
+        question_count: normalizedQuestionCount,
+        duration_minutes: normalizedDurationMinutes,
         difficulty,
         match_mode,
         status: "pending",
@@ -201,7 +207,7 @@ export async function POST(req: NextRequest) {
       await supabase.from("notifications").insert({
         user_id: challenged_id,
         title: "⚔️ New 1v1 Arena Challenge!",
-        message: `${challengerName} has challenged you to a ${subject} showdown (${challenge.question_count} questions)!`,
+        message: `${challengerName} has challenged you to a ${normalizedSubject} showdown (${challenge.question_count} questions)!`,
         type: "competition_challenge",
         metadata: { challenge_id: challenge.id, challenger_id: user.id, subject },
       });
