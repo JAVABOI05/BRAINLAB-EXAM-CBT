@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const subjectId = searchParams.get("subjectId");
     const courseId = searchParams.get("courseId");
     const tag = searchParams.get("tag");
+    const user = await getUserFromRequest(request);
 
     const supabase = getSupabaseServerClient();
     let query = supabase
@@ -24,6 +25,44 @@ export async function GET(request: NextRequest) {
     if (error) return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
 
     let result = posts ?? [];
+    const scopedCourseIds = [...new Set(result.map((post) => post.course_id).filter(Boolean))] as string[];
+    if (scopedCourseIds.length) {
+      if (!user) {
+        result = result.filter((post) => !post.course_id);
+      } else {
+        const [{ data: enrollments }, { data: activeSubscription }, { data: courses }, { data: adminProfile }] = await Promise.all([
+          supabase.from("course_enrollments")
+            .select("course_id, expires_at")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .in("course_id", scopedCourseIds),
+          supabase.from("subscription_records")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .limit(1)
+            .maybeSingle(),
+          supabase.from("courses")
+            .select("id, tutor_id")
+            .in("id", scopedCourseIds),
+          supabase.from("admin_profiles")
+            .select("role")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]);
+        const now = Date.now();
+        const enrolledCourseIds = new Set((enrollments || [])
+          .filter((enrollment) => !enrollment.expires_at || new Date(enrollment.expires_at).getTime() > now)
+          .map((enrollment) => enrollment.course_id));
+        const tutorCourseIds = new Set((courses || [])
+          .filter((course) => course.tutor_id === user.id)
+          .map((course) => course.id));
+        const isAdmin = Boolean(adminProfile && ["super_admin", "platform_admin"].includes(adminProfile.role));
+        result = result.filter((post) => !post.course_id ||
+          isAdmin || enrolledCourseIds.has(post.course_id) ||
+          tutorCourseIds.has(post.course_id) || Boolean(activeSubscription));
+      }
+    }
     if (tag && tag !== "all") {
       result = result.filter((p) =>
         p.content_tags?.some((ct: { official_tags?: { name?: string | null } | null }) => ct.official_tags?.name === tag)
