@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       if (staffAccess.isPlatformAdmin || recording.created_by === user.id || ownsClass) return recording;
       if (!recording.is_visible_to_students || recording.processing_status !== "ready") return null;
       if (recording.access_policy === "public") return recording;
-      if (recording.access_policy !== "enrolled_only" || !recording.class_id) return null;
+      if (recording.access_policy !== "enrolled_only") return null;
 
       const courseId = recording.course_id || recording.live_classes?.course_id;
       if (courseId) {
@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
           .maybeSingle();
         return subscription ? recording : null;
       }
+      if (!recording.class_id) return null;
 
       const { data: attendance } = await supabase
         .from("class_attendance_records")
