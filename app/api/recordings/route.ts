@@ -13,17 +13,6 @@ async function isPlatformAdmin(supabase: any, userId: string) {
   return Boolean(data && ADMIN_ROLES.includes(data.role));
 }
 
-async function canManageClass(supabase: any, classId: string, userId: string, isAdmin: boolean) {
-  if (isAdmin) return true;
-  const { data } = await supabase
-    .from("live_classes")
-    .select("id")
-    .eq("id", classId)
-    .eq("tutor_id", userId)
-    .maybeSingle();
-  return Boolean(data);
-}
-
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
