@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canAccessClassroom } from "@/app/lib/liveClassroom/authorization";
 import { getClassroomMedia } from "@/app/lib/classroomMediaStore";
 
 export const dynamic = "force-dynamic";
@@ -21,9 +22,7 @@ function cleanMimeType(mime?: string | null): string {
 }
 
 const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-  "Access-Control-Allow-Headers": "Range, Content-Type, Accept",
+  "Vary": "Cookie, Authorization",
 };
 
 export async function OPTIONS() {
@@ -54,7 +53,7 @@ function serveBuffer(buffer: Buffer, rawMime: string, request: NextRequest) {
         "Content-Length": chunkSize.toString(),
         "Content-Type": mimeType,
         "Content-Disposition": "inline",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "private, no-store",
       },
     });
   }
@@ -84,22 +83,36 @@ export async function GET(
       return new NextResponse("Asset ID required", { status: 400, headers: CORS_HEADERS });
     }
 
-    // 1. Check in-memory fast media cache first
+    const user = await getUserFromRequest(request);
+    if (!user) return new NextResponse("Unauthorized", { status: 401, headers: { "Cache-Control": "private, no-store" } });
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+
+    // 1. Check in-memory fast media cache; every asset is bound to a class.
     const cached = getClassroomMedia(id);
     if (cached) {
+      if (!cached.classId || !(await canAccessClassroom(user, cached.classId, bearerToken))) {
+        return new NextResponse("Forbidden", { status: 403, headers: { "Cache-Control": "private, no-store" } });
+      }
       return serveBuffer(cached.buffer, cached.mimeType, request);
     }
 
-    // 2. Fallback to Supabase audio_assets table
-    const supabase = getSupabaseServerClient();
+    // 2. Fallback to Supabase audio_assets table. Legacy assets without a
+    // class binding fail closed rather than becoming public through this route.
+    const supabase = getSupabaseServerClient(bearerToken);
     const { data: asset, error } = await supabase
       .from("audio_assets")
-      .select("file_url, mime_type, title")
+      .select("file_url, mime_type, title, metadata")
       .eq("id", id)
       .maybeSingle();
 
     if (error || !asset || !asset.file_url) {
       return new NextResponse("Media asset not found", { status: 404, headers: CORS_HEADERS });
+    }
+
+    const metadata = asset.metadata && typeof asset.metadata === "object" ? asset.metadata as Record<string, unknown> : {};
+    const classId = typeof metadata.class_id === "string" ? metadata.class_id : null;
+    if (!classId || !(await canAccessClassroom(user, classId, bearerToken))) {
+      return new NextResponse("Forbidden", { status: 403, headers: { "Cache-Control": "private, no-store" } });
     }
 
     // Handle base64 data URIs
