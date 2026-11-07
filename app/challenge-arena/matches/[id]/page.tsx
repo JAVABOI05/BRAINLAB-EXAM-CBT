@@ -64,6 +64,8 @@ interface MatchState {
     team_a_name?: string;
     team_b_name?: string;
     roster_size?: number;
+    team_scoring_mode?: "sum" | "average" | "top_performers" | "custom";
+    top_performer_count?: number;
   };
 }
 
@@ -262,6 +264,24 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   const isTeamMatch = match?.match_type === "team_vs_team";
   const teamRosterA = participants.filter((participant) => participant.seat === "A");
   const teamRosterB = participants.filter((participant) => participant.seat === "B");
+  const aggregateTeamScore = (roster: Participant[]) => {
+    if (!roster.length || roster.some((participant) => participant.score === null)) return null;
+    const scores = roster.map((participant) => Number(participant.score || 0));
+    switch (match?.metadata?.team_scoring_mode || "sum") {
+      case "average":
+        return scores.reduce((total, score) => total + score, 0) / scores.length;
+      case "top_performers":
+        return scores.sort((a, b) => b - a)
+          .slice(0, Math.max(1, Math.min(scores.length, match?.metadata?.top_performer_count || 2)))
+          .reduce((total, score) => total + score, 0);
+      case "custom":
+        return null;
+      default:
+        return scores.reduce((total, score) => total + score, 0);
+    }
+  };
+  const liveTeamScoreA = isTeamMatch ? aggregateTeamScore(teamRosterA) : null;
+  const liveTeamScoreB = isTeamMatch ? aggregateTeamScore(teamRosterB) : null;
   const winningTeamName = match?.winner_team_id
     ? (match.winner_team_id === participants.find((participant) => participant.seat === "A")?.team_id
       ? match.metadata?.team_a_name : match.metadata?.team_b_name)
@@ -432,7 +452,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 </div>
                 <div>
                   <p className="text-xs font-bold">{isTeamMatch ? (match.metadata?.team_a_name || "Team A") : (isSpectator ? (participantA?.display_name || "Player 1") : (myParticipant?.display_name || "You"))}</p>
-                  <p className="text-lg font-black text-blue-500">{isTeamMatch ? (match.score_a ?? "Hidden") : (myParticipant?.score ?? (isSpectator ? "Hidden" : 0))} {isTeamMatch ? (match.score_a === null ? "" : "PTS") : (myParticipant?.score === null && isSpectator ? "" : "PTS")}</p>
+                  <p className="text-lg font-black text-blue-500">{isTeamMatch ? (liveTeamScoreA === null ? "Hidden" : Number(liveTeamScoreA.toFixed(1))) : (myParticipant?.score ?? (isSpectator ? "Hidden" : 0))} {isTeamMatch ? (liveTeamScoreA === null ? "" : "PTS") : (myParticipant?.score === null && isSpectator ? "" : "PTS")}</p>
                 </div>
               </div>
 
@@ -448,7 +468,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
               <div className="flex items-center gap-3 text-right">
                 <div>
                   <p className="text-xs font-bold">{isTeamMatch ? (match.metadata?.team_b_name || "Team B") : (isSpectator ? (participantB?.display_name || "Player 2") : (opponentParticipant?.display_name || "Opponent"))}</p>
-                  <p className="text-lg font-black text-[#FF5238]">{isTeamMatch ? (match.score_b ?? "Hidden") : (opponentParticipant?.score ?? (isSpectator ? "Hidden" : 0))} {isTeamMatch ? (match.score_b === null ? "" : "PTS") : (opponentParticipant?.score === null && isSpectator ? "" : "PTS")}</p>
+                  <p className="text-lg font-black text-[#FF5238]">{isTeamMatch ? (liveTeamScoreB === null ? "Hidden" : Number(liveTeamScoreB.toFixed(1))) : (opponentParticipant?.score ?? (isSpectator ? "Hidden" : 0))} {isTeamMatch ? (liveTeamScoreB === null ? "" : "PTS") : (opponentParticipant?.score === null && isSpectator ? "" : "PTS")}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-[#FF5238] text-white flex items-center justify-center font-bold text-sm">
                   {opponentParticipant?.display_name?.slice(0, 2).toUpperCase() || "OP"}
