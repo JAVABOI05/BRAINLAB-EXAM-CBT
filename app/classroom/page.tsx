@@ -205,11 +205,7 @@ function ClassroomLobbyContent() {
       }
     }
 
-    const isEnteringAsHost =
-      isStaff ||
-      isAdminUser ||
-      portalMode === "tutor" ||
-      false;
+    const isEnteringAsHost = isStaff || isAdminUser || portalMode === "tutor";
 
     if (isEnteringAsHost) {
       router.push(`/classroom/${code}?role=host`);
