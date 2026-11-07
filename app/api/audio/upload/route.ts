@@ -191,6 +191,9 @@ export async function POST(request: NextRequest) {
         duration_seconds: asset.duration_seconds,
         asset_type: asset.asset_type,
         created_at: asset.created_at,
+        // The uploader owns this asset. Existing assignment/feed composers
+        // need the inline URL until private audio playback is migrated.
+        file_url: asset.file_url,
       },
     });
   } catch (error: unknown) {
