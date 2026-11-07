@@ -37,20 +37,24 @@ jobs:
         run: npm ci
       - name: Check whitespace and patch integrity
         run: git diff --check
-      - name: ESLint changed files (incremental baseline)
+      - name: ESLint changed JavaScript and TypeScript files
         shell: bash
         run: |
           set -euo pipefail
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             git fetch origin "${GITHUB_BASE_REF}" --depth=1
-            mapfile -t files < <(git diff --name-only --diff-filter=ACMR "origin/${GITHUB_BASE_REF}...HEAD" -- '*.js' '*.jsx' '*.ts' '*.tsx' | grep -vE '(^|/)(node_modules|\.next)/' || true)
-            if (("${#files[@]}" > 0)); then
-              npx eslint "${files[@]}"
-            else
-              echo "No changed JavaScript/TypeScript files to lint."
-            fi
+            diff_base="origin/${GITHUB_BASE_REF}"
           else
-            npm run lint
+            diff_base="${GITHUB_EVENT_BEFORE:-HEAD^}"
+            if [[ "${diff_base}" == "0000000000000000000000000000000000000000" ]]; then
+              diff_base="HEAD^"
+            fi
+          fi
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "${diff_base}...HEAD" -- '*.js' '*.jsx' '*.ts' '*.tsx' | grep -vE '(^|/)(node_modules|\.next)/' || true)
+          if (("${#files[@]}" > 0)); then
+            npx eslint "${files[@]}"
+          else
+            echo "No changed JavaScript/TypeScript files to lint."
           fi
       - name: TypeScript
         run: npx tsc --noEmit
