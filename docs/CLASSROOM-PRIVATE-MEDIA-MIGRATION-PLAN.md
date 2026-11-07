@@ -53,3 +53,19 @@ The Learning Hub uses the same bucket for its own media upload flow. Making it p
 - No SQL schema changes or migrations applied.
 - No bulk object movement or URL rewriting.
 - No production deployment, merge, or promotion.
+
+
+## Follow-up code review — Studio importer and upload durability
+
+The importer call site in `app/classroom/studio/page.tsx` passes a Studio `lessonId` into `classroom/upload` as `classId`. The upload route interprets that value as a `live_classes.id`, which is the wrong resource namespace. This is now corrected in the feature branch:
+
+- Studio slide and handout uploads use the existing `classroom-assets` shared-assets scope.
+- The upload endpoint already restricts that scope to verified teaching staff.
+- The importer no longer accepts/passes a misleading `lessonId` prop for upload authorization. Lesson ownership remains enforced by the Classroom Studio lesson endpoints.
+- The upload endpoint now returns HTTP 503 if Supabase Storage does not durably store the object. It no longer reports success with a proxy URL backed only by process-local memory, which is unreliable across serverless instances.
+
+This is a compatibility correction, not a private-media implementation. New Studio images/documents still use the existing public shared bucket until the dedicated private bucket and asset registry are approved and implemented.
+
+## Additional security issue queued for review
+
+The legacy `app/api/recordings/route.ts` and newer `app/api/classroom/recordings/route.ts` expose overlapping recording workflows with different authorization logic. The legacy GET path includes an `access_policy === "public"` branch and its own subscription/enrollment checks; the newer path uses `canAccessClassroom`. These endpoints and all callers must be reconciled before either is removed or tightened, to avoid both bypasses and accidental loss of intended public/course access.
