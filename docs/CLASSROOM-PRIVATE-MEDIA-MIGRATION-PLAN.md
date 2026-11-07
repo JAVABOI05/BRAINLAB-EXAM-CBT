@@ -234,3 +234,8 @@ A code review of the assignment endpoints found two additional object-level auth
 The feature branch now verifies student audio ownership, the `student_submission` asset type and matching assignment ID before attaching it. Grading is restricted to the assignment's own tutor or platform administrators; grading status is allowlisted; tutor feedback audio must belong to the grading tutor, have type `tutor_voice_note`, and carry the matching assignment ID.
 
 The audio upload response continues to return the uploader's own `file_url` for compatibility with existing assignment and feed composers. This is an owner-only upload response, not a general list response. The underlying base64-in-database design is still temporary and must be replaced by private Storage plus authorized playback before broad audio table access is considered safe.
+
+
+### Course-feed composer compatibility
+
+The existing subject-feed composer sends `subject_id` but not `course_id`, while `course_feed_posts.course_id` is NOT NULL. The route now resolves a subject-only submission to a course only when exactly one eligible course can be identified for the tutor/subject (or one course exists for a platform admin). If multiple courses match, it returns a clear selection error instead of guessing. An explicitly supplied course ID is checked against the subject and the caller's course ownership or tutor membership. Audio attachments must be the caller's own tutor voice note and may not be linked to a different course.
