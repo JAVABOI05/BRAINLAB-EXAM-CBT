@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     const config = await getLiveClassroomConfig();
     const staffAccess = await resolveClassroomStaffAccess(user);
-    const isPlatformStaff = staffAccess.source === "platform_role";
+    const isPlatformStaff = staffAccess.isPlatformAdmin;
     const { data: liveClass } = await supabase
       .from("live_classes")
       .select("tutor_id")
