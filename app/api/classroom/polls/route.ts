@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -119,16 +119,8 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // Verify class ownership or tutor/admin authorization
-    const { data: liveClass } = await supabase
-      .from("live_classes")
-      .select("tutor_id")
-      .eq("id", classId)
-      .maybeSingle();
-
-    const staffAccess = await resolveClassroomStaffAccess(user);
-    const isAuthorized =
-      staffAccess.isPlatformAdmin ||
-      Boolean(liveClass && liveClass.tutor_id === user.id);
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const isAuthorized = await canManageClassroom(user, classId, bearerToken);
 
     if (!isAuthorized) {
       return NextResponse.json(
@@ -223,15 +215,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Poll not found" }, { status: 404 });
     }
 
-    const { data: liveClass } = await supabase
-      .from("live_classes")
-      .select("tutor_id")
-      .eq("id", existingPoll.class_id)
-      .maybeSingle();
-    const staffAccess = await resolveClassroomStaffAccess(user);
-    const isAssignedTutor = liveClass?.tutor_id === user.id;
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const canManage = await canManageClassroom(user, existingPoll.class_id, bearerToken);
 
-    if (!staffAccess.isPlatformAdmin && !isAssignedTutor) {
+    if (!canManage) {
       return NextResponse.json(
         { ok: false, error: "Only the assigned class tutor or a platform administrator can manage this poll." },
         { status: 403 }
