@@ -1031,6 +1031,7 @@ export async function updateConversationRequestStatus(
   conversationId: string,
   action: "accept" | "decline" | "accept_group" | "decline_group"
 ): Promise<ChatConversation | null> {
+  await assertConversationParticipant(conversationId, userId);
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
 
