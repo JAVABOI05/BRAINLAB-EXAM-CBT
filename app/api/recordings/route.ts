@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Sign in to view class recordings." }, { status: 401 });
 
-    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const { searchParams } = new URL(request.url);
     const courseId = searchParams.get("courseId");
     const classId = searchParams.get("classId");
