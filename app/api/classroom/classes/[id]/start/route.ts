@@ -39,8 +39,9 @@ export async function POST(
     // 1. Resolve host access from an authoritative platform role, an approved
     // tutor profile, or the explicitly configured individual tutor allowlist.
     // User metadata and email-domain membership are not authorization signals.
-    const { isStaff: isAuthorizedHost } = await resolveClassroomStaffAccess(user, token);
-    const isHostClaim = isAuthorizedHost;
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    const isPlatformStaff = staffAccess.source === "platform_role";
+    const isHostClaim = staffAccess.isStaff;
 
 
     const now = new Date().toISOString();
@@ -122,7 +123,7 @@ export async function POST(
 
     if (fetchErr || !liveClass) {
       // If class record not found but user is authorized host, permit open ad-hoc stage
-      if (isAuthorizedHost) {
+      if (isHostClaim) {
         return NextResponse.json({
           ok: true,
           success: true,
@@ -142,7 +143,7 @@ export async function POST(
 
     // Verify user is tutor assigned or administrator
     const isAssignedTutor = liveClass.tutor_id === user.id;
-    if (!isAuthorizedHost && !isAssignedTutor) {
+    if (!isPlatformStaff && !isAssignedTutor) {
       return NextResponse.json(
         {
           ok: false,
