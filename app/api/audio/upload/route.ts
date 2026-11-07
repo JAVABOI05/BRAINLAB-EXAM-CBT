@@ -58,12 +58,20 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
+    const isPlatformAdmin =
+      Boolean(adminRole && ["super_admin", "platform_admin"].includes(adminRole.role)) ||
+      Boolean(adminUser && ["super_admin", "platform_admin"].includes(adminUser.role));
     const isTutorOrAdmin =
       Boolean(adminRole && ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminRole.role)) ||
       Boolean(adminUser && ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminUser.role)) ||
       Boolean(tutorMembership);
 
-    // If student submission: enforce student audio submission policies
+    if (!["tutor_voice_note", "student_submission", "lesson_audio", "discussion_audio"].includes(assetType)) {
+      return NextResponse.json({ error: "Unsupported audio asset type." }, { status: 400 });
+    }
+
+    // Student submissions must target an existing, published assignment that
+    // explicitly accepts audio. Missing assignment IDs fail closed.
     if (assetType === "student_submission") {
       if (!config.student_audio_enabled_globally) {
         return NextResponse.json(
@@ -71,42 +79,44 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
-
-      if (assignmentId) {
-        const { data: assignment } = await supabase
-          .from("assignments")
-          .select("id, allow_audio_submission")
-          .eq("id", assignmentId)
-          .maybeSingle();
-
-        if (assignment && !assignment.allow_audio_submission) {
-          return NextResponse.json(
-            { error: "This specific assignment does not accept audio submissions." },
-            { status: 403 }
-          );
-        }
+      if (!assignmentId) {
+        return NextResponse.json({ error: "Select an assignment before uploading audio." }, { status: 400 });
+      }
+      const { data: assignment, error: assignmentError } = await supabase
+        .from("assignments")
+        .select("id, allow_audio_submission, status")
+        .eq("id", assignmentId)
+        .maybeSingle();
+      if (assignmentError || !assignment) {
+        return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
+      }
+      if (!assignment.allow_audio_submission || assignment.status !== "published") {
+        return NextResponse.json(
+          { error: "This assignment is not published or does not accept audio submissions." },
+          { status: 403 }
+        );
       }
     } else if (assetType === "discussion_audio") {
-      // Discussion voice notes in chat and study circles are permitted for all authenticated users
+      // Discussion voice notes are permitted for all authenticated users.
     } else {
-      // For tutor voice notes or lesson audio, sender must be tutor or admin
+      if (assignmentId) {
+        const { data: assignment, error: assignmentError } = await supabase
+          .from("assignments")
+          .select("id, tutor_id")
+          .eq("id", assignmentId)
+          .maybeSingle();
+        if (assignmentError || !assignment) {
+          return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
+        }
+        if (assignment.tutor_id !== user.id && !isPlatformAdmin) {
+          return NextResponse.json({ error: "Only the assigned tutor can upload feedback audio for this assignment." }, { status: 403 });
+        }
+      }
       if (!isTutorOrAdmin) {
-        let isCourseTutor = false;
-        if (courseId) {
-          const { data: course } = await supabase
-            .from("courses")
-            .select("tutor_id")
-            .eq("id", courseId)
-            .maybeSingle();
-          if (course && course.tutor_id === user.id) isCourseTutor = true;
-        }
-
-        if (!isCourseTutor) {
-          return NextResponse.json(
-            { error: "Forbidden. Only authorized instructors can publish voice notes or lessons." },
-            { status: 403 }
-          );
-        }
+        return NextResponse.json(
+          { error: "Forbidden. Only authorized instructors can publish voice notes or lessons." },
+          { status: 403 }
+        );
       }
     }
 
