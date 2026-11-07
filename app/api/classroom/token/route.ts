@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // 1. Resolve staff access from authoritative platform roles, approved tutor
     // profiles, or the explicitly configured individual tutor allowlist.
     const staffAccess = await resolveClassroomStaffAccess(user, token);
-    const isPlatformStaff = staffAccess.source === "platform_role";
+    const isPlatformStaff = staffAccess.isPlatformAdmin;
     const isAuthorizedTutor = isPlatformStaff || staffAccess.isStaff;
 
 
@@ -104,23 +104,7 @@ export async function POST(request: NextRequest) {
       if (dbClass) {
         liveClass = dbClass as LiveClass;
       } else {
-        liveClass = {
-          id: classId,
-          title: `BrainLab Live Class Session (${classId.slice(0, 10)})`,
-          description: "Live interactive class session on the BrainLab Learning Platform.",
-          tutor_id: isAuthorizedTutor ? user.id : "tutor-unassigned",
-          status: "scheduled",
-          class_format: "lecture",
-          course_id: null,
-          scheduled_start_at: new Date().toISOString(),
-          duration_minutes: 90,
-          student_mic_enabled: true,
-          student_camera_enabled: false,
-          student_screenshare_enabled: false,
-          student_chat_enabled: true,
-          is_recording_enabled: false,
-          waiting_room_enabled: false,
-        };
+        return NextResponse.json({ error: "Live class not found." }, { status: 404 });
       }
     }
 
@@ -137,7 +121,6 @@ export async function POST(request: NextRequest) {
 
     // 3. Check Room Configuration from Platform Config
     const roomConfig = config.room_configs?.[classId];
-    const isTutor = isAuthorizedTutor || liveClass.tutor_id === user.id;
     const isHost = isPlatformStaff || liveClass.tutor_id === user.id || (isOpenStage && staffAccess.isStaff);
 
     if (isHost) {
