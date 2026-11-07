@@ -517,109 +517,14 @@ async function finalizeMatch(matchId: string, supabase: any) {
   // Team-vs-team matches aggregate the locked roster's individual answer
   // scores. They must never fall through to the two-player Elo finalizer.
   if (match.match_type === "team_vs_team") {
-    const teamAId = match.team_a_id as string | null;
-    const teamBId = match.team_b_id as string | null;
-    if (!teamAId || !teamBId || teamAId === teamBId) {
-      throw new Error("Team match is missing two distinct team assignments.");
-    }
-    const rosterA = participants.filter((p: { team_id: string | null }) => p.team_id === teamAId);
-    const rosterB = participants.filter((p: { team_id: string | null }) => p.team_id === teamBId);
-    if (!rosterA.length || !rosterB.length || rosterA.length + rosterB.length !== participants.length) {
-      throw new Error("Team match roster is incomplete or contains unassigned participants.");
-    }
-
-    // Sum is the safe default until a competition-specific team scoring
-    // policy is frozen into match metadata at roster lock.
-    const scoreA = rosterA.reduce((sum: number, p: { score: number }) => sum + Number(p.score || 0), 0);
-    const scoreB = rosterB.reduce((sum: number, p: { score: number }) => sum + Number(p.score || 0), 0);
-    const winnerTeamId = scoreA > scoreB ? teamAId : scoreB > scoreA ? teamBId : null;
-    const outcomeA = scoreA > scoreB ? 1 : scoreA < scoreB ? 0 : 0.5;
-    const outcomeB = 1 - outcomeA;
-
-    const { data: claim, error: claimError } = await supabase
-      .from("competition_matches")
-      .update({
-        status: "completed",
-        ended_at: new Date().toISOString(),
-        score_a: scoreA,
-        score_b: scoreB,
-        winner_id: null,
-        winner_team_id: winnerTeamId,
-      })
-      .eq("id", matchId)
-      .neq("status", "completed")
-      .select("id")
-      .maybeSingle();
-    if (claimError) throw claimError;
-    if (!claim) return;
-
-    const ranked = match.metadata?.match_mode !== "friendly" && match.metadata?.ranked !== false;
-    const { data: teams, error: teamsError } = await supabase
-      .from("competition_teams")
-      .select("id, captain_id, elo_rating, matches_played, matches_won, matches_drawn, matches_lost")
-      .in("id", [teamAId, teamBId]);
-    if (teamsError) throw teamsError;
-    const teamA = teams?.find((team: { id: string }) => team.id === teamAId);
-    const teamB = teams?.find((team: { id: string }) => team.id === teamBId);
-    if (!teamA || !teamB) throw new Error("A team in this match no longer exists.");
-
-    if (ranked) {
-      const ratingA = Number(teamA.elo_rating) || 1200;
-      const ratingB = Number(teamB.elo_rating) || 1200;
-      const [{ data: deltaA, error: deltaAError }, { data: deltaB, error: deltaBError }] = await Promise.all([
-        supabase.rpc("calculate_elo_delta", { player_rating: ratingA, opponent_rating: ratingB, actual_score: outcomeA, k_factor: 32 }),
-        supabase.rpc("calculate_elo_delta", { player_rating: ratingB, opponent_rating: ratingA, actual_score: outcomeB, k_factor: 32 }),
-      ]);
-      if (deltaAError) throw deltaAError;
-      if (deltaBError) throw deltaBError;
-      const nextA = Math.max(100, ratingA + (Number(deltaA) || 0));
-      const nextB = Math.max(100, ratingB + (Number(deltaB) || 0));
-      const { error: updateAError } = await supabase.from("competition_teams").update({
-        elo_rating: nextA,
-        matches_played: Number(teamA.matches_played || 0) + 1,
-        matches_won: Number(teamA.matches_won || 0) + (outcomeA === 1 ? 1 : 0),
-        matches_drawn: Number(teamA.matches_drawn || 0) + (outcomeA === 0.5 ? 1 : 0),
-        matches_lost: Number(teamA.matches_lost || 0) + (outcomeA === 0 ? 1 : 0),
-        updated_at: new Date().toISOString(),
-      }).eq("id", teamAId);
-      if (updateAError) throw updateAError;
-      const { error: updateBError } = await supabase.from("competition_teams").update({
-        elo_rating: nextB,
-        matches_played: Number(teamB.matches_played || 0) + 1,
-        matches_won: Number(teamB.matches_won || 0) + (outcomeB === 1 ? 1 : 0),
-        matches_drawn: Number(teamB.matches_drawn || 0) + (outcomeB === 0.5 ? 1 : 0),
-        matches_lost: Number(teamB.matches_lost || 0) + (outcomeB === 0 ? 1 : 0),
-        updated_at: new Date().toISOString(),
-      }).eq("id", teamBId);
-      if (updateBError) throw updateBError;
-
-      const { data: activeSeason, error: seasonError } = await supabase.from("competition_seasons")
-        .select("id").eq("status", "active")
-        .lte("starts_at", new Date().toISOString())
-        .gte("ends_at", new Date().toISOString()).maybeSingle();
-      if (seasonError) throw seasonError;
-      const { error: historyError } = await supabase.from("competition_rating_history").insert([
-        { season_id: activeSeason?.id || null, user_id: teamA.captain_id, team_id: teamAId, match_id: matchId, rating_kind: "team", rating_before: ratingA, rating_after: nextA, rating_delta: nextA - ratingA, reason: "verified_ranked_team_match" },
-        { season_id: activeSeason?.id || null, user_id: teamB.captain_id, team_id: teamBId, match_id: matchId, rating_kind: "team", rating_before: ratingB, rating_after: nextB, rating_delta: nextB - ratingB, reason: "verified_ranked_team_match" },
-      ]);
-      if (historyError) throw historyError;
-    }
-
-    const xpAwards = participants.map((participant: { user_id: string; team_id: string }) => {
-      const won = participant.team_id === winnerTeamId;
-      return {
-        user_id: participant.user_id,
-        amount: winnerTeamId ? (won ? 50 : 20) : 20,
-        activity_type: "competition_team_match",
-        idempotency_key: `arena-match:${matchId}:user:${participant.user_id}`,
-        description: winnerTeamId && won ? "Arena Team Match Victory!" : "Arena Team Match Participation",
-        metadata: { match_id: matchId, team_id: participant.team_id, outcome: winnerTeamId ? (won ? "win" : "participation") : "draw" },
-      };
-    });
-    const { error: xpError } = await supabase.from("user_xp_ledger")
-      .upsert(xpAwards, { onConflict: "idempotency_key", ignoreDuplicates: true });
-    if (xpError) throw xpError;
-    return;
+    // Team scoring, rating history, XP and match completion are one Postgres
+    // transaction. A failure rolls back every effect and leaves the match retryable.
+    const { data: finalization, error: finalizationError } = await supabase.rpc(
+      "finalize_competition_team_match_atomic",
+      { p_match_id: matchId }
+    );
+    if (finalizationError) throw finalizationError;
+    return finalization;
   }
 
   const pA = participants.find((p: { user_id: string }) => p.user_id === match.participant_a_id) || participants[0];
