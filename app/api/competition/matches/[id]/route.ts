@@ -95,7 +95,11 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       const { user_id: _privateUserId, ...publicParticipant } = participant;
       return {
         ...publicParticipant,
-        seat: participant.user_id === match.participant_a_id ? "A" : "B",
+        seat: participant.team_id && participant.team_id === match.team_a_id
+          ? "A"
+          : participant.team_id && participant.team_id === match.team_b_id
+            ? "B"
+            : participant.user_id === match.participant_a_id ? "A" : "B",
         is_me: Boolean(user && participant.user_id === user.id),
         score: canSeeScores ? participant.score : null,
         profile: profilesMap[participant.user_id] || { full_name: participant.display_name || "Private player" },
