@@ -6,7 +6,11 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "verify": "npm run test:architecture && npm run test:separation && npm run typecheck",
+    "test:architecture": "npx tsx scripts/test-public-website-architecture.ts",
+    "test:separation": "npx tsx scripts/test-public-and-portal-separation.ts",
+    "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
