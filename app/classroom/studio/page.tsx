@@ -535,6 +535,11 @@ export default function ClassroomStudioPage() {
   }) => {
     if (!previewBlob || !token) throw new Error("No video or authentication found.");
 
+    // Ensure the Studio lesson exists before linking its recording metadata.
+    // New drafts may not yet have an ID when the tutor starts recording.
+    const savedLessonId = await saveLesson(status);
+    if (!savedLessonId) throw new Error("Save the lesson before adding its recording to the library.");
+
     // 1. Upload to Supabase Storage: 'live-class-recordings'
     const ext = previewMimeType.includes("mp4") ? "mp4" : "webm";
     const safeTitle = (title || "Lesson").replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -561,7 +566,7 @@ export default function ClassroomStudioPage() {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        lessonId,
+        lessonId: savedLessonId,
         title,
         subject,
         topic,
