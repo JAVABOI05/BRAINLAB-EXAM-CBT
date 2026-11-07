@@ -109,6 +109,24 @@ These paths must be tightened before the broader access cutover. The remediation
 
 The operator-gate route is comparatively safer: it validates the Supabase user and then calls the database-backed `get_admin_role()` RPC. Its role contract must remain stable until the compatibility migration is ready.
 
+### Classroom remediation completed on the feature branch
+
+The following classroom paths now use the shared server-side resolver and/or class ownership helper:
+
+- `app/lib/liveClassroom/authorization.ts`: resolves platform staff roles, approved tutor profiles and explicit individual allowlist entries; exposes a class-scoped `canManageClassroom()` check.
+- `app/api/classroom/token/route.ts`: host privileges are derived from verified staff status and class ownership, not client-supplied `requestedRole` / `asHost` flags or email-domain matching.
+- `app/api/classroom/classes/[id]/start/route.ts`: open stages require verified staff; scheduled classes require assigned tutor ownership or platform-admin authority.
+- `app/api/classroom/classes/[id]/end/route.ts`: scheduled class ending is restricted to the assigned tutor or platform admin; virtual stages require the active host or platform admin.
+- `app/api/classroom/attendance/route.ts`: report access, manual attendance and corrections use class-scoped authorization.
+- `app/api/classroom/admit/route.ts`: admission changes require the assigned host or platform admin.
+- `app/api/classroom/polls/route.ts`: poll creation and management use class-scoped authorization.
+- `app/api/classroom/broadcast/route.ts`: a verified staff member may start a broadcast, but cannot overwrite an existing class owned by another tutor.
+- `app/classroom/[id]/page.tsx`: the host UI is derived from the server-issued room token rather than URL flags, browser storage or editable Auth metadata.
+
+The authorization helper uses the server-only service client only after the route has authenticated the caller; it reads class ownership and never accepts a user-supplied user ID as proof of access.
+
+**Still required:** verify these changes through the Vercel preview build and route-level tests; review other classroom messaging, file-upload, recording, moderation and whiteboard endpoints for independent authorization; reconcile the fixed role list with the eventual centralized permission catalogue. No database migration has been applied.
+
 ## 3. New staged access model
 
 The current feature branch adds four access tables and Super Admin-checked RPCs for:
