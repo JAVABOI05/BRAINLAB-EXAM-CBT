@@ -540,25 +540,37 @@ export default function ClassroomStudioPage() {
     const savedLessonId = await saveLesson(status);
     if (!savedLessonId) throw new Error("Save the lesson before adding its recording to the library.");
 
-    // 1. Upload to Supabase Storage: 'live-class-recordings'
+    // 1. Ask the server to verify lesson ownership and mint a one-object
+    // upload token. The private bucket intentionally has no broad client INSERT policy.
     const ext = previewMimeType.includes("mp4") ? "mp4" : "webm";
     const safeTitle = (title || "Lesson").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const filename = `studio-lessons/${user?.id || "tutor"}/${Date.now()}-${safeTitle}.${ext}`;
+    const uploadPrepResponse = await fetch("/api/classroom/studio/recording-upload-url", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        lesson_id: savedLessonId,
+        content_type: previewMimeType,
+        filename: `${safeTitle}.${ext}`,
+      }),
+    });
+    const uploadPrep = await uploadPrepResponse.json();
+    if (!uploadPrepResponse.ok || !uploadPrep.token || !uploadPrep.path) {
+      throw new Error(uploadPrep.error || "Could not prepare a secure recording upload.");
+    }
 
+    const filename = String(uploadPrep.path);
     const { error: uploadErr } = await supabase.storage
       .from("live-class-recordings")
-      .upload(filename, previewBlob, {
+      .uploadToSignedUrl(filename, uploadPrep.token, previewBlob, {
         contentType: previewMimeType,
-        upsert: true,
       });
-
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
-    // Get signed or public URL
+    // A short-lived URL is used only by the optional trim job. Recording
+    // metadata stores the private path and playback URLs are minted on demand.
     const { data: signedData } = await supabase.storage
       .from("live-class-recordings")
-      .createSignedUrl(filename, 60 * 60 * 24 * 365); // 1 year access
-
+      .createSignedUrl(filename, 60 * 10);
     const finalVideoUrl = signedData?.signedUrl || filename;
 
     // 2. Save metadata to class_recordings table
