@@ -40,7 +40,7 @@ export async function POST(
     // tutor profile, or the explicitly configured individual tutor allowlist.
     // User metadata and email-domain membership are not authorization signals.
     const staffAccess = await resolveClassroomStaffAccess(user, token);
-    const isPlatformStaff = staffAccess.source === "platform_role";
+    const isPlatformStaff = staffAccess.isPlatformAdmin;
     const isHostClaim = staffAccess.isStaff;
 
 
@@ -122,19 +122,6 @@ export async function POST(
       .maybeSingle();
 
     if (fetchErr || !liveClass) {
-      // If class record not found but user is authorized host, permit open ad-hoc stage
-      if (isHostClaim) {
-        return NextResponse.json({
-          ok: true,
-          success: true,
-          classId,
-          roomName: classId,
-          status: "live",
-          startedAt: now,
-          message: "Live stage launched.",
-        });
-      }
-
       return NextResponse.json(
         { ok: false, error: "Live class not found." },
         { status: 404 }
