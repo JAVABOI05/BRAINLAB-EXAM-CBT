@@ -69,3 +69,25 @@ This is a compatibility correction, not a private-media implementation. New Stud
 ## Additional security issue queued for review
 
 The legacy `app/api/recordings/route.ts` and newer `app/api/classroom/recordings/route.ts` expose overlapping recording workflows with different authorization logic. The legacy GET path includes an `access_policy === "public"` branch and its own subscription/enrollment checks; the newer path uses `canAccessClassroom`. These endpoints and all callers must be reconciled before either is removed or tightened, to avoid both bypasses and accidental loss of intended public/course access.
+
+
+## Recording-storage follow-up — private bucket upload and playback
+
+The staging database currently has **no Storage object policies** for `live-class-recordings`. This is consistent with the bucket being private and the application needing server-minted signed upload tokens. The Studio UI previously attempted a direct browser upload without such a token, then minted a one-year signed playback URL in the browser and stored that URL in recording metadata.
+
+The feature branch now addresses that flow:
+
+- Added `POST /api/classroom/studio/recording-upload-url`. It verifies staff status, verifies that the requested Studio lesson belongs to the signed-in tutor, and mints a signed upload token for a path scoped to `studio-lessons/{userId}/...`.
+- Updated Studio recording save to save the lesson first, request the signed upload token, upload with `uploadToSignedUrl`, and use normalized MIME types.
+- Updated `POST /api/classroom/recordings` to require an owned Studio lesson when no scheduled class is supplied, validate recording paths against the tutor/class or tutor/Studio prefix, and store the private Storage path rather than a client-minted long-lived signed URL.
+- The recording metadata insert uses the server-side service client only after the requester's identity, verified staff status, class ownership, and/or lesson ownership have been checked with the caller-scoped client. This is necessary because the existing `class_recordings` INSERT RLS policy only permits recordings attached to a scheduled class.
+- Updated `GET /api/classroom/recordings` to authorize visibility first, then mint 60-minute playback URLs from the private bucket. It no longer needs to rely on a year-long URL stored in the row.
+
+These code changes have not yet been verified by a successful preview build. The private bucket's existing setting and policies were only inspected; no storage settings or database policies were changed.
+
+## Remaining recording compatibility checks
+
+- Confirm the Studio lesson row exists and is owned by the current tutor before requesting the upload token (implemented server-side).
+- Confirm the recording metadata insert works with the configured service-role secret in the deployment environment; without it, the route fails safely.
+- Check the optional trim job: it currently receives a short-lived signed URL and must complete within its expiry. If trimming can be delayed, change it to accept an authorized recording ID and mint its own URL.
+- Review the legacy `/api/recordings` flow and `/api/recordings/[id]/download` separately; they still have a different authorization model and a 4-hour playback URL in the legacy GET handler.
