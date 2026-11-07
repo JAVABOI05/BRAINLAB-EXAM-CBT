@@ -98,7 +98,7 @@ export async function GET(
 
     // 2. Fallback to Supabase audio_assets table. Legacy assets without a
     // class binding fail closed rather than becoming public through this route.
-    const supabase = getSupabaseServerClient(bearerToken);
+    const supabase = getSupabaseServerClient();
     const { data: asset, error } = await supabase
       .from("audio_assets")
       .select("file_url, storage_path, mime_type, title, metadata")
