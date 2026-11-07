@@ -117,6 +117,28 @@ test("Guest participant can only view public entry points and cannot access admi
   assert.equal(hasPermissionInScope(guest, "competition.view").allowed, true);
   assert.equal(hasPermissionInScope(guest, "competition.create").allowed, false);
   assert.equal(hasPermissionInScope(guest, "question_bank.view").allowed, false);
+  assert.equal(hasPermissionInScope(guest, "competition.delete").allowed, false);
+});
+
+test("Strict role-based deletion: Admins can delete, Hosts can delete own only, Students and Moderators cannot", () => {
+  const superAdmin = { id: "sa-1", email: "sa@brainlab.edu", role: "super_admin" };
+  const compAdmin = { id: "ca-1", email: "ca@brainlab.edu", role: "competition_admin" };
+  const host = { id: "host-1", email: "host@brainlab.edu", role: "competition_host" };
+  const moderator = { id: "mod-1", email: "mod@brainlab.edu", role: "competition_moderator" };
+  const student = { id: "stu-1", email: "stu@brainlab.edu", role: "student" };
+
+  // Admins can delete
+  assert.equal(hasPermissionInScope(superAdmin, "competition.delete").allowed, true);
+  assert.equal(hasPermissionInScope(compAdmin, "competition.delete").allowed, true);
+
+  // Host can delete own competition
+  assert.equal(hasPermissionInScope(host, "competition.delete", { ownerId: "host-1" }).allowed, true);
+  // Host CANNOT delete another user's competition
+  assert.equal(hasPermissionInScope(host, "competition.delete", { ownerId: "other-user" }).allowed, false);
+
+  // Moderator and Student CANNOT delete
+  assert.equal(hasPermissionInScope(moderator, "competition.delete").allowed, false);
+  assert.equal(hasPermissionInScope(student, "competition.delete").allowed, false);
 });
 
 test("Granular scoped assignment grants permission only to the explicitly assigned resource", () => {

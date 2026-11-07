@@ -134,3 +134,75 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const actor = await getCompetitionActor(req);
+    if (!actor) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const supabase = getSupabaseServerClient();
+    const { data: comp } = await supabase
+      .from("competitions")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!comp) return NextResponse.json({ error: "Competition not found" }, { status: 404 });
+
+    const perm = hasPermissionInScope(actor, "competition.delete", {
+      scopeType: "competition",
+      scopeId: id,
+      ownerId: comp.creator_id,
+    });
+
+    if (!perm.allowed) {
+      return NextResponse.json(
+        { error: perm.reason || "Forbidden: You do not have permission to delete this competition" },
+        { status: 403 }
+      );
+    }
+
+    // Clean up all associated tables explicitly
+    await Promise.allSettled([
+      supabase.from("competition_participants").delete().eq("competition_id", id),
+      supabase.from("competition_attempt_snapshots").delete().eq("competition_id", id),
+      supabase.from("competition_moderation_cases").delete().eq("competition_id", id),
+      supabase.from("competition_reward_proposals").delete().eq("competition_id", id),
+      supabase.from("competition_matches").delete().eq("competition_id", id),
+      supabase.from("competition_disputes").delete().eq("competition_id", id),
+      supabase.from("competition_challenges").delete().eq("competition_id", id),
+    ]);
+
+    const { error: deleteErr } = await supabase
+      .from("competitions")
+      .delete()
+      .eq("id", id);
+
+    if (deleteErr) throw deleteErr;
+
+    await logCompetitionAuditEvent({
+      action: "competition_deleted",
+      resourceType: "competitions",
+      resourceId: id,
+      actorId: actor.id,
+      actorEmail: actor.email,
+      details: {
+        title: comp.title,
+        code: comp.code,
+        status: comp.status,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Competition '${comp.title}' has been completely deleted.`,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Error deleting competition";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

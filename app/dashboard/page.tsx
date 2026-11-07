@@ -1042,12 +1042,20 @@ export default function LearnerDashboardPage() {
                   Participate in published organisation quizzes and competition assessments.
                 </p>
               </div>
-              <Link
-                href="/assessments"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition active-press"
-              >
-                Browse Quizzes →
-              </Link>
+              <div className="mt-4 flex flex-col gap-2">
+                <Link
+                  href="/challenge-arena"
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-500 hover:to-indigo-500 transition active-press"
+                >
+                  ⚡ Competition Arena →
+                </Link>
+                <Link
+                  href="/assessments"
+                  className="inline-flex min-h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  Browse Quizzes →
+                </Link>
+              </div>
             </article>
 
             <article className="group rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/70 to-white p-5 transition duration-200 hover:border-blue-300 hover:shadow-md hover-lift flex flex-col justify-between">

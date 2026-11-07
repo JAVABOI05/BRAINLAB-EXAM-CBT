@@ -43,15 +43,19 @@ export async function POST(
       );
     }
 
-    // Check attempt limits
+    // Check attempt limits based on submitted/finished attempts
     const { data: existingAttempts } = await supabase
       .from("competition_participants")
       .select("id, status")
       .eq("competition_id", id)
       .or(user ? `user_id.eq.${user.id}` : `guest_session_id.eq.${guestSessionId}`);
 
+    const finishedAttempts = (existingAttempts || []).filter(
+      (a) => a.status === "submitted" || a.status === "disqualified"
+    );
+
     const maxAttempts = comp.rules?.attempt_limit || 1;
-    if (existingAttempts && existingAttempts.length >= maxAttempts) {
+    if (finishedAttempts.length >= maxAttempts) {
       return NextResponse.json(
         { error: `Attempt limit of ${maxAttempts} reached for this competition.` },
         { status: 429 }
@@ -156,16 +160,28 @@ export async function POST(
       scoring_rules: snapshot.scoring_rules,
     });
 
-    // Register participant
-    await supabase.from("competition_participants").insert({
-      competition_id: id,
-      user_id: user?.id || null,
-      guest_session_id: user ? null : guestSessionId,
-      display_name: displayName,
-      is_guest: !user,
-      status: "active",
-      joined_at: new Date().toISOString(),
-    });
+    // Update existing registered participant or insert active participant
+    const existing = existingAttempts?.[0];
+    if (existing) {
+      await supabase
+        .from("competition_participants")
+        .update({
+          status: "active",
+          display_name: displayName,
+          joined_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+    } else {
+      await supabase.from("competition_participants").insert({
+        competition_id: id,
+        user_id: user?.id || null,
+        guest_session_id: user ? null : guestSessionId,
+        display_name: displayName,
+        is_guest: !user,
+        status: "active",
+        joined_at: new Date().toISOString(),
+      });
+    }
 
     // Strip answers from returned payload to prevent client-side answer key leakage!
     const clientQuestions = snapshot.questions_snapshot.map((q) => ({

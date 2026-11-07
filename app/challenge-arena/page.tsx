@@ -20,10 +20,25 @@ interface Competition {
   prize_pool?: string;
   current_participants?: number;
   max_participants?: number;
+  is_registered?: boolean;
+  participant_status?: "registered" | "active" | "submitted" | "disqualified" | null;
+  my_score?: number | null;
   rules?: {
     question_count?: number;
     duration_seconds?: number;
   };
+}
+
+interface CBTQuestion {
+  id: string;
+  question: string;
+  subject?: string;
+  topic?: string;
+  difficulty?: string;
+  options: { key: string; text: string }[];
+  option_images?: Record<string, string>;
+  question_image_url?: string;
+  marks?: number;
 }
 
 interface Challenge {
@@ -138,14 +153,37 @@ export default function ChallengeArenaPage() {
   const [registeringCompId, setRegisteringCompId] = useState<string | null>(null);
   const [registrationMessage, setRegistrationMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
+  // CBT Exam Simulation states
+  const [activeExamComp, setActiveExamComp] = useState<Competition | null>(null);
+  const [activeExamSessionId, setActiveExamSessionId] = useState<string | null>(null);
+  const [activeExamQuestions, setActiveExamQuestions] = useState<CBTQuestion[]>([]);
+  const [activeExamIndex, setActiveExamIndex] = useState(0);
+  const [activeExamAnswers, setActiveExamAnswers] = useState<Record<string, string>>({});
+  const [activeExamTimeRemaining, setActiveExamTimeRemaining] = useState<number>(0);
+  const [activeExamSubmitting, setActiveExamSubmitting] = useState(false);
+  const [activeExamResult, setActiveExamResult] = useState<{
+    score: number;
+    rawScore: number;
+    maxScore: number;
+    correctCount: number;
+    totalQuestions: number;
+    xpEarned?: number;
+  } | null>(null);
+  const [examLoading, setExamLoading] = useState(false);
+
   // Fetch initial user & arena data
   const loadArenaData = useCallback(async () => {
     try {
       setLoading(true);
 
-      // 1. Get current auth user
-      const { data: { user } } = await supabase.auth.getUser();
+      // 1. Get current auth user & session
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       setCurrentUser(user ? { id: user.id, email: user.email } : null);
+
+      const authHeaders: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
 
       // 2. Fetch emergency status
       fetch("/api/competition/emergency-controls")
@@ -157,22 +195,22 @@ export default function ChallengeArenaPage() {
         })
         .catch(() => {});
 
-      // 3. Fetch Competitions
-      const compRes = await fetch("/api/competition/competitions");
+      // 3. Fetch Competitions with auth token to reflect candidate registration
+      const compRes = await fetch("/api/competition/competitions", { headers: authHeaders });
       if (compRes.ok) {
         const compJson = await compRes.json();
         setCompetitions(compJson.competitions || []);
       }
 
       // 4. Fetch Challenges
-      const chalRes = await fetch("/api/competition/challenges?filter=all");
+      const chalRes = await fetch("/api/competition/challenges?filter=all", { headers: authHeaders });
       if (chalRes.ok) {
         const chalJson = await chalRes.json();
         setChallenges(chalJson.challenges || []);
       }
 
       // 5. Fetch Teams
-      const teamRes = await fetch("/api/competition/teams");
+      const teamRes = await fetch("/api/competition/teams", { headers: authHeaders });
       if (teamRes.ok) {
         const teamJson = await teamRes.json();
         setTeams(teamJson.teams || []);
@@ -180,7 +218,7 @@ export default function ChallengeArenaPage() {
       }
 
       // 6. Fetch Leaderboard & User Rating
-      const leadRes = await fetch("/api/competition/leaderboards?type=all");
+      const leadRes = await fetch("/api/competition/leaderboards?type=all", { headers: authHeaders });
       if (leadRes.ok) {
         const leadJson = await leadRes.json();
         setLeaderboard(leadJson.individuals || []);
@@ -190,7 +228,7 @@ export default function ChallengeArenaPage() {
       }
 
       // 7. Fetch Spectator Matches
-      const specRes = await fetch("/api/competition/spectators");
+      const specRes = await fetch("/api/competition/spectators", { headers: authHeaders });
       if (specRes.ok) {
         const specJson = await specRes.json();
         setSpectatorMatches(specJson.matches || []);
@@ -321,9 +359,15 @@ export default function ChallengeArenaPage() {
       setRegisteringCompId(competitionId);
       setRegistrationMessage(null);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch(`/api/competition/competitions/${competitionId}/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
       });
 
       const data = await res.json();
@@ -343,6 +387,92 @@ export default function ChallengeArenaPage() {
       setRegisteringCompId(null);
     }
   };
+
+  // Launch Active Competition CBT Attempt
+  const handleStartAttempt = async (comp: Competition) => {
+    try {
+      setExamLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch(`/api/competition/competitions/${comp.id}/start-attempt`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ displayName: currentUser?.email?.split("@")[0] || "Contender" }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to launch competition attempt");
+
+      setActiveExamComp(comp);
+      setActiveExamSessionId(data.sessionId);
+      setActiveExamQuestions(data.questions || []);
+      setActiveExamIndex(0);
+      setActiveExamAnswers({});
+      setActiveExamTimeRemaining(data.durationSeconds || comp.rules?.duration_seconds || 300);
+      setActiveExamResult(null);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error launching exam");
+    } finally {
+      setExamLoading(false);
+    }
+  };
+
+  // Submit Active Attempt Server-Side
+  const handleSubmitAttempt = async () => {
+    if (!activeExamComp || !activeExamSessionId || activeExamSubmitting) return;
+    try {
+      setActiveExamSubmitting(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const durationSpent = (activeExamComp.rules?.duration_seconds || 300) - activeExamTimeRemaining;
+
+      const res = await fetch(`/api/competition/competitions/${activeExamComp.id}/submit-attempt`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          sessionId: activeExamSessionId,
+          answers: activeExamAnswers,
+          durationSpentSeconds: Math.max(durationSpent, 1),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit attempt");
+
+      setActiveExamResult(data);
+      loadArenaData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error submitting exam attempt");
+    } finally {
+      setActiveExamSubmitting(false);
+    }
+  };
+
+  // Exam Countdown Timer & Auto-Submit
+  useEffect(() => {
+    if (!activeExamSessionId || activeExamResult || activeExamTimeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setActiveExamTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          void handleSubmitAttempt();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeExamSessionId, activeExamResult, activeExamTimeRemaining]);
 
   // Helper for tier color
   const getTierColor = (tier: string) => {
@@ -564,17 +694,33 @@ export default function ChallengeArenaPage() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleRegisterTournament(comp.id)}
-                        disabled={registeringCompId === comp.id}
-                        className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/20 active:scale-95"
-                      >
-                        {registeringCompId === comp.id
-                          ? "Processing..."
-                          : isFree
-                          ? "Register Free Now"
-                          : `Pay ₦${entryFee.toLocaleString()} (BACHS) & Enter`}
-                      </button>
+                      {comp.participant_status === "submitted" ? (
+                        <div className="w-full py-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-center font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5">
+                          <span>✓</span>
+                          <span>Exam Completed {comp.my_score !== null && `(Score: ${comp.my_score}%)`}</span>
+                        </div>
+                      ) : comp.is_registered || comp.participant_status === "registered" || comp.participant_status === "active" ? (
+                        <button
+                          onClick={() => handleStartAttempt(comp)}
+                          disabled={examLoading}
+                          className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-600/25 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <span>⚡</span>
+                          <span>{examLoading ? "Loading Exam..." : "Enter Arena / Take Exam"}</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleRegisterTournament(comp.id)}
+                          disabled={registeringCompId === comp.id}
+                          className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/20 active:scale-95"
+                        >
+                          {registeringCompId === comp.id
+                            ? "Processing..."
+                            : isFree
+                            ? "Register Free Now"
+                            : `Pay ₦${entryFee.toLocaleString()} (BACHS) & Enter`}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -600,6 +746,84 @@ export default function ChallengeArenaPage() {
                 <span>⚔️</span> Issue Challenge
               </button>
             </div>
+
+            {/* OFFICIAL 1V1 BATTLE COMPETITIONS */}
+            {competitions.filter((c) => c.competition_type === "battle_1v1").length > 0 && (
+              <div className={`p-6 rounded-3xl border shadow-xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base font-bold flex items-center gap-2">
+                      <span className="text-amber-400">⚡</span> Official 1v1 Battle Competitions
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Sanctioned synchronous 1v1 showdowns with verified scoring and instant ELO rating updates</p>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full font-black bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    {competitions.filter((c) => c.competition_type === "battle_1v1").length} Active
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {competitions
+                    .filter((c) => c.competition_type === "battle_1v1")
+                    .map((comp) => {
+                      const entryFee = Number(comp.entry_fee) || 0;
+                      const isFree = entryFee === 0;
+
+                      return (
+                        <div
+                          key={comp.id}
+                          className={`p-5 rounded-2xl border flex flex-col justify-between gap-4 transition hover:border-blue-500/50 ${
+                            isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-xs font-black uppercase text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                                ⚔️ 1v1 BATTLE
+                              </span>
+                              <span className="text-[11px] text-slate-400">
+                                {Math.round((comp.rules?.duration_seconds || 300) / 60)} Mins
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-sm">{comp.title}</h4>
+                            <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                              {comp.description || "Synchronized 1v1 battle testing curriculum speed and accuracy."}
+                            </p>
+                            <div className="mt-2 text-[11px] font-semibold text-slate-400">
+                              <span>{comp.rules?.question_count || 10} Questions • </span>
+                              <span className="text-blue-400">{comp.current_participants || 0} Registered</span>
+                            </div>
+                          </div>
+
+                          {comp.participant_status === "submitted" ? (
+                            <div className="w-full py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-center font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5">
+                              <span>✓</span>
+                              <span>Completed {comp.my_score !== null && `(${comp.my_score}%)`}</span>
+                            </div>
+                          ) : comp.is_registered || comp.participant_status === "registered" || comp.participant_status === "active" ? (
+                            <button
+                              onClick={() => handleStartAttempt(comp)}
+                              disabled={examLoading}
+                              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-1.5"
+                            >
+                              <span>⚡</span>
+                              <span>{examLoading ? "Loading..." : "Enter 1v1 Battle"}</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleRegisterTournament(comp.id)}
+                              disabled={registeringCompId === comp.id}
+                              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-blue-600/20 active:scale-95"
+                            >
+                              {registeringCompId === comp.id ? "Processing..." : isFree ? "Register Free ⚔️" : `Pay ₦${entryFee.toLocaleString()}`}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             {/* OPEN CHALLENGES BOARD */}
             <div className={`p-6 rounded-3xl border shadow-xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
@@ -930,7 +1154,241 @@ export default function ChallengeArenaPage() {
         </div>
       )}
 
-      {/* CREATE SQUAD MODAL */}
+      {/* CBT EXAM SIMULATOR MODAL */}
+      {activeExamComp && activeExamQuestions.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className={`max-w-4xl w-full rounded-3xl border shadow-2xl flex flex-col max-h-[92vh] overflow-hidden ${
+            isDark ? "bg-[#0D172E] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"
+          }`}>
+            {/* EXAM HEADER */}
+            <div className={`px-6 py-4 border-b flex flex-wrap items-center justify-between gap-3 ${
+              isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"
+            }`}>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">
+                  {activeExamComp.competition_type.replace("_", " ").toUpperCase()} • {activeExamComp.code}
+                </span>
+                <h2 className="text-base sm:text-lg font-black truncate max-w-md">{activeExamComp.title}</h2>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* TIMER */}
+                <div className={`px-3 py-1.5 rounded-xl border font-mono font-black text-sm sm:text-base flex items-center gap-2 ${
+                  activeExamTimeRemaining < 60
+                    ? "bg-red-500/20 text-red-400 border-red-500/30 animate-pulse"
+                    : activeExamTimeRemaining < 180
+                    ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                    : "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                }`}>
+                  <span>⏱️</span>
+                  <span>
+                    {Math.floor(activeExamTimeRemaining / 60)}:
+                    {String(activeExamTimeRemaining % 60).padStart(2, "0")}
+                  </span>
+                </div>
+
+                {!activeExamResult && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to finalize and submit your examination?")) {
+                        void handleSubmitAttempt();
+                      }
+                    }}
+                    disabled={activeExamSubmitting}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/20 transition active:scale-95"
+                  >
+                    {activeExamSubmitting ? "Grading..." : "Submit Exam"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* EXAM BODY OR RESULT */}
+            {activeExamResult ? (
+              <div className="p-8 sm:p-12 flex flex-col items-center text-center justify-center gap-4">
+                <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-4xl shadow-xl">
+                  🏆
+                </div>
+                <h3 className="text-2xl font-black">Examination Completed!</h3>
+                <p className="text-slate-400 text-xs sm:text-sm max-w-md">
+                  Your competitive assessment snapshot was verified and graded server-side against the official answer key.
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg my-4">
+                  <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Final Score</span>
+                    <span className="text-2xl font-black text-emerald-400">{activeExamResult.score}%</span>
+                  </div>
+                  <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Correct</span>
+                    <span className="text-2xl font-black text-blue-400">
+                      {activeExamResult.correctCount}/{activeExamResult.totalQuestions}
+                    </span>
+                  </div>
+                  <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Marks</span>
+                    <span className="text-2xl font-black text-amber-400">
+                      {activeExamResult.rawScore}/{activeExamResult.maxScore}
+                    </span>
+                  </div>
+                  <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">XP Gained</span>
+                    <span className="text-2xl font-black text-purple-400">+{activeExamResult.xpEarned || 25}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setActiveExamComp(null);
+                    setActiveExamSessionId(null);
+                    setActiveExamQuestions([]);
+                    setActiveExamResult(null);
+                  }}
+                  className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm uppercase tracking-wider transition shadow-xl shadow-blue-600/25 active:scale-95"
+                >
+                  Return to Competition Arena
+                </button>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col justify-between gap-6">
+                {(() => {
+                  const currentQ = activeExamQuestions[activeExamIndex];
+                  if (!currentQ) return null;
+                  const chosenOption = activeExamAnswers[currentQ.id];
+
+                  return (
+                    <div className="flex flex-col gap-6">
+                      {/* QUESTION BADGES */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-black">
+                            Question {activeExamIndex + 1} of {activeExamQuestions.length}
+                          </span>
+                          {currentQ.subject && (
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-700/30 text-slate-400 text-xs font-semibold">
+                              {currentQ.subject} {currentQ.topic ? `• ${currentQ.topic}` : ""}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-slate-400">
+                          {currentQ.marks || 1} {(currentQ.marks || 1) === 1 ? "Mark" : "Marks"}
+                        </span>
+                      </div>
+
+                      {/* QUESTION STEM */}
+                      <div className={`p-5 rounded-2xl border text-sm sm:text-base font-semibold leading-relaxed ${
+                        isDark ? "bg-[#0B1536] border-slate-800" : "bg-slate-50 border-slate-200 text-slate-900"
+                      }`}>
+                        {currentQ.question}
+                      </div>
+
+                      {/* OPTIONS LIST */}
+                      <div className="grid grid-cols-1 gap-3">
+                        {currentQ.options.map((opt) => {
+                          const isSelected = chosenOption === opt.key;
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => {
+                                setActiveExamAnswers((prev) => ({ ...prev, [currentQ.id]: opt.key }));
+                              }}
+                              className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all ${
+                                isSelected
+                                  ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/25 scale-[1.01]"
+                                  : isDark
+                                  ? "bg-[#0B1536] border-slate-800 hover:border-slate-700 text-slate-200 hover:bg-[#0E1B42]"
+                                  : "bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800 hover:bg-slate-100"
+                              }`}
+                            >
+                              <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                                isSelected
+                                  ? "bg-white text-blue-600 shadow"
+                                  : isDark
+                                  ? "bg-slate-800 text-slate-300"
+                                  : "bg-white border text-slate-700"
+                              }`}>
+                                {opt.key}
+                              </span>
+                              <span className="text-sm font-medium mt-0.5">{opt.text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* CONTROLS & PALETTE */}
+                      <div className="pt-4 border-t flex flex-col gap-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveExamIndex((prev) => Math.max(0, prev - 1))}
+                            disabled={activeExamIndex === 0}
+                            className="px-4 py-2 rounded-xl border text-xs font-bold disabled:opacity-30 transition"
+                          >
+                            ← Previous
+                          </button>
+
+                          {chosenOption && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveExamAnswers((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated[currentQ.id];
+                                  return updated;
+                                });
+                              }}
+                              className="text-xs text-rose-400 hover:text-rose-300 font-bold transition"
+                            >
+                              Clear Selection
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => setActiveExamIndex((prev) => Math.min(activeExamQuestions.length - 1, prev + 1))}
+                            disabled={activeExamIndex === activeExamQuestions.length - 1}
+                            className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-30 transition shadow-md shadow-blue-600/20"
+                          >
+                            Next →
+                          </button>
+                        </div>
+
+                        {/* QUESTION NUMBER PALETTE */}
+                        <div className="flex flex-wrap gap-1.5 pt-2">
+                          {activeExamQuestions.map((q, idx) => {
+                            const isAnswered = !!activeExamAnswers[q.id];
+                            const isCurrent = idx === activeExamIndex;
+
+                            return (
+                              <button
+                                key={q.id}
+                                type="button"
+                                onClick={() => setActiveExamIndex(idx)}
+                                className={`w-8 h-8 rounded-lg font-mono text-xs font-bold transition ${
+                                  isCurrent
+                                    ? "bg-blue-600 text-white ring-2 ring-blue-400 shadow"
+                                    : isAnswered
+                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                    : isDark
+                                    ? "bg-slate-800 text-slate-400 hover:text-white"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                }`}
+                              >
+                                {idx + 1}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {showCreateSquadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
           <div className={`max-w-md w-full p-6 rounded-3xl border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}>

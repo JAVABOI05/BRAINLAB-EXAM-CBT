@@ -420,6 +420,29 @@ export default function CompetitionArenaAdminPage() {
     }
   };
 
+  // Permanently delete a competition
+  const handleDeleteCompetition = async (compId: string, compTitle: string) => {
+    if (
+      !window.confirm(
+        `Are you absolutely sure you want to permanently delete '${compTitle}'? This will completely remove the competition, participant records, and associated attempts.`
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    try {
+      const res = await authFetch(`/api/competition/competitions/${compId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete competition");
+      setMessage(data.message || `Competition '${compTitle}' deleted permanently.`);
+      await loadCompetitions();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error deleting competition");
+    }
+  };
+
   // In-Web Question Builder Save
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -813,6 +836,13 @@ export default function CompetitionArenaAdminPage() {
                       Cancel
                     </button>
                   )}
+                  <button
+                    onClick={() => handleDeleteCompetition(comp.id, comp.title)}
+                    className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1 shadow-sm"
+                    title="Permanently delete competition"
+                  >
+                    <span>🗑️</span> Delete
+                  </button>
                 </div>
               </div>
             ))}

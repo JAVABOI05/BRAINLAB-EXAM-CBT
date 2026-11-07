@@ -23,6 +23,7 @@ export const COMPETITION_PERMISSIONS = [
   "competition.publish",
   "competition.schedule",
   "competition.cancel",
+  "competition.delete",
   "competition.manage_participants",
   "competition.view_results",
   "competition.publish_results",
@@ -85,6 +86,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<CompetitionRole, readonly Competit
     "competition.publish",
     "competition.schedule",
     "competition.cancel",
+    "competition.delete",
     "competition.manage_participants",
     "competition.view_results",
     "competition.publish_results",
@@ -112,6 +114,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<CompetitionRole, readonly Competit
     "competition.view",
     "competition.create",
     "competition.edit_own",
+    "competition.delete",
     "competition.view_results",
     "question_bank.create",
     "question_bank.view",
@@ -159,10 +162,17 @@ export function hasPermissionInScope(
     };
   }
 
-  // Boundary check: Students and Guests cannot access restricted banks or publish without approval
-  if (actor.role === "student" || actor.role === "guest") {
-    if (permission.startsWith("question_bank.delete") || permission === "question_bank.publish" || permission === "competition.publish_results") {
-      return { allowed: false, reason: "Students and guests cannot publish or delete institutional resources." };
+  // Boundary check: Students, Guests, and Moderators cannot delete competitions or publish without approval
+  if (actor.role === "student" || actor.role === "guest" || actor.role === "competition_moderator") {
+    if (permission === "competition.delete" || permission.startsWith("question_bank.delete") || permission === "question_bank.publish" || permission === "competition.publish_results") {
+      return { allowed: false, reason: "You do not have permission to delete or publish this competition resource." };
+    }
+  }
+
+  // Boundary check: Host can only delete their own competition
+  if (actor.role === "competition_host" && permission === "competition.delete") {
+    if (target?.ownerId && target.ownerId !== actor.id) {
+      return { allowed: false, reason: "Competition hosts can only delete their own competitions." };
     }
   }
 

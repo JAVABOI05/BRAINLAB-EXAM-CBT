@@ -18,6 +18,7 @@ type Assessment = {
   ends_at: string | null;
   access_code_required: boolean;
   result_release: string;
+  custom_url?: string;
 };
 
 type FilterStatus = "all" | "available" | "upcoming" | "closed";
@@ -44,7 +45,7 @@ export default function AssessmentsPage() {
         return;
       }
 
-      const [assessmentsRes, attemptsRes] = await Promise.all([
+      const [assessmentsRes, attemptsRes, competitionsRes] = await Promise.all([
         supabase
           .from("learning_assessments")
           .select("id,assessment_type,title,description,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release")
@@ -55,6 +56,12 @@ export default function AssessmentsPage() {
           .select("assessment_id, status")
           .eq("user_id", auth.user.id)
           .not("assessment_id", "is", null),
+        supabase
+          .from("competitions")
+          .select("id, title, description, code, rules, start_time, end_time, status, visibility")
+          .in("visibility", ["public", "open_link"])
+          .in("status", ["scheduled", "published", "active"])
+          .order("created_at", { ascending: false }),
       ]);
 
       if (!active) return;
@@ -62,7 +69,24 @@ export default function AssessmentsPage() {
         setError("Could not load assessments. Check that you are signed in and the assessment system is available.");
       }
 
-      setAssessments((assessmentsRes.data ?? []) as Assessment[]);
+      const baseAssessments = (assessmentsRes.data ?? []) as Assessment[];
+      const mappedCompetitions: Assessment[] = (competitionsRes.data || []).map((c) => ({
+        id: c.id,
+        assessment_type: "competition",
+        title: c.title,
+        description: c.description || "Official BrainLab Academy Competition Arena championship.",
+        organisation_id: null,
+        question_count: c.rules?.question_count || 10,
+        duration_seconds: c.rules?.duration_seconds || 300,
+        max_attempts: c.rules?.attempt_limit || 1,
+        starts_at: c.start_time,
+        ends_at: c.end_time,
+        access_code_required: false,
+        result_release: "immediate",
+        custom_url: "/challenge-arena",
+      }));
+
+      setAssessments([...mappedCompetitions, ...baseAssessments]);
 
       // Group attempts by assessment_id
       const counts: Record<string, number> = {};
@@ -404,15 +428,19 @@ export default function AssessmentsPage() {
                   {/* Actions Bar */}
                   <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
                     <Link
-                      aria-disabled={!canStart}
-                      href={canStart ? `/assessments/${a.id}` : "#"}
+                      aria-disabled={!canStart && !a.custom_url}
+                      href={a.custom_url || (canStart ? `/assessments/${a.id}` : "#")}
                       className={`flex-1 inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black transition active:scale-98 ${
-                        canStart
+                        a.custom_url
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20"
+                          : canStart
                           ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs"
                           : "pointer-events-none bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600"
                       }`}
                     >
-                      {!hasAttemptsRemaining
+                      {a.custom_url
+                        ? "Enter Competition Arena ⚡"
+                        : !hasAttemptsRemaining
                         ? "Attempts Completed"
                         : currentStatus === "Available"
                         ? "Enter Assessment Stage →"
@@ -423,7 +451,7 @@ export default function AssessmentsPage() {
 
                     {/* Leaderboard Button */}
                     <Link
-                      href={`/assessments/${a.id}/leaderboard`}
+                      href={a.custom_url ? a.custom_url : `/assessments/${a.id}/leaderboard`}
                       className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                       title="View assessment standings and leaderboard"
                     >

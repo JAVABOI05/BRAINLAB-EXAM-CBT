@@ -331,6 +331,13 @@ export default function CBTExamPortalPage() {
             >
               <span className="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" /><path d="M6 6h10" /><path d="M6 10h10" /></svg><span>Exam Rules</span></span>
             </Link>
+            <Link
+              href="/challenge-arena"
+              className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-black text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition flex items-center gap-1.5 shadow-xs"
+            >
+              <span>⚔️</span>
+              <span>Competition Arena &amp; 1v1</span>
+            </Link>
           </div>
         </div>
       </div>

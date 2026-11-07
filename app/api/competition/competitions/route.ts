@@ -23,15 +23,60 @@ export async function GET(req: NextRequest) {
     if (status && status !== "all") query = query.eq("status", status);
     if (sourceMode && sourceMode !== "all") query = query.eq("question_source_mode", sourceMode);
 
-    // If unauthenticated or student/guest, only show public or scheduled/active competitions
+    // If unauthenticated or student/guest, only show public or open_link competitions that are scheduled/published/active/concluded
     if (!actor || actor.role === "student" || actor.role === "guest") {
-      query = query.eq("visibility", "public").in("status", ["scheduled", "published", "active", "concluded"]);
+      query = query.in("visibility", ["public", "open_link"]).in("status", ["scheduled", "published", "active", "concluded"]);
     }
 
     const { data: competitions, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ competitions: competitions || [] });
+    const compIds = (competitions || []).map((c) => c.id);
+
+    // Aggregate dynamic participant counts
+    let countsMap: Record<string, number> = {};
+    if (compIds.length > 0) {
+      const { data: counts } = await supabase
+        .from("competition_participants")
+        .select("competition_id")
+        .in("competition_id", compIds);
+      if (counts) {
+        for (const row of counts) {
+          countsMap[row.competition_id] = (countsMap[row.competition_id] || 0) + 1;
+        }
+      }
+    }
+
+    // Lookup current user's registration and completion status
+    let userParticipantsMap: Record<string, { status: string; score: number | null }> = {};
+    if (actor?.id && compIds.length > 0) {
+      const { data: userParts } = await supabase
+        .from("competition_participants")
+        .select("competition_id, status, score")
+        .eq("user_id", actor.id)
+        .in("competition_id", compIds);
+      if (userParts) {
+        for (const p of userParts) {
+          userParticipantsMap[p.competition_id] = {
+            status: p.status,
+            score: p.score,
+          };
+        }
+      }
+    }
+
+    const enrichedCompetitions = (competitions || []).map((c) => {
+      const myPart = userParticipantsMap[c.id];
+      return {
+        ...c,
+        current_participants: countsMap[c.id] || 0,
+        is_registered: !!myPart,
+        participant_status: myPart?.status || null,
+        my_score: myPart?.score ?? null,
+      };
+    });
+
+    return NextResponse.json({ competitions: enrichedCompetitions });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error listing competitions";
     return NextResponse.json({ error: message }, { status: 500 });
