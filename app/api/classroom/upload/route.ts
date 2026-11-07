@@ -101,8 +101,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Persist asset record if audio
     if (mediaType === "audio" && user) {
-      try {
-        await supabase
+      const { error: assetInsertError } = await supabase
           .from("audio_assets")
           .insert({
             id: assetId,
@@ -121,8 +120,9 @@ export async function POST(request: NextRequest) {
               uploader_id: userId,
             },
           });
-      } catch {
-        // Non-blocking
+      if (assetInsertError) {
+        console.error("[classroom/upload] Audio metadata persistence failed:", assetInsertError.message);
+        return NextResponse.json({ error: "The audio was uploaded but could not be registered securely. Please retry." }, { status: 500 });
       }
     }
 
