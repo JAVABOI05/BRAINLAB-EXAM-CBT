@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServerClient } from "../../lib/supabaseServer";
-import { CANONICAL_SUBJECT_REGISTRY, resolveCanonicalSubject } from "@/app/lib/curriculumData";
+import { getSupabasePublicServerClient } from "../../lib/supabaseServer";
+import { CANONICAL_SUBJECT_REGISTRY, type CanonicalSubject } from "@/app/lib/curriculumData";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const supabase = getSupabaseServerClient();
+    const supabase = getSupabasePublicServerClient();
 
     // 1. Attempt query from canonical academic_subject_registry
     let canonicalList = CANONICAL_SUBJECT_REGISTRY;
@@ -25,7 +25,7 @@ export async function GET() {
           cbtKey: r.cbt_key,
           learningHubSlug: r.learning_hub_slug,
           stemSubjectId: r.stem_subject_id,
-          category: r.category as any,
+          category: r.category as CanonicalSubject["category"],
           icon: r.icon,
           description: r.description || "",
           displayOrder: r.display_order,
