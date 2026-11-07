@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
+import { canAccessClassroom, canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 import { storeClassroomMedia } from "@/app/lib/classroomMediaStore";
 import crypto from "crypto";
 
@@ -28,7 +28,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No media file provided." }, { status: 400 });
     }
 
-    // Only the verified class host may upload teaching documents/resources.
+    // Uploads tied to a class require active participant admission; teaching
+    // resources remain tutor/admin-only.
+    if (classId !== "classroom-assets" && !(await canAccessClassroom(user, classId, token))) {
+      return NextResponse.json({ error: "You are not admitted to this classroom." }, { status: 403 });
+    }
     if (mediaType === "document" && !(await canManageClassroom(user, classId, token))) {
       return NextResponse.json({ error: "Only the assigned tutor or a platform administrator can upload classroom documents." }, { status: 403 });
     }
@@ -42,7 +46,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const mimeType = file.type || (mediaType === "audio" ? "audio/webm" : mediaType === "image" ? "image/jpeg" : "application/octet-stream");
+    const mimeType = (file.type || "").split(";")[0].trim().toLowerCase();
+    const allowedMimeTypes: Record<string, string[]> = {
+      audio: ["audio/webm", "audio/mp4", "audio/aac", "audio/ogg", "audio/wav", "audio/mpeg"],
+      image: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+      document: ["application/pdf", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"],
+    };
+    if (!allowedMimeTypes[mediaType].includes(mimeType)) {
+      return NextResponse.json({ error: "This file type is not supported for classroom uploads." }, { status: 415 });
+    }
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const assetId = crypto.randomUUID();
@@ -68,9 +80,18 @@ export async function POST(request: NextRequest) {
         });
 
       if (!uploadError) {
-        // Keep the browser URL on the authenticated media proxy. The proxy
-        // issues a short-lived storage URL after checking class membership.
-        finalUrl = `/api/classroom/media/${assetId}`;
+        if (mediaType === "audio") {
+          // Audio is persisted with class metadata and delivered through the
+          // authenticated media proxy using a short-lived signed URL.
+          finalUrl = `/api/classroom/media/${assetId}`;
+        } else {
+          // Existing image/document viewers consume direct storage URLs.
+          // A private-bucket migration is needed before proxying these formats.
+          const { data: publicUrlData } = supabase.storage
+            .from("learning-content-media")
+            .getPublicUrl(storagePath);
+          if (publicUrlData?.publicUrl) finalUrl = publicUrlData.publicUrl;
+        }
       } else {
         console.warn("[classroom/upload] Storage bucket upload warning:", uploadError.message);
       }
