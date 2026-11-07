@@ -259,10 +259,10 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   const participantB = participants.find((participant) => participant.seat === "B") || participants[1];
   const myParticipant = isSpectator ? participantA : participants.find((participant) => participant.is_me);
   const opponentParticipant = isSpectator ? participantB : participants.find((participant) => !participant.is_me);
-  const isTeamMatch = match.match_type === "team_vs_team";
+  const isTeamMatch = match?.match_type === "team_vs_team";
   const teamRosterA = participants.filter((participant) => participant.seat === "A");
   const teamRosterB = participants.filter((participant) => participant.seat === "B");
-  const winningTeamName = match.winner_team_id
+  const winningTeamName = match?.winner_team_id
     ? (match.winner_team_id === participants.find((participant) => participant.seat === "A")?.team_id
       ? match.metadata?.team_a_name : match.metadata?.team_b_name)
     : null;
