@@ -40,17 +40,10 @@ export async function GET(request: NextRequest) {
       .filter((recording: any) => (recording.course_id || recording.live_classes?.course_id) && recording.is_visible_to_students && recording.processing_status === "ready")
       .map((recording: any) => recording.course_id || recording.live_classes?.course_id))] as string[];
     const { data: enrollments } = courseIds.length
-      ? await supabase.from("course_enrollments").select("course_id").eq("user_id", user.id).eq("status", "active").in("course_id", courseIds)
+      ? await supabase.from("course_enrollments").select("course_id, expires_at").eq("user_id", user.id).eq("status", "active").in("course_id", courseIds)
       : { data: [] };
-    const enrolledCourseIds = new Set((enrollments ?? []).map((item: any) => item.course_id));
-    const { data: activeSubscription } = await supabase
-      .from("user_subscriptions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .gt("current_period_end", new Date().toISOString())
-      .limit(1)
-      .maybeSingle();
+    const enrolledCourseIds = new Set((enrollments ?? []).filter((item: any) => !item.expires_at || new Date(item.expires_at).getTime() > Date.now()).map((item: any) => item.course_id));
+
 
     const visibilityChecks = await Promise.all(rowsList.map(async (recording: any) => {
       const ownsClass = recording.live_classes?.tutor_id === user.id;
@@ -63,7 +56,7 @@ export async function GET(request: NextRequest) {
       if (recording.class_id) {
         const linkedCourseId = recording.course_id || recording.live_classes?.course_id;
         if (linkedCourseId) {
-          return enrolledCourseIds.has(linkedCourseId) || Boolean(activeSubscription);
+          return enrolledCourseIds.has(linkedCourseId);
         }
 
         // Standalone classes without a course are limited to learners who
@@ -80,7 +73,7 @@ export async function GET(request: NextRequest) {
         return Boolean(attendance);
       }
       if (recording.course_id) {
-        return enrolledCourseIds.has(recording.course_id) || Boolean(activeSubscription);
+        return enrolledCourseIds.has(recording.course_id);
       }
       return false;
     }));
