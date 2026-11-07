@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const isPrivileged = adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role);
+      const isPlatformAdmin = Boolean(adminRole && ["super_admin", "platform_admin"].includes(adminRole.role));
 
       let query = supabase
         .from("assignments")
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         `)
         .order("created_at", { ascending: false });
 
-      if (!isPrivileged) {
+      if (!isPlatformAdmin) {
         query = query.eq("tutor_id", user.id);
       }
       if (courseId) {
