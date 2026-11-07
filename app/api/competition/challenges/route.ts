@@ -564,7 +564,7 @@ export async function PATCH(req: NextRequest) {
                 metadata: { match_id: teamMatchId, challenge_id },
               }))
             );
-            if (notificationError) throw notificationError;
+            if (notificationError) console.error("Team challenge accepted but leader notification failed:", notificationError);
           }
         }
         return NextResponse.json({
