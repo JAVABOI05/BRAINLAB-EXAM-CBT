@@ -18,21 +18,47 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(50);
 
+    let myTeamIds: string[] = [];
+    if (user) {
+      const { data: memberships, error: membershipError } = await supabase
+        .from("competition_team_members")
+        .select("team_id")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+      if (membershipError) throw membershipError;
+      myTeamIds = Array.from(new Set((memberships || []).map((item) => item.team_id)));
+    }
+
     if (filter === "open") {
-      query = query.is("challenged_id", null).eq("status", "pending");
+      query = query.is("challenged_id", null).is("challenged_team_id", null)
+        .eq("challenge_type", "individual").eq("status", "pending");
     } else {
       if (!user) return NextResponse.json({ error: "Sign in to view your challenge centre." }, { status: 401 });
       if (filter === "incoming") {
-        query = query.eq("challenged_id", user.id).eq("status", "pending");
+        const teamFilter = myTeamIds.length ? `,challenged_team_id.in.(${myTeamIds.join(",")})` : "";
+        query = query.or(`challenged_id.eq.${user.id}${teamFilter}`).eq("status", "pending");
       } else if (filter === "outgoing") {
         query = query.eq("challenger_id", user.id);
       } else {
-        query = query.or(`challenger_id.eq.${user.id},challenged_id.eq.${user.id}`);
+        const teamFilter = myTeamIds.length
+          ? `,challenger_team_id.in.(${myTeamIds.join(",")}),challenged_team_id.in.(${myTeamIds.join(",")})`
+          : "";
+        query = query.or(`challenger_id.eq.${user.id},challenged_id.eq.${user.id}${teamFilter}`);
       }
     }
 
     const { data: challenges, error } = await query;
     if (error) throw error;
+
+    const teamIds = new Set<string>();
+    challenges?.forEach((item) => {
+      if (item.challenger_team_id) teamIds.add(item.challenger_team_id);
+      if (item.challenged_team_id) teamIds.add(item.challenged_team_id);
+    });
+    const { data: challengeTeams } = teamIds.size
+      ? await supabase.from("competition_teams").select("id, name, slug, avatar_url").in("id", Array.from(teamIds))
+      : { data: [] as Array<{ id: string; name: string; slug: string; avatar_url: string | null }> };
+    const teamMap = Object.fromEntries((challengeTeams || []).map((team) => [team.id, team]));
 
     // Fetch user profiles for challenger and challenged display names
     const userIds = new Set<string>();
@@ -76,6 +102,8 @@ export async function GET(req: NextRequest) {
         challenged: challenge.challenged_id
           ? { display_name: challengedProfile?.display_name || "Private player", avatar_url: challengedProfile?.avatar_url || null }
           : null,
+        challenger_team: challenge.challenger_team_id ? teamMap[challenge.challenger_team_id] || null : null,
+        challenged_team: challenge.challenged_team_id ? teamMap[challenge.challenged_team_id] || null : null,
       };
     });
 
