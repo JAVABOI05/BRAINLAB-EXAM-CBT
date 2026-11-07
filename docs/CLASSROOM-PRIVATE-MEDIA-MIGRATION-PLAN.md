@@ -190,3 +190,35 @@ The inspected staging schema has `user_subscriptions` (with `status` and `curren
 - Studio slide import no longer embeds a failed image upload as a base64 data URI in the lesson JSON. Failed uploads are reported and skipped; successful durable Storage uploads remain available for import.
 
 The shared `learning-content-media` bucket is still public, so these safeguards do not make new slide/handout URLs private. The dedicated private bucket and asset registry remain a separate, unapplied migration.
+
+
+## 7 November staging re-audit — database evidence and replay entitlement tightening
+
+A fresh read-only inspection of the linked staging database confirmed:
+
+- `audio_assets` currently contains 9 rows, all `tutor_voice_note`; 8 of the 9 store a `data:` base64 payload in `file_url`, and none has a `storage_path` or `course_id`.
+- No rows in the inspected staging `messages`, `course_feed_posts`, or `assignment_submissions` currently reference an audio asset. This is a staging snapshot only and must not be assumed to represent production.
+- The audio asset type check constraint already includes `discussion_audio`; the chat type introduced in the branch is schema-compatible with this staging database.
+- The shared public bucket `learning-content-media` permits audio, but is public. The private `live-class-recordings` bucket currently allows only video MIME types. There is no existing private audio bucket suitable for this upload flow.
+- The broad audio SELECT policy remains unsafe: it exposes all `tutor_voice_note` and `lesson_audio` rows to the `public` database role. The old base64 payloads make that direct-row exposure particularly sensitive.
+
+### Replay and feed access tightening
+
+The prior fallback that treated any active platform subscription as access to every course feed or course recording was too broad: it did not prove that the plan included the specific course. It has been removed. Course feed posts and course-linked replays now require an active, non-expired `course_enrollments` row, course ownership, or platform-admin access. Standalone enrolled-only replays still require recorded attendance. Explicitly public recordings remain public after publication.
+
+The feed query's result destructuring was corrected after removing the unscoped subscription lookup. This is a code-only fix.
+
+### Database remediation design — still not applied
+
+- For `conversation_participants`, add a SELECT policy limited to the caller's own membership rows.
+- Correct `conversations` SELECT to correlate `conversation_participants.conversation_id = conversations.id` and `conversation_participants.user_id = auth.uid()`.
+- Correct `messages` SELECT/INSERT to correlate `conversation_participants.conversation_id = messages.conversation_id`; INSERT must also require `sender_id = auth.uid()`.
+- Add participant-scoped SELECT/INSERT/DELETE policies for `message_reactions`, correlating the reaction's message to its conversation and caller membership.
+- Replace the broad audio SELECT policy only after mapping legacy voice-note records and all parent-resource relationships. The current staging data has 9 unlinked tutor voice notes, 8 with embedded base64 payloads. Do not delete or rewrite them as part of a policy migration.
+- Do not expose base64 `file_url` through general list APIs. A new private audio bucket and authorized playback route require a separate bucket configuration and Storage policy migration. The current private recording bucket is video-only, and the public Learning Hub bucket must not be made private globally.
+
+A policy migration must preserve tutor feedback, assignment audio, course feed attachments, chat audio, classroom attendance and admin review paths. It must be tested with anonymous users, unrelated learners, enrolled learners, assignment submitters, assigned tutors, conversation participants, non-participants and admins before production rollout.
+
+### Advisor findings
+
+The staging Supabase security advisor reports 24 RLS-enabled tables with no policies, including `conversation_participants`, `message_reactions`, and several Arena/admin tables. These are not automatically vulnerabilities if access is intended exclusively through server-side service-role routes, but each table needs an explicit access-model decision. The advisor also flags multiple public-schema SECURITY DEFINER functions callable by authenticated users; those require a separate function-by-function audit rather than blanket revocation, because some are core exam submission and payment workflows.
