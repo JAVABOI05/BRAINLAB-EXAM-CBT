@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 import { storeClassroomMedia } from "@/app/lib/classroomMediaStore";
 import crypto from "crypto";
 
@@ -8,17 +9,31 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Sign in before uploading classroom media." }, { status: 401 });
+    }
+
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const classId = (formData.get("classId") as string) || "classroom-assets";
     const mediaType = (formData.get("mediaType") as string) || "image"; // "audio" | "image" | "document"
     const durationSeconds = parseFloat((formData.get("duration") as string) || "0");
 
+    if (!["audio", "image", "document"].includes(mediaType)) {
+      return NextResponse.json({ error: "Unsupported classroom media type." }, { status: 400 });
+    }
+
     if (!file) {
       return NextResponse.json({ error: "No media file provided." }, { status: 400 });
     }
 
-    // Limit to 50MB for presentation decks/documents, 25MB for audio/images
+    // Only the verified class host may upload teaching documents/resources.
+    if (mediaType === "document" && !(await canManageClassroom(user, classId, token))) {
+      return NextResponse.json({ error: "Only the assigned tutor or a platform administrator can upload classroom documents." }, { status: 403 });
+    }
+
+    // Limit to 50MB for presentation decks/documents, 25MB for audio/images.
     const maxSizeBytes = mediaType === "document" ? 50 * 1024 * 1024 : 25 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
       return NextResponse.json(
@@ -35,12 +50,13 @@ export async function POST(request: NextRequest) {
     // 1. Store in fast in-memory media cache for instant fallback
     storeClassroomMedia(assetId, buffer, mimeType, durationSeconds, file.name);
 
-    const supabase = getSupabaseServerClient();
-    const userId = user?.id || "guest_learner";
+    const supabase = getSupabaseServerClient(token);
+    const userId = user.id;
 
     // 2. Upload file to Supabase Storage: 'learning-content-media'
     const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-    const storagePath = `classroom-assets/${classId}/${assetId}-${safeName}`;
+    const safeClassId = String(classId).replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 100);
+    const storagePath = `classroom-assets/${safeClassId}/${assetId}-${safeName}`;
     let finalUrl = `/api/classroom/media/${assetId}`;
 
     try {
