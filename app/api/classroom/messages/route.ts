@@ -151,6 +151,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized. Sign in to post classroom messages." }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       classId,
@@ -168,7 +172,13 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedClassId = String(classId).trim().toUpperCase();
-    const supabase = getSupabaseServerClient();
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const canManage = await canManageClassroom(user, String(classId), bearerToken);
+    if (isPinned && !canManage) {
+      return NextResponse.json({ error: "Only the assigned class tutor or a platform administrator can pin classroom messages." }, { status: 403 });
+    }
+
+    const supabase = getSupabaseServerClient(bearerToken);
     const msgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const nowIso = new Date().toISOString();
     const timestampStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -183,11 +193,11 @@ export async function POST(request: NextRequest) {
       senderName: safeSenderName,
       text: text || (type === "audio" ? "🎙️ Voice Note" : "📷 Shared Diagram"),
       timestamp: timestampStr,
-      isHost: Boolean(isHost),
+      isHost: canManage,
       type,
       mediaUrl: mediaUrl || undefined,
       duration: duration || undefined,
-      isPinned: Boolean(isPinned),
+      isPinned: Boolean(isPinned && canManage),
       createdAt: nowIso,
     };
 
@@ -255,7 +265,7 @@ export async function POST(request: NextRequest) {
             sender_id: user.id,
             message_type: type === "audio" ? "audio_note" : type === "image" ? "file" : "text",
             content: messageObj.text || "",
-            is_pinned: isPinned,
+            is_pinned: Boolean(isPinned && canManage),
             metadata: {
               senderName: messageObj.senderName,
               type: messageObj.type,
