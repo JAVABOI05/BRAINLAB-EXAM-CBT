@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Host / Tutor auto-activation: mark room active if needed
-      if (roomConfig && !roomConfig.is_active) {
+      if (roomConfig && (!roomConfig.is_active || !roomConfig.active_host_id)) {
         const updatedRooms = { ...config.room_configs };
         updatedRooms[classId] = {
           ...roomConfig,
