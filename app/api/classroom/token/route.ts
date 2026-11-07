@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
-import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
+import { getLiveClassroomConfig, saveLiveClassroomParticipantGrant } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
 
@@ -232,11 +232,7 @@ export async function POST(request: NextRequest) {
           ) as Record<string, number>;
           activeGrants[user.id] = now + (config.default_duration_minutes || 60) * 60 * 1000;
           updatedRooms[classId] = { ...currentRoom, participant_access: activeGrants };
-          const savedGrant = await saveLiveClassroomConfig(
-            { room_configs: updatedRooms },
-            { id: user.id, email: user.email || "classroom-participant@brainlabacademy.com.ng" },
-            "Issued short-lived classroom entry-code access"
-          );
+          const savedGrant = await saveLiveClassroomParticipantGrant(updatedRooms);
           if (!savedGrant) {
             return NextResponse.json({ error: "Unable to establish secure classroom access. Please retry." }, { status: 503 });
           }
