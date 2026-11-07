@@ -33,7 +33,18 @@ export async function GET(request: NextRequest) {
       return (await canAccessClassroom(user, recording.class_id, token)) ? recording : null;
     }));
 
-    return NextResponse.json({ success: true, recordings: visibleRecordings.filter(Boolean) });
+    // Mint short-lived playback URLs only after the caller's visibility and
+    // class-admission checks. Never return the long-lived URL saved by a client.
+    const storageAdmin = getSupabaseServerClient();
+    const playableRecordings = await Promise.all(visibleRecordings.filter(Boolean).map(async (recording) => {
+      if (!recording.storage_path) return recording;
+      const { data: signed, error: signError } = await storageAdmin.storage
+        .from("live-class-recordings")
+        .createSignedUrl(recording.storage_path, 60 * 60);
+      return { ...recording, video_url: signError ? "" : (signed?.signedUrl || "") };
+    }));
+
+    return NextResponse.json({ success: true, recordings: playableRecordings });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to load recordings." },
@@ -70,8 +81,8 @@ export async function POST(request: NextRequest) {
       aspectRatio = "16 / 9",
     } = body;
 
-    if (!videoUrl) {
-      return NextResponse.json({ error: "Missing videoUrl parameter." }, { status: 400 });
+    if (!videoUrl && !storagePath) {
+      return NextResponse.json({ error: "A recording storage path or HTTPS video URL is required." }, { status: 400 });
     }
 
     // Recording metadata must only be created by verified teaching staff
@@ -83,6 +94,34 @@ export async function POST(request: NextRequest) {
     if (classId && !(await canManageClassroom(user, String(classId), token))) {
       return NextResponse.json({ error: "Forbidden. You cannot save a recording for another instructor's class." }, { status: 403 });
     }
+    if (!classId && !lessonId) {
+      return NextResponse.json({ error: "A scheduled class or an owned Studio lesson is required." }, { status: 400 });
+    }
+    if (lessonId) {
+      const { data: lesson, error: lessonError } = await supabase
+        .from("classroom_lessons")
+        .select("id")
+        .eq("id", String(lessonId))
+        .eq("tutor_id", user.id)
+        .maybeSingle();
+      if (lessonError || !lesson) {
+        return NextResponse.json({ error: "The Studio lesson was not found or is not owned by this tutor." }, { status: 403 });
+      }
+    }
+    if (storagePath) {
+      const expectedPrefix = classId
+        ? `${String(classId)}/${user.id}/`
+        : `studio-lessons/${user.id}/`;
+      if (typeof storagePath !== "string" || !storagePath.startsWith(expectedPrefix) || storagePath.includes("..")) {
+        return NextResponse.json({ error: "The recording storage path is not owned by this tutor and lesson/class." }, { status: 403 });
+      }
+    } else {
+      try {
+        if (new URL(String(videoUrl)).protocol !== "https:") throw new Error("HTTPS required");
+      } catch {
+        return NextResponse.json({ error: "Use a valid HTTPS video URL." }, { status: 400 });
+      }
+    }
 
     const payload = {
       class_id: classId || null,
@@ -91,7 +130,8 @@ export async function POST(request: NextRequest) {
       subject: subject || null,
       topic: topic || null,
       description: description || null,
-      video_url: videoUrl,
+      // Store the private object path, never a client-minted signed URL.
+      video_url: storagePath || videoUrl,
       storage_path: storagePath || null,
       duration_seconds: Math.round(Number(durationSeconds) || 0),
       file_size_bytes: Number(fileSizeBytes) || 0,
@@ -105,7 +145,11 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    // All authorization checks above use the caller-scoped client. Use the
+    // server client only for the final insert so Studio-only recordings with
+    // class_id=NULL can be persisted despite the legacy class-only INSERT RLS.
+    const storageAdmin = getSupabaseServerClient();
+    const { data, error } = await storageAdmin
       .from("class_recordings")
       .insert(payload)
       .select()
