@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       if (!user) {
         result = result.filter((post) => !post.course_id);
       } else {
-        const [{ data: enrollments }, { data: activeSubscription }, { data: courses }, { data: adminProfile }] = await Promise.all([
+        const [{ data: enrollments }, { data: courses }, { data: adminProfile }] = await Promise.all([
           supabase.from("course_enrollments")
             .select("course_id, expires_at")
             .eq("user_id", user.id)
