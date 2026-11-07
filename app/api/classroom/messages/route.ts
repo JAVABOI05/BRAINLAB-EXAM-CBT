@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
+import { canAccessClassroom, canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +55,11 @@ export async function GET(request: NextRequest) {
     }
 
     const normalizedClassId = String(classId).trim().toUpperCase();
-    const supabase = getSupabaseServerClient();
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    if (!(await canAccessClassroom(user, classId, bearerToken))) {
+      return NextResponse.json({ error: "You are not admitted to this classroom." }, { status: 403 });
+    }
+    const supabase = getSupabaseServerClient(bearerToken);
     const collected: ClassroomMemoryMessage[] = [];
 
     // 1. Check persistent exam_config store for classroom messages (supports any class code like BL-LIVE-101)
