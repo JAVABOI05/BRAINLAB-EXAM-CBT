@@ -26,7 +26,6 @@ export async function POST(
       );
     }
 
-    const body = await request.json().catch(() => ({}));
     const normalizedClassId = String(classId).trim().toUpperCase();
     const isOpenStage =
       normalizedClassId === "BL-LIVE-101" ||
@@ -41,7 +40,7 @@ export async function POST(
     // tutor profile, or the explicitly configured individual tutor allowlist.
     // User metadata and email-domain membership are not authorization signals.
     const { isStaff: isAuthorizedHost } = await resolveClassroomStaffAccess(user, token);
-    const isHostClaim = isAuthorizedHost || (isOpenStage && (body?.asHost === true || body?.role === "host" && isAuthorizedHost));
+    const isHostClaim = isAuthorizedHost;
 
 
     const now = new Date().toISOString();
