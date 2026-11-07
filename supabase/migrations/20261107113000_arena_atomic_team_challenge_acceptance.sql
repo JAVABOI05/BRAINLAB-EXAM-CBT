@@ -92,18 +92,31 @@ begin
     )
   ) returning id into v_match_id;
 
+  with locked_rosters as (
+    select member.team_id, member.user_id, member.joined_at,
+           row_number() over (
+             partition by member.team_id
+             order by
+               case when member.user_id = team.captain_id then 0
+                    when member.user_id = team.co_captain_id then 1 else 2 end,
+               member.joined_at, member.user_id
+           ) as roster_position
+    from public.competition_team_members member
+    join public.competition_teams team on team.id = member.team_id
+    where member.team_id in (v_challenge.challenger_team_id, p_accepting_team_id)
+      and member.is_active
+  )
   insert into public.competition_match_participants (
     match_id, user_id, team_id, display_name, is_ready, current_question_index, score
   )
-  select v_match_id, member.user_id, member.team_id,
+  select v_match_id, roster.user_id, roster.team_id,
          coalesce(nullif(profile.display_name, ''), 'Private player'),
          false, 0, 0
-  from public.competition_team_members member
+  from locked_rosters roster
   left join public.competition_public_profiles profile
-    on profile.user_id = member.user_id and profile.visibility = 'public'
-  where member.team_id in (v_challenge.challenger_team_id, p_accepting_team_id)
-    and member.is_active
-  order by member.team_id, member.joined_at, member.user_id;
+    on profile.user_id = roster.user_id and profile.visibility = 'public'
+  where roster.roster_position <= v_roster_size
+  order by roster.team_id, roster.roster_position;
 
   update public.competition_challenges
   set status = 'accepted',
