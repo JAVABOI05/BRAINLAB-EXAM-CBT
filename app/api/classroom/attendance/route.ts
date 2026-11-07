@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       .eq("id", classId)
       .maybeSingle();
     const isAuthorizedStaff =
-      staffAccess.source === "platform_role" ||
+      staffAccess.isPlatformAdmin ||
       (staffAccess.isStaff && liveClass?.tutor_id === user.id);
 
     // 2. Fetch attendance records from database
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
       const staffAccess = await resolveClassroomStaffAccess(user);
       const isAssignedTutor = liveClass?.tutor_id === user.id;
-      const isAuthorizedAdmin = staffAccess.source === "platform_role";
+      const isAuthorizedAdmin = staffAccess.isPlatformAdmin;
       if (!liveClass || (!isAssignedTutor && !isAuthorizedAdmin)) {
         return NextResponse.json({ error: "Only the assigned tutor or an authorized administrator can take attendance." }, { status: 403 });
       }
@@ -308,7 +308,7 @@ export async function PATCH(request: NextRequest) {
 
     const isTutor = record.live_classes?.tutor_id === user.id;
     const staffAccess = await resolveClassroomStaffAccess(user);
-    const isAdmin = staffAccess.source === "platform_role";
+    const isAdmin = staffAccess.isPlatformAdmin;
 
     if (!isTutor && !isAdmin) {
       return NextResponse.json(
