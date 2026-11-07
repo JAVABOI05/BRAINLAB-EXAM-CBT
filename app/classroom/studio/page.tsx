@@ -567,13 +567,6 @@ export default function ClassroomStudioPage() {
       });
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
-    // A short-lived URL is used only by the optional trim job. Recording
-    // metadata stores the private path and playback URLs are minted on demand.
-    const { data: signedData } = await supabase.storage
-      .from("live-class-recordings")
-      .createSignedUrl(filename, 60 * 10);
-    const finalVideoUrl = signedData?.signedUrl || filename;
-
     // 2. Save metadata to class_recordings table
     const response = await fetch("/api/classroom/recordings", {
       method: "POST",
@@ -583,7 +576,6 @@ export default function ClassroomStudioPage() {
         title,
         subject,
         topic,
-        videoUrl: finalVideoUrl,
         storagePath: filename,
         durationSeconds: meta.duration,
         fileSizeBytes: meta.fileSize,
