@@ -64,7 +64,35 @@ The feature branch now changes these helpers to:
 
 This keeps the learner subscription system separate from custom staff permissions and removes a client-controlled route to the VIP bypass. The new helper behavior must be regression-tested against payment initialization, tier-gate UI, corrections, classroom, competition registration and upgrade nudges.
 
-### E. Legacy classroom staff shortcuts requiring security remediation
+### E. Classroom authorization remediation now implemented on the feature branch
+
+The following routes now use the shared `resolveClassroomStaffAccess()` helper instead of metadata, domain membership or inconsistent direct profile-table checks:
+
+- `app/api/classroom/token/route.ts`
+- `app/api/classroom/classes/[id]/start/route.ts`
+- `app/api/classroom/classes/[id]/end/route.ts`
+- `app/api/classroom/admit/route.ts`
+- `app/api/classroom/broadcast/route.ts`
+- `app/api/classroom/attendance/route.ts`
+
+The helper accepts only exact database-backed classroom staff roles, approved `tutor_profiles` records, or exact matches in the explicitly configured individual tutor allowlist. It does not treat an official email domain or user-editable Auth metadata as authorization.
+
+Additional safeguards now in the branch:
+
+- Client-supplied `asHost` / `requestedRole` claims cannot elevate a learner into host or moderator privileges.
+- Tutor profiles and allowlisted tutors can host an open stage, but for a scheduled class they must be the class's assigned tutor.
+- Only `super_admin` and `platform_admin` receive the global class-ownership override; a `teacher` role or approved tutor profile alone does not.
+- Admission and attendance-management operations are limited to the assigned host or a platform administrator.
+- Unregistered class IDs are rejected by the token and start endpoints instead of silently creating virtual scheduled classes.
+- The end endpoint no longer reports a successful end for a nonexistent database class.
+
+These changes are on the feature branch only and still require preview build and route-level regression tests. The configured tutor allowlist remains an intentional explicit exception and should be audited periodically by Super Admin.
+
+### E. Historical discovery notes
+
+The initial inspection found that the classroom token and class-start handlers accepted user-editable Auth metadata and official-domain email membership as staff evidence. Those shortcuts have been removed in the current feature branch as documented above.
+
+
 
 Inspection of the classroom token and class-start handlers found additional staff classification shortcuts that are not safe as authorization evidence:
 
