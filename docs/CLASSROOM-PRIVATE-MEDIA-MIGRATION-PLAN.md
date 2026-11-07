@@ -159,3 +159,12 @@ No database policies, tables, or data were changed. The staging RLS findings mus
 - `GET /api/feed/posts` now filters course-linked posts to the course tutor, platform admins, active course enrollees (respecting enrollment expiry), or users with an active subscription. Subject-only posts remain available to the existing public subject-feed experience. The subject feed page now forwards its session token when available.
 
 These changes are code-level mitigations only. They do not replace the required RLS policy migration for direct table access, and the feed's subscription check still follows the existing broad active-subscription model pending a dedicated entitlement review.
+
+
+### Additional messaging API hardening
+
+- Reaction requests now require a conversation ID, verify the caller is a participant, and verify that a native message belongs to that conversation before changing its reactions. Legacy config-backed messages use the same participant check.
+- Conversation invite accept/decline updates now verify the requester is a participant before changing native or fallback conversation state.
+- The chat composer now uploads voice notes as `discussion_audio`, matching the upload API's authenticated-user discussion-audio path instead of misclassifying ordinary learner messages as tutor-only voice notes.
+
+The database RLS defects remain queued for a reviewed migration. These route checks protect the current service-role API paths but do not make direct table policies safe.
