@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
-import { getLiveClassroomConfig, saveLiveClassroomParticipantGrant } from "@/app/lib/platformConfig";
+import { getLiveClassroomConfig, saveLiveClassroomParticipantGrant, saveLiveClassroomRoomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
 
@@ -266,19 +266,19 @@ export async function POST(request: NextRequest) {
     } else {
       // Host / Tutor auto-activation: mark room active if needed
       if (roomConfig && (!roomConfig.is_active || !roomConfig.active_host_id)) {
-        const updatedRooms = { ...config.room_configs };
-        updatedRooms[classId] = {
-          ...roomConfig,
-          is_active: true,
-          active_host_id: user.id,
-          active_host_name: user.user_metadata?.full_name || user.email || "Tutor",
-          started_at: new Date().toISOString(),
-        };
-        void saveLiveClassroomConfig(
-          { room_configs: updatedRooms },
-          { id: user.id, email: user.email || "tutor@brainlabacademy.com.ng" },
-          `Tutor launched live stage for class ${classId}`
+        const savedHostAssignment = await saveLiveClassroomRoomConfig(
+          classId,
+          {
+            is_active: true,
+            active_host_id: user.id,
+            active_host_name: user.user_metadata?.full_name || user.email || "Tutor",
+            started_at: new Date().toISOString(),
+          },
+          `Verified tutor launched live stage for class ${classId}`
         );
+        if (!savedHostAssignment) {
+          return NextResponse.json({ error: "Unable to activate this classroom safely. Please retry." }, { status: 503 });
+        }
       }
     }
 
