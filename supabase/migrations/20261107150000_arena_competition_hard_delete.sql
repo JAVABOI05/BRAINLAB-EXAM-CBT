@@ -28,7 +28,12 @@ begin
   end if;
 
   delete from public.competition_matches
-  where competition_id = p_competition_id;
+  where competition_id = p_competition_id
+     or round_id in (
+       select id
+       from public.competition_rounds
+       where competition_id = p_competition_id
+     );
   get diagnostics v_match_count = row_count;
 
   delete from public.competitions
