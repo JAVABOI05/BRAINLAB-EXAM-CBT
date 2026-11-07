@@ -1,7 +1,7 @@
 /* eslint @typescript-eslint/no-explicit-any: "off", prefer-const: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, logAdminAction } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -21,19 +21,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
-    const supabase = getSupabaseServerClient();
+    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
 
-    // Staff may view the report globally; tutors may view only their own class.
-    const staffAccess = await resolveClassroomStaffAccess(user);
-    const { data: liveClass } = await supabase
-      .from("live_classes")
-      .select("tutor_id")
-      .eq("id", classId)
-      .maybeSingle();
-    const isAuthorizedStaff =
-      staffAccess.isPlatformAdmin ||
-      (staffAccess.isStaff && liveClass?.tutor_id === user.id);
+    // Tutors can view only the class they own; platform administrators can
+    // review any class. Everyone else is restricted to their own attendance.
+    const isAuthorizedStaff = await canManageClassroom(user, classId, token);
 
     // 2. Fetch attendance records from database
     const { data: records, error } = await supabase
@@ -135,15 +129,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Provide between 1 and 200 valid connected student IDs." }, { status: 400 });
       }
 
+      const canManage = await canManageClassroom(
+        user,
+        classId,
+        request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "")
+      );
       const { data: liveClass } = await supabase
         .from("live_classes")
         .select("id, tutor_id")
         .eq("id", classId)
         .maybeSingle();
-      const staffAccess = await resolveClassroomStaffAccess(user);
-      const isAssignedTutor = liveClass?.tutor_id === user.id;
-      const isAuthorizedAdmin = staffAccess.isPlatformAdmin;
-      if (!liveClass || (!isAssignedTutor && !isAuthorizedAdmin)) {
+      if (!liveClass || !canManage) {
         return NextResponse.json({ error: "Only the assigned tutor or an authorized administrator can take attendance." }, { status: 403 });
       }
 
@@ -306,11 +302,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Attendance record not found" }, { status: 404 });
     }
 
-    const isTutor = record.live_classes?.tutor_id === user.id;
-    const staffAccess = await resolveClassroomStaffAccess(user);
-    const isAdmin = staffAccess.isPlatformAdmin;
+    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const canManage = await canManageClassroom(user, record.class_id, token);
 
-    if (!isTutor && !isAdmin) {
+    if (!canManage) {
       return NextResponse.json(
         { error: "Forbidden. Only assigned tutors or administrators can modify attendance." },
         { status: 403 }
