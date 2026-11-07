@@ -186,7 +186,6 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       participant_a_id: _participantAId,
       participant_b_id: _participantBId,
       winner_id: _privateWinnerId,
-      answer_keys_snapshot: _privateAnswerKeysSnapshot,
       ...publicMatch
     } = match;
     const safeMatch = {
