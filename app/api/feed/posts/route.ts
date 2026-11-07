@@ -94,19 +94,73 @@ export async function POST(request: NextRequest) {
     if (!title || !content) {
       return NextResponse.json({ error: "Title and content are required." }, { status: 400 });
     }
-    if (!course_id) {
-      return NextResponse.json({ error: "A course must be selected for this announcement." }, { status: 400 });
-    }
-
-    const [{ data: adminRole }, { data: course, error: courseError }] = await Promise.all([
-      supabase.from("admin_profiles").select("role").eq("user_id", user.id).maybeSingle(),
-      supabase.from("courses").select("id, tutor_id, subject_id").eq("id", course_id).maybeSingle(),
-    ]);
-    if (courseError || !course) {
-      return NextResponse.json({ error: "Course not found." }, { status: 404 });
-    }
-
+    const { data: adminRole } = await supabase
+      .from("admin_profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
     const isPlatformAdmin = Boolean(adminRole && ["super_admin", "platform_admin"].includes(adminRole.role));
+
+    let resolvedCourseId: string | null = course_id || null;
+    let course: { id: string; tutor_id: string; subject_id: string | null } | null = null;
+
+    if (resolvedCourseId) {
+      const { data, error: courseError } = await supabase
+        .from("courses")
+        .select("id, tutor_id, subject_id")
+        .eq("id", resolvedCourseId)
+        .maybeSingle();
+      if (courseError || !data) {
+        return NextResponse.json({ error: "Course not found." }, { status: 404 });
+      }
+      course = data;
+    } else if (subject_id) {
+      // The existing subject-feed composer does not send course_id. Resolve it
+      // only when exactly one course is unambiguous for this tutor/subject.
+      const { data: subjectCourses, error: coursesError } = await supabase
+        .from("courses")
+        .select("id, tutor_id, subject_id")
+        .eq("subject_id", subject_id);
+      if (coursesError) {
+        return NextResponse.json({ error: "Unable to resolve the course for this subject." }, { status: 500 });
+      }
+      let eligibleCourses = subjectCourses || [];
+      if (!isPlatformAdmin) {
+        const ownCourses = eligibleCourses.filter((item) => item.tutor_id === user.id);
+        if (ownCourses.length) {
+          eligibleCourses = ownCourses;
+        } else {
+          const { data: membership, error: membershipError } = await supabase
+            .from("learning_subject_memberships")
+            .select("subject_id")
+            .eq("user_id", user.id)
+            .eq("subject_id", subject_id)
+            .eq("membership_role", "tutor")
+            .maybeSingle();
+          if (membershipError) {
+            return NextResponse.json({ error: "Unable to verify subject teaching assignment." }, { status: 500 });
+          }
+          eligibleCourses = membership ? eligibleCourses : [];
+        }
+      }
+      if (eligibleCourses.length !== 1) {
+        return NextResponse.json(
+          { error: eligibleCourses.length
+            ? "More than one course is linked to this subject. Select a specific course before publishing."
+            : "No course assigned to you was found for this subject." },
+          { status: 400 }
+        );
+      }
+      course = eligibleCourses[0];
+      resolvedCourseId = course.id;
+    } else {
+      return NextResponse.json({ error: "A course or subject must be selected for this announcement." }, { status: 400 });
+    }
+
+    if (!course || (subject_id && course.subject_id && course.subject_id !== subject_id)) {
+      return NextResponse.json({ error: "The selected course does not match this subject." }, { status: 400 });
+    }
+
     let hasCourseTeachingAssignment = course.tutor_id === user.id;
     if (!hasCourseTeachingAssignment && course.subject_id) {
       const { data: membership, error: membershipError } = await supabase
@@ -146,7 +200,7 @@ export async function POST(request: NextRequest) {
       .insert({
         title,
         content,
-        course_id: course_id || null,
+        course_id: resolvedCourseId,
         subject_id: subject_id || null,
         author_id: user.id,
         post_type,
