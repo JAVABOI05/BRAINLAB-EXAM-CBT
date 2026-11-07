@@ -1021,6 +1021,12 @@ export default function ChallengeArenaPage() {
                 </select>
               </div>
 
+              <label className="text-xs font-bold text-slate-400 block">Difficulty
+                <select value={newChallengeDifficulty} onChange={(event) => setNewChallengeDifficulty(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="mixed">Mixed</option>
+                </select>
+              </label>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-400 block mb-1">Questions</label>
@@ -1059,19 +1065,6 @@ export default function ChallengeArenaPage() {
                   <option value="ranked">Ranked — affects competitive rating</option>
                   <option value="friendly">Friendly — practice, no rating change</option>
                 </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 block">Invite founding members (at least one other player)</label>
-                <div className="flex gap-2">
-                  <input value={founderSearch} onChange={(e) => setFounderSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void searchFoundingMembers(); } }} placeholder="Search public Arena players…" className={`min-w-0 flex-1 p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`} />
-                  <button type="button" onClick={searchFoundingMembers} disabled={founderSearchLoading || founderSearch.trim().length < 2} className="rounded-xl bg-blue-600 px-4 text-xs font-bold text-white disabled:opacity-50">{founderSearchLoading ? "Searching…" : "Search"}</button>
-                </div>
-                {founderSearchResults.length > 0 && <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-700/30">
-                  {founderSearchResults.map(player => <button type="button" key={player.slug} onClick={() => addFoundingMember(player)} className="flex w-full items-center justify-between gap-3 border-b border-slate-700/20 px-3 py-2 text-left last:border-0 hover:bg-blue-500/10"><span className="text-sm font-semibold">{player.display_name}</span><span className="text-xs font-bold text-blue-500">Invite +</span></button>)}
-                </div>}
-                {selectedFounders.length > 0 && <div className="flex flex-wrap gap-2">{selectedFounders.map(player => <span key={player.slug} className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-300">{player.display_name}<button type="button" onClick={() => setSelectedFounders(current => current.filter(item => item.slug !== player.slug))} aria-label={`Remove ${player.display_name}`} className="text-base leading-none">×</button></span>)}</div>}
-                <p className="text-[11px] text-slate-500">Every invited founder must accept. The Arena administrator then approves the request, and the founding members elect their captain. Only players with public Arena profiles appear in search.</p>
               </div>
 
               <div className="flex gap-2 justify-end mt-2">
@@ -1116,6 +1109,11 @@ export default function ChallengeArenaPage() {
               <label className="text-xs font-bold text-slate-400">Subject
                 <select value={newChallengeSubject} onChange={(event) => setNewChallengeSubject(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
                   {["Mathematics","English","Physics","Chemistry","Biology","Economics","Government","General"].map((subject) => <option key={subject} value={subject}>{subject}</option>)}
+                </select>
+              </label>
+              <label className="text-xs font-bold text-slate-400">Difficulty
+                <select value={newChallengeDifficulty} onChange={(event) => setNewChallengeDifficulty(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="mixed">Mixed</option>
                 </select>
               </label>
               <div className="grid grid-cols-2 gap-3">
