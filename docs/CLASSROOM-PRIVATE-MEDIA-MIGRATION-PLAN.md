@@ -222,3 +222,15 @@ A policy migration must preserve tutor feedback, assignment audio, course feed a
 ### Advisor findings
 
 The staging Supabase security advisor reports 24 RLS-enabled tables with no policies, including `conversation_participants`, `message_reactions`, and several Arena/admin tables. These are not automatically vulnerabilities if access is intended exclusively through server-side service-role routes, but each table needs an explicit access-model decision. The advisor also flags multiple public-schema SECURITY DEFINER functions callable by authenticated users; those require a separate function-by-function audit rather than blanket revocation, because some are core exam submission and payment workflows.
+
+
+### Assignment audio and grading authorization follow-up
+
+A code review of the assignment endpoints found two additional object-level authorization gaps:
+
+- Student submission accepted any supplied `audioAssetId` without proving the asset belonged to the student or was uploaded for that assignment.
+- Grading allowed any account with the broad `teacher` platform role to grade any tutor's assignment, and accepted arbitrary tutor audio IDs.
+
+The feature branch now verifies student audio ownership, the `student_submission` asset type and matching assignment ID before attaching it. Grading is restricted to the assignment's own tutor or platform administrators; grading status is allowlisted; tutor feedback audio must belong to the grading tutor, have type `tutor_voice_note`, and carry the matching assignment ID.
+
+The audio upload response continues to return the uploader's own `file_url` for compatibility with existing assignment and feed composers. This is an owner-only upload response, not a general list response. The underlying base64-in-database design is still temporary and must be replaced by private Storage plus authorized playback before broad audio table access is considered safe.
