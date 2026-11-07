@@ -139,34 +139,20 @@ export default function TutorAssignmentsPage() {
 
     async function loadSubs() {
       try {
-        const { data, error } = await supabase
-          .from("assignment_submissions")
-          .select(`
-            id,
-            assignment_id,
-            student_id,
-            text_submission,
-            audio_asset_id,
-            tutor_audio_asset_id,
-            grade,
-            feedback,
-            rubric_scores,
-            status,
-            submitted_at,
-            graded_at,
-            audio_asset:audio_asset_id ( id, file_url, duration_seconds, title ),
-            tutor_audio_asset:tutor_audio_asset_id ( id, file_url, duration_seconds, title )
-          `)
-          .eq("assignment_id", selectedAssignmentId)
-          .order("submitted_at", { ascending: false });
-
-        if (error) throw error;
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) throw new Error("Authentication required.");
+        const response = await fetch(
+          `/api/assignments/submissions?assignmentId=${encodeURIComponent(selectedAssignmentId)}`,
+          { headers: { Authorization: `Bearer ${sessionData.session.access_token}` }, cache: "no-store" }
+        );
+        const json = await response.json();
+        if (!response.ok || !json.success) throw new Error(json.error || "Unable to load submissions.");
         if (active) {
           type RawSubmission = Omit<StudentSubmission, "audio_asset" | "tutor_audio_asset"> & {
             audio_asset?: AudioAsset | AudioAsset[] | null;
             tutor_audio_asset?: AudioAsset | AudioAsset[] | null;
           };
-          const normalized: StudentSubmission[] = ((data as unknown as RawSubmission[] | null) || []).map((row) => ({
+          const normalized: StudentSubmission[] = ((json.submissions as RawSubmission[] | null) || []).map((row) => ({
             ...row,
             audio_asset: Array.isArray(row.audio_asset) ? row.audio_asset[0] : row.audio_asset,
             tutor_audio_asset: Array.isArray(row.tutor_audio_asset) ? row.tutor_audio_asset[0] : row.tutor_audio_asset,
