@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     let query = supabase
       .from("live_classes")
-      .select("*, courses(title, slug), learning_subjects(name, slug)")
+      .select("id, title, description, status, scheduled_start_at, scheduled_end_at, class_format, course_id, subject_id, courses(title, slug), learning_subjects(name, slug)")
       .order("scheduled_start_at", { ascending: true });
 
     if (courseId) query = query.eq("course_id", courseId);
