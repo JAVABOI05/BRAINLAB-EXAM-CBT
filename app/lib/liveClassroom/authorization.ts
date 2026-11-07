@@ -126,6 +126,11 @@ export async function canAccessClassroom(
     return false;
   }
   const room = config.room_configs?.[classId] || config.room_configs?.[normalizedId];
+  const isBuiltInPublicStage = normalizedId === "BL-LIVE-101" ||
+    normalizedId === "DEMO-CLASS" || normalizedId === "GENERAL-STAGE";
+  // Dynamic/private stage IDs are not valid merely because they match a
+  // naming prefix. They must exist in the server-managed room configuration.
+  if (isVirtualStage && !isBuiltInPublicStage && !room) return false;
   if (room?.entry_code && Number(room.participant_access?.[user.id] || 0) <= Date.now()) return false;
   if (room?.require_permission && !room.admitted_students?.includes(user.id)) return false;
 
