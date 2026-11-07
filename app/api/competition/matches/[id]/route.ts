@@ -66,6 +66,9 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       if (refreshError) throw refreshError;
       match = refreshedMatch;
     }
+    if (!match) {
+      return NextResponse.json({ error: "Match not found after finalization." }, { status: 404 });
+    }
 
     const isParticipant = Boolean(user && participants?.some((participant) => participant.user_id === user.id));
     const adminRole = user ? await resolveAdminRole(user.id) : null;
