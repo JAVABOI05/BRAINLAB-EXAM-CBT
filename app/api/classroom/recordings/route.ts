@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { canAccessClassroom, canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
+import { canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
