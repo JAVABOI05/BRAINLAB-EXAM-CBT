@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/app/lib/supabaseServer";
 import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
-import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
