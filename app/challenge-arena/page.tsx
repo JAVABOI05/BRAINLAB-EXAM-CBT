@@ -123,6 +123,7 @@ export default function ChallengeArenaPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
+  const [myTeamRole, setMyTeamRole] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [spectatorMatches, setSpectatorMatches] = useState<SpectatorMatch[]>([]);
 
@@ -198,6 +199,7 @@ export default function ChallengeArenaPage() {
         const teamJson = await teamRes.json();
         setTeams(teamJson.teams || []);
         setMyTeamId(teamJson.my_team_id || null);
+        setMyTeamRole(teamJson.my_team_role || null);
       }
 
       // 6. Fetch Leaderboard & User Rating
@@ -271,9 +273,8 @@ export default function ChallengeArenaPage() {
       alert("You must be an active member of a team before issuing a team challenge.");
       return;
     }
-    const ownTeam = teams.find((team) => team.id === myTeamId);
-    if (!ownTeam) {
-      alert("Your active team could not be loaded. Refresh and try again.");
+    if (myTeamRole !== "captain" && myTeamRole !== "co_captain") {
+      alert("Only your team's captain or co-captain can issue a team challenge.");
       return;
     }
     try {
@@ -720,7 +721,7 @@ export default function ChallengeArenaPage() {
                 >
                   <span>⚔️</span> Issue 1v1
                 </button>
-                {myTeamId && <button
+                {myTeamId && (myTeamRole === "captain" || myTeamRole === "co_captain") && <button
                   onClick={() => setShowTeamChallengeModal(true)}
                   className="px-4 py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] text-white font-bold text-xs transition flex items-center gap-2"
                 >
