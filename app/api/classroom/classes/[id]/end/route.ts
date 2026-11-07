@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +22,9 @@ export async function POST(
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const supabase = getSupabaseServerClient(token);
 
-    // 1. Verify user is tutor or administrator
-    const resolvedRole = await resolveAdminRole(user.id);
-    const isAdmin = Boolean(
-      resolvedRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(resolvedRole)
-    );
+    // Only platform administrators may override class ownership.
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    const isPlatformAdmin = staffAccess.source === "platform_role";
 
     const { data: liveClass, error: fetchErr } = await supabase
       .from("live_classes")
@@ -34,20 +33,10 @@ export async function POST(
       .maybeSingle();
 
     if (fetchErr || !liveClass) {
-      // If it was a mock / open stage room (e.g. BL-LIVE-101)
-      return NextResponse.json({
-        success: true,
-        summary: {
-          classId,
-          title: "BrainLab Live Session",
-          endedAt: new Date().toISOString(),
-          durationMinutes: 60,
-          totalAttendees: 1,
-        },
-      });
+      return NextResponse.json({ error: "Live class not found." }, { status: 404 });
     }
 
-    if (!isAdmin && liveClass.tutor_id !== user.id) {
+    if (!isPlatformAdmin && liveClass.tutor_id !== user.id) {
       return NextResponse.json(
         { error: "Forbidden. Only the host tutor or administrator can end this class." },
         { status: 403 }
