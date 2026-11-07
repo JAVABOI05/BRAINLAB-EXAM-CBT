@@ -672,7 +672,7 @@ export async function getConversationMessages(
   try {
     const { data: messages, error } = await supabase
       .from("messages")
-      .select("*, audio_assets(*), message_reactions(*)")
+      .select("*, audio_assets(id, title, file_url, duration_seconds, mime_type), message_reactions(*)")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
 
@@ -772,6 +772,20 @@ export async function sendChatMessage(
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
   const senderId = sender.id;
+  if (payload.audioUrl && !payload.audioAssetId) {
+    throw new Error("Audio messages must reference an uploaded audio asset.");
+  }
+  if (payload.audioAssetId) {
+    const { data: audioAsset, error: audioAssetError } = await supabase
+      .from("audio_assets")
+      .select("id, user_id, asset_type")
+      .eq("id", payload.audioAssetId)
+      .maybeSingle();
+    if (audioAssetError || !audioAsset || audioAsset.user_id !== senderId ||
+        !["tutor_voice_note", "discussion_audio"].includes(audioAsset.asset_type)) {
+      throw new Error("You can only attach your own voice note to a conversation.");
+    }
+  }
   const senderMetadataName = sender.user_metadata?.full_name ?? sender.user_metadata?.name;
   const senderName =
     (typeof senderMetadataName === "string" ? senderMetadataName : null) ||
@@ -867,7 +881,7 @@ export async function sendChatMessage(
         audio_asset_id: message.audio_asset_id,
         reply_to_id: message.reply_to_id,
       })
-      .select("*, audio_assets(*)")
+      .select("*, audio_assets(id, title, file_url, duration_seconds, mime_type)")
       .single();
 
     if (!error && nativeMsg) {
