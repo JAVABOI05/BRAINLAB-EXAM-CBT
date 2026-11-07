@@ -8,6 +8,19 @@ import { useLearnerTheme } from "@/app/components/LearnerThemeProvider";
 import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
 import ArenaSpectatorChat from "@/app/components/arena/ArenaSpectatorChat";
 
+/** Attach the signed-in Supabase session to every Arena API request.
+ * The browser Supabase client persists sessions in browser storage, which is
+ * not automatically available to Route Handlers as an HTTP cookie.
+ */
+async function arenaApiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers = new Headers(init.headers);
+  if (session?.access_token) {
+    headers.set("Authorization", `Bearer ${session.access_token}`);
+  }
+  return fetch(input, { ...init, headers });
+}
+
 interface QuestionSnapshot {
   id: string;
   question: string;
@@ -100,7 +113,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   // Fetch match details
   const fetchMatch = useCallback(async () => {
     try {
-      const res = await fetch(`/api/competition/matches/${matchId}${isSpectator ? "?spectator=true" : ""}`);
+      const res = await arenaApiFetch(`/api/competition/matches/${matchId}${isSpectator ? "?spectator=true" : ""}`);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error || "Failed to load match room");
@@ -150,7 +163,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
     const pingStart = Date.now();
     const hb = setInterval(async () => {
       const ping = Date.now() - pingStart;
-      await fetch(`/api/competition/matches/${matchId}`, {
+      await arenaApiFetch(`/api/competition/matches/${matchId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "heartbeat", ping_ms: Math.min(ping, 200) }),
@@ -163,7 +176,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   const handleToggleReady = async () => {
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/competition/matches/${matchId}`, {
+      const res = await arenaApiFetch(`/api/competition/matches/${matchId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "toggle_ready" }),
@@ -190,7 +203,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
       setSelectedOption(optKey);
       const timeTaken = Math.max(1, Math.round((Date.now() - qStartTime) / 1000));
 
-      const res = await fetch(`/api/competition/matches/${matchId}`, {
+      const res = await arenaApiFetch(`/api/competition/matches/${matchId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -212,7 +225,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
 
       if (nextIdx >= questions.length) {
         // Player has finished questions!
-        await fetch(`/api/competition/matches/${matchId}`, {
+        await arenaApiFetch(`/api/competition/matches/${matchId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "finish" }),
@@ -233,7 +246,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
     if (!disputeReason.trim()) return;
     try {
       setDisputeSubmitting(true);
-      const res = await fetch("/api/competition/disputes", {
+      const res = await arenaApiFetch("/api/competition/disputes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
