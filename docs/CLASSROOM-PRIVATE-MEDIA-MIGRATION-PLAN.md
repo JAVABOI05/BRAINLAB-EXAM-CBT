@@ -175,3 +175,8 @@ The database RLS defects remain queued for a reviewed migration. These route che
 The newer `GET /api/classroom/recordings` endpoint previously reused live-room admission checks for replay access. That could make a recording inaccessible after a temporary entry-code grant expired, while a standalone class with no course could be treated as open to any signed-in learner. It now applies replay-specific rules: course-linked recordings require an active course enrolment (respecting `expires_at`) or the existing active-subscription entitlement; standalone class recordings require a recorded attendance status; explicitly public recordings remain public after publication. The assigned tutor, creator, and platform admins retain their management access.
 
 This aligns the newer route with the legacy replay endpoint. Actual end-to-end playback tests are still pending.
+
+
+### Subscription entitlement source correction
+
+The inspected staging schema has `user_subscriptions` (with `status` and `current_period_end`) and does not have `subscription_records`. The recording and feed routes had been querying the nonexistent `subscription_records` table and silently treating the resulting error as no active subscription. The feature branch now queries the actual `user_subscriptions` table and requires an active, unexpired billing period. This was applied consistently to both recording APIs and the course-feed API. Course enrolment remains the primary course-specific entitlement; the broad active-plan fallback is retained for compatibility and still needs a plan-entitlement review.
