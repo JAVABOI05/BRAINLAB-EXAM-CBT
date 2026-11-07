@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // Verify class ownership or tutor/admin authorization
-    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const isAuthorized = await canManageClassroom(user, classId, bearerToken);
 
     if (!isAuthorized) {
@@ -215,7 +215,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Poll not found" }, { status: 404 });
     }
 
-    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const canManage = await canManageClassroom(user, existingPoll.class_id, bearerToken);
 
     if (!canManage) {
