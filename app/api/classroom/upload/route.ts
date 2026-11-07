@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const assetId = crypto.randomUUID();
 
     // 1. Store in fast in-memory media cache for instant fallback
-    storeClassroomMedia(assetId, buffer, mimeType, durationSeconds, file.name);
+    storeClassroomMedia(assetId, buffer, mimeType, durationSeconds, file.name, classId);
 
     const supabase = getSupabaseServerClient(token);
     const userId = user.id;
