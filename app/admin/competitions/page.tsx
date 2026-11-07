@@ -96,6 +96,7 @@ export default function CompetitionArenaAdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingCompetitionId, setDeletingCompetitionId] = useState<string | null>(null);
 
   // Data states
   const [competitions, setCompetitions] = useState<CompetitionRecord[]>([]);
@@ -496,12 +497,48 @@ export default function CompetitionArenaAdminPage() {
       if (!res.ok) throw new Error(data.error || `Failed to ${action} competition`);
       if (data.status === "pending_approval") {
         setMessage("Public quiz submitted for independent administrator approval.");
+      } else if (action === "publish" && data.discoverable === false) {
+        setMessage(data.message || "Competition published, but it is not listed publicly. Check its visibility setting.");
       } else {
-        setMessage(`Competition ${action}ed successfully.`);
+        setMessage(data.message || `Competition ${action}ed successfully.`);
       }
       await loadCompetitions();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : `Failed to ${action} competition`);
+    }
+  };
+
+  const handleDeleteCompetition = async (comp: CompetitionRecord) => {
+    if (adminUser?.role !== "super_admin") {
+      setError("Only Super Admin can permanently delete a competition.");
+      return;
+    }
+    const confirmation = window.prompt(
+      `This permanently deletes "${comp.title}" and its competition matches, participants, answers and related records. This cannot be undone.\n\nType the exact competition title to continue:`
+    );
+    if (confirmation === null) return;
+    if (confirmation !== comp.title) {
+      setError("The title did not match. Nothing was deleted.");
+      return;
+    }
+
+    setDeletingCompetitionId(comp.id);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await authFetch(`/api/competition/competitions/${comp.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to permanently delete competition.");
+      setMessage(`"${data.title || comp.title}" was permanently deleted.`);
+      await loadCompetitions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to permanently delete competition.");
+    } finally {
+      setDeletingCompetitionId(null);
     }
   };
 
@@ -866,6 +903,9 @@ export default function CompetitionArenaAdminPage() {
                     {comp.competition_question_banks && (
                       <span className="truncate">({comp.competition_question_banks.name})</span>
                     )}
+                    <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                      {comp.visibility || "public"}
+                    </span>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs bg-gray-50 p-2 rounded-lg border border-gray-100">
                     <div>Questions: <span className="font-bold">{comp.rules?.question_count || 10}</span></div>
@@ -906,6 +946,15 @@ export default function CompetitionArenaAdminPage() {
                       className="text-xs bg-rose-50 text-rose-700 hover:bg-rose-100 px-3 py-1.5 rounded-lg font-medium transition"
                     >
                       Cancel
+                    </button>
+                  )}
+                  {adminUser?.role === "super_admin" && (
+                    <button
+                      onClick={() => handleDeleteCompetition(comp)}
+                      disabled={deletingCompetitionId === comp.id}
+                      className="text-xs border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 px-3 py-1.5 rounded-lg font-semibold transition"
+                    >
+                      {deletingCompetitionId === comp.id ? "Deleting…" : "Permanently Delete"}
                     </button>
                   )}
                 </div>
