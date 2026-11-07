@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 const DEFAULT_PAGES = [{ id: "page-1", title: "Page 1", aspectRatio: "16 / 9", backgroundMode: "blackboard", elements: [] }];
 
@@ -36,6 +37,10 @@ export async function POST(request: NextRequest) {
   const user = await getUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Sign in to save a lesson." }, { status: 401 });
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const staffAccess = await resolveClassroomStaffAccess(user, token);
+  if (!staffAccess.isStaff) {
+    return NextResponse.json({ error: "Only verified instructors can create or update Classroom Studio lessons." }, { status: 403 });
+  }
   const supabase = getSupabaseServerClient(token);
   const body = await request.json().catch(() => null);
   if (!body || typeof body.title !== "string") return NextResponse.json({ error: "A lesson title is required." }, { status: 400 });
@@ -71,6 +76,10 @@ export async function DELETE(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Sign in to archive a lesson." }, { status: 401 });
   const id = request.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Lesson ID is required." }, { status: 400 });
+  const staffAccess = await resolveClassroomStaffAccess(user, request.headers.get("authorization")?.replace(/^Bearer\s+/i, ""));
+  if (!staffAccess.isStaff) {
+    return NextResponse.json({ error: "Only verified instructors can archive Classroom Studio lessons." }, { status: 403 });
+  }
   const supabase = getSupabaseServerClient(request.headers.get("authorization")?.replace(/^Bearer\s+/i, ""));
   const { error } = await supabase.from("classroom_lessons").update({ status: "archived" }).eq("id", id).eq("tutor_id", user.id);
   if (error) return NextResponse.json({ error: "Unable to archive lesson." }, { status: 500 });
