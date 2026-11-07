@@ -27,9 +27,10 @@ export async function GET(request: NextRequest) {
 
     // A visible flag is not global authorization. Replays use durable course
     // enrolment or recorded attendance, not temporary live-room entry-code grants.
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
     const visibleRecordings = await Promise.all((recordings || []).map(async (recording) => {
       const ownsClass = recording.live_classes?.tutor_id === user.id;
-      if (recording.created_by === user.id || ownsClass) return recording;
+      if (staffAccess.isPlatformAdmin || recording.created_by === user.id || ownsClass) return recording;
       if (!recording.is_visible_to_students || recording.processing_status !== "ready") return null;
       if (recording.access_policy === "public") return recording;
       if (recording.access_policy !== "enrolled_only" || !recording.class_id) return null;
