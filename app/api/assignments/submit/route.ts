@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     // 1. Fetch assignment details
     const { data: assignment, error: assignmentError } = await supabase
       .from("assignments")
-      .select("id, title, tutor_id, status, due_date, allow_late_submissions, allow_audio_submission")
+      .select("id, title, tutor_id, course_id, status, due_date, allow_late_submissions, allow_audio_submission")
       .eq("id", assignmentId)
       .single();
 
@@ -59,6 +59,25 @@ export async function POST(request: NextRequest) {
         { success: false, error: "Voice note submissions are not enabled for this assignment." },
         { status: 400 }
       );
+    }
+
+    if (audioAssetId) {
+      const { data: audioAsset, error: audioError } = await supabase
+        .from("audio_assets")
+        .select("id, user_id, asset_type, metadata")
+        .eq("id", audioAssetId)
+        .maybeSingle();
+      const metadata = audioAsset?.metadata && typeof audioAsset.metadata === "object"
+        ? audioAsset.metadata as Record<string, unknown>
+        : {};
+      if (audioError || !audioAsset || audioAsset.user_id !== user.id ||
+          audioAsset.asset_type !== "student_submission" ||
+          metadata.assignment_id !== assignmentId) {
+        return NextResponse.json(
+          { success: false, error: "The audio attachment does not belong to your submission for this assignment." },
+          { status: 403 }
+        );
+      }
     }
 
     // 2. Upsert submission
