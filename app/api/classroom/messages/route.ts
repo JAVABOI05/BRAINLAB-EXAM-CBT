@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     const normalizedClassId = String(classId).trim().toUpperCase();
-    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (!(await canAccessClassroom(user, classId, bearerToken))) {
       return NextResponse.json({ error: "You are not admitted to this classroom." }, { status: 403 });
     }
