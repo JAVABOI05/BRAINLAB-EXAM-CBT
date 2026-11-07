@@ -432,8 +432,8 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                   {myParticipant?.display_name?.slice(0, 2).toUpperCase() || "YOU"}
                 </div>
                 <div>
-                  <p className="text-xs font-bold">{isSpectator ? (participantA?.display_name || "Player 1") : (myParticipant?.display_name || "You")}</p>
-                  <p className="text-lg font-black text-blue-500">{myParticipant?.score ?? (isSpectator ? "Hidden" : 0)} {myParticipant?.score === null && isSpectator ? "" : "PTS"}</p>
+                  <p className="text-xs font-bold">{isTeamMatch ? (match.metadata?.team_a_name || "Team A") : (isSpectator ? (participantA?.display_name || "Player 1") : (myParticipant?.display_name || "You"))}</p>
+                  <p className="text-lg font-black text-blue-500">{isTeamMatch ? (match.score_a ?? "Hidden") : (myParticipant?.score ?? (isSpectator ? "Hidden" : 0))} {isTeamMatch ? (match.score_a === null ? "" : "PTS") : (myParticipant?.score === null && isSpectator ? "" : "PTS")}</p>
                 </div>
               </div>
 
@@ -448,8 +448,8 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
               {/* Opponent */}
               <div className="flex items-center gap-3 text-right">
                 <div>
-                  <p className="text-xs font-bold">{isSpectator ? (participantB?.display_name || "Player 2") : (opponentParticipant?.display_name || "Opponent")}</p>
-                  <p className="text-lg font-black text-[#FF5238]">{opponentParticipant?.score ?? (isSpectator ? "Hidden" : 0)} {opponentParticipant?.score === null && isSpectator ? "" : "PTS"}</p>
+                  <p className="text-xs font-bold">{isTeamMatch ? (match.metadata?.team_b_name || "Team B") : (isSpectator ? (participantB?.display_name || "Player 2") : (opponentParticipant?.display_name || "Opponent"))}</p>
+                  <p className="text-lg font-black text-[#FF5238]">{isTeamMatch ? (match.score_b ?? "Hidden") : (opponentParticipant?.score ?? (isSpectator ? "Hidden" : 0))} {isTeamMatch ? (match.score_b === null ? "" : "PTS") : (opponentParticipant?.score === null && isSpectator ? "" : "PTS")}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-[#FF5238] text-white flex items-center justify-center font-bold text-sm">
                   {opponentParticipant?.display_name?.slice(0, 2).toUpperCase() || "OP"}
@@ -541,13 +541,13 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                   <h2 className="text-3xl font-black text-blue-400 tracking-tight">MATCH CONCLUDED</h2>
                   <p className="text-slate-400 text-sm">The official result is displayed according to the organiser&apos;s spectator visibility settings.</p>
                 </div>
-              ) : match.winner_is_me ? (
+              ) : (isTeamMatch ? match.winner_team_is_mine : match.winner_is_me) ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 text-white flex items-center justify-center text-4xl shadow-xl shadow-amber-500/20 animate-bounce">
                     🏆
                   </div>
                   <h2 className="text-3xl font-black text-amber-400 tracking-tight">VICTORY!</h2>
-                  <p className="text-slate-400 text-sm">Phenomenal performance! You emerged victorious in the Arena.</p>
+                  <p className="text-slate-400 text-sm">{isTeamMatch ? `Phenomenal performance! ${winningTeamName || "Your team"} won this team battle.` : "Phenomenal performance! You emerged victorious in the Arena."}</p>
                 </div>
               ) : match.has_winner ? (
                 <div className="flex flex-col items-center gap-3">
