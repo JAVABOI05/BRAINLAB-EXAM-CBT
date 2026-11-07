@@ -168,3 +168,10 @@ These changes are code-level mitigations only. They do not replace the required 
 - The chat composer now uploads voice notes as `discussion_audio`, matching the upload API's authenticated-user discussion-audio path instead of misclassifying ordinary learner messages as tutor-only voice notes.
 
 The database RLS defects remain queued for a reviewed migration. These route checks protect the current service-role API paths but do not make direct table policies safe.
+
+
+### Replay authorization consistency
+
+The newer `GET /api/classroom/recordings` endpoint previously reused live-room admission checks for replay access. That could make a recording inaccessible after a temporary entry-code grant expired, while a standalone class with no course could be treated as open to any signed-in learner. It now applies replay-specific rules: course-linked recordings require an active course enrolment (respecting `expires_at`) or the existing active-subscription entitlement; standalone class recordings require a recorded attendance status; explicitly public recordings remain public after publication. The assigned tutor, creator, and platform admins retain their management access.
+
+This aligns the newer route with the legacy replay endpoint. Actual end-to-end playback tests are still pending.
