@@ -36,13 +36,6 @@ export async function GET(request: NextRequest) {
             .eq("user_id", user.id)
             .eq("status", "active")
             .in("course_id", scopedCourseIds),
-          supabase.from("user_subscriptions")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("status", "active")
-            .gt("current_period_end", new Date().toISOString())
-            .limit(1)
-            .maybeSingle(),
           supabase.from("courses")
             .select("id, tutor_id")
             .in("id", scopedCourseIds),
@@ -61,7 +54,7 @@ export async function GET(request: NextRequest) {
         const isAdmin = Boolean(adminProfile && ["super_admin", "platform_admin"].includes(adminProfile.role));
         result = result.filter((post) => !post.course_id ||
           isAdmin || enrolledCourseIds.has(post.course_id) ||
-          tutorCourseIds.has(post.course_id) || Boolean(activeSubscription));
+          tutorCourseIds.has(post.course_id));
       }
     }
     if (tag && tag !== "all") {
