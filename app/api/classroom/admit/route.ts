@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
-    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const config = await getLiveClassroomConfig();
     const isAuthorized = await canManageClassroom(user, classId, token);
 
     if (!isAuthorized) {
