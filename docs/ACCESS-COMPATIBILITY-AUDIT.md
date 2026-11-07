@@ -118,14 +118,19 @@ The following classroom paths now use the shared server-side resolver and/or cla
 - `app/api/classroom/classes/[id]/start/route.ts`: open stages require verified staff; scheduled classes require assigned tutor ownership or platform-admin authority.
 - `app/api/classroom/classes/[id]/end/route.ts`: scheduled class ending is restricted to the assigned tutor or platform admin; virtual stages require the active host or platform admin.
 - `app/api/classroom/attendance/route.ts`: report access, manual attendance and corrections use class-scoped authorization.
-- `app/api/classroom/admit/route.ts`: admission changes require the assigned host or platform admin.
+- `app/api/classroom/admit/route.ts`: admission changes require the assigned host or platform admin; the room configuration is explicitly loaded before mutation.
 - `app/api/classroom/polls/route.ts`: poll creation and management use class-scoped authorization.
 - `app/api/classroom/broadcast/route.ts`: a verified staff member may start a broadcast, but cannot overwrite an existing class owned by another tutor.
-- `app/classroom/[id]/page.tsx`: the host UI is derived from the server-issued room token rather than URL flags, browser storage or editable Auth metadata.
+- `app/api/classroom/messages/route.ts`: message reads and writes require an authenticated Supabase user; host and pinned-message flags are derived from class-scoped server authorization rather than request-body claims.
+- `app/api/classroom/upload/route.ts`: classroom uploads require authentication; teaching-document uploads require the assigned class tutor or platform administrator.
+- `app/api/classroom/recordings/route.ts`: recording metadata creation requires verified teaching staff and, when a class is specified, authority over that class.
+- `app/api/classroom/studio/route.ts`: lesson authoring and archiving require verified teaching staff; reads remain scoped to the requesting tutor's own lessons.
+- `app/classroom/page.tsx`: client staff presentation no longer trusts Auth metadata, URL host flags or browser/session storage as staff grants.
+- Bearer-token extraction in the touched classroom handlers now uses normal whitespace parsing.
 
 The authorization helper uses the server-only service client only after the route has authenticated the caller; it reads class ownership and never accepts a user-supplied user ID as proof of access.
 
-**Still required:** verify these changes through the Vercel preview build and route-level tests; review other classroom messaging, file-upload, recording, moderation and whiteboard endpoints for independent authorization; reconcile the fixed role list with the eventual centralized permission catalogue. No database migration has been applied.
+**Still required:** route-level authorization tests; review media retrieval, recording visibility, classroom resource/library moderation and whiteboard collaboration for appropriate participant and class scope; reconcile the fixed role list with the eventual centralized permission catalogue. No database migration has been applied. The last known Vercel build failed on an undefined `config` reference in the admission handler; that defect has been fixed. Subsequent preview deployments have remained queued, and the latest reported Vercel check points to a build-rate limit, so the newest branch head is not yet build-verified.
 
 ## 3. New staged access model
 
