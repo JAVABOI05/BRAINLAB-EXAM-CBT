@@ -126,7 +126,7 @@ export default function AdminUsersPage() {
     });
     if (rpcError) setError(rpcError.message || "The role assignment was rejected.");
     else {
-      setNotice("Role assigned. The action was recorded in the audit log.");
+      setNotice("Role assignment saved to the staged access catalogue and recorded in the audit log. It does not grant live platform access until the authorization cutover is approved.");
       setSelectedAccount(null); setAccounts([]); setHasSearched(false); setQuery(""); setExpiresAt(""); setScopeText("{}");
       await loadData();
     }
@@ -171,7 +171,7 @@ export default function AdminUsersPage() {
       target_user_id: row.user_id, target_role_id: row.role_id,
     });
     if (rpcError) setError(rpcError.message || "The assignment could not be revoked.");
-    else { setNotice("Role assignment revoked."); await loadData(); }
+    else { setNotice("Staged role assignment revoked. Existing live access remains governed by the current authorization system."); await loadData(); }
     setBusy(false);
   }
 
@@ -203,13 +203,14 @@ export default function AdminUsersPage() {
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white/10 p-4"><p className="text-xs text-blue-200">System roles</p><p className="mt-1 text-2xl font-black">{roles.filter(r => r.is_system).length}</p></div>
             <div className="rounded-2xl bg-white/10 p-4"><p className="text-xs text-blue-200">Custom roles</p><p className="mt-1 text-2xl font-black">{roles.filter(r => !r.is_system && r.is_active).length}</p></div>
-            <div className="rounded-2xl bg-white/10 p-4"><p className="text-xs text-blue-200">Active assignments</p><p className="mt-1 text-2xl font-black">{assignments.length}</p></div>
+            <div className="rounded-2xl bg-white/10 p-4"><p className="text-xs text-blue-200">Staged assignments</p><p className="mt-1 text-2xl font-black">{assignments.length}</p></div>
           </div>
         </header>
 
         {(error || notice) && <div className={`mt-5 rounded-xl border p-4 text-sm ${error ? "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200" : "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"}`} role={error ? "alert" : "status"}>{error || notice}</div>}
 
         <section className={`mt-6 ${panelClass}`}>
+          <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"><strong>Staged implementation notice:</strong> This workspace currently manages the new access catalogue only. Saved assignments and custom permissions are not yet used to authorize sign-in, dashboards, APIs or database rows. Existing BrainLab access remains unchanged until the separate compatibility and security cutover is tested and approved.</div>
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-extrabold">Find a BrainLab account</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Search by registered name or email. Search results are not access grants.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800 dark:bg-blue-950 dark:text-blue-200">Super Admin only</span></div>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={e => { e.preventDefault(); void searchAccounts(); }}>
             <input className={inputClass} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name or email address" aria-label="Search registered accounts" />
@@ -222,14 +223,14 @@ export default function AdminUsersPage() {
           </div>}
           {hasSearched && accounts.length === 0 && <p className="mt-3 text-sm text-slate-500">No registered accounts matched that name or email.</p>}
           {selectedAccount && <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/30">
-            <h3 className="font-extrabold">Assign an additional role</h3><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{selectedAccount.display_name} · {selectedAccount.email}</p>
+            <h3 className="font-extrabold">Prepare an additional role assignment</h3><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{selectedAccount.display_name} · {selectedAccount.email}</p>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <label className="text-sm font-semibold">Role<select className={`mt-1 ${inputClass}`} value={selectedRole} onChange={e => setSelectedRole(e.target.value)}><option value="">Choose a role</option>{roles.filter(r => r.is_active).map(r => <option key={r.id} value={r.id}>{r.name}{r.is_system ? " · System" : " · Custom"}</option>)}</select></label>
               <label className="text-sm font-semibold">Optional expiry<input className={`mt-1 ${inputClass}`} type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></label>
               <label className="text-sm font-semibold md:col-span-2">Resource scope (JSON object)<textarea className={`mt-1 min-h-20 ${inputClass}`} value={scopeText} onChange={e => setScopeText(e.target.value)} spellCheck={false} /></label>
             </div>
             <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-400">Use {} for platform-wide scope only when appropriate. Resource-level enforcement must be implemented by the relevant module before relying on a scope restriction.</p>
-            <div className="mt-4 flex flex-wrap gap-2"><button className={buttonClass} disabled={busy || !selectedRole} onClick={() => void assignSelectedRole()}>Assign role</button><button className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold dark:border-slate-700" onClick={() => setSelectedAccount(null)}>Cancel</button></div>
+            <div className="mt-4 flex flex-wrap gap-2"><button className={buttonClass} disabled={busy || !selectedRole} onClick={() => void assignSelectedRole()}>Save staged assignment</button><button className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold dark:border-slate-700" onClick={() => setSelectedAccount(null)}>Cancel</button></div>
           </div>}
         </section>
 
@@ -254,7 +255,7 @@ export default function AdminUsersPage() {
         </section>
 
         <section className={`mt-6 ${panelClass}`}>
-          <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-extrabold">Active access assignments</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">A person can hold multiple roles. Revoking one role does not remove their other roles or learner account.</p></div><select className={`w-auto min-w-44 ${inputClass}`} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}><option value="all">All roles</option>{roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
+          <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-extrabold">Staged role assignments</h2><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">A person can hold multiple staged roles. These records do not yet alter live permissions. Revoking one staged role does not remove other roles or the learner account.</p></div><select className={`w-auto min-w-44 ${inputClass}`} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}><option value="all">All roles</option>{roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
           <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-300"><tr><th className="p-3">Person</th><th className="p-3">Role</th><th className="p-3">Scope</th><th className="p-3">Expires</th><th className="p-3">Action</th></tr></thead><tbody>{visibleAssignments.map(row => <tr key={row.assignment_id} className="border-t border-slate-100 dark:border-slate-800"><td className="p-3"><span className="block font-bold">{row.display_name}</span><span className="text-xs text-slate-500">{row.email}</span></td><td className="p-3">{row.role_name}</td><td className="max-w-40 truncate p-3 font-mono text-xs text-slate-500">{JSON.stringify(row.resource_scope)}</td><td className="p-3 text-slate-600 dark:text-slate-400">{row.expires_at ? new Date(row.expires_at).toLocaleString() : "No expiry"}</td><td className="p-3"><button className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 dark:border-red-900 dark:text-red-300" disabled={busy || row.user_id === currentAdmin?.id} onClick={() => void revokeAssignment(row)}>Revoke</button></td></tr>)}{visibleAssignments.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-slate-500">No active assignments found.</td></tr>}</tbody></table></div>
         </section>
       </AdminPinGuard>
