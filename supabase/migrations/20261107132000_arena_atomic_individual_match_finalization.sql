@@ -102,7 +102,7 @@ begin
   end if;
 
   v_ranked := coalesce(v_match.metadata->>'match_mode', 'ranked') <> 'friendly'
-    and coalesce((v_match.metadata->>'ranked')::boolean, true);
+    and (v_match.metadata->'ranked' is distinct from 'false'::jsonb);
 
   if v_ranked then
     -- Ensure both rating rows exist, then lock them in deterministic order.
