@@ -201,6 +201,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!["draft", "published"].includes(status)) {
+      return NextResponse.json({ success: false, error: "Assignments can only be created as draft or published." }, { status: 400 });
+    }
+
     const [{ data: adminRole }, { data: course, error: courseError }] = await Promise.all([
       supabase.from("admin_profiles").select("role").eq("user_id", user.id).maybeSingle(),
       supabase.from("courses").select("id, tutor_id, subject_id").eq("id", courseId).maybeSingle(),
@@ -264,7 +268,7 @@ export async function POST(request: NextRequest) {
           description: `Course assignment due: ${instructions.slice(0, 200)}`,
           event_type: "assignment",
           course_id: courseId,
-          subject_id: subjectId || null,
+          subject_id: resolvedSubjectId,
           start_time: new Date(dueDate).toISOString(),
           end_time: new Date(new Date(dueDate).getTime() + 30 * 60 * 1000).toISOString(),
           location_url: `/assignments?id=${assignment.id}`,
