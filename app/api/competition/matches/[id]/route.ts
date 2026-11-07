@@ -537,6 +537,9 @@ async function finalizeMatch(matchId: string, supabase: any) {
     .eq("match_id", matchId);
 
   if (!participants || participants.length < 2) {
+    if (match.match_type === "team_vs_team") {
+      throw new Error("Team match cannot be finalized because its locked roster is incomplete.");
+    }
     await supabase
       .from("competition_matches")
       .update({ status: "completed", ended_at: new Date().toISOString() })
