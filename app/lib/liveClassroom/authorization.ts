@@ -141,7 +141,6 @@ export async function canAccessClassroom(
     .eq("id", classId)
     .maybeSingle();
   if (error || !liveClass || !["live", "completed"].includes(liveClass.status)) return false;
-  if (liveClass.waiting_room_enabled && !room?.admitted_students?.includes(user.id)) return false;
 
   if (!liveClass.course_id) return true;
   const { data: enrollment } = await supabase
