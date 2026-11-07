@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
 
     // 1. Resolve staff access from authoritative platform roles, approved tutor
     // profiles, or the explicitly configured individual tutor allowlist.
-    const { isStaff } = await resolveClassroomStaffAccess(user, token);
-    const isAuthorizedTutor = isStaff;
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    const isPlatformStaff = staffAccess.source === "platform_role";
+    const isAuthorizedTutor = isPlatformStaff || staffAccess.isStaff;
 
 
     // 2. Fetch class details or provision session fallback
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
     // 3. Check Room Configuration from Platform Config
     const roomConfig = config.room_configs?.[classId];
     const isTutor = isAuthorizedTutor || liveClass.tutor_id === user.id;
-    const isHost = isTutor;
+    const isHost = isPlatformStaff || liveClass.tutor_id === user.id || (isOpenStage && staffAccess.isStaff);
 
     if (isHost) {
       liveClass.tutor_id = user.id;
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 4b. Subscription Tier & Feature Entitlement Verification (Staff and Open Stages are exempt)
-      if (!isOpenStage && !isStaff) {
+      if (!isOpenStage && !isHost) {
         const { getStudentSubscriptionAndEntitlements } = await import("@/app/lib/subscriptionEntitlements");
         const studentTier = await getStudentSubscriptionAndEntitlements(user.id);
 
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
         Boolean(roomConfig?.entry_code) ||
         Boolean(roomConfig?.require_permission);
 
-      if (isMasterclass && !isStaff) {
+      if (isMasterclass && !isHost) {
         // A. Code Entry verification (if configured on this masterclass)
         if (roomConfig?.entry_code && roomConfig.entry_code.trim()) {
           const submittedCode = String(entryCode || "").trim().toUpperCase();
@@ -275,7 +276,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Enforce Enrollment & Entitlement Verification (Staff and Hosts are always enrolled)
     let isEnrolled = false;
-    if (isHost || isStaff) {
+    if (isHost) {
       isEnrolled = true;
     } else if (liveClass.course_id) {
       const { data: enrollment } = await supabase
@@ -322,11 +323,11 @@ export async function POST(request: NextRequest) {
     }
 
     const permissions: RoomPermissions = {
-      isModerator: isHost || isStaff,
-      canPublishAudio: isHost || isStaff || liveClass.student_mic_enabled,
-      canPublishVideo: isHost || isStaff || liveClass.student_camera_enabled,
-      canPublishScreen: isHost || isStaff || liveClass.student_screenshare_enabled,
-      canChat: liveClass.student_chat_enabled || isHost || isStaff,
+      isModerator: isHost,
+      canPublishAudio: isHost || liveClass.student_mic_enabled,
+      canPublishVideo: isHost || liveClass.student_camera_enabled,
+      canPublishScreen: isHost || liveClass.student_screenshare_enabled,
+      canChat: liveClass.student_chat_enabled || isHost,
     };
 
     // 8. Generate Provider-Specific Access Token (WebRTC, LiveKit, Agora, Daily)
