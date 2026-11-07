@@ -27,6 +27,7 @@ interface Participant {
   id: string;
   display_name: string;
   seat: "A" | "B";
+  team_id?: string | null;
   is_me: boolean;
   is_ready: boolean;
   score: number | null;
@@ -44,6 +45,8 @@ interface MatchState {
   match_type: string;
   status: "waiting" | "lobby" | "in_progress" | "paused" | "completed" | "cancelled" | "disputed";
   winner_is_me: boolean;
+  winner_team_is_mine?: boolean;
+  winner_team_id?: string | null;
   has_winner: boolean;
   score_a: number;
   score_b: number;
@@ -58,6 +61,9 @@ interface MatchState {
     player_a_name?: string;
     player_b_name?: string;
     match_mode?: "ranked" | "friendly";
+    team_a_name?: string;
+    team_b_name?: string;
+    roster_size?: number;
   };
 }
 
@@ -253,6 +259,14 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
   const participantB = participants.find((participant) => participant.seat === "B") || participants[1];
   const myParticipant = isSpectator ? participantA : participants.find((participant) => participant.is_me);
   const opponentParticipant = isSpectator ? participantB : participants.find((participant) => !participant.is_me);
+  const isTeamMatch = match.match_type === "team_vs_team";
+  const teamRosterA = participants.filter((participant) => participant.seat === "A");
+  const teamRosterB = participants.filter((participant) => participant.seat === "B");
+  const myTeamName = myParticipant?.seat === "A" ? match.metadata?.team_a_name : match.metadata?.team_b_name;
+  const winningTeamName = match.winner_team_id
+    ? (match.winner_team_id === participants.find((participant) => participant.seat === "A")?.team_id
+      ? match.metadata?.team_a_name : match.metadata?.team_b_name)
+    : null;
 
   // Formatting time display
   const formatTime = (secs: number) => {
@@ -355,52 +369,35 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
           <div className="flex flex-col items-center justify-center flex-1 my-auto">
             <div className={`max-w-2xl w-full rounded-3xl p-8 border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
               <div className="text-center mb-8">
-                <span className="text-xs font-black tracking-widest text-blue-500 uppercase">1V1 BATTLE ROOM</span>
+                <span className="text-xs font-black tracking-widest text-blue-500 uppercase">{isTeamMatch ? "TEAM BATTLE ROOM" : "1V1 BATTLE ROOM"}</span>
                 <h2 className="text-3xl font-black mt-1">Get Ready to Compete</h2>
-                <p className="text-slate-400 text-sm mt-1">Both participants must ready up before the examination begins.</p>
+                <p className="text-slate-400 text-sm mt-1">{isTeamMatch ? "Every locked roster member must ready up before the team match begins." : "Both participants must ready up before the examination begins."}</p>
               </div>
 
-              {/* VERSUS CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                {/* Player 1 Card */}
-                <div className={`p-5 rounded-2xl border flex flex-col items-center text-center gap-3 transition-all ${
-                  myParticipant?.is_ready ? "border-emerald-500/50 bg-emerald-500/5" : isDark ? "border-slate-800 bg-[#0B1536]" : "border-slate-200 bg-slate-50"
-                }`}>
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xl font-black shadow-lg">
-                    {myParticipant?.display_name?.slice(0, 2).toUpperCase() || "YOU"}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base flex items-center justify-center gap-1.5">
-                      {myParticipant?.display_name || "You"} <span className="text-xs text-blue-400 font-medium">(You)</span>
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Ping: {myParticipant?.ping_ms || 24}ms</p>
-                  </div>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${
-                    myParticipant?.is_ready ? "bg-emerald-500 text-white" : "bg-slate-700/40 text-slate-400"
-                  }`}>
-                    {myParticipant?.is_ready ? "✓ READY" : "NOT READY"}
-                  </div>
-                </div>
-
-                {/* Player 2 Card */}
-                <div className={`p-5 rounded-2xl border flex flex-col items-center text-center gap-3 transition-all ${
-                  opponentParticipant?.is_ready ? "border-emerald-500/50 bg-emerald-500/5" : isDark ? "border-slate-800 bg-[#0B1536]" : "border-slate-200 bg-slate-50"
-                }`}>
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-coral to-amber-500 text-white flex items-center justify-center text-xl font-black shadow-lg" style={{ background: "linear-gradient(135deg, #FF5238, #f59e0b)" }}>
-                    {opponentParticipant?.display_name?.slice(0, 2).toUpperCase() || "OP"}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base">{opponentParticipant?.display_name || "Waiting for opponent..."}</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {opponentParticipant ? `Ping: ${opponentParticipant.ping_ms || 32}ms` : "Standby"}
-                    </p>
-                  </div>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${
-                    opponentParticipant?.is_ready ? "bg-emerald-500 text-white" : "bg-slate-700/40 text-slate-400"
-                  }`}>
-                    {opponentParticipant?.is_ready ? "✓ READY" : "NOT READY"}
-                  </div>
-                </div>
+              {/* VERSUS ROSTERS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                {[
+                  { label: isTeamMatch ? (match.metadata?.team_a_name || "Team A") : "Player A", roster: isTeamMatch ? teamRosterA : [participantA], tone: "blue" },
+                  { label: isTeamMatch ? (match.metadata?.team_b_name || "Team B") : "Player B", roster: isTeamMatch ? teamRosterB : [participantB], tone: "coral" },
+                ].map((side) => (
+                  <section key={side.label} className={`rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-[#0B1536]" : "border-slate-200 bg-slate-50"}`}>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <h3 className="font-black text-sm">{side.label}</h3>
+                      <span className="text-[10px] text-slate-400">{side.roster.filter((player) => player.is_ready).length}/{side.roster.length} READY</span>
+                    </div>
+                    <div className="space-y-2">
+                      {side.roster.map((player) => (
+                        <div key={player.id} className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${player.is_ready ? "border-emerald-500/40 bg-emerald-500/5" : isDark ? "border-slate-700 bg-slate-900/50" : "border-slate-200 bg-white"}`}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0 ${side.tone === "blue" ? "bg-blue-600" : "bg-[#FF5238]"}`}>{player.display_name.slice(0,2).toUpperCase()}</div>
+                            <div className="min-w-0"><p className="text-xs font-bold truncate">{player.display_name}{player.is_me ? " (You)" : ""}</p><p className="text-[10px] text-slate-400">{player.is_me ? `Your connection · ${player.ping_ms || 0}ms` : `Ping ${player.ping_ms || 0}ms`}</p></div>
+                          </div>
+                          <span className={`text-[10px] font-black ${player.is_ready ? "text-emerald-500" : "text-slate-400"}`}>{player.is_ready ? "READY" : "WAITING"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
               </div>
 
               {/* READY ACTION BUTTON */}
@@ -416,7 +413,7 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 >
                   {myParticipant?.is_ready ? "UNREADY (STANDBY)" : "READY UP FOR BATTLE"}
                 </button>
-                <p className="text-xs text-slate-400">Match will start automatically once both fighters click Ready.</p>
+                <p className="text-xs text-slate-400">{isTeamMatch ? "The server starts the battle when every locked player is ready." : "Match will start automatically once both fighters click Ready."}</p>
               </div>
             </div>
           </div>
