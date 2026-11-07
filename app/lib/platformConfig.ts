@@ -1124,6 +1124,28 @@ export async function saveLiveClassroomParticipantGrant(
   );
 }
 
+/**
+ * Update one room against the latest server configuration. This avoids
+ * attributing operational room changes to an administrator and reduces
+ * overwriting unrelated room updates from stale request snapshots.
+ */
+export async function saveLiveClassroomRoomConfig(
+  roomId: string,
+  updates: Partial<MasterclassRoomConfig>,
+  reason: string
+): Promise<boolean> {
+  const current = await getLiveClassroomConfig();
+  const roomConfigs = { ...(current.room_configs || {}) };
+  const latestRoom = roomConfigs[roomId] || updates as MasterclassRoomConfig;
+  roomConfigs[roomId] = { ...latestRoom, ...updates } as MasterclassRoomConfig;
+  return await setPlatformConfig(
+    "live_classroom_config",
+    { ...current, room_configs: roomConfigs },
+    undefined,
+    reason
+  );
+}
+
 // ----------------------------------------------------------------------------
 // Communication & Messaging Configuration
 // ----------------------------------------------------------------------------
