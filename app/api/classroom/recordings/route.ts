@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     const { data: recordings, error } = await supabase
       .from("class_recordings")
-      .select("*")
+      .select("*, live_classes(id, tutor_id, course_id)")
       .or(`created_by.eq.${user.id},is_visible_to_students.eq.true`)
       .order("created_at", { ascending: false });
 
@@ -25,12 +25,46 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ recordings: [] });
     }
 
-    // A visible-to-students flag is not global authorization: confirm the
-    // requester can access each recording's associated class.
+    // A visible flag is not global authorization. Replays use durable course
+    // enrolment or recorded attendance, not temporary live-room entry-code grants.
     const visibleRecordings = await Promise.all((recordings || []).map(async (recording) => {
-      if (recording.created_by === user.id) return recording;
-      if (!recording.class_id) return null;
-      return (await canAccessClassroom(user, recording.class_id, token)) ? recording : null;
+      const ownsClass = recording.live_classes?.tutor_id === user.id;
+      if (recording.created_by === user.id || ownsClass) return recording;
+      if (!recording.is_visible_to_students || recording.processing_status !== "ready") return null;
+      if (recording.access_policy === "public") return recording;
+      if (recording.access_policy !== "enrolled_only" || !recording.class_id) return null;
+
+      const courseId = recording.course_id || recording.live_classes?.course_id;
+      if (courseId) {
+        const { data: enrollment } = await supabase
+          .from("course_enrollments")
+          .select("id, expires_at")
+          .eq("course_id", courseId)
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle();
+        if (enrollment && (!enrollment.expires_at || new Date(enrollment.expires_at).getTime() > Date.now())) {
+          return recording;
+        }
+        const { data: subscription } = await supabase
+          .from("subscription_records")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle();
+        return subscription ? recording : null;
+      }
+
+      const { data: attendance } = await supabase
+        .from("class_attendance_records")
+        .select("id")
+        .eq("class_id", recording.class_id)
+        .eq("user_id", user.id)
+        .in("attendance_status", ["present", "partial", "manual_verified"])
+        .limit(1)
+        .maybeSingle();
+      return attendance ? recording : null;
     }));
 
     // Mint short-lived playback URLs only after the caller's visibility and
