@@ -96,7 +96,13 @@ export default function SubjectFeedPage({
       }
 
       // 3. Fetch Posts
-      const res = await fetch(`/api/feed/posts?subjectId=${subData.id}&tag=${activeTag}`);
+      const feedHeaders = sessionData.session?.access_token
+        ? { Authorization: `Bearer ${sessionData.session.access_token}` }
+        : {};
+      const res = await fetch(`/api/feed/posts?subjectId=${subData.id}&tag=${activeTag}`, {
+        headers: feedHeaders,
+        cache: "no-store",
+      });
       const json = await res.json();
       if (active && json.success) {
         setPosts(json.posts);
@@ -169,7 +175,10 @@ export default function SubjectFeedPage({
       setPostContent("");
       setRecordedAudioId(null);
       // Reload posts
-      const updated = await fetch(`/api/feed/posts?subjectId=${subject.id}`);
+      const updated = await fetch(`/api/feed/posts?subjectId=${subject.id}`, {
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+        cache: "no-store",
+      });
       const updatedJson = await updated.json();
       if (updatedJson.success) setPosts(updatedJson.posts);
       toast.success("Post published to subject feed! 📢");
