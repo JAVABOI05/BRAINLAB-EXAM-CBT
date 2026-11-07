@@ -663,20 +663,23 @@ async function finalizeMatch(matchId: string, supabase: any) {
   const xpA = actualScoreA === 1.0 ? xpWin : xpParticipation;
   const xpB = actualScoreB === 1.0 ? xpWin : xpParticipation;
 
-  await supabase.from("user_xp_ledger").insert([
+  const { error: xpAwardError } = await supabase.from("user_xp_ledger").upsert([
     {
       user_id: pA.user_id,
       amount: xpA,
       activity_type: "competition_match",
-      source_id: matchId,
+      idempotency_key: `arena-match:${matchId}:user:${pA.user_id}`,
       description: actualScoreA === 1.0 ? "Arena Match Victory!" : "Arena Match Participation",
+      metadata: { match_id: matchId, outcome: actualScoreA === 1.0 ? "win" : actualScoreA === 0.5 ? "draw" : "participation" },
     },
     {
       user_id: pB.user_id,
       amount: xpB,
       activity_type: "competition_match",
-      source_id: matchId,
+      idempotency_key: `arena-match:${matchId}:user:${pB.user_id}`,
       description: actualScoreB === 1.0 ? "Arena Match Victory!" : "Arena Match Participation",
+      metadata: { match_id: matchId, outcome: actualScoreB === 1.0 ? "win" : actualScoreB === 0.5 ? "draw" : "participation" },
     },
-  ]);
+  ], { onConflict: "idempotency_key", ignoreDuplicates: true });
+  if (xpAwardError) throw xpAwardError;
 }
