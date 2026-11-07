@@ -37,6 +37,7 @@ export default function AdminUsersPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [query, setQuery] = useState("");
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [selectedRole, setSelectedRole] = useState("");
   const [scopeText, setScopeText] = useState("{}");
@@ -63,8 +64,8 @@ export default function AdminUsersPage() {
     setRoles(roleRows);
     setPermissions((permissionResult.data ?? []) as Permission[]);
     setAssignments((assignmentResult.data ?? []) as Assignment[]);
-    if (!selectedRole && roleRows.length) setSelectedRole(roleRows.find(r => r.is_system && r.role_key === "teacher")?.id ?? roleRows[0].id);
-  }, [selectedRole]);
+    if (roleRows.length) setSelectedRole(current => current || roleRows.find(r => r.is_system && r.role_key === "teacher")?.id || roleRows[0].id);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -91,13 +92,21 @@ export default function AdminUsersPage() {
   }, [permissions]);
 
   async function searchAccounts() {
-    setError(""); setNotice(""); setSelectedAccount(null); setAccounts([]);
+    setError(""); setNotice(""); setSelectedAccount(null); setAccounts([]); setHasSearched(false);
     if (query.trim().length < 2) { setError("Enter at least two characters to search."); return; }
     setBusy(true);
-    const { data, error: rpcError } = await supabase.rpc("access_search_accounts", { search_text: query.trim() });
-    if (rpcError) setError("Account search failed. Confirm the directory migration and Super Admin session.");
-    else setAccounts((data ?? []) as Account[]);
-    setBusy(false);
+    try {
+      const { data, error: rpcError } = await supabase.rpc("access_search_accounts", { search_text: query.trim() });
+      if (rpcError) setError("Account search failed. Confirm the directory migration and Super Admin session.");
+      else {
+        setAccounts((data ?? []) as Account[]);
+        setHasSearched(true);
+      }
+    } catch {
+      setError("Account search could not be completed. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function assignSelectedRole() {
@@ -118,7 +127,7 @@ export default function AdminUsersPage() {
     if (rpcError) setError(rpcError.message || "The role assignment was rejected.");
     else {
       setNotice("Role assigned. The action was recorded in the audit log.");
-      setSelectedAccount(null); setAccounts([]); setQuery(""); setExpiresAt(""); setScopeText("{}");
+      setSelectedAccount(null); setAccounts([]); setHasSearched(false); setQuery(""); setExpiresAt(""); setScopeText("{}");
       await loadData();
     }
     setBusy(false);
@@ -211,7 +220,7 @@ export default function AdminUsersPage() {
               <span className="block font-bold">{account.display_name}</span><span className="mt-1 block text-sm text-slate-600 dark:text-slate-400">{account.email}</span><span className="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">{account.has_staff_access ? "Has active staff access" : "No active staff access"}</span>
             </button>)}
           </div>}
-          {accounts.length === 0 && query.length >= 2 && <p className="mt-3 text-sm text-slate-500">No search results yet. Run a search to find matching accounts.</p>}
+          {hasSearched && accounts.length === 0 && <p className="mt-3 text-sm text-slate-500">No registered accounts matched that name or email.</p>}
           {selectedAccount && <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900 dark:bg-blue-950/30">
             <h3 className="font-extrabold">Assign an additional role</h3><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{selectedAccount.display_name} · {selectedAccount.email}</p>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
