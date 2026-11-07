@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .from("user_subscriptions")
       .select("id")
       .eq("user_id", user.id)
-       .eq("status", "active")
+      .eq("status", "active")
       .gt("current_period_end", new Date().toISOString())
       .limit(1)
       .maybeSingle();
