@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
           return recording;
         }
         const { data: subscription } = await supabase
-          .from("subscription_records")
+          .from("user_subscriptions")
           .select("id")
           .eq("user_id", user.id)
           .eq("status", "active")
