@@ -11,7 +11,6 @@ import { getLiveClassroomConfig } from "@/app/lib/platformConfig";
 const CLASSROOM_STAFF_ROLES = new Set([
   "super_admin",
   "platform_admin",
-  "school_admin",
   "teacher",
 ]);
 
