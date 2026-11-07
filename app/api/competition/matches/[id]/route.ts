@@ -276,25 +276,40 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
       if (allReady) {
         // Start the match!
         const now = new Date().toISOString();
-        await supabase
+        const { data: startedMatch, error: startError } = await supabase
           .from("competition_matches")
-          .update({
-            status: "in_progress",
+          .update({ status: "in_progress", started_at: now })
+          .eq("id", matchId)
+          .in("status", ["lobby", "waiting"])
+          .select("id")
+          .maybeSingle();
+        if (startError) throw startError;
+
+        if (startedMatch) {
+          const { error: clockError } = await supabase
+            .from("competition_match_participants")
+            .update({ current_question_started_at: now })
+            .eq("match_id", matchId)
+            .eq("current_question_index", 0);
+          if (clockError) throw clockError;
+          return NextResponse.json({
+            ok: true,
+            match_status: "in_progress",
             started_at: now,
-          })
-          .eq("id", matchId);
+            message: "Every locked player is ready. Match started.",
+          });
+        }
 
-        await supabase
-          .from("competition_match_participants")
-          .update({ current_question_started_at: now })
-          .eq("match_id", matchId)
-          .eq("current_question_index", 0);
-
+        const { data: latestMatch } = await supabase
+          .from("competition_matches")
+          .select("status, started_at")
+          .eq("id", matchId)
+          .maybeSingle();
         return NextResponse.json({
           ok: true,
-          match_status: "in_progress",
-          started_at: now,
-          message: "All players ready! Match started.",
+          match_status: latestMatch?.status || "lobby",
+          started_at: latestMatch?.started_at || null,
+          is_ready: nextReady,
         });
       }
 
