@@ -148,3 +148,14 @@ A code-only mitigation is now committed: the communication store verifies native
 - Test anonymous, unrelated learner, enrolled learner, assignment submitter, assignment tutor, message participant, non-participant, classroom attendee, and platform-admin cases.
 
 No database policies, tables, or data were changed. The staging RLS findings must be reconciled with the live database before any migration is applied.
+
+
+### Follow-up code-only mitigations
+
+- `communicationStore` now verifies that the requester is a participant in the native conversation before reading or sending messages. Legacy `exam_config` conversations are allowed only when their participant list includes the requester.
+- Message audio attachments must reference an asset uploaded by the sending user and use an allowed voice-note asset type. A caller cannot attach another user's audio asset by guessing its ID.
+- The message API returns HTTP 403 for non-participants.
+- The audio upload response no longer returns the full `file_url` payload to the uploader; the client only needs the new asset ID and metadata.
+- `GET /api/feed/posts` now filters course-linked posts to the course tutor, platform admins, active course enrollees (respecting enrollment expiry), or users with an active subscription. Subject-only posts remain available to the existing public subject-feed experience. The subject feed page now forwards its session token when available.
+
+These changes are code-level mitigations only. They do not replace the required RLS policy migration for direct table access, and the feed's subscription check still follows the existing broad active-subscription model pending a dedicated entitlement review.
