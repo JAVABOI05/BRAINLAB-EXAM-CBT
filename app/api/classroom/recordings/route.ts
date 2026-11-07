@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,16 @@ export async function POST(request: NextRequest) {
 
     if (!videoUrl) {
       return NextResponse.json({ error: "Missing videoUrl parameter." }, { status: 400 });
+    }
+
+    // Recording metadata must only be created by verified teaching staff
+    // managing the associated class. Client-supplied flags never grant access.
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    if (!staffAccess.isStaff) {
+      return NextResponse.json({ error: "Forbidden. Only verified instructors can save classroom recordings." }, { status: 403 });
+    }
+    if (classId && !(await canManageClassroom(user, String(classId), token))) {
+      return NextResponse.json({ error: "Forbidden. You cannot save a recording for another instructor's class." }, { status: 403 });
     }
 
     const payload = {
