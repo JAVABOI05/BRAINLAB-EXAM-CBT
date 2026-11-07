@@ -1113,9 +1113,20 @@ export async function saveLiveClassroomConfig(
  * that participant as an administrator in the admin configuration audit log.
  */
 export async function saveLiveClassroomParticipantGrant(
-  roomConfigs: LiveClassroomConfig["room_configs"]
+  roomId: string,
+  userId: string,
+  expiresAt: number
 ): Promise<boolean> {
   const current = await getLiveClassroomConfig();
+  const roomConfigs = { ...(current.room_configs || {}) };
+  const room = roomConfigs[roomId];
+  if (!room) return false;
+  const now = Date.now();
+  const activeGrants = Object.fromEntries(
+    Object.entries(room.participant_access || {}).filter(([, expiry]) => Number(expiry) > now)
+  ) as Record<string, number>;
+  activeGrants[userId] = expiresAt;
+  roomConfigs[roomId] = { ...room, participant_access: activeGrants };
   return await setPlatformConfig(
     "live_classroom_config",
     { ...current, room_configs: roomConfigs },
