@@ -37,6 +37,11 @@ interface Challenge {
   duration_minutes: number;
   difficulty: string;
   status: "pending" | "accepted" | "declined" | "expired" | "completed" | "cancelled";
+  challenge_type?: "individual" | "team";
+  challenger_team_id?: string | null;
+  challenged_team_id?: string | null;
+  challenger_team?: { id: string; name: string; slug: string; avatar_url: string | null } | null;
+  challenged_team?: { id: string; name: string; slug: string; avatar_url: string | null } | null;
   match_id?: string | null;
   created_at: string;
   challenger?: {
@@ -132,6 +137,10 @@ export default function ChallengeArenaPage() {
   const [newChallengeDifficulty, setNewChallengeDifficulty] = useState("medium");
   const [newChallengeMatchMode, setNewChallengeMatchMode] = useState<"ranked" | "friendly">("ranked");
   const [submittingChallenge, setSubmittingChallenge] = useState(false);
+  const [showTeamChallengeModal, setShowTeamChallengeModal] = useState(false);
+  const [teamChallengeTargetId, setTeamChallengeTargetId] = useState("");
+  const [teamChallengeRosterSize, setTeamChallengeRosterSize] = useState(2);
+  const [submittingTeamChallenge, setSubmittingTeamChallenge] = useState(false);
 
   // Squad modal
   const [showCreateSquadModal, setShowCreateSquadModal] = useState(false);
@@ -256,8 +265,51 @@ export default function ChallengeArenaPage() {
     }
   };
 
+  const handleCreateTeamChallenge = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!currentUser || !myTeamId) {
+      alert("You must be an active member of a team before issuing a team challenge.");
+      return;
+    }
+    const ownTeam = teams.find((team) => team.id === myTeamId);
+    if (!ownTeam) {
+      alert("Your active team could not be loaded. Refresh and try again.");
+      return;
+    }
+    try {
+      setSubmittingTeamChallenge(true);
+      const response = await fetch("/api/competition/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_type: "team",
+          challenger_team_id: myTeamId,
+          challenged_team_id: teamChallengeTargetId || null,
+          roster_size: teamChallengeRosterSize,
+          subject: newChallengeSubject,
+          question_count: newChallengeQCount,
+          duration_minutes: newChallengeDuration,
+          difficulty: newChallengeDifficulty,
+          match_mode: newChallengeMatchMode,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to issue team challenge.");
+      setShowTeamChallengeModal(false);
+      setTeamChallengeTargetId("");
+      await loadArenaData();
+      alert(teamChallengeTargetId
+        ? "Team challenge sent to the selected team."
+        : "Open team challenge published to the Arena.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to issue team challenge.");
+    } finally {
+      setSubmittingTeamChallenge(false);
+    }
+  };
+
   // Handle Accept Challenge
-  const handleAcceptChallenge = async (challengeId: string) => {
+  const handleAcceptChallenge = async (challengeId: string, acceptingTeamId?: string) => {
     if (!currentUser) {
       router.push("/auth/signin?redirect=/challenge-arena");
       return;
@@ -270,6 +322,7 @@ export default function ChallengeArenaPage() {
         body: JSON.stringify({
           challenge_id: challengeId,
           action: "accept",
+          ...(acceptingTeamId ? { accepting_team_id: acceptingTeamId } : {}),
         }),
       });
 
@@ -658,20 +711,28 @@ export default function ChallengeArenaPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black">1v1 Direct & Open Challenges</h2>
-                <p className="text-slate-400 text-xs">Accept open challenges from students online or launch your own duel</p>
+                <p className="text-slate-400 text-xs">Compete in individual duels and coordinated team battles.</p>
               </div>
-              <button
-                onClick={() => setShowCreateChallengeModal(true)}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2 self-start sm:self-auto"
-              >
-                <span>⚔️</span> Issue Challenge
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setShowCreateChallengeModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2"
+                >
+                  <span>⚔️</span> Issue 1v1
+                </button>
+                {myTeamId && <button
+                  onClick={() => setShowTeamChallengeModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] text-white font-bold text-xs transition flex items-center gap-2"
+                >
+                  <span>🛡️</span> Challenge a Team
+                </button>}
+              </div>
             </div>
 
             {/* OPEN CHALLENGES BOARD */}
             <div className={`p-6 rounded-3xl border shadow-xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
               <h3 className="text-base font-bold mb-4 flex items-center gap-2">
-                <span>🔥</span> Open Challenges Waiting for Contenders ({challenges.filter((c) => c.status === "pending").length})
+                <span>🔥</span> Pending Challenges ({challenges.filter((c) => c.status === "pending").length})
               </h3>
 
               {challenges.filter((c) => c.status === "pending").length === 0 ? (
@@ -697,15 +758,26 @@ export default function ChallengeArenaPage() {
                             <span className="text-[11px] text-slate-400">{chal.duration_minutes} Mins</span>
                           </div>
                           <h4 className="font-bold text-sm">
-                            {chal.challenger?.display_name || "Private player"}
+                            {chal.challenge_type === "team"
+                              ? (chal.challenger_team?.name || "Arena team")
+                              : (chal.challenger?.display_name || "Private player")}
                           </h4>
+                          {chal.challenge_type === "team" && <p className="text-[11px] font-bold text-[#FF5238] mt-1">TEAM BATTLE · {chal.challenged_team?.name || "OPEN CHALLENGE"}</p>}
                           <p className="text-xs text-slate-400 mt-1">
                             {chal.question_count} Questions • {chal.difficulty.toUpperCase()} Difficulty
                           </p>
                         </div>
 
                         {chal.is_outgoing ? (
-                          <span className="text-xs text-slate-400 italic text-center py-2">Your Open Challenge</span>
+                          <span className="text-xs text-slate-400 italic text-center py-2">Your challenge is awaiting acceptance</span>
+                        ) : chal.challenge_type === "team" ? (
+                          <button
+                            disabled={!myTeamId || submittingTeamChallenge}
+                            onClick={() => myTeamId && handleAcceptChallenge(chal.id, myTeamId)}
+                            className="w-full py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] disabled:opacity-40 text-white font-bold text-xs transition"
+                          >
+                            {myTeamId ? "Accept with My Team" : "Join a team to accept"}
+                          </button>
                         ) : (
                           <button
                             onClick={() => handleAcceptChallenge(chal.id)}
@@ -1016,6 +1088,55 @@ export default function ChallengeArenaPage() {
                 >
                   {submittingChallenge ? "Posting..." : "Broadcast Challenge ⚔️"}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE TEAM CHALLENGE MODAL */}
+      {showTeamChallengeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className={`max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+            <h3 className="text-xl font-black mb-1">Create a Team Battle</h3>
+            <p className="text-slate-400 text-xs mb-5">Only your team captain or co-captain can publish the challenge. Rosters are locked when the opposing team accepts.</p>
+            <form onSubmit={handleCreateTeamChallenge} className="flex flex-col gap-4">
+              <label className="text-xs font-bold text-slate-400">Opposing team
+                <select value={teamChallengeTargetId} onChange={(event) => setTeamChallengeTargetId(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="">Open challenge — any eligible team</option>
+                  {teams.filter((team) => team.id !== myTeamId).map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+                </select>
+              </label>
+              <label className="text-xs font-bold text-slate-400">Battle format
+                <select value={teamChallengeRosterSize} onChange={(event) => setTeamChallengeRosterSize(Number(event.target.value))} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value={2}>2 vs 2</option><option value={3}>3 vs 3</option><option value={4}>4 vs 4</option><option value={5}>5 vs 5</option>
+                </select>
+              </label>
+              <label className="text-xs font-bold text-slate-400">Subject
+                <select value={newChallengeSubject} onChange={(event) => setNewChallengeSubject(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  {["Mathematics","English","Physics","Chemistry","Biology","Economics","Government","General"].map((subject) => <option key={subject} value={subject}>{subject}</option>)}
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-xs font-bold text-slate-400">Questions
+                  <select value={newChallengeQCount} onChange={(event) => setNewChallengeQCount(Number(event.target.value))} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                    {[5,10,15,20].map((count) => <option key={count} value={count}>{count}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs font-bold text-slate-400">Duration
+                  <select value={newChallengeDuration} onChange={(event) => setNewChallengeDuration(Number(event.target.value))} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                    {[3,5,10].map((minutes) => <option key={minutes} value={minutes}>{minutes} min</option>)}
+                  </select>
+                </label>
+              </div>
+              <label className="text-xs font-bold text-slate-400">Match type
+                <select value={newChallengeMatchMode} onChange={(event) => setNewChallengeMatchMode(event.target.value as "ranked" | "friendly")} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="ranked">Ranked — affects team rating</option><option value="friendly">Friendly — no rating change</option>
+                </select>
+              </label>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowTeamChallengeModal(false)} className="px-4 py-2.5 rounded-xl text-slate-400 text-sm font-bold">Cancel</button>
+                <button type="submit" disabled={submittingTeamChallenge} className="px-5 py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] text-white text-sm font-bold disabled:opacity-50">{submittingTeamChallenge ? "Publishing…" : "Publish Team Challenge"}</button>
               </div>
             </form>
           </div>
