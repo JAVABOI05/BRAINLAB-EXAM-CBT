@@ -217,11 +217,12 @@ export default function LiveClassroomPage({
   const channelRef = useRef<any>(null);
   const initClassroomRef = useRef<((codeOverride?: string) => Promise<void>) | null>(null);
 
+  // Host UI is derived only from the server-issued room token. URL flags,
+  // browser storage and editable Auth metadata are never role evidence.
   const isHostRole =
     tokenData?.role === "host" ||
     Boolean(tokenData?.permissions?.isModerator) ||
-    Boolean(classDetails?.tutorId && currentUser?.id && classDetails.tutorId === currentUser.id) ||
-    (typeof window !== "undefined" && window.location.search.includes("role=host"));
+    Boolean(classDetails?.tutorId && currentUser?.id && classDetails.tutorId === currentUser.id);
 
   // 1. Authenticate & Obtain Classroom Admission Token & Load Polls
   useEffect(() => {
@@ -240,31 +241,11 @@ export default function LiveClassroomPage({
         setCurrentUser(user);
 
         // Call backend token generator which enforces server authorization & enrollment
-        let hasAdminSessionOrPin = false;
-        if (typeof window !== "undefined") {
-          try {
-            if (
-              sessionStorage.getItem("brainlab_admin_session_cache") ||
-              sessionStorage.getItem("brainlab_admin_pin_verified") === "true" ||
-              localStorage.getItem("admin_user")
-            ) {
-              hasAdminSessionOrPin = true;
-            }
-          } catch {}
-        }
-
-        const isUserStaffOrAdmin =
-          hasAdminSessionOrPin ||
-          user.user_metadata?.role === "tutor" ||
-          user.user_metadata?.role === "teacher" ||
-          String(user.user_metadata?.role || "").includes("admin") ||
-          Boolean(user.email && (user.email.endsWith("@brainlabacademy.com.ng") || user.email.endsWith("@brainlab.com.ng")));
-
+        // Host intent is only a navigation hint; the API independently
+        // resolves the user's real permissions and never trusts this flag.
         const hasHostIntent =
           typeof window !== "undefined" &&
-          (window.location.search.includes("role=host") ||
-           isUserStaffOrAdmin ||
-           codeOverride === "host");
+          (window.location.search.includes("role=host") || codeOverride === "host");
 
         const res = await fetch("/api/classroom/token", {
           method: "POST",
