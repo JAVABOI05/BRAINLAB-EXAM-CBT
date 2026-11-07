@@ -78,31 +78,6 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // Verify user is tutor or admin
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const isAuthorized =
-      adminRole &&
-      ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminRole.role);
-
-    const { data: memberships } = await supabase
-      .from("learning_subject_memberships")
-      .select("subject_id")
-      .eq("user_id", user.id);
-
-    const hasTeachingAssignment = (memberships && memberships.length > 0) || isAuthorized;
-
-    if (!hasTeachingAssignment) {
-      return NextResponse.json(
-        { error: "Forbidden. Only authorized instructors can publish to the course feed." },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
     const {
       title,
@@ -118,6 +93,52 @@ export async function POST(request: NextRequest) {
 
     if (!title || !content) {
       return NextResponse.json({ error: "Title and content are required." }, { status: 400 });
+    }
+    if (!course_id) {
+      return NextResponse.json({ error: "A course must be selected for this announcement." }, { status: 400 });
+    }
+
+    const [{ data: adminRole }, { data: course, error: courseError }] = await Promise.all([
+      supabase.from("admin_profiles").select("role").eq("user_id", user.id).maybeSingle(),
+      supabase.from("courses").select("id, tutor_id, subject_id").eq("id", course_id).maybeSingle(),
+    ]);
+    if (courseError || !course) {
+      return NextResponse.json({ error: "Course not found." }, { status: 404 });
+    }
+
+    const isPlatformAdmin = Boolean(adminRole && ["super_admin", "platform_admin"].includes(adminRole.role));
+    let hasCourseTeachingAssignment = course.tutor_id === user.id;
+    if (!hasCourseTeachingAssignment && course.subject_id) {
+      const { data: membership, error: membershipError } = await supabase
+        .from("learning_subject_memberships")
+        .select("subject_id")
+        .eq("user_id", user.id)
+        .eq("subject_id", course.subject_id)
+        .eq("membership_role", "tutor")
+        .maybeSingle();
+      if (membershipError) {
+        return NextResponse.json({ error: "Unable to verify course teaching assignment." }, { status: 500 });
+      }
+      hasCourseTeachingAssignment = Boolean(membership);
+    }
+    if (!isPlatformAdmin && !hasCourseTeachingAssignment) {
+      return NextResponse.json(
+        { error: "You are not assigned to teach this course." },
+        { status: 403 }
+      );
+    }
+
+    if (audio_asset_id) {
+      const { data: audioAsset, error: audioError } = await supabase
+        .from("audio_assets")
+        .select("id, user_id, asset_type, course_id")
+        .eq("id", audio_asset_id)
+        .maybeSingle();
+      if (audioError || !audioAsset || audioAsset.user_id !== user.id ||
+          audioAsset.asset_type !== "tutor_voice_note" ||
+          (audioAsset.course_id && audioAsset.course_id !== course_id)) {
+        return NextResponse.json({ error: "The selected audio attachment is not available to this course." }, { status: 403 });
+      }
     }
 
     const { data: post, error: insertError } = await supabase
