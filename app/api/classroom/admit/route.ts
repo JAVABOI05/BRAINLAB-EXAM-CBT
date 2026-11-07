@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getUserFromRequest } from "@/app/lib/supabaseServer";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 
@@ -19,24 +20,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
-    const supabase = getSupabaseServerClient();
+    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const isAuthorized = await canManageClassroom(user, classId, token);
 
-    const config = await getLiveClassroomConfig();
-    const staffAccess = await resolveClassroomStaffAccess(user);
-    const isPlatformStaff = staffAccess.isPlatformAdmin;
-    const { data: liveClass } = await supabase
-      .from("live_classes")
-      .select("tutor_id")
-      .eq("id", classId)
-      .maybeSingle();
-
-    const isAssignedHost =
-      liveClass?.tutor_id === user.id ||
-      config.room_configs?.[classId]?.active_host_id === user.id;
-
-    if (!isPlatformStaff && !(staffAccess.isStaff && isAssignedHost)) {
+    if (!isAuthorized) {
       return NextResponse.json(
-        { error: "Forbidden. Only the assigned host or an authorized platform administrator can grant admission." },
+        { error: "Forbidden. Only the assigned tutor or a platform administrator can manage admission for this class." },
         { status: 403 }
       );
     }
