@@ -773,11 +773,11 @@ export default function ChallengeArenaPage() {
                           <span className="text-xs text-slate-400 italic text-center py-2">Your challenge is awaiting acceptance</span>
                         ) : chal.challenge_type === "team" ? (
                           <button
-                            disabled={!myTeamId || submittingTeamChallenge}
+                            disabled={!myTeamId || (myTeamRole !== "captain" && myTeamRole !== "co_captain") || submittingTeamChallenge}
                             onClick={() => myTeamId && handleAcceptChallenge(chal.id, myTeamId)}
                             className="w-full py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] disabled:opacity-40 text-white font-bold text-xs transition"
                           >
-                            {myTeamId ? "Accept with My Team" : "Join a team to accept"}
+                            {!myTeamId ? "Join a team to accept" : myTeamRole === "captain" || myTeamRole === "co_captain" ? "Accept with My Team" : "Team leaders can accept"}
                           </button>
                         ) : (
                           <button
