@@ -1,7 +1,6 @@
 /* eslint @typescript-eslint/no-explicit-any: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "../../lib/supabaseServer";
-import { canAccessClassroom } from "../../lib/liveClassroom/authorization";
 
 const ADMIN_ROLES = ["super_admin", "platform_admin"];
 
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("class_recordings")
-      .select("*, live_classes(id, tutor_id, title, scheduled_start_at), courses(title, slug)")
+      .select("*, live_classes(id, tutor_id, course_id, title, scheduled_start_at), courses(title, slug)")
       .order("created_at", { ascending: false });
 
     if (courseId) query = query.eq("course_id", courseId);
@@ -50,8 +49,8 @@ export async function GET(request: NextRequest) {
 
     const rowsList = rows ?? [];
     const courseIds = [...new Set(rowsList
-      .filter((recording: any) => recording.course_id && recording.is_visible_to_students && recording.processing_status === "ready")
-      .map((recording: any) => recording.course_id))] as string[];
+      .filter((recording: any) => (recording.course_id || recording.live_classes?.course_id) && recording.is_visible_to_students && recording.processing_status === "ready")
+      .map((recording: any) => recording.course_id || recording.live_classes?.course_id))] as string[];
     const { data: enrollments } = courseIds.length
       ? await supabase.from("course_enrollments").select("course_id").eq("user_id", user.id).eq("status", "active").in("course_id", courseIds)
       : { data: [] };
@@ -73,7 +72,23 @@ export async function GET(request: NextRequest) {
       if (recording.access_policy !== "enrolled_only") return false;
 
       if (recording.class_id) {
-        return await canAccessClassroom(user, recording.class_id, token);
+        const linkedCourseId = recording.course_id || recording.live_classes?.course_id;
+        if (linkedCourseId) {
+          return enrolledCourseIds.has(linkedCourseId) || Boolean(activeSubscription);
+        }
+
+        // Standalone classes without a course are limited to learners who
+        // actually attended or were manually verified for that class. Do not
+        // reuse live-room admission grants, which are intentionally temporary.
+        const { data: attendance } = await supabase
+          .from("class_attendance_records")
+          .select("id")
+          .eq("class_id", recording.class_id)
+          .eq("user_id", user.id)
+          .in("attendance_status", ["present", "partial", "manual_verified"])
+          .limit(1)
+          .maybeSingle();
+        return Boolean(attendance);
       }
       if (recording.course_id) {
         return enrolledCourseIds.has(recording.course_id) || Boolean(activeSubscription);
