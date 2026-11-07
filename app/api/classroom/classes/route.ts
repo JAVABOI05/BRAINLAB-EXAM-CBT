@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
-import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
+import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, logAdminAction } from "@/app/lib/platformConfig";
 
 export async function GET(request: NextRequest) {
@@ -38,30 +38,6 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const isAuthorized =
-      adminRole &&
-      ["super_admin", "platform_admin", "teacher", "ai_learning_admin"].includes(adminRole.role);
-
-    const { data: memberships } = await supabase
-      .from("learning_subject_memberships")
-      .select("subject_id")
-      .eq("user_id", user.id);
-
-    const hasTeachingAssignment = (memberships && memberships.length > 0) || isAuthorized;
-
-    if (!hasTeachingAssignment) {
-      return NextResponse.json(
-        { error: "Forbidden. Only authorized instructors or administrators can create live classes." },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
     const {
       title,
@@ -85,6 +61,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "title, scheduled_start_at, and scheduled_end_at are required." },
         { status: 400 }
+      );
+    }
+
+    const staffAccess = await resolveClassroomStaffAccess(user);
+    const isPlatformAdmin = staffAccess.isPlatformAdmin;
+    const { data: tutorMembership } = subject_id
+      ? await supabase
+          .from("learning_subject_memberships")
+          .select("subject_id")
+          .eq("user_id", user.id)
+          .eq("subject_id", subject_id)
+          .eq("membership_role", "tutor")
+          .maybeSingle()
+      : { data: null };
+
+    if (!isPlatformAdmin && (!staffAccess.isStaff || !tutorMembership)) {
+      return NextResponse.json(
+        { error: "Forbidden. Only platform administrators or tutors assigned to the selected subject can create this class." },
+        { status: 403 }
       );
     }
 
@@ -177,13 +172,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     const isTutor = existingClass.tutor_id === user.id;
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const isAdmin = adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role);
+    const staffAccess = await resolveClassroomStaffAccess(user);
+    const isAdmin = staffAccess.isPlatformAdmin;
 
     if (!isTutor && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
