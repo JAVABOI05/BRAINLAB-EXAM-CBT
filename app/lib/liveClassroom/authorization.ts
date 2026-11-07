@@ -62,3 +62,39 @@ export async function resolveClassroomStaffAccess(
 
   return { isStaff: false, isPlatformAdmin: false, source: null };
 }
+
+/**
+ * Checks whether the caller may manage a specific classroom. Platform admins
+ * may manage any class; tutors and explicitly approved individual exceptions
+ * may manage only a class assigned to them (or a virtual stage they currently
+ * host). A general tutor profile is never enough to manage another tutor's class.
+ */
+export async function canManageClassroom(
+  user: User,
+  classId: string,
+  bearerToken?: string
+): Promise<boolean> {
+  const staff = await resolveClassroomStaffAccess(user, bearerToken);
+  if (staff.isPlatformAdmin) return true;
+
+  const supabase = getSupabaseServerClient(bearerToken);
+  try {
+    const { data: liveClass, error } = await supabase
+      .from("live_classes")
+      .select("tutor_id")
+      .eq("id", classId)
+      .maybeSingle();
+
+    if (!error && liveClass?.tutor_id === user.id) return true;
+  } catch {
+    // Continue to the virtual-stage ownership check.
+  }
+
+  try {
+    const config = await getLiveClassroomConfig();
+    const room = config.room_configs?.[classId];
+    return Boolean(staff.isStaff && room?.active_host_id === user.id);
+  } catch {
+    return false;
+  }
+}
