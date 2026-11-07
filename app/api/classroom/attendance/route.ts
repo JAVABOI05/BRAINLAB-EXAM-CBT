@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const config = await getLiveClassroomConfig();
     const supabase = getSupabaseServerClient(token);
-    const config = await getLiveClassroomConfig();
 
     // Tutors can view only the class they own; platform administrators can
     // review any class. Everyone else is restricted to their own attendance.
