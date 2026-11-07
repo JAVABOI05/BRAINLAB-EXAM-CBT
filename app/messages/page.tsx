@@ -312,7 +312,7 @@ export default function MessagesPage() {
 
     const formData = new FormData();
     formData.append("file", blob, "voice_note.webm");
-    formData.append("asset_type", "tutor_voice_note");
+    formData.append("asset_type", "discussion_audio");
     formData.append("duration_seconds", String(durationSeconds));
     formData.append("title", "Voice Note");
 
