@@ -306,7 +306,6 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
 // ----------------------------------------------------------------------------
 
 export async function getUserConversations(userId: string): Promise<ChatConversation[]> {
-  await assertConversationParticipant(conversationId, userId);
   const supabase = getSupabaseServerClient();
   const { allPeers } = await getRealPeersAndPresence(userId);
   const peersById = new Map<string, RealPeer>(allPeers.map((p) => [p.user_id, p]));
