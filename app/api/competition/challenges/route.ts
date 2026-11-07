@@ -547,17 +547,25 @@ export async function PATCH(req: NextRequest) {
         }
         const { data: challengerTeam } = await supabase
           .from("competition_teams")
-          .select("name, captain_id")
+          .select("name, captain_id, co_captain_id")
           .eq("id", challenge.challenger_team_id)
           .maybeSingle();
-        if (challengerTeam?.captain_id) {
-          await supabase.from("notifications").insert({
-            user_id: challengerTeam.captain_id,
-            title: "Team challenge accepted",
-            message: `${acceptingTeam.name} accepted your team battle. Your locked roster can enter the match lobby.`,
-            type: "competition_match_lobby",
-            metadata: { match_id: teamMatchId, challenge_id },
-          });
+        if (challengerTeam) {
+          const leaderRecipients = Array.from(new Set(
+            [challengerTeam.captain_id, challengerTeam.co_captain_id].filter((id): id is string => Boolean(id))
+          ));
+          if (leaderRecipients.length) {
+            const { error: notificationError } = await supabase.from("notifications").insert(
+              leaderRecipients.map((recipientId) => ({
+                user_id: recipientId,
+                title: "Team challenge accepted",
+                message: `${acceptingTeam.name} accepted your team battle. Your locked roster can enter the match lobby.`,
+                type: "competition_match_lobby",
+                metadata: { match_id: teamMatchId, challenge_id },
+              }))
+            );
+            if (notificationError) throw notificationError;
+          }
         }
         return NextResponse.json({
           ok: true,
