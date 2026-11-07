@@ -44,10 +44,11 @@ export async function GET(request: NextRequest) {
       : { data: [] };
     const enrolledCourseIds = new Set((enrollments ?? []).map((item: any) => item.course_id));
     const { data: activeSubscription } = await supabase
-      .from("subscription_records")
+      .from("user_subscriptions")
       .select("id")
       .eq("user_id", user.id)
-      .eq("status", "active")
+       .eq("status", "active")
+      .gt("current_period_end", new Date().toISOString())
       .limit(1)
       .maybeSingle();
 
