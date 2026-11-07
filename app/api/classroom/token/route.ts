@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
+    const roomConfig = config.room_configs?.[classId] || config.room_configs?.[normalizedClassId];
 
     // 1. Resolve staff access from authoritative platform roles, approved tutor
     // profiles, or the explicitly configured individual tutor allowlist.
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         id: classId,
         title: stageTitle,
         description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-        tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
+        tutor_id: roomConfig?.active_host_id || "brainlab-official-host",
         status: "live",
         class_format: "interactive",
         course_id: null,
@@ -120,7 +121,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Check Room Configuration from Platform Config
-    const roomConfig = config.room_configs?.[classId] || config.room_configs?.[normalizedClassId];
     const isBuiltInPublicStage = normalizedClassId === "BL-LIVE-101" ||
       normalizedClassId === "DEMO-CLASS" || normalizedClassId === "GENERAL-STAGE";
     // Prefixes are identifiers, not proof that a room exists. Only the
@@ -129,7 +129,10 @@ export async function POST(request: NextRequest) {
     if (isOpenStage && !isBuiltInPublicStage && !roomConfig) {
       return NextResponse.json({ error: "This virtual classroom has not been configured." }, { status: 404 });
     }
-    const isHost = isPlatformStaff || liveClass.tutor_id === user.id || (isOpenStage && staffAccess.isStaff);
+    const isHost = isPlatformStaff ||
+      (!isOpenStage && liveClass.tutor_id === user.id) ||
+      (isOpenStage && staffAccess.isStaff &&
+        (!roomConfig?.active_host_id || roomConfig.active_host_id === user.id));
 
     if (isHost) {
       liveClass.tutor_id = user.id;
