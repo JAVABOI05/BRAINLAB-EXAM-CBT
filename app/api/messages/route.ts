@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
     const messages = await getConversationMessages(conversationId, user.id, user);
     return NextResponse.json({ success: true, messages });
   } catch (err: unknown) {
-    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    if (message === "CONVERSATION_ACCESS_DENIED") {
+      return NextResponse.json({ error: "You are not a participant in this conversation." }, { status: 403 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -50,6 +54,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message });
   } catch (err: unknown) {
-    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    if (message === "CONVERSATION_ACCESS_DENIED") {
+      return NextResponse.json({ error: "You are not a participant in this conversation." }, { status: 403 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
