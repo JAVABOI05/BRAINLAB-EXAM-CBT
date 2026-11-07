@@ -234,7 +234,8 @@ begin
   left join public.tutor_profiles tp on tp.user_id=u.id
   where u.email ilike '%'||trim(search_text)||'%'
      or coalesce(u.raw_user_meta_data->>'full_name',u.raw_user_meta_data->>'name',tp.name,'') ilike '%'||trim(search_text)||'%'
-  order by display_name
+  -- Use the select-list ordinal to avoid PL/pgSQL OUT-parameter name ambiguity.
+  order by 3
   limit 25;
 end;
 $function$;
