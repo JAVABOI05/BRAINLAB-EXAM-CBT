@@ -44,7 +44,8 @@ begin
   join auth.users u on u.id=a.user_id
   left join public.tutor_profiles tp on tp.user_id=a.user_id
   where a.revoked_at is null and (a.expires_at is null or a.expires_at>now())
-  order by display_name,r.name;
+  -- display_name is also a RETURNS TABLE OUT parameter; ordinals avoid PL/pgSQL ambiguity.
+  order by 4,7;
 end;
 $function$;
 
