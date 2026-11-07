@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
 import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
+import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,50 @@ export async function POST(
       .maybeSingle();
 
     if (fetchErr || !liveClass) {
-      return NextResponse.json({ error: "Live class not found." }, { status: 404 });
+      const normalizedClassId = classId.trim().toUpperCase();
+      const isVirtualStage =
+        normalizedClassId === "BL-LIVE-101" ||
+        normalizedClassId === "DEMO-CLASS" ||
+        normalizedClassId === "GENERAL-STAGE" ||
+        normalizedClassId.startsWith("BL-ROOM-") ||
+        normalizedClassId.startsWith("BL-LIVE-") ||
+        normalizedClassId.startsWith("BL-STAGE-");
+
+      if (!isVirtualStage) {
+        return NextResponse.json({ error: "Live class not found." }, { status: 404 });
+      }
+
+      const config = await getLiveClassroomConfig();
+      const room = config.room_configs?.[classId];
+      if (!room) {
+        return NextResponse.json({ error: "Active virtual classroom not found." }, { status: 404 });
+      }
+
+      if (!isPlatformAdmin && room.active_host_id !== user.id) {
+        return NextResponse.json(
+          { error: "Forbidden. Only the active host or a platform administrator can end this stage." },
+          { status: 403 }
+        );
+      }
+
+      const updatedRooms = { ...(config.room_configs || {}) };
+      updatedRooms[classId] = { ...room, is_active: false, active_host_id: undefined };
+      await saveLiveClassroomConfig(
+        { room_configs: updatedRooms },
+        { id: user.id, email: user.email || "host@brainlabacademy.com.ng" },
+        `Host ended virtual classroom stage ${classId}`
+      );
+
+      return NextResponse.json({
+        success: true,
+        summary: {
+          classId,
+          title: room.title || "BrainLab Live Session",
+          endedAt: new Date().toISOString(),
+          durationMinutes: 0,
+          totalAttendees: 0,
+        },
+      });
     }
 
     if (!isPlatformAdmin && liveClass.tutor_id !== user.id) {
