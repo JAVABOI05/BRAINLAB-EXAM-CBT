@@ -3,6 +3,140 @@
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* ==========================================================================
+   BRAINLAB CANONICAL DESIGN SYSTEM TOKENS
+   Semantic color roles, spacing, radii, elevation, motion durations.
+   ========================================================================== */
+:root {
+  /* Surfaces & Canvas */
+  --bl-color-canvas: #f8fafc;
+  --bl-color-surface: #ffffff;
+  --bl-color-surface-raised: #f1f5f9;
+  --bl-color-surface-subtle: #f8fafc;
+  --bl-color-surface-sunken: #e2e8f0;
+
+  /* Borders */
+  --bl-color-border: #e2e8f0;
+  --bl-color-border-subtle: #f1f5f9;
+  --bl-color-border-strong: #cbd5e1;
+
+  /* Text & Contrast */
+  --bl-color-text-primary: #0b1536;
+  --bl-color-text-secondary: #334155;
+  --bl-color-text-muted: #64748b;
+  --bl-color-text-faint: #94a3b8;
+  --bl-color-text-inverse: #ffffff;
+
+  /* Brand Colors */
+  --bl-color-brand-primary: #1356e8;
+  --bl-color-brand-primary-hover: #0f44bc;
+  --bl-color-brand-navy: #0b1536;
+  --bl-color-brand-coral: #ff5238;
+  --bl-color-brand-coral-hover: #e04028;
+  --bl-color-brand-channel: #25d366;
+  --bl-color-brand-channel-hover: #20ba5a;
+
+  /* Feedback & Alerts */
+  --bl-color-success: #15803d;
+  --bl-color-success-bg: #dcfce7;
+  --bl-color-warning: #b45309;
+  --bl-color-warning-bg: #fef3c7;
+  --bl-color-error: #dc2626;
+  --bl-color-error-bg: #fee2e2;
+  --bl-color-info: #0284c7;
+  --bl-color-info-bg: #e0f2fe;
+
+  /* Radii */
+  --bl-radius-xs: 4px;
+  --bl-radius-sm: 8px;
+  --bl-radius-md: 12px;
+  --bl-radius-lg: 16px;
+  --bl-radius-xl: 24px;
+  --bl-radius-2xl: 32px;
+  --bl-radius-full: 9999px;
+
+  /* Elevation */
+  --bl-shadow-xs: 0 1px 2px 0 rgba(11, 21, 54, 0.05);
+  --bl-shadow-sm: 0 1px 3px 0 rgba(11, 21, 54, 0.08), 0 1px 2px -1px rgba(11, 21, 54, 0.06);
+  --bl-shadow-md: 0 4px 6px -1px rgba(11, 21, 54, 0.08), 0 2px 4px -2px rgba(11, 21, 54, 0.06);
+  --bl-shadow-lg: 0 10px 15px -3px rgba(11, 21, 54, 0.08), 0 4px 6px -4px rgba(11, 21, 54, 0.04);
+  --bl-shadow-xl: 0 20px 25px -5px rgba(11, 21, 54, 0.1), 0 8px 10px -6px rgba(11, 21, 54, 0.04);
+  --bl-shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #1356e8;
+
+  /* Motion */
+  --bl-duration-instant: 100ms;
+  --bl-duration-fast: 180ms;
+  --bl-duration-normal: 240ms;
+  --bl-duration-slow: 360ms;
+  --bl-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:is(html[data-theme="dark"], html.dark) {
+  --bl-color-canvas: #070d18;
+  --bl-color-surface: #0d1727;
+  --bl-color-surface-raised: #132137;
+  --bl-color-surface-subtle: #192940;
+  --bl-color-surface-sunken: #050910;
+
+  --bl-color-border: #2a3b53;
+  --bl-color-border-subtle: #1e293b;
+  --bl-color-border-strong: #3b4d66;
+
+  --bl-color-text-primary: #edf4ff;
+  --bl-color-text-secondary: #cbd5e1;
+  --bl-color-text-muted: #94a3b8;
+  --bl-color-text-faint: #64748b;
+  --bl-color-text-inverse: #0b1536;
+
+  --bl-color-brand-primary: #3b82f6;
+  --bl-color-brand-primary-hover: #60a5fa;
+  --bl-color-brand-navy: #0b1536;
+  --bl-color-brand-coral: #ff6b55;
+  --bl-color-brand-coral-hover: #ff8572;
+  --bl-color-brand-channel: #25d366;
+  --bl-color-brand-channel-hover: #22c55e;
+
+  --bl-color-success: #22c55e;
+  --bl-color-success-bg: #052e16;
+  --bl-color-warning: #fbbf24;
+  --bl-color-warning-bg: #451a03;
+  --bl-color-error: #f87171;
+  --bl-color-error-bg: #450a0a;
+  --bl-color-info: #38bdf8;
+  --bl-color-info-bg: #082f49;
+
+  --bl-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --bl-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.35);
+  --bl-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --bl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.45);
+  --bl-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  --bl-shadow-focus: 0 0 0 2px #070d18, 0 0 0 4px #3b82f6;
+}
+
+/* ==========================================================================
+   TOKEN-BACKED DESIGN SYSTEM UTILITIES
+   ========================================================================== */
+.bl-canvas {
+  background-color: var(--bl-color-canvas);
+  color: var(--bl-color-text-primary);
+}
+
+.bl-surface {
+  background-color: var(--bl-color-surface);
+  color: var(--bl-color-text-primary);
+  border-color: var(--bl-color-border);
+}
+
+.bl-surface-raised {
+  background-color: var(--bl-color-surface-raised);
+  border-color: var(--bl-color-border);
+}
+
+.bl-focus-ring:focus-visible {
+  outline: 2px solid var(--bl-color-brand-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* ==========================================================================
    1. BASE TYPOGRAPHY & SHELL
    ========================================================================== */
 

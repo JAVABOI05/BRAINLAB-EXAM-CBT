@@ -1,9 +1,14 @@
 // Centralized WhatsApp Helpdesk & Alerts Configuration for BrainLab Academy
 import { getFooterConfig } from "./platformConfig";
+import {
+  CANONICAL_PHONE_DIGITS,
+  CANONICAL_PHONE_DISPLAY,
+  CANONICAL_WHATSAPP_CHANNEL,
+} from "./contactConfig";
 
-export const DEFAULT_WHATSAPP_NUMBER = "2349074310204";
-export const DEFAULT_SUPPORT_PHONE = "+234 907 431 0204";
-export const DEFAULT_WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m";
+export const DEFAULT_WHATSAPP_NUMBER = CANONICAL_PHONE_DIGITS;
+export const DEFAULT_SUPPORT_PHONE = CANONICAL_PHONE_DISPLAY;
+export const DEFAULT_WHATSAPP_CHANNEL = CANONICAL_WHATSAPP_CHANNEL;
 
 /**
  * Normalizes a phone number into international format without symbols (e.g. "2349074310204").
