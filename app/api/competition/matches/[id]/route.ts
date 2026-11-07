@@ -278,6 +278,12 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
           })
           .eq("id", matchId);
 
+        await supabase
+          .from("competition_match_participants")
+          .update({ current_question_started_at: now })
+          .eq("match_id", matchId)
+          .eq("current_question_index", 0);
+
         return NextResponse.json({
           ok: true,
           match_status: "in_progress",
@@ -356,9 +362,13 @@ export async function POST(req: NextRequest, { params }: MatchParams) {
       if (!match.started_at) {
         return NextResponse.json({ error: "Match clock has not started" }, { status: 409 });
       }
-      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(match.started_at).getTime()) / 1000));
-      const previousTime = Math.max(0, Math.floor(Number(myParticipant.total_time_spent_seconds) || 0));
-      const timeTaken = Math.max(0, Math.min(Number(match.duration_seconds) || 0, elapsedSeconds - previousTime));
+      const questionStartedAt = myParticipant.current_question_started_at || match.started_at;
+      const questionStartMs = new Date(questionStartedAt).getTime();
+      if (!Number.isFinite(questionStartMs)) {
+        return NextResponse.json({ error: "The server question clock is unavailable. Please reconnect before submitting." }, { status: 409 });
+      }
+      const questionElapsedSeconds = Math.max(0, Math.floor((Date.now() - questionStartMs) / 1000));
+      const timeTaken = Math.max(0, Math.min(Number(match.duration_seconds) || 0, questionElapsedSeconds));
 
       // Use the marks frozen into this match's question snapshot. No client-side
       // score or timing input is trusted.
