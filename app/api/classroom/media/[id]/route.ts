@@ -66,7 +66,7 @@ function serveBuffer(buffer: Buffer, rawMime: string, request: NextRequest) {
       "Content-Length": totalSize.toString(),
       "Accept-Ranges": "bytes",
       "Content-Disposition": "inline",
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Cache-Control": "private, no-store",
     },
   });
 }
@@ -85,7 +85,7 @@ export async function GET(
 
     const user = await getUserFromRequest(request);
     if (!user) return new NextResponse("Unauthorized", { status: 401, headers: { "Cache-Control": "private, no-store" } });
-    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
     // 1. Check in-memory fast media cache; every asset is bound to a class.
     const cached = getClassroomMedia(id);
@@ -101,7 +101,7 @@ export async function GET(
     const supabase = getSupabaseServerClient(bearerToken);
     const { data: asset, error } = await supabase
       .from("audio_assets")
-      .select("file_url, mime_type, title, metadata")
+      .select("file_url, storage_path, mime_type, title, metadata")
       .eq("id", id)
       .maybeSingle();
 
@@ -128,8 +128,19 @@ export async function GET(
       return serveBuffer(buffer, mimeType, request);
     }
 
-    // If it is a remote URL, redirect to it
-    return NextResponse.redirect(asset.file_url);
+    // Deliver storage objects through short-lived signed URLs only after the
+    // caller has passed the class admission check above.
+    if (asset.storage_path) {
+      const { data: signed, error: signError } = await supabase.storage
+        .from("learning-content-media")
+        .createSignedUrl(asset.storage_path, 60);
+      if (signError || !signed?.signedUrl) {
+        return new NextResponse("Media temporarily unavailable", { status: 503, headers: { "Cache-Control": "private, no-store" } });
+      }
+      return NextResponse.redirect(signed.signedUrl, { headers: { "Cache-Control": "private, no-store" } });
+    }
+    // Legacy external URLs are allowed only after class authorization.
+    return NextResponse.redirect(asset.file_url, { headers: { "Cache-Control": "private, no-store" } });
   } catch (err: unknown) {
     return new NextResponse((err instanceof Error ? err.message : String(err)) || "Server Error", {
       status: 500,
