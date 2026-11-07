@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
@@ -36,50 +37,12 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
 
-    // 1. Check if user is staff/tutor/admin
-    const resolvedRole = await resolveAdminRole(user.id, token, user.email);
-    const isStaffRole = Boolean(
-      resolvedRole &&
-      (
-        ["super_admin", "platform_admin", "cbt_admin", "ai_learning_admin", "community_moderator", "analytics_admin", "school_admin", "teacher", "content_reviewer", "finance_admin", "read_only_auditor", "competition_admin", "competition_moderator", "competition_host"].includes(resolvedRole) ||
-        resolvedRole.toLowerCase().includes("admin") ||
-        resolvedRole.toLowerCase().includes("tutor") ||
-        resolvedRole.toLowerCase().includes("teacher") ||
-        resolvedRole.toLowerCase().includes("host") ||
-        resolvedRole.toLowerCase().includes("moderator") ||
-        resolvedRole.toLowerCase().includes("instructor") ||
-        resolvedRole.toLowerCase().includes("staff")
-      )
-    );
+    // 1. Resolve staff access from authoritative platform roles, approved tutor
+    // profiles, or the explicitly configured individual tutor allowlist.
+    const { isStaff } = await resolveClassroomStaffAccess(user, token);
+    const isAuthorizedTutor = isStaff;
 
-    const isAllowedTutorByEmail = Boolean(
-      user.email &&
-      config.allowed_tutor_emails?.some((e) => e.trim().toLowerCase() === user.email?.trim().toLowerCase())
-    );
 
-    const isOfficialDomain = Boolean(
-      user.email &&
-      (user.email.toLowerCase().endsWith("@brainlabacademy.com.ng") ||
-       user.email.toLowerCase().endsWith("@brainlab.com.ng"))
-    );
-
-    const metaRole = String(user.user_metadata?.role || user.app_metadata?.role || "").toLowerCase();
-    const isMetaStaff = metaRole.includes("admin") || metaRole === "teacher" || metaRole === "tutor" || metaRole === "host";
-
-    let isAdminTableUser = false;
-    try {
-      const serviceSupabase = getSupabaseServerClient();
-      const [uRes, pRes] = await Promise.all([
-        user.email ? serviceSupabase.from("admin_users").select("id").ilike("email", user.email.trim()).maybeSingle() : Promise.resolve({ data: null }),
-        user.id ? serviceSupabase.from("admin_profiles").select("id").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
-      ]);
-      if (uRes?.data || pRes?.data) {
-        isAdminTableUser = true;
-      }
-    } catch {}
-
-    const isStaff = isStaffRole || isAllowedTutorByEmail || isOfficialDomain || isMetaStaff || isAdminTableUser;
-    const requestedHost = body.requestedRole === "host" || body.asHost === true;
     const isAuthorizedTutor = isStaff || (isOpenStage && requestedHost);
 
     // 2. Fetch class details or provision session fallback
