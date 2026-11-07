@@ -542,14 +542,15 @@ export default function ClassroomStudioPage() {
 
     // 1. Ask the server to verify lesson ownership and mint a one-object
     // upload token. The private bucket intentionally has no broad client INSERT policy.
-    const ext = previewMimeType.includes("mp4") ? "mp4" : "webm";
+    const normalizedMimeType = previewMimeType.split(";")[0].trim().toLowerCase();
+    const ext = normalizedMimeType.includes("mp4") ? "mp4" : "webm";
     const safeTitle = (title || "Lesson").replace(/[^a-zA-Z0-9_-]/g, "_");
     const uploadPrepResponse = await fetch("/api/classroom/studio/recording-upload-url", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
         lesson_id: savedLessonId,
-        content_type: previewMimeType,
+        content_type: normalizedMimeType,
         filename: `${safeTitle}.${ext}`,
       }),
     });
@@ -562,7 +563,7 @@ export default function ClassroomStudioPage() {
     const { error: uploadErr } = await supabase.storage
       .from("live-class-recordings")
       .uploadToSignedUrl(filename, uploadPrep.token, previewBlob, {
-        contentType: previewMimeType,
+        contentType: normalizedMimeType,
       });
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
