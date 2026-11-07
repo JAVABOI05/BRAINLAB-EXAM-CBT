@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,11 @@ function sanitizeSenderName(name?: string | null): string {
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized. Sign in to view classroom messages." }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("classId");
 
@@ -163,7 +169,6 @@ export async function POST(request: NextRequest) {
       type = "text",
       mediaUrl,
       duration,
-      isHost = false,
       isPinned = false,
     } = body;
 
