@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
-    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const config = await getLiveClassroomConfig();
     const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
 
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
       const canManage = await canManageClassroom(
         user,
         classId,
-        request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "")
+        request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
       );
       const { data: liveClass } = await supabase
         .from("live_classes")
@@ -302,7 +303,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Attendance record not found" }, { status: 404 });
     }
 
-    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const canManage = await canManageClassroom(user, record.class_id, token);
 
     if (!canManage) {
