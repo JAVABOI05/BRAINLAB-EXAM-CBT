@@ -239,3 +239,8 @@ The audio upload response continues to return the uploader's own `file_url` for 
 ### Course-feed composer compatibility
 
 The existing subject-feed composer sends `subject_id` but not `course_id`, while `course_feed_posts.course_id` is NOT NULL. The route now resolves a subject-only submission to a course only when exactly one eligible course can be identified for the tutor/subject (or one course exists for a platform admin). If multiple courses match, it returns a clear selection error instead of guessing. An explicitly supplied course ID is checked against the subject and the caller's course ownership or tutor membership. Audio attachments must be the caller's own tutor voice note and may not be linked to a different course.
+
+
+### Tutor assignment playback access path
+
+The tutor assignment dashboard previously queried `assignment_submissions` and joined audio assets directly from the browser. A new authenticated `GET /api/assignments/submissions?assignmentId=...` endpoint now checks that the requester is the assignment's assigned tutor or a platform administrator before returning the submission rows and their audio playback data. The dashboard now uses this scoped endpoint. This removes one direct-client dependency on the broad `audio_assets` SELECT policy; the policy itself remains unchanged pending a complete audit of every remaining direct audio-table consumer, including admin analytics.
