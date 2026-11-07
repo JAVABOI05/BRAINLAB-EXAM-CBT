@@ -99,6 +99,19 @@ export async function POST(request: NextRequest) {
     } else if (assetType === "discussion_audio") {
       // Discussion voice notes are permitted for all authenticated users.
     } else {
+      let isAssignedTutor = false;
+      let isCourseTutor = false;
+      if (courseId) {
+        const { data: course, error: courseError } = await supabase
+          .from("courses")
+          .select("id, tutor_id")
+          .eq("id", courseId)
+          .maybeSingle();
+        if (courseError || !course) {
+          return NextResponse.json({ error: "Course not found." }, { status: 404 });
+        }
+        isCourseTutor = course.tutor_id === user.id;
+      }
       if (assignmentId) {
         const { data: assignment, error: assignmentError } = await supabase
           .from("assignments")
@@ -108,11 +121,12 @@ export async function POST(request: NextRequest) {
         if (assignmentError || !assignment) {
           return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
         }
-        if (assignment.tutor_id !== user.id && !isPlatformAdmin) {
+        isAssignedTutor = assignment.tutor_id === user.id;
+        if (!isAssignedTutor && !isPlatformAdmin) {
           return NextResponse.json({ error: "Only the assigned tutor can upload feedback audio for this assignment." }, { status: 403 });
         }
       }
-      if (!isTutorOrAdmin) {
+      if (!isTutorOrAdmin && !isCourseTutor && !isAssignedTutor) {
         return NextResponse.json(
           { error: "Forbidden. Only authorized instructors can publish voice notes or lessons." },
           { status: 403 }
