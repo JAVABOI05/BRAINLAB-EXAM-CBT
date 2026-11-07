@@ -412,6 +412,119 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "Challenge acceptance and match creation are temporarily paused." }, { status: 503 });
       }
 
+      if (challenge.challenge_type === "team") {
+        const acceptingTeamId = typeof body.accepting_team_id === "string" ? body.accepting_team_id : "";
+        if (!acceptingTeamId) return NextResponse.json({ error: "Select the team accepting this challenge." }, { status: 400 });
+        const { data: acceptingTeam, error: acceptingTeamError } = await supabase
+          .from("competition_teams")
+          .select("id, name, captain_id, co_captain_id")
+          .eq("id", acceptingTeamId)
+          .maybeSingle();
+        if (acceptingTeamError) throw acceptingTeamError;
+        if (!acceptingTeam) return NextResponse.json({ error: "Accepting team not found." }, { status: 404 });
+        const { data: acceptingLeader } = await supabase
+          .from("competition_team_members")
+          .select("id")
+          .eq("team_id", acceptingTeamId)
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (!acceptingLeader || (acceptingTeam.captain_id !== user.id && acceptingTeam.co_captain_id !== user.id)) {
+          return NextResponse.json({ error: "Only the accepting team's captain or co-captain can accept a team challenge." }, { status: 403 });
+        }
+        if (challenge.challenged_team_id && challenge.challenged_team_id !== acceptingTeamId) {
+          return NextResponse.json({ error: "This challenge was issued to another team." }, { status: 403 });
+        }
+
+        let teamQuestionsQuery = supabase
+          .from("questions")
+          .select("id, subject, difficulty, question, option_a, option_b, option_c, option_d, option_e, correct_answer, explanation, question_image_url, passage_id, passage_title, passage_text, reading_text_id, marks")
+          .eq("is_active", true)
+          .eq("is_archived", false);
+        if (challenge.subject && challenge.subject !== "General") teamQuestionsQuery = teamQuestionsQuery.eq("subject", challenge.subject);
+        if (challenge.difficulty && challenge.difficulty !== "mixed") teamQuestionsQuery = teamQuestionsQuery.eq("difficulty", challenge.difficulty);
+        const { data: teamRawQuestions, error: teamQuestionsError } = await teamQuestionsQuery.limit(5000);
+        if (teamQuestionsError) throw teamQuestionsError;
+        const teamPool = (teamRawQuestions || []).filter((question) => {
+          const answer = typeof question.correct_answer === "string" ? question.correct_answer.trim().toUpperCase() : "";
+          const options = [question.option_a, question.option_b, question.option_c, question.option_d, question.option_e];
+          const index = ["A", "B", "C", "D", "E"].indexOf(answer);
+          return index >= 0 && Boolean(options[index]);
+        });
+        const teamSelection = selectPassageSafeQuestions(teamPool.map((question) => ({
+          ...question,
+          id: String(question.id),
+          bank_id: "main_cbt_bank",
+          subject: question.subject || challenge.subject || "General",
+          difficulty: question.difficulty === "hard" ? "hard" : question.difficulty === "easy" ? "easy" : "medium",
+          question_type: "multiple_choice",
+          option_a: question.option_a || "",
+          option_b: question.option_b || "",
+          option_c: question.option_c || "",
+          option_d: question.option_d || "",
+          correct_answer: question.correct_answer.trim().toUpperCase(),
+          marks: Number(question.marks) > 0 ? Number(question.marks) : 10,
+          status: "published",
+          created_by: "system_main",
+        })), Number(challenge.question_count) || 10);
+        if (!teamSelection.ok) return NextResponse.json({ error: teamSelection.error }, { status: 409 });
+
+        const teamQuestionSnapshot = teamSelection.questions.map((question) => ({
+          id: String(question.id),
+          question: question.question,
+          option_a: question.option_a,
+          option_b: question.option_b,
+          option_c: question.option_c,
+          option_d: question.option_d,
+          option_e: question.option_e || null,
+          question_image_url: question.question_image_url || null,
+          passage_id: question.passage_id || null,
+          passage_title: question.passage_title || null,
+          passage_text: question.passage_text || null,
+          marks: Number(question.marks) > 0 ? Number(question.marks) : 10,
+        }));
+        const teamAnswerKeys = Object.fromEntries(teamSelection.questions.map((question) => [
+          String(question.id), question.correct_answer.trim().toUpperCase(),
+        ]));
+        const { data: teamMatchId, error: teamAcceptError } = await supabase.rpc("accept_competition_team_challenge_atomic", {
+          p_challenge_id: challenge_id,
+          p_accepting_team_id: acceptingTeamId,
+          p_questions_snapshot: teamQuestionSnapshot,
+          p_answer_keys_snapshot: teamAnswerKeys,
+          p_duration_seconds: (challenge.duration_minutes || 5) * 60,
+          p_metadata: {
+            subject: challenge.subject,
+            question_count: challenge.question_count,
+            difficulty: challenge.difficulty,
+          },
+        });
+        if (teamAcceptError) {
+          if (teamAcceptError.message?.includes("no longer pending")) return NextResponse.json({ error: "Another team has already accepted this challenge." }, { status: 409 });
+          if (teamAcceptError.message?.includes("expired")) return NextResponse.json({ error: "This challenge has expired." }, { status: 410 });
+          if (teamAcceptError.message?.includes("configured number")) return NextResponse.json({ error: teamAcceptError.message }, { status: 409 });
+          throw teamAcceptError;
+        }
+        const { data: challengerTeam } = await supabase
+          .from("competition_teams")
+          .select("name, captain_id")
+          .eq("id", challenge.challenger_team_id)
+          .maybeSingle();
+        if (challengerTeam?.captain_id) {
+          await supabase.from("notifications").insert({
+            user_id: challengerTeam.captain_id,
+            title: "Team challenge accepted",
+            message: `${acceptingTeam.name} accepted your team battle. Your locked roster can enter the match lobby.`,
+            type: "competition_match_lobby",
+            metadata: { match_id: teamMatchId, challenge_id },
+          });
+        }
+        return NextResponse.json({
+          ok: true,
+          match_id: teamMatchId,
+          message: "Team challenge accepted. Both rosters have been locked into the match lobby.",
+        });
+      }
+
       // Load a full, valid source pool and preserve every linked passage as an indivisible unit.
       let questionsQuery = supabase
         .from("questions")
