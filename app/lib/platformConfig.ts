@@ -1147,7 +1147,7 @@ export async function saveLiveClassroomRoomConfig(
 ): Promise<boolean> {
   const current = await getLiveClassroomConfig();
   const roomConfigs = { ...(current.room_configs || {}) };
-  const latestRoom = roomConfigs[roomId] || updates as MasterclassRoomConfig;
+  const latestRoom = roomConfigs[roomId] || { class_type: "open" as const };
   roomConfigs[roomId] = { ...latestRoom, ...updates } as MasterclassRoomConfig;
   return await setPlatformConfig(
     "live_classroom_config",
