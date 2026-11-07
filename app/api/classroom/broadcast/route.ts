@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Prevent a tutor from overwriting an existing classroom owned by another
     // tutor. New broadcasts still require verified staff status above.
-    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const { data: existingClass } = await supabase
       .from("live_classes")
       .select("id")
