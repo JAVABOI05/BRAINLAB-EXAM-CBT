@@ -36,10 +36,11 @@ export async function GET(request: NextRequest) {
             .eq("user_id", user.id)
             .eq("status", "active")
             .in("course_id", scopedCourseIds),
-          supabase.from("subscription_records")
+          supabase.from("user_subscriptions")
             .select("id")
             .eq("user_id", user.id)
             .eq("status", "active")
+            .gt("current_period_end", new Date().toISOString())
             .limit(1)
             .maybeSingle(),
           supabase.from("courses")
