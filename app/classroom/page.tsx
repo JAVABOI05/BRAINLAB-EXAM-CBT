@@ -39,7 +39,6 @@ function ClassroomLobbyContent() {
 
   // URL query pre-fills
   const initialCode = searchParams.get("code") || "BL-LIVE-101";
-  const initialRole = searchParams.get("role");
 
   const [classCode, setClassCode] = useState(initialCode);
   const [isStaff, setIsStaff] = useState(false);
@@ -51,7 +50,7 @@ function ClassroomLobbyContent() {
   const [showTierModal, setShowTierModal] = useState(false);
 
   // Portal View Mode: "tutor" | "student"
-  const [portalMode, setPortalMode] = useState<"tutor" | "student">(initialRole === "host" ? "tutor" : "student");
+  const [portalMode, setPortalMode] = useState<"tutor" | "student">("student");
 
   // Inline Tutor Sign-In Modal
   const [showTutorAuthModal, setShowTutorAuthModal] = useState(false);
@@ -210,7 +209,7 @@ function ClassroomLobbyContent() {
       isStaff ||
       isAdminUser ||
       portalMode === "tutor" ||
-      (typeof window !== "undefined" && window.location.search.includes("role=host"));
+      false;
 
     if (isEnteringAsHost) {
       router.push(`/classroom/${code}?role=host`);
