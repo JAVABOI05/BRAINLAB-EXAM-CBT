@@ -64,6 +64,19 @@ The feature branch now changes these helpers to:
 
 This keeps the learner subscription system separate from custom staff permissions and removes a client-controlled route to the VIP bypass. The new helper behavior must be regression-tested against payment initialization, tier-gate UI, corrections, classroom, competition registration and upgrade nudges.
 
+### E. Legacy classroom staff shortcuts requiring security remediation
+
+Inspection of the classroom token and class-start handlers found additional staff classification shortcuts that are not safe as authorization evidence:
+
+- `app/api/classroom/token/route.ts` and `app/api/classroom/classes/[id]/start/route.ts` treat user-editable Auth metadata role strings as staff.
+- Both handlers also treat any address on the BrainLab official email domain as staff, independently of an approved staff/tutor record.
+- The token handler's staff classification affects host/moderator room permissions, including audio, video and screen publishing.
+- The class-start handler uses the same broad classification to permit launching classes.
+
+These paths must be tightened before the broader access cutover. The remediation must retain explicitly approved tutor-email exceptions only if that is still an intentional operational policy, and must independently verify tutor approval, assigned class ownership, or an authoritative staff role. A domain match or user-editable metadata must never confer host privileges.
+
+The operator-gate route is comparatively safer: it validates the Supabase user and then calls the database-backed `get_admin_role()` RPC. Its role contract must remain stable until the compatibility migration is ready.
+
 ## 3. New staged access model
 
 The current feature branch adds four access tables and Super Admin-checked RPCs for:
