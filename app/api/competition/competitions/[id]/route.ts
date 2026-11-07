@@ -63,15 +63,20 @@ export async function POST(
         const canApprove = canApprovePublication(actor, comp.creator_id);
         if (!canApprove.allowed) {
           // Submit for moderation case instead of direct publication
-          await supabase.from("competition_moderation_cases").insert({
+          const { error: moderationError } = await supabase.from("competition_moderation_cases").insert({
             competition_id: id,
             reporter_id: actor.id,
             case_type: "publication_request",
             description: `Host ${actor.email} requested publication of public competition '${comp.title}'. Requires independent administrator approval.`,
             status: "pending",
           });
+          if (moderationError) throw moderationError;
 
-          await supabase.from("competitions").update({ status: "pending_approval" }).eq("id", id);
+          const { error: approvalStatusError } = await supabase
+            .from("competitions")
+            .update({ status: "pending_approval", updated_at: new Date().toISOString() })
+            .eq("id", id);
+          if (approvalStatusError) throw approvalStatusError;
 
           return NextResponse.json({
             status: "pending_approval",
