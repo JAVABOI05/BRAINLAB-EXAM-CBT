@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
     // profiles, or the explicitly configured individual tutor allowlist.
     const staffAccess = await resolveClassroomStaffAccess(user, token);
     const isPlatformStaff = staffAccess.isPlatformAdmin;
-    const isAuthorizedTutor = isPlatformStaff || staffAccess.isStaff;
 
 
     // 2. Fetch class details or provision session fallback
