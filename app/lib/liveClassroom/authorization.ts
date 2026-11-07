@@ -77,7 +77,10 @@ export async function canManageClassroom(
   const staff = await resolveClassroomStaffAccess(user, bearerToken);
   if (staff.isPlatformAdmin) return true;
 
-  const supabase = getSupabaseServerClient(bearerToken);
+  // This server-only helper uses the service client after the caller has
+  // already been authenticated with getUserFromRequest. It needs to read the
+  // owner field even when ordinary classroom RLS hides the full class row.
+  const supabase = getSupabaseServerClient();
   try {
     const { data: liveClass, error } = await supabase
       .from("live_classes")
