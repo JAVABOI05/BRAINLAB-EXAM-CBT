@@ -902,7 +902,6 @@ export default function ClassroomStudioPage() {
             toast.success(`Imported ${newPages.length} slide(s) into your lesson whiteboard!`);
           }}
           authToken={token}
-          lessonId={lessonId || "studio-draft"}
           attachments={attachments}
           onAddAttachment={(att) => setAttachments((prev) => [...prev, att])}
         />
