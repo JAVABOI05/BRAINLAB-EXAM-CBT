@@ -74,6 +74,8 @@ The following routes now use the shared `resolveClassroomStaffAccess()` helper i
 - `app/api/classroom/admit/route.ts`
 - `app/api/classroom/broadcast/route.ts`
 - `app/api/classroom/attendance/route.ts`
+- `app/api/classroom/classes/route.ts`
+- `app/api/classroom/polls/route.ts`
 
 The helper accepts only exact database-backed classroom staff roles, approved `tutor_profiles` records, or exact matches in the explicitly configured individual tutor allowlist. It does not treat an official email domain or user-editable Auth metadata as authorization.
 
@@ -83,6 +85,8 @@ Additional safeguards now in the branch:
 - Tutor profiles and allowlisted tutors can host an open stage, but for a scheduled class they must be the class's assigned tutor.
 - Only `super_admin` and `platform_admin` receive the global class-ownership override; a `teacher` role or approved tutor profile alone does not.
 - Admission and attendance-management operations are limited to the assigned host or a platform administrator.
+- Creating a scheduled class requires a tutor membership for the selected subject; ordinary student memberships do not qualify. Class edits require the assigned tutor or a platform administrator.
+- Poll creation and closure require the assigned class tutor or a platform administrator.
 - Unregistered class IDs are rejected by the token and start endpoints instead of silently creating virtual scheduled classes.
 - The end endpoint no longer reports a successful end for a nonexistent database class.
 
