@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { canAccessClassroom, canManageClassroom } from "@/app/lib/liveClassroom/authorization";
+import { canAccessClassroom, canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { storeClassroomMedia } from "@/app/lib/classroomMediaStore";
 import crypto from "crypto";
 
@@ -30,7 +30,12 @@ export async function POST(request: NextRequest) {
 
     // Uploads tied to a class require active participant admission; teaching
     // resources remain tutor/admin-only.
-    if (classId !== "classroom-assets" && !(await canAccessClassroom(user, classId, token))) {
+    if (classId === "classroom-assets") {
+      const staff = await resolveClassroomStaffAccess(user, token);
+      if (!staff.isStaff) {
+        return NextResponse.json({ error: "Only verified teaching staff can upload shared classroom assets." }, { status: 403 });
+      }
+    } else if (!(await canAccessClassroom(user, classId, token))) {
       return NextResponse.json({ error: "You are not admitted to this classroom." }, { status: 403 });
     }
     if (mediaType === "document" && !(await canManageClassroom(user, classId, token))) {
