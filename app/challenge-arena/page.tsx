@@ -120,6 +120,7 @@ export default function ChallengeArenaPage() {
   // Data states
   const [loading, setLoading] = useState(true);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitionLoadError, setCompetitionLoadError] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
@@ -177,10 +178,15 @@ export default function ChallengeArenaPage() {
         .catch(() => {});
 
       // 3. Fetch Competitions
-      const compRes = await fetch("/api/competition/competitions");
+      const compRes = await fetch("/api/competition/competitions", { cache: "no-store" });
       if (compRes.ok) {
         const compJson = await compRes.json();
-        setCompetitions(compJson.competitions || []);
+        setCompetitions(Array.isArray(compJson.competitions) ? compJson.competitions : []);
+        setCompetitionLoadError(null);
+      } else {
+        const compError = await compRes.json().catch(() => ({}));
+        setCompetitions([]);
+        setCompetitionLoadError(compError.error || `Competition listings could not be loaded (HTTP ${compRes.status}).`);
       }
 
       // 4. Fetch Challenges
@@ -623,7 +629,13 @@ export default function ChallengeArenaPage() {
               </div>
             )}
 
-            {competitions.length === 0 ? (
+            {competitionLoadError ? (
+              <div role="alert" className={`p-6 rounded-3xl border text-center ${isDark ? "bg-rose-950/30 border-rose-800 text-rose-200" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                <h3 className="font-black">Competition listings are temporarily unavailable</h3>
+                <p className="mt-2 text-sm">{competitionLoadError}</p>
+                <button onClick={() => void loadArenaData()} className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white">Retry</button>
+              </div>
+            ) : competitions.length === 0 ? (
               <div className={`p-12 rounded-3xl border text-center shadow-lg ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
                 <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-3xl">🏆</div>
                 <h3 className="text-lg font-black">No Active Tournaments Scheduled</h3>
