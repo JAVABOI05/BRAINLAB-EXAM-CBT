@@ -98,21 +98,9 @@ begin
     v_next_a := greatest(100, v_rating_a + v_delta_a);
     v_next_b := greatest(100, v_rating_b + v_delta_b);
 
-    update public.competition_teams set
-      elo_rating = v_next_a,
-      matches_played = matches_played + 1,
-      matches_won = matches_won + case when v_outcome_a = 1 then 1 else 0 end,
-      matches_drawn = matches_drawn + case when v_outcome_a = 0.5 then 1 else 0 end,
-      matches_lost = matches_lost + case when v_outcome_a = 0 then 1 else 0 end,
-      updated_at = now()
+    update public.competition_teams set elo_rating = v_next_a, updated_at = now()
     where id = v_match.team_a_id;
-    update public.competition_teams set
-      elo_rating = v_next_b,
-      matches_played = matches_played + 1,
-      matches_won = matches_won + case when v_outcome_b = 1 then 1 else 0 end,
-      matches_drawn = matches_drawn + case when v_outcome_b = 0.5 then 1 else 0 end,
-      matches_lost = matches_lost + case when v_outcome_b = 0 then 1 else 0 end,
-      updated_at = now()
+    update public.competition_teams set elo_rating = v_next_b, updated_at = now()
     where id = v_match.team_b_id;
 
     select id into v_season_id from public.competition_seasons
@@ -126,8 +114,26 @@ begin
       (v_season_id,v_team_b.captain_id,v_match.team_b_id,p_match_id,'team',v_rating_b,v_next_b,v_next_b-v_rating_b,'verified_ranked_team_match');
   end if;
 
-  insert into public.user_xp_ledger (user_id,amount,activity_type,idempotency_key,description,metadata)
-  select participant.user_id,
+  -- Verified friendly matches count in team match records, but never change
+  -- competitive ratings or award XP that could be farmed outside ranked play.
+  update public.competition_teams set
+    matches_played = matches_played + 1,
+    matches_won = matches_won + case when v_outcome_a = 1 then 1 else 0 end,
+    matches_drawn = matches_drawn + case when v_outcome_a = 0.5 then 1 else 0 end,
+    matches_lost = matches_lost + case when v_outcome_a = 0 then 1 else 0 end,
+    updated_at = now()
+  where id = v_match.team_a_id;
+  update public.competition_teams set
+    matches_played = matches_played + 1,
+    matches_won = matches_won + case when v_outcome_b = 1 then 1 else 0 end,
+    matches_drawn = matches_drawn + case when v_outcome_b = 0.5 then 1 else 0 end,
+    matches_lost = matches_lost + case when v_outcome_b = 0 then 1 else 0 end,
+    updated_at = now()
+  where id = v_match.team_b_id;
+
+  if v_ranked then
+    insert into public.user_xp_ledger (user_id,amount,activity_type,idempotency_key,description,metadata)
+    select participant.user_id,
          case when v_winner_team_id is null then 20 when participant.team_id = v_winner_team_id then 50 else 20 end,
          'competition_team_match',
          'arena-match:' || p_match_id::text || ':user:' || participant.user_id::text,
@@ -136,15 +142,18 @@ begin
            case when v_winner_team_id is null then 'draw' when participant.team_id = v_winner_team_id then 'win' else 'participation' end)
   from public.competition_match_participants participant
   where participant.match_id = p_match_id
-  on conflict (idempotency_key) do nothing;
+    on conflict (idempotency_key) do nothing;
+  end if;
 
   select coalesce(sum(case when v_winner_team_id is null then 20 when team_id = v_winner_team_id then 50 else 20 end),0)::integer
   into v_xp_total_a from public.competition_match_participants where match_id = p_match_id and team_id = v_match.team_a_id;
   select coalesce(sum(case when v_winner_team_id is null then 20 when team_id = v_winner_team_id then 50 else 20 end),0)::integer
   into v_xp_total_b from public.competition_match_participants where match_id = p_match_id and team_id = v_match.team_b_id;
 
-  update public.competition_teams set total_xp = total_xp + v_xp_total_a, updated_at = now() where id = v_match.team_a_id;
-  update public.competition_teams set total_xp = total_xp + v_xp_total_b, updated_at = now() where id = v_match.team_b_id;
+  if v_ranked then
+    update public.competition_teams set total_xp = total_xp + v_xp_total_a, updated_at = now() where id = v_match.team_a_id;
+    update public.competition_teams set total_xp = total_xp + v_xp_total_b, updated_at = now() where id = v_match.team_b_id;
+  end if;
 
   update public.competition_matches set
     status = 'completed',
