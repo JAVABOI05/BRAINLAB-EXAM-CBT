@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     const isSpectator = searchParams.get("spectator") === "true";
 
     // Fetch match
-    const { data: match, error: matchErr } = await supabase
+    let { data: match, error: matchErr } = await supabase
       .from("competition_matches")
       .select(`
         id, competition_id, round_id, match_number, match_type, status,
@@ -50,6 +50,21 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       .eq("match_id", matchId);
 
     if (partErr) throw partErr;
+
+    // A match must conclude when the server clock expires even if every client
+    // disconnects or nobody sends another answer. Polling GET requests may
+    // safely trigger the idempotent server-side finalizer.
+    if (match.status === "in_progress" && match.started_at &&
+        Date.now() >= new Date(match.started_at).getTime() + Number(match.duration_seconds) * 1000) {
+      await finalizeMatch(matchId, supabase);
+      const { data: refreshedMatch, error: refreshError } = await supabase
+        .from("competition_matches")
+        .select("*")
+        .eq("id", matchId)
+        .single();
+      if (refreshError) throw refreshError;
+      match = refreshedMatch;
+    }
 
     const isParticipant = Boolean(user && participants?.some((participant) => participant.user_id === user.id));
     const adminRole = user ? await resolveAdminRole(user.id) : null;
