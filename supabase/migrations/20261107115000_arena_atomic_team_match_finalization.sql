@@ -11,6 +11,7 @@ declare
   v_roster_size integer;
   v_count_a integer;
   v_count_b integer;
+  v_unassigned integer;
   v_score_a numeric;
   v_score_b numeric;
   v_winner_team_id uuid;
@@ -49,11 +50,11 @@ begin
   select count(*) filter (where team_id = v_match.team_a_id),
          count(*) filter (where team_id = v_match.team_b_id),
          count(*) filter (where team_id is null or team_id not in (v_match.team_a_id, v_match.team_b_id))
-  into v_count_a, v_count_b, v_top_count
+  into v_count_a, v_count_b, v_unassigned
   from public.competition_match_participants
   where match_id = p_match_id;
 
-  if v_count_a <> v_roster_size or v_count_b <> v_roster_size or v_top_count <> 0 then
+  if v_count_a <> v_roster_size or v_count_b <> v_roster_size or v_unassigned <> 0 then
     raise exception 'Locked team rosters do not match the configured battle format';
   end if;
 
