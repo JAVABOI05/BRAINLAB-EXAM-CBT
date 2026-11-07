@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     const isSpectator = searchParams.get("spectator") === "true";
 
     // Fetch match
-    let { data: match, error: matchErr } = await supabase
+    const { data: initialMatch, error: matchErr } = await supabase
       .from("competition_matches")
       .select(`
         id, competition_id, round_id, match_number, match_type, status,
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       .eq("id", matchId)
       .single();
 
+    let match = initialMatch;
     if (matchErr || !match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
