@@ -125,3 +125,26 @@ The complete original video remains downloadable. Actual trimmed export is not i
 - Inspect the legacy upload/download routes and all recording UI consumers as part of the compatibility test pass.
 
 No schema, Storage, or production changes were made.
+
+
+## Messaging and audio authorization review — additional high-priority findings
+
+Read-only inspection of the staging schema and policies found several cross-feature issues that must be resolved before treating the media layer as private:
+
+1. **Audio asset row visibility is too broad.** The current `audio_assets` SELECT policy is assigned to `public` and allows any requester to read every `tutor_voice_note` and `lesson_audio` row, regardless of its parent feed post, assignment, message conversation, or classroom. The table's `file_url` can contain a base64 audio payload, so this is not merely metadata exposure.
+2. **The same audio table serves multiple privacy contexts.** Its records are linked through `messages.audio_asset_id`, `course_feed_posts.audio_asset_id`, `assignment_submissions.audio_asset_id` / `tutor_audio_asset_id`, and classroom metadata. A single asset-type rule cannot safely authorize all of these.
+3. **The feed API is not access-scoped.** `GET /api/feed/posts` uses a service-role client, requires no signed-in user, and returns `audio_assets(*)` for published posts. Course-specific posts therefore need explicit course-entitlement filtering before this endpoint can safely expose them.
+4. **Native message RLS predicates are malformed.** The inspected `messages` policy compares `cp.conversation_id` to itself instead of the outer message's conversation ID. The `conversations` policy compares `cp.conversation_id` to `cp.id`. The `conversation_participants` table has RLS enabled but no policies in the inspected database. These policies do not provide a reliable membership boundary.
+5. **The server message API bypasses RLS by design.** `getConversationMessages` and `sendChatMessage` use a server/service client. Before this branch, they did not independently prove that the requester belonged to the requested conversation, so a signed-in user could attempt to read or send against another conversation ID.
+
+A code-only mitigation is now committed: the communication store verifies native conversation membership before reading or sending; if a conversation exists in the legacy `exam_config` fallback, it verifies that fallback participant list instead. The messages API returns HTTP 403 for a non-participant. This does not repair the underlying database policies or the feed API.
+
+### Required database and API remediation — not applied
+
+- Replace the broad `audio_assets` policy with parent-resource-aware authorization for class attendance/admission, course feed access, assignment submitter/tutor access, and conversation participants.
+- Add narrowly scoped policies or security-definer membership helpers for `conversation_participants`, `conversations`, and `messages`; correct all outer-row correlation predicates.
+- Add authenticated access checks to course-specific feed reads and filter course-linked posts by enrollment/plan entitlement before returning nested audio.
+- Avoid returning raw base64 `file_url` values from general list APIs; return an authorized playback endpoint or short-lived signed URL only after parent-resource authorization.
+- Test anonymous, unrelated learner, enrolled learner, assignment submitter, assignment tutor, message participant, non-participant, classroom attendee, and platform-admin cases.
+
+No database policies, tables, or data were changed. The staging RLS findings must be reconciled with the live database before any migration is applied.
