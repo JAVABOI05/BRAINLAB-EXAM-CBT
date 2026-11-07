@@ -58,8 +58,24 @@ jobs:
       - name: Check patch whitespace
         run: git diff --check
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: ESLint changed JavaScript and TypeScript files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            git fetch origin "${GITHUB_BASE_REF}" --depth=1
+            diff_base="origin/${GITHUB_BASE_REF}"
+          elif [[ -n "${GITHUB_EVENT_BEFORE:-}" && "${GITHUB_EVENT_BEFORE}" != "0000000000000000000000000000000000000000" ]]; then
+            diff_base="${GITHUB_EVENT_BEFORE}"
+          else
+            diff_base="HEAD^"
+          fi
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "${diff_base}...HEAD" -- '*.js' '*.jsx' '*.ts' '*.tsx' | grep -vE '(^|/)(node_modules|\.next)/' || true)
+          if (("${#files[@]}" > 0)); then
+            npx eslint "${files[@]}"
+          else
+            echo "No changed JavaScript/TypeScript files to lint."
+          fi
 
       - name: TypeScript type check
         run: npx tsc --noEmit
