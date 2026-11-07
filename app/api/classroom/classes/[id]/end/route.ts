@@ -24,7 +24,7 @@ export async function POST(
 
     // Only platform administrators may override class ownership.
     const staffAccess = await resolveClassroomStaffAccess(user, token);
-    const isPlatformAdmin = staffAccess.source === "platform_role";
+    const isPlatformAdmin = staffAccess.isPlatformAdmin;
 
     const { data: liveClass, error: fetchErr } = await supabase
       .from("live_classes")
