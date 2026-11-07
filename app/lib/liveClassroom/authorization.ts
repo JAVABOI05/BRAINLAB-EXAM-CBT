@@ -126,6 +126,7 @@ export async function canAccessClassroom(
     return false;
   }
   const room = config.room_configs?.[classId] || config.room_configs?.[normalizedId];
+  if (room?.entry_code && Number(room.participant_access?.[user.id] || 0) <= Date.now()) return false;
   if (room?.require_permission && !room.admitted_students?.includes(user.id)) return false;
 
   if (isVirtualStage) {
