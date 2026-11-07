@@ -1,6 +1,7 @@
 /* eslint @typescript-eslint/no-explicit-any: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "../../lib/supabaseServer";
+import { canAccessClassroom } from "../../lib/liveClassroom/authorization";
 
 const ADMIN_ROLES = ["super_admin", "platform_admin"];
 
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Sign in to view class recordings." }, { status: 401 });
 
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const { searchParams } = new URL(request.url);
     const courseId = searchParams.get("courseId");
     const classId = searchParams.get("classId");
@@ -62,15 +64,23 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    const visibleToUser = rowsList.filter((recording: any) => {
+    const visibilityChecks = await Promise.all(rowsList.map(async (recording: any) => {
       const ownsClass = recording.live_classes?.tutor_id === user.id;
-      if (isAdmin || ownsClass) return true;
+      if (isAdmin || ownsClass || recording.created_by === user.id) return true;
       if (!recording.is_visible_to_students || recording.processing_status !== "ready") return false;
       if (recording.access_policy === "tutors_only") return false;
       if (recording.access_policy === "public") return true;
-      if (!recording.course_id) return true;
-      return enrolledCourseIds.has(recording.course_id) || Boolean(activeSubscription);
-    });
+      if (recording.access_policy !== "enrolled_only") return false;
+
+      if (recording.class_id) {
+        return await canAccessClassroom(user, recording.class_id, token);
+      }
+      if (recording.course_id) {
+        return enrolledCourseIds.has(recording.course_id) || Boolean(activeSubscription);
+      }
+      return false;
+    }));
+    const visibleToUser = rowsList.filter((_: any, index: number) => visibilityChecks[index]);
 
     const recordings = await Promise.all(visibleToUser.map(async (recording: any) => {
       let videoUrl = recording.video_url;
@@ -121,9 +131,21 @@ export async function POST(request: NextRequest) {
     }
 
     const isAdmin = await isPlatformAdmin(supabase, user.id);
-    if (!(await canManageClass(supabase, class_id, user.id, isAdmin))) {
+    const { data: liveClass, error: classError } = await supabase
+      .from("live_classes")
+      .select("id, tutor_id, course_id")
+      .eq("id", class_id)
+      .maybeSingle();
+    if (classError || !liveClass) {
+      return NextResponse.json({ error: "Class not found." }, { status: 404 });
+    }
+    if (liveClass.tutor_id !== user.id && !isAdmin) {
       return NextResponse.json({ error: "Only the class tutor can save its recording." }, { status: 403 });
     }
+    if (course_id && course_id !== liveClass.course_id) {
+      return NextResponse.json({ error: "The selected course is not linked to this classroom." }, { status: 400 });
+    }
+    const recordingCourseId = liveClass.course_id || null;
     if (storage_path && !String(storage_path).startsWith(`${class_id}/${user.id}/`)) {
       return NextResponse.json({ error: "The recording storage path does not belong to this tutor and class." }, { status: 403 });
     }
@@ -139,7 +161,7 @@ export async function POST(request: NextRequest) {
       .from("class_recordings")
       .insert({
         class_id,
-        course_id: course_id || null,
+        course_id: recordingCourseId,
         title: String(title).trim().slice(0, 180),
         description: description ? String(description).slice(0, 2000) : null,
         video_url: storage_path || video_url,
