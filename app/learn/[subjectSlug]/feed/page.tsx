@@ -96,7 +96,7 @@ export default function SubjectFeedPage({
       }
 
       // 3. Fetch Posts
-      const feedHeaders = sessionData.session?.access_token
+      const feedHeaders: Record<string, string> = sessionData.session?.access_token
         ? { Authorization: `Bearer ${sessionData.session.access_token}` }
         : {};
       const res = await fetch(`/api/feed/posts?subjectId=${subData.id}&tag=${activeTag}`, {
