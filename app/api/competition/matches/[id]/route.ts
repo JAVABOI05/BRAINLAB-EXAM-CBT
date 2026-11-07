@@ -69,7 +69,14 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       await finalizeMatch(matchId, supabase);
       const { data: refreshedMatch, error: refreshError } = await supabase
         .from("competition_matches")
-        .select("*")
+        .select(`
+          id, competition_id, round_id, match_number, match_type, status,
+          participant_a_id, participant_b_id, team_a_id, team_b_id,
+          score_a, score_b, winner_id, winner_team_id,
+          duration_seconds, started_at, ended_at, paused_at,
+          remaining_seconds_at_pause, spectator_delay_seconds,
+          questions_snapshot, metadata, created_at
+        `)
         .eq("id", matchId)
         .single();
       if (refreshError) throw refreshError;
@@ -179,6 +186,7 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
       participant_a_id: _participantAId,
       participant_b_id: _participantBId,
       winner_id: _privateWinnerId,
+      answer_keys_snapshot: _privateAnswerKeysSnapshot,
       ...publicMatch
     } = match;
     const safeMatch = {
