@@ -182,6 +182,8 @@ export interface MasterclassRoomConfig {
   topic?: string;
   started_at?: string;
   admitted_students?: string[];
+  /** Short-lived server-issued participant grants after entry-code verification. */
+  participant_access?: Record<string, number>;
 }
 
 export interface LiveClassroomConfig {
