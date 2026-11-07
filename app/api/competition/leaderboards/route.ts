@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 
       // Personal user rank
       if (user) {
-        const myRankIndex = individualRanked.findIndex((r) => r.user_id === user.id);
+        const myRankIndex = (individualRows || []).findIndex((row) => row.user_id === user.id);
         if (myRankIndex >= 0) {
           responseData.my_rank = individualRanked[myRankIndex];
         } else {
