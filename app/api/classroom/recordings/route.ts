@@ -25,7 +25,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ recordings: [] });
     }
 
-    return NextResponse.json({ success: true, recordings: recordings || [] });
+    // A visible-to-students flag is not global authorization: confirm the
+    // requester can access each recording's associated class.
+    const visibleRecordings = await Promise.all((recordings || []).map(async (recording) => {
+      if (recording.created_by === user.id) return recording;
+      if (!recording.class_id) return null;
+      return (await canManageClassroom(user, recording.class_id, token) ||
+        await (async () => {
+          const { canAccessClassroom } = await import("@/app/lib/liveClassroom/authorization");
+          return canAccessClassroom(user, recording.class_id, token);
+        })()) ? recording : null;
+    }));
+
+    return NextResponse.json({ success: true, recordings: visibleRecordings.filter(Boolean) });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to load recordings." },
