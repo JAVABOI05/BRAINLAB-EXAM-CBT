@@ -30,8 +30,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (filter === "open") {
+      // Both individual and team challenges may be broadcast to the open Arena.
       query = query.is("challenged_id", null).is("challenged_team_id", null)
-        .eq("challenge_type", "individual").eq("status", "pending");
+        .eq("status", "pending");
     } else {
       if (!user) return NextResponse.json({ error: "Sign in to view your challenge centre." }, { status: 401 });
       if (filter === "incoming") {
@@ -360,8 +361,19 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (challenge.status !== "pending") {
-      if (action === "accept" && challenge.status === "accepted" && challenge.challenged_id === user.id && challenge.match_id) {
-        return NextResponse.json({ ok: true, match_id: challenge.match_id, message: "Challenge already accepted. Rejoining the existing match." });
+      if (action === "accept" && challenge.status === "accepted" && challenge.match_id) {
+        if (challenge.challenge_type === "team" && challenge.challenged_team_id === body.accepting_team_id) {
+          const { data: team } = await supabase.from("competition_teams")
+            .select("captain_id, co_captain_id").eq("id", body.accepting_team_id).maybeSingle();
+          const { data: membership } = await supabase.from("competition_team_members")
+            .select("id").eq("team_id", body.accepting_team_id).eq("user_id", user.id).eq("is_active", true).maybeSingle();
+          if (membership && (team?.captain_id === user.id || team?.co_captain_id === user.id)) {
+            return NextResponse.json({ ok: true, match_id: challenge.match_id, message: "Team challenge already accepted. Rejoining the existing match lobby." });
+          }
+        }
+        if (challenge.challenge_type !== "team" && challenge.challenged_id === user.id) {
+          return NextResponse.json({ ok: true, match_id: challenge.match_id, message: "Challenge already accepted. Rejoining the existing match." });
+        }
       }
       return NextResponse.json({ error: `Challenge is already ${challenge.status}` }, { status: 409 });
     }
@@ -517,6 +529,7 @@ export async function PATCH(req: NextRequest) {
         const { data: teamMatchId, error: teamAcceptError } = await supabase.rpc("accept_competition_team_challenge_atomic", {
           p_challenge_id: challenge_id,
           p_accepting_team_id: acceptingTeamId,
+          p_accepting_actor_id: acceptingUserId,
           p_questions_snapshot: teamQuestionSnapshot,
           p_answer_keys_snapshot: teamAnswerKeys,
           p_duration_seconds: (challenge.duration_minutes || 5) * 60,
