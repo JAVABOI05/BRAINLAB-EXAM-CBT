@@ -52,10 +52,19 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
 
     if (partErr) throw partErr;
 
-    // A match must conclude when the server clock expires even if every client
-    // disconnects or nobody sends another answer. Polling GET requests may
-    // safely trigger the idempotent server-side finalizer.
-    if (match.status === "in_progress" && match.started_at &&
+    const isParticipant = Boolean(user && participants?.some((participant) => participant.user_id === user.id));
+    const adminRole = user ? await resolveAdminRole(user.id) : null;
+    const isAdmin = ["super_admin", "platform_admin", "competition_admin", "competition_moderator"].includes(adminRole || "");
+    const canViewAsSpectator = Boolean(
+      isSpectator && competition && competition.visibility === "public" && competition.allow_spectators === true
+    );
+    if (!isParticipant && !isAdmin && !canViewAsSpectator) {
+      return NextResponse.json({ error: "You are not authorised to view this match. Spectator access is not enabled for this event." }, { status: 403 });
+    }
+
+    // Only a match participant or authorised Arena administrator may trigger
+    // expiry finalization. A public/anonymous spectator GET must remain read-only.
+    if ((isParticipant || isAdmin) && match.status === "in_progress" && match.started_at &&
         Date.now() >= new Date(match.started_at).getTime() + Number(match.duration_seconds) * 1000) {
       await finalizeMatch(matchId, supabase);
       const { data: refreshedMatch, error: refreshError } = await supabase
@@ -68,15 +77,6 @@ export async function GET(req: NextRequest, { params }: MatchParams) {
     }
     if (!match) {
       return NextResponse.json({ error: "Match not found after finalization." }, { status: 404 });
-    }
-
-    const isParticipant = Boolean(user && participants?.some((participant) => participant.user_id === user.id));
-    const adminRole = user ? await resolveAdminRole(user.id) : null;
-    const isAdmin = ["super_admin", "platform_admin", "competition_admin", "competition_moderator"].includes(adminRole || "");
-    if (!isParticipant && !isAdmin) {
-      if (!isSpectator || !competition || competition.visibility !== "public" || competition.allow_spectators !== true) {
-        return NextResponse.json({ error: "You are not authorised to view this match. Spectator access is not enabled for this event." }, { status: 403 });
-      }
     }
 
     // Fetch profiles for participants
