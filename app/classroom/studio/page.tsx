@@ -595,23 +595,11 @@ export default function ClassroomStudioPage() {
     const resData = await response.json();
     if (!response.ok) throw new Error(resData.error || "Failed to save recording record.");
 
-    // 3. Trigger server-side trimmer job if video was trimmed (Stage 7)
-    if (meta.trimmedStart > 0 || meta.trimmedEnd > 0) {
-      try {
-        await fetch("/api/classroom/trim", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            videoUrl: finalVideoUrl,
-            startSec: meta.trimmedStart,
-            endSec: meta.trimmedEnd,
-            lessonId,
-            recordingId: resData.recording?.id,
-          }),
-        });
-      } catch (trimErr) {
-        console.warn("Background trimmer notification failed:", trimErr);
-      }
+    // The current editor only limits preview playback; it does not transcode
+    // or cut the uploaded file. Keep the library metadata aligned with the
+    // complete original and avoid reporting a trim job that does not exist.
+    if (meta.trimmedStart > 0 || (meta.trimmedEnd > 0 && meta.trimmedEnd < meta.duration)) {
+      toast.info("The complete original video was saved. Exported trimming is not available yet.");
     }
   };
 
