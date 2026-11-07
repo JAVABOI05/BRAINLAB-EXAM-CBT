@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
+import { canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +28,22 @@ export async function POST(request: NextRequest) {
 
     if (!roomId) {
       return NextResponse.json({ error: "Missing required roomId." }, { status: 400 });
+    }
+
+    // Prevent a tutor from overwriting an existing classroom owned by another
+    // tutor. New broadcasts still require verified staff status above.
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const { data: existingClass } = await supabase
+      .from("live_classes")
+      .select("id")
+      .eq("id", roomId)
+      .maybeSingle();
+
+    if (existingClass && !(await canManageClassroom(user, roomId, bearerToken))) {
+      return NextResponse.json(
+        { error: "Forbidden: you cannot broadcast over another tutor's classroom." },
+        { status: 403 }
+      );
     }
 
     const liveTitle = title || "BrainLab Live Academic Masterclass";
