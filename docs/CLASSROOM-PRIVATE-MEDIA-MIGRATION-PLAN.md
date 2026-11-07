@@ -89,18 +89,18 @@ These code changes have not yet been verified by a successful preview build. The
 
 - Confirm the Studio lesson row exists and is owned by the current tutor before requesting the upload token (implemented server-side).
 - Confirm the recording metadata insert works with the configured service-role secret in the deployment environment; without it, the route fails safely.
-- Check the optional trim job: it currently receives a short-lived signed URL and must complete within its expiry. If trimming can be delayed, change it to accept an authorized recording ID and mint its own URL.
+- Actual video trimming is not implemented. The old false-success endpoint has been disabled with HTTP 501; preview controls are explicitly preview-only.
 - Review the legacy `/api/recordings` flow and `/api/recordings/[id]/download` separately; they still have a different authorization model and a 4-hour playback URL in the legacy GET handler.
 
 
 ## Legacy recording API audit — access fixes and known limitations
 
-The staging schema confirms that `class_recordings` contains `class_id`, `course_id`, `lesson_id`, `created_by`, `storage_path`, `access_policy`, and publication fields. `live_classes` contains its authoritative `course_id` and `tutor_id`.
+The staging schema confirms that `class_recordings` contains `class_id`, `course_id`, `lesson_id`, `created_by`, `storage_path`, `access_policy`, and publication fields. `live_classes` contains its authoritative `course_id` and `tutor_id`; `class_attendance_records` provides class/user attendance rows and `attendance_status`. The staging `class_recordings` table currently returned no rows, so there was no existing recording sample to validate against.
 
 Code-only fixes committed to the feature branch:
 
 - The legacy scheduled-class recording save route now reads the class's authoritative `course_id`, rejects a mismatched caller-supplied course, and stores the class-linked course ID.
-- Student playback for class-linked `enrolled_only` recordings now calls the shared `canAccessClassroom` authorization helper rather than relying only on a course subscription/enrollment shortcut.
+- Student playback for class-linked `enrolled_only` recordings now checks the class's authoritative course entitlement. For standalone classes without a course, it requires a recorded attendance status (`present`, `partial`, or `manual_verified`) rather than reusing temporary live-room entry-code grants.
 - An `enrolled_only` recording with neither a class nor course association is no longer exposed to every signed-in user by default.
 - Tutor-owned Studio recordings are included in the tutor's recording-management results and the original-file download endpoint verifies ownership through the linked `classroom_lessons.tutor_id`.
 - The legacy recording GET route still creates a four-hour signed playback URL. Shortening this is deferred until all playback consumers and long-video behavior are tested.
