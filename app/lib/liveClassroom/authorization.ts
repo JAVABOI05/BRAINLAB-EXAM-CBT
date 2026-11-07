@@ -18,10 +18,15 @@ const CLASSROOM_STAFF_ROLES = new Set([
 export async function resolveClassroomStaffAccess(
   user: User,
   bearerToken?: string
-): Promise<{ isStaff: boolean; source: "platform_role" | "approved_tutor" | "allowlist" | null }> {
+): Promise<{ isStaff: boolean; isPlatformAdmin: boolean; source: "platform_role" | "approved_tutor" | "allowlist" | null }> {
   const role = await resolveAdminRole(user.id, bearerToken, user.email);
   if (role && CLASSROOM_STAFF_ROLES.has(role.trim().toLowerCase())) {
-    return { isStaff: true, source: "platform_role" };
+    const normalizedRole = role.trim().toLowerCase();
+    return {
+      isStaff: true,
+      isPlatformAdmin: normalizedRole === "super_admin" || normalizedRole === "platform_admin",
+      source: "platform_role",
+    };
   }
 
   const serviceSupabase = getSupabaseServerClient();
@@ -36,7 +41,7 @@ export async function resolveClassroomStaffAccess(
         .limit(1)
         .maybeSingle();
 
-      if (!error && data) return { isStaff: true, source: "approved_tutor" };
+      if (!error && data) return { isStaff: true, isPlatformAdmin: false, source: "approved_tutor" };
     } catch {
       // Fail closed: a profile lookup failure must not grant host privileges.
     }
@@ -51,10 +56,10 @@ export async function resolveClassroomStaffAccess(
       email &&
       config.allowed_tutor_emails?.some((entry) => entry.trim().toLowerCase() === email)
     );
-    if (allowed) return { isStaff: true, source: "allowlist" };
+    if (allowed) return { isStaff: true, isPlatformAdmin: false, source: "allowlist" };
   } catch {
     // Fail closed when the explicit allowlist cannot be read.
   }
 
-  return { isStaff: false, source: null };
+  return { isStaff: false, isPlatformAdmin: false, source: null };
 }
