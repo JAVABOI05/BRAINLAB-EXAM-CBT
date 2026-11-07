@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
     const safeClassId = String(classId).replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 100);
     const storagePath = `classroom-assets/${safeClassId}/${assetId}-${safeName}`;
     let finalUrl = `/api/classroom/media/${assetId}`;
+    let storageUploaded = false;
 
     try {
       const { error: uploadError } = await supabase.storage
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest) {
         });
 
       if (!uploadError) {
+        storageUploaded = true;
         if (mediaType === "audio") {
           // Audio is persisted with class metadata and delivered through the
           // authenticated media proxy using a short-lived signed URL.
@@ -97,6 +99,12 @@ export async function POST(request: NextRequest) {
       }
     } catch (storageErr) {
       console.warn("[classroom/upload] Storage upload exception, falling back to media route:", storageErr);
+    }
+
+    // Audio is only proxied across serverless instances when the durable
+    // Storage object exists; never register a broken media reference.
+    if (mediaType === "audio" && !storageUploaded) {
+      return NextResponse.json({ error: "Audio storage is temporarily unavailable. Please retry." }, { status: 503 });
     }
 
     // 3. Persist asset record if audio
