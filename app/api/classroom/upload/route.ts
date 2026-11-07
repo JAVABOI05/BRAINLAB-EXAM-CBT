@@ -106,10 +106,15 @@ export async function POST(request: NextRequest) {
       console.warn("[classroom/upload] Storage upload exception, falling back to media route:", storageErr);
     }
 
-    // Audio is only proxied across serverless instances when the durable
-    // Storage object exists; never register a broken media reference.
-    if (mediaType === "audio" && !storageUploaded) {
-      return NextResponse.json({ error: "Audio storage is temporarily unavailable. Please retry." }, { status: 503 });
+    // Every successful upload response must point to durable Storage.
+    // The in-memory cache is process-local and cannot guarantee retrieval on
+    // another serverless instance, so never return a proxy URL as if an upload
+    // succeeded when the durable object was not stored.
+    if (!storageUploaded) {
+      return NextResponse.json(
+        { error: "Classroom media storage is temporarily unavailable. Please retry the upload." },
+        { status: 503 }
+      );
     }
 
     // 3. Persist asset record if audio
