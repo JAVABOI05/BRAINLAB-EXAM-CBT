@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
+import { canAccessClassroom, canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +30,7 @@ export async function GET(request: NextRequest) {
     const visibleRecordings = await Promise.all((recordings || []).map(async (recording) => {
       if (recording.created_by === user.id) return recording;
       if (!recording.class_id) return null;
-      return (await canManageClassroom(user, recording.class_id, token) ||
-        await (async () => {
-          const { canAccessClassroom } = await import("@/app/lib/liveClassroom/authorization");
-          return canAccessClassroom(user, recording.class_id, token);
-        })()) ? recording : null;
+      return (await canAccessClassroom(user, recording.class_id, token)) ? recording : null;
     }));
 
     return NextResponse.json({ success: true, recordings: visibleRecordings.filter(Boolean) });
