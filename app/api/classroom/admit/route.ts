@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -20,26 +21,22 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // Check if user is staff/tutor/admin
-    let isAuthorized = false;
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
+    const config = await getLiveClassroomConfig();
+    const staffAccess = await resolveClassroomStaffAccess(user);
+    const isPlatformStaff = staffAccess.source === "platform_role";
+    const { data: liveClass } = await supabase
+      .from("live_classes")
+      .select("tutor_id")
+      .eq("id", classId)
       .maybeSingle();
 
-    if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
-      isAuthorized = true;
-    }
+    const isAssignedHost =
+      liveClass?.tutor_id === user.id ||
+      config.room_configs?.[classId]?.active_host_id === user.id;
 
-    const config = await getLiveClassroomConfig();
-    if (user.email && config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())) {
-      isAuthorized = true;
-    }
-
-    if (!isAuthorized) {
+    if (!isPlatformStaff && !(staffAccess.isStaff && isAssignedHost)) {
       return NextResponse.json(
-        { error: "Forbidden. Only authorized tutors or administrators can grant admission into a masterclass." },
+        { error: "Forbidden. Only the assigned host or an authorized platform administrator can grant admission." },
         { status: 403 }
       );
     }
