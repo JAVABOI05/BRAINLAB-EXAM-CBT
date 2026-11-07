@@ -356,7 +356,7 @@ export default function MessagesPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${sessionData.session.access_token}`,
       },
-      body: JSON.stringify({ messageId, reaction }),
+      body: JSON.stringify({ conversationId: activeConvId, messageId, reaction }),
     });
 
     const res = await fetch(`/api/messages?conversationId=${activeConvId}`, {
