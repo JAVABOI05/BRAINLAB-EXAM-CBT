@@ -244,3 +244,10 @@ The existing subject-feed composer sends `subject_id` but not `course_id`, while
 ### Tutor assignment playback access path
 
 The tutor assignment dashboard previously queried `assignment_submissions` and joined audio assets directly from the browser. A new authenticated `GET /api/assignments/submissions?assignmentId=...` endpoint now checks that the requester is the assignment's assigned tutor or a platform administrator before returning the submission rows and their audio playback data. The dashboard now uses this scoped endpoint. This removes one direct-client dependency on the broad `audio_assets` SELECT policy; the policy itself remains unchanged pending a complete audit of every remaining direct audio-table consumer, including admin analytics.
+
+
+### Assignment access review — tutor listing and creation
+
+A further audit found that the tutor assignment listing treated every `teacher` role as globally privileged, exposing assignments and submission counts beyond that tutor's own work. It now lists all assignments only to platform admins; other tutors are restricted to assignments whose `tutor_id` is their own.
+
+Assignment creation also previously accepted any course ID when the caller had a membership in any subject. It now verifies that the caller owns the selected course or has an explicit tutor membership for that course's subject. Platform admins retain global access. The course's subject is authoritative, and the automatically generated course-feed announcement now includes the required `course_id`.
