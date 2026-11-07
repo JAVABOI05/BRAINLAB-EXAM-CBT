@@ -154,11 +154,13 @@ export async function GET(req: NextRequest) {
 
     const countsByTeam: Record<string, number> = {};
     let myTeamId: string | null = null;
+    let myTeamRole: string | null = null;
 
     allMembers?.forEach((m) => {
       countsByTeam[m.team_id] = (countsByTeam[m.team_id] || 0) + 1;
       if (user && m.user_id === user.id) {
         myTeamId = m.team_id;
+        myTeamRole = m.role;
       }
     });
 
@@ -171,6 +173,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       teams: enrichedTeams,
       my_team_id: myTeamId,
+      my_team_role: myTeamRole,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error listing teams";
