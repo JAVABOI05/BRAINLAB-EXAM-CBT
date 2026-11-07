@@ -180,3 +180,13 @@ This aligns the newer route with the legacy replay endpoint. Actual end-to-end p
 ### Subscription entitlement source correction
 
 The inspected staging schema has `user_subscriptions` (with `status` and `current_period_end`) and does not have `subscription_records`. The recording and feed routes had been querying the nonexistent `subscription_records` table and silently treating the resulting error as no active subscription. The feature branch now queries the actual `user_subscriptions` table and requires an active, unexpired billing period. This was applied consistently to both recording APIs and the course-feed API. Course enrolment remains the primary course-specific entitlement; the broad active-plan fallback is retained for compatibility and still needs a plan-entitlement review.
+
+
+### Upload-side audio and slide-import safeguards
+
+- `POST /api/audio/upload` now validates the four supported asset types, requires an existing published assignment that explicitly allows audio for student submissions, and verifies assignment tutor ownership for tutor feedback audio. Course-linked tutor audio checks the course owner where a course ID is supplied.
+- Ordinary chat voice notes now use `discussion_audio`, which is the intended authenticated-user type; they are no longer mislabeled as tutor-only voice notes.
+- The audio upload response no longer includes the base64 `file_url` payload.
+- Studio slide import no longer embeds a failed image upload as a base64 data URI in the lesson JSON. Failed uploads are reported and skipped; successful durable Storage uploads remain available for import.
+
+The shared `learning-content-media` bucket is still public, so these safeguards do not make new slide/handout URLs private. The dedicated private bucket and asset registry remain a separate, unapplied migration.
