@@ -1,6 +1,6 @@
 begin;
 
-select plan(16);
+select plan(17);
 
 select ok(
   (select count(*) = 4
@@ -109,14 +109,24 @@ select ok(
    from public.access_role_permissions rp
    join public.access_roles r on r.id=rp.role_id
    where r.role_key='teacher')
-  = array['learning.content.manage','student.support']::text[],
-  'teacher permissions match the existing legacy authorization policy'
+  = array[
+     'ai.content.manage','cbt.questions.delete','cbt.questions.manage','cbt.results.read',
+     'learning.content.manage','question_bank.create','question_bank.edit_own',
+     'question_bank.import_csv','question_bank.view','question_builder.use',
+     'stem.resource.manage','stem.resource.view','student.support'
+   ]::text[],
+  'teacher permissions match the latest checked-in instructor authorization policy'
 );
 
 select ok(
   position('scoped_permissions' in pg_get_functiondef('private.access_get_session_context_impl()'::regprocedure)) > 0
   and position('resource_scope' in pg_get_functiondef('private.access_get_session_context_impl()'::regprocedure)) > 0,
   'session context keeps resource-scoped permissions separate from global permissions'
+);
+
+select ok(
+  exists (select 1 from public.access_permissions where permission_key='exam.calendar.manage' and module_key='exam_calendar'),
+  'the canonical permission catalogue includes the National Exam Calendar permission'
 );
 
 select ok(
