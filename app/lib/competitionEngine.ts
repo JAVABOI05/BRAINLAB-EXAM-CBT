@@ -66,6 +66,135 @@ export interface CompetitionQuestionSnapshotItem {
   explanation?: string;
 }
 
+
+export interface NormalizedOption {
+  key: string;
+  text: string;
+}
+
+export interface ClientCompetitionQuestion {
+  id: string;
+  question: string;
+  subject?: string;
+  topic?: string;
+  subtopic?: string;
+  difficulty?: string;
+  options: NormalizedOption[];
+  optionsMap: Record<string, string>;
+  option_a?: string | null;
+  option_b?: string | null;
+  option_c?: string | null;
+  option_d?: string | null;
+  option_e?: string | null;
+  option_images?: Record<string, string>;
+  question_image_url?: string | null;
+  passage_id?: string | null;
+  passage_title?: string | null;
+  passage_text?: string | null;
+  reading_text_id?: string | null;
+  marks: number;
+}
+
+/**
+ * Universal option normalizer.
+ * Safely converts keyed objects ({ A: '...', B: '...' }), option arrays ([{ key: 'A', text: '...' }]),
+ * or raw string arrays (['...', '...']) into a uniform NormalizedOption[].
+ * Guarantees that .map() will NEVER throw at runtime, even with malformed inputs.
+ */
+export function normalizeQuestionOptions(options: unknown): NormalizedOption[] {
+  if (!options) return [];
+
+  // 1. Array-based inputs
+  if (Array.isArray(options)) {
+    return options
+      .map((opt, idx) => {
+        if (!opt && opt !== 0) return null;
+        if (typeof opt === "string" || typeof opt === "number") {
+          return {
+            key: String.fromCharCode(65 + idx),
+            text: String(opt),
+          };
+        }
+        if (typeof opt === "object") {
+          const rec = opt as Record<string, unknown>;
+          const key = String(rec.key || rec.letter || rec.id || String.fromCharCode(65 + idx)).trim().toUpperCase();
+          const text = String(rec.text ?? rec.label ?? rec.value ?? "");
+          return { key, text };
+        }
+        return null;
+      })
+      .filter((item): item is NormalizedOption => item !== null && item.text.length > 0);
+  }
+
+  // 2. Keyed-object inputs: { A: '...', B: '...' }
+  if (typeof options === "object") {
+    return Object.entries(options as Record<string, unknown>)
+      .filter(([, val]) => val !== null && val !== undefined)
+      .map(([key, val]) => ({
+        key: key.trim().toUpperCase(),
+        text: typeof val === "string" ? val : String(val),
+      }))
+      .filter((item) => item.text.length > 0)
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }
+
+  return [];
+}
+
+/**
+ * Normalizes any raw question item into a standardized client contract.
+ * Attaches both normalized options array (for .map()), optionsMap (for keyed access),
+ * and flat option_a..e (for match arenas), ensuring complete cross-boundary contract safety.
+ */
+export function normalizeClientQuestion(q: unknown): ClientCompetitionQuestion {
+  const item = (q || {}) as Record<string, unknown>;
+  const rawOptions = item.options || item.optionsMap;
+
+  // If no options object found, check for flat option_a..e fields
+  let sourceOptions: unknown = rawOptions;
+  if (!sourceOptions || (typeof sourceOptions === "object" && Object.keys(sourceOptions).length === 0)) {
+    const flat: Record<string, string> = {};
+    if (item.option_a) flat.A = String(item.option_a);
+    if (item.option_b) flat.B = String(item.option_b);
+    if (item.option_c) flat.C = String(item.option_c);
+    if (item.option_d) flat.D = String(item.option_d);
+    if (item.option_e) flat.E = String(item.option_e);
+    if (Object.keys(flat).length > 0) {
+      sourceOptions = flat;
+    }
+  }
+
+  const options = normalizeQuestionOptions(sourceOptions);
+  const optionsMap: Record<string, string> = {};
+
+  for (const opt of options) {
+    optionsMap[opt.key] = opt.text;
+  }
+
+  return {
+    id: String(item.id || ""),
+    question: String(item.question || ""),
+    subject: item.subject ? String(item.subject) : undefined,
+    topic: item.topic ? String(item.topic) : undefined,
+    subtopic: item.subtopic ? String(item.subtopic) : undefined,
+    difficulty: item.difficulty ? String(item.difficulty) : undefined,
+    options,
+    optionsMap,
+    option_a: optionsMap["A"] || (typeof item.option_a === "string" ? item.option_a : null),
+    option_b: optionsMap["B"] || (typeof item.option_b === "string" ? item.option_b : null),
+    option_c: optionsMap["C"] || (typeof item.option_c === "string" ? item.option_c : null),
+    option_d: optionsMap["D"] || (typeof item.option_d === "string" ? item.option_d : null),
+    option_e: optionsMap["E"] || (typeof item.option_e === "string" ? item.option_e : null),
+    option_images: item.option_images && typeof item.option_images === "object" ? (item.option_images as Record<string, string>) : {},
+    question_image_url: item.question_image_url ? String(item.question_image_url) : null,
+    passage_id: item.passage_id ? String(item.passage_id) : null,
+    passage_title: item.passage_title ? String(item.passage_title) : null,
+    passage_text: item.passage_text ? String(item.passage_text) : null,
+    reading_text_id: item.reading_text_id ? String(item.reading_text_id) : null,
+    marks: Number(item.marks) > 0 ? Number(item.marks) : 1,
+  };
+}
+
 export interface CompetitionAttemptSnapshot {
   session_id: string;
   competition_id: string;

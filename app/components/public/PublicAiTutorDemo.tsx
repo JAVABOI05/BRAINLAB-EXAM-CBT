@@ -65,7 +65,7 @@ const CURATED_EXAMPLES: CuratedExample[] = [
   },
 ];
 
-export default function PublicAiTutorDemo() {
+export function PublicAiTutorDemo() {
   const [activeTab, setActiveTab] = useState<"curated" | "sandbox">("curated");
   const [selectedCuratedId, setSelectedCuratedId] = useState<string>("math-quadratic");
 
@@ -346,3 +346,5 @@ export default function PublicAiTutorDemo() {
     </section>
   );
 }
+
+export default PublicAiTutorDemo;

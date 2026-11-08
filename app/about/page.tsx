@@ -456,8 +456,8 @@ export default function AboutPage() {
           >
             Open Revision Planner
           </Link>
-          <Link
-            href="/contact"
+          <Link href="/about/trust-centre" className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-3 text-sm font-bold text-emerald-900 transition hover:bg-emerald-100 active:scale-95">Trust &amp; Governance Centre</Link>
+          <Link href="/contact"
             className="rounded-xl border border-blue-200 bg-blue-50 px-6 py-3 text-sm font-bold text-blue-900 transition hover:bg-blue-100 active:scale-95"
           >
             Contact Academy Directory

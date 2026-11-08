@@ -644,7 +644,7 @@ function PricingContent() {
 
           {/* Refund policy & FAQs reminder */}
           <div className="mt-16 rounded-3xl border border-slate-200 bg-white p-8 sm:p-10">
-            <h3 className="text-lg font-black text-slate-950">Fair Billing &amp; Refund Guarantee</h3>
+            <h3 className="text-lg font-black text-slate-950">Fair Billing &amp; Refund Policy <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded ml-2">[PENDING FORMAL APPROVAL]</span></h3>
             <div className="mt-4 grid gap-6 sm:grid-cols-3 text-xs leading-6 text-slate-600">
               <div>
                 <p className="font-bold text-slate-900">24-Hour Review Window</p>

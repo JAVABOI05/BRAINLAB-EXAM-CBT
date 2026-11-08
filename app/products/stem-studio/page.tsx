@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import PublicStemDemo from "@/app/components/public/PublicStemDemo";
 
 export const metadata: Metadata = {
   title: "STEM Studio & Virtual Laboratory Suite | BrainLab Academy",
@@ -186,6 +187,25 @@ export default function StemStudioProductPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Live Interactive STEM Preview Section */}
+      <section className="border-b border-slate-200/80 bg-slate-100/50 py-12 sm:py-16 dark:border-slate-800/80 dark:bg-[#070f20]/50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="max-w-2xl space-y-1">
+            <span className="text-xs font-black uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+              Interactive Experimentation Preview
+            </span>
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+              Test the Simulation Engine Directly
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Adjust parameters below to see how mathematical formulas react in real time. Works with touch, mouse, or keyboard navigation.
+            </p>
+          </div>
+
+          <PublicStemDemo />
         </div>
       </section>
 
