@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS public.tutor_applications (
 );
 
 ALTER TABLE public.tutor_applications ENABLE ROW LEVEL SECURITY;
+GRANT INSERT ON public.tutor_applications TO anon, authenticated;
+GRANT SELECT, UPDATE, DELETE ON public.tutor_applications TO authenticated;
 
 DROP POLICY IF EXISTS "Public applicants can submit tutor application" ON public.tutor_applications;
 CREATE POLICY "Public applicants can submit tutor application"
