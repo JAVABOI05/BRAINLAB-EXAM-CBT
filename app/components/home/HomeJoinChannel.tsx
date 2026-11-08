@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { trackEvent } from "@/app/lib/analytics";
 import { CONTACT_CONFIG } from "@/app/lib/contactConfig";
 
 export interface ChannelPlatformConfig {
@@ -123,6 +124,10 @@ export function HomeJoinChannel({
   // No-op analytics logger hook for prompt 12
   const handleClick = (platformId: string) => {
     try {
+      trackEvent("channel_join_clicked", {
+        channel: platformId,
+        placement: "homepage_callout",
+      });
       if (typeof onChannelClick === "function") {
         onChannelClick(platformId);
       } else if (typeof window !== "undefined") {

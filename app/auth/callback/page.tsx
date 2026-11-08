@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { sanitizeRedirectUrl } from "../../lib/authRedirect";
 import type { Session } from "@supabase/supabase-js";
 
 const EXAM_SPEED_TIPS = [
@@ -70,7 +71,7 @@ export default function AuthCallbackPage() {
     async function completeSignIn() {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
-      const nextParam = params.get("next");
+      const nextParam = params.get("next") || params.get("redirect");
 
       if (params.has("error") || params.has("error_description")) {
         clearInterval(progressTimer);
@@ -162,9 +163,7 @@ export default function AuthCallbackPage() {
       // Standard learner: fast-route to dashboard
       clearOperatorGateNonBlocking();
       setStatusText("Welcome to BrainLab Academy! Launching…");
-      const targetDestination = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-        ? nextParam
-        : "/dashboard";
+      const targetDestination = sanitizeRedirectUrl(nextParam, "/dashboard");
 
       router.replace(targetDestination);
     }

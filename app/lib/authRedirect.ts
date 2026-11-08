@@ -61,3 +61,27 @@ export function getAuthRedirectUrl(path: string = "/auth/callback"): string {
 
   return `https://brainlabacademy.com.ng${normalizedPath}`;
 }
+
+/**
+ * Strictly sanitizes internal redirect URLs to prevent open-redirect vulnerabilities.
+ * Ensures that the destination is a safe, relative, same-origin path.
+ * Rejects protocol-relative URLs (//), backslashes (\), javascript schemes, and control characters.
+ */
+export function sanitizeRedirectUrl(target: string | null | undefined, fallback: string = "/dashboard"): string {
+  if (!target || typeof target !== "string") return fallback;
+  const trimmed = target.trim();
+  // Must start with a single slash and not followed by a second slash or backslash
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.startsWith("/\\")) {
+    return fallback;
+  }
+  // Disallow backslashes anywhere in the path, colons before query, or control chars
+  if (trimmed.includes("\\") || trimmed.includes("\0") || trimmed.includes("\r") || trimmed.includes("\n")) {
+    return fallback;
+  }
+  // Validate path format
+  const safePathPattern = /^\/[a-zA-Z0-9_\-\/.]*(\?[a-zA-Z0-9_\-=&%.]*)?(#[a-zA-Z0-9_\-]*)?$/;
+  if (!safePathPattern.test(trimmed)) {
+    return fallback;
+  }
+  return trimmed;
+}

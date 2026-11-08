@@ -1,6 +1,10 @@
+"use client";
+
+import { useEffect } from "react";
 import React from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "./Breadcrumbs";
+import { trackEvent } from "@/app/lib/analytics";
 
 export interface ProgrammeSubject {
   name: string;
@@ -55,6 +59,14 @@ interface ProgrammePageTemplateProps {
 
 export function ProgrammePageTemplate({ data }: ProgrammePageTemplateProps) {
   const isPlanned = data.status === "planned" || data.status === "in_development";
+
+  useEffect(() => {
+    trackEvent("programme_viewed", {
+      programme_id: data.id,
+      title: data.title,
+      status: data.status,
+    });
+  }, [data.id, data.title, data.status]);
 
   return (
     <div className="public-surface min-h-screen bg-slate-50 text-slate-900 dark:bg-[#070e1b] dark:text-slate-100 transition-colors">
@@ -138,6 +150,7 @@ export function ProgrammePageTemplate({ data }: ProgrammePageTemplateProps) {
             ) : (
               <Link
                 href={data.checkoutHref}
+                onClick={() => trackEvent("enrolment_started", { programme_id: data.id, title: data.title })}
                 className="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-700 hover:bg-blue-800 px-7 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 active:scale-95"
               >
                 Enrol in Programme →

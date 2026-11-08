@@ -11,6 +11,7 @@ import {
   type SubscriptionPlan,
 } from "../lib/platformConfig";
 import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
+import { trackEvent } from "../lib/analytics";
 
 type UserSubscription = {
   plan_id: string;
@@ -122,6 +123,10 @@ function PricingContent() {
   }, [rawRedirect]);
 
   function handleChoosePlan(plan: SubscriptionPlan) {
+    trackEvent("enrolment_started", {
+      plan_id: plan.id,
+      amount_ngn: Math.round(plan.price_kobo / 100),
+    });
     if (isAdmin) {
       // Super admins already possess universal VIP root access
       window.location.href = returnUrl || "/dashboard";
@@ -183,6 +188,11 @@ function PricingContent() {
       return;
     }
 
+    trackEvent("enrolment_started", {
+      plan_id: checkoutPlan.id,
+      amount_ngn: payableAmountNaira,
+      provider: selectedProvider,
+    });
     setInitiatingPayment(true);
     setPaymentError("");
 

@@ -1,3 +1,4 @@
+import { trackEvent } from "@/app/lib/analytics";
 "use client";
 
 import { useState } from "react";
@@ -135,6 +136,10 @@ export function TutorApplicationForm() {
 
       const data = await res.json();
       if (res.ok && data.ok) {
+        trackEvent("tutor_application_submitted", {
+          qualification,
+          subjects_count: selectedSubjects.length,
+        });
         setSubmitResult({
           ok: true,
           ref: data.referenceCode,

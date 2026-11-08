@@ -1,3 +1,4 @@
+import { trackEvent } from "@/app/lib/analytics";
 "use client";
 
 import Link from "next/link";
@@ -6,7 +7,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { getAuthRedirectUrl } from "../lib/authRedirect";
+import { getAuthRedirectUrl, sanitizeRedirectUrl } from "../lib/authRedirect";
 import { isAdminPinLocallyVerified } from "../lib/adminPinAuth";
 import { isGovernanceAdminRole, isInstructorRole } from "../lib/adminRoles";
 import { setCachedAdminSession, type AdminUser } from "../lib/adminAuth";
@@ -40,6 +41,7 @@ function CentralLoginForm() {
     }
     if (searchParams.get("mode") === "signup") {
       setMode("signup");
+      trackEvent("signup_started", { source: "url_param" });
     }
 
     let active = true;
@@ -124,10 +126,8 @@ function CentralLoginForm() {
 
     // 4. Route Candidate / Student
     await clearOperatorGate();
-    const redirectParam = searchParams.get("redirect");
-    const safeTarget = redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
-      ? redirectParam
-      : "/dashboard";
+    const redirectParam = searchParams.get("redirect") || searchParams.get("next");
+    const safeTarget = sanitizeRedirectUrl(redirectParam, "/dashboard");
     router.replace(safeTarget);
   }
 
@@ -166,6 +166,8 @@ function CentralLoginForm() {
           setError(signUpError.message);
           return;
         }
+
+        trackEvent("signup_completed", { auth_provider: "email", role: "student" });
 
         if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
           setError("An account with this email already exists. Please sign in or reset your password.");
@@ -210,11 +212,12 @@ function CentralLoginForm() {
     setBusy(true);
     setError("");
     try {
-      const redirectTarget = searchParams.get("redirect") || "/dashboard";
+      const redirectTarget = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
+      const safeRedirect = sanitizeRedirectUrl(redirectTarget, "/dashboard");
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: getAuthRedirectUrl(`/auth/callback?redirect=${encodeURIComponent(redirectTarget)}`),
+          redirectTo: getAuthRedirectUrl(`/auth/callback?redirect=${encodeURIComponent(safeRedirect)}`),
         },
       });
       if (oauthError) {
@@ -319,6 +322,7 @@ function CentralLoginForm() {
                 onClick={() => {
                   setMode("signup");
                   setError("");
+                  trackEvent("signup_started", { source: "tab_toggle" });
                   setMessage("");
                 }}
                 className={`py-2.5 rounded-xl transition-all ${

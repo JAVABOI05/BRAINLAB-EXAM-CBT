@@ -18,7 +18,9 @@ function assert(condition: boolean, name: string) {
   }
 }
 
-// 1. STEM DEMO COMPONENT INSPECTION
+// ---------------------------------------------------------------------------
+// 1. STEM DEMO COMPONENT INSPECTION & MATHEMATICAL ENGINE
+// ---------------------------------------------------------------------------
 console.log("1. PUBLIC STEM DEMONSTRATION & MATHEMATICAL PARABOLA EXPLORER");
 const stemDemoPath = path.join(process.cwd(), "app/components/public/PublicStemDemo.tsx");
 assert(fs.existsSync(stemDemoPath), "PublicStemDemo component file exists");
@@ -54,8 +56,52 @@ assert(
   "Supports dark (#070e1b) and light (#f8fafc) theme tokens"
 );
 
-// 2. EMBEDDING IN STEM PRODUCT PAGE
-console.log("\n2. STEM STUDIO PAGE EMBEDDING INTEGRITY");
+// ---------------------------------------------------------------------------
+// 2. THROTTLED MOBILE & LOW-SPEC DEVICE FALLBACK VERIFICATION
+// ---------------------------------------------------------------------------
+console.log("\n2. THROTTLED MOBILE & HARDWARE FALLBACK VERIFICATION");
+assert(
+  stemDemoContent.includes("deviceMemory") &&
+  stemDemoContent.includes("hardwareConcurrency") &&
+  stemDemoContent.includes("mem <= 1 || cores <= 1"),
+  "Inspects navigator.deviceMemory and hardwareConcurrency for weak mobile devices"
+);
+assert(
+  stemDemoContent.includes("setForceFallback") &&
+  stemDemoContent.includes("Switch to Low-Data SVG"),
+  "Provides manual toggle to switch into lightweight SVG mode at user discretion"
+);
+assert(
+  stemDemoContent.includes("viewBox=\"0 0 320 220\"") &&
+  stemDemoContent.includes("<rect width=\"320\" height=\"220\""),
+  "Renders responsive vector SVG diagram with zero GPU/Canvas context overhead in fallback mode"
+);
+
+// ---------------------------------------------------------------------------
+// 3. KEYBOARD ACCESSIBILITY & CONTROLS VERIFICATION
+// ---------------------------------------------------------------------------
+console.log("\n3. ACCESSIBILITY & KEYBOARD ALTERNATIVES");
+assert(
+  stemDemoContent.includes('step="0.5"') &&
+  stemDemoContent.includes('step="1"'),
+  "Continuous sliders support discrete step increments for keyboard arrow key navigation"
+);
+assert(
+  stemDemoContent.includes("Preset: 2 Roots") &&
+  stemDemoContent.includes("Preset: Tangent") &&
+  stemDemoContent.includes("Preset: Complex"),
+  "Provides one-click accessible presets for users unable to manipulate continuous range sliders"
+);
+assert(
+  stemDemoContent.includes("aria-valuemin") &&
+  stemDemoContent.includes("aria-valuemax"),
+  "Range inputs declare explicit aria-valuemin and aria-valuemax bounds"
+);
+
+// ---------------------------------------------------------------------------
+// 4. STEM STUDIO PRODUCT PAGE EMBEDDING & ISOLATION
+// ---------------------------------------------------------------------------
+console.log("\n4. STEM STUDIO PAGE EMBEDDING & ROUTE ISOLATION");
 const stemProductPagePath = path.join(process.cwd(), "app/products/stem-studio/page.tsx");
 assert(fs.existsSync(stemProductPagePath), "app/products/stem-studio/page.tsx exists");
 const stemProductContent = fs.readFileSync(stemProductPagePath, "utf-8");
@@ -67,9 +113,17 @@ assert(
   stemProductContent.includes("/classroom/stem"),
   "Provides clear call to action routing to authenticated STEM Studio workspace"
 );
+assert(
+  !stemProductContent.includes("/admin/stem") &&
+  !stemProductContent.includes("draft=true") &&
+  !stemProductContent.includes("internal_bench"),
+  "Zero links to unpublished or admin-only STEM resources on the public page"
+);
 
-// 3. AI TUTOR DEMO COMPONENT INSPECTION
-console.log("\n3. PUBLIC AI TUTOR DEMO & PEDAGOGICAL BOUNDARIES");
+// ---------------------------------------------------------------------------
+// 5. PUBLIC AI TUTOR DEMO & PEDAGOGICAL BOUNDARIES
+// ---------------------------------------------------------------------------
+console.log("\n5. PUBLIC AI TUTOR DEMO & PEDAGOGICAL BOUNDARIES");
 const aiDemoPath = path.join(process.cwd(), "app/components/public/PublicAiTutorDemo.tsx");
 assert(fs.existsSync(aiDemoPath), "PublicAiTutorDemo component file exists");
 
@@ -93,8 +147,10 @@ assert(
   "Provides rate-limited public guest sandbox with 250-character cap"
 );
 
-// 4. PUBLIC AI TUTOR API ROUTE SECURITY & RATE LIMITING
-console.log("\n4. PUBLIC AI DEMO API RATE LIMITING & SECURITY GUARDRAILS");
+// ---------------------------------------------------------------------------
+// 6. PUBLIC AI TUTOR API ROUTE SECURITY, RATE LIMITING & COST CAPS
+// ---------------------------------------------------------------------------
+console.log("\n6. PUBLIC AI DEMO API RATE LIMITING & SECURITY GUARDRAILS");
 const aiApiPath = path.join(process.cwd(), "app/api/ai-tutor/public-demo/route.ts");
 assert(fs.existsSync(aiApiPath), "app/api/ai-tutor/public-demo/route.ts exists");
 
@@ -112,6 +168,10 @@ assert(
   "Enforces global daily cost ceiling cap of 300 public questions per day"
 );
 assert(
+  aiApiContent.includes("status: 429"),
+  "Returns HTTP 429 status code when rate limit or global ceiling is reached"
+);
+assert(
   aiApiContent.includes("process.env.GROQ_API_KEY") &&
   !aiApiContent.includes("NEXT_PUBLIC_GROQ"),
   "Keeps AI API credentials strictly server-side with zero client exposure"
@@ -121,8 +181,10 @@ assert(
   "Embeds strict academic safety instructions preventing abuse and live test cheating"
 );
 
-// 5. EMBEDDING IN AI LEARNING PRODUCT PAGE
-console.log("\n5. AI LEARNING PRODUCT PAGE EMBEDDING INTEGRITY");
+// ---------------------------------------------------------------------------
+// 7. EMBEDDING IN AI LEARNING PRODUCT PAGE
+// ---------------------------------------------------------------------------
+console.log("\n7. AI LEARNING PRODUCT PAGE EMBEDDING INTEGRITY");
 const aiProductPagePath = path.join(process.cwd(), "app/products/ai-learning/page.tsx");
 assert(fs.existsSync(aiProductPagePath), "app/products/ai-learning/page.tsx exists");
 const aiProductContent = fs.readFileSync(aiProductPagePath, "utf-8");
@@ -131,13 +193,20 @@ assert(
   "PublicAiTutorDemo is embedded directly on the public AI Learning page"
 );
 
-// 6. S7 COMPLIANCE & ZERO PRIVATE DATA LEAK
-console.log("\n6. S7 ANTI-HARDCODED FIGURES & DATA PROTECTION AUDIT");
+// ---------------------------------------------------------------------------
+// 8. S7 COMPLIANCE & ZERO PRIVATE DATA LEAK
+// ---------------------------------------------------------------------------
+console.log("\n8. S7 ANTI-HARDCODED FIGURES & DATA PROTECTION AUDIT");
 assert(
   !stemDemoContent.includes("password") &&
   !stemDemoContent.includes("sessionToken") &&
   !aiDemoContent.includes("student_id"),
   "Zero private student identifiers or credentials present in public demonstration components"
+);
+assert(
+  !aiDemoContent.includes("supabase.from(") &&
+  !stemDemoContent.includes("supabase.from("),
+  "Components perform zero unauthorized database queries and leak no private tables"
 );
 
 console.log("\n=========================================================================");

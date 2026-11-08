@@ -1,3 +1,4 @@
+import { trackEvent } from "@/app/lib/analytics";
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -267,6 +268,11 @@ export default function CBTExamPortalPage() {
     }
 
     setStarting(false);
+
+    trackEvent("free_practice_started", {
+      mode: accessCodeRequired ? "code_practice" : "open_mock",
+      subjects_count: selectedSubjects.length,
+    });
 
     if (accessCodeRequired && !savedCode) {
       router.push("/access");

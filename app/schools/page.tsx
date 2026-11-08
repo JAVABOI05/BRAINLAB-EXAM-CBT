@@ -1,3 +1,4 @@
+import { trackEvent } from "@/app/lib/analytics";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -181,6 +182,10 @@ export default function SchoolsPage() {
 
       const data = await res.json();
       if (res.ok && data.ok) {
+        trackEvent("school_enquiry_submitted", {
+          exam_type: inquiryExam,
+          student_cohort: inquiryCount,
+        });
         setSubmitResult({
           ok: true,
           ref: data.referenceCode,

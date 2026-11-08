@@ -1,3 +1,4 @@
+import { trackEvent } from "@/app/lib/analytics";
 "use client";
 
 import React, { useState } from "react";
@@ -99,6 +100,7 @@ export function PublicAiTutorDemo() {
       }
 
       setSandboxAnswer(data.answer);
+      trackEvent("demo_completed", { demo_type: "ai_tutor_socratic" });
       if (typeof data.remainingGuestQueries === "number") {
         setRemainingQueries(data.remainingGuestQueries);
       }
