@@ -477,7 +477,6 @@ export default function ChallengeArenaPage() {
       if (session?.access_token) {
         headers["Authorization"] = `Bearer ${session.access_token}`;
       }
-      }
 
       const res = await fetch(`/api/competition/competitions/${competitionId}/register`, {
         method: "POST",
