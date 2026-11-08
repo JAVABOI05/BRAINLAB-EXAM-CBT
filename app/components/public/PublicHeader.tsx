@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { isCurrentUserAdmin } from "@/app/lib/subscriptionEntitlements";
@@ -13,6 +13,7 @@ import { Link } from "@/app/components/ui/Link";
 
 export function PublicHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -22,17 +23,21 @@ export function PublicHeader() {
 
   const headerRef = useRef<HTMLElement>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prevPathnameRef = useRef(pathname);
 
   const config = HOMEPAGE_CONTENT_CONFIG.header;
 
   // Initialize theme from document
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      const isDarkMode =
-        document.documentElement.classList.contains("dark") ||
-        document.documentElement.getAttribute("data-theme") === "dark";
-      setIsDark(isDarkMode);
-    }
+    const timer = setTimeout(() => {
+      if (typeof document !== "undefined") {
+        const isDarkMode =
+          document.documentElement.classList.contains("dark") ||
+          document.documentElement.getAttribute("data-theme") === "dark";
+        setIsDark(isDarkMode);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleTheme = () => {
@@ -108,8 +113,14 @@ export function PublicHeader() {
 
   // Close menus on path change
   useEffect(() => {
-    setMobileDrawerOpen(false);
-    setActiveDropdown(null);
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      const timer = setTimeout(() => {
+        setMobileDrawerOpen(false);
+        setActiveDropdown(null);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
   }, [pathname]);
 
   // Close dropdown on outside click or Escape
@@ -146,7 +157,7 @@ export function PublicHeader() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/";
+    router.push("/");
   };
 
   return (
