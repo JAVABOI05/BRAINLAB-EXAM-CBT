@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Sign in before saving a Studio recording." }, { status: 401 });
 
-    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const staff = await resolveClassroomStaffAccess(user, token);
     if (!staff.isStaff) {
       return NextResponse.json({ error: "Only verified teaching staff can upload Studio recordings." }, { status: 403 });
