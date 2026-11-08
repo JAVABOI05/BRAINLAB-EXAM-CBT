@@ -306,113 +306,122 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
         )}
-        {/* Top Identity Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-800">
-              Your BrainLab account
-            </p>
-            <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl flex items-center gap-2 flex-wrap">
-              <span>{greeting}</span>
-              {firstName ? <span>, {firstName}</span> : null}
-              {user && <UserBadges userId={user.id} size="sm" maxVisible={3} />}
-            </h1>
-
-            {gamification && (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-black text-amber-900">
-                  ⭐ Level {gamification.current_level} · {gamification.level_name} ({gamification.lifetime_xp.toLocaleString()} XP)
+        {/* Executive Learner Identity Header Card */}
+        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#0c1527] transition-all">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div className="flex items-start sm:items-center gap-4">
+              <Link href="/profile" className="relative group shrink-0" title="View Profile">
+                {avatar && typeof avatar === "string" && /^https:\/\//i.test(avatar) ? (
+                  <img
+                    src={avatar}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="h-16 w-16 rounded-2xl object-cover ring-2 ring-blue-500/30 group-hover:ring-blue-500 transition"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#012153] to-blue-600 text-lg font-black text-white shadow-md"
+                  >
+                    {initials(fullName || "BL")}
+                  </span>
+                )}
+                <span className="absolute -bottom-1 -right-1 flex h-4 w-4" title="Active">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white dark:border-slate-900" />
                 </span>
-                <LearningStreakCard
-                  currentStreak={gamification.current_streak_days}
-                  longestStreak={gamification.longest_streak_days}
-                  lastActiveDate={gamification.last_activity_date}
-                  compact={true}
-                />
-                <Link
-                  href="/challenge-arena"
-                  className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50/90 px-3 py-1 text-xs font-black text-amber-950 hover:bg-amber-100 transition shadow-xs"
-                >
-                  <svg className="h-3.5 w-3.5 text-amber-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>Challenge Arena (2× XP)
-                </Link>
-                <Link
-                  href="/learning-dna"
-                  className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-900 hover:bg-blue-100 transition shadow-xs"
-                >
-                  <svg className="h-3.5 w-3.5 text-blue-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 8 8 8"/><path d="m8 16 8-8"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>Learning DNA
-                </Link>
-                <Link
-                  href="/resources"
-                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-slate-100 transition shadow-xs"
-                >
-                  <svg className="h-3.5 w-3.5 text-slate-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>Formulas
-                </Link>
-                <Link
-                  href="/community"
-                  className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-900 hover:bg-emerald-100 transition shadow-xs"
-                >
-                  <svg className="h-3.5 w-3.5 text-emerald-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Communities
-                </Link>
-                <Link
-                  href="/leaderboard"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:underline"
-                >
-                  <svg className="h-3.5 w-3.5 text-blue-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>Leaderboard
-                </Link>
-                <Link
-                  href="/learning/achievements"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:underline"
-                >
-                  <svg className="h-3.5 w-3.5 text-amber-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>Achievements &amp; Streaks
-                </Link>
+              </Link>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 dark:text-cyan-400">
+                    BrainLab Learner Workspace
+                  </span>
+                  {stats.accessTier && (
+                    <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-[10px] font-black text-blue-800 dark:text-blue-300">
+                      {stats.accessTier}
+                    </span>
+                  )}
+                </div>
+                <h1 className="mt-1 text-2xl font-black text-slate-950 dark:text-white sm:text-3xl flex items-center gap-2 flex-wrap">
+                  <span>{greeting}</span>
+                  {firstName ? <span>, {firstName}</span> : null}
+                  {user && <UserBadges userId={user.id} size="sm" maxVisible={3} />}
+                </h1>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Track your topic mastery, complete daily learning quests, and get ready for scheduled tests.
+                </p>
               </div>
-            )}
+            </div>
 
-
+            {/* Right Status Indicators: Gamification & Presence */}
+            <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
+              <ActivePresenceBar activityContext="Studying on Learner Dashboard" variant="pill" />
+              {gamification && (
+                <>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/50 dark:text-amber-200 shadow-xs">
+                    <span>⭐</span>
+                    <span>Level {gamification.current_level} · {gamification.level_name} ({gamification.lifetime_xp.toLocaleString()} XP)</span>
+                  </span>
+                  <LearningStreakCard
+                    currentStreak={gamification.current_streak_days}
+                    longestStreak={gamification.longest_streak_days}
+                    lastActiveDate={gamification.last_activity_date}
+                    compact={true}
+                  />
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <ActivePresenceBar activityContext="Studying on Learner Dashboard" variant="pill" />
-            <Link
-              href="/account/access"
-              className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1.5 text-xs font-bold text-blue-900 transition hover:bg-blue-100"
-            >
-              <svg className="h-3.5 w-3.5 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
-              <span>{stats.accessTier}</span>
-              {stats.subscriptionExpiry && stats.accessTier.includes("Member") && (
-                <span className="hidden sm:inline-block text-[10px] font-medium text-blue-700/80 ml-1">
-                  • {stats.subscriptionExpiry}
-                </span>
-              )}
-            </Link>
-            <Link
-              href="/profile"
-              className="group inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1.5 pl-1.5 pr-4 shadow-sm transition hover:border-blue-200 hover:shadow-md"
-            >
-              {avatar && typeof avatar === "string" && /^https:\/\//i.test(avatar) ? (
-                <img
-                  src={avatar}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  className="h-8 w-8 rounded-full object-cover"
-                />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#dbeafe] text-xs font-black text-[#12346b]"
-                >
-                  {initials(fullName || "BL")}
-                </span>
-              )}
-              <span className="text-sm font-semibold text-slate-700">
-                {fullName || "Profile"}
-              </span>
-              <span
-                aria-hidden="true"
-                className="text-slate-400 transition group-hover:translate-x-0.5"
+
+          {/* Quick Navigation Action Strip */}
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/cbt"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 text-xs font-bold transition shadow-xs active:scale-95"
               >
-                ↗
-              </span>
-            </Link>
+                <span>✍️</span> CBT Practice
+              </Link>
+              <Link
+                href="/ai-learning"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 hover:bg-purple-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+              >
+                <span>🤖</span> AI Study Mission
+              </Link>
+              <Link
+                href="/community"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+              >
+                <span>👥</span> Communities
+              </Link>
+              <Link
+                href="/challenge-arena"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-300 hover:bg-amber-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+              >
+                <span>⚡</span> Arena (2× XP)
+              </Link>
+              <Link
+                href="/learning-dna"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+              >
+                <span>🧬</span> Learning DNA
+              </Link>
+              <Link
+                href="/resources"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+              >
+                <span>📐</span> Formulas
+              </Link>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-bold">
+              <Link href="/leaderboard" className="text-blue-700 dark:text-blue-400 hover:underline inline-flex items-center gap-1">
+                <span>🏆</span> Leaderboard
+              </Link>
+              <span className="text-slate-300 dark:text-slate-700">·</span>
+              <Link href="/learning/achievements" className="text-amber-700 dark:text-amber-400 hover:underline inline-flex items-center gap-1">
+                <span>🎖️</span> Achievements
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -449,7 +458,7 @@ export default function LearnerDashboardPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/classroom/BL-LIVE-101"
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-400 hover:bg-emerald-300 px-4 py-2 text-xs font-black text-slate-950 transition active:scale-95 shadow-sm"
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-400 hover:bg-emerald-300 px-4 py-2 text-xs font-black text-slate-950 dark:text-white transition active:scale-95 shadow-sm"
             >
               Enter Live Room ↗
             </Link>
@@ -653,7 +662,7 @@ export default function LearnerDashboardPage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a4 4 0 0 0-4 4c0 .8.2 1.5.7 2.1L8 10a4 4 0 0 0 4 4 4 4 0 0 0 4-4l-.7-1.9c.5-.6.7-1.3.7-2.1a4 4 0 0 0-4-4Z" /><path d="M12 14v8" /><path d="M9 18h6" /></svg><span>Daily Retention</span>
               </div>
               <h3 className="mt-2 text-lg font-black text-slate-900">10-Minute Spaced Review</h3>
-              <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Review questions you previously missed before they fade from memory.
               </p>
               <div className="mt-4 rounded-2xl bg-white border border-purple-100 p-3.5 shadow-sm text-center">
@@ -688,7 +697,7 @@ export default function LearnerDashboardPage() {
                 <h3 className="mt-1 text-lg font-black text-slate-900">
                   Comprehensive Candidate Study Report
                 </h3>
-                <p className="mt-1 max-w-xl text-xs text-slate-600 leading-relaxed">
+                <p className="mt-1 max-w-xl text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Track cognitive processing speed, subject syllabus completion, retention benchmarks, and download your printable verified examination performance slip.
                 </p>
               </div>
@@ -794,69 +803,6 @@ export default function LearnerDashboardPage() {
           </section>
         )}
 
-        {/* Hero Banner */}
-        <section className="relative overflow-hidden rounded-[2rem] bg-[#071c43] px-6 py-8 text-white shadow-[0_24px_70px_rgba(7,28,67,0.16)] sm:px-10 sm:py-11 lg:px-12 lg:py-12">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full border border-white/10 sm:h-96 sm:w-96"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-4 top-10 h-48 w-48 rounded-full border border-white/10 sm:right-16 sm:top-6 sm:h-64 sm:w-64"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 right-0 h-40 w-40 bg-gradient-to-tl from-cyan-400/20 to-transparent blur-3xl"
-          />
-          <div className="relative grid gap-9 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold text-cyan-200">
-                A little progress, repeated, changes everything.
-              </p>
-              <h2 className="mt-4 text-3xl font-black leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-                Welcome to your learning space
-                {firstName ? `, ` : "."}
-                {firstName ? <span className="text-cyan-200">{firstName}.</span> : null}
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-blue-100/85">
-                Your next breakthrough starts with one good learning session. Choose a path, focus on what matters, and keep moving forward.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/learn"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-[#071c43] shadow-lg transition hover:-translate-y-0.5 hover:bg-cyan-50"
-                >
-                  Continue learning <span aria-hidden="true">→</span>
-                </Link>
-                <Link
-                  href="/learning/revision"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                >
-                  My revision plan
-                </Link>
-              </div>
-            </div>
-            <div className="relative rounded-2xl border border-white/15 bg-white/[0.07] p-5 backdrop-blur-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-bold text-blue-100">Your next step</span>
-                <span className="rounded-full bg-cyan-200/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-cyan-100">
-                  Focus
-                </span>
-              </div>
-              <p className="mt-4 text-xl font-extrabold">Pick one thing to master.</p>
-              <p className="mt-2 text-sm leading-6 text-blue-100/75">
-                Choose a topic you find challenging and give it 15 focused minutes.
-              </p>
-              <Link
-                href="/ai-learning"
-                className="mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-cyan-200 hover:text-white"
-              >
-                Build a study mission <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </div>
-        </section>
-
         {/* Learning Paths */}
         <section aria-labelledby="spaces-heading">
           <div>
@@ -870,32 +816,32 @@ export default function LearnerDashboardPage() {
               Three ways to make today count. Start wherever you are, and return whenever you are ready.
             </p>
           </div>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {spaces.map((space) => (
               <article
                 key={space.href}
-                className="group flex min-h-[260px] flex-col rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-md hover-lift sm:p-7"
+                className="group flex min-h-[240px] flex-col rounded-3xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-[#0c1527] p-6 shadow-xs transition duration-200 hover:-translate-y-1 hover:border-blue-300 dark:hover:border-cyan-500/40 hover:shadow-md hover-lift"
               >
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-sm font-black text-blue-900">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-sm font-black text-blue-700 dark:text-cyan-400 border border-blue-200/60 dark:border-blue-800">
                     {space.number}
                   </span>
-                  <span className="text-[11px] font-bold tracking-wider text-slate-400">
-                    BRAINLAB ACADEMY
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Study Space
                   </span>
                 </div>
-                <p className="mt-5 text-[10px] font-extrabold tracking-[0.17em] text-blue-800">
+                <p className="mt-4 text-[10px] font-black tracking-[0.16em] uppercase text-blue-700 dark:text-cyan-400">
                   {space.eyebrow}
                 </p>
-                <h3 className="mt-1.5 text-xl font-extrabold tracking-tight">{space.title}</h3>
-                <p className="mt-2.5 flex-1 text-sm leading-6 text-slate-600">
+                <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white">{space.title}</h3>
+                <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
                   {space.description}
                 </p>
                 <Link
                   href={space.href}
-                  className="mt-5 inline-flex min-h-11 items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm font-extrabold text-[#0b2a5b] active-press"
+                  className="mt-4 inline-flex min-h-10 items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/80 pt-3 text-xs font-black text-blue-700 dark:text-cyan-400 group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition"
                 >
-                  {space.action}
+                  <span>{space.action}</span>
                   <span aria-hidden="true" className="transition group-hover:translate-x-1">
                     →
                   </span>
@@ -916,7 +862,7 @@ export default function LearnerDashboardPage() {
             </h2>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="group rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 to-white p-5 transition duration-200 hover:border-indigo-300 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group rounded-3xl border border-indigo-200/80 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/70 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -936,7 +882,7 @@ export default function LearnerDashboardPage() {
               </Link>
             </article>
 
-            <article className="group rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/60 to-white p-5 transition duration-200 hover:border-amber-300 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group rounded-3xl border border-amber-200/80 dark:border-amber-900/40 bg-gradient-to-br from-amber-50/60 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-amber-300 dark:hover:border-amber-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm shadow-amber-500/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -966,7 +912,7 @@ export default function LearnerDashboardPage() {
               </div>
             </article>
 
-            <article className="group rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/70 to-white p-5 transition duration-200 hover:border-blue-300 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group rounded-3xl border border-blue-200/80 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/70 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -989,7 +935,7 @@ export default function LearnerDashboardPage() {
               </Link>
             </article>
 
-            <article className="group rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 to-white p-5 transition duration-200 hover:border-emerald-300 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group rounded-3xl border border-emerald-200/80 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50/60 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

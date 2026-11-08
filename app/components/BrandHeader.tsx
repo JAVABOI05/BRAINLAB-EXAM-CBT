@@ -496,33 +496,6 @@ export default function BrandHeader() {
 
         {/* Right Desktop Actions & Action Buttons */}
         <div className="hidden md:flex items-center gap-2">
-          {/* Action: Pricing Link */}
-          <Link
-            href="/pricing"
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-              pathname === "/pricing"
-                ? "text-blue-700 dark:text-cyan-300 font-extrabold"
-                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
-            }`}
-          >
-            Pricing
-          </Link>
-
-          {/* Action: Teach with Us */}
-          <Link
-            href="/for-tutors"
-            className="hidden xl:inline-flex rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition"
-          >
-            Teach with Us
-          </Link>
-
-          {/* Action: Support */}
-          <Link
-            href="/contact"
-            className="hidden xl:inline-flex rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition"
-          >
-            Support
-          </Link>
 
           {checkingSession ? (
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-slate-700">
@@ -781,14 +754,7 @@ export default function BrandHeader() {
                 <span>ℹ️</span>
                 <span>About BrainLab Academy</span>
               </Link>
-              <Link
-                href="/for-tutors"
-                onClick={closeAllMenus}
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <span>👨‍🏫</span>
-                <span>Teach with Us</span>
-              </Link>
+
               <Link
                 href="/contact"
                 onClick={closeAllMenus}
