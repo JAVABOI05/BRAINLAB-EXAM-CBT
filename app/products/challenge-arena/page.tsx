@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Academic Challenge Arena & Daily Sprints | BrainLab Academy",
+  title: "Academic Challenge Arena & Daily Sprints",
   description:
     "Gamified examination preparation: daily 10-question timed speed sprints, real-time 1v1 academic duels, daily streak milestones, and the verified national merit leaderboard.",
-  alternates: { canonical: "/products/challenge-arena" },
+  alternates: { canonical: "https://www.brainlabacademy.com.ng/products/challenge-arena" },
   openGraph: {
     title: "Challenge Arena & Competitions — BrainLab Academy",
     description:
