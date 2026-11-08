@@ -48,12 +48,12 @@ as $function$
     ),'[]'::jsonb),
     -- Only unscoped assignments contribute to the global permission list.
     'permissions',coalesce((
-      select to_jsonb(array(
-        select distinct unnest(permission_keys)
-        from assignment_permissions
-        where resource_scope='{}'::jsonb
-        order by 1
-      ))
+      select jsonb_agg(global_permission.permission_key order by global_permission.permission_key)
+      from (
+        select distinct unnest(ap.permission_keys) as permission_key
+        from assignment_permissions ap
+        where ap.resource_scope='{}'::jsonb
+      ) global_permission
     ),'[]'::jsonb),
     -- Scoped grants remain attached to their assignment and are never flattened globally.
     'scoped_permissions',coalesce((
