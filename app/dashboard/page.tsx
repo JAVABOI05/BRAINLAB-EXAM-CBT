@@ -23,6 +23,8 @@ import DeviceNotificationPrompt from "../components/DeviceNotificationPrompt";
 import ExamCountdownBanner from "../components/ExamCountdownBanner";
 import WhatsAppChannelHeroBanner from "../components/WhatsAppChannelHeroBanner";
 import DailyLearningFeedWidget from "../components/dashboard/DailyLearningFeedWidget";
+import { StudentAvatar } from "../components/ui/StudentAvatar";
+import { extractStudentProfile } from "../lib/studentProfile";
 
 type RecentExam = {
   result_id: string;
@@ -329,25 +331,12 @@ export default function LearnerDashboardPage() {
             <div className="flex items-start sm:items-center gap-5">
               {/* Profile Avatar with Glowing Ring & Presence */}
               <Link href="/profile" className="relative group shrink-0" title="View & Edit Profile">
-                {avatar && typeof avatar === "string" && /^https:\/\//i.test(avatar) ? (
-                  <img
-                    src={avatar}
-                    alt=""
-                    referrerPolicy="no-referrer"
-                    className="h-20 w-20 rounded-2xl object-cover ring-2 ring-cyan-400/50 shadow-xl group-hover:scale-105 group-hover:ring-cyan-300 transition duration-300"
-                  />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 text-2xl font-black text-white shadow-xl ring-2 ring-white/20 group-hover:scale-105 transition duration-300"
-                  >
-                    {initials(fullName || "BL")}
-                  </span>
-                )}
-                <span className="absolute -bottom-1 -right-1 flex h-5 w-5" title="Online Active">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-5 w-5 bg-emerald-500 border-2 border-[#07132e]" />
-                </span>
+                <StudentAvatar
+                  profile={studentProfile}
+                  size="lg"
+                  showOnlineDot={true}
+                  className="ring-2 ring-cyan-400/50 shadow-xl group-hover:scale-105 group-hover:ring-cyan-300 transition duration-300"
+                />
               </Link>
 
               <div>
