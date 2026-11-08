@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
       };
     }));
 
-    return NextResponse.json({ success: true, recordings });
+    return NextResponse.json({ success: true, recordings }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Could not load recordings." }, { status: 500 });
   }
