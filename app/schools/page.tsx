@@ -754,8 +754,30 @@ export default function SchoolsPage() {
             ) : (
               <form onSubmit={handleInquirySubmit} className="mt-8 space-y-4">
                 {submitResult && !submitResult.ok && (
-                  <div className="rounded-xl bg-rose-50 p-4 text-xs font-semibold text-rose-800 dark:bg-rose-950/50 dark:text-rose-200">
-                    {submitResult.message}
+                  <div className="rounded-2xl border border-rose-300 bg-rose-50 p-5 text-xs text-rose-900 dark:border-rose-800/80 dark:bg-rose-950/60 dark:text-rose-200">
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl leading-none">⚠️</span>
+                      <div className="flex-1">
+                        <p className="font-bold text-rose-950 dark:text-rose-100">Submission Notice</p>
+                        <p className="mt-1 leading-relaxed text-rose-800 dark:text-rose-300">{submitResult.message}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <a
+                            href={getWhatsAppChatUrl("Hello BrainLab Academic Desk, we encountered an issue submitting our institutional inquiry online and would like to connect directly.", whatsappNumber)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500"
+                          >
+                            💬 Chat Directly on WhatsApp
+                          </a>
+                          <a
+                            href="mailto:support@brainlab.edu.ng?subject=Institutional%20Inquiry%20Direct%20Submission"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-400/60 bg-white/80 px-3 py-1.5 text-[11px] font-bold text-rose-900 transition-colors hover:bg-white dark:border-rose-700 dark:bg-rose-900/50 dark:text-rose-100"
+                          >
+                            ✉️ Email Academic Desk
+                          </a>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 

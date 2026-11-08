@@ -5,7 +5,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { getStudentSubscriptionAndEntitlements } from "../lib/subscriptionEntitlements";
+import {
+  getLearnerDashboardSummary,
+  type LearnerStats,
+  type ActivePlan,
+  type RecentLesson,
+} from "../lib/services/learnerProgressService";
 import { getTopicMasteryRecords, calculateExamReadiness, type ExamReadiness } from "../lib/adaptiveEngine";
 import { getDueSpacedReviews } from "../lib/spacedRepetition";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
@@ -15,16 +20,8 @@ import { getUserGamificationProfile, type UserGamificationProfile } from "../lib
 import { CardSkeleton, StatsSkeleton } from "../components/SkeletonLoader";
 import ActivePresenceBar from "../components/ActivePresenceBar";
 import DeviceNotificationPrompt from "../components/DeviceNotificationPrompt";
-
-type LearnerStats = {
-  lessonsCompleted: number;
-  questionsPracticed: number;
-  revisionTasksTotal: number;
-  revisionTasksCompleted: number;
-  accessTier: string;
-  maxQuestions: number;
-  subscriptionExpiry?: string | null;
-};
+import ExamCountdownBanner from "../components/ExamCountdownBanner";
+import WhatsAppChannelHeroBanner from "../components/WhatsAppChannelHeroBanner";
 
 type RecentExam = {
   result_id: string;
@@ -32,21 +29,6 @@ type RecentExam = {
   total: number;
   status?: string;
   subject_scores?: Record<string, number>;
-};
-
-type ActivePlan = {
-  goal: string;
-  days: number;
-  dailyMinutes: number;
-  tasksCount: number;
-  completedTasks: number;
-};
-
-type RecentLesson = {
-  lessonId: string;
-  title: string;
-  subjectName?: string;
-  status: string;
 };
 
 function getLearnerDisplayName(user: User): string {
@@ -182,7 +164,7 @@ export default function LearnerDashboardPage() {
 
       setUser(currentUser);
 
-      // Fetch authentic progress data across systems in parallel with defensive fallbacks
+      // Fetch authentic progress data via consolidated Data Access Layer
       try {
         void getTopicMasteryRecords().then((list) => {
           if (list.length) setReadiness(calculateExamReadiness(list));
@@ -192,153 +174,17 @@ export default function LearnerDashboardPage() {
           if (active && gp) setGamification(gp);
         });
 
-        const [progressRes, planRes, entitlementsRes, subscriptionRes, testAttemptsRes] = await Promise.all([
-          // 1. Lessons completed
-          supabase
-            .from("learning_lesson_progress")
-            .select("lesson_id, status, updated_at")
-            .eq("student_id", currentUser.id),
-
-          // 2. Revision plan
-          supabase
-            .from("learning_revision_plans")
-            .select("goal, plan_days, daily_minutes, tasks")
-            .eq("user_id", currentUser.id)
-            .maybeSingle(),
-
-          // 3. Entitlements
-          supabase
-            .from("learning_entitlements")
-            .select("entitlement_type, membership_type, max_questions, status, starts_at, expires_at, permanent, revoked_at")
-            .eq("user_id", currentUser.id)
-            .eq("status", "active"),
-
-          // 4. Subscription fallback keeps the dashboard consistent with billing/admin records.
-          supabase
-            .from("user_subscriptions")
-            .select("plan_id, status, current_period_end")
-            .eq("user_id", currentUser.id)
-            .maybeSingle(),
-
-          // 5. Test attempts
-          supabase
-            .from("learning_test_attempts")
-            .select("id, score, total_marks, status, submitted_at")
-            .eq("student_id", currentUser.id),
-        ]);
+        const summary = await getLearnerDashboardSummary(
+          currentUser.id,
+          recentExam ? recentExam.total : 0
+        );
 
         if (!active) return;
 
-        let completedLessonsCount = 0;
-        let lastLessonId: string | null = null;
-        if (progressRes.data && Array.isArray(progressRes.data)) {
-          completedLessonsCount = progressRes.data.filter((r) => r.status === "completed").length;
-          const sorted = [...progressRes.data].sort(
-            (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-          );
-          if (sorted[0]?.lesson_id) {
-            lastLessonId = sorted[0].lesson_id;
-          }
-        }
-
-        // Fetch lesson title if recent lesson exists
-        if (lastLessonId) {
-          const { data: lessonData } = await supabase
-            .from("learning_lessons")
-            .select("id, title")
-            .eq("id", lastLessonId)
-            .maybeSingle();
-
-          if (lessonData && active) {
-            setRecentLesson({
-              lessonId: lessonData.id,
-              title: lessonData.title,
-              status: "In progress",
-            });
-          }
-        }
-
-        // Parse Revision Plan
-        let planTotalTasks = 0;
-        let planCompletedTasks = 0;
-        if (planRes.data) {
-          const tasks = Array.isArray(planRes.data.tasks) ? planRes.data.tasks : [];
-          planTotalTasks = tasks.length;
-          planCompletedTasks = tasks.filter((t: { done?: boolean }) => t.done === true).length;
-          setActivePlan({
-            goal: planRes.data.goal || "Exam Preparation",
-            days: planRes.data.plan_days || 7,
-            dailyMinutes: planRes.data.daily_minutes || 30,
-            tasksCount: planTotalTasks,
-            completedTasks: planCompletedTasks,
-          });
-        }
-
-        // Check if user is an Administrator
-        let resolvedRole: string | null = null;
-        try {
-          const { data: role } = await supabase.rpc("get_admin_role");
-          if (typeof role === "string" && role.length > 0) {
-            resolvedRole = role;
-          }
-        } catch {}
-
-        if (!resolvedRole) {
-          try {
-            const { data: profile } = await supabase
-              .from("admin_profiles")
-              .select("role")
-              .eq("user_id", currentUser.id)
-              .maybeSingle();
-            if (profile?.role) resolvedRole = profile.role;
-          } catch {}
-        }
-
-        if (resolvedRole) {
-          setAdminRole(resolvedRole);
-        }
-
-        // Parse Access Entitlements (Authoritative unified tier resolution)
-        let tierName = "Free Learner";
-        let maxAllowedQuestions = 50;
-        let expiryDateText: string | null = null;
-
-        try {
-          const authTier = await getStudentSubscriptionAndEntitlements(currentUser.id);
-          if (authTier.planId === "admin_vip" || resolvedRole) {
-            tierName = `${(resolvedRole === "super_admin" || authTier.planId === "admin_vip") ? "Super Admin" : "Administrator"} VIP (Universal Access)`;
-            maxAllowedQuestions = 999999;
-            expiryDateText = "Universal Access";
-          } else if (authTier.isSubscribed && authTier.planId !== "free") {
-            const planKey = authTier.planId.toLowerCase();
-            tierName = `${planKey.toUpperCase()} Member`;
-            maxAllowedQuestions = planKey === "pro" ? 500 : planKey === "plus" ? 400 : 250;
-            expiryDateText = authTier.expiresAt
-              ? new Date(authTier.expiresAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })
-              : "Active";
-          } else {
-            tierName = "Free Learner";
-            maxAllowedQuestions = 50;
-            expiryDateText = null;
-          }
-        } catch {
-          tierName = "Free Learner";
-          maxAllowedQuestions = 50;
-          expiryDateText = null;
-        }
-
-        // Test attempts count
-        const testAttemptsCount = testAttemptsRes.data?.length ?? 0;
-
-        setStats({
-          lessonsCompleted: completedLessonsCount,
-          questionsPracticed: testAttemptsCount > 0 ? testAttemptsCount * 20 : (recentExam ? recentExam.total : 0),
-          revisionTasksTotal: planTotalTasks,
-          revisionTasksCompleted: planCompletedTasks,
-          accessTier: tierName,
-          maxQuestions: maxAllowedQuestions,
-          subscriptionExpiry: expiryDateText,
-        });
+        setStats(summary.stats);
+        if (summary.activePlan) setActivePlan(summary.activePlan);
+        if (summary.recentLesson) setRecentLesson(summary.recentLesson);
+        if (summary.adminRole) setAdminRole(summary.adminRole);
       } catch {
         // Defensive: dashboard remains operational even if database tables are in migration
       } finally {
@@ -581,6 +427,20 @@ export default function LearnerDashboardPage() {
             >
               Timetable
             </Link>
+          </div>
+        </div>
+
+        {/* Exam Countdown & Official WhatsApp Community Row */}
+        <div className="grid gap-4 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <ExamCountdownBanner
+              variant="dashboard"
+              examLabel="2027 JAMB UTME National Examination"
+              showCta={true}
+            />
+          </div>
+          <div className="lg:col-span-4">
+            <WhatsAppChannelHeroBanner variant="card" />
           </div>
         </div>
 

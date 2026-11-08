@@ -100,9 +100,11 @@ export default function ContactPage() {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [ticketRef, setTicketRef] = useState<string>("");
+  const [ticketWaUrl, setTicketWaUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim() || !formData.message.trim()) {
       toast.error("Please fill in your name, contact phone number, and inquiry message.");
@@ -111,16 +113,38 @@ export default function ContactPage() {
 
     setLoading(true);
 
-    const encodedMsg = encodeURIComponent(
-      `Hello BrainLab Academy Desk,\n\nCandidate Name: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email || "N/A"}\nTopic: ${formData.category}\n\nMessage:\n${formData.message}`
-    );
-    const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumber}?text=${encodedMsg}`;
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    setTimeout(() => {
-      setLoading(false);
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setTicketRef(data.referenceCode || "BL-CNT-ACK");
+        setTicketWaUrl(data.whatsappUrl || "");
+        setSubmitted(true);
+        toast.success(`Inquiry registered! Reference: ${data.referenceCode}`);
+        if (data.whatsappUrl) {
+          window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
+        }
+      } else {
+        toast.error(data.error || "Unable to submit inquiry. Please try again.");
+      }
+    } catch {
+      // Fallback: direct WhatsApp open if network fails
+      const encodedMsg = encodeURIComponent(
+        `Hello BrainLab Academy Desk,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nTopic: ${formData.category}\n\nMessage:\n${formData.message}`
+      );
+      const fallbackUrl = `https://wa.me/${contactInfo.whatsappNumber}?text=${encodedMsg}`;
+      setTicketRef("OFFLINE-DISPATCH");
+      setTicketWaUrl(fallbackUrl);
       setSubmitted(true);
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    }, 500);
+      window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCopy = (text: string, label: string) => {
@@ -324,22 +348,30 @@ export default function ContactPage() {
                   <div className="mt-8 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-6 text-center">
                     <span className="text-3xl" aria-hidden="true">✓</span>
                     <h3 className="mt-2 text-lg font-bold text-emerald-950 dark:text-emerald-200">
-                      Inquiry Packaged &amp; Dispatched!
+                      Inquiry Registered &amp; Dispatched!
                     </h3>
-                    <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300">
-                      Your query has been routed. If WhatsApp didn&apos;t open automatically on your device, click below to connect:
+                    {ticketRef && (
+                      <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-3 py-1 text-xs font-black text-emerald-900 dark:text-emerald-200">
+                        <span>Ticket ID:</span>
+                        <span className="font-mono">{ticketRef}</span>
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-emerald-800 dark:text-emerald-300">
+                      Your query has been logged to our academic queue. Click below if WhatsApp didn&apos;t open automatically on your device:
                     </p>
                     <a
-                      href={`https://wa.me/${contactInfo.whatsappNumber}`}
+                      href={ticketWaUrl || `https://wa.me/${contactInfo.whatsappNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow transition active:scale-95"
                     >
-                      <span>Open WhatsApp Chat Now</span> &rarr;
+                      <span>Continue on WhatsApp with Ticket #{ticketRef}</span> &rarr;
                     </a>
                     <button
                       onClick={() => {
                         setSubmitted(false);
+                        setTicketRef("");
+                        setTicketWaUrl("");
                         setFormData({ name: "", phone: "", email: "", category: "cbt_exam", message: "" });
                       }}
                       className="mt-3 block w-full text-center text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"

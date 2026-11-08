@@ -84,8 +84,15 @@ export async function POST(req: NextRequest) {
     ]);
 
     if (insertError) {
-      // If table has not yet been migrated in current environment, log without PII
-      console.warn(`[INSTITUTIONAL INQUIRY] Database persistence notice for Ref ${referenceCode}: ${insertError.message}`);
+      // Fail closed: Do not report false success if database persistence fails
+      console.warn(`[INSTITUTIONAL INQUIRY] Database persistence failed for Ref ${referenceCode}: ${insertError.message}`);
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Unable to record inquiry automatically at this time. Please contact our Academic Desk directly via WhatsApp or email.",
+        },
+        { status: 503 }
+      );
     }
 
     // 2. Broadcast alert to live admin channel as a secondary real-time notification

@@ -9,21 +9,100 @@ import { supabase } from "../lib/supabase";
 import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
 import UserBadges from "./UserBadges";
 
-interface NavLinkItem {
+interface DropdownItem {
+  title: string;
+  description: string;
   href: string;
-  label: string;
-  isLiveIndicator?: boolean;
   badge?: string;
+  icon?: string;
 }
 
-const NAV_LINKS: NavLinkItem[] = [
+export const LEGACY_NAV_MAPPING = [
   { href: "/products", label: "Products" },
   { href: "/syllabus", label: "Syllabus" },
   { href: "/resources", label: "Resources" },
   { href: "/pricing", label: "Pricing" },
   { href: "/schools", label: "For Schools" },
   { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+];
+
+const PROGRAMMES_ITEMS: DropdownItem[] = [
+  {
+    title: "JAMB UTME Accelerator",
+    description: "Full-length 4-subject CBT mock exams with standard 2027 question banks.",
+    href: "/products/cbt",
+    badge: "Most Popular",
+    icon: "🎯",
+  },
+  {
+    title: "WAEC & NECO Senior School",
+    description: "Curriculum theory lessons, formula sheets, and past question analysis.",
+    href: "/learn",
+    icon: "📚",
+  },
+  {
+    title: "National Challenge Arena",
+    description: "Head-to-head live 1v1 academic sprint battles and school leaderboards.",
+    href: "/products/challenge-arena",
+    badge: "Live 1v1",
+    icon: "⚡",
+  },
+];
+
+const PLATFORM_ITEMS: DropdownItem[] = [
+  {
+    title: "CBT Mock Simulator",
+    description: "Authentic JAMB exam interface with timer, calculator, and offline sync.",
+    href: "/products/cbt",
+    icon: "🖥️",
+  },
+  {
+    title: "Curriculum Learning Hub",
+    description: "Structured video and text modules across Science, Art, and Commercial.",
+    href: "/products/learning-hub",
+    icon: "📖",
+  },
+  {
+    title: "Virtual STEM Studio",
+    description: "Interactive Physics, Chemistry, and Math parameter simulations.",
+    href: "/products/stem-studio",
+    badge: "Interactive",
+    icon: "🔬",
+  },
+  {
+    title: "Live Interactive Classroom",
+    description: "Audio, video, and synchronized whiteboard masterclasses with top tutors.",
+    href: "/products/live-classroom",
+    icon: "👨‍🏫",
+  },
+  {
+    title: "AI Diagnostic Studio",
+    description: "Pinpoint weak subtopics and drill targeted reinforcement questions.",
+    href: "/products/ai-learning",
+    icon: "🤖",
+  },
+];
+
+const RESOURCES_ITEMS: DropdownItem[] = [
+  {
+    title: "Official UTME Syllabus",
+    description: "Complete NERDC/JAMB subject syllabus, topics, and recommended texts.",
+    href: "/syllabus",
+    badge: "Official",
+    icon: "📋",
+  },
+  {
+    title: "Downloads & Past Papers",
+    description: "Curated PDF revision summaries and official exam timetables.",
+    href: "/resources",
+    icon: "📥",
+  },
+  {
+    title: "Frequently Asked Questions",
+    description: "Common questions about practice codes, offline mode, and payments.",
+    href: "/faq",
+    icon: "💡",
+  },
 ];
 
 function displayName(user: User) {
@@ -39,6 +118,7 @@ export default function BrandHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [openNavDropdown, setOpenNavDropdown] = useState<"programmes" | "platform" | "resources" | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -47,8 +127,9 @@ export default function BrandHeader() {
   const [isLiveClassOn, setIsLiveClassOn] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Poll for active live classes to toggle indicator from red to green
+  // Poll for active live classes
   useEffect(() => {
     let isMounted = true;
     const checkLiveClass = async () => {
@@ -61,7 +142,7 @@ export default function BrandHeader() {
           }
         }
       } catch {
-        // Silently keep default
+        // keep default
       }
     };
 
@@ -78,6 +159,9 @@ export default function BrandHeader() {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setUserDropdownOpen(false);
+      }
+      if (navDropdownRef.current && !navDropdownRef.current.contains(e.target as Node)) {
+        setOpenNavDropdown(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -186,6 +270,7 @@ export default function BrandHeader() {
     await supabase.auth.signOut();
     setUser(null);
     setUserDropdownOpen(false);
+    setOpenNavDropdown(null);
     setMobileMenuOpen(false);
     router.replace("/");
     router.refresh();
@@ -195,11 +280,12 @@ export default function BrandHeader() {
   const closeAllMenus = () => {
     setMobileMenuOpen(false);
     setUserDropdownOpen(false);
+    setOpenNavDropdown(null);
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 text-slate-900 shadow-[0_2px_14px_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-slate-800/80 dark:bg-[#071328]/85 dark:text-slate-100 dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-colors">
-      <div className="mx-auto flex min-h-[68px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 text-slate-900 shadow-[0_2px_14px_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-slate-800/80 dark:bg-[#071328]/90 dark:text-slate-100 dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-colors">
+      <div className="mx-auto flex min-h-[70px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         
         {/* Brand Logo & Emblem */}
         <Link
@@ -228,73 +314,241 @@ export default function BrandHeader() {
           </div>
         </Link>
 
-        {/* Center Desktop Navigation Pills */}
+        {/* Center Desktop Navigation Pillars (5 Pillars) */}
         <nav
+          ref={navDropdownRef}
           aria-label="Main navigation"
-          className="hidden md:flex items-center gap-1 rounded-2xl border border-slate-200/60 bg-slate-50/60 p-1 dark:border-slate-800 dark:bg-slate-900/60"
+          className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/60 bg-slate-50/60 p-1 dark:border-slate-800 dark:bg-slate-900/60"
         >
-          {NAV_LINKS.map((link) => {
-            const isActive =
-              pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href + "/"));
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-150 ${
-                  isActive
-                    ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
-                    : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
-                }`}
-              >
-                <span>{link.label}</span>
-                {link.isLiveIndicator && (
-                  <span
-                    className="relative flex h-2 w-2 items-center justify-center shrink-0 ml-0.5"
-                    title={isLiveClassOn ? "Live Class is currently ON" : "No live class currently on"}
-                    aria-label={isLiveClassOn ? "Live class on" : "No live class"}
+          {/* Pillar 1: Programmes Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenNavDropdown(openNavDropdown === "programmes" ? null : "programmes")}
+              className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                openNavDropdown === "programmes" || pathname.startsWith("/products/cbt") || pathname.startsWith("/products/challenge-arena")
+                  ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
+                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+              }`}
+            >
+              <span>Programmes</span>
+              <svg className={`h-3 w-3 transition-transform ${openNavDropdown === "programmes" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            {openNavDropdown === "programmes" && (
+              <div className="absolute left-0 mt-2 w-72 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-[#0b1528] animate-in fade-in zoom-in-95 duration-100 z-50">
+                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Targeted Curricula
+                </div>
+                {PROGRAMMES_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpenNavDropdown(null)}
+                    className="flex items-start gap-2.5 rounded-xl p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
                   >
-                    {isLiveClassOn && (
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    )}
-                    <span
-                      className={`relative inline-flex h-2 w-2 rounded-full ${
-                        isLiveClassOn ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-rose-500"
-                      }`}
-                    />
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+                    <span className="text-lg shrink-0 mt-0.5">{item.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300">
+                          {item.title}
+                        </span>
+                        {item.badge && (
+                          <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.2 text-[9px] font-black uppercase text-blue-800 dark:text-cyan-300">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-2 mt-0.5">
+                        {item.description}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pillar 2: Platform Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenNavDropdown(openNavDropdown === "platform" ? null : "platform")}
+              className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                openNavDropdown === "platform" || pathname.startsWith("/products")
+                  ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
+                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+              }`}
+            >
+              <span>Platform</span>
+              <svg className={`h-3 w-3 transition-transform ${openNavDropdown === "platform" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            {openNavDropdown === "platform" && (
+              <div className="absolute left-0 mt-2 w-80 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-[#0b1528] animate-in fade-in zoom-in-95 duration-100 z-50">
+                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Learning &amp; Testing Ecosystem
+                </div>
+                {PLATFORM_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpenNavDropdown(null)}
+                    className="flex items-start gap-2.5 rounded-xl p-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
+                  >
+                    <span className="text-base shrink-0 mt-0.5">{item.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300">
+                          {item.title}
+                        </span>
+                        {item.badge && (
+                          <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-800 dark:text-emerald-300">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-1 mt-0.5">
+                        {item.description}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pillar 3: Schools Direct Link */}
+          <Link
+            href="/schools"
+            onClick={() => setOpenNavDropdown(null)}
+            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+              pathname === "/schools"
+                ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
+                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+            }`}
+          >
+            Schools
+          </Link>
+
+          {/* Pillar 4: Resources Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenNavDropdown(openNavDropdown === "resources" ? null : "resources")}
+              className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                openNavDropdown === "resources" || pathname.startsWith("/syllabus") || pathname.startsWith("/resources") || pathname.startsWith("/faq")
+                  ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
+                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+              }`}
+            >
+              <span>Resources</span>
+              <svg className={`h-3 w-3 transition-transform ${openNavDropdown === "resources" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            {openNavDropdown === "resources" && (
+              <div className="absolute left-0 mt-2 w-72 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-[#0b1528] animate-in fade-in zoom-in-95 duration-100 z-50">
+                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Student &amp; Academic Tools
+                </div>
+                {RESOURCES_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpenNavDropdown(null)}
+                    className="flex items-start gap-2.5 rounded-xl p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
+                  >
+                    <span className="text-base shrink-0 mt-0.5">{item.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300">
+                          {item.title}
+                        </span>
+                        {item.badge && (
+                          <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-800 dark:text-emerald-300">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-1 mt-0.5">
+                        {item.description}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Pillar 5: About Direct Link */}
+          <Link
+            href="/about"
+            onClick={() => setOpenNavDropdown(null)}
+            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+              pathname === "/about"
+                ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
+                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+            }`}
+          >
+            About
+          </Link>
         </nav>
 
-        {/* Right Desktop Actions */}
-        <div className="hidden md:flex items-center gap-2.5">
+        {/* Right Desktop Actions & Action Buttons */}
+        <div className="hidden md:flex items-center gap-2">
+          {/* Action: Pricing Link */}
+          <Link
+            href="/pricing"
+            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+              pathname === "/pricing"
+                ? "text-blue-700 dark:text-cyan-300 font-extrabold"
+                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+            }`}
+          >
+            Pricing
+          </Link>
+
+          {/* Action: Teach with Us */}
+          <Link
+            href="/for-tutors"
+            className="hidden xl:inline-flex rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition"
+          >
+            Teach with Us
+          </Link>
+
+          {/* Action: Support */}
+          <Link
+            href="/contact"
+            className="hidden xl:inline-flex rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition"
+          >
+            Support
+          </Link>
+
           {checkingSession ? (
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-slate-700">
               <span className="h-1.5 w-1.5 animate-ping rounded-full bg-blue-600" />
-              <span>Verifying session…</span>
+              <span>Checking…</span>
             </div>
           ) : user ? (
-            <div className="flex items-center gap-2">
-              {/* Quick Messages Icon */}
+            <div className="flex items-center gap-2 ml-1">
+              {/* Quick Messages */}
               <Link
                 href="/messages"
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
                 title="Messages"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
                 </svg>
               </Link>
 
-              {/* Quick Notifications Icon */}
+              {/* Quick Notifications */}
               <Link
                 href="/notifications"
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
                 title="Notifications"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                   <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                 </svg>
@@ -305,7 +559,7 @@ export default function BrandHeader() {
                 )}
               </Link>
 
-              {/* Quick Admin Portal Pill if Administrator */}
+              {/* Quick Admin Portal Button */}
               {isAdmin && (
                 <Link
                   href="/admin/dashboard"
@@ -313,21 +567,15 @@ export default function BrandHeader() {
                   title="Open Administrator Portal"
                 >
                   <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  <span>Admin Portal</span>
+                  <span>Admin</span>
                 </Link>
               )}
 
-              {/* Primary "My Learning" Quick Pill */}
+              {/* Student Portal Primary Pill */}
               <Link
                 href="/dashboard"
                 className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 px-3.5 py-2 text-xs font-black text-white shadow-xs transition hover:shadow-sm active:scale-95"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="7" height="9" x="3" y="3" rx="1.5" />
-                  <rect width="7" height="5" x="14" y="3" rx="1.5" />
-                  <rect width="7" height="9" x="14" y="12" rx="1.5" />
-                  <rect width="7" height="5" x="3" y="16" rx="1.5" />
-                </svg>
                 <span>Student Portal →</span>
               </Link>
 
@@ -350,57 +598,37 @@ export default function BrandHeader() {
                       {displayName(user).charAt(0).toUpperCase()}
                     </span>
                   )}
-                  <span className="max-w-[100px] truncate">{displayName(user)}</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-slate-400 transition-transform ${userDropdownOpen ? "rotate-180" : ""}`}>
-                    <path d="m6 9 6 6 6-6"/>
+                  <span className="max-w-[80px] truncate text-slate-900 dark:text-slate-100">{displayName(user)}</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-slate-400">
+                    <path d="m6 9 6 6 6-6" />
                   </svg>
                 </button>
 
-                {/* Dropdown Menu Overlay */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 text-xs shadow-xl dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
-                    <div className="border-b border-slate-100 p-2.5 dark:border-slate-800">
-                      <p className="font-extrabold text-slate-950 dark:text-white truncate">{displayName(user)}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
-                      <div className="mt-1.5">
-                        <UserBadges userId={user.id} maxVisible={2} size="xs" />
-                      </div>
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-800 dark:bg-[#0b1528] z-50">
+                    <div className="border-b border-slate-100 px-3 py-2.5 dark:border-slate-800">
+                      <p className="font-extrabold text-xs text-slate-900 dark:text-white truncate">
+                        {displayName(user)}
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        {user.email}
+                      </p>
                     </div>
 
-                    <div className="py-1">
-                      {isAdmin && (
-                        <Link
-                          href="/admin/dashboard"
-                          onClick={closeAllMenus}
-                          className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 hover:bg-amber-500 hover:text-slate-950 transition mb-1"
-                        >
-                          <svg className="h-4 w-4 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                          <span>Admin Portal Command</span>
-                        </Link>
-                      )}
-                      {isAdmin && (
-                        <Link
-                          href="/tutor"
-                          onClick={closeAllMenus}
-                          className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-black text-indigo-700 dark:text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500 hover:text-white transition mb-1"
-                        >
-                          <span>👨‍🏫</span>
-                          <span>Instructor Studio</span>
-                        </Link>
-                      )}
+                    <div className="py-1 text-xs">
+                      <Link
+                        href="/dashboard"
+                        onClick={closeAllMenus}
+                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                      >
+                        <span>📊</span> Student Dashboard
+                      </Link>
                       <Link
                         href="/profile"
                         onClick={closeAllMenus}
                         className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                       >
                         <span>👤</span> Profile &amp; Bio
-                      </Link>
-                      <Link
-                        href="/skills-passport"
-                        onClick={closeAllMenus}
-                        className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-                      >
-                        <span>🏅</span> Performance &amp; Badges
                       </Link>
                       <Link
                         href="/pricing"
@@ -421,7 +649,7 @@ export default function BrandHeader() {
                         type="button"
                         onClick={() => void signOut()}
                         disabled={signingOut}
-                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 text-xs"
                       >
                         <span>🚪</span>
                         <span>{signingOut ? "Signing out…" : "Sign Out"}</span>
@@ -433,7 +661,7 @@ export default function BrandHeader() {
             </div>
           ) : (
             /* Logged-out state */
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-1">
               <Link
                 href="/login"
                 className="rounded-xl px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 transition"
@@ -444,7 +672,7 @@ export default function BrandHeader() {
                 href="/login?mode=signup"
                 className="rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 px-4 py-2 text-xs font-extrabold text-white shadow-xs transition hover:shadow-sm active:scale-95"
               >
-                Get Started Free →
+                Start Free &rarr;
               </Link>
             </div>
           )}
@@ -453,7 +681,7 @@ export default function BrandHeader() {
         {/* Mobile Hamburger Toggle Button */}
         <button
           type="button"
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 md:hidden transition active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 lg:hidden transition active:scale-95"
           aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
@@ -463,46 +691,113 @@ export default function BrandHeader() {
 
       {/* Modern Mobile Slide-Down Drawer */}
       {mobileMenuOpen && (
-        <div className="border-b border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-[#071328] md:hidden animate-in fade-in duration-150">
-          <div className="space-y-1">
-            {NAV_LINKS.map((link) => {
-              const isActive =
-                pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href + "/"));
-              return (
+        <div className="border-b border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-[#071328] lg:hidden animate-in fade-in duration-150 max-h-[85vh] overflow-y-auto">
+          {/* Mobile Programmes Pillar */}
+          <div className="mb-3">
+            <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
+              Programmes
+            </div>
+            <div className="space-y-1 mt-1">
+              {PROGRAMMES_ITEMS.map((item) => (
                 <Link
-                  key={link.href}
-                  href={link.href}
+                  key={item.href}
+                  href={item.href}
                   onClick={closeAllMenus}
-                  className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold ${
-                    isActive
-                      ? "bg-blue-50 text-blue-900 font-extrabold dark:bg-blue-950/80 dark:text-cyan-300"
-                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <span className="flex items-center gap-2">
-                    {link.label}
-                    {link.isLiveIndicator && (
-                      <span className="relative flex h-2 w-2 items-center justify-center">
-                        {isLiveClassOn && (
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                        )}
-                        <span
-                          className={`relative inline-flex h-2 w-2 rounded-full ${
-                            isLiveClassOn ? "bg-emerald-500" : "bg-rose-500"
-                          }`}
-                          title={isLiveClassOn ? "Live class in session" : "No live class active"}
-                        />
-                      </span>
-                    )}
+                    <span>{item.icon}</span>
+                    <span>{item.title}</span>
                   </span>
-                  {link.badge && (
+                  {item.badge && (
                     <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black uppercase text-blue-800 dark:bg-blue-900 dark:text-cyan-300">
-                      {link.badge}
+                      {item.badge}
                     </span>
                   )}
                 </Link>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile Platform Pillar */}
+          <div className="mb-3">
+            <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
+              Platform Features
+            </div>
+            <div className="space-y-1 mt-1">
+              {PLATFORM_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={closeAllMenus}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>{item.icon}</span>
+                    <span>{item.title}</span>
+                  </span>
+                  {item.badge && (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile Resources Pillar */}
+          <div className="mb-3">
+            <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
+              Resources &amp; Support
+            </div>
+            <div className="space-y-1 mt-1">
+              <Link
+                href="/schools"
+                onClick={closeAllMenus}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <span>🏫</span>
+                <span>For Schools &amp; Institutions</span>
+              </Link>
+              {RESOURCES_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={closeAllMenus}
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>{item.icon}</span>
+                    <span>{item.title}</span>
+                  </span>
+                </Link>
+              ))}
+              <Link
+                href="/about"
+                onClick={closeAllMenus}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <span>ℹ️</span>
+                <span>About BrainLab Academy</span>
+              </Link>
+              <Link
+                href="/for-tutors"
+                onClick={closeAllMenus}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <span>👨‍🏫</span>
+                <span>Teach with Us</span>
+              </Link>
+              <Link
+                href="/contact"
+                onClick={closeAllMenus}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <span>📞</span>
+                <span>Contact &amp; Helpdesk</span>
+              </Link>
+            </div>
           </div>
 
           {/* User actions on mobile */}
@@ -521,33 +816,12 @@ export default function BrandHeader() {
                   </div>
                 </div>
 
-                {isAdmin && (
-                  <Link
-                    href="/admin/dashboard"
-                    onClick={closeAllMenus}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/15 py-2.5 text-xs font-black text-amber-700 dark:text-amber-300 shadow-xs mb-2 active:scale-95 transition"
-                  >
-                    <svg className="h-4 w-4 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>Open Admin Portal →</span>
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link
-                    href="/tutor"
-                    onClick={closeAllMenus}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 py-2.5 text-xs font-black text-indigo-700 dark:text-indigo-300 shadow-xs mb-2 active:scale-95 transition"
-                  >
-                    <span>👨‍🏫</span>
-                    <span>Open Instructor Studio →</span>
-                  </Link>
-                )}
-
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <Link
                     href="/dashboard"
                     onClick={closeAllMenus}
                     className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
-                  >Student Portal →</Link>
+                  >Student Portal &rarr;</Link>
                   <Link
                     href="/pricing"
                     onClick={closeAllMenus}
@@ -579,56 +853,10 @@ export default function BrandHeader() {
                   onClick={closeAllMenus}
                   className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white"
                 >
-                  Get Started →
+                  Start Free &rarr;
                 </Link>
               </div>
             )}
-
-            {/* Quick Community Channels */}
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-              <span className="font-semibold text-slate-400">Official Channels:</span>
-              <div className="flex items-center gap-2.5">
-                <a
-                  href="https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-500 hover:text-emerald-400 font-bold"
-                  title="WhatsApp Channel"
-                >
-                  WhatsApp
-                </a>
-                <span className="text-slate-300 dark:text-slate-700">&bull;</span>
-                <a
-                  href="https://www.instagram.com/brain_labacademy?dlrf=NGJzcmFnaGcwZHV4"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-pink-500 hover:text-pink-400 font-bold"
-                  title="Instagram"
-                >
-                  Instagram
-                </a>
-                <span className="text-slate-300 dark:text-slate-700">&bull;</span>
-                <a
-                  href="https://www.tiktok.com/@brainlabacademy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-cyan-500 hover:text-cyan-400 font-bold"
-                  title="TikTok"
-                >
-                  TikTok
-                </a>
-                <span className="text-slate-300 dark:text-slate-700">&bull;</span>
-                <a
-                  href="https://youtube.com/@thebrainlabhub?si=z4sAVuNmJUdPom_u"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-red-500 hover:text-red-400 font-bold"
-                  title="YouTube"
-                >
-                  YouTube
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       )}
