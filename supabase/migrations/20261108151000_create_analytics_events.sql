@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS public.platform_analytics_events (
 );
 
 ALTER TABLE public.platform_analytics_events ENABLE ROW LEVEL SECURITY;
+GRANT INSERT ON public.platform_analytics_events TO anon, authenticated;
+GRANT SELECT ON public.platform_analytics_events TO authenticated;
 
 DROP POLICY IF EXISTS "Public can record analytics events" ON public.platform_analytics_events;
 CREATE POLICY "Public can record analytics events"
