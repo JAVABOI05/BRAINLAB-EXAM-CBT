@@ -10,6 +10,8 @@ import type {
   CommunityPoll,
   PollOption,
   GroupAssessmentSchedule,
+  CohortLeaderboardEntry,
+  CohortLeaderboardScope,
 } from "@/app/lib/community/types";
 
 export default function CommunityGroupSpacePage() {
@@ -19,7 +21,7 @@ export default function CommunityGroupSpacePage() {
 
   const [group, setGroup] = useState<CommunityGroup | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"feed" | "assessments" | "members" | "rules">("feed");
+  const [activeTab, setActiveTab] = useState<"feed" | "assessments" | "leaderboard" | "members" | "rules">("feed");
   const [isJoining, setIsJoining] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -32,6 +34,11 @@ export default function CommunityGroupSpacePage() {
 
   // Phase 3: Cohort Assessments State
   const [assessments, setAssessments] = useState<GroupAssessmentSchedule[]>([]);
+
+  // Phase 4: Cohort Leaderboard State
+  const [leaderboard, setLeaderboard] = useState<CohortLeaderboardEntry[]>([]);
+  const [leaderboardScope, setLeaderboardScope] = useState<CohortLeaderboardScope>("weekly");
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -69,18 +76,47 @@ export default function CommunityGroupSpacePage() {
       if (jsonAssess.ok && Array.isArray(jsonAssess.data)) {
         setAssessments(jsonAssess.data);
       }
+
+      // 5. Fetch leaderboard (Phase 4)
+      const resLb = await fetch(`/api/community/groups/${slug}/leaderboard?scope=${leaderboardScope}`, { headers });
+      const jsonLb = await resLb.json();
+      if (jsonLb.ok && jsonLb.data?.rows) {
+        setLeaderboard(jsonLb.data.rows);
+      }
     } catch {
       // Handled gracefully
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, leaderboardScope]);
 
   useEffect(() => {
     if (slug) {
       void loadData();
     }
   }, [slug, loadData]);
+
+  const handleScopeChange = async (newScope: CohortLeaderboardScope) => {
+    setLeaderboardScope(newScope);
+    try {
+      setLoadingLeaderboard(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch(`/api/community/groups/${slug}/leaderboard?scope=${newScope}`, { headers });
+      const json = await res.json();
+      if (json.ok && json.data?.rows) {
+        setLeaderboard(json.data.rows);
+      }
+    } catch {
+      // Handled gracefully
+    } finally {
+      setLoadingLeaderboard(false);
+    }
+  };
 
   const handleJoin = async () => {
     if (!group) return;
@@ -182,7 +218,6 @@ export default function CommunityGroupSpacePage() {
 
       const json = await res.json();
       if (json.ok) {
-        // Refresh polls
         const refRes = await fetch(`/api/community/groups/${slug}/polls`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
@@ -301,8 +336,8 @@ export default function CommunityGroupSpacePage() {
           )}
 
           {/* Navigation Tabs */}
-          <div className="mt-8 flex gap-2 border-t border-blue-900/40 pt-4">
-            {(["feed", "assessments", "members", "rules"] as const).map((tab) => (
+          <div className="mt-8 flex flex-wrap gap-2 border-t border-blue-900/40 pt-4">
+            {(["feed", "assessments", "leaderboard", "members", "rules"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -312,7 +347,13 @@ export default function CommunityGroupSpacePage() {
                     : "text-slate-300 hover:bg-white/10"
                 }`}
               >
-                {tab === "feed" ? "Daily Feed" : tab === "assessments" ? `Assessments (${assessments.length})` : tab}
+                {tab === "feed"
+                  ? "Daily Feed"
+                  : tab === "assessments"
+                  ? `Assessments (${assessments.length})`
+                  : tab === "leaderboard"
+                  ? "Leaderboard 🏆"
+                  : tab}
               </button>
             ))}
           </div>
@@ -537,12 +578,12 @@ export default function CommunityGroupSpacePage() {
                   </div>
                 </div>
 
-                <Link
-                  href="/leaderboard"
-                  className="mt-5 block text-center rounded-xl border border-slate-200 p-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                <button
+                  onClick={() => setActiveTab("leaderboard")}
+                  className="mt-5 block w-full text-center rounded-xl border border-slate-200 p-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
-                  View Cohort Leaderboard →
-                </Link>
+                  View Cohort Leaderboard 🏆 →
+                </button>
               </div>
             </div>
           </div>
@@ -617,6 +658,88 @@ export default function CommunityGroupSpacePage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Phase 4: Cohort Leaderboard Tab */}
+        {activeTab === "leaderboard" && (
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>🏆</span> Cohort Assessment Leaderboard
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Rankings ranked strictly by Score DESC → Duration ASC → Submitted Time ASC. Anonymized per NDPA 2023.
+                </p>
+              </div>
+
+              {/* Scope Switcher */}
+              <div className="flex items-center gap-1 rounded-2xl bg-slate-100 p-1 dark:bg-slate-800">
+                {(["daily", "weekly", "all_time"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handleScopeChange(s)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold capitalize transition ${
+                      leaderboardScope === s
+                        ? "bg-white text-slate-900 shadow-sm dark:bg-blue-600 dark:text-white"
+                        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    }`}
+                  >
+                    {s === "all_time" ? "All Time" : s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loadingLeaderboard ? (
+              <div className="py-12 text-center text-xs text-slate-400">
+                Recalculating cohort rankings...
+              </div>
+            ) : (
+              <div className="mt-6 space-y-3">
+                {leaderboard.map((row) => (
+                  <div
+                    key={row.user_id + row.rank}
+                    className={`flex items-center justify-between rounded-2xl border p-4 transition ${
+                      row.is_current_user
+                        ? "border-blue-500 bg-blue-50/50 dark:border-blue-500/50 dark:bg-blue-950/30"
+                        : "border-slate-200 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-950/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-xs font-black shadow-sm dark:bg-slate-800">
+                        {row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : `#${row.rank}`}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h5 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                            {row.masked_handle}
+                          </h5>
+                          {row.is_current_user && (
+                            <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[9px] font-black uppercase text-white">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          ⏱️ {Math.floor(row.time_spent_seconds / 60)}m {row.time_spent_seconds % 60}s
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-sm font-black text-slate-900 dark:text-white">
+                        {row.percentage}%
+                      </span>
+                      <span className="block text-[10px] font-bold text-slate-400">
+                        {row.score} Marks
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

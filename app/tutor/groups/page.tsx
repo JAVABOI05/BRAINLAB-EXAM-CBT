@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
-import type { CommunityGroup, CommunityGroupType } from "../../lib/community/types";
+import type {
+  CommunityGroup,
+  CommunityGroupType,
+  CohortPsychometrics,
+} from "../../lib/community/types";
 import InstructorPortalShell from "../InstructorPortalShell";
 
 export default function TutorGroupsManagementPage() {
@@ -50,6 +54,11 @@ export default function TutorGroupsManagementPage() {
   const [testStartsAt, setTestStartsAt] = useState(() => new Date().toISOString().slice(0, 16));
   const [testEndsAt, setTestEndsAt] = useState(() => new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16));
   const [testFreezeRoster, setTestFreezeRoster] = useState(true);
+
+  // Phase 4: Cohort Psychometrics Modal
+  const [isViewingPsychometrics, setIsViewingPsychometrics] = useState(false);
+  const [psychometrics, setPsychometrics] = useState<CohortPsychometrics | null>(null);
+  const [loadingPsychometrics, setLoadingPsychometrics] = useState(false);
 
   const [modalSubmitting, setModalSubmitting] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
@@ -270,6 +279,33 @@ export default function TutorGroupsManagementPage() {
     }
   };
 
+  const handleViewPsychometrics = async (group: CommunityGroup) => {
+    setSelectedGroup(group);
+    setIsViewingPsychometrics(true);
+    setIsAnnouncing(false);
+    setIsPolling(false);
+    setIsSchedulingTest(false);
+
+    try {
+      setLoadingPsychometrics(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch(`/api/community/groups/${group.slug}/psychometrics`, { headers });
+      const json = await res.json();
+      if (json.ok && json.data?.psychometrics) {
+        setPsychometrics(json.data.psychometrics);
+      }
+    } catch {
+      // Handled gracefully
+    } finally {
+      setLoadingPsychometrics(false);
+    }
+  };
+
   return (
     <InstructorPortalShell>
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -466,7 +502,7 @@ export default function TutorGroupsManagementPage() {
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => {
@@ -474,8 +510,9 @@ export default function TutorGroupsManagementPage() {
                         setIsAnnouncing(true);
                         setIsPolling(false);
                         setIsSchedulingTest(false);
+                        setIsViewingPsychometrics(false);
                       }}
-                      className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300"
+                      className="rounded-lg bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300"
                     >
                       📢 Broadcast
                     </button>
@@ -486,10 +523,18 @@ export default function TutorGroupsManagementPage() {
                         setIsPolling(true);
                         setIsAnnouncing(false);
                         setIsSchedulingTest(false);
+                        setIsViewingPsychometrics(false);
                       }}
-                      className="rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300"
+                      className="rounded-lg bg-purple-50 px-2 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300"
                     >
                       📊 Poll
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleViewPsychometrics(group)}
+                      className="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300"
+                    >
+                      📈 Diagnostics
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
@@ -506,6 +551,7 @@ export default function TutorGroupsManagementPage() {
                         setIsSchedulingTest(true);
                         setIsAnnouncing(false);
                         setIsPolling(false);
+                        setIsViewingPsychometrics(false);
                       }}
                       className="rounded-xl bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
                     >
@@ -849,6 +895,98 @@ export default function TutorGroupsManagementPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Cohort Psychometrics (Phase 4) */}
+        {isViewingPsychometrics && selectedGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>📈</span> Cohort Diagnostics &amp; Psychometrics
+                  </h3>
+                  <p className="text-[11px] text-slate-400">{selectedGroup.name}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsViewingPsychometrics(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {loadingPsychometrics ? (
+                <div className="py-12 text-center text-xs text-slate-400">
+                  Aggregating psychometric metrics...
+                </div>
+              ) : psychometrics ? (
+                <div className="mt-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Total Attempts</span>
+                      <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
+                        {psychometrics.total_attempts}
+                      </div>
+                      <span className="text-[10px] text-slate-500">
+                        Across {psychometrics.unique_candidates} unique candidates
+                      </span>
+                    </div>
+
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-950 dark:bg-emerald-950/20">
+                      <span className="text-[10px] font-black uppercase text-emerald-600">Pass Rate (&gt;= 50%)</span>
+                      <div className="mt-1 text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                        {psychometrics.pass_rate_percentage}%
+                      </div>
+                      <span className="text-[10px] text-emerald-700/70 dark:text-emerald-400/70">
+                        Cohort Benchmark Target
+                      </span>
+                    </div>
+
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-950 dark:bg-blue-950/20">
+                      <span className="text-[10px] font-black uppercase text-blue-600">Average Percentage</span>
+                      <div className="mt-1 text-2xl font-black text-blue-600 dark:text-blue-400">
+                        {psychometrics.average_percentage}%
+                      </div>
+                      <span className="text-[10px] text-blue-700/70 dark:text-blue-400/70">
+                        Average Score: {psychometrics.average_score}
+                      </span>
+                    </div>
+
+                    <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-950 dark:bg-purple-950/20">
+                      <span className="text-[10px] font-black uppercase text-purple-600">Avg Speed / Duration</span>
+                      <div className="mt-1 text-2xl font-black text-purple-600 dark:text-purple-400">
+                        {Math.floor(psychometrics.average_time_spent_seconds / 60)}m
+                      </div>
+                      <span className="text-[10px] text-purple-700/70 dark:text-purple-400/70">
+                        {psychometrics.average_time_spent_seconds % 60} seconds average
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
+                    <p className="font-bold text-slate-900 dark:text-white mb-1">Security &amp; Proctoring Log</p>
+                    <p>Disqualified attempts (excessive tab switching): <span className="font-bold text-rose-600">{psychometrics.disqualified_count}</span></p>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  No psychometric data available for this cohort yet.
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end border-t border-slate-100 pt-3 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsViewingPsychometrics(false)}
+                  className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  Close Diagnostics
+                </button>
+              </div>
             </div>
           </div>
         )}

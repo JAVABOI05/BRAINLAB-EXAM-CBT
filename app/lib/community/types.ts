@@ -232,3 +232,31 @@ export interface CreateAssessmentScheduleParams {
   freeze_eligible_members?: boolean;
   frozen_question_ids?: number[];
 }
+
+
+// ==============================================================================
+// PHASE 4: COHORT LEADERBOARDS & PSYCHOMETRICS
+// ==============================================================================
+
+export type CohortLeaderboardScope = "daily" | "weekly" | "all_time";
+
+export interface CohortLeaderboardEntry {
+  rank: number;
+  user_id: string;
+  masked_handle: string;
+  score: number;
+  percentage: number;
+  time_spent_seconds: number;
+  submitted_at: string;
+  is_current_user?: boolean;
+}
+
+export interface CohortPsychometrics {
+  total_attempts: number;
+  unique_candidates: number;
+  average_score: number;
+  average_percentage: number;
+  pass_rate_percentage: number;
+  average_time_spent_seconds: number;
+  disqualified_count: number;
+}
