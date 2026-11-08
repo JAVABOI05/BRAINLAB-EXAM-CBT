@@ -94,7 +94,7 @@ export default function StudentPortalShell({ children }: { children: React.React
         {/* Student Portal Navigation Bar */}
         <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800/80 dark:bg-[#070e1b]/95">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            {/* Logo & Portal Badge + Quick Public Return */}
+            {/* Logo & Portal Branding */}
             <div className="flex items-center gap-3">
               <Link href="/dashboard" className="flex items-center gap-2.5 transition active:scale-98">
                 <Image
@@ -102,7 +102,7 @@ export default function StudentPortalShell({ children }: { children: React.React
                   alt="BrainLab Academy"
                   width={32}
                   height={32}
-                  className="rounded-xl shadow-xs ring-1 ring-cyan-500/20"
+                  className="rounded-xl shadow-xs ring-1 ring-cyan-500/30"
                 />
                 <div className="flex flex-col">
                   <span className="text-sm font-black tracking-tight text-slate-950 dark:text-white">BrainLab</span>
@@ -111,44 +111,6 @@ export default function StudentPortalShell({ children }: { children: React.React
                   </span>
                 </div>
               </Link>
-
-              {/* Quick Public Website Switcher */}
-              <Link
-                href="/"
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white transition"
-                title="Return to BrainLab Academy Public Website"
-              >
-                <span>🌐 Public Site</span>
-              </Link>
-
-              {/* Super Admin / Admin Cross-Portal Switchers */}
-              {isGovernanceAdminRole(userRole) && (
-                <div className="hidden sm:flex items-center gap-1.5">
-                  <Link
-                    href="/admin/dashboard"
-                    className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-black text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition shadow-xs"
-                    title="Open Administrator Command Center"
-                  >
-                    <span>🛡️ Admin Console</span>
-                  </Link>
-                  <Link
-                    href="/tutor"
-                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1 text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition shadow-xs"
-                    title="Open Instructor & Tutor Studio"
-                  >
-                    <span>👨‍🏫 Instructor Studio</span>
-                  </Link>
-                </div>
-              )}
-              {!isGovernanceAdminRole(userRole) && isInstructorRole(userRole) && (
-                <Link
-                  href="/tutor"
-                  className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1 text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition shadow-xs"
-                  title="Open Instructor Studio"
-                >
-                  <span>👨‍🏫 Instructor Studio</span>
-                </Link>
-              )}
             </div>
 
             {/* Desktop Nav Items */}
@@ -163,21 +125,49 @@ export default function StudentPortalShell({ children }: { children: React.React
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
                       isActive
-                        ? "bg-cyan-500/10 text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white"
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs"
+                        : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                   >
-                    <span className="text-sm leading-none">{link.icon}</span>
                     <span>{link.label}</span>
                   </Link>
                 );
               })}
             </nav>
 
-            {/* Right Action Controls: Theme & Profile Dropdown */}
-            <div className="flex items-center gap-2.5">
+            {/* Right Action Controls: Theme, Admin Switches & Profile Dropdown */}
+            <div className="flex items-center gap-2">
+              {/* Super Admin / Admin Cross-Portal Switchers */}
+              {isGovernanceAdminRole(userRole) && (
+                <div className="hidden sm:flex items-center gap-1.5 mr-1">
+                  <Link
+                    href="/admin/dashboard"
+                    className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] font-black text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition shadow-xs"
+                    title="Open Administrator Command Center"
+                  >
+                    <span>🛡️ Admin</span>
+                  </Link>
+                  <Link
+                    href="/tutor"
+                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2 py-1 text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition shadow-xs"
+                    title="Open Instructor & Tutor Studio"
+                  >
+                    <span>👨‍🏫 Studio</span>
+                  </Link>
+                </div>
+              )}
+              {!isGovernanceAdminRole(userRole) && isInstructorRole(userRole) && (
+                <Link
+                  href="/tutor"
+                  className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2 py-1 text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition shadow-xs mr-1"
+                  title="Open Instructor Studio"
+                >
+                  <span>👨‍🏫 Studio</span>
+                </Link>
+              )}
+
               {/* Theme Toggle Button */}
               <button
                 type="button"
