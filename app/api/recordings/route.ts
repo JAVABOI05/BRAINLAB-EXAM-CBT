@@ -243,3 +243,68 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Could not update recording visibility." }, { status: 500 });
   }
 }
+
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const body = await request.json().catch(() => ({}));
+    const recordingId = String(body?.recording_id || "");
+    if (!recordingId) {
+      return NextResponse.json({ error: "A recording ID is required." }, { status: 400 });
+    }
+
+    const supabase = getSupabaseServerClient();
+    const isAdmin = await isPlatformAdmin(supabase, user.id);
+    const { data: recording, error: lookupError } = await supabase
+      .from("class_recordings")
+      .select("id, class_id, lesson_id, created_by, storage_path, live_classes(tutor_id)")
+      .eq("id", recordingId)
+      .maybeSingle();
+
+    if (lookupError || !recording) {
+      return NextResponse.json({ error: "Recording not found." }, { status: 404 });
+    }
+
+    const classTutorId = (recording as any).live_classes?.tutor_id;
+    let ownsStudioLesson = false;
+    if (!recording.class_id && recording.lesson_id && recording.created_by === user.id) {
+      const { data: lesson } = await supabase
+        .from("classroom_lessons")
+        .select("id")
+        .eq("id", recording.lesson_id)
+        .eq("tutor_id", user.id)
+        .maybeSingle();
+      ownsStudioLesson = Boolean(lesson);
+    }
+
+    if (!isAdmin && classTutorId !== user.id && !ownsStudioLesson) {
+      return NextResponse.json({ error: "Only the assigned class tutor or Studio lesson owner can delete this recording." }, { status: 403 });
+    }
+
+    if (recording.storage_path) {
+      const { error: storageError } = await supabase.storage
+        .from("live-class-recordings")
+        .remove([recording.storage_path]);
+      if (storageError) {
+        return NextResponse.json({ error: "The recording file could not be removed. Its library record was kept unchanged." }, { status: 502 });
+      }
+    }
+
+    const { error: deleteError } = await supabase
+      .from("class_recordings")
+      .delete()
+      .eq("id", recordingId);
+
+    if (deleteError) {
+      return NextResponse.json({ error: "The file was removed, but its library record could not be deleted. Please contact support." }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, deleted: true });
+  } catch {
+    return NextResponse.json({ error: "Could not delete recording." }, { status: 500 });
+  }
+}
