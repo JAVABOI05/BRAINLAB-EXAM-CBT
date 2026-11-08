@@ -9,7 +9,9 @@ export interface PinStatusResult {
   ok: boolean;
   isSet: boolean;
   isVerified: boolean;
-  defaultHint: boolean;
+  canManage?: boolean;
+  adminEmail?: string;
+  adminRole?: string;
   error?: string;
 }
 
@@ -77,7 +79,6 @@ export async function checkAdminPinStatus(): Promise<PinStatusResult> {
         ok: false,
         isSet: false,
         isVerified: false,
-        defaultHint: false,
         error: data.error || "Failed to check PIN status.",
       };
     }
@@ -93,14 +94,15 @@ export async function checkAdminPinStatus(): Promise<PinStatusResult> {
       ok: true,
       isSet: !!data.isSet,
       isVerified: !!data.isVerified || isAdminPinLocallyVerified(),
-      defaultHint: !!data.defaultHint,
+      canManage: !!data.canManage,
+      adminEmail: data.adminEmail || "",
+      adminRole: data.adminRole || "",
     };
   } catch (err) {
     return {
       ok: false,
       isSet: false,
       isVerified: isAdminPinLocallyVerified(),
-      defaultHint: false,
       error: err instanceof Error ? err.message : "Network error",
     };
   }
@@ -131,13 +133,84 @@ export async function verifyAdminPin(pin: string): Promise<PinVerifyResult> {
     return {
       ok: true,
       verified: true,
-      isDefault: !!data.isDefault,
       message: data.message || "Security PIN verified successfully.",
     };
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Could not verify PIN. Check your connection.",
+    };
+  }
+}
+
+export async function setupAdminPin(newPin: string): Promise<PinVerifyResult> {
+  try {
+    const authHeader = await getAuthHeader();
+    const res = await fetch("/api/admin/security/pin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+      },
+      body: JSON.stringify({ action: "setup", newPin }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      return {
+        ok: false,
+        error: data.error || "Failed to initialize Security PIN.",
+      };
+    }
+
+    setAdminPinLocallyVerified(true);
+    return {
+      ok: true,
+      verified: true,
+      message: data.message || "Security PIN initialized successfully.",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to connect to PIN service.",
+    };
+  }
+}
+
+export async function resetAdminPin(params: { adminPassword: string; newPin: string }): Promise<PinVerifyResult> {
+  try {
+    const authHeader = await getAuthHeader();
+    const res = await fetch("/api/admin/security/pin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+      },
+      body: JSON.stringify({
+        action: "reset",
+        adminPassword: params.adminPassword,
+        newPin: params.newPin,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      return {
+        ok: false,
+        error: data.error || "Failed to reset Security PIN.",
+      };
+    }
+
+    setAdminPinLocallyVerified(true);
+    return {
+      ok: true,
+      verified: true,
+      message: data.message || "Security PIN reset successfully.",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to connect to PIN service.",
     };
   }
 }

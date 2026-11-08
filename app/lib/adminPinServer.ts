@@ -5,7 +5,6 @@ import { getSupabaseServerClient } from "./supabaseServer";
 
 const PIN_COOKIE_NAME = "brainlab_admin_pin_session";
 const PIN_CONFIG_KEY = "admin_security_pin";
-const DEFAULT_PIN = "1234";
 
 function getSecretKey(): string {
   return (
@@ -68,11 +67,7 @@ export async function verifyAdminPin(pin: string): Promise<boolean> {
       }
     }
 
-    // Fallback to default PIN ("1234")
-    const defaultSalt = "brainlab_default_salt";
-    const defaultHash = crypto.pbkdf2Sync(DEFAULT_PIN, defaultSalt, 10000, 32, "sha256").toString("hex");
-    const testHash = crypto.pbkdf2Sync(cleanPin, defaultSalt, 10000, 32, "sha256").toString("hex");
-    return crypto.timingSafeEqual(Buffer.from(testHash), Buffer.from(defaultHash));
+    return false;
   } catch {
     return false;
   }

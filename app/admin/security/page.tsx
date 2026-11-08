@@ -6,7 +6,7 @@ import { supabase } from "../../lib/supabase";
 import { getAdminSession, adminSignOut, type AdminUser } from "../../lib/adminAuth";
 import { ADMIN_ROLE_DETAILS, type AdminPermission } from "../../lib/adminRoles";
 import AdminPinGuard from "@/app/components/AdminPinGuard";
-import { updateAdminPin, lockAdminPin } from "@/app/lib/adminPinAuth";
+import { updateAdminPin, resetAdminPin, lockAdminPin } from "@/app/lib/adminPinAuth";
 import "../admin.css";
 
 type SecurityCheckItem = {
@@ -25,6 +25,8 @@ export default function AdminSecurityPage() {
   const [sessionVerifiedAt, setSessionVerifiedAt] = useState<string>("");
   const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState("");
+  const [pinResetMode, setPinResetMode] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [currentPinInput, setCurrentPinInput] = useState("");
   const [newPinInput, setNewPinInput] = useState("");
   const [confirmPinInput, setConfirmPinInput] = useState("");
@@ -63,6 +65,45 @@ export default function AdminSecurityPage() {
       setConfirmPinInput("");
     } catch {
       setPinError("Network error updating PIN.");
+    } finally {
+      setPinUpdating(false);
+    }
+  }
+
+  async function handlePinResetSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPinError("");
+    setPinMessage("");
+
+    if (!adminPasswordInput) {
+      setPinError("Administrator account password is required.");
+      return;
+    }
+    if (!newPinInput.trim() || newPinInput.length < 4 || newPinInput.length > 12) {
+      setPinError("New PIN must be between 4 and 12 characters.");
+      return;
+    }
+    if (newPinInput !== confirmPinInput) {
+      setPinError("New PIN and confirmation do not match.");
+      return;
+    }
+
+    setPinUpdating(true);
+    try {
+      const res = await resetAdminPin({
+        adminPassword: adminPasswordInput,
+        newPin: newPinInput.trim(),
+      });
+      if (!res.ok) {
+        setPinError(res.error || "Failed to reset Security PIN.");
+        return;
+      }
+      setPinMessage("Security PIN reset successfully! The new PIN is active across all workspaces.");
+      setAdminPasswordInput("");
+      setNewPinInput("");
+      setConfirmPinInput("");
+    } catch {
+      setPinError("Network error resetting PIN.");
     } finally {
       setPinUpdating(false);
     }
@@ -282,6 +323,165 @@ export default function AdminSecurityPage() {
           <p className="admin-card-text">Manage administrative security cookies and authorization tokens</p>
 
           <div className="mt-6 space-y-4">
+            {/* Master Security PIN Management Card */}
+            <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-5 dark:border-blue-900/50 dark:bg-blue-950/20">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Admin Security PIN
+                    </h3>
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      MASTER GATEWAY
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Protects sensitive platform controls (People & Access Management, Payment Gateways, Exam Configuration).
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPinResetMode(!pinResetMode);
+                      setPinError("");
+                      setPinMessage("");
+                    }}
+                    className="admin-btn-light !text-xs whitespace-nowrap"
+                  >
+                    {pinResetMode ? "Use Current PIN Instead" : "Forgot PIN? Reset with Password"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void lockAdminPin().then(() => router.refresh())}
+                    className="admin-btn-light !text-xs !text-rose-600 whitespace-nowrap"
+                  >
+                    🔒 Lock Now
+                  </button>
+                </div>
+              </div>
+
+              {pinError && (
+                <div role="alert" className="mb-3 rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs font-semibold text-rose-800">
+                  {pinError}
+                </div>
+              )}
+              {pinMessage && (
+                <div role="status" className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-semibold text-emerald-800">
+                  {pinMessage}
+                </div>
+              )}
+
+              {pinResetMode ? (
+                <form onSubmit={handlePinResetSubmit} className="grid gap-3 sm:grid-cols-3 items-end">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Admin Account Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={adminPasswordInput}
+                      onChange={(e) => setAdminPasswordInput(e.target.value)}
+                      placeholder="Account password"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      New Security PIN
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      maxLength={12}
+                      value={newPinInput}
+                      onChange={(e) => setNewPinInput(e.target.value)}
+                      placeholder="New PIN (4-12 digits)"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Confirm New PIN
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        required
+                        maxLength={12}
+                        value={confirmPinInput}
+                        onChange={(e) => setConfirmPinInput(e.target.value)}
+                        placeholder="Confirm PIN"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
+                      />
+                      <button
+                        type="submit"
+                        disabled={pinUpdating || !adminPasswordInput || !newPinInput.trim() || !confirmPinInput.trim()}
+                        className="admin-btn-primary !text-xs whitespace-nowrap !bg-amber-600 hover:!bg-amber-700"
+                      >
+                        {pinUpdating ? "Resetting…" : "Reset PIN"}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handlePinUpdateSubmit} className="grid gap-3 sm:grid-cols-3 items-end">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Current Security PIN
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      maxLength={12}
+                      value={currentPinInput}
+                      onChange={(e) => setCurrentPinInput(e.target.value)}
+                      placeholder="Current PIN"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      New Security PIN
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      maxLength={12}
+                      value={newPinInput}
+                      onChange={(e) => setNewPinInput(e.target.value)}
+                      placeholder="New PIN (4-12 digits)"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Confirm New PIN
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        required
+                        maxLength={12}
+                        value={confirmPinInput}
+                        onChange={(e) => setConfirmPinInput(e.target.value)}
+                        placeholder="Confirm PIN"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
+                      />
+                      <button
+                        type="submit"
+                        disabled={pinUpdating || !currentPinInput.trim() || !newPinInput.trim() || !confirmPinInput.trim()}
+                        className="admin-btn-primary !text-xs whitespace-nowrap"
+                      >
+                        {pinUpdating ? "Updating…" : "Update PIN"}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+            </div>
             <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>

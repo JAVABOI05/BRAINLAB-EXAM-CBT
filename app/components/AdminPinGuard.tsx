@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   checkAdminPinStatus,
   verifyAdminPin,
+  setupAdminPin,
+  resetAdminPin,
   lockAdminPin,
   isAdminPinLocallyVerified,
 } from "@/app/lib/adminPinAuth";
@@ -25,9 +27,18 @@ export default function AdminPinGuard({
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
-  const [defaultHint, setDefaultHint] = useState(false);
+  const [isSet, setIsSet] = useState(true);
+  const [canManage, setCanManage] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [mode, setMode] = useState<"verify" | "setup" | "reset">("verify");
+
+  // Form fields
   const [pin, setPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [showPin, setShowPin] = useState(false);
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -36,7 +47,7 @@ export default function AdminPinGuard({
     let active = true;
 
     async function init() {
-      // First check local fast storage
+      // Fast check local storage
       if (isAdminPinLocallyVerified()) {
         if (active) {
           setIsVerified(true);
@@ -45,11 +56,22 @@ export default function AdminPinGuard({
         return;
       }
 
-      // Check server cookie
+      // Check server cookie and PIN record status
       const status = await checkAdminPinStatus();
       if (!active) return;
+
       setIsVerified(status.isVerified);
-      setDefaultHint(status.defaultHint);
+      setIsSet(status.isSet);
+      setCanManage(!!status.canManage);
+      setAdminEmail(status.adminEmail || "");
+
+      // If PIN is not initialized yet and current admin has setup privileges, default to setup mode
+      if (!status.isSet && status.canManage) {
+        setMode("setup");
+      } else {
+        setMode("verify");
+      }
+
       setChecking(false);
     }
 
@@ -88,10 +110,94 @@ export default function AdminPinGuard({
     }
   }
 
+  async function handleSetup(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    const cleanNewPin = newPin.trim();
+    if (!cleanNewPin || cleanNewPin.length < 4 || cleanNewPin.length > 12) {
+      setError("Security PIN must be between 4 and 12 characters.");
+      return;
+    }
+
+    if (cleanNewPin !== confirmPin.trim()) {
+      setError("Security PIN confirmation does not match.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await setupAdminPin(cleanNewPin);
+      if (!res.ok) {
+        setError(res.error || "Failed to initialize Security PIN.");
+        return;
+      }
+
+      setIsSet(true);
+      setIsVerified(true);
+      setNewPin("");
+      setConfirmPin("");
+      setMessage("Master Security PIN initialized and workspace unlocked.");
+    } catch {
+      setError("Network error initializing Security PIN.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReset(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!adminPassword) {
+      setError("Administrator account password is required.");
+      return;
+    }
+
+    const cleanNewPin = newPin.trim();
+    if (!cleanNewPin || cleanNewPin.length < 4 || cleanNewPin.length > 12) {
+      setError("New Security PIN must be between 4 and 12 characters.");
+      return;
+    }
+
+    if (cleanNewPin !== confirmPin.trim()) {
+      setError("New Security PIN and confirmation do not match.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await resetAdminPin({
+        adminPassword,
+        newPin: cleanNewPin,
+      });
+
+      if (!res.ok) {
+        setError(res.error || "Failed to reset Security PIN.");
+        return;
+      }
+
+      setIsSet(true);
+      setIsVerified(true);
+      setAdminPassword("");
+      setNewPin("");
+      setConfirmPin("");
+      setMessage("Security PIN successfully reset and workspace unlocked.");
+    } catch {
+      setError("Network error resetting Security PIN.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleLock() {
     setBusy(true);
     await lockAdminPin();
     setIsVerified(false);
+    setMode("verify");
+    setPin("");
     setMessage("Workspace locked.");
     setBusy(false);
   }
@@ -128,11 +234,11 @@ export default function AdminPinGuard({
             height: 56,
             margin: "0 auto 16px",
             borderRadius: "50%",
-            backgroundColor: "#eff6ff",
+            backgroundColor: mode === "setup" ? "#ecfdf5" : mode === "reset" ? "#fef3c7" : "#eff6ff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#2563eb",
+            color: mode === "setup" ? "#059669" : mode === "reset" ? "#d97706" : "#2563eb",
           }}
         >
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -141,6 +247,7 @@ export default function AdminPinGuard({
           </svg>
         </div>
 
+        {/* Eyebrow Badge */}
         <span
           style={{
             display: "inline-block",
@@ -148,22 +255,55 @@ export default function AdminPinGuard({
             fontWeight: 800,
             textTransform: "uppercase",
             letterSpacing: "0.08em",
-            color: "#2563eb",
-            backgroundColor: "#dbeafe",
+            color: mode === "setup" ? "#047857" : mode === "reset" ? "#b45309" : "#2563eb",
+            backgroundColor: mode === "setup" ? "#d1fae5" : mode === "reset" ? "#fef3c7" : "#dbeafe",
             padding: "4px 10px",
             borderRadius: 9999,
             marginBottom: 10,
           }}
         >
-          SECURITY PIN REQUIRED
+          {mode === "setup"
+            ? "INITIAL SECURITY SETUP"
+            : mode === "reset"
+            ? "ADMINISTRATOR RE-AUTHENTICATION"
+            : "SECURITY PIN REQUIRED"}
         </span>
 
+        {/* Header Title & Description */}
         <h2 style={{ fontSize: "1.375rem", fontWeight: 800, color: "#0f172a", marginBottom: 8, letterSpacing: "-0.02em" }}>
-          {title}
+          {mode === "setup"
+            ? "Initialize Admin Security PIN"
+            : mode === "reset"
+            ? "Reset Security PIN"
+            : title}
         </h2>
         <p style={{ color: "#64748b", fontSize: "0.875rem", lineHeight: 1.5, marginBottom: 24 }}>
-          {description}
+          {mode === "setup"
+            ? "A master Security PIN has not yet been established. Set a secure 4 to 12-character PIN to safeguard platform governance, user permissions, and sensitive controls."
+            : mode === "reset"
+            ? `Authorize a Security PIN reset using your administrator account password${adminEmail ? ` (${adminEmail})` : ""}.`
+            : description}
         </p>
+
+        {/* Informative alert when PIN not initialized and cannot setup */}
+        {!isSet && !canManage && mode !== "setup" && (
+          <div
+            role="alert"
+            style={{
+              padding: "12px 16px",
+              backgroundColor: "#fef3c7",
+              color: "#92400e",
+              borderRadius: 8,
+              fontSize: "0.875rem",
+              fontWeight: 600,
+              border: "1px solid #fde68a",
+              marginBottom: 18,
+              textAlign: "left",
+            }}
+          >
+            The master Security PIN has not yet been initialized. Please have a Super Administrator configure the platform PIN to unlock this workspace.
+          </div>
+        )}
 
         {error && (
           <div
@@ -184,99 +324,425 @@ export default function AdminPinGuard({
           </div>
         )}
 
-        <form onSubmit={handleVerify} style={{ textAlign: "left" }}>
-          <label
-            htmlFor="admin-pin-input"
-            style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
+        {message && (
+          <div
+            role="status"
+            style={{
+              padding: "10px 14px",
+              backgroundColor: "#f0fdf4",
+              color: "#166534",
+              borderRadius: 8,
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              border: "1px solid #bbf7d0",
+              marginBottom: 16,
+              textAlign: "left",
+            }}
           >
-            Enter Admin Security PIN
-          </label>
-          <div style={{ position: "relative", marginBottom: 12 }}>
+            {message}
+          </div>
+        )}
+
+        {/* 1. SETUP FORM (When PIN not set) */}
+        {mode === "setup" && canManage && (
+          <form onSubmit={handleSetup} style={{ textAlign: "left" }}>
+            <label
+              htmlFor="admin-new-pin"
+              style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
+            >
+              Create Master Security PIN (4–12 characters)
+            </label>
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <input
+                id="admin-new-pin"
+                type={showPin ? "text" : "password"}
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value)}
+                placeholder="Enter new PIN"
+                autoFocus
+                maxLength={12}
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px 48px 12px 14px",
+                  fontSize: "1rem",
+                  letterSpacing: showPin ? "normal" : "0.2em",
+                  borderRadius: 10,
+                  border: "1.5px solid #cbd5e1",
+                  outline: "none",
+                  fontWeight: 600,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  border: "none",
+                  color: "#64748b",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {showPin ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            <label
+              htmlFor="admin-confirm-pin"
+              style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
+            >
+              Confirm Master Security PIN
+            </label>
             <input
-              id="admin-pin-input"
+              id="admin-confirm-pin"
               type={showPin ? "text" : "password"}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="••••"
-              autoFocus
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value)}
+              placeholder="Confirm new PIN"
               maxLength={12}
               required
               style={{
                 width: "100%",
-                padding: "12px 48px 12px 14px",
-                fontSize: "1.125rem",
-                letterSpacing: showPin ? "normal" : "0.25em",
+                padding: "12px 14px",
+                fontSize: "1rem",
+                letterSpacing: showPin ? "normal" : "0.2em",
                 borderRadius: 10,
                 border: "1.5px solid #cbd5e1",
                 outline: "none",
                 fontWeight: 600,
-                fontFamily: showPin ? "inherit" : "monospace",
+                marginBottom: 16,
               }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPin(!showPin)}
-              style={{
-                position: "absolute",
-                right: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "transparent",
-                border: "none",
-                color: "#64748b",
-                fontSize: "0.8125rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {showPin ? "Hide" : "Show"}
-            </button>
-          </div>
 
-          {defaultHint && (
-            <p style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: 16 }}>
-              💡 <em>Default initial PIN is <strong>1234</strong>. You can change this in Security Workspace.</em>
-            </p>
-          )}
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button
+                type="submit"
+                disabled={busy || !newPin.trim() || !confirmPin.trim()}
+                className="admin-btn-primary"
+                style={{
+                  flex: 1,
+                  padding: "12px 18px",
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  backgroundColor: "#059669",
+                  color: "#ffffff",
+                  border: "none",
+                  cursor: busy ? "not-allowed" : "pointer",
+                }}
+              >
+                {busy ? "Initializing PIN…" : "Set PIN & Unlock Workspace"}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/admin/dashboard")}
+                className="admin-btn-light"
+                style={{
+                  padding: "12px 16px",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#f8fafc",
+                  color: "#475569",
+                  cursor: "pointer",
+                }}
+              >
+                Dashboard
+              </button>
+            </div>
+          </form>
+        )}
 
-          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-            <button
-              type="submit"
-              disabled={busy || !pin.trim()}
-              className="admin-btn-primary"
-              style={{
-                flex: 1,
-                padding: "12px 18px",
-                fontSize: "0.875rem",
-                fontWeight: 700,
-                borderRadius: 10,
-                backgroundColor: "#2563eb",
-                color: "#ffffff",
-                border: "none",
-                cursor: busy ? "not-allowed" : "pointer",
-              }}
+        {/* 2. RESET FORM (Emergency Password-Based Reset) */}
+        {mode === "reset" && (
+          <form onSubmit={handleReset} style={{ textAlign: "left" }}>
+            <label
+              htmlFor="admin-account-password"
+              style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
             >
-              {busy ? "Verifying PIN…" : "Unlock Settings"}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/admin/dashboard")}
-              className="admin-btn-light"
+              Administrator Account Password
+            </label>
+            <input
+              id="admin-account-password"
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="Enter your account login password"
+              autoFocus
+              required
               style={{
-                padding: "12px 16px",
-                fontSize: "0.875rem",
+                width: "100%",
+                padding: "12px 14px",
+                fontSize: "0.9375rem",
+                borderRadius: 10,
+                border: "1.5px solid #cbd5e1",
+                outline: "none",
+                fontWeight: 500,
+                marginBottom: 14,
+              }}
+            />
+
+            <label
+              htmlFor="admin-reset-new-pin"
+              style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
+            >
+              New Security PIN (4–12 characters)
+            </label>
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <input
+                id="admin-reset-new-pin"
+                type={showPin ? "text" : "password"}
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value)}
+                placeholder="Enter new PIN"
+                maxLength={12}
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px 48px 12px 14px",
+                  fontSize: "1rem",
+                  letterSpacing: showPin ? "normal" : "0.2em",
+                  borderRadius: 10,
+                  border: "1.5px solid #cbd5e1",
+                  outline: "none",
+                  fontWeight: 600,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  border: "none",
+                  color: "#64748b",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {showPin ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            <label
+              htmlFor="admin-reset-confirm-pin"
+              style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
+            >
+              Confirm New Security PIN
+            </label>
+            <input
+              id="admin-reset-confirm-pin"
+              type={showPin ? "text" : "password"}
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value)}
+              placeholder="Confirm new PIN"
+              maxLength={12}
+              required
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                fontSize: "1rem",
+                letterSpacing: showPin ? "normal" : "0.2em",
+                borderRadius: 10,
+                border: "1.5px solid #cbd5e1",
+                outline: "none",
                 fontWeight: 600,
-                borderRadius: 10,
-                border: "1px solid #cbd5e1",
-                backgroundColor: "#f8fafc",
-                color: "#475569",
-                cursor: "pointer",
+                marginBottom: 16,
               }}
+            />
+
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button
+                type="submit"
+                disabled={busy || !adminPassword || !newPin.trim() || !confirmPin.trim()}
+                className="admin-btn-primary"
+                style={{
+                  flex: 1,
+                  padding: "12px 18px",
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  backgroundColor: "#d97706",
+                  color: "#ffffff",
+                  border: "none",
+                  cursor: busy ? "not-allowed" : "pointer",
+                }}
+              >
+                {busy ? "Resetting PIN…" : "Verify Password & Reset PIN"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("verify");
+                  setError("");
+                  setMessage("");
+                }}
+                className="admin-btn-light"
+                style={{
+                  padding: "12px 16px",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#f8fafc",
+                  color: "#475569",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* 3. VERIFY FORM (Normal verification) */}
+        {mode === "verify" && (
+          <form onSubmit={handleVerify} style={{ textAlign: "left" }}>
+            <label
+              htmlFor="admin-pin-input"
+              style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
             >
-              Dashboard
-            </button>
-          </div>
-        </form>
+              Enter Admin Security PIN
+            </label>
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <input
+                id="admin-pin-input"
+                type={showPin ? "text" : "password"}
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="••••"
+                autoFocus
+                maxLength={12}
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px 48px 12px 14px",
+                  fontSize: "1.125rem",
+                  letterSpacing: showPin ? "normal" : "0.25em",
+                  borderRadius: 10,
+                  border: "1.5px solid #cbd5e1",
+                  outline: "none",
+                  fontWeight: 600,
+                  fontFamily: showPin ? "inherit" : "monospace",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  border: "none",
+                  color: "#64748b",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {showPin ? "Hide" : "Show"}
+              </button>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button
+                type="submit"
+                disabled={busy || !pin.trim()}
+                className="admin-btn-primary"
+                style={{
+                  flex: 1,
+                  padding: "12px 18px",
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  backgroundColor: "#2563eb",
+                  color: "#ffffff",
+                  border: "none",
+                  cursor: busy ? "not-allowed" : "pointer",
+                }}
+              >
+                {busy ? "Verifying PIN…" : "Unlock Settings"}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/admin/dashboard")}
+                className="admin-btn-light"
+                style={{
+                  padding: "12px 16px",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#f8fafc",
+                  color: "#475569",
+                  cursor: "pointer",
+                }}
+              >
+                Dashboard
+              </button>
+            </div>
+
+            {/* Reset / Setup actions */}
+            <div style={{ marginTop: 20, textAlign: "center", borderTop: "1px solid #f1f5f9", paddingTop: 14 }}>
+              {!isSet && canManage && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("setup");
+                    setError("");
+                    setMessage("");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#059669",
+                    fontSize: "0.8125rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  ⚡ Set up initial Security PIN now
+                </button>
+              )}
+
+              {isSet && canManage && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("reset");
+                    setError("");
+                    setMessage("");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#475569",
+                    fontSize: "0.8125rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  Forgot Security PIN? Reset with administrator password
+                </button>
+              )}
+            </div>
+          </form>
+        )}
       </section>
     );
   }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getAdminSession } from "@/app/lib/adminAuth";
-import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getSupabaseServerClient, getSupabasePublicServerClient } from "@/app/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
@@ -101,12 +101,15 @@ export async function GET(request: NextRequest) {
     }
 
     const pinRecord = await getStoredPinRecord();
+    const canManage = admin.role === "super_admin" || admin.role === "platform_admin";
 
     return NextResponse.json({
       ok: true,
       isSet: pinRecord.isSet,
       isVerified,
-      defaultHint: !pinRecord.isSet,
+      canManage,
+      adminEmail: admin.email,
+      adminRole: admin.role,
     });
   } catch (err: unknown) {
     return NextResponse.json(
@@ -160,7 +163,12 @@ export async function POST(request: NextRequest) {
       const pinRecord = await getStoredPinRecord();
       if (!pinRecord.isSet || !pinRecord.hash || !pinRecord.salt) {
         return NextResponse.json(
-          { ok: false, error: "Security PIN has not been initialized. Please have a Super Administrator set up the initial Security PIN.", setupRequired: true },
+          {
+            ok: false,
+            error: "Security PIN has not been initialized yet. Please initialize your security PIN to continue.",
+            setupRequired: true,
+            canSetup: admin.role === "super_admin" || admin.role === "platform_admin",
+          },
           { status: 400 }
         );
       }
@@ -194,7 +202,6 @@ export async function POST(request: NextRequest) {
         ok: true,
         verified: true,
         message: "Security PIN verified successfully.",
-        isDefault: !pinRecord.isSet,
       });
 
       response.cookies.set(PIN_COOKIE_NAME, token, {
@@ -210,30 +217,44 @@ export async function POST(request: NextRequest) {
 
     // 2b. ACTION: SETUP (Initialize PIN if not set)
     if (action === "setup") {
-      if (admin.role !== "super_admin") {
-        return NextResponse.json({ ok: false, error: "Only Super Admin can initialize the Security PIN." }, { status: 403 });
+      if (admin.role !== "super_admin" && admin.role !== "platform_admin") {
+        return NextResponse.json({ ok: false, error: "Only Super Admin or Platform Admin can initialize the Security PIN." }, { status: 403 });
       }
       const newPin = String(body.newPin || "").trim();
-      if (!newPin || newPin.length < 4) {
-        return NextResponse.json({ ok: false, error: "PIN must be at least 4 digits." }, { status: 400 });
+      if (!newPin || newPin.length < 4 || newPin.length > 12) {
+        return NextResponse.json({ ok: false, error: "Security PIN must be between 4 and 12 characters." }, { status: 400 });
       }
       const pinRecord = await getStoredPinRecord();
       if (pinRecord.isSet) {
-        return NextResponse.json({ ok: false, error: "PIN is already initialized. Use update action to change it." }, { status: 400 });
+        return NextResponse.json({ ok: false, error: "Security PIN is already initialized. Use update or reset action to change it." }, { status: 400 });
       }
       const newSalt = crypto.randomBytes(16).toString("hex");
       const newHash = hashPin(newPin, newSalt);
       const supabase = getSupabaseServerClient();
-      const { error: upsertErr } = await supabase.from("exam_config").upsert({
-        config_key: PIN_CONFIG_KEY,
-        config_value: { hash: newHash, salt: newSalt, updated_at: new Date().toISOString(), updated_by: admin.id },
-        updated_at: new Date().toISOString(),
-      });
+      const { error: upsertErr } = await supabase.from("exam_config").upsert(
+        {
+          config_key: PIN_CONFIG_KEY,
+          config_value: {
+            hash: newHash,
+            salt: newSalt,
+            updated_at: new Date().toISOString(),
+            updated_by: admin.email,
+            is_set: true,
+          },
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "config_key" }
+      );
       if (upsertErr) {
         return NextResponse.json({ ok: false, error: "Failed to initialize PIN: " + upsertErr.message }, { status: 500 });
       }
+      attemptTracker.delete(admin.id);
       const token = createSessionToken(admin.id, admin.role);
-      const response = NextResponse.json({ ok: true, verified: true, message: "Security PIN initialized successfully." });
+      const response = NextResponse.json({
+        ok: true,
+        verified: true,
+        message: "Security PIN initialized successfully. Workspace unlocked.",
+      });
       response.cookies.set(PIN_COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -241,6 +262,95 @@ export async function POST(request: NextRequest) {
         path: "/",
         maxAge: PIN_COOKIE_MAX_AGE,
       });
+      return response;
+    }
+
+    // 2c. ACTION: RESET (Emergency reset with administrator account password)
+    if (action === "reset") {
+      if (admin.role !== "super_admin" && admin.role !== "platform_admin") {
+        return NextResponse.json({ ok: false, error: "Only Super Admin or Platform Admin can reset the Security PIN." }, { status: 403 });
+      }
+
+      const adminPassword = String(body.adminPassword || "").trim();
+      const newPin = String(body.newPin || "").trim();
+
+      if (!adminPassword) {
+        return NextResponse.json(
+          { ok: false, error: "Administrator account password is required to authorize a PIN reset." },
+          { status: 400 }
+        );
+      }
+
+      if (!newPin || newPin.length < 4 || newPin.length > 12) {
+        return NextResponse.json(
+          { ok: false, error: "New Security PIN must be between 4 and 12 characters." },
+          { status: 400 }
+        );
+      }
+
+      // Verify the administrator's password against Supabase Auth
+      try {
+        const publicClient = getSupabasePublicServerClient();
+        const { data: authData, error: authError } = await publicClient.auth.signInWithPassword({
+          email: admin.email,
+          password: adminPassword,
+        });
+
+        if (authError || !authData.user || authData.user.id !== admin.id) {
+          return NextResponse.json(
+            { ok: false, error: "Administrator password incorrect. PIN reset declined." },
+            { status: 401 }
+          );
+        }
+      } catch (authErr) {
+        console.error("[adminPin] Password verification error:", authErr);
+        return NextResponse.json(
+          { ok: false, error: "Unable to verify administrator password. Please try again." },
+          { status: 500 }
+        );
+      }
+
+      // Generate new salt and hash
+      const newSalt = crypto.randomBytes(16).toString("hex");
+      const newHash = hashPin(newPin, newSalt);
+      const supabase = getSupabaseServerClient();
+      const { error: upsertErr } = await supabase.from("exam_config").upsert(
+        {
+          config_key: PIN_CONFIG_KEY,
+          config_value: {
+            hash: newHash,
+            salt: newSalt,
+            updated_at: new Date().toISOString(),
+            updated_by: admin.email,
+            is_set: true,
+          },
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "config_key" }
+      );
+
+      if (upsertErr) {
+        return NextResponse.json({ ok: false, error: "Failed to reset PIN: " + upsertErr.message }, { status: 500 });
+      }
+
+      // Clear any lockout tracker
+      attemptTracker.delete(admin.id);
+
+      const token = createSessionToken(admin.id, admin.role);
+      const response = NextResponse.json({
+        ok: true,
+        verified: true,
+        message: "Admin Security PIN reset successfully. Workspace unlocked.",
+      });
+
+      response.cookies.set(PIN_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: PIN_COOKIE_MAX_AGE,
+      });
+
       return response;
     }
 
@@ -262,6 +372,12 @@ export async function POST(request: NextRequest) {
       }
 
       const pinRecord = await getStoredPinRecord();
+      if (!pinRecord.isSet || !pinRecord.hash || !pinRecord.salt) {
+        return NextResponse.json(
+          { ok: false, error: "Security PIN has not been initialized yet. Use the setup action to establish your initial PIN." },
+          { status: 400 }
+        );
+      }
       const currentInputHash = hashPin(currentPin, pinRecord.salt);
       const isCurrentValid = crypto.timingSafeEqual(Buffer.from(currentInputHash), Buffer.from(pinRecord.hash));
 
