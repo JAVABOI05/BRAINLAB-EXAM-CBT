@@ -52,6 +52,10 @@ export interface CompetitionQuestionSnapshotItem {
   subject: string;
   topic?: string;
   subtopic?: string;
+  passage_id?: string;
+  passage_title?: string;
+  passage_text?: string;
+  reading_text_id?: string;
   difficulty: string;
   question: string;
   options: Record<string, string>; // { A: "...", B: "...", C: "...", D: "...", E?: "..." }
@@ -127,8 +131,10 @@ export function shuffleQuestionOptions(
   if (question.option_d_image_url) rawImages.D = question.option_d_image_url;
   if (question.option_e_image_url) rawImages.E = question.option_e_image_url;
 
-  const originalCorrectKey = (question.correct_answer || "A").trim().toUpperCase();
-  const correctText = rawOptions[originalCorrectKey] || rawOptions.A;
+  const originalCorrectKey = (question.correct_answer || "").trim().toUpperCase();
+  if (!letters.includes(originalCorrectKey) || !rawOptions[originalCorrectKey]) {
+    throw new Error(`Question ${question.id || "unknown"} has an invalid or missing correct answer key.`);
+  }
 
   // Pair up options and shuffle their display order
   const pairs = letters.map((k) => ({
@@ -147,7 +153,7 @@ export function shuffleQuestionOptions(
     const pair = shuffledPairs[idx];
     shuffledOptions[newLetter] = pair.text;
     if (pair.imageUrl) shuffledImages[newLetter] = pair.imageUrl;
-    if (pair.text === correctText) {
+    if (pair.originalKey === originalCorrectKey) {
       newCorrectAnswer = newLetter;
     }
   });
@@ -175,6 +181,10 @@ export function formatQuestionForSnapshot(
         subject: q.subject,
         topic: q.topic,
         subtopic: q.subtopic,
+        passage_id: q.passage_id || undefined,
+        passage_title: q.passage_title || undefined,
+        passage_text: q.passage_text || undefined,
+        reading_text_id: q.reading_text_id || undefined,
         difficulty: q.difficulty,
         question: q.question,
         options: shuffledOptions,
@@ -222,8 +232,94 @@ export function formatQuestionForSnapshot(
       marks: q.marks > 0 ? q.marks : 1.0,
       explanation: q.explanation,
     },
-    correctOption: (q.correct_answer || "A").trim().toUpperCase(),
+    correctOption: (() => {
+      const answer = (q.correct_answer || "").trim().toUpperCase();
+      if (!["A", "B", "C", "D", "E"].includes(answer) || !options[answer]) {
+        throw new Error(`Question ${q.id || "unknown"} has an invalid or missing correct answer key.`);
+      }
+      return answer;
+    })(),
   };
+}
+
+/**
+ * Keep comprehension/cloze passage questions together. A passage is a single
+ * selection unit: either all linked questions are included or none are.
+ */
+function preservePassageUnits(
+  selected: CompetitionQuestionItem[],
+  available: CompetitionQuestionItem[],
+  targetCount: number
+): { ok: true; questions: CompetitionQuestionItem[] } | { ok: false; error: string } {
+  const groupKey = (question: CompetitionQuestionItem) =>
+    question.passage_id || question.reading_text_id || null;
+  const groups = new Map<string, CompetitionQuestionItem[]>();
+  for (const question of available) {
+    const key = groupKey(question);
+    if (!key) continue;
+    const current = groups.get(key) || [];
+    current.push(question);
+    groups.set(key, current);
+  }
+  for (const [key, rows] of groups) {
+    rows.sort((left, right) => {
+      const leftId = Number(String(left.id || "").replace(/^main_/, ""));
+      const rightId = Number(String(right.id || "").replace(/^main_/, ""));
+      return Number.isFinite(leftId) && Number.isFinite(rightId) ? leftId - rightId : String(left.id).localeCompare(String(right.id));
+    });
+    groups.set(key, rows);
+  }
+
+  const result: CompetitionQuestionItem[] = [];
+  const includedIds = new Set<string>();
+  const handledGroups = new Set<string>();
+  const tryAdd = (question: CompetitionQuestionItem) => {
+    const key = groupKey(question);
+    if (key) {
+      if (handledGroups.has(key)) return true;
+      handledGroups.add(key);
+      const unit = groups.get(key) || [question];
+      if (result.length + unit.length > targetCount) return false;
+      for (const item of unit) {
+        const id = String(item.id || "");
+        if (!includedIds.has(id)) {
+          result.push(item);
+          includedIds.add(id);
+        }
+      }
+      return true;
+    }
+    const id = String(question.id || "");
+    if (!includedIds.has(id) && result.length < targetCount) {
+      result.push(question);
+      includedIds.add(id);
+    }
+    return true;
+  };
+
+  for (const question of selected) tryAdd(question);
+  if (result.length < targetCount) {
+    for (const question of available) {
+      if (result.length >= targetCount) break;
+      tryAdd(question);
+    }
+  }
+  if (result.length !== targetCount) {
+    return {
+      ok: false,
+      error: `The selected question set cannot preserve all linked comprehension/cloze passages while meeting the requested ${targetCount}-question count. Adjust the question count or source filters.`,
+    };
+  }
+  return { ok: true, questions: result };
+}
+
+export function selectPassageSafeQuestions(
+  available: CompetitionQuestionItem[],
+  targetCount: number,
+  seed?: number
+): { ok: true; questions: CompetitionQuestionItem[] } | { ok: false; error: string } {
+  const candidates = shuffleArray(available, seed);
+  return preservePassageUnits(candidates.slice(0, targetCount), available, targetCount);
 }
 
 /**
@@ -258,6 +354,7 @@ export function generateCompetitionAssessmentSnapshot(params: {
   const targetCount = rules.question_count || 10;
   let selectedCompetitionQuestions: CompetitionQuestionItem[] = [];
   let selectedMainQuestions: CompetitionQuestionItem[] = [];
+  let mainQuestionTarget = 0;
   let compAllocation: DifficultyAllocationResult | undefined;
   let mainAllocation: DifficultyAllocationResult | undefined;
 
@@ -288,6 +385,7 @@ export function generateCompetitionAssessmentSnapshot(params: {
     selectedCompetitionQuestions = res.questions;
     compAllocation = res.allocationResult;
   } else if (sourceMode === "main_bank") {
+    mainQuestionTarget = targetCount;
     if (mainBankQuestions.length < targetCount) {
       return {
         ok: false,
@@ -316,6 +414,7 @@ export function generateCompetitionAssessmentSnapshot(params: {
     // Combined Source Mode
     const compQuota = Math.round(targetCount * combinedRatio.competitionBank);
     const mainQuota = targetCount - compQuota;
+    mainQuestionTarget = mainQuota;
 
     if (competitionBankQuestions.length < compQuota) {
       return {
@@ -364,6 +463,14 @@ export function generateCompetitionAssessmentSnapshot(params: {
     selectedMainQuestions = resMain.questions;
     compAllocation = resComp.allocationResult;
     mainAllocation = resMain.allocationResult;
+  }
+
+  if (selectedMainQuestions.length > 0 && mainQuestionTarget > 0) {
+    const passageSafeSelection = preservePassageUnits(selectedMainQuestions, mainBankQuestions, mainQuestionTarget);
+    if (!passageSafeSelection.ok) {
+      return { ok: false, error: passageSafeSelection.error, shortageDetails: { source: "main_bank", preserve_passages: true } };
+    }
+    selectedMainQuestions = passageSafeSelection.questions;
   }
 
   // Combine and format
