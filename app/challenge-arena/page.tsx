@@ -536,11 +536,19 @@ export default function ChallengeArenaPage() {
       }
 
       const questions: CBTQuestion[] = data.questions.map((question: any, index: number) => {
-        const options = Array.isArray(question?.options)
-          ? question.options
+        // The assessment engine stores options as a keyed object ({ A: "...", B: "..." }),
+        // while this student UI renders a list. Support both shapes explicitly.
+        const rawOptions = question?.options;
+        const options = Array.isArray(rawOptions)
+          ? rawOptions
               .filter((option: any) => option && typeof option.key === "string" && typeof option.text === "string")
               .map((option: any) => ({ key: option.key.toUpperCase(), text: option.text }))
-          : [];
+          : rawOptions && typeof rawOptions === "object"
+            ? Object.entries(rawOptions)
+                .filter(([key, value]) => /^[A-E]$/i.test(key) && typeof value === "string" && value.trim().length > 0)
+                .map(([key, value]) => ({ key: key.toUpperCase(), text: value as string }))
+                .sort((a, b) => a.key.localeCompare(b.key))
+            : [];
         if (!question || typeof question.id !== "string" || typeof question.question !== "string" || options.length < 2) {
           throw new Error(`Question ${index + 1} is incomplete. Please contact the competition organiser.`);
         }
