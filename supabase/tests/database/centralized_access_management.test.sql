@@ -1,6 +1,6 @@
 begin;
 
-select plan(17);
+select plan(19);
 
 select ok(
   (select count(*) = 4
@@ -88,6 +88,17 @@ select ok(
       and indexdef ilike '%where (revoked_at IS NULL)%'
   ),
   'one active assignment per user and role is enforced without deleting revoked history'
+);
+
+select ok(
+  exists (select 1 from pg_indexes where schemaname='public' and indexname='access_roles_name_ci_uidx'),
+  'role names are unique without case sensitivity'
+);
+
+select ok(
+  position('Super Admin role revocation requires the separate break-glass governance process'
+    in pg_get_functiondef('private.access_revoke_role_impl(uuid,uuid)'::regprocedure)) > 0,
+  'Super Admin role revocation is blocked outside the break-glass process'
 );
 
 select ok(
