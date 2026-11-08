@@ -250,7 +250,7 @@ export async function DELETE(request: NextRequest) {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const body = await request.json().catch(() => ({}));
     const recordingId = String(body?.recording_id || "");
     if (!recordingId) {
