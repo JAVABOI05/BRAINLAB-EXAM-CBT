@@ -14,7 +14,7 @@ export function DynamicCountdownSlot({ className = "" }: DynamicCountdownSlotPro
   }, []);
 
   return (
-    <div className={`dynamic-countdown-slot ${className}`}>
+    <div aria-live="polite" className={`dynamic-countdown-slot ${className}`}>
       <ExamCountdownBanner variant="hero" />
     </div>
   );
