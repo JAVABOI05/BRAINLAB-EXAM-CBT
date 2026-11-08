@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const staffAccess = await resolveClassroomStaffAccess(user, token);
     if (!staffAccess.isStaff) {
       return NextResponse.json({ error: "Only verified teaching staff can save scheduled-class recordings." }, { status: 403 });
