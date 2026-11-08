@@ -9,8 +9,6 @@
  *   (platform_settings / admin config).
  */
 
-import { CONTACT_CONFIG } from "./contactConfig";
-
 export type ClaimsRegisterStatus =
   | "VERIFIED"          // Verified by academic registry, legal record, or signed consent
   | "LIVE_AGGREGATE"    // Dynamic aggregate count from database at runtime

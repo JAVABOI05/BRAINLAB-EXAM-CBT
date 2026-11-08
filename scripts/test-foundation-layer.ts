@@ -147,7 +147,7 @@ async function runFoundationSuite() {
     ];
     for (const sec of requiredSections) {
       assert(
-        HOMEPAGE_CONTENT_CONFIG.sectionOrder.includes(sec as any),
+        HOMEPAGE_CONTENT_CONFIG.sectionOrder.includes(sec as HomepageSectionId),
         `Section ${sec} must exist in order array`
       );
       assert.strictEqual(
