@@ -5,14 +5,15 @@ import Link from "next/link";
 import { toast } from "../lib/toast";
 import { getFooterConfig } from "../lib/platformConfig";
 import { normalizeWhatsAppNumber, getWhatsAppChatUrl } from "../lib/whatsapp";
+import { CONTACT_CONFIG } from "../lib/contactConfig";
 
 const DEFAULT_CONTACT_INFO = {
-  primaryPhone: "+234 907 431 0204",
-  secondaryPhone: "+234 902 111 8231",
-  whatsappNumber: "2349074310204",
-  email: "support@brainlabacademy.com.ng",
-  academyEmail: "hello@brainlabacademy.com.ng",
-  whatsappChannel: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
+  primaryPhone: CONTACT_CONFIG.phone.display,
+  secondaryPhone: CONTACT_CONFIG.phone.display,
+  whatsappNumber: CONTACT_CONFIG.whatsapp.number,
+  email: CONTACT_CONFIG.email.support,
+  academyEmail: CONTACT_CONFIG.email.enquiries,
+  whatsappChannel: CONTACT_CONFIG.whatsapp.channelUrl,
   location: "Lagos, Nigeria",
   workingHours: "Monday – Saturday: 8:00 AM – 8:00 PM (WAT)",
 };
