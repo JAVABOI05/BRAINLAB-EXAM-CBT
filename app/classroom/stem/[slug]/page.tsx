@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { StemResource } from "@/app/lib/stem/stemService";
-import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
 import {
   QuadraticGraphAdapter,
   DEFAULT_QUADRATIC_STATE,
@@ -35,6 +34,8 @@ export default function StemPlayerPage({
 
   const [resource, setResource] = useState<StemResource | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessError, setAccessError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   // Student Observations & Lab Attempts
   const [observations, setObservations] = useState("");
@@ -58,19 +59,23 @@ export default function StemPlayerPage({
     async function load() {
       try {
         setLoading(true);
+        setAccessError("");
+        setLoadError("");
         const res = await fetch(`/api/stem/resources/${slug}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (active && data.ok && data.resource) {
-            setResource(data.resource);
-            return;
-          }
+        const data = await res.json().catch(() => ({}));
+        if (active && res.ok && data.ok && data.resource) {
+          setResource(data.resource);
+          return;
         }
-        const fallback = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug);
-        if (active && fallback) setResource(fallback);
+        if (active && res.status === 403 && data.locked) {
+          setAccessError(data.error || "This STEM resource is not included in your current plan.");
+          return;
+        }
+        if (active) {
+          setLoadError(data.error || "This STEM resource is unavailable. Please return to the STEM catalogue.");
+        }
       } catch {
-        const fallback = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug);
-        if (active && fallback) setResource(fallback);
+        if (active) setLoadError("Unable to load this STEM resource. Check your connection and try again.");
       } finally {
         if (active) setLoading(false);
       }
@@ -112,43 +117,56 @@ export default function StemPlayerPage({
   }, [slug, quadState, projState, circState, titrState, genState, logicState]);
 
   const handleSaveObservation = async () => {
-    setSavedStatus("Submitting experiment attempt…");
-    try {
-      const activeState =
-        slug === "quadratic-graph-explorer"
-          ? quadState
-          : slug === "projectile-motion-simulator"
-          ? projState
-          : slug === "ohms-law-dc-circuit"
-          ? circState
-          : slug === "acid-base-titration-curve"
-          ? titrState
-          : slug === "genetics-punnett-square-lab"
-          ? genState
-          : { selectedOrganelle };
+    const versionId = resource?.current_version?.id;
+    if (!versionId) {
+      setSavedStatus("This published lab has no active content version. Your attempt was not submitted.");
+      return;
+    }
 
+    setSavedStatus("Submitting experiment attempt…");
+    const activeState =
+      slug === "quadratic-graph-explorer"
+        ? quadState
+        : slug === "projectile-motion-simulator"
+        ? projState
+        : slug === "ohms-law-dc-circuit"
+        ? circState
+        : slug === "acid-base-titration-curve"
+        ? titrState
+        : slug === "genetics-punnett-square-lab"
+        ? genState
+        : { selectedOrganelle };
+
+    try {
       const res = await fetch("/api/stem/attempts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          resource_version_id: resource?.current_version?.id || resource?.id,
+          resource_version_id: versionId,
           observations: { notes: observations, state: activeState },
           measurements: [activeState],
           conclusion: observations,
         }),
       });
+      const data = await res.json().catch(() => ({}));
 
-      if (res.ok) {
-        setSavedStatus("Submitted to tutor academic log! ✓");
+      if (res.ok && data.ok) {
+        setSavedStatus("Submitted to your tutor's academic log! ✓");
       } else {
         localStorage.setItem(`stem-attempt-${slug}`, JSON.stringify({ activeState, observations, at: Date.now() }));
-        setSavedStatus("Saved to your local laboratory portfolio! ✓");
+        if (res.status === 429) {
+          setSavedStatus("Monthly lab quota reached. Notes kept locally only; no submission was created.");
+        } else if (res.status === 403) {
+          setSavedStatus("Plan access denied. Notes kept locally only; no submission was created.");
+        } else {
+          setSavedStatus(`${data.error || "Submission failed."} Notes kept locally only.`);
+        }
       }
     } catch {
-      localStorage.setItem(`stem-attempt-${slug}`, JSON.stringify({ observations, at: Date.now() }));
-      setSavedStatus("Saved to your local laboratory portfolio! ✓");
+      localStorage.setItem(`stem-attempt-${slug}`, JSON.stringify({ activeState, observations, at: Date.now() }));
+      setSavedStatus("Connection unavailable. Notes kept locally only; no server submission was created.");
     }
-    setTimeout(() => setSavedStatus(""), 4000);
+    setTimeout(() => setSavedStatus(""), 5000);
   };
 
   if (loading && !resource) {
@@ -162,10 +180,31 @@ export default function StemPlayerPage({
     );
   }
 
+  if (!resource && accessError) {
+    return (
+      <div className="min-h-screen bg-[#070d1e] text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md space-y-4">
+          <div className="text-4xl">🔒</div>
+          <h2 className="text-xl font-black">Unlock this STEM experience</h2>
+          <p className="text-sm leading-relaxed text-slate-300">{accessError}</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link href="/pricing?feature=stem" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold">
+              Compare STEM plans
+            </Link>
+            <Link href="/classroom/stem" className="px-5 py-2.5 border border-white/15 rounded-xl text-xs font-bold">
+              Back to STEM Studio
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!resource) {
     return (
-      <div className="min-h-screen bg-[#070d1e] text-white flex flex-col items-center justify-center p-4">
-        <h2 className="text-xl font-bold">STEM Resource Not Found</h2>
+      <div className="min-h-screen bg-[#070d1e] text-white flex flex-col items-center justify-center p-4 text-center">
+        <h2 className="text-xl font-bold">STEM Resource Unavailable</h2>
+        <p className="mt-2 max-w-md text-sm text-slate-300">{loadError || "This resource could not be loaded."}</p>
         <Link href="/classroom/stem" className="mt-4 px-4 py-2 bg-blue-600 rounded-xl text-xs font-bold">
           Return to STEM Studio
         </Link>

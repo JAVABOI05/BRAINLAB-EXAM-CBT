@@ -21,7 +21,9 @@ export interface PlanEntitlements {
   certificates_issued: boolean; // Verified digital certificates upon score threshold
   calculator_type: "none" | "standard" | "scientific"; // Allowed exam calculator type
   vip_support: boolean; // 24/7 priority resolution and tutor direct dispatch
-  stem_studio_access?: boolean; // Interactive STEM simulations & formula lab access
+  stem_studio_access?: boolean; // Master switch for learner-facing STEM Studio
+  stem_access_level?: "none" | "discover" | "explore" | "practise" | "advanced" | "complete";
+  stem_monthly_lab_quota?: number; // 999999 = unlimited; applies to saved/submitted lab attempts
 }
 
 export interface SubscriptionPlan {
@@ -253,6 +255,8 @@ export const DEFAULT_FREE_ENTITLEMENTS: PlanEntitlements = {
   calculator_type: "standard",
   vip_support: false,
   stem_studio_access: true,
+  stem_access_level: "discover",
+  stem_monthly_lab_quota: 3,
 };
 
 export function normalizePlanEntitlements(
@@ -276,6 +280,9 @@ export function normalizePlanEntitlements(
         certificates_issued: false,
         calculator_type: "scientific",
         vip_support: false,
+        stem_studio_access: true,
+        stem_access_level: "practise",
+        stem_monthly_lab_quota: 25,
       };
 
   if (!raw || typeof raw !== "object") return { ...base };
@@ -308,6 +315,13 @@ export function normalizePlanEntitlements(
       typeof rawObj.certificates_issued === "boolean" ? rawObj.certificates_issued : base.certificates_issued,
     calculator_type: calcType,
     vip_support: typeof rawObj.vip_support === "boolean" ? rawObj.vip_support : base.vip_support,
+    stem_studio_access: typeof rawObj.stem_studio_access === "boolean" ? rawObj.stem_studio_access : base.stem_studio_access,
+    stem_access_level: ["none", "discover", "explore", "practise", "advanced", "complete"].includes(String(rawObj.stem_access_level))
+      ? (rawObj.stem_access_level as PlanEntitlements["stem_access_level"])
+      : base.stem_access_level,
+    stem_monthly_lab_quota: typeof rawObj.stem_monthly_lab_quota === "number" && rawObj.stem_monthly_lab_quota >= 0
+      ? rawObj.stem_monthly_lab_quota
+      : base.stem_monthly_lab_quota,
   };
 }
 
@@ -365,6 +379,9 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
       certificates_issued: false,
       calculator_type: "scientific",
       vip_support: false,
+      stem_studio_access: true,
+      stem_access_level: "practise",
+      stem_monthly_lab_quota: 25,
     },
     is_active: true,
     display_order: 2,
@@ -399,6 +416,9 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
       certificates_issued: true,
       calculator_type: "scientific",
       vip_support: false,
+      stem_studio_access: true,
+      stem_access_level: "advanced",
+      stem_monthly_lab_quota: 75,
     },
     is_active: true,
     display_order: 3,
@@ -433,6 +453,9 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
       certificates_issued: true,
       calculator_type: "scientific",
       vip_support: true,
+      stem_studio_access: true,
+      stem_access_level: "complete",
+      stem_monthly_lab_quota: 999999,
     },
     is_active: true,
     display_order: 4,
@@ -764,10 +787,17 @@ export async function setPlatformConfig<T>(
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const plans = await getPlatformConfig<SubscriptionPlan[]>("subscription_plans", DEFAULT_PLANS);
   return plans
-    .map((p) => ({
-      ...p,
-      entitlements: normalizePlanEntitlements(p.entitlements, p.id === "free"),
-    }))
+    .map((p) => {
+      const defaultPlan = DEFAULT_PLANS.find((defaultItem) => defaultItem.id === p.id);
+      const mergedEntitlements = {
+        ...(defaultPlan?.entitlements || (p.id === "free" ? DEFAULT_FREE_ENTITLEMENTS : {})),
+        ...(p.entitlements || {}),
+      };
+      return {
+        ...p,
+        entitlements: normalizePlanEntitlements(mergedEntitlements, p.id === "free"),
+      };
+    })
     .sort((a, b) => a.display_order - b.display_order);
 }
 

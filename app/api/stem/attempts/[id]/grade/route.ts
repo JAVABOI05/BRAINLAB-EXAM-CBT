@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
 import { gradeStemExperimentAttempt } from "@/app/lib/stem/stemService";
-import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
 
 export async function POST(
   request: NextRequest,
@@ -19,7 +18,14 @@ export async function POST(
     }
 
     const adminRole = await resolveAdminRole(user.id);
-    const canGrade = isGovernanceAdminRole(adminRole) || isInstructorRole(adminRole);
+    const isStemGovernanceRole = ["super_admin", "platform_admin", "content_reviewer", "ai_learning_admin", "admin"].includes(adminRole || "");
+    const { data: approvedTutor } = await client
+      .from("tutor_profiles")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("profile_status", "approved")
+      .maybeSingle();
+    const canGrade = isStemGovernanceRole || adminRole === "teacher" || Boolean(approvedTutor);
 
     if (!canGrade) {
       return NextResponse.json(

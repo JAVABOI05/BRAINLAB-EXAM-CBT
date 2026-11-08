@@ -107,6 +107,9 @@ export default function AdminPricingPage() {
         certificates_issued: false,
         calculator_type: "scientific",
         vip_support: false,
+        stem_studio_access: true,
+        stem_access_level: "practise",
+        stem_monthly_lab_quota: 25,
       },
       is_active: true,
       display_order: plans.length + 1,
@@ -299,6 +302,9 @@ export default function AdminPricingPage() {
                       <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold ${ent.competitions_included ? "bg-blue-50 text-blue-800" : "bg-slate-100 text-slate-500"}`}>
                         🏆 {ent.competitions_included ? "Arena ON" : "No Arena"}
                       </span>
+                      <span className="inline-flex items-center gap-1 rounded-md bg-cyan-50 px-2 py-0.5 text-[10px] font-extrabold text-cyan-800">
+                        🔬 STEM: {ent.stem_studio_access === false ? "Off" : (ent.stem_access_level || "Discover")}
+                      </span>
                     </div>
 
                     <div className="mt-4 space-y-1 text-xs text-slate-600">
@@ -443,6 +449,21 @@ export default function AdminPricingPage() {
                     return (
                       <td key={p.id} className="py-3 px-4 text-center font-extrabold">
                         {ent.competitions_included ? <span className="text-emerald-600">✓ Entry Pass</span> : <span className="text-slate-400">✗ Locked</span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                <tr>
+                  <td className="py-3 px-4 font-bold text-slate-800">STEM Studio Learning &amp; Virtual Labs</td>
+                  {plans.map((p) => {
+                    const ent = normalizePlanEntitlements(p.entitlements, p.id === "free");
+                    const level = ent.stem_studio_access === false ? "none" : (ent.stem_access_level || "discover");
+                    const label = ({ none: "No access", discover: "Discover", explore: "Explore", practise: "Practise", advanced: "Advanced", complete: "Complete" } as Record<string, string>)[level] || "Discover";
+                    return (
+                      <td key={p.id} className="py-3 px-4 text-center font-bold">
+                        <span className={level === "none" ? "text-slate-400" : "text-cyan-700"}>{label}</span>
+                        {level !== "none" && <span className="block text-[10px] text-slate-500">{ent.stem_monthly_lab_quota && ent.stem_monthly_lab_quota >= 999999 ? "Unlimited labs" : `${ent.stem_monthly_lab_quota ?? 0} saved labs/mo`}</span>}
                       </td>
                     );
                   })}
@@ -783,6 +804,51 @@ export default function AdminPricingPage() {
                         />
                         <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
+                    </div>
+
+                    {/* STEM Studio Plan Access */}
+                    <div className="rounded-2xl border border-cyan-200 p-4 bg-cyan-50/60 space-y-3">
+                      <div>
+                        <span className="font-extrabold text-slate-900 block">🔬 STEM Studio Access Level</span>
+                        <span className="text-xs text-slate-600">Set the depth of interactive science, 3D models, pathways and virtual laboratory access included in this plan.</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Access level</label>
+                          <select
+                            value={editEntitlements.stem_studio_access === false ? "none" : (editEntitlements.stem_access_level || "discover")}
+                            onChange={(e) => {
+                              const level = e.target.value as NonNullable<PlanEntitlements["stem_access_level"]>;
+                              updateEntitlement("stem_access_level", level);
+                              updateEntitlement("stem_studio_access", level !== "none");
+                            }}
+                            className="w-full rounded-xl border border-cyan-300 bg-white p-2.5 text-sm font-bold text-slate-900"
+                          >
+                            <option value="none">No STEM Studio access</option>
+                            <option value="discover">Discover — previews and introductory 2D content</option>
+                            <option value="explore">Explore — interactive models and basic pathways</option>
+                            <option value="practise">Practise — guided pathways, labs and assessments</option>
+                            <option value="advanced">Advanced — advanced 3D, simulations and reports</option>
+                            <option value="complete">Complete — all learner-facing STEM experiences</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Monthly saved lab attempts</label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={999999}
+                            value={editEntitlements.stem_monthly_lab_quota ?? 3}
+                            disabled={!editEntitlements.stem_studio_access}
+                            onChange={(e) => updateEntitlement("stem_monthly_lab_quota", Math.max(0, Number(e.target.value) || 0))}
+                            className="w-full rounded-xl border border-cyan-300 bg-white p-2.5 text-sm font-bold text-slate-900 disabled:opacity-50"
+                          />
+                          <span className="text-[10px] text-slate-500">Use 999999 for unlimited. Zero allows viewing but no saved submissions.</span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-cyan-200 bg-white p-3 text-xs text-slate-600">
+                        The access level is a baseline. STEM resources can require a higher level, and the server will enforce the learner&apos;s active plan.
+                      </div>
                     </div>
 
                     {/* Advanced Analytics */}

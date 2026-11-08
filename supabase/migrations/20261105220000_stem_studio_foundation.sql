@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.stem_resource_versions (
   initial_state JSONB NOT NULL DEFAULT '{}'::jsonb,
   content_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   learning_objectives TEXT[] DEFAULT '{}',
-  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT stem_resource_version_unique UNIQUE (resource_id, version_number)
 );
@@ -123,6 +123,87 @@ CREATE TRIGGER trg_stem_attempts_updated_at
   BEFORE UPDATE ON public.stem_experiment_attempts
   FOR EACH ROW EXECUTE FUNCTION public.set_stem_updated_at();
 
+-- Prevent students and class tutors from rewriting attempt ownership or identity.
+-- Students may edit their own learning work while in progress; assigned tutors
+-- may only grade/leave feedback and mark the attempt graded. Governance admins
+-- retain full corrective access for audited administrative intervention.
+CREATE OR REPLACE FUNCTION public.guard_stem_attempt_updates()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_is_reviewer BOOLEAN := public.is_stem_reviewer_or_admin();
+  v_is_assigned_tutor BOOLEAN := FALSE;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required to update STEM attempts';
+  END IF;
+
+  IF v_is_reviewer THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.id IS DISTINCT FROM OLD.id
+    OR NEW.resource_version_id IS DISTINCT FROM OLD.resource_version_id
+    OR NEW.student_id IS DISTINCT FROM OLD.student_id
+    OR NEW.class_id IS DISTINCT FROM OLD.class_id
+    OR NEW.assignment_id IS DISTINCT FROM OLD.assignment_id
+    OR NEW.attempt_number IS DISTINCT FROM OLD.attempt_number
+    OR NEW.started_at IS DISTINCT FROM OLD.started_at
+  THEN
+    RAISE EXCEPTION 'STEM attempt identity and ownership fields are immutable';
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.live_classes c
+    WHERE c.id = OLD.class_id AND c.tutor_id = v_user_id
+  ) INTO v_is_assigned_tutor;
+
+  IF v_is_assigned_tutor THEN
+    IF OLD.status NOT IN ('completed', 'graded') OR NEW.status <> 'graded' THEN
+      RAISE EXCEPTION 'Only submitted STEM attempts may be graded';
+    END IF;
+    IF NEW.tutor_score IS NULL OR NEW.tutor_score < 0 OR NEW.tutor_score > 100 THEN
+      RAISE EXCEPTION 'STEM tutor score must be between 0 and 100';
+    END IF;
+    IF NEW.observations IS DISTINCT FROM OLD.observations
+      OR NEW.measurements IS DISTINCT FROM OLD.measurements
+      OR NEW.conclusion IS DISTINCT FROM OLD.conclusion
+      OR NEW.submitted_at IS DISTINCT FROM OLD.submitted_at
+    THEN
+      RAISE EXCEPTION 'Tutors may grade STEM attempts but cannot alter student submissions';
+    END IF;
+    IF NEW.status IS DISTINCT FROM OLD.status AND NEW.status <> 'graded' THEN
+      RAISE EXCEPTION 'Tutors may only mark an eligible STEM attempt as graded';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF OLD.student_id = v_user_id THEN
+    IF NEW.tutor_score IS DISTINCT FROM OLD.tutor_score
+      OR NEW.tutor_feedback IS DISTINCT FROM OLD.tutor_feedback
+    THEN
+      RAISE EXCEPTION 'Students cannot change STEM grading fields';
+    END IF;
+    IF OLD.status <> 'in_progress' OR NEW.status NOT IN ('in_progress', 'completed') THEN
+      RAISE EXCEPTION 'Students may only edit an in-progress STEM attempt';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  RAISE EXCEPTION 'Not authorized to update this STEM attempt';
+END;
+$;
+
+DROP TRIGGER IF EXISTS trg_stem_attempts_guard_updates ON public.stem_experiment_attempts;
+CREATE TRIGGER trg_stem_attempts_guard_updates
+  BEFORE UPDATE ON public.stem_experiment_attempts
+  FOR EACH ROW EXECUTE FUNCTION public.guard_stem_attempt_updates();
+
+
 -- 5. Row Level Security Policies
 ALTER TABLE public.stem_resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stem_resource_versions ENABLE ROW LEVEL SECURITY;
@@ -137,15 +218,38 @@ BEGIN
     RETURN FALSE;
   END IF;
 
+  -- admin_profiles is the canonical user-to-role mapping. The legacy
+  -- admin_users table has its own generated row id, so match it by the
+  -- authenticated email rather than incorrectly comparing unrelated UUIDs.
   RETURN EXISTS (
-    SELECT 1 FROM public.admin_users a
-    WHERE a.id = auth.uid()
-      AND a.role IN ('super_admin', 'platform_admin', 'content_reviewer', 'teacher', 'ai_learning_admin')
-  ) OR EXISTS (
     SELECT 1 FROM public.admin_profiles p
     WHERE p.user_id = auth.uid()
-      AND p.role IN ('super_admin', 'platform_admin', 'content_reviewer', 'teacher', 'ai_learning_admin')
+      AND p.role IN ('super_admin', 'platform_admin', 'content_reviewer', 'ai_learning_admin')
+  ) OR EXISTS (
+    SELECT 1 FROM public.admin_users a
+    WHERE lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+      AND a.role IN ('super_admin', 'admin')
   );
+END;
+$$;
+
+-- Content authors are authenticated teachers/tutors mapped to the teacher
+-- role. Reviewer/admin privileges remain separate and can manage all content.
+CREATE OR REPLACE FUNCTION public.can_author_stem_resources()
+RETURNS BOOLEAN LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  RETURN public.is_stem_reviewer_or_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.admin_profiles p
+      WHERE p.user_id = auth.uid() AND p.role = 'teacher'
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.tutor_profiles t
+      WHERE t.user_id = auth.uid() AND t.profile_status = 'approved'
+    );
 END;
 $$;
 
@@ -164,7 +268,7 @@ DROP POLICY IF EXISTS "Tutors and admins can create STEM resources" ON public.st
 CREATE POLICY "Tutors and admins can create STEM resources"
   ON public.stem_resources FOR INSERT
   WITH CHECK (
-    auth.uid() = author_id
+    (auth.uid() = author_id AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
@@ -172,7 +276,7 @@ DROP POLICY IF EXISTS "Authors and admins can update STEM resources" ON public.s
 CREATE POLICY "Authors and admins can update STEM resources"
   ON public.stem_resources FOR UPDATE
   USING (
-    author_id = auth.uid()
+    (author_id = auth.uid() AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
@@ -180,7 +284,7 @@ DROP POLICY IF EXISTS "Authors can delete draft resources and admins can delete 
 CREATE POLICY "Authors can delete draft resources and admins can delete any"
   ON public.stem_resources FOR DELETE
   USING (
-    (author_id = auth.uid() AND status = 'draft')
+    (author_id = auth.uid() AND status = 'draft' AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
@@ -204,7 +308,7 @@ DROP POLICY IF EXISTS "Authors and admins can insert resource versions" ON publi
 CREATE POLICY "Authors and admins can insert resource versions"
   ON public.stem_resource_versions FOR INSERT
   WITH CHECK (
-    auth.uid() = created_by
+    (auth.uid() = created_by AND public.can_author_stem_resources())
     OR public.is_stem_reviewer_or_admin()
   );
 
@@ -221,30 +325,86 @@ CREATE POLICY "Authors and admins manage curriculum mappings"
     public.is_stem_reviewer_or_admin()
     OR EXISTS (
       SELECT 1 FROM public.stem_resources r
-      WHERE r.id = stem_curriculum_mappings.resource_id AND r.author_id = auth.uid()
+      WHERE r.id = stem_curriculum_mappings.resource_id
+          AND r.author_id = auth.uid()
+          AND public.can_author_stem_resources()
     )
   );
 
 -- RLS: stem_experiment_attempts
+-- Students may read their own work and submit/update learning data while an
+-- attempt is in progress. Grading fields are never writable through student
+-- policies. Tutors can review attempts for their own classes.
 DROP POLICY IF EXISTS "Students view and manage own experiment attempts" ON public.stem_experiment_attempts;
-CREATE POLICY "Students view and manage own experiment attempts"
-  ON public.stem_experiment_attempts FOR ALL
+DROP POLICY IF EXISTS "Students read own STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Students create own STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Students update own in-progress STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Tutors and admins review STEM attempts" ON public.stem_experiment_attempts;
+DROP POLICY IF EXISTS "Students delete own in-progress STEM attempts" ON public.stem_experiment_attempts;
+
+CREATE POLICY "Students read own STEM attempts"
+  ON public.stem_experiment_attempts FOR SELECT
   USING (
     student_id = auth.uid()
     OR public.is_stem_reviewer_or_admin()
     OR (
       class_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM public.live_classes c WHERE c.id = class_id AND c.tutor_id = auth.uid()
+        SELECT 1 FROM public.live_classes c
+        WHERE c.id = stem_experiment_attempts.class_id AND c.tutor_id = auth.uid()
       )
     )
   );
+
+CREATE POLICY "Students create own STEM attempts"
+  ON public.stem_experiment_attempts FOR INSERT
+  WITH CHECK (
+    student_id = auth.uid()
+    AND status IN ('in_progress', 'completed')
+    AND tutor_score IS NULL
+    AND tutor_feedback IS NULL
+  );
+
+CREATE POLICY "Students update own in-progress STEM attempts"
+  ON public.stem_experiment_attempts FOR UPDATE
+  USING (student_id = auth.uid() AND status = 'in_progress')
+  WITH CHECK (
+    student_id = auth.uid()
+    AND status IN ('in_progress', 'completed')
+    AND tutor_score IS NULL
+    AND tutor_feedback IS NULL
+  );
+
+CREATE POLICY "Tutors and admins review STEM attempts"
+  ON public.stem_experiment_attempts FOR UPDATE
+  USING (
+    public.is_stem_reviewer_or_admin()
+    OR (
+      class_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.live_classes c
+        WHERE c.id = stem_experiment_attempts.class_id AND c.tutor_id = auth.uid()
+      )
+    )
+  )
+  WITH CHECK (
+    public.is_stem_reviewer_or_admin()
+    OR (
+      class_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.live_classes c
+        WHERE c.id = stem_experiment_attempts.class_id AND c.tutor_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Students delete own in-progress STEM attempts"
+  ON public.stem_experiment_attempts FOR DELETE
+  USING (student_id = auth.uid() AND status = 'in_progress');
 
 -- Grants
 GRANT SELECT ON public.stem_resources TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.stem_resources TO authenticated;
 
 GRANT SELECT ON public.stem_resource_versions TO anon, authenticated;
-GRANT INSERT, UPDATE ON public.stem_resource_versions TO authenticated;
+GRANT INSERT ON public.stem_resource_versions TO authenticated;
 
 GRANT SELECT ON public.stem_curriculum_mappings TO anon, authenticated;
 GRANT ALL ON public.stem_curriculum_mappings TO authenticated;

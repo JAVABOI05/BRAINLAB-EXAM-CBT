@@ -5,12 +5,13 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { getAdminSession, type AdminUser } from "@/app/lib/adminAuth";
 import type { StemResource, StemResourceType } from "@/app/lib/stem/stemService";
-import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
 
 export default function AdminStemStudioPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [token, setToken] = useState<string>("");
-  const [resources, setResources] = useState<StemResource[]>(INITIAL_STEM_RESOURCES);
+  const [resources, setResources] = useState<StemResource[]>([]);
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -20,12 +21,23 @@ export default function AdminStemStudioPage() {
   const [createSlug, setCreateSlug] = useState("");
   const [createTitle, setCreateTitle] = useState("");
   const [createSummary, setCreateSummary] = useState("");
-  const [createSubjectId, setCreateSubjectId] = useState("subj-math");
+  const [createSubjectId, setCreateSubjectId] = useState("");
   const [createType, setCreateType] = useState<StemResourceType>("simulation");
   const [createTier, setCreateTier] = useState<1 | 2 | 3>(2);
+  const [createEntitlementTier, setCreateEntitlementTier] = useState<"free" | "premium" | "vip">("free");
   const [createTags, setCreateTags] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState("");
+
+  // Append-only STEM content version authoring
+  const [versionResource, setVersionResource] = useState<StemResource | null>(null);
+  const [versionAdapter, setVersionAdapter] = useState("canvas_quadratic");
+  const [versionInitialState, setVersionInitialState] = useState("{}");
+  const [versionPayload, setVersionPayload] = useState("{}");
+  const [versionObjectives, setVersionObjectives] = useState("");
+  const [versionBusy, setVersionBusy] = useState(false);
+  const [versionError, setVersionError] = useState("");
+  const [versionSuccess, setVersionSuccess] = useState("");
 
   // Review & Publish Modal State
   const [selectedForReview, setSelectedForReview] = useState<StemResource | null>(null);
@@ -51,14 +63,14 @@ export default function AdminStemStudioPage() {
       const res = await fetch("/api/stem/resources?status=all", { headers });
       if (res.ok) {
         const data = await res.json();
-        if (data.ok && Array.isArray(data.resources) && data.resources.length > 0) {
+        if (data.ok && Array.isArray(data.resources)) {
           setResources(data.resources);
           return;
         }
       }
-      setResources(INITIAL_STEM_RESOURCES);
+      setResources([]);
     } catch {
-      setResources(INITIAL_STEM_RESOURCES);
+      setResources([]);
     } finally {
       setLoading(false);
     }
@@ -72,6 +84,24 @@ export default function AdminStemStudioPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token || "";
       setToken(authToken);
+
+      const { data: subjectRows, error: subjectError } = await supabase
+        .from("learning_subjects")
+        .select("id, name, slug")
+        .eq("is_published", true)
+        .order("order_index", { ascending: true });
+
+      if (subjectError) {
+        console.error("Failed to load STEM curriculum subjects:", subjectError);
+        setSubjects([]);
+      } else {
+        const availableSubjects = (subjectRows || []).filter(
+          (subject: { id: string; name: string; slug: string }) => subject.id && subject.name && subject.slug
+        );
+        setSubjects(availableSubjects);
+        setCreateSubjectId((current) => current || availableSubjects[0]?.id || "");
+      }
+      setSubjectsLoading(false);
 
       await loadResources(authToken);
     }
@@ -103,6 +133,7 @@ export default function AdminStemStudioPage() {
           subject_id: createSubjectId,
           tier: createTier,
           resource_type: createType,
+          entitlement_tier: createEntitlementTier,
           tags: tagsArray,
         }),
       });
@@ -117,6 +148,7 @@ export default function AdminStemStudioPage() {
       setCreateSlug("");
       setCreateTitle("");
       setCreateSummary("");
+      setCreateEntitlementTier("free");
       setCreateTags("");
       await loadResources(token);
     } catch (err) {
@@ -126,12 +158,77 @@ export default function AdminStemStudioPage() {
     }
   }
 
+  function openVersionEditor(resource: StemResource) {
+    setVersionResource(resource);
+    const existing = resource.current_version;
+    const slugDefaults: Record<string, { adapter: string; state: Record<string, unknown>; payload: Record<string, unknown> }> = {
+      "quadratic-graph-explorer": { adapter: "canvas_quadratic", state: { a: 2, b: 0, c: -4 }, payload: { equation: "y = ax² + bx + c" } },
+      "projectile-motion-simulator": { adapter: "canvas_kinematics", state: { velocity: 25, angle: 45, gravity: 9.8, initialHeight: 0 }, payload: { formulas: { range: "u²sin(2θ)/g", maxHeight: "u²sin²(θ)/(2g)" } } },
+      "ohms-law-dc-circuit": { adapter: "circuit_dc", state: { voltage: 12, resistance: 4 }, payload: { formula: "V = I · R", powerFormula: "P = V · I" } },
+      "logic-gates-circuits": { adapter: "canvas_logic", state: { gateType: "AND", inputA: 1, inputB: 0, active: true }, payload: { schematic: "standard-iec" } },
+    };
+    const fallback = slugDefaults[resource.slug] || { adapter: "", state: {}, payload: {} };
+    setVersionAdapter(existing?.adapter_type || fallback.adapter);
+    setVersionInitialState(JSON.stringify(existing?.initial_state || fallback.state, null, 2));
+    setVersionPayload(JSON.stringify(existing?.content_payload || fallback.payload, null, 2));
+    setVersionObjectives((existing?.learning_objectives || []).join("\n"));
+    setVersionError("");
+    setVersionSuccess("");
+  }
+
+  async function handleSaveVersion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!versionResource) return;
+    setVersionError("");
+    setVersionSuccess("");
+    let initialState: Record<string, unknown>;
+    let contentPayload: Record<string, unknown>;
+    try {
+      initialState = JSON.parse(versionInitialState);
+      contentPayload = JSON.parse(versionPayload);
+      if (!initialState || Array.isArray(initialState) || typeof initialState !== "object") throw new Error("Initial state must be a JSON object.");
+      if (!contentPayload || Array.isArray(contentPayload) || typeof contentPayload !== "object") throw new Error("Content payload must be a JSON object.");
+    } catch (error) {
+      setVersionError(error instanceof Error ? error.message : "Check the JSON fields.");
+      return;
+    }
+    if (versionAdapter === "phet_embed" && !String(contentPayload.embedUrl || "").startsWith("https://")) {
+      setVersionError("PhET embeds require a valid HTTPS embedUrl.");
+      return;
+    }
+    setVersionBusy(true);
+    try {
+      const res = await fetch(`/api/stem/resources/${versionResource.slug}/version`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          adapter_type: versionAdapter,
+          initial_state: initialState,
+          content_payload: contentPayload,
+          learning_objectives: versionObjectives.split("\n").map((line) => line.trim()).filter(Boolean),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Could not save this content version.");
+      setVersionSuccess(`Version ${data.version?.version_number || "new"} saved as an immutable draft. Review it before publishing.`);
+      await loadResources(token);
+    } catch (error) {
+      setVersionError(error instanceof Error ? error.message : "Version save failed.");
+    } finally {
+      setVersionBusy(false);
+    }
+  }
+
   // Handle Publish Resource
   async function handlePublishResource(resource: StemResource) {
+    if (!resource.current_version?.id) {
+      setPublishMessage("This resource has no saved content version. Add and save a version before publishing.");
+      return;
+    }
     setPublishBusy(true);
     setPublishMessage("");
     try {
-      const versionId = resource.current_version?.id || "seed-ver-01";
+      const versionId = resource.current_version.id;
       const res = await fetch(`/api/stem/resources/${resource.slug}/publish`, {
         method: "POST",
         headers: {
@@ -390,6 +487,13 @@ export default function AdminStemStudioPage() {
                     v{item.current_version?.version_number || 1}.0
                   </td>
                   <td className="p-4 text-right space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => openVersionEditor(item)}
+                      className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] transition"
+                    >
+                      {item.current_version ? "New Version" : "Add Content"}
+                    </button>
                     <Link
                       href={`/classroom/stem/${item.slug}`}
                       className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/10 hover:bg-slate-200 text-slate-800 dark:text-white font-bold text-[11px] transition inline-block"
@@ -574,13 +678,16 @@ export default function AdminStemStudioPage() {
                   <select
                     value={createSubjectId}
                     onChange={(e) => setCreateSubjectId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                    required
+                    disabled={subjectsLoading || subjects.length === 0}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-white outline-none focus:border-blue-500 disabled:opacity-60"
                   >
-                    <option value="subj-math">Mathematics</option>
-                    <option value="subj-physics">Physics</option>
-                    <option value="subj-chem">Chemistry</option>
-                    <option value="subj-bio">Biology</option>
-                    <option value="subj-eng">Engineering &amp; Logic</option>
+                    <option value="">
+                      {subjectsLoading ? "Loading subjects..." : subjects.length === 0 ? "No published subjects available" : "Select a subject"}
+                    </option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>{subject.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -596,6 +703,20 @@ export default function AdminStemStudioPage() {
                     <option value="diagram">Annotated Diagram (Tier 1)</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">Minimum STEM Plan Access</label>
+                <select
+                  value={createEntitlementTier}
+                  onChange={(e) => setCreateEntitlementTier(e.target.value as "free" | "premium" | "vip")}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                >
+                  <option value="free">Discover — Free Learner</option>
+                  <option value="premium">Practise — Premium Study and above</option>
+                  <option value="vip">Complete — BrainLab Pro only</option>
+                </select>
+                <p className="text-[10px] text-slate-500">The learner’s configured plan access level must meet this resource’s minimum level.</p>
               </div>
 
               <div className="space-y-1">
@@ -619,11 +740,69 @@ export default function AdminStemStudioPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createBusy}
+                  disabled={createBusy || subjectsLoading || subjects.length === 0 || !createSubjectId}
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow disabled:opacity-50"
                 >
                   {createBusy ? "Creating Draft..." : "Create Resource Draft"}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* STEM Content Version Editor */}
+      {versionResource && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-6">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#0B1536] p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">STEM Content Version Editor</h3>
+                <p className="text-xs text-slate-500 mt-1">{versionResource.title} · {versionResource.slug}</p>
+              </div>
+              <button type="button" onClick={() => setVersionResource(null)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+              <strong className="text-cyan-600 dark:text-cyan-300">Authoring standard</strong>
+              <p>Save a complete, tested content version. Use high-resolution, scientifically accurate source media and verified labels. A 3D adapter must have a real supported 3D viewer and asset; do not label a flat illustration as 3D. Saving creates a new immutable version and does not publish it.</p>
+            </div>
+            <form onSubmit={handleSaveVersion} className="space-y-4 text-xs">
+              {versionError && <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-rose-500">{versionError}</div>}
+              {versionSuccess && <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3 text-emerald-500">{versionSuccess}</div>}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Interactive renderer / adapter</label>
+                <select value={versionAdapter} onChange={(e) => setVersionAdapter(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-2.5 text-slate-900 dark:text-white">
+                  {versionResource.slug === "quadratic-graph-explorer" && <option value="canvas_quadratic">Quadratic graph canvas</option>}
+                  {versionResource.slug === "projectile-motion-simulator" && <option value="canvas_kinematics">Kinematics / projectile canvas</option>}
+                  {versionResource.slug === "ohms-law-dc-circuit" && <option value="circuit_dc">DC circuit model</option>}
+                  {versionResource.slug === "acid-base-titration-curve" && <option value="chem_titration">Acid-base titration model</option>}
+                  {versionResource.slug === "cell-ultrastructure-guide" && <option value="vector_cell">Cell structure illustration (2D)</option>}
+                  {versionResource.slug === "genetics-punnett-square-lab" && <option value="canvas_genetics">Genetics / Punnett square</option>}
+                  {versionResource.slug === "logic-gates-circuits" && <option value="canvas_logic">Logic gates</option>}
+                </select>
+                <p className="text-[10px] text-slate-500">Only select a renderer that matches the content and is supported by the student player.</p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Initial interactive state (JSON object)</label>
+                  <textarea required rows={12} spellCheck={false} value={versionInitialState} onChange={(e) => setVersionInitialState(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 font-mono text-[11px] text-slate-900 dark:text-white" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Content payload (JSON object)</label>
+                  <textarea required rows={12} spellCheck={false} value={versionPayload} onChange={(e) => setVersionPayload(e.target.value)} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 font-mono text-[11px] text-slate-900 dark:text-white" />
+                </div>
+              </div>
+              {versionResource.slug === "cell-ultrastructure-guide" && <p className="text-[11px] text-amber-600 dark:text-amber-300">This is currently a 2D cell-content adapter. A high-quality GLB/glTF 3D cell viewer and validated model asset pipeline are still pending; do not publish this as a 3D experience.</p>}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Learning objectives (one per line)</label>
+                <textarea rows={3} value={versionObjectives} onChange={(e) => setVersionObjectives(e.target.value)} placeholder={"Identify the key structures\nExplain their functions\nInterpret the model accurately"} className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#070d1e] p-3 text-slate-900 dark:text-white" />
+              </div>
+              <div className="flex flex-wrap justify-between gap-2 border-t border-slate-200 dark:border-white/10 pt-3">
+                <p className="self-center text-[10px] text-slate-500">Versions are append-only. Publishing remains a separate review action.</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setVersionResource(null)} className="rounded-lg px-4 py-2 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white font-bold">Close</button>
+                  <button type="submit" disabled={versionBusy} className="rounded-lg px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold disabled:opacity-50">{versionBusy ? "Saving version…" : "Save Draft Version"}</button>
+                </div>
               </div>
             </form>
           </div>
@@ -655,7 +834,7 @@ export default function AdminStemStudioPage() {
                 <div>Subject: {selectedForReview.subject?.name}</div>
                 <div>Slug: {selectedForReview.slug}</div>
                 <div>Tier: Tier {selectedForReview.tier}</div>
-                <div>Status: Ready for Publication</div>
+                <div>Status: {selectedForReview.current_version?.id ? "Ready for Publication" : "Content version required before publication"}</div>
               </div>
               {publishMessage && (
                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold">
@@ -674,7 +853,7 @@ export default function AdminStemStudioPage() {
               </button>
               <button
                 type="button"
-                disabled={publishBusy}
+                disabled={publishBusy || !selectedForReview.current_version?.id}
                 onClick={() => handlePublishResource(selectedForReview)}
                 className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow disabled:opacity-50"
               >
