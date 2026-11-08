@@ -153,15 +153,14 @@ with grants(role_key, permission_key) as (
     'cbt.codes.manage','cbt.codes.delete','cbt.config.read','cbt.config.manage','cbt.config.delete',
     'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read',
     'community.moderate','student.support','analytics.read','institution.reports.read',
-    'institution.manage','learning.content.review','finance.billing.manage','audit.logs.read','audit.logs.write',
+    'institution.manage','learning.content.review','finance.billing.manage','audit.logs.read','audit.logs.write'
   ]::text[])
   union all select 'cbt_admin', unnest(array[
     'cbt.questions.manage','cbt.answers.read','cbt.results.read',
     'cbt.sessions.read','cbt.sessions.manage','cbt.codes.manage','cbt.config.read',
     'cbt.config.manage','audit.logs.write'  ]::text[])
   union all select 'ai_learning_admin', unnest(array[
-    'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read',
-    'stem.resource.view','stem.resource.manage'
+    'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read'
   ]::text[])
   -- Match the existing admin_has_permission() policy exactly for current teachers.
   union all select 'teacher', unnest(array[
@@ -184,7 +183,7 @@ with grants(role_key, permission_key) as (
     'institution.manage','institution.reports.read','student.support'
   ]::text[])
   union all select 'content_reviewer', unnest(array[
-    'learning.content.review','ai.quality.review','stem.resource.review'
+    'learning.content.review','ai.quality.review'
   ]::text[])
   union all select 'finance_admin', 'finance.billing.manage'
   union all select 'read_only_auditor', unnest(array['audit.logs.read','analytics.read']::text[])
