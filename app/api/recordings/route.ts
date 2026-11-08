@@ -284,6 +284,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Only the assigned class tutor or Studio lesson owner can delete this recording." }, { status: 403 });
     }
 
+    if (!isAdmin && recording.storage_path) {
+      const expectedPrefix = recording.class_id
+        ? `${recording.class_id}/${user.id}/`
+        : `studio-lessons/${user.id}/`;
+      if (!recording.storage_path.startsWith(expectedPrefix)) {
+        return NextResponse.json({ error: "The recording storage path does not match this tutor's class or Studio lesson." }, { status: 409 });
+      }
+    }
+
     if (recording.storage_path) {
       const { error: storageError } = await supabase.storage
         .from("live-class-recordings")
