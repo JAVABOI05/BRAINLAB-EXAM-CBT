@@ -527,7 +527,11 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 {/* Options List */}
                 <div className="grid grid-cols-1 gap-3">
                   {(["A", "B", "C", "D", "E"] as const).map((key) => {
-                    const optionVal = currentQ[`option_${key.toLowerCase()}` as keyof QuestionSnapshot];
+                    const optionVal =
+                    currentQ[`option_${key.toLowerCase()}` as keyof QuestionSnapshot] ||
+                    ((currentQ as Record<string, any>).optionsMap && (currentQ as Record<string, any>).optionsMap[key]) ||
+                    ((currentQ as Record<string, any>).options && typeof (currentQ as Record<string, any>).options === 'object' && !Array.isArray((currentQ as Record<string, any>).options) ? (currentQ as Record<string, any>).options[key] : undefined) ||
+                    (Array.isArray((currentQ as Record<string, any>).options) ? (currentQ as Record<string, any>).options.find((o: any) => o?.key === key)?.text : undefined);
                     if (!optionVal) return null;
 
                     const isChosen = selectedOption === key || myAnswers[currentQ.id] === key;

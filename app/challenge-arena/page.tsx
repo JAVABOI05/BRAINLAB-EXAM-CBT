@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import ArenaThemeToggle from "../components/arena/ArenaThemeToggle";
+import { normalizeQuestionOptions, normalizeClientQuestion, type ClientCompetitionQuestion } from "../lib/competitionEngine";
 
 interface Competition {
   id: string;
@@ -176,7 +177,8 @@ export default function ChallengeArenaPage() {
   // CBT Exam Simulation states
   const [activeExamComp, setActiveExamComp] = useState<Competition | null>(null);
   const [activeExamSessionId, setActiveExamSessionId] = useState<string | null>(null);
-  const [activeExamQuestions, setActiveExamQuestions] = useState<CBTQuestion[]>([]);
+  const [activeExamQuestions, setActiveExamQuestions] = useState<ClientCompetitionQuestion[]>([]);
+  const [examLaunchError, setExamLaunchError] = useState<{ message: string; comp?: Competition } | null>(null);
   const [activeExamIndex, setActiveExamIndex] = useState(0);
   const [activeExamAnswers, setActiveExamAnswers] = useState<Record<string, string>>({});
   const [activeExamTimeRemaining, setActiveExamTimeRemaining] = useState<number>(0);
@@ -509,8 +511,10 @@ export default function ChallengeArenaPage() {
 
   // Launch Active Competition CBT Attempt
   const handleStartAttempt = async (comp: Competition) => {
+    if (examLoading) return;
     try {
       setExamLoading(true);
+      setExamLaunchError(null);
       const { data: { session } } = await supabase.auth.getSession();
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (session?.access_token) {
@@ -526,15 +530,40 @@ export default function ChallengeArenaPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to launch competition attempt");
 
+      const rawQuestions = Array.isArray(data.questions) ? data.questions : [];
+      const normalizedQuestions = rawQuestions.map(normalizeClientQuestion);
+
+      if (normalizedQuestions.length === 0) {
+        throw new Error("No approved questions could be loaded for this competition.");
+      }
+
       setActiveExamComp(comp);
       setActiveExamSessionId(data.sessionId);
-      setActiveExamQuestions(data.questions || []);
+      setActiveExamQuestions(normalizedQuestions);
       setActiveExamIndex(0);
-      setActiveExamAnswers({});
+
+      // Attempt recovery: restore saved answers from localStorage if available
+      try {
+        const saved = localStorage.getItem(`bl_arena_answers_${data.sessionId}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            setActiveExamAnswers(parsed);
+          } else {
+            setActiveExamAnswers({});
+          }
+        } else {
+          setActiveExamAnswers({});
+        }
+      } catch {
+        setActiveExamAnswers({});
+      }
+
       setActiveExamTimeRemaining(data.durationSeconds || comp.rules?.duration_seconds || 300);
       setActiveExamResult(null);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error launching exam");
+      const msg = err instanceof Error ? err.message : "Error launching exam";
+      setExamLaunchError({ message: msg, comp });
     } finally {
       setExamLoading(false);
     }
@@ -1335,9 +1364,9 @@ export default function ChallengeArenaPage() {
             }`}>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">
-                  {activeExamComp.competition_type.replace("_", " ").toUpperCase()} • {activeExamComp.code}
+                  {(activeExamComp.competition_type || "arena").replace(/_/g, " ").toUpperCase()} • {activeExamComp.code || "BL-ARENA"}
                 </span>
-                <h2 className="text-base sm:text-lg font-black truncate max-w-md">{activeExamComp.title}</h2>
+                <h2 className="text-base sm:text-lg font-black truncate max-w-md">{activeExamComp.title || "Examination"}</h2>
               </div>
 
               <div className="flex items-center gap-3">
@@ -1453,14 +1482,17 @@ export default function ChallengeArenaPage() {
 
                       {/* OPTIONS LIST */}
                       <div className="grid grid-cols-1 gap-3">
-                        {currentQ.options.map((opt) => {
+                        {normalizeQuestionOptions(currentQ.options).map((opt) => {
                           const isSelected = chosenOption === opt.key;
                           return (
                             <button
                               key={opt.key}
                               type="button"
                               onClick={() => {
-                                setActiveExamAnswers((prev) => ({ ...prev, [currentQ.id]: opt.key }));
+                                const next = { ...activeExamAnswers, [currentQ.id]: opt.key };
+                                setActiveExamAnswers(next);
+                                if (activeExamSessionId) {
+                                  try { localStorage.setItem("bl_arena_answers_" + activeExamSessionId, JSON.stringify(next)); } catch {}}
                               }}
                               className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all ${
                                 isSelected
