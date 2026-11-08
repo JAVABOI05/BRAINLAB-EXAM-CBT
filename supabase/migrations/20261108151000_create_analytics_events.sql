@@ -16,6 +16,14 @@ CREATE TABLE IF NOT EXISTS public.platform_analytics_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT analytics_payload_object CHECK (jsonb_typeof(event_payload) = 'object'),
   CONSTRAINT analytics_payload_size CHECK (octet_length(event_payload::text) <= 2048),
+  CONSTRAINT analytics_payload_allowed_keys CHECK (
+    event_payload - ARRAY[
+      'programme_slug', 'programme_title', 'is_planned', 'slot', 'source',
+      'auth_provider', 'role', 'mode', 'subjects_count', 'plan_id',
+      'exam_type', 'student_cohort', 'channel', 'placement', 'demo_type',
+      'parameter', 'value', 'programme_id', 'title', 'qualification', 'exam'
+    ] = '{}'::jsonb
+  ),
   CONSTRAINT analytics_payload_no_sensitive_keys CHECK (
     event_payload::text !~* '"[^"]*(password|passcode|token|secret|email|phone|mobile|full.?name|address|bvn|nin|card|cvv|account.?number|answer|statement)[^"]*"\s*:'
   ),
