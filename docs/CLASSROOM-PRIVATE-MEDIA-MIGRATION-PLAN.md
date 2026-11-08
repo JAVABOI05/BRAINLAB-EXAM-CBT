@@ -251,3 +251,22 @@ The tutor assignment dashboard previously queried `assignment_submissions` and j
 A further audit found that the tutor assignment listing treated every `teacher` role as globally privileged, exposing assignments and submission counts beyond that tutor's own work. It now lists all assignments only to platform admins; other tutors are restricted to assignments whose `tutor_id` is their own.
 
 Assignment creation also previously accepted any course ID when the caller had a membership in any subject. It now verifies that the caller owns the selected course or has an explicit tutor membership for that course's subject. Platform admins retain global access. The course's subject is authoritative, and the automatically generated course-feed announcement now includes the required `course_id`.
+
+
+## 8 November 2026 — legacy recording API and database policy follow-up
+
+A read-only inspection of the linked staging database and the current main-branch recording routes found the following:
+
+- The private `live-class-recordings` bucket is configured as private, accepts WebM/MP4/QuickTime video, and has no matching client-side Storage object policies. Recording upload therefore depends on server-minted signed upload tokens; playback/download links must be minted server-side after authorization.
+- The `class_recordings` table has a SELECT policy that permits any authenticated user to select rows when `is_visible_to_students=true` and `processing_status='ready'`. That policy does not itself check `access_policy`, course enrolment, or attendance. The server recording APIs perform those checks, but a direct authenticated PostgREST query can bypass the API's more specific course/attendance filtering and read row metadata.
+- The current library and replay pages use the server APIs for reads. The Studio library has a direct client-side delete action, which is owner-scoped by the existing table policy but does not remove the underlying private Storage object; this can leave orphaned video objects.
+- The staging query returned no grouped recording rows. This is a staging observation only and does not establish that production has no recordings.
+
+Code-only follow-up on `fix/recording-access-followup`:
+
+- The legacy scheduled-class upload-token endpoint now requires verified classroom staff and class-management authorization before minting a token.
+- The legacy scheduled-class recording metadata endpoint now applies the same verified-staff and class-management checks before saving.
+- The legacy visibility handler now supports a Studio lesson owner, after verifying both the recording creator and ownership of the linked Studio lesson.
+- The Studio recording upload-token endpoint now strips the Bearer scheme correctly before passing the access token to server-side authorization.
+
+Database remediation remains pending review and explicit approval. The intended policy change is to align direct table SELECT with the API model: creator/assigned tutor/platform admin, explicitly public published replays, and enrolled-only published replays only for the relevant active course enrolment or verified attendance. Do not apply a policy change until the exact production schema, existing consumer paths, and policy behavior have been validated. No database migrations, RLS policies, Storage buckets, objects, or production deployments were changed as part of this follow-up.
