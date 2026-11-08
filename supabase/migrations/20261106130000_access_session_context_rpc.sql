@@ -1,6 +1,6 @@
 -- Read-only session context for the additive access-management model.
--- This exposes only the authenticated user's own active assignments and permission keys.
--- It does not replace get_admin_role() or admin_has_permission().
+-- Global permissions are separated from resource-scoped permissions.
+-- Consumers must enforce each scoped grant against the target resource.
 begin;
 
 create or replace function public.access_get_session_context()
@@ -8,10 +8,11 @@ returns jsonb
 language sql
 stable
 security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
   with active_assignments as (
     select a.id as assignment_id,
+           a.role_id,
            r.role_key,
            r.name as role_name,
            a.resource_scope,
@@ -23,28 +24,48 @@ as $function$
       and (a.expires_at is null or a.expires_at>now())
       and r.is_active=true
   ),
-  effective_permissions as (
-    select distinct rp.permission_key
+  assignment_permissions as (
+    select a.assignment_id,a.role_id,a.role_key,a.role_name,
+           a.resource_scope,a.expires_at,
+           coalesce(array_agg(rp.permission_key order by rp.permission_key)
+             filter(where rp.permission_key is not null),'{}'::text[]) as permission_keys
     from active_assignments a
-    join public.access_roles r on r.role_key=a.role_key
-    join public.access_role_permissions rp on rp.role_id=r.id
+    left join public.access_role_permissions rp on rp.role_id=a.role_id
+    group by a.assignment_id,a.role_id,a.role_key,a.role_name,a.resource_scope,a.expires_at
   )
   select jsonb_build_object(
     'user_id', auth.uid(),
     'roles', coalesce((
       select jsonb_agg(jsonb_build_object(
-        'assignment_id', assignment_id,
-        'role_key', role_key,
-        'role_name', role_name,
-        'resource_scope', resource_scope,
-        'expires_at', expires_at
+        'assignment_id',assignment_id,
+        'role_key',role_key,
+        'role_name',role_name,
+        'resource_scope',resource_scope,
+        'expires_at',expires_at,
+        'permissions',permission_keys
       ) order by role_name)
-      from active_assignments
-    ), '[]'::jsonb),
-    'permissions', coalesce((
-      select jsonb_agg(permission_key order by permission_key)
-      from effective_permissions
-    ), '[]'::jsonb)
+      from assignment_permissions
+    ),'[]'::jsonb),
+    -- Only unscoped assignments contribute to the global permission list.
+    'permissions',coalesce((
+      select to_jsonb(array(
+        select distinct unnest(permission_keys)
+        from assignment_permissions
+        where resource_scope='{}'::jsonb
+        order by 1
+      ))
+    ),'[]'::jsonb),
+    -- Scoped grants remain attached to their assignment and are never flattened globally.
+    'scoped_permissions',coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'assignment_id',assignment_id,
+        'role_key',role_key,
+        'resource_scope',resource_scope,
+        'permissions',permission_keys
+      ) order by role_key)
+      from assignment_permissions
+      where resource_scope<>'{}'::jsonb
+    ),'[]'::jsonb)
   )
   where auth.uid() is not null;
 $function$;
@@ -53,6 +74,6 @@ revoke all on function public.access_get_session_context() from public,anon;
 grant execute on function public.access_get_session_context() to authenticated;
 
 comment on function public.access_get_session_context() is
-  'Returns the caller own active role assignments, resource scopes, expiry values and effective permission keys. Read-only compatibility API; does not grant or activate access by itself.';
+  'Returns only the caller own active role assignments. Unscoped permissions are global; resource-scoped permissions remain attached to their scope and must be enforced by the consuming module.';
 
 commit;
