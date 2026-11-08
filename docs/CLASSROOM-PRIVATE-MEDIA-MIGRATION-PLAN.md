@@ -271,3 +271,18 @@ Code-only remediation on `fix/recording-library-delete`:
 - The Classroom Library no longer performs direct client-side deletes against `class_recordings`.
 
 Database remediation remains pending review and explicit approval. Align direct table SELECT with the intended API model: creator/assigned tutor/platform admin, explicitly public published replays, and enrolled-only published replays only for the relevant active course enrolment or verified attendance. No database migrations, RLS policies, Storage buckets, objects, or production deployments were changed as part of this follow-up.
+
+
+### Additional staging policy detail (read-only verification)
+
+The current staging policies on `class_recordings` are:
+
+- `class_recordings_select_visible_or_owner`: permits any authenticated user to select a row when `is_visible_to_students = true` and `processing_status = 'ready'`, or when the caller is the creator, scheduled-class tutor, or platform admin.
+- `class_recordings_tutor_manage`: grants row management to the creator, scheduled-class tutor, or platform admin.
+- Separate INSERT and UPDATE policies also exist.
+
+The SELECT predicate does not check `access_policy`, course enrolment, or recorded attendance. This is a confirmed direct-table metadata exposure in the inspected staging project. The API's stricter visibility filtering does not protect direct PostgREST reads.
+
+The relevant staging schema contains `class_recordings.class_id/course_id/lesson_id/created_by/storage_path/access_policy/is_visible_to_students/processing_status`, `course_enrollments(course_id,user_id,status,expires_at)`, and `class_attendance_records(class_id,user_id,attendance_status)`. A future RLS policy can therefore express the intended public/enrolled-only/attended visibility rules, but it must be tested against production policy definitions and all client-side consumers before rollout.
+
+The secure delete endpoint additionally validates a non-admin caller's object path prefix: scheduled-class recordings must be under `{class_id}/{user_id}/`; Studio recordings must be under `studio-lessons/{user_id}/`. This prevents an otherwise authorized tutor from using a manipulated metadata row to remove another tutor's object.
