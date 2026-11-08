@@ -9,6 +9,7 @@ import type {
   CommunityAnnouncement,
   CommunityPoll,
   PollOption,
+  GroupAssessmentSchedule,
 } from "@/app/lib/community/types";
 
 export default function CommunityGroupSpacePage() {
@@ -28,6 +29,9 @@ export default function CommunityGroupSpacePage() {
   const [selectedPollOptions, setSelectedPollOptions] = useState<Record<string, string>>({});
   const [votingId, setVotingId] = useState<string | null>(null);
   const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+
+  // Phase 3: Cohort Assessments State
+  const [assessments, setAssessments] = useState<GroupAssessmentSchedule[]>([]);
 
   const loadData = useCallback(async () => {
     try {
@@ -58,6 +62,13 @@ export default function CommunityGroupSpacePage() {
       if (jsonPolls.ok && Array.isArray(jsonPolls.data)) {
         setPolls(jsonPolls.data);
       }
+
+      // 4. Fetch assessments (Phase 3)
+      const resAssess = await fetch(`/api/community/groups/${slug}/assessments`, { headers });
+      const jsonAssess = await resAssess.json();
+      if (jsonAssess.ok && Array.isArray(jsonAssess.data)) {
+        setAssessments(jsonAssess.data);
+      }
     } catch {
       // Handled gracefully
     } finally {
@@ -75,7 +86,7 @@ export default function CommunityGroupSpacePage() {
     if (!group) return;
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
+      if (!session) {
         router.push(`/login?redirect=/community/${slug}`);
         return;
       }
@@ -141,7 +152,7 @@ export default function CommunityGroupSpacePage() {
         );
       }
     } catch {
-      // Non-fatal
+      // Handled gracefully
     } finally {
       setAcknowledgingId(null);
     }
@@ -171,30 +182,19 @@ export default function CommunityGroupSpacePage() {
 
       const json = await res.json();
       if (json.ok) {
-        setPolls((prev) =>
-          prev.map((p) => {
-            if (p.id !== pollId) return p;
-            const updatedTotal = (p.total_votes || 0) + 1;
-            const updatedOptions = p.options.map((opt: PollOption) => {
-              const newCount = opt.id === selected ? (opt.votes_count || 0) + 1 : opt.votes_count || 0;
-              return {
-                ...opt,
-                votes_count: newCount,
-                percentage: Math.round((newCount / updatedTotal) * 100),
-              };
-            });
-            return {
-              ...p,
-              total_votes: updatedTotal,
-              user_voted: true,
-              user_selected_options: [selected],
-              options: updatedOptions,
-            };
-          })
-        );
+        // Refresh polls
+        const refRes = await fetch(`/api/community/groups/${slug}/polls`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const refJson = await refRes.json();
+        if (refJson.ok && Array.isArray(refJson.data)) {
+          setPolls(refJson.data);
+        }
+      } else {
+        alert(json.error || "Failed to record vote.");
       }
     } catch {
-      // Non-fatal
+      alert("Connection error casting vote.");
     } finally {
       setVotingId(null);
     }
@@ -232,6 +232,8 @@ export default function CommunityGroupSpacePage() {
       </main>
     );
   }
+
+  const primaryAssessment = assessments[0];
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#000814] dark:text-slate-100">
@@ -310,7 +312,7 @@ export default function CommunityGroupSpacePage() {
                     : "text-slate-300 hover:bg-white/10"
                 }`}
               >
-                {tab === "feed" ? "Daily Feed" : tab}
+                {tab === "feed" ? "Daily Feed" : tab === "assessments" ? `Assessments (${assessments.length})` : tab}
               </button>
             ))}
           </div>
@@ -324,34 +326,38 @@ export default function CommunityGroupSpacePage() {
             {/* Left 2 Cols: Activity Feed, Announcements & Polls */}
             <div className="md:col-span-2 space-y-6">
               {/* Daily Assessment Alert Card */}
-              <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white p-6 shadow-sm dark:border-indigo-950 dark:from-slate-900 dark:to-slate-950">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <span className="rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">
-                      Today&apos;s Scheduled Cohort Test
-                    </span>
-                    <h3 className="mt-3 text-lg font-extrabold text-slate-950 dark:text-white">
-                      {group.name} — Speed Drill #12
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                      40 timed questions covering key syllabus areas. Standardized UTME marking applied.
-                    </p>
+              {primaryAssessment ? (
+                <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white p-6 shadow-sm dark:border-indigo-950 dark:from-slate-900 dark:to-slate-950">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className="rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">
+                        {primaryAssessment.is_open ? "Live Cohort Assessment" : "Scheduled Cohort Assessment"}
+                      </span>
+                      <h3 className="mt-3 text-lg font-extrabold text-slate-950 dark:text-white">
+                        {primaryAssessment.title}
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                        {primaryAssessment.description || `${primaryAssessment.question_count} questions in ${primaryAssessment.subject}. Standardized server marking applied.`}
+                      </p>
+                    </div>
+                    <span className="text-3xl">⏱️</span>
                   </div>
-                  <span className="text-3xl">⏱️</span>
-                </div>
 
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-                  <div className="text-xs font-bold text-slate-500">
-                    Duration: <span className="text-slate-900 dark:text-white">45 Mins</span> • Attempts: <span className="text-slate-900 dark:text-white">1</span>
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <div className="text-xs font-bold text-slate-500">
+                      Duration: <span className="text-slate-900 dark:text-white">{primaryAssessment.duration_minutes} Mins</span> • Attempts: <span className="text-slate-900 dark:text-white">{primaryAssessment.max_attempts}</span>
+                    </div>
+                    <Link
+                      href={`/cbt?cohort=${group.slug}&assessment=${primaryAssessment.id}`}
+                      className="rounded-xl bg-[#012153] px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-900 transition dark:bg-blue-600 dark:hover:bg-blue-500"
+                    >
+                      {primaryAssessment.user_latest_attempt?.status === "completed"
+                        ? "Review Score"
+                        : "Start Test Now →"}
+                    </Link>
                   </div>
-                  <Link
-                    href={`/cbt?cohort=${group.slug}`}
-                    className="rounded-xl bg-[#012153] px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-900 transition dark:bg-blue-600 dark:hover:bg-blue-500"
-                  >
-                    Start Test Now →
-                  </Link>
                 </div>
-              </div>
+              ) : null}
 
               {/* Announcements Section (Phase 2 Live Engine) */}
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -448,28 +454,24 @@ export default function CommunityGroupSpacePage() {
                                   <label
                                     className={`flex items-center justify-between rounded-xl border p-3 text-xs transition cursor-pointer ${
                                       isChosen
-                                        ? "border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200"
-                                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                                        ? "border-blue-600 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-950/40"
+                                        : "border-slate-200 bg-white hover:bg-slate-100/60 dark:border-slate-800 dark:bg-slate-900"
                                     }`}
                                   >
-                                    <div className="flex items-center gap-2.5">
+                                    <div className="flex items-center gap-2">
                                       <input
                                         type="radio"
                                         name={`poll-${poll.id}`}
+                                        value={opt.id}
                                         checked={isChosen}
-                                        onChange={() =>
-                                          !poll.user_voted &&
-                                          setSelectedPollOptions((prev) => ({ ...prev, [poll.id]: opt.id }))
-                                        }
                                         disabled={poll.user_voted || poll.is_closed}
+                                        onChange={() => setSelectedPollOptions({ ...selectedPollOptions, [poll.id]: opt.id })}
                                         className="text-blue-600 focus:ring-blue-500"
                                       />
-                                      <span className="font-medium text-slate-800 dark:text-slate-200">
-                                        {opt.text}
-                                      </span>
+                                      <span className="font-medium text-slate-900 dark:text-white">{opt.text}</span>
                                     </div>
                                     {(poll.user_voted || poll.is_closed) && (
-                                      <span className="text-[11px] font-black text-slate-600 dark:text-slate-400">
+                                      <span className="text-xs font-black text-slate-700 dark:text-slate-300">
                                         {opt.percentage || 0}%
                                       </span>
                                     )}
@@ -526,12 +528,12 @@ export default function CommunityGroupSpacePage() {
                     <span className="font-bold text-slate-900 dark:text-white">{group.member_count || 1}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Average Readiness</span>
-                    <span className="font-bold text-emerald-600">74% Target</span>
+                    <span className="text-slate-500">Scheduled Sprints</span>
+                    <span className="font-bold text-indigo-600">{assessments.length} Tests</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Weekly Quests Complete</span>
-                    <span className="font-bold text-blue-600">88%</span>
+                    <span className="text-slate-500">Average Readiness</span>
+                    <span className="font-bold text-emerald-600">74% Target</span>
                   </div>
                 </div>
 
@@ -548,27 +550,72 @@ export default function CommunityGroupSpacePage() {
 
         {activeTab === "assessments" && (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
-              Scheduled Assessments &amp; Mock Sprints
-            </h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Assigned tests pull from verified question snapshots using standard CBT rules.
-            </p>
-            <div className="mt-6 divide-y divide-slate-100 dark:divide-slate-800">
-              <div className="py-4 flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Speed Drill #12 (Active)
-                  </h4>
-                  <p className="text-xs text-slate-500">Closes today at 6:00 PM</p>
-                </div>
-                <Link
-                  href={`/cbt?cohort=${group.slug}`}
-                  className="rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white hover:bg-blue-900 dark:bg-blue-600"
-                >
-                  Start →
-                </Link>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                  Scheduled Assessments &amp; Mock Sprints ({assessments.length})
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Assigned tests pull from verified question snapshots using standard CBT rules.
+                </p>
               </div>
+              <Link
+                href={`/cbt?cohort=${group.slug}`}
+                className="inline-flex items-center justify-center rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+              >
+                Open General CBT Practice →
+              </Link>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {assessments.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-950"
+                >
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+                        {item.subject}
+                      </span>
+                      {item.is_open ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                          Active Now
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                          Window Closes: {new Date(item.ends_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      {item.question_count} Questions • {item.duration_minutes} Mins • Max Attempts: {item.max_attempts}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-3">
+                    {item.user_latest_attempt?.status === "completed" ? (
+                      <div className="text-right">
+                        <span className="block text-sm font-black text-emerald-600 dark:text-emerald-400">
+                          Score: {item.user_latest_attempt.percentage}%
+                        </span>
+                        <span className="text-[10px] text-slate-400">Completed</span>
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/cbt?cohort=${group.slug}&assessment=${item.id}`}
+                        className="rounded-xl bg-[#012153] px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-900 transition dark:bg-blue-600 dark:hover:bg-blue-500"
+                      >
+                        Start Test →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -599,7 +646,7 @@ export default function CommunityGroupSpacePage() {
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950 flex items-center gap-3">
                 <span className="text-2xl">🎓</span>
                 <div>
-                  <h5 className="text-xs font-bold text-slate-900 dark:text-white">Candidate #BL-72A3</h5>
+                  <h5 className="text-xs font-bold text-slate-900 dark:text-white">Candidate #BL-88A2</h5>
                   <p className="text-[11px] text-slate-400">Streak: 8 Days</p>
                 </div>
               </div>
@@ -608,12 +655,13 @@ export default function CommunityGroupSpacePage() {
         )}
 
         {activeTab === "rules" && (
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
-              Community Charter &amp; Academic Rules
-            </h3>
-            <div className="mt-4 prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300">
-              {group.group_rules || "1. Maintain academic integrity at all times.\n2. Complete scheduled cohort tests honestly without external aids.\n3. Respect peers and faculty mentors."}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Cohort Academic Charter</h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Guidelines established by cohort faculty lead to maintain academic integrity.
+            </p>
+            <div className="mt-6 rounded-2xl bg-slate-50 p-6 dark:bg-slate-950 leading-relaxed text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+              {group.group_rules || "1. Adhere to all exam security standards.\n2. Support peer candidates constructively.\n3. Complete scheduled mock assessments on time.\n4. NDPA 2023 candidate privacy must be respected at all times."}
             </div>
           </div>
         )}

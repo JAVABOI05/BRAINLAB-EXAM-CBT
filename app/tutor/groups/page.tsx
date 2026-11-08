@@ -40,6 +40,17 @@ export default function TutorGroupsManagementPage() {
   const [pollOpt1, setPollOpt1] = useState("");
   const [pollOpt2, setPollOpt2] = useState("");
   const [pollOpt3, setPollOpt3] = useState("");
+
+  // Phase 3: Assessment Scheduling Modal
+  const [isSchedulingTest, setIsSchedulingTest] = useState(false);
+  const [testTitle, setTestTitle] = useState("");
+  const [testSubject, setTestSubject] = useState("Biology & General Science");
+  const [testQuestionCount, setTestQuestionCount] = useState(40);
+  const [testDuration, setTestDuration] = useState(45);
+  const [testStartsAt, setTestStartsAt] = useState(() => new Date().toISOString().slice(0, 16));
+  const [testEndsAt, setTestEndsAt] = useState(() => new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16));
+  const [testFreezeRoster, setTestFreezeRoster] = useState(true);
+
   const [modalSubmitting, setModalSubmitting] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
@@ -209,6 +220,51 @@ export default function TutorGroupsManagementPage() {
       }
     } catch {
       setModalMessage("Network error publishing poll.");
+    } finally {
+      setModalSubmitting(false);
+    }
+  };
+
+  const handleScheduleAssessment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup || !testTitle.trim() || !testSubject.trim()) return;
+    try {
+      setModalSubmitting(true);
+      setModalMessage("");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`/api/community/groups/${selectedGroup.slug}/assessments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          title: testTitle.trim(),
+          subject: testSubject.trim(),
+          question_count: Number(testQuestionCount),
+          duration_minutes: Number(testDuration),
+          starts_at: new Date(testStartsAt).toISOString(),
+          ends_at: new Date(testEndsAt).toISOString(),
+          max_attempts: 1,
+          freeze_eligible_members: testFreezeRoster,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        setModalMessage("Assessment schedule published with frozen question snapshots!");
+        setTestTitle("");
+        setTimeout(() => {
+          setIsSchedulingTest(false);
+          setModalMessage("");
+        }, 1500);
+      } else {
+        setModalMessage(json.error || "Failed to schedule assessment.");
+      }
+    } catch {
+      setModalMessage("Network error scheduling assessment.");
     } finally {
       setModalSubmitting(false);
     }
@@ -417,6 +473,7 @@ export default function TutorGroupsManagementPage() {
                         setSelectedGroup(group);
                         setIsAnnouncing(true);
                         setIsPolling(false);
+                        setIsSchedulingTest(false);
                       }}
                       className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300"
                     >
@@ -428,6 +485,7 @@ export default function TutorGroupsManagementPage() {
                         setSelectedGroup(group);
                         setIsPolling(true);
                         setIsAnnouncing(false);
+                        setIsSchedulingTest(false);
                       }}
                       className="rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300"
                     >
@@ -441,12 +499,18 @@ export default function TutorGroupsManagementPage() {
                     >
                       Open Space →
                     </Link>
-                    <Link
-                      href={`/cbt?cohort=${group.slug}`}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroup(group);
+                        setIsSchedulingTest(true);
+                        setIsAnnouncing(false);
+                        setIsPolling(false);
+                      }}
                       className="rounded-xl bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
                     >
                       Assign Test
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -637,6 +701,151 @@ export default function TutorGroupsManagementPage() {
                     className="rounded-xl bg-purple-600 px-5 py-2 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-50"
                   >
                     {modalSubmitting ? "Publishing..." : "Launch Poll"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Schedule Assessment (Phase 3) */}
+        {isSchedulingTest && selectedGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  ⏱️ Schedule Assessment for {selectedGroup.name}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsSchedulingTest(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {modalMessage && (
+                <div className="mt-4 rounded-xl bg-indigo-50 p-3 text-xs font-bold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                  {modalMessage}
+                </div>
+              )}
+
+              <form onSubmit={handleScheduleAssessment} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Assessment Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={testTitle}
+                    onChange={(e) => setTestTitle(e.target.value)}
+                    placeholder="e.g. Saturday Timed Diagnostic Speed Drill #01"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Subject
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={testSubject}
+                      onChange={(e) => setTestSubject(e.target.value)}
+                      placeholder="e.g. Biology & Chemistry"
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Question Count
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={5}
+                      max={100}
+                      value={testQuestionCount}
+                      onChange={(e) => setTestQuestionCount(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Duration (Minutes)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={10}
+                      max={180}
+                      value={testDuration}
+                      onChange={(e) => setTestDuration(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Starts At
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={testStartsAt}
+                      onChange={(e) => setTestStartsAt(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Testing Window Closes At
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={testEndsAt}
+                    onChange={(e) => setTestEndsAt(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex items-center pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={testFreezeRoster}
+                      onChange={(e) => setTestFreezeRoster(e.target.checked)}
+                      className="rounded border-slate-300 text-indigo-600"
+                    />
+                    Freeze Current Cohort Eligibility Roster (Immutable Snapshot)
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsSchedulingTest(false)}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={modalSubmitting}
+                    className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {modalSubmitting ? "Freezing & Publishing..." : "Publish Assessment"}
                   </button>
                 </div>
               </form>

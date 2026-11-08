@@ -153,3 +153,82 @@ export interface CommunityPollVote {
   selected_options: string[];
   created_at: string;
 }
+
+
+// ==============================================================================
+// PHASE 3: GROUP ASSESSMENT SCHEDULES & ATTEMPTS
+// ==============================================================================
+
+export interface GroupAssessmentSchedule {
+  id: string;
+  group_id: string;
+  created_by: string;
+  title: string;
+  description?: string | null;
+  subject: string;
+  topics: string[];
+  question_count: number;
+  difficulty_distribution: {
+    easy: number;
+    medium: number;
+    hard: number;
+  };
+  duration_minutes: number;
+  starts_at: string;
+  ends_at: string;
+  max_attempts: number;
+  is_published: boolean;
+  freeze_eligible_members: boolean;
+  frozen_eligible_member_ids?: string[] | null;
+  frozen_question_ids?: number[] | null;
+  settings: {
+    shuffle_options?: boolean;
+    show_corrections_after_close?: boolean;
+    require_webcam?: boolean;
+    allow_late_entry?: boolean;
+  };
+  created_at: string;
+  updated_at: string;
+  // Computed caller state
+  user_attempts_count?: number;
+  user_latest_attempt?: GroupAssessmentAttempt | null;
+  is_open?: boolean;
+  is_eligible?: boolean;
+}
+
+export interface GroupAssessmentAttempt {
+  id: string;
+  assessment_id: string;
+  group_id: string;
+  user_id: string;
+  exam_session_id?: string | null;
+  score: number;
+  total_questions: number;
+  percentage: number;
+  time_spent_seconds: number;
+  tab_switch_count: number;
+  status: "in_progress" | "completed" | "disqualified" | "expired";
+  answers: Record<string, string>;
+  started_at: string;
+  submitted_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  candidate_name?: string;
+}
+
+export interface CreateAssessmentScheduleParams {
+  group_id: string;
+  created_by: string;
+  title: string;
+  description?: string;
+  subject: string;
+  topics?: string[];
+  question_count?: number;
+  duration_minutes?: number;
+  starts_at: string;
+  ends_at: string;
+  max_attempts?: number;
+  is_published?: boolean;
+  freeze_eligible_members?: boolean;
+  frozen_question_ids?: number[];
+}

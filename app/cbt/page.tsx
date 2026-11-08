@@ -260,6 +260,8 @@ export default function CBTExamPortalPage() {
         subjects: selectedSubjects,
         code: savedCode,
         user_id: currentUser?.id || null,
+        cohort_slug: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('cohort') || null : null,
+        cohort_assessment_id: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('assessment') || null : null,
       })
     );
 
