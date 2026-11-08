@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "AI Study Studio & Diagnostic Revision | BrainLab Academy",
+  title: "AI Study Studio & Diagnostic Revision",
   description:
     "AI-assisted learning and diagnostic revision: automatically identify syllabus weaknesses from mock CBT mistakes, generate 5-question reinforcement drills, and retain formulas with SM-2 spaced repetition.",
-  alternates: { canonical: "/products/ai-learning" },
+  alternates: { canonical: "https://www.brainlabacademy.com.ng/products/ai-learning" },
   openGraph: {
     title: "AI Study Studio & Diagnostics — BrainLab Academy",
     description:
