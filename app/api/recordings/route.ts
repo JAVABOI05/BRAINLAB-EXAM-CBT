@@ -1,6 +1,7 @@
 /* eslint @typescript-eslint/no-explicit-any: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "../../lib/supabaseServer";
+import { canManageClassroom, resolveClassroomStaffAccess } from "../../lib/liveClassroom/authorization";
 
 const ADMIN_ROLES = ["super_admin", "platform_admin"];
 
@@ -111,6 +112,12 @@ export async function POST(request: NextRequest) {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    if (!staffAccess.isStaff) {
+      return NextResponse.json({ error: "Only verified teaching staff can save scheduled-class recordings." }, { status: 403 });
+    }
+
     const supabase = getSupabaseServerClient();
     const body = await request.json();
     const {
@@ -138,8 +145,8 @@ export async function POST(request: NextRequest) {
     if (classError || !liveClass) {
       return NextResponse.json({ error: "Class not found." }, { status: 404 });
     }
-    if (liveClass.tutor_id !== user.id && !isAdmin) {
-      return NextResponse.json({ error: "Only the class tutor can save its recording." }, { status: 403 });
+    if (!(await canManageClassroom(user, String(class_id), token))) {
+      return NextResponse.json({ error: "Only the assigned tutor or an authorized platform administrator can save this recording." }, { status: 403 });
     }
     if (course_id && course_id !== liveClass.course_id) {
       return NextResponse.json({ error: "The selected course is not linked to this classroom." }, { status: 400 });
@@ -201,14 +208,24 @@ export async function PATCH(request: NextRequest) {
     const isAdmin = await isPlatformAdmin(supabase, user.id);
     const { data: existing, error: lookupError } = await supabase
       .from("class_recordings")
-      .select("id, class_id, live_classes(tutor_id)")
+      .select("id, class_id, lesson_id, created_by, live_classes(tutor_id)")
       .eq("id", recordingId)
       .maybeSingle();
 
     if (lookupError || !existing) return NextResponse.json({ error: "Recording not found." }, { status: 404 });
     const ownerId = (existing as any).live_classes?.tutor_id;
-    if (!isAdmin && ownerId !== user.id) {
-      return NextResponse.json({ error: "Only the class tutor can change recording visibility." }, { status: 403 });
+    let ownsStudioLesson = false;
+    if (!existing.class_id && existing.lesson_id && existing.created_by === user.id) {
+      const { data: lesson } = await supabase
+        .from("classroom_lessons")
+        .select("id")
+        .eq("id", existing.lesson_id)
+        .eq("tutor_id", user.id)
+        .maybeSingle();
+      ownsStudioLesson = Boolean(lesson);
+    }
+    if (!isAdmin && ownerId !== user.id && !ownsStudioLesson) {
+      return NextResponse.json({ error: "Only the assigned class tutor or the Studio lesson owner can change recording visibility." }, { status: 403 });
     }
 
     const { error } = await supabase
@@ -224,5 +241,69 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, is_visible_to_students: visible });
   } catch {
     return NextResponse.json({ error: "Could not update recording visibility." }, { status: 500 });
+  }
+}
+
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await request.json().catch(() => ({}));
+    const recordingId = String(body?.recording_id || "");
+    if (!recordingId) {
+      return NextResponse.json({ error: "A recording ID is required." }, { status: 400 });
+    }
+
+    const supabase = getSupabaseServerClient();
+    const isAdmin = await isPlatformAdmin(supabase, user.id);
+    const { data: recording, error: lookupError } = await supabase
+      .from("class_recordings")
+      .select("id, class_id, lesson_id, created_by, storage_path, live_classes(tutor_id)")
+      .eq("id", recordingId)
+      .maybeSingle();
+
+    if (lookupError || !recording) {
+      return NextResponse.json({ error: "Recording not found." }, { status: 404 });
+    }
+
+    const classTutorId = (recording as any).live_classes?.tutor_id;
+    let ownsStudioLesson = false;
+    if (!recording.class_id && recording.lesson_id && recording.created_by === user.id) {
+      const { data: lesson } = await supabase
+        .from("classroom_lessons")
+        .select("id")
+        .eq("id", recording.lesson_id)
+        .eq("tutor_id", user.id)
+        .maybeSingle();
+      ownsStudioLesson = Boolean(lesson);
+    }
+
+    if (!isAdmin && classTutorId !== user.id && !ownsStudioLesson) {
+      return NextResponse.json({ error: "Only the assigned class tutor or Studio lesson owner can delete this recording." }, { status: 403 });
+    }
+
+    if (recording.storage_path) {
+      const { error: storageError } = await supabase.storage
+        .from("live-class-recordings")
+        .remove([recording.storage_path]);
+      if (storageError) {
+        return NextResponse.json({ error: "The recording file could not be removed. Its library record was kept unchanged." }, { status: 502 });
+      }
+    }
+
+    const { error: deleteError } = await supabase
+      .from("class_recordings")
+      .delete()
+      .eq("id", recordingId);
+
+    if (deleteError) {
+      return NextResponse.json({ error: "The file was removed, but its library record could not be deleted. Please contact support." }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, deleted: true });
+  } catch {
+    return NextResponse.json({ error: "Could not delete recording." }, { status: 500 });
   }
 }
