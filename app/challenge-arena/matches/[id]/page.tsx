@@ -528,7 +528,8 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 {/* Options List */}
                 <div className="grid grid-cols-1 gap-3">
                   {(["A", "B", "C", "D", "E"] as const).map((key) => {
-                    const rawCandidateOptions = (currentQ as Record<string, unknown>).options || (currentQ as Record<string, unknown>).optionsMap;
+                    const candidateObj = currentQ as unknown as Record<string, unknown>;
+                    const rawCandidateOptions = candidateObj.options || candidateObj.optionsMap;
                     const normalizedOptions = normalizeQuestionOptions(rawCandidateOptions);
                     const matchedOpt = normalizedOptions.find((o) => o.key === key);
                     const optionVal = currentQ[`option_${key.toLowerCase()}` as keyof QuestionSnapshot] || matchedOpt?.text;
