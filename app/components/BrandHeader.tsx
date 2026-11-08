@@ -576,7 +576,7 @@ export default function BrandHeader() {
                 href="/dashboard"
                 className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 px-3.5 py-2 text-xs font-black text-white shadow-xs transition hover:shadow-sm active:scale-95"
               >
-                <span>Student Portal &rarr;</span>
+                <span>Student Portal →</span>
               </Link>
 
               {/* User Dropdown Pill */}
