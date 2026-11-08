@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canAccessClassroom, canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { storeClassroomMedia } from "@/app/lib/classroomMediaStore";
 import crypto from "crypto";
 
@@ -8,17 +9,40 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Sign in before uploading classroom media." }, { status: 401 });
+    }
+
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const classId = (formData.get("classId") as string) || "classroom-assets";
     const mediaType = (formData.get("mediaType") as string) || "image"; // "audio" | "image" | "document"
     const durationSeconds = parseFloat((formData.get("duration") as string) || "0");
 
+    if (!["audio", "image", "document"].includes(mediaType)) {
+      return NextResponse.json({ error: "Unsupported classroom media type." }, { status: 400 });
+    }
+
     if (!file) {
       return NextResponse.json({ error: "No media file provided." }, { status: 400 });
     }
 
-    // Limit to 50MB for presentation decks/documents, 25MB for audio/images
+    // Uploads tied to a class require active participant admission; teaching
+    // resources remain tutor/admin-only.
+    if (classId === "classroom-assets") {
+      const staff = await resolveClassroomStaffAccess(user, token);
+      if (!staff.isStaff) {
+        return NextResponse.json({ error: "Only verified teaching staff can upload shared classroom assets." }, { status: 403 });
+      }
+    } else if (!(await canAccessClassroom(user, classId, token))) {
+      return NextResponse.json({ error: "You are not admitted to this classroom." }, { status: 403 });
+    }
+    if (mediaType === "document" && classId !== "classroom-assets" && !(await canManageClassroom(user, classId, token))) {
+      return NextResponse.json({ error: "Only the assigned tutor or a platform administrator can upload classroom documents." }, { status: 403 });
+    }
+
+    // Limit to 50MB for presentation decks/documents, 25MB for audio/images.
     const maxSizeBytes = mediaType === "document" ? 50 * 1024 * 1024 : 25 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
       return NextResponse.json(
@@ -27,21 +51,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const mimeType = file.type || (mediaType === "audio" ? "audio/webm" : mediaType === "image" ? "image/jpeg" : "application/octet-stream");
+    const mimeType = (file.type || "").split(";")[0].trim().toLowerCase();
+    const allowedMimeTypes: Record<string, string[]> = {
+      audio: ["audio/webm", "audio/mp4", "audio/aac", "audio/ogg", "audio/wav", "audio/mpeg"],
+      image: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+      document: ["application/pdf", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"],
+    };
+    if (!allowedMimeTypes[mediaType].includes(mimeType)) {
+      return NextResponse.json({ error: "This file type is not supported for classroom uploads." }, { status: 415 });
+    }
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const assetId = crypto.randomUUID();
 
     // 1. Store in fast in-memory media cache for instant fallback
-    storeClassroomMedia(assetId, buffer, mimeType, durationSeconds, file.name);
+    storeClassroomMedia(assetId, buffer, mimeType, durationSeconds, file.name, classId);
 
-    const supabase = getSupabaseServerClient();
-    const userId = user?.id || "guest_learner";
+    const supabase = getSupabaseServerClient(token);
+    const userId = user.id;
 
     // 2. Upload file to Supabase Storage: 'learning-content-media'
     const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-    const storagePath = `classroom-assets/${classId}/${assetId}-${safeName}`;
+    const safeClassId = String(classId).replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 100);
+    const storagePath = `classroom-assets/${safeClassId}/${assetId}-${safeName}`;
     let finalUrl = `/api/classroom/media/${assetId}`;
+    let storageUploaded = false;
 
     try {
       const { error: uploadError } = await supabase.storage
@@ -52,11 +86,18 @@ export async function POST(request: NextRequest) {
         });
 
       if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage
-          .from("learning-content-media")
-          .getPublicUrl(storagePath);
-        if (publicUrlData?.publicUrl) {
-          finalUrl = publicUrlData.publicUrl;
+        storageUploaded = true;
+        if (mediaType === "audio") {
+          // Audio is persisted with class metadata and delivered through the
+          // authenticated media proxy using a short-lived signed URL.
+          finalUrl = `/api/classroom/media/${assetId}`;
+        } else {
+          // Existing image/document viewers consume direct storage URLs.
+          // A private-bucket migration is needed before proxying these formats.
+          const { data: publicUrlData } = supabase.storage
+            .from("learning-content-media")
+            .getPublicUrl(storagePath);
+          if (publicUrlData?.publicUrl) finalUrl = publicUrlData.publicUrl;
         }
       } else {
         console.warn("[classroom/upload] Storage bucket upload warning:", uploadError.message);
@@ -65,10 +106,20 @@ export async function POST(request: NextRequest) {
       console.warn("[classroom/upload] Storage upload exception, falling back to media route:", storageErr);
     }
 
+    // Every successful upload response must point to durable Storage.
+    // The in-memory cache is process-local and cannot guarantee retrieval on
+    // another serverless instance, so never return a proxy URL as if an upload
+    // succeeded when the durable object was not stored.
+    if (!storageUploaded) {
+      return NextResponse.json(
+        { error: "Classroom media storage is temporarily unavailable. Please retry the upload." },
+        { status: 503 }
+      );
+    }
+
     // 3. Persist asset record if audio
     if (mediaType === "audio" && user) {
-      try {
-        await supabase
+      const { error: assetInsertError } = await supabase
           .from("audio_assets")
           .insert({
             id: assetId,
@@ -87,8 +138,9 @@ export async function POST(request: NextRequest) {
               uploader_id: userId,
             },
           });
-      } catch {
-        // Non-blocking
+      if (assetInsertError) {
+        console.error("[classroom/upload] Audio metadata persistence failed:", assetInsertError.message);
+        return NextResponse.json({ error: "The audio was uploaded but could not be registered securely. Please retry." }, { status: 500 });
       }
     }
 

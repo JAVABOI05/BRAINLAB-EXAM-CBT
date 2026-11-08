@@ -1,6 +1,7 @@
 /* eslint @typescript-eslint/no-explicit-any: "off", prefer-const: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, logAdminAction } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -20,19 +21,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
-    const supabase = getSupabaseServerClient();
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const config = await getLiveClassroomConfig();
+    const supabase = getSupabaseServerClient(token);
 
-    // 1. Check if user is staff/tutor/admin or student checking own status
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const isAuthorizedStaff =
-      (adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role)) ||
-      (user.email && config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase()));
+    // Tutors can view only the class they own; platform administrators can
+    // review any class. Everyone else is restricted to their own attendance.
+    const isAuthorizedStaff = await canManageClassroom(user, classId, token);
 
     // 2. Fetch attendance records from database
     const { data: records, error } = await supabase
@@ -134,19 +129,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Provide between 1 and 200 valid connected student IDs." }, { status: 400 });
       }
 
+      const canManage = await canManageClassroom(
+        user,
+        classId,
+        request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+      );
       const { data: liveClass } = await supabase
         .from("live_classes")
         .select("id, tutor_id")
         .eq("id", classId)
         .maybeSingle();
-      const { data: adminRole } = await supabase
-        .from("admin_profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      const isAssignedTutor = liveClass?.tutor_id === user.id;
-      const isAuthorizedAdmin = ["super_admin", "platform_admin"].includes(adminRole?.role || "");
-      if (!liveClass || (!isAssignedTutor && !isAuthorizedAdmin)) {
+      if (!liveClass || !canManage) {
         return NextResponse.json({ error: "Only the assigned tutor or an authorized administrator can take attendance." }, { status: 403 });
       }
 
@@ -309,16 +302,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Attendance record not found" }, { status: 404 });
     }
 
-    const isTutor = record.live_classes?.tutor_id === user.id;
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const canManage = await canManageClassroom(user, record.class_id, token);
 
-    const isAdmin = adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role);
-
-    if (!isTutor && !isAdmin) {
+    if (!canManage) {
       return NextResponse.json(
         { error: "Forbidden. Only assigned tutors or administrators can modify attendance." },
         { status: 403 }

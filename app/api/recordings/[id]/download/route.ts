@@ -16,14 +16,24 @@ export async function GET(
     const supabase = getSupabaseServerClient();
     const { data: recording, error } = await supabase
       .from("class_recordings")
-      .select("id, title, storage_path, live_classes(tutor_id)")
+      .select("id, title, storage_path, class_id, lesson_id, created_by, live_classes(tutor_id)")
       .eq("id", id)
       .maybeSingle();
 
     if (error || !recording) return NextResponse.json({ error: "Recording not found." }, { status: 404 });
-    const tutorId = (recording as any).live_classes?.tutor_id;
-    if (tutorId !== user.id) {
-      return NextResponse.json({ error: "Only the class tutor can download the original recording." }, { status: 403 });
+    const classTutorId = (recording as any).live_classes?.tutor_id;
+    let ownsStudioLesson = false;
+    if (!recording.class_id && recording.lesson_id && recording.created_by === user.id) {
+      const { data: lesson } = await supabase
+        .from("classroom_lessons")
+        .select("id")
+        .eq("id", recording.lesson_id)
+        .eq("tutor_id", user.id)
+        .maybeSingle();
+      ownsStudioLesson = Boolean(lesson);
+    }
+    if (classTutorId !== user.id && !ownsStudioLesson) {
+      return NextResponse.json({ error: "Only the recording's assigned tutor can download the original file." }, { status: 403 });
     }
     if (!recording.storage_path) {
       return NextResponse.json({ error: "This older recording is not stored in BrainLab's private recording storage." }, { status: 409 });

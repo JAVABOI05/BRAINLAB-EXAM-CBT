@@ -92,6 +92,10 @@ export async function PATCH(request: NextRequest) {
     const conversation = await updateConversationRequestStatus(user.id, conversationId, action);
     return NextResponse.json({ success: true, conversation });
   } catch (err: unknown) {
-    return NextResponse.json({ error: (err instanceof Error ? err.message : String(err)) }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    if (message === "CONVERSATION_ACCESS_DENIED") {
+      return NextResponse.json({ error: "You are not a participant in this conversation." }, { status: 403 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

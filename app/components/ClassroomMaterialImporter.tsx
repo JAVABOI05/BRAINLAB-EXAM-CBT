@@ -22,7 +22,6 @@ interface ClassroomMaterialImporterProps {
   attachments?: LessonAttachment[];
   onRemoveAttachment?: (id: string) => void;
   authToken?: string;
-  lessonId?: string;
 }
 
 export default function ClassroomMaterialImporter({
@@ -33,7 +32,6 @@ export default function ClassroomMaterialImporter({
   attachments = [],
   onRemoveAttachment,
   authToken = "",
-  lessonId = "draft",
 }: ClassroomMaterialImporterProps) {
   const [activeTab, setActiveTab] = useState<"csv" | "slides" | "outline" | "handouts">("csv");
 
@@ -47,6 +45,7 @@ export default function ClassroomMaterialImporter({
   // Slide Images State
   const [slideImages, setSlideImages] = useState<{ name: string; dataUrl: string; aspectRatio: "16 / 9" | "4 / 3" | "9 / 16" | "free" }[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [slideUploadError, setSlideUploadError] = useState("");
 
   // Outline State
   const [outlineText, setOutlineText] = useState("");
@@ -261,6 +260,7 @@ export default function ClassroomMaterialImporter({
     if (files.length === 0) return;
 
     setLoadingImages(true);
+    setSlideUploadError("");
     const loaded: { name: string; dataUrl: string; aspectRatio: "16 / 9" | "4 / 3" | "9 / 16" | "free" }[] = [];
 
     // Sort files naturally by filename so slide1, slide2, slide3 stay in order
@@ -273,7 +273,9 @@ export default function ClassroomMaterialImporter({
         const formData = new FormData();
         formData.append("file", f);
         formData.append("mediaType", "image");
-        formData.append("classId", lessonId || "slides");
+        // These are tutor-owned Studio materials, not uploads to a live class.
+        // The shared-assets scope is restricted to verified teaching staff.
+        formData.append("classId", "classroom-assets");
 
         const res = await fetch("/api/classroom/upload", {
           method: "POST",
@@ -281,22 +283,17 @@ export default function ClassroomMaterialImporter({
           body: formData,
         });
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.url) {
-            finalUrl = json.url;
-          }
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.url) {
+          throw new Error(json.error || "The slide image could not be stored securely.");
         }
+        finalUrl = json.url;
       } catch (err) {
-        console.warn("Storage upload failed for slide, using fallback URL:", err);
-      }
-
-      if (!finalUrl) {
-        finalUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(f);
-        });
+        console.warn("Slide image upload failed:", err);
+        setSlideUploadError((current) => current
+          ? `${current} Also failed: ${f.name}.`
+          : `Could not upload ${f.name}. No embedded fallback was created; retry after storage is available.`);
+        continue;
       }
 
       // Detect natural aspect ratio to avoid distortion
@@ -408,7 +405,9 @@ export default function ClassroomMaterialImporter({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("classId", lessonId);
+      // Studio lessons are not live_classes. Use the verified-staff shared-assets
+      // scope; lesson ownership is enforced by the Studio save/read endpoints.
+      formData.append("classId", "classroom-assets");
       formData.append("mediaType", "document");
 
       const res = await fetch("/api/classroom/upload", {
@@ -595,6 +594,7 @@ export default function ClassroomMaterialImporter({
                   Select all slide images at once. They will be ordered naturally by slide number.
                 </p>
                 {loadingImages && <p className="mt-2 text-xs text-blue-400 animate-pulse">Processing slide images...</p>}
+                {slideUploadError && <p role="alert" className="mt-3 text-xs text-rose-300">{slideUploadError}</p>}
               </div>
 
               {slideImages.length > 0 && (

@@ -57,13 +57,36 @@ export async function POST(request: NextRequest) {
 
     const isPrivileged =
       assignment?.tutor_id === user.id ||
-      (adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role));
+      (adminRole && ["super_admin", "platform_admin"].includes(adminRole.role));
 
     if (!isPrivileged) {
       return NextResponse.json(
         { success: false, error: "Only the assigned course tutor or an administrator can grade this submission." },
         { status: 403 }
       );
+    }
+
+    if (!["graded", "resubmission_requested"].includes(status)) {
+      return NextResponse.json({ success: false, error: "Invalid grading status." }, { status: 400 });
+    }
+
+    if (tutorAudioAssetId) {
+      const { data: audioAsset, error: audioError } = await supabase
+        .from("audio_assets")
+        .select("id, user_id, asset_type, metadata")
+        .eq("id", tutorAudioAssetId)
+        .maybeSingle();
+      const metadata = audioAsset?.metadata && typeof audioAsset.metadata === "object"
+        ? audioAsset.metadata as Record<string, unknown>
+        : {};
+      if (audioError || !audioAsset || audioAsset.user_id !== user.id ||
+          audioAsset.asset_type !== "tutor_voice_note" ||
+          metadata.assignment_id !== assignment?.id) {
+        return NextResponse.json(
+          { success: false, error: "The audio feedback must be uploaded by you for this assignment." },
+          { status: 403 }
+        );
+      }
     }
 
     const numericGrade = grade !== undefined && grade !== null && grade !== "" ? Number(grade) : null;

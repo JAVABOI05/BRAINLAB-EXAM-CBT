@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const isPrivileged = adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role);
+      const isPlatformAdmin = Boolean(adminRole && ["super_admin", "platform_admin"].includes(adminRole.role));
 
       let query = supabase
         .from("assignments")
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         `)
         .order("created_at", { ascending: false });
 
-      if (!isPrivileged) {
+      if (!isPlatformAdmin) {
         query = query.eq("tutor_id", user.id);
       }
       if (courseId) {
@@ -180,30 +180,6 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // Verify Tutor / Admin authorization
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const { data: subjectMembership } = await supabase
-      .from("learning_subject_memberships")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const isAuthorized =
-      subjectMembership ||
-      (adminRole && ["super_admin", "platform_admin", "teacher"].includes(adminRole.role));
-
-    if (!isAuthorized) {
-      return NextResponse.json(
-        { success: false, error: "Tutor or administrator authorization required." },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json().catch(() => ({}));
     const {
       title,
@@ -225,6 +201,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!["draft", "published"].includes(status)) {
+      return NextResponse.json({ success: false, error: "Assignments can only be created as draft or published." }, { status: 400 });
+    }
+
+    const [{ data: adminRole }, { data: course, error: courseError }] = await Promise.all([
+      supabase.from("admin_profiles").select("role").eq("user_id", user.id).maybeSingle(),
+      supabase.from("courses").select("id, tutor_id, subject_id").eq("id", courseId).maybeSingle(),
+    ]);
+    if (courseError || !course) {
+      return NextResponse.json({ success: false, error: "Course not found." }, { status: 404 });
+    }
+
+    const isPlatformAdmin = Boolean(adminRole && ["super_admin", "platform_admin"].includes(adminRole.role));
+    let hasCourseTeachingAssignment = course.tutor_id === user.id;
+    if (!hasCourseTeachingAssignment && course.subject_id) {
+      const { data: membership, error: membershipError } = await supabase
+        .from("learning_subject_memberships")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("subject_id", course.subject_id)
+        .eq("membership_role", "tutor")
+        .maybeSingle();
+      if (membershipError) {
+        return NextResponse.json({ success: false, error: "Unable to verify course teaching assignment." }, { status: 500 });
+      }
+      hasCourseTeachingAssignment = Boolean(membership);
+    }
+    if (!isPlatformAdmin && !hasCourseTeachingAssignment) {
+      return NextResponse.json(
+        { success: false, error: "You are not assigned to teach this course." },
+        { status: 403 }
+      );
+    }
+    if (subjectId && course.subject_id && subjectId !== course.subject_id) {
+      return NextResponse.json({ success: false, error: "The selected subject does not match this course." }, { status: 400 });
+    }
+    const resolvedSubjectId = course.subject_id || subjectId || null;
+
     // Insert Assignment
     const { data: assignment, error: insertError } = await supabase
       .from("assignments")
@@ -232,7 +246,7 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         instructions: instructions.trim(),
         course_id: courseId,
-        subject_id: subjectId || null,
+        subject_id: resolvedSubjectId,
         tutor_id: user.id,
         max_points: Number(maxPoints) || 100,
         due_date: dueDate ? new Date(dueDate).toISOString() : null,
@@ -254,7 +268,7 @@ export async function POST(request: NextRequest) {
           description: `Course assignment due: ${instructions.slice(0, 200)}`,
           event_type: "assignment",
           course_id: courseId,
-          subject_id: subjectId || null,
+          subject_id: resolvedSubjectId,
           start_time: new Date(dueDate).toISOString(),
           end_time: new Date(new Date(dueDate).getTime() + 30 * 60 * 1000).toISOString(),
           location_url: `/assignments?id=${assignment.id}`,
@@ -266,10 +280,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Post announcement to course feed
-    if (status === "published" && subjectId) {
+    if (status === "published" && resolvedSubjectId) {
       try {
         await supabase.from("course_feed_posts").insert({
-          subject_id: subjectId,
+          course_id: course.id,
+          subject_id: resolvedSubjectId,
           author_id: user.id,
           title: `New Assignment: ${title.trim()}`,
           content: `A new course assignment has been assigned. Due: ${

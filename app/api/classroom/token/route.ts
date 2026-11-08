@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
-import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
+import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
+import { getLiveClassroomConfig, saveLiveClassroomParticipantGrant, saveLiveClassroomRoomConfig } from "@/app/lib/platformConfig";
 import { getVideoProvider } from "@/app/lib/liveClassroom/provider";
 import type { ParticipantRole, RoomPermissions, VideoProviderType } from "@/app/lib/liveClassroom/types";
 
@@ -35,52 +36,13 @@ export async function POST(request: NextRequest) {
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
+    const roomConfig = config.room_configs?.[classId] || config.room_configs?.[normalizedClassId];
 
-    // 1. Check if user is staff/tutor/admin
-    const resolvedRole = await resolveAdminRole(user.id, token, user.email);
-    const isStaffRole = Boolean(
-      resolvedRole &&
-      (
-        ["super_admin", "platform_admin", "cbt_admin", "ai_learning_admin", "community_moderator", "analytics_admin", "school_admin", "teacher", "content_reviewer", "finance_admin", "read_only_auditor", "competition_admin", "competition_moderator", "competition_host"].includes(resolvedRole) ||
-        resolvedRole.toLowerCase().includes("admin") ||
-        resolvedRole.toLowerCase().includes("tutor") ||
-        resolvedRole.toLowerCase().includes("teacher") ||
-        resolvedRole.toLowerCase().includes("host") ||
-        resolvedRole.toLowerCase().includes("moderator") ||
-        resolvedRole.toLowerCase().includes("instructor") ||
-        resolvedRole.toLowerCase().includes("staff")
-      )
-    );
+    // 1. Resolve staff access from authoritative platform roles, approved tutor
+    // profiles, or the explicitly configured individual tutor allowlist.
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    const isPlatformStaff = staffAccess.isPlatformAdmin;
 
-    const isAllowedTutorByEmail = Boolean(
-      user.email &&
-      config.allowed_tutor_emails?.some((e) => e.trim().toLowerCase() === user.email?.trim().toLowerCase())
-    );
-
-    const isOfficialDomain = Boolean(
-      user.email &&
-      (user.email.toLowerCase().endsWith("@brainlabacademy.com.ng") ||
-       user.email.toLowerCase().endsWith("@brainlab.com.ng"))
-    );
-
-    const metaRole = String(user.user_metadata?.role || user.app_metadata?.role || "").toLowerCase();
-    const isMetaStaff = metaRole.includes("admin") || metaRole === "teacher" || metaRole === "tutor" || metaRole === "host";
-
-    let isAdminTableUser = false;
-    try {
-      const serviceSupabase = getSupabaseServerClient();
-      const [uRes, pRes] = await Promise.all([
-        user.email ? serviceSupabase.from("admin_users").select("id").ilike("email", user.email.trim()).maybeSingle() : Promise.resolve({ data: null }),
-        user.id ? serviceSupabase.from("admin_profiles").select("id").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
-      ]);
-      if (uRes?.data || pRes?.data) {
-        isAdminTableUser = true;
-      }
-    } catch {}
-
-    const isStaff = isStaffRole || isAllowedTutorByEmail || isOfficialDomain || isMetaStaff || isAdminTableUser;
-    const requestedHost = body.requestedRole === "host" || body.asHost === true;
-    const isAuthorizedTutor = isStaff || (isOpenStage && requestedHost);
 
     // 2. Fetch class details or provision session fallback
     type LiveClass = {
@@ -119,7 +81,7 @@ export async function POST(request: NextRequest) {
         id: classId,
         title: stageTitle,
         description: "Interactive revision, instant in-chat polls, multimedia pictures, audio notes, and live questions.",
-        tutor_id: isAuthorizedTutor ? user.id : "brainlab-official-host",
+        tutor_id: roomConfig?.active_host_id || "brainlab-official-host",
         status: "live",
         class_format: "interactive",
         course_id: null,
@@ -142,23 +104,7 @@ export async function POST(request: NextRequest) {
       if (dbClass) {
         liveClass = dbClass as LiveClass;
       } else {
-        liveClass = {
-          id: classId,
-          title: `BrainLab Live Class Session (${classId.slice(0, 10)})`,
-          description: "Live interactive class session on the BrainLab Learning Platform.",
-          tutor_id: isAuthorizedTutor ? user.id : "tutor-unassigned",
-          status: "scheduled",
-          class_format: "lecture",
-          course_id: null,
-          scheduled_start_at: new Date().toISOString(),
-          duration_minutes: 90,
-          student_mic_enabled: true,
-          student_camera_enabled: false,
-          student_screenshare_enabled: false,
-          student_chat_enabled: true,
-          is_recording_enabled: false,
-          waiting_room_enabled: false,
-        };
+        return NextResponse.json({ error: "Live class not found." }, { status: 404 });
       }
     }
 
@@ -174,9 +120,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Check Room Configuration from Platform Config
-    const roomConfig = config.room_configs?.[classId];
-    const isTutor = isAuthorizedTutor || liveClass.tutor_id === user.id;
-    const isHost = isTutor;
+    const isBuiltInPublicStage = normalizedClassId === "BL-LIVE-101" ||
+      normalizedClassId === "DEMO-CLASS" || normalizedClassId === "GENERAL-STAGE";
+    // Prefixes are identifiers, not proof that a room exists. Only the
+    // built-in public stages or rooms explicitly provisioned by an admin
+    // may receive virtual-stage tokens.
+    if (isOpenStage && !isBuiltInPublicStage && !roomConfig) {
+      return NextResponse.json({ error: "This virtual classroom has not been configured." }, { status: 404 });
+    }
+    const isHost = isPlatformStaff ||
+      (!isOpenStage && liveClass.tutor_id === user.id) ||
+      (isOpenStage && staffAccess.isStaff &&
+        (!roomConfig?.active_host_id || roomConfig.active_host_id === user.id));
 
     if (isHost) {
       liveClass.tutor_id = user.id;
@@ -208,7 +163,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 4b. Subscription Tier & Feature Entitlement Verification (Staff and Open Stages are exempt)
-      if (!isOpenStage && !isStaff) {
+      if (!isOpenStage && !isHost) {
         const { getStudentSubscriptionAndEntitlements } = await import("@/app/lib/subscriptionEntitlements");
         const studentTier = await getStudentSubscriptionAndEntitlements(user.id);
 
@@ -235,7 +190,7 @@ export async function POST(request: NextRequest) {
         Boolean(roomConfig?.entry_code) ||
         Boolean(roomConfig?.require_permission);
 
-      if (isMasterclass && !isStaff) {
+      if (isMasterclass && !isHost) {
         // A. Code Entry verification (if configured on this masterclass)
         if (roomConfig?.entry_code && roomConfig.entry_code.trim()) {
           const submittedCode = String(entryCode || "").trim().toUpperCase();
@@ -268,6 +223,14 @@ export async function POST(request: NextRequest) {
               { status: 403 }
             );
           }
+
+          // Persist a short-lived server-side grant so the participant can use
+          // class-scoped message/media APIs without resending the entry code.
+          const expiresAt = Date.now() + (config.default_duration_minutes || 60) * 60 * 1000;
+          const savedGrant = await saveLiveClassroomParticipantGrant(classId, user.id, expiresAt);
+          if (!savedGrant) {
+            return NextResponse.json({ error: "Unable to establish secure classroom access. Please retry." }, { status: 503 });
+          }
         }
 
         // B. Permission Granting / Host Approval verification
@@ -295,26 +258,26 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Host / Tutor auto-activation: mark room active if needed
-      if (roomConfig && !roomConfig.is_active) {
-        const updatedRooms = { ...config.room_configs };
-        updatedRooms[classId] = {
-          ...roomConfig,
-          is_active: true,
-          active_host_id: user.id,
-          active_host_name: user.user_metadata?.full_name || user.email || "Tutor",
-          started_at: new Date().toISOString(),
-        };
-        void saveLiveClassroomConfig(
-          { room_configs: updatedRooms },
-          { id: user.id, email: user.email || "tutor@brainlabacademy.com.ng" },
-          `Tutor launched live stage for class ${classId}`
+      if (isOpenStage && (!roomConfig?.is_active || !roomConfig?.active_host_id)) {
+        const savedHostAssignment = await saveLiveClassroomRoomConfig(
+          classId,
+          {
+            is_active: true,
+            active_host_id: user.id,
+            active_host_name: user.user_metadata?.full_name || user.email || "Tutor",
+            started_at: new Date().toISOString(),
+          },
+          `Verified tutor launched live stage for class ${classId}`
         );
+        if (!savedHostAssignment) {
+          return NextResponse.json({ error: "Unable to activate this classroom safely. Please retry." }, { status: 503 });
+        }
       }
     }
 
     // 6. Enforce Enrollment & Entitlement Verification (Staff and Hosts are always enrolled)
     let isEnrolled = false;
-    if (isHost || isStaff) {
+    if (isHost) {
       isEnrolled = true;
     } else if (liveClass.course_id) {
       const { data: enrollment } = await supabase
@@ -361,11 +324,11 @@ export async function POST(request: NextRequest) {
     }
 
     const permissions: RoomPermissions = {
-      isModerator: isHost || isStaff,
-      canPublishAudio: isHost || isStaff || liveClass.student_mic_enabled,
-      canPublishVideo: isHost || isStaff || liveClass.student_camera_enabled,
-      canPublishScreen: isHost || isStaff || liveClass.student_screenshare_enabled,
-      canChat: liveClass.student_chat_enabled || isHost || isStaff,
+      isModerator: isHost,
+      canPublishAudio: isHost || liveClass.student_mic_enabled,
+      canPublishVideo: isHost || liveClass.student_camera_enabled,
+      canPublishScreen: isHost || liveClass.student_screenshare_enabled,
+      canChat: liveClass.student_chat_enabled || isHost,
     };
 
     // 8. Generate Provider-Specific Access Token (WebRTC, LiveKit, Agora, Daily)
