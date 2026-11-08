@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,12 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Sign in before recording a class." }, { status: 401 });
+
+    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    if (!staffAccess.isStaff) {
+      return NextResponse.json({ error: "Only verified teaching staff can upload scheduled-class recordings." }, { status: 403 });
+    }
 
     const body = await request.json();
     const classId = String(body?.class_id || "");
@@ -38,8 +45,8 @@ export async function POST(request: NextRequest) {
     if (classError || !liveClass) {
       return NextResponse.json({ error: "This recording flow is available for scheduled classroom sessions." }, { status: 404 });
     }
-    if (liveClass.tutor_id !== user.id) {
-      return NextResponse.json({ error: "Only the assigned tutor can record this class." }, { status: 403 });
+    if (!(await canManageClassroom(user, classId, token))) {
+      return NextResponse.json({ error: "Only the assigned tutor or an authorized platform administrator can record this class." }, { status: 403 });
     }
     if (!liveClass.is_recording_enabled) {
       return NextResponse.json({ error: "Recording is disabled for this class. Contact the platform administrator." }, { status: 403 });
