@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Live Interactive Classroom & Whiteboard Stage | BrainLab Academy",
+  title: "Live Interactive Classroom & Whiteboard Stage",
   description:
     "Tutor-led live interactive masterclasses featuring BrainLab's vector academic whiteboard, multi-surface drawing grids, real-time checkpoint polls, and low-data audio lectures.",
-  alternates: { canonical: "/products/live-classroom" },
+  alternates: { canonical: "https://www.brainlabacademy.com.ng/products/live-classroom" },
   openGraph: {
     title: "Live Classroom & Whiteboard Stage — BrainLab Academy",
     description:
