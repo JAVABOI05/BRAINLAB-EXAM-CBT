@@ -22,6 +22,8 @@ export interface PlanEntitlements {
   calculator_type: "none" | "standard" | "scientific"; // Allowed exam calculator type
   vip_support: boolean; // 24/7 priority resolution and tutor direct dispatch
   stem_studio_access?: boolean; // Interactive STEM simulations & formula lab access
+  stem_access_level?: "none" | "discover" | "explore" | "practise" | "advanced" | "complete";
+  stem_monthly_lab_quota?: number; // 999999 = unlimited
 }
 
 export interface SubscriptionPlan {
@@ -253,6 +255,8 @@ export const DEFAULT_FREE_ENTITLEMENTS: PlanEntitlements = {
   calculator_type: "standard",
   vip_support: false,
   stem_studio_access: true,
+  stem_access_level: "discover",
+  stem_monthly_lab_quota: 3,
 };
 
 export function normalizePlanEntitlements(
@@ -308,6 +312,9 @@ export function normalizePlanEntitlements(
       typeof rawObj.certificates_issued === "boolean" ? rawObj.certificates_issued : base.certificates_issued,
     calculator_type: calcType,
     vip_support: typeof rawObj.vip_support === "boolean" ? rawObj.vip_support : base.vip_support,
+    stem_studio_access: typeof rawObj.stem_studio_access === "boolean" ? rawObj.stem_studio_access : (base.stem_studio_access ?? false),
+    stem_access_level: ["none", "discover", "explore", "practise", "advanced", "complete"].includes(String(rawObj.stem_access_level)) ? rawObj.stem_access_level as PlanEntitlements["stem_access_level"] : (isFreeTier ? "discover" : "practise"),
+    stem_monthly_lab_quota: typeof rawObj.stem_monthly_lab_quota === "number" && rawObj.stem_monthly_lab_quota >= 0 ? rawObj.stem_monthly_lab_quota : (isFreeTier ? 3 : 25),
   };
 }
 
