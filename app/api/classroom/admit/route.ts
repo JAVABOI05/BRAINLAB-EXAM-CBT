@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { getUserFromRequest } from "@/app/lib/supabaseServer";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, saveLiveClassroomConfig } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -18,28 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required classId parameter." }, { status: 400 });
     }
 
-    const supabase = getSupabaseServerClient();
-
-    // Check if user is staff/tutor/admin
-    let isAuthorized = false;
-    const { data: adminRole } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (adminRole && ["super_admin", "platform_admin", "cbt_admin", "teacher"].includes(adminRole.role)) {
-      isAuthorized = true;
-    }
-
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const config = await getLiveClassroomConfig();
-    if (user.email && config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())) {
-      isAuthorized = true;
-    }
+    const isAuthorized = await canManageClassroom(user, classId, token);
 
     if (!isAuthorized) {
       return NextResponse.json(
-        { error: "Forbidden. Only authorized tutors or administrators can grant admission into a masterclass." },
+        { error: "Forbidden. Only the assigned tutor or a platform administrator can manage admission for this class." },
         { status: 403 }
       );
     }

@@ -13,17 +13,6 @@ async function isPlatformAdmin(supabase: any, userId: string) {
   return Boolean(data && ADMIN_ROLES.includes(data.role));
 }
 
-async function canManageClass(supabase: any, classId: string, userId: string, isAdmin: boolean) {
-  if (isAdmin) return true;
-  const { data } = await supabase
-    .from("live_classes")
-    .select("id")
-    .eq("id", classId)
-    .eq("tutor_id", userId)
-    .maybeSingle();
-  return Boolean(data);
-}
-
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -37,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("class_recordings")
-      .select("*, live_classes(id, tutor_id, title, scheduled_start_at), courses(title, slug)")
+      .select("*, live_classes(id, tutor_id, course_id, title, scheduled_start_at), courses(title, slug)")
       .order("created_at", { ascending: false });
 
     if (courseId) query = query.eq("course_id", courseId);
@@ -48,29 +37,47 @@ export async function GET(request: NextRequest) {
 
     const rowsList = rows ?? [];
     const courseIds = [...new Set(rowsList
-      .filter((recording: any) => recording.course_id && recording.is_visible_to_students && recording.processing_status === "ready")
-      .map((recording: any) => recording.course_id))] as string[];
+      .filter((recording: any) => (recording.course_id || recording.live_classes?.course_id) && recording.is_visible_to_students && recording.processing_status === "ready")
+      .map((recording: any) => recording.course_id || recording.live_classes?.course_id))] as string[];
     const { data: enrollments } = courseIds.length
-      ? await supabase.from("course_enrollments").select("course_id").eq("user_id", user.id).eq("status", "active").in("course_id", courseIds)
+      ? await supabase.from("course_enrollments").select("course_id, expires_at").eq("user_id", user.id).eq("status", "active").in("course_id", courseIds)
       : { data: [] };
-    const enrolledCourseIds = new Set((enrollments ?? []).map((item: any) => item.course_id));
-    const { data: activeSubscription } = await supabase
-      .from("subscription_records")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle();
+    const enrolledCourseIds = new Set((enrollments ?? []).filter((item: any) => !item.expires_at || new Date(item.expires_at).getTime() > Date.now()).map((item: any) => item.course_id));
 
-    const visibleToUser = rowsList.filter((recording: any) => {
+
+    const visibilityChecks = await Promise.all(rowsList.map(async (recording: any) => {
       const ownsClass = recording.live_classes?.tutor_id === user.id;
-      if (isAdmin || ownsClass) return true;
+      if (isAdmin || ownsClass || recording.created_by === user.id) return true;
       if (!recording.is_visible_to_students || recording.processing_status !== "ready") return false;
       if (recording.access_policy === "tutors_only") return false;
       if (recording.access_policy === "public") return true;
-      if (!recording.course_id) return true;
-      return enrolledCourseIds.has(recording.course_id) || Boolean(activeSubscription);
-    });
+      if (recording.access_policy !== "enrolled_only") return false;
+
+      if (recording.class_id) {
+        const linkedCourseId = recording.course_id || recording.live_classes?.course_id;
+        if (linkedCourseId) {
+          return enrolledCourseIds.has(linkedCourseId);
+        }
+
+        // Standalone classes without a course are limited to learners who
+        // actually attended or were manually verified for that class. Do not
+        // reuse live-room admission grants, which are intentionally temporary.
+        const { data: attendance } = await supabase
+          .from("class_attendance_records")
+          .select("id")
+          .eq("class_id", recording.class_id)
+          .eq("user_id", user.id)
+          .in("attendance_status", ["present", "partial", "manual_verified"])
+          .limit(1)
+          .maybeSingle();
+        return Boolean(attendance);
+      }
+      if (recording.course_id) {
+        return enrolledCourseIds.has(recording.course_id);
+      }
+      return false;
+    }));
+    const visibleToUser = rowsList.filter((_: any, index: number) => visibilityChecks[index]);
 
     const recordings = await Promise.all(visibleToUser.map(async (recording: any) => {
       let videoUrl = recording.video_url;
@@ -81,13 +88,15 @@ export async function GET(request: NextRequest) {
         videoUrl = signedError ? "" : (signed?.signedUrl || "");
       }
 
-      const canManage = isAdmin || recording.live_classes?.tutor_id === user.id;
+      const ownsClass = recording.live_classes?.tutor_id === user.id;
+      const ownsStudioLesson = !recording.class_id && recording.created_by === user.id && Boolean(recording.lesson_id);
+      const canManage = isAdmin || ownsClass || ownsStudioLesson;
       return {
         ...recording,
         video_url: videoUrl,
         is_downloadable: false,
         canManage,
-        canDownload: recording.live_classes?.tutor_id === user.id && Boolean(recording.storage_path),
+        canDownload: (ownsClass || ownsStudioLesson) && Boolean(recording.storage_path),
       };
     }));
 
@@ -121,9 +130,21 @@ export async function POST(request: NextRequest) {
     }
 
     const isAdmin = await isPlatformAdmin(supabase, user.id);
-    if (!(await canManageClass(supabase, class_id, user.id, isAdmin))) {
+    const { data: liveClass, error: classError } = await supabase
+      .from("live_classes")
+      .select("id, tutor_id, course_id")
+      .eq("id", class_id)
+      .maybeSingle();
+    if (classError || !liveClass) {
+      return NextResponse.json({ error: "Class not found." }, { status: 404 });
+    }
+    if (liveClass.tutor_id !== user.id && !isAdmin) {
       return NextResponse.json({ error: "Only the class tutor can save its recording." }, { status: 403 });
     }
+    if (course_id && course_id !== liveClass.course_id) {
+      return NextResponse.json({ error: "The selected course is not linked to this classroom." }, { status: 400 });
+    }
+    const recordingCourseId = liveClass.course_id || null;
     if (storage_path && !String(storage_path).startsWith(`${class_id}/${user.id}/`)) {
       return NextResponse.json({ error: "The recording storage path does not belong to this tutor and class." }, { status: 403 });
     }
@@ -139,7 +160,7 @@ export async function POST(request: NextRequest) {
       .from("class_recordings")
       .insert({
         class_id,
-        course_id: course_id || null,
+        course_id: recordingCourseId,
         title: String(title).trim().slice(0, 180),
         description: description ? String(description).slice(0, 2000) : null,
         video_url: storage_path || video_url,

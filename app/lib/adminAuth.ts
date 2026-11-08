@@ -181,13 +181,9 @@ export async function getAdminSession(req?: NextRequest, forceRefresh = false): 
 
   let resolvedRole: string | null = null;
 
-  // 4a. Check role from JWT user metadata if available
-  const metaRole = (user.app_metadata?.role || user.user_metadata?.role) as string | undefined;
-  if (metaRole && ADMIN_ROLES.includes(metaRole as AdminRole)) {
-    resolvedRole = metaRole;
-  }
-
-  // 4b. Query get_admin_role RPC with 2.5s timeout guard
+  // 4a. Resolve the role from the database, never from client-editable user metadata.
+  // app_metadata can also remain stale after a role revocation, so the database RPC is authoritative.
+  // Query get_admin_role RPC with 2.5s timeout guard.
   if (!resolvedRole) {
     try {
       const rpcTimeout = new Promise<{ data: null; error: Error }>((resolve) =>
@@ -203,7 +199,7 @@ export async function getAdminSession(req?: NextRequest, forceRefresh = false): 
     } catch {}
   }
 
-  // 4c. Fallback to admin_profiles table
+  // 4b. Fallback to admin_profiles table
   if (!resolvedRole) {
     try {
       const profileTimeout = new Promise<{ data: null }>((resolve) =>
@@ -219,7 +215,7 @@ export async function getAdminSession(req?: NextRequest, forceRefresh = false): 
     } catch {}
   }
 
-  // 4d. (admin_user_roles check removed)
+  // 4c. (legacy admin_user_roles check removed)
 
   if (!resolvedRole) {
     setCachedAdminSession(null);

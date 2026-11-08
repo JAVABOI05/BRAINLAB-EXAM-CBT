@@ -182,6 +182,8 @@ export interface MasterclassRoomConfig {
   topic?: string;
   started_at?: string;
   admitted_students?: string[];
+  /** Short-lived server-issued participant grants after entry-code verification. */
+  participant_access?: Record<string, number>;
 }
 
 export interface LiveClassroomConfig {
@@ -1104,6 +1106,55 @@ export async function saveLiveClassroomConfig(
   const current = await getLiveClassroomConfig();
   const updated = { ...current, ...config };
   return await setPlatformConfig("live_classroom_config", updated, adminUser, reason || "Updated Live Classroom policy");
+}
+
+/**
+ * Persist a participant's short-lived admission grant without impersonating
+ * that participant as an administrator in the admin configuration audit log.
+ */
+export async function saveLiveClassroomParticipantGrant(
+  roomId: string,
+  userId: string,
+  expiresAt: number
+): Promise<boolean> {
+  const current = await getLiveClassroomConfig();
+  const roomConfigs = { ...(current.room_configs || {}) };
+  const room = roomConfigs[roomId];
+  if (!room) return false;
+  const now = Date.now();
+  const activeGrants = Object.fromEntries(
+    Object.entries(room.participant_access || {}).filter(([, expiry]) => Number(expiry) > now)
+  ) as Record<string, number>;
+  activeGrants[userId] = expiresAt;
+  roomConfigs[roomId] = { ...room, participant_access: activeGrants };
+  return await setPlatformConfig(
+    "live_classroom_config",
+    { ...current, room_configs: roomConfigs },
+    undefined,
+    "Participant entry-code grant issued"
+  );
+}
+
+/**
+ * Update one room against the latest server configuration. This avoids
+ * attributing operational room changes to an administrator and reduces
+ * overwriting unrelated room updates from stale request snapshots.
+ */
+export async function saveLiveClassroomRoomConfig(
+  roomId: string,
+  updates: Partial<MasterclassRoomConfig>,
+  reason: string
+): Promise<boolean> {
+  const current = await getLiveClassroomConfig();
+  const roomConfigs = { ...(current.room_configs || {}) };
+  const latestRoom = roomConfigs[roomId] || { class_type: "open" as const };
+  roomConfigs[roomId] = { ...latestRoom, ...updates } as MasterclassRoomConfig;
+  return await setPlatformConfig(
+    "live_classroom_config",
+    { ...current, room_configs: roomConfigs },
+    undefined,
+    reason
+  );
 }
 
 // ----------------------------------------------------------------------------

@@ -121,7 +121,7 @@ export default function VideoPreviewEditor({
     setSavingToCloud(true);
     try {
       await onSaveToLibrary({
-        duration: trimEnd > trimStart ? trimEnd - trimStart : duration,
+        duration,
         fileSize: videoBlob.size,
         trimmedStart: trimStart,
         trimmedEnd: trimEnd,
@@ -208,13 +208,14 @@ export default function VideoPreviewEditor({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black tracking-wider uppercase text-blue-300 flex items-center gap-1.5">
               <span>✂️</span>
-              <span>Trim Start &amp; End Footage</span>
+              <span>Preview Start &amp; End</span>
             </span>
             <span className="text-xs font-mono text-slate-300">
               Segment Duration: {formatTime(Math.max(0, trimEnd - trimStart))}
             </span>
           </div>
 
+          <p className="text-[11px] leading-5 text-amber-200/90">These controls limit playback preview only. The saved/downloaded video remains the complete original recording.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             {/* Start Trim */}
             <div className="space-y-1">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canManageClassroom } from "@/app/lib/liveClassroom/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -118,29 +119,8 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     // Verify class ownership or tutor/admin authorization
-    const { data: liveClass } = await supabase
-      .from("live_classes")
-      .select("tutor_id")
-      .eq("id", classId)
-      .maybeSingle();
-
-    const { data: adminRole1 } = await supabase
-      .from("admin_profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const { data: adminRole2 } = await supabase
-      .from("admin_users")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const isStaff =
-      Boolean(adminRole1 && ["super_admin", "platform_admin", "teacher", "cbt_admin", "ai_learning_admin"].includes(adminRole1.role)) ||
-      Boolean(adminRole2 && ["super_admin", "platform_admin", "teacher"].includes(adminRole2.role));
-
-    const isAuthorized = isStaff || Boolean(liveClass && liveClass.tutor_id === user.id);
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const isAuthorized = await canManageClassroom(user, classId, bearerToken);
 
     if (!isAuthorized) {
       return NextResponse.json(
@@ -225,6 +205,25 @@ export async function PATCH(request: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
+    const { data: existingPoll, error: pollLookupError } = await supabase
+      .from("classroom_polls")
+      .select("id, class_id")
+      .eq("id", pollId)
+      .maybeSingle();
+
+    if (pollLookupError || !existingPoll) {
+      return NextResponse.json({ ok: false, error: "Poll not found" }, { status: 404 });
+    }
+
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const canManage = await canManageClassroom(user, existingPoll.class_id, bearerToken);
+
+    if (!canManage) {
+      return NextResponse.json(
+        { ok: false, error: "Only the assigned class tutor or a platform administrator can manage this poll." },
+        { status: 403 }
+      );
+    }
 
     const { data: updatedPoll, error: updateError } = await supabase
       .from("classroom_polls")

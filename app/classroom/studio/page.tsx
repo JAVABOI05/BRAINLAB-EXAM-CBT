@@ -535,37 +535,47 @@ export default function ClassroomStudioPage() {
   }) => {
     if (!previewBlob || !token) throw new Error("No video or authentication found.");
 
-    // 1. Upload to Supabase Storage: 'live-class-recordings'
-    const ext = previewMimeType.includes("mp4") ? "mp4" : "webm";
-    const safeTitle = (title || "Lesson").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const filename = `studio-lessons/${user?.id || "tutor"}/${Date.now()}-${safeTitle}.${ext}`;
+    // Ensure the Studio lesson exists before linking its recording metadata.
+    // New drafts may not yet have an ID when the tutor starts recording.
+    const savedLessonId = await saveLesson(status);
+    if (!savedLessonId) throw new Error("Save the lesson before adding its recording to the library.");
 
+    // 1. Ask the server to verify lesson ownership and mint a one-object
+    // upload token. The private bucket intentionally has no broad client INSERT policy.
+    const normalizedMimeType = previewMimeType.split(";")[0].trim().toLowerCase();
+    const ext = normalizedMimeType.includes("mp4") ? "mp4" : "webm";
+    const safeTitle = (title || "Lesson").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const uploadPrepResponse = await fetch("/api/classroom/studio/recording-upload-url", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        lesson_id: savedLessonId,
+        content_type: normalizedMimeType,
+        filename: `${safeTitle}.${ext}`,
+      }),
+    });
+    const uploadPrep = await uploadPrepResponse.json();
+    if (!uploadPrepResponse.ok || !uploadPrep.token || !uploadPrep.path) {
+      throw new Error(uploadPrep.error || "Could not prepare a secure recording upload.");
+    }
+
+    const filename = String(uploadPrep.path);
     const { error: uploadErr } = await supabase.storage
       .from("live-class-recordings")
-      .upload(filename, previewBlob, {
-        contentType: previewMimeType,
-        upsert: true,
+      .uploadToSignedUrl(filename, uploadPrep.token, previewBlob, {
+        contentType: normalizedMimeType,
       });
-
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
-
-    // Get signed or public URL
-    const { data: signedData } = await supabase.storage
-      .from("live-class-recordings")
-      .createSignedUrl(filename, 60 * 60 * 24 * 365); // 1 year access
-
-    const finalVideoUrl = signedData?.signedUrl || filename;
 
     // 2. Save metadata to class_recordings table
     const response = await fetch("/api/classroom/recordings", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        lessonId,
+        lessonId: savedLessonId,
         title,
         subject,
         topic,
-        videoUrl: finalVideoUrl,
         storagePath: filename,
         durationSeconds: meta.duration,
         fileSizeBytes: meta.fileSize,
@@ -577,23 +587,11 @@ export default function ClassroomStudioPage() {
     const resData = await response.json();
     if (!response.ok) throw new Error(resData.error || "Failed to save recording record.");
 
-    // 3. Trigger server-side trimmer job if video was trimmed (Stage 7)
-    if (meta.trimmedStart > 0 || meta.trimmedEnd > 0) {
-      try {
-        await fetch("/api/classroom/trim", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            videoUrl: finalVideoUrl,
-            startSec: meta.trimmedStart,
-            endSec: meta.trimmedEnd,
-            lessonId,
-            recordingId: resData.recording?.id,
-          }),
-        });
-      } catch (trimErr) {
-        console.warn("Background trimmer notification failed:", trimErr);
-      }
+    // The current editor only limits preview playback; it does not transcode
+    // or cut the uploaded file. Keep the library metadata aligned with the
+    // complete original and avoid reporting a trim job that does not exist.
+    if (meta.trimmedStart > 0 || (meta.trimmedEnd > 0 && meta.trimmedEnd < meta.duration)) {
+      toast.info("The complete original video was saved. Exported trimming is not available yet.");
     }
   };
 
@@ -902,7 +900,6 @@ export default function ClassroomStudioPage() {
             toast.success(`Imported ${newPages.length} slide(s) into your lesson whiteboard!`);
           }}
           authToken={token}
-          lessonId={lessonId || "studio-draft"}
           attachments={attachments}
           onAddAttachment={(att) => setAttachments((prev) => [...prev, att])}
         />

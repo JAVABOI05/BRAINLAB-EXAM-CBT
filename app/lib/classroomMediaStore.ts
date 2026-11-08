@@ -4,6 +4,7 @@ type StoredMedia = {
   mimeType: string;
   duration?: number;
   title?: string;
+  classId?: string;
   createdAt: number;
 };
 
@@ -23,7 +24,8 @@ export function storeClassroomMedia(
   buffer: Buffer,
   mimeType: string,
   duration?: number,
-  title?: string
+  title?: string,
+  classId?: string
 ) {
   // Evict oldest items if exceeding 200 items to preserve memory
   if (mediaCache.size > 200) {
@@ -36,6 +38,7 @@ export function storeClassroomMedia(
     mimeType,
     duration,
     title,
+    classId,
     createdAt: Date.now(),
   });
 }

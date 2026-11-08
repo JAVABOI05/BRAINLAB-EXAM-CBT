@@ -312,7 +312,7 @@ export default function MessagesPage() {
 
     const formData = new FormData();
     formData.append("file", blob, "voice_note.webm");
-    formData.append("asset_type", "tutor_voice_note");
+    formData.append("asset_type", "discussion_audio");
     formData.append("duration_seconds", String(durationSeconds));
     formData.append("title", "Voice Note");
 
@@ -356,7 +356,7 @@ export default function MessagesPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${sessionData.session.access_token}`,
       },
-      body: JSON.stringify({ messageId, reaction }),
+      body: JSON.stringify({ conversationId: activeConvId, messageId, reaction }),
     });
 
     const res = await fetch(`/api/messages?conversationId=${activeConvId}`, {

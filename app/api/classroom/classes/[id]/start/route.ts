@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 import { getLiveClassroomConfig, logAdminAction } from "@/app/lib/platformConfig";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,6 @@ export async function POST(
       );
     }
 
-    const body = await request.json().catch(() => ({}));
     const normalizedClassId = String(classId).trim().toUpperCase();
     const isOpenStage =
       normalizedClassId === "BL-LIVE-101" ||
@@ -36,58 +36,13 @@ export async function POST(
     const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
 
-    // 1. Resolve host / instructor authorization
-    const resolvedRole = await resolveAdminRole(user.id, token, user.email);
-    const isStaffRole = Boolean(
-      resolvedRole &&
-      (
-        ["super_admin", "platform_admin", "cbt_admin", "ai_learning_admin", "community_moderator", "analytics_admin", "school_admin", "teacher", "content_reviewer", "finance_admin", "read_only_auditor", "competition_admin", "competition_moderator", "competition_host"].includes(resolvedRole) ||
-        resolvedRole.toLowerCase().includes("admin") ||
-        resolvedRole.toLowerCase().includes("tutor") ||
-        resolvedRole.toLowerCase().includes("teacher") ||
-        resolvedRole.toLowerCase().includes("host") ||
-        resolvedRole.toLowerCase().includes("moderator") ||
-        resolvedRole.toLowerCase().includes("instructor") ||
-        resolvedRole.toLowerCase().includes("staff")
-      )
-    );
+    // 1. Resolve host access from an authoritative platform role, an approved
+    // tutor profile, or the explicitly configured individual tutor allowlist.
+    // User metadata and email-domain membership are not authorization signals.
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    const isPlatformStaff = staffAccess.isPlatformAdmin;
+    const isHostClaim = staffAccess.isStaff;
 
-    const isAllowedTutorByEmail = Boolean(
-      user.email &&
-        config.allowed_tutor_emails?.some(
-          (e) => e.trim().toLowerCase() === user.email?.trim().toLowerCase()
-        )
-    );
-
-    const isOfficialDomain = Boolean(
-      user.email &&
-      (user.email.toLowerCase().endsWith("@brainlabacademy.com.ng") ||
-       user.email.toLowerCase().endsWith("@brainlab.com.ng"))
-    );
-
-    const metaRole = String(
-      user.user_metadata?.role || user.app_metadata?.role || ""
-    ).toLowerCase();
-    const isMetaStaff =
-      metaRole.includes("admin") ||
-      metaRole === "teacher" ||
-      metaRole === "tutor" ||
-      metaRole === "host";
-
-    let isAdminTableUser = false;
-    try {
-      const serviceSupabase = getSupabaseServerClient();
-      const [uRes, pRes] = await Promise.all([
-        user.email ? serviceSupabase.from("admin_users").select("id").ilike("email", user.email.trim()).maybeSingle() : Promise.resolve({ data: null }),
-        user.id ? serviceSupabase.from("admin_profiles").select("id").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
-      ]);
-      if (uRes?.data || pRes?.data) {
-        isAdminTableUser = true;
-      }
-    } catch {}
-
-    const isAuthorizedHost = isStaffRole || isAllowedTutorByEmail || isOfficialDomain || isMetaStaff || isAdminTableUser;
-    const isHostClaim = isAuthorizedHost || (isOpenStage && (body?.asHost === true || body?.role === "host"));
 
     const now = new Date().toISOString();
 
@@ -167,19 +122,6 @@ export async function POST(
       .maybeSingle();
 
     if (fetchErr || !liveClass) {
-      // If class record not found but user is authorized host, permit open ad-hoc stage
-      if (isAuthorizedHost) {
-        return NextResponse.json({
-          ok: true,
-          success: true,
-          classId,
-          roomName: classId,
-          status: "live",
-          startedAt: now,
-          message: "Live stage launched.",
-        });
-      }
-
       return NextResponse.json(
         { ok: false, error: "Live class not found." },
         { status: 404 }
@@ -188,7 +130,7 @@ export async function POST(
 
     // Verify user is tutor assigned or administrator
     const isAssignedTutor = liveClass.tutor_id === user.id;
-    if (!isAuthorizedHost && !isAssignedTutor) {
+    if (!isPlatformStaff && !isAssignedTutor) {
       return NextResponse.json(
         {
           ok: false,

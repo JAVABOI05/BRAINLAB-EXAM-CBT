@@ -594,11 +594,56 @@ export async function createGroupChat(
 // Messages Management
 // ----------------------------------------------------------------------------
 
+export async function assertConversationParticipant(conversationId: string, userId: string): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { data: conversation, error: conversationError } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (!conversationError && conversation) {
+    const { data: participant, error: participantError } = await supabase
+      .from("conversation_participants")
+      .select("id")
+      .eq("conversation_id", conversationId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (participantError) throw new Error("Unable to verify conversation membership.");
+    if (!participant) throw new Error("CONVERSATION_ACCESS_DENIED");
+    return;
+  }
+
+  // The legacy exam_config store is used only when no native conversation row
+  // exists (or the native tables are not installed). It must enforce the same
+  // participant check before messages can be read or sent.
+  if (conversationError && !["42P01", "PGRST205", "PGRST204"].includes(conversationError.code || "")) {
+    throw new Error("Unable to verify conversation membership.");
+  }
+
+  const { data: row, error: configError } = await supabase
+    .from("exam_config")
+    .select("config_value")
+    .eq("config_key", "platform_chat_conversations")
+    .maybeSingle();
+  if (configError) throw new Error("Unable to verify conversation membership.");
+
+  const conversationsMap: Record<string, ChatConversation> =
+    row && typeof row.config_value === "object" && row.config_value !== null
+      ? row.config_value as Record<string, ChatConversation>
+      : {};
+  const fallbackConversation = conversationsMap[conversationId];
+  if (!fallbackConversation?.participants?.some((participant) => participant.user_id === userId)) {
+    throw new Error("CONVERSATION_ACCESS_DENIED");
+  }
+}
+
 export async function getConversationMessages(
   conversationId: string,
   userId: string,
   readerUser?: { id: string; user_metadata?: Record<string, unknown> }
 ): Promise<ChatMessage[]> {
+  await assertConversationParticipant(conversationId, userId);
   const supabase = getSupabaseServerClient();
   const { allPeers } = await getRealPeersAndPresence(userId);
   const peersById = new Map<string, RealPeer>(allPeers.map((p) => [p.user_id, p]));
@@ -627,7 +672,7 @@ export async function getConversationMessages(
   try {
     const { data: messages, error } = await supabase
       .from("messages")
-      .select("*, audio_assets(*), message_reactions(*)")
+      .select("*, audio_assets(id, title, file_url, duration_seconds, mime_type), message_reactions(*)")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
 
@@ -723,9 +768,24 @@ export async function sendChatMessage(
     replyToId?: string | null;
   }
 ): Promise<ChatMessage> {
+  await assertConversationParticipant(conversationId, sender.id);
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
   const senderId = sender.id;
+  if (payload.audioUrl && !payload.audioAssetId) {
+    throw new Error("Audio messages must reference an uploaded audio asset.");
+  }
+  if (payload.audioAssetId) {
+    const { data: audioAsset, error: audioAssetError } = await supabase
+      .from("audio_assets")
+      .select("id, user_id, asset_type")
+      .eq("id", payload.audioAssetId)
+      .maybeSingle();
+    if (audioAssetError || !audioAsset || audioAsset.user_id !== senderId ||
+        !["tutor_voice_note", "discussion_audio"].includes(audioAsset.asset_type)) {
+      throw new Error("You can only attach your own voice note to a conversation.");
+    }
+  }
   const senderMetadataName = sender.user_metadata?.full_name ?? sender.user_metadata?.name;
   const senderName =
     (typeof senderMetadataName === "string" ? senderMetadataName : null) ||
@@ -821,7 +881,7 @@ export async function sendChatMessage(
         audio_asset_id: message.audio_asset_id,
         reply_to_id: message.reply_to_id,
       })
-      .select("*, audio_assets(*)")
+      .select("*, audio_assets(id, title, file_url, duration_seconds, mime_type)")
       .single();
 
     if (!error && nativeMsg) {
@@ -901,6 +961,7 @@ export async function toggleMessageReaction(
   userId: string,
   emoji: string
 ) {
+  await assertConversationParticipant(conversationId, userId);
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
 
@@ -970,6 +1031,7 @@ export async function updateConversationRequestStatus(
   conversationId: string,
   action: "accept" | "decline" | "accept_group" | "decline_group"
 ): Promise<ChatConversation | null> {
+  await assertConversationParticipant(conversationId, userId);
   const supabase = getSupabaseServerClient();
   const now = new Date().toISOString();
 

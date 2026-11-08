@@ -39,7 +39,6 @@ function ClassroomLobbyContent() {
 
   // URL query pre-fills
   const initialCode = searchParams.get("code") || "BL-LIVE-101";
-  const initialRole = searchParams.get("role");
 
   const [classCode, setClassCode] = useState(initialCode);
   const [isStaff, setIsStaff] = useState(false);
@@ -51,7 +50,7 @@ function ClassroomLobbyContent() {
   const [showTierModal, setShowTierModal] = useState(false);
 
   // Portal View Mode: "tutor" | "student"
-  const [portalMode, setPortalMode] = useState<"tutor" | "student">(initialRole === "host" ? "tutor" : "student");
+  const [portalMode, setPortalMode] = useState<"tutor" | "student">("student");
 
   // Inline Tutor Sign-In Modal
   const [showTutorAuthModal, setShowTutorAuthModal] = useState(false);
@@ -100,89 +99,67 @@ function ClassroomLobbyContent() {
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData?.session?.user;
 
-    let adminCacheUser: any = null;
-    let hasAdminCache = false;
-    if (typeof window !== "undefined") {
-      try {
-        const sc = sessionStorage.getItem("brainlab_admin_session_cache");
-        if (sc) {
-          const parsed = JSON.parse(sc);
-          if (parsed?.user) adminCacheUser = parsed.user;
-        }
-        if (sessionStorage.getItem("brainlab_admin_pin_verified") === "true") {
-          hasAdminCache = true;
-        }
-        const lc = localStorage.getItem("admin_user");
-        if (lc) {
-          const parsedL = JSON.parse(lc);
-          if (parsedL) adminCacheUser = adminCacheUser || parsedL;
-        }
-      } catch {}
-    }
-
-    if (user) {
-      setUserId(user.id);
-      setUserEmail(user.email || null);
-      const name =
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.email?.split("@")[0] ||
-        "User";
-      setUserName(name);
-
-      const isAdmin = (await isCurrentUserAdmin(user.id)) || hasAdminCache || Boolean(adminCacheUser);
-      setIsAdminUser(isAdmin);
-      let staffIdentified = isAdmin;
-
-      const metaRole = String(
-        user.user_metadata?.role || user.app_metadata?.role || ""
-      ).toLowerCase();
-      if (
-        metaRole === "tutor" ||
-        metaRole === "teacher" ||
-        metaRole.includes("admin")
-      ) {
-        staffIdentified = true;
-      }
-
-      if (!staffIdentified && user.email) {
-        const { getLiveClassroomConfig } = await import("@/app/lib/platformConfig");
-        const config = await getLiveClassroomConfig();
-        if (config.allowed_tutor_emails?.map((e) => e.toLowerCase()).includes(user.email.toLowerCase())) {
-          staffIdentified = true;
-        }
-      }
-
-      if (staffIdentified) {
-        setIsStaff(true);
-        setPortalMode("tutor"); // Auto-route verified tutors to Tutor Teaching Station
-      } else {
-        setIsStaff(false);
-        setPortalMode("student");
-      }
-
-      const tier = await getStudentSubscriptionAndEntitlements(user.id);
-      setSubscriptionInfo(tier);
-    } else {
-      if (adminCacheUser || hasAdminCache) {
-        setUserId(adminCacheUser?.id || "admin-host");
-        setUserEmail(adminCacheUser?.email || "admin@brainlabacademy.com.ng");
-        setUserName(adminCacheUser?.name || adminCacheUser?.email?.split("@")[0] || "Instructor");
-        setIsStaff(true);
-        setIsAdminUser(true);
-        setPortalMode("tutor");
-      } else {
-        setUserId(null);
-        setUserEmail(null);
-        setIsStaff(false);
-        setIsAdminUser(false);
-        setPortalMode("student");
-      }
+    if (!user) {
+      setUserId(null);
+      setUserEmail(null);
+      setUserName("Learner");
+      setIsStaff(false);
+      setIsAdminUser(false);
+      setPortalMode("student");
       const tier = await getStudentSubscriptionAndEntitlements();
       setSubscriptionInfo(tier);
+      return;
     }
-  }, []);
 
+    setUserId(user.id);
+    setUserEmail(user.email || null);
+    const name =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "User";
+    setUserName(name);
+
+    // Client-side presentation mirrors authoritative records only. Auth
+    // metadata, URL flags and local/session storage are never staff grants.
+    const isAdmin = await isCurrentUserAdmin(user.id);
+    let isApprovedTutor = false;
+    try {
+      const { data: tutorProfile } = await supabase
+        .from("tutor_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("profile_status", "approved")
+        .limit(1)
+        .maybeSingle();
+      isApprovedTutor = Boolean(tutorProfile);
+    } catch {
+      // The server remains authoritative if this optional client lookup fails.
+    }
+
+    let isAllowlistedTutor = false;
+    if (!isAdmin && !isApprovedTutor && user.email) {
+      try {
+        const { getLiveClassroomConfig } = await import("@/app/lib/platformConfig");
+        const config = await getLiveClassroomConfig();
+        isAllowlistedTutor = Boolean(
+          config.allowed_tutor_emails?.some(
+            (email) => email.trim().toLowerCase() === user.email?.trim().toLowerCase()
+          )
+        );
+      } catch {
+        // Fail closed when the explicit allowlist cannot be read.
+      }
+    }
+
+    const staffIdentified = isAdmin || isApprovedTutor || isAllowlistedTutor;
+    setIsAdminUser(isAdmin);
+    setIsStaff(staffIdentified);
+    setPortalMode(staffIdentified ? "tutor" : "student");
+
+    const tier = await getStudentSubscriptionAndEntitlements(user.id);
+    setSubscriptionInfo(tier);
+  }, []);
   useEffect(() => {
     void checkUserRoleAndAuth();
     void fetchClasses();
@@ -228,11 +205,7 @@ function ClassroomLobbyContent() {
       }
     }
 
-    const isEnteringAsHost =
-      isStaff ||
-      isAdminUser ||
-      portalMode === "tutor" ||
-      (typeof window !== "undefined" && window.location.search.includes("role=host"));
+    const isEnteringAsHost = isStaff || isAdminUser || portalMode === "tutor";
 
     if (isEnteringAsHost) {
       router.push(`/classroom/${code}?role=host`);

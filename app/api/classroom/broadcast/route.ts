@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import { canManageClassroom, resolveClassroomStaffAccess } from "@/app/lib/liveClassroom/authorization";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,18 +11,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // Resolve roles through the same authoritative sources used by admin authentication.
-    // The browser sends a verified Supabase access token; fall back to server-side table
-    // lookup when the role RPC is unavailable or does not return an allowed classroom role.
-    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    const allowedRoles = ["super_admin", "platform_admin", "teacher", "cbt_admin", "ai_learning_admin"];
-    let resolvedRole = await resolveAdminRole(user.id, bearerToken);
-
-    if (!allowedRoles.includes(resolvedRole ?? "")) {
-      resolvedRole = await resolveAdminRole(user.id);
-    }
-
-    const isAuthorized = allowedRoles.includes(resolvedRole ?? "");
+    // Broadcasting is restricted to an authoritative platform role,
+    // an approved tutor profile, or an explicitly configured tutor email.
+    const staffAccess = await resolveClassroomStaffAccess(user);
+    const isAuthorized = staffAccess.isStaff;
 
     if (!isAuthorized) {
       return NextResponse.json(
@@ -35,6 +28,22 @@ export async function POST(request: NextRequest) {
 
     if (!roomId) {
       return NextResponse.json({ error: "Missing required roomId." }, { status: 400 });
+    }
+
+    // Prevent a tutor from overwriting an existing classroom owned by another
+    // tutor. New broadcasts still require verified staff status above.
+    const bearerToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const { data: existingClass } = await supabase
+      .from("live_classes")
+      .select("id")
+      .eq("id", roomId)
+      .maybeSingle();
+
+    if (existingClass && !(await canManageClassroom(user, roomId, bearerToken))) {
+      return NextResponse.json(
+        { error: "Forbidden: you cannot broadcast over another tutor's classroom." },
+        { status: 403 }
+      );
     }
 
     const liveTitle = title || "BrainLab Live Academic Masterclass";
