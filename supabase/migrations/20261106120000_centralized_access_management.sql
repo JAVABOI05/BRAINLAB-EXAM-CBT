@@ -124,7 +124,8 @@ insert into public.access_permissions(permission_key,module_key,label,descriptio
 ('stem.resource.manage','stem','Manage STEM resources','Create and edit STEM resources',false),
 ('stem.resource.publish','stem','Publish STEM resources','Publish STEM resources',true),
 ('stem.resource.review','stem','Review STEM resources','Review STEM resources',false),
-('stem.experiments.grade','stem','Grade STEM experiments','Grade submitted STEM experiments',false)
+('stem.experiments.grade','stem','Grade STEM experiments','Grade submitted STEM experiments',false),
+('exam.calendar.manage','exam_calendar','Manage exam calendar','Manage the National Exam Calendar and dynamic exam slots',true)
 on conflict (permission_key) do update set
   module_key=excluded.module_key,label=excluded.label,description=excluded.description,is_sensitive=excluded.is_sensitive;
 
@@ -156,37 +157,48 @@ with grants(role_key, permission_key) as (
     'cbt.codes.manage','cbt.codes.delete','cbt.config.read','cbt.config.manage','cbt.config.delete',
     'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read',
     'community.moderate','student.support','analytics.read','institution.reports.read',
-    'institution.manage','learning.content.review','finance.billing.manage','audit.logs.read','audit.logs.write'
+    'institution.manage','learning.content.review','finance.billing.manage','audit.logs.read','audit.logs.write',
+    'stem.resource.view','stem.resource.manage','stem.resource.publish',
+    'question_bank.create','question_bank.view','question_bank.edit_own',
+    'question_bank.import_csv','question_builder.use'
   ]::text[])
   union all select 'cbt_admin', unnest(array[
-    'cbt.questions.manage','cbt.answers.read','cbt.results.read',
+    'cbt.questions.manage','cbt.questions.delete','cbt.answers.read','cbt.results.read',
     'cbt.sessions.read','cbt.sessions.manage','cbt.codes.manage','cbt.config.read',
-    'cbt.config.manage','audit.logs.write'  ]::text[])
-  union all select 'ai_learning_admin', unnest(array[
-    'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read'
+    'cbt.config.manage','question_bank.create','question_bank.view','question_bank.edit_own',
+    'question_bank.import_csv','question_builder.use','audit.logs.write'
   ]::text[])
-  -- Match the existing admin_has_permission() policy exactly for current teachers.
+  union all select 'ai_learning_admin', unnest(array[
+    'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read',
+    'stem.resource.view','stem.resource.manage'
+  ]::text[])
+  -- Match the latest checked-in admin_has_permission() and TypeScript instructor catalogue.
   union all select 'teacher', unnest(array[
-    'learning.content.manage','student.support'
+    'learning.content.manage','student.support','cbt.questions.manage','cbt.questions.delete',
+    'cbt.results.read','ai.content.manage','question_bank.create','question_bank.view',
+    'question_bank.edit_own','question_bank.import_csv','question_builder.use',
+    'stem.resource.view','stem.resource.manage'
   ]::text[])
   union all select 'competition_host', unnest(array[
-    'competition.view','competition.create','competition.edit_own',
-    'competition.manage_participants','competition.view_results',
-    'question_bank.view','question_bank.create','question_bank.edit_own','question_builder.use'
+    'learning.content.manage','student.support','cbt.questions.manage','cbt.questions.delete',
+    'cbt.results.read','ai.content.manage','question_bank.create','question_bank.view',
+    'question_bank.edit_own','question_bank.import_csv','question_builder.use',
+    'stem.resource.view','stem.resource.manage'
   ]::text[])
   union all select 'competition_moderator', unnest(array[
-    'competition.view','competition.manage_participants','competition.view_results',
-    'competition.disqualify_participant','competition.view_audit_logs'
+    'community.moderate','student.support','question_bank.view',
+    'question_bank.moderate','cbt.questions.manage'
   ]::text[])
   union all select 'community_moderator', unnest(array['community.moderate','student.support']::text[])
   union all select 'analytics_admin', unnest(array[
     'analytics.read','analytics.ai.read','cbt.sessions.read','institution.reports.read','audit.logs.read'
   ]::text[])
   union all select 'school_admin', unnest(array[
-    'institution.manage','institution.reports.read','student.support'
+    'institution.manage','institution.reports.read','student.support',
+    'cbt.results.read','cbt.sessions.read'
   ]::text[])
   union all select 'content_reviewer', unnest(array[
-    'learning.content.review','ai.quality.review'
+    'learning.content.review','ai.quality.review','stem.resource.review','cbt.questions.manage'
   ]::text[])
   union all select 'finance_admin', 'finance.billing.manage'
   union all select 'read_only_auditor', unnest(array['audit.logs.read','analytics.read']::text[])
