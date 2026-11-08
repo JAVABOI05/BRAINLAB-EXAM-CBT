@@ -164,13 +164,5 @@ end;
 $function$;
 
 -- Final function privileges are centralised in the fourth hardening migration.
-/*
-revoke all on function public.access_list_assignments() from public,anon;
-revoke all on function public.access_update_custom_role(uuid,text,text,text[]) from public,anon;
-revoke all on function public.access_retire_custom_role(uuid) from public,anon;
-grant execute on function public.access_list_permissions() to authenticated;
-grant execute on function public.access_list_assignments() to authenticated;
-grant execute on function public.access_update_custom_role(uuid,text,text,text[]) to authenticated;
-*/
 
 commit;
