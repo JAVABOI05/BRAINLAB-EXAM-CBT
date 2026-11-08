@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS public.platform_configuration (
 );
 
 ALTER TABLE public.platform_configuration ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON public.platform_configuration TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.platform_configuration TO authenticated;
 
 DROP POLICY IF EXISTS "Public can read non-secret platform configuration" ON public.platform_configuration;
 CREATE POLICY "Public can read non-secret platform configuration"
@@ -68,6 +70,8 @@ CREATE INDEX IF NOT EXISTS idx_exam_calendar_programme
     WHERE status = 'published';
 
 ALTER TABLE public.exam_calendar_events ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON public.exam_calendar_events TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.exam_calendar_events TO authenticated;
 
 DROP POLICY IF EXISTS "Public can view published exam calendar events" ON public.exam_calendar_events;
 CREATE POLICY "Public can view published exam calendar events"
