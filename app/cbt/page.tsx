@@ -1,5 +1,5 @@
-import { trackEvent } from "@/app/lib/analytics";
 "use client";
+import { trackEvent } from "@/app/lib/analytics";
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";

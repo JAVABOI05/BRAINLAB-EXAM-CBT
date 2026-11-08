@@ -1,5 +1,5 @@
-import { trackEvent } from "@/app/lib/analytics";
 "use client";
+import { trackEvent } from "@/app/lib/analytics";
 
 import { useState, useEffect } from "react";
 import { getFooterConfig } from "../lib/platformConfig";

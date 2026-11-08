@@ -1,5 +1,5 @@
-import { trackEvent } from "@/app/lib/analytics";
 "use client";
+import { trackEvent } from "@/app/lib/analytics";
 
 import React, { useState } from "react";
 import Link from "next/link";

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ slug: string }> | { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
     const resolvedParams = await Promise.resolve(context.params);
@@ -40,7 +40,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ slug: string }> | { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
     const resolvedParams = await Promise.resolve(context.params);

@@ -56,6 +56,9 @@ export default function LearnerSettingsClient() {
     marketing_announcements: boolean;
     sms_alerts: boolean;
     unsubscribed_all: boolean;
+    quiet_hours_start?: string;
+    quiet_hours_end?: string;
+    timezone?: string;
   }>({
     exam_results: true,
     classroom_alerts: true,
@@ -64,6 +67,9 @@ export default function LearnerSettingsClient() {
     marketing_announcements: true,
     sms_alerts: true,
     unsubscribed_all: false,
+    quiet_hours_start: "22:00",
+    quiet_hours_end: "07:00",
+    timezone: "Africa/Lagos",
   });
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifSuccess, setNotifSuccess] = useState("");
@@ -252,6 +258,40 @@ export default function LearnerSettingsClient() {
       }
     } catch {
       setNotifError("Network error while updating subscription.");
+    } finally {
+      setNotifSaving(false);
+    }
+  }
+
+  async function updateQuietHours(start: string, end: string, tz: string) {
+    setNotifSaving(true);
+    setNotifSuccess("");
+    setNotifError("");
+
+    try {
+      const res = await fetch("/api/notifications/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quiet_hours_start: start,
+          quiet_hours_end: end,
+          timezone: tz,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNotifPrefs((prev) => ({
+          ...prev,
+          quiet_hours_start: start,
+          quiet_hours_end: end,
+          timezone: tz,
+        }));
+        setNotifSuccess("✓ Quiet hours and timezone updated successfully.");
+      } else {
+        setNotifError(data.error || "Could not update quiet hours.");
+      }
+    } catch {
+      setNotifError("Network error while updating quiet hours.");
     } finally {
       setNotifSaving(false);
     }
@@ -767,6 +807,63 @@ export default function LearnerSettingsClient() {
                   }`}
                 />
               </button>
+            </div>
+          </div>
+
+          {/* Quiet Hours & Timezone Configuration */}
+          <div className="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <span className="text-xl">🌙</span>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-slate-900">Quiet Hours &amp; Study Schedule</h3>
+                <p className="mt-0.5 text-xs text-slate-600 leading-relaxed">
+                  During quiet hours, non-critical push notifications and email study reminders are paused so your rest is protected.
+                </p>
+
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                      Quiet Starts
+                    </label>
+                    <input
+                      type="time"
+                      value={notifPrefs.quiet_hours_start || "22:00"}
+                      onChange={(e) => updateQuietHours(e.target.value, notifPrefs.quiet_hours_end || "07:00", notifPrefs.timezone || "Africa/Lagos")}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                      Quiet Ends
+                    </label>
+                    <input
+                      type="time"
+                      value={notifPrefs.quiet_hours_end || "07:00"}
+                      onChange={(e) => updateQuietHours(notifPrefs.quiet_hours_start || "22:00", e.target.value, notifPrefs.timezone || "Africa/Lagos")}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                      Your Timezone
+                    </label>
+                    <select
+                      value={notifPrefs.timezone || "Africa/Lagos"}
+                      onChange={(e) => updateQuietHours(notifPrefs.quiet_hours_start || "22:00", notifPrefs.quiet_hours_end || "07:00", e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs"
+                    >
+                      <option value="Africa/Lagos">West Africa Time (Lagos, UTC+1)</option>
+                      <option value="Africa/Accra">GMT / Accra (UTC+0)</option>
+                      <option value="Africa/Johannesburg">South Africa Time (UTC+2)</option>
+                      <option value="UTC">Coordinated Universal Time (UTC)</option>
+                      <option value="Europe/London">UK Time (London)</option>
+                      <option value="America/New_York">US Eastern (New York)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

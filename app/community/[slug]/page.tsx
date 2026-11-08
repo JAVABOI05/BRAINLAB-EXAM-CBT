@@ -13,6 +13,7 @@ import type {
   CohortLeaderboardEntry,
   CohortLeaderboardScope,
 } from "@/app/lib/community/types";
+import DailyQuestsCard from "@/app/components/community/DailyQuestsCard";
 
 export default function CommunityGroupSpacePage() {
   const params = useParams();
@@ -572,10 +573,6 @@ export default function CommunityGroupSpacePage() {
                     <span className="text-slate-500">Scheduled Sprints</span>
                     <span className="font-bold text-indigo-600">{assessments.length} Tests</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Average Readiness</span>
-                    <span className="font-bold text-emerald-600">74% Target</span>
-                  </div>
                 </div>
 
                 <button
@@ -585,6 +582,9 @@ export default function CommunityGroupSpacePage() {
                   View Cohort Leaderboard 🏆 →
                 </button>
               </div>
+
+              {/* Daily Quests Card */}
+              <DailyQuestsCard compact />
             </div>
           </div>
         )}

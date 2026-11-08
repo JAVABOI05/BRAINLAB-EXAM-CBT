@@ -32,7 +32,7 @@ assert(types.includes('LearningQuest'), 'LearningQuest interface exported');
 assert(types.includes('StudentDailyFeed'), 'StudentDailyFeed interface exported');
 assert(types.includes('QuestType'), 'QuestType type exported');
 
-// 3. Quest Service
+// 3. Quest Service & Rule S7 Check
 const servicePath = 'app/lib/community/questService.ts';
 assert(fs.existsSync(servicePath), 'Quest service file exists');
 if (fs.existsSync(servicePath)) {
@@ -40,6 +40,9 @@ if (fs.existsSync(servicePath)) {
   assert(svc.includes('export async function listDailyQuests'), 'listDailyQuests exported');
   assert(svc.includes('export async function getStudentDailyFeed'), 'getStudentDailyFeed exported');
   assert(svc.includes('export async function claimQuestReward'), 'claimQuestReward exported');
+  assert(!svc.includes('streak_days: 12'), 'Rule S7: No hardcoded streak_days: 12 in questService');
+  assert(!svc.includes('total_xp: 850'), 'Rule S7: No hardcoded total_xp: 850 in questService');
+  assert(svc.includes('user_gamification_profiles'), 'Fetches real gamification profile stats');
 }
 
 // 4. API Routes
@@ -50,12 +53,18 @@ assert(fs.existsSync(apiFeed), 'API /api/community/feed exists');
 assert(fs.existsSync(apiQuests), 'API /api/community/quests exists');
 assert(fs.existsSync(apiClaim), 'API /api/community/quests/[id]/claim exists');
 
-// 5. UI Features & Dashboard Integration
+// 5. UI Features & Integration
 const widgetPath = 'app/components/dashboard/DailyLearningFeedWidget.tsx';
 assert(fs.existsSync(widgetPath), 'DailyLearningFeedWidget component exists');
 
 const dash = fs.readFileSync('app/dashboard/page.tsx', 'utf8');
 assert(dash.includes('DailyLearningFeedWidget'), 'Student Dashboard renders DailyLearningFeedWidget');
+
+const questsCardPath = 'app/components/community/DailyQuestsCard.tsx';
+assert(fs.existsSync(questsCardPath), 'DailyQuestsCard component exists');
+
+const groupPage = fs.readFileSync('app/community/[slug]/page.tsx', 'utf8');
+assert(groupPage.includes('DailyQuestsCard'), 'Community Group page renders DailyQuestsCard');
 
 console.log('\n--- VERIFICATION RESULT ---');
 if (failed) {

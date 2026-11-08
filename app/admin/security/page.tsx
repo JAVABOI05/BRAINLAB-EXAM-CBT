@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import { getAdminSession, adminSignOut, type AdminUser } from "../../lib/adminAuth";
 import { ADMIN_ROLE_DETAILS, type AdminPermission } from "../../lib/adminRoles";
 import AdminPinGuard from "@/app/components/AdminPinGuard";
+import { PasswordStrengthMeter } from "@/app/components/ui/PasswordStrengthMeter";
 import { updateAdminPin, resetAdminPin, lockAdminPin } from "@/app/lib/adminPinAuth";
 import "../admin.css";
 
@@ -401,6 +402,7 @@ export default function AdminSecurityPage() {
                       placeholder="New PIN (4-12 digits)"
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
                     />
+                    <PasswordStrengthMeter password={newPinInput} role="pin" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -455,6 +457,7 @@ export default function AdminSecurityPage() {
                       placeholder="New PIN (4-12 digits)"
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900"
                     />
+                    <PasswordStrengthMeter password={newPinInput} role="pin" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">

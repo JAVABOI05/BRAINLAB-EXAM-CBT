@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { trackEvent } from "@/app/lib/analytics";
 
 function sanitizeRedirect(target: string | null | undefined): string {
   if (!target || typeof target !== "string") return "/dashboard";
@@ -100,6 +101,7 @@ function SubscriptionCallbackContent() {
           } else {
             setStatus("success");
             setPlanId(data.planId || "premium");
+            trackEvent("payment_completed", { plan_id: data.planId || "premium" });
           }
         } else if (res.status === 202 || (pollCount < maxPolls && data.pending)) {
           // If gateway webhook or provider verification is still processing, retry briefly

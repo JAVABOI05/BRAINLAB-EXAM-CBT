@@ -1,4 +1,3 @@
-import { trackEvent } from "@/app/lib/analytics";
 "use client";
 
 import Link from "next/link";
@@ -11,6 +10,9 @@ import { getAuthRedirectUrl, sanitizeRedirectUrl } from "../lib/authRedirect";
 import { isAdminPinLocallyVerified } from "../lib/adminPinAuth";
 import { isGovernanceAdminRole, isInstructorRole } from "../lib/adminRoles";
 import { setCachedAdminSession, type AdminUser } from "../lib/adminAuth";
+import { trackEvent } from "@/app/lib/analytics";
+import PasswordStrengthMeter from "@/app/components/ui/PasswordStrengthMeter";
+import { evaluatePasswordStrength } from "@/app/lib/passwordStrength";
 
 type AuthMode = "signin" | "signup";
 
@@ -148,8 +150,10 @@ function CentralLoginForm() {
           setError("Please enter your full name.");
           return;
         }
-        if (password.length < 8) {
-          setError("Password must contain at least 8 characters.");
+
+        const strength = evaluatePasswordStrength(password, "student");
+        if (!strength.isValid) {
+          setError(strength.feedback || "Please choose a stronger password with at least 8 characters.");
           return;
         }
 
@@ -464,6 +468,9 @@ function CentralLoginForm() {
                     {showPassword ? "👁️" : "👁️‍🗨️"}
                   </button>
                 </div>
+                {mode === "signup" && (
+                  <PasswordStrengthMeter password={password} role="student" />
+                )}
               </div>
 
               <button

@@ -1,5 +1,5 @@
-import { trackEvent } from "@/app/lib/analytics";
 "use client";
+import { trackEvent } from "@/app/lib/analytics";
 
 import { useState } from "react";
 import { toast } from "@/app/lib/toast";
