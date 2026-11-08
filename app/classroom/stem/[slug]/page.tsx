@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { StemResource } from "@/app/lib/stem/stemService";
-import { INITIAL_STEM_RESOURCES } from "@/app/lib/stem/seedData";
 import {
   QuadraticGraphAdapter,
   DEFAULT_QUADRATIC_STATE,
@@ -52,25 +51,31 @@ export default function StemPlayerPage({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Fetch or fallback resource
+  // Load only the server-authorized resource; never fall back to bundled seed content.
   useEffect(() => {
     let active = true;
     async function load() {
       try {
         setLoading(true);
         const res = await fetch(`/api/stem/resources/${slug}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (active && data.ok && data.resource) {
-            setResource(data.resource);
-            return;
-          }
+        const data = await res.json().catch(() => null);
+        if (active && res.ok && data?.ok && data?.resource) {
+          setResource(data.resource);
+        } else if (active) {
+          setResource(null);
+          setSavedStatus(
+            res.status === 403
+              ? "This STEM resource is locked for your current plan. View plans to unlock it."
+              : res.status === 404
+              ? "This STEM resource is not currently published or does not exist."
+              : "The STEM resource could not be loaded. Please try again."
+          );
         }
-        const fallback = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug);
-        if (active && fallback) setResource(fallback);
       } catch {
-        const fallback = INITIAL_STEM_RESOURCES.find((r) => r.slug === slug);
-        if (active && fallback) setResource(fallback);
+        if (active) {
+          setResource(null);
+          setSavedStatus("The STEM service is temporarily unavailable. Please try again.");
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -165,8 +170,14 @@ export default function StemPlayerPage({
   if (!resource) {
     return (
       <div className="min-h-screen bg-[#070d1e] text-white flex flex-col items-center justify-center p-4">
-        <h2 className="text-xl font-bold">STEM Resource Not Found</h2>
-        <Link href="/classroom/stem" className="mt-4 px-4 py-2 bg-blue-600 rounded-xl text-xs font-bold">
+        <h2 className="text-xl font-bold">STEM Resource Unavailable</h2>
+        <p className="mt-2 max-w-md text-center text-sm text-slate-300">{savedStatus || "This resource is unavailable."}</p>
+        {savedStatus.includes("locked") && (
+          <Link href="/pricing?feature=stem" className="mt-4 px-4 py-2 bg-blue-600 rounded-xl text-xs font-bold">
+            View STEM plans
+          </Link>
+        )}
+        <Link href="/classroom/stem" className="mt-3 px-4 py-2 border border-white/20 rounded-xl text-xs font-bold">
           Return to STEM Studio
         </Link>
       </div>
