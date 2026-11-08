@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       return { ...recording, video_url: signError ? "" : (signed?.signedUrl || "") };
     }));
 
-    return NextResponse.json({ success: true, recordings: playableRecordings });
+    return NextResponse.json({ success: true, recordings: playableRecordings }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to load recordings." },
