@@ -535,24 +535,32 @@ export default function ChallengeArenaPage() {
         throw new Error(data.error || "This competition does not currently have enough valid questions. Please contact the organiser.");
       }
 
-      const questions: CBTQuestion[] = data.questions.map((question: any, index: number) => {
+      const questions: CBTQuestion[] = data.questions.map((rawQuestion: unknown, index: number) => {
+        if (!rawQuestion || typeof rawQuestion !== "object" || Array.isArray(rawQuestion)) {
+          throw new Error(`Question ${index + 1} is incomplete. Please contact the competition organiser.`);
+        }
+        const question = rawQuestion as Record<string, unknown>;
         // The assessment engine stores options as a keyed object ({ A: "...", B: "..." }),
         // while this student UI renders a list. Support both shapes explicitly.
-        const rawOptions = question?.options;
-        const options = Array.isArray(rawOptions)
+        const rawOptions = question.options;
+        const options: Array<{ key: string; text: string }> = Array.isArray(rawOptions)
           ? rawOptions
-              .filter((option: any) => option && typeof option.key === "string" && typeof option.text === "string")
-              .map((option: any) => ({ key: option.key.toUpperCase(), text: option.text }))
+              .flatMap((rawOption: unknown) => {
+                if (!rawOption || typeof rawOption !== "object" || Array.isArray(rawOption)) return [];
+                const option = rawOption as Record<string, unknown>;
+                if (typeof option.key !== "string" || typeof option.text !== "string") return [];
+                return [{ key: option.key.toUpperCase(), text: option.text }];
+              })
           : rawOptions && typeof rawOptions === "object"
-            ? Object.entries(rawOptions)
+            ? Object.entries(rawOptions as Record<string, unknown>)
                 .filter(([key, value]) => /^[A-E]$/i.test(key) && typeof value === "string" && value.trim().length > 0)
                 .map(([key, value]) => ({ key: key.toUpperCase(), text: value as string }))
                 .sort((a, b) => a.key.localeCompare(b.key))
             : [];
-        if (!question || typeof question.id !== "string" || typeof question.question !== "string" || options.length < 2) {
+        if (typeof question.id !== "string" || typeof question.question !== "string" || options.length < 2) {
           throw new Error(`Question ${index + 1} is incomplete. Please contact the competition organiser.`);
         }
-        return { ...question, options } as CBTQuestion;
+        return { ...question, options } as unknown as CBTQuestion;
       });
 
       const durationSeconds = Number(data.durationSeconds || comp.rules?.duration_seconds || 300);
@@ -1370,7 +1378,7 @@ export default function ChallengeArenaPage() {
               <p className="text-sm font-semibold">Preparing your examination securely…</p>
             ) : (
               <>
-                <p className="text-sm font-bold text-rose-500">We couldn't open this examination</p>
+                <p className="text-sm font-bold text-rose-500">We couldn&apos;t open this examination</p>
                 <p className="mt-1 text-sm">{examLaunchError}</p>
                 <button type="button" onClick={() => setExamLaunchError(null)} className="mt-3 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white">Dismiss</button>
               </>
