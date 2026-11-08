@@ -261,6 +261,7 @@ export default function LearnerDashboardPage() {
   const firstName = fullName ? fullName.split(/\s+/)[0] : "";
   const greeting = timeGreeting();
   const avatar = user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
+  const studentProfile = extractStudentProfile(user);
 
   return (
     <main
@@ -361,6 +362,39 @@ export default function LearnerDashboardPage() {
                 <p className="mt-1.5 max-w-xl text-xs sm:text-sm text-blue-100/80 leading-relaxed font-medium">
                   Welcome to your academic sanctuary. Track topic mastery, complete daily quests, and prepare to ace your exams.
                 </p>
+
+                {/* Student Ambition & Vibe Badges */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  {studentProfile.targetCourse && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/25 border border-blue-400/40 px-3 py-1 font-bold text-cyan-200 backdrop-blur-md">
+                      <span>🎯</span> {studentProfile.targetCourse}
+                    </span>
+                  )}
+                  {studentProfile.dreamSchool && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500/25 border border-indigo-400/40 px-3 py-1 font-bold text-indigo-200 backdrop-blur-md">
+                      <span>🏛️</span> {studentProfile.dreamSchool}
+                    </span>
+                  )}
+                  {studentProfile.targetScore && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/25 border border-amber-400/40 px-3 py-1 font-bold text-amber-200 backdrop-blur-md">
+                      <span>⭐</span> Goal: {studentProfile.targetScore}
+                    </span>
+                  )}
+                  {studentProfile.studyVibe && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 px-3 py-1 font-bold text-purple-200 backdrop-blur-md">
+                      <span>✨</span> {studentProfile.studyVibe}
+                    </span>
+                  )}
+                  {!studentProfile.targetCourse && !studentProfile.dreamSchool && (
+                    <Link
+                      href="/profile"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-cyan-400/50 bg-cyan-400/10 px-3 py-1 font-bold text-cyan-200 hover:bg-cyan-400/20 backdrop-blur-md transition"
+                    >
+                      <span>✨ Customise your dream school, course & avatar</span>
+                      <span>→</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
 

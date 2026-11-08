@@ -9,6 +9,7 @@ import OfflineSyncManager from "./OfflineSyncManager";
 import GlobalAnnouncementBanner from "./GlobalAnnouncementBanner";
 import StudentPortalShell from "./StudentPortalShell";
 import CookieConsentBanner from "./public/CookieConsentBanner";
+import PresenceHeartbeatManager from "./PresenceHeartbeatManager";
 
 // All authenticated student portal path prefixes (Experience B)
 const STUDENT_PORTAL_PREFIXES = [
@@ -102,6 +103,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <>
         <ToastContainer />
         <OfflineSyncManager />
+        <PresenceHeartbeatManager />
         {children}
       </>
     );
@@ -113,6 +115,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <>
         <ToastContainer />
         <OfflineSyncManager />
+        <PresenceHeartbeatManager />
         {children}
       </>
     );
@@ -124,6 +127,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <>
         <ToastContainer />
         <OfflineSyncManager />
+        <PresenceHeartbeatManager />
         {children}
       </>
     );
@@ -135,6 +139,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <>
         <ToastContainer />
         <OfflineSyncManager />
+        <PresenceHeartbeatManager />
         {children}
       </>
     );
@@ -146,6 +151,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <>
         <ToastContainer />
         <OfflineSyncManager />
+        <PresenceHeartbeatManager />
         <StudentPortalShell>{children}</StudentPortalShell>
       </>
     );

@@ -707,6 +707,7 @@ export default function MessagesPage() {
     activeConv?.type === "direct"
       ? activeConv.participants?.find((p) => p.user_id !== currentUser?.id)?.user_id
       : null;
+  const otherPeer = otherPeerId ? onlinePeers.find((p) => p.user_id === otherPeerId) : null;
   const isPeerBlocked = otherPeerId ? blockedUsers.includes(otherPeerId) : false;
   const isFriend = otherPeerId ? friendsList.includes(otherPeerId) : true;
   const hasSentAnyMessage = messages.some((m) => m.sender_id === currentUser?.id);
@@ -1218,9 +1219,25 @@ export default function MessagesPage() {
                         </span>
                       )}
                     </h2>
-                    <span className="text-[11px] text-slate-500 capitalize">
-                      {activeConv.type === "group" ? "Study Circle Collaboration" : "Direct Message Channel"}
-                    </span>
+                    {activeConv.type === "direct" && otherPeer ? (
+                      <span className="text-[11px] flex items-center gap-1.5 font-medium">
+                        {otherPeer.status !== "offline" ? (
+                          <span className="text-emerald-600 font-bold flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Online
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+                            {otherPeer.activity_context || "Offline"}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-500 capitalize">
+                        {activeConv.type === "group" ? "Study Circle Collaboration" : "Direct Message Channel"}
+                      </span>
+                    )}
                   </div>
                 </div>
 
