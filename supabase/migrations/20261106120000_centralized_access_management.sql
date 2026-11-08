@@ -2,6 +2,9 @@
 -- Additive compatibility migration. Review and apply only through the approved staging migration workflow.
 begin;
 
+create schema if not exists private;
+revoke all on schema private from public,anon;
+
 create table if not exists public.access_permissions (
   permission_key text primary key,
   module_key text not null,
@@ -206,7 +209,7 @@ from public.admin_profiles ap join public.access_roles r on r.role_key=ap.role
 on conflict (user_id,role_id) do nothing;
 
 -- Super Admin is the only authority for directory lookup and role management.
-create or replace function public.access_search_accounts(search_text text)
+create or replace function private.access_search_accounts_impl(search_text text)
 returns table(user_id uuid,email text,display_name text,has_staff_access boolean)
 language plpgsql stable security definer
 set search_path=''
@@ -243,7 +246,7 @@ begin
 end;
 $function$;
 
-create or replace function public.access_list_role_catalogue()
+create or replace function private.access_list_role_catalogue_impl()
 returns table(id uuid,role_key text,name text,description text,is_system boolean,is_active boolean,permissions text[])
 language sql stable security definer
 set search_path=''
@@ -261,7 +264,7 @@ as $function$
   order by r.is_system desc,r.name;
 $function$;
 
-create or replace function public.access_create_custom_role(
+create or replace function private.access_create_custom_role_impl(
   role_name text, role_description text, permission_keys text[]
 ) returns uuid
 language plpgsql security definer
@@ -299,7 +302,7 @@ begin
 end;
 $function$;
 
-create or replace function public.access_assign_role(
+create or replace function private.access_assign_role_impl(
   target_user_id uuid, target_role_id uuid, resource_scope jsonb default '{}'::jsonb, expires_at timestamptz default null
 ) returns void
 language plpgsql security definer
@@ -345,7 +348,7 @@ begin
 end;
 $function$;
 
-create or replace function public.access_revoke_role(target_user_id uuid,target_role_id uuid)
+create or replace function private.access_revoke_role_impl(target_user_id uuid,target_role_id uuid)
 returns void language plpgsql security definer
 set search_path=''
 as $function$
@@ -363,6 +366,47 @@ begin
       jsonb_build_object('role_id',target_role_id)
     from auth.users u where u.id=auth.uid();
   end if;
+end;
+$function$;
+
+
+-- Public PostgREST entry points are SECURITY INVOKER wrappers only.
+create or replace function public.access_search_accounts(search_text text)
+returns table(user_id uuid,email text,display_name text,has_staff_access boolean)
+language sql stable security invoker
+set search_path=''
+as $function$ select * from private.access_search_accounts_impl(search_text); $function$;
+
+create or replace function public.access_list_role_catalogue()
+returns table(id uuid,role_key text,name text,description text,is_system boolean,is_active boolean,permissions text[])
+language sql stable security invoker
+set search_path=''
+as $function$ select * from private.access_list_role_catalogue_impl(); $function$;
+
+create or replace function public.access_create_custom_role(role_name text,role_description text,permission_keys text[])
+returns uuid
+language sql security invoker
+set search_path=''
+as $function$ select private.access_create_custom_role_impl(role_name,role_description,permission_keys); $function$;
+
+create or replace function public.access_assign_role(
+  target_user_id uuid,target_role_id uuid,resource_scope jsonb default '{}'::jsonb,expires_at timestamptz default null
+) returns void
+language plpgsql security invoker
+set search_path=''
+as $function$
+begin
+  perform private.access_assign_role_impl(target_user_id,target_role_id,resource_scope,expires_at);
+end;
+$function$;
+
+create or replace function public.access_revoke_role(target_user_id uuid,target_role_id uuid)
+returns void
+language plpgsql security invoker
+set search_path=''
+as $function$
+begin
+  perform private.access_revoke_role_impl(target_user_id,target_role_id);
 end;
 $function$;
 
