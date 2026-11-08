@@ -1,5 +1,6 @@
 -- Harden the additive access-management schema before any staging activation.
 -- Direct table access is denied; approved SECURITY DEFINER RPCs are the only interface.
+-- Every privileged RPC pins an empty search_path and schema-qualifies its objects.
 begin;
 
 alter table public.access_permissions enable row level security;
