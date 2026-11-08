@@ -7,6 +7,7 @@ import { supabase } from "@/app/lib/supabase";
 import { useLearnerTheme } from "@/app/components/LearnerThemeProvider";
 import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
 import ArenaSpectatorChat from "@/app/components/arena/ArenaSpectatorChat";
+import { normalizeQuestionOptions } from "@/app/lib/competitionEngine";
 
 /** Attach the signed-in Supabase session to every Arena API request.
  * The browser Supabase client persists sessions in browser storage, which is
@@ -527,11 +528,10 @@ export default function MatchRoomPage({ params }: { params: Promise<{ id: string
                 {/* Options List */}
                 <div className="grid grid-cols-1 gap-3">
                   {(["A", "B", "C", "D", "E"] as const).map((key) => {
-                    const optionVal =
-                    currentQ[`option_${key.toLowerCase()}` as keyof QuestionSnapshot] ||
-                    ((currentQ as Record<string, any>).optionsMap && (currentQ as Record<string, any>).optionsMap[key]) ||
-                    ((currentQ as Record<string, any>).options && typeof (currentQ as Record<string, any>).options === 'object' && !Array.isArray((currentQ as Record<string, any>).options) ? (currentQ as Record<string, any>).options[key] : undefined) ||
-                    (Array.isArray((currentQ as Record<string, any>).options) ? (currentQ as Record<string, any>).options.find((o: any) => o?.key === key)?.text : undefined);
+                    const rawCandidateOptions = (currentQ as Record<string, unknown>).options || (currentQ as Record<string, unknown>).optionsMap;
+                    const normalizedOptions = normalizeQuestionOptions(rawCandidateOptions);
+                    const matchedOpt = normalizedOptions.find((o) => o.key === key);
+                    const optionVal = currentQ[`option_${key.toLowerCase()}` as keyof QuestionSnapshot] || matchedOpt?.text;
                     if (!optionVal) return null;
 
                     const isChosen = selectedOption === key || myAnswers[currentQ.id] === key;

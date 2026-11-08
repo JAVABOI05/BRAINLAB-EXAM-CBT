@@ -129,7 +129,7 @@ export function normalizeQuestionOptions(options: unknown): NormalizedOption[] {
   // 2. Keyed-object inputs: { A: '...', B: '...' }
   if (typeof options === "object") {
     return Object.entries(options as Record<string, unknown>)
-      .filter(([_, val]) => val !== null && val !== undefined)
+      .filter(([, val]) => val !== null && val !== undefined)
       .map(([key, val]) => ({
         key: key.trim().toUpperCase(),
         text: typeof val === "string" ? val : String(val),
