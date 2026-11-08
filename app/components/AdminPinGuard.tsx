@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import PasswordStrengthMeter from "@/app/components/ui/PasswordStrengthMeter";
 import {
   checkAdminPinStatus,
   verifyAdminPin,
@@ -392,6 +393,9 @@ export default function AdminPinGuard({
                 {showPin ? "Hide" : "Show"}
               </button>
             </div>
+            <div style={{ marginBottom: 12 }}>
+              <PasswordStrengthMeter password={newPin} role="pin" />
+            </div>
 
             <label
               htmlFor="admin-confirm-pin"
@@ -533,6 +537,10 @@ export default function AdminPinGuard({
               >
                 {showPin ? "Hide" : "Show"}
               </button>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <PasswordStrengthMeter password={newPin} role="pin" />
             </div>
 
             <label
@@ -795,3 +803,4 @@ export default function AdminPinGuard({
     </>
   );
 }
+

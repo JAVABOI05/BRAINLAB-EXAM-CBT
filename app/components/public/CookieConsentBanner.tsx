@@ -52,7 +52,7 @@ export default function CookieConsentBanner() {
             <div className="flex items-center gap-2">
               <span className="text-base" aria-hidden="true">🍪</span>
               <h2 className="text-sm font-black tracking-tight text-slate-950 dark:text-white">
-                Privacy Choices &amp; First-Party Measurement (NDPA 2023)
+                Privacy Choices &amp; First-Party Measurement (Nigeria Data Protection Act (NDPA) 2023)
               </h2>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
