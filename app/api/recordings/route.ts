@@ -201,14 +201,24 @@ export async function PATCH(request: NextRequest) {
     const isAdmin = await isPlatformAdmin(supabase, user.id);
     const { data: existing, error: lookupError } = await supabase
       .from("class_recordings")
-      .select("id, class_id, live_classes(tutor_id)")
+      .select("id, class_id, lesson_id, created_by, live_classes(tutor_id)")
       .eq("id", recordingId)
       .maybeSingle();
 
     if (lookupError || !existing) return NextResponse.json({ error: "Recording not found." }, { status: 404 });
     const ownerId = (existing as any).live_classes?.tutor_id;
-    if (!isAdmin && ownerId !== user.id) {
-      return NextResponse.json({ error: "Only the class tutor can change recording visibility." }, { status: 403 });
+    let ownsStudioLesson = false;
+    if (!existing.class_id && existing.lesson_id && existing.created_by === user.id) {
+      const { data: lesson } = await supabase
+        .from("classroom_lessons")
+        .select("id")
+        .eq("id", existing.lesson_id)
+        .eq("tutor_id", user.id)
+        .maybeSingle();
+      ownsStudioLesson = Boolean(lesson);
+    }
+    if (!isAdmin && ownerId !== user.id && !ownsStudioLesson) {
+      return NextResponse.json({ error: "Only the assigned class tutor or the Studio lesson owner can change recording visibility." }, { status: 403 });
     }
 
     const { error } = await supabase
