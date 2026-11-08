@@ -1,6 +1,7 @@
 /* eslint @typescript-eslint/no-explicit-any: "off" */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, getSupabaseServerClient } from "../../lib/supabaseServer";
+import { canManageClassroom, resolveClassroomStaffAccess } from "../../lib/liveClassroom/authorization";
 
 const ADMIN_ROLES = ["super_admin", "platform_admin"];
 
@@ -111,6 +112,12 @@ export async function POST(request: NextRequest) {
     const user = await getUserFromRequest(request);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "");
+    const staffAccess = await resolveClassroomStaffAccess(user, token);
+    if (!staffAccess.isStaff) {
+      return NextResponse.json({ error: "Only verified teaching staff can save scheduled-class recordings." }, { status: 403 });
+    }
+
     const supabase = getSupabaseServerClient();
     const body = await request.json();
     const {
@@ -138,8 +145,8 @@ export async function POST(request: NextRequest) {
     if (classError || !liveClass) {
       return NextResponse.json({ error: "Class not found." }, { status: 404 });
     }
-    if (liveClass.tutor_id !== user.id && !isAdmin) {
-      return NextResponse.json({ error: "Only the class tutor can save its recording." }, { status: 403 });
+    if (!(await canManageClassroom(user, String(class_id), token))) {
+      return NextResponse.json({ error: "Only the assigned tutor or an authorized platform administrator can save this recording." }, { status: 403 });
     }
     if (course_id && course_id !== liveClass.course_id) {
       return NextResponse.json({ error: "The selected course is not linked to this classroom." }, { status: 400 });
