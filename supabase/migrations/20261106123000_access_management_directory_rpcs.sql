@@ -5,11 +5,14 @@ begin;
 create or replace function public.access_list_permissions()
 returns table(permission_key text,module_key text,label text,description text,is_sensitive boolean)
 language sql stable security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
   select p.permission_key,p.module_key,p.label,p.description,p.is_sensitive
   from public.access_permissions p
-  where public.is_super_admin()
+  where exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  )
   order by p.module_key,p.label;
 $function$;
 
@@ -27,10 +30,13 @@ returns table(
   resource_scope jsonb
 )
 language plpgsql stable security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
 begin
-  if not public.is_super_admin() then
+  if not exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  ) then
     raise exception 'Insufficient permission' using errcode='42501';
   end if;
   return query
@@ -42,7 +48,12 @@ begin
   from public.access_user_role_assignments a
   join public.access_roles r on r.id=a.role_id
   join auth.users u on u.id=a.user_id
-  left join public.tutor_profiles tp on tp.user_id=a.user_id
+  left join lateral (
+    select p.name from public.tutor_profiles p
+    where p.user_id=a.user_id
+    order by p.updated_at desc,p.created_at desc,p.id desc
+    limit 1
+  ) tp on true
   where a.revoked_at is null and (a.expires_at is null or a.expires_at>now())
   -- display_name is also a RETURNS TABLE OUT parameter; ordinals avoid PL/pgSQL ambiguity.
   order by 4,7;
@@ -53,11 +64,14 @@ create or replace function public.access_update_custom_role(
   target_role_id uuid, role_name text, role_description text, permission_keys text[]
 ) returns void
 language plpgsql security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
 declare role_row public.access_roles%rowtype;
 begin
-  if not public.is_super_admin() then raise exception 'Insufficient permission' using errcode='42501'; end if;
+  if not exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  ) then raise exception 'Insufficient permission' using errcode='42501'; end if;
   select * into role_row from public.access_roles where id=target_role_id for update;
   if not found or role_row.is_system or role_row.role_key not like 'custom:%' then
     raise exception 'Only custom roles can be edited' using errcode='42501';
@@ -89,11 +103,14 @@ $function$;
 
 create or replace function public.access_retire_custom_role(target_role_id uuid)
 returns void language plpgsql security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
 declare role_row public.access_roles%rowtype;
 begin
-  if not public.is_super_admin() then raise exception 'Insufficient permission' using errcode='42501'; end if;
+  if not exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  ) then raise exception 'Insufficient permission' using errcode='42501'; end if;
   select * into role_row from public.access_roles where id=target_role_id for update;
   if not found or role_row.is_system or role_row.role_key not like 'custom:%' then
     raise exception 'Only custom roles can be retired' using errcode='42501';
