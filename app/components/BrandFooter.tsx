@@ -391,6 +391,16 @@ export default function BrandFooter() {
             </h3>
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all font-semibold text-cyan-300" href="/programmes">
+                  Academic Programmes ?
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/platform/loop">
+                  The BrainLab Loop
+                </Link>
+              </li>
+              <li>
                 <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/syllabus">
                   Official JAMB Syllabus
                 </Link>
@@ -447,6 +457,11 @@ export default function BrandFooter() {
               <li>
                 <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all" href="/pricing">
                   Pricing &amp; Plans
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-cyan-300 hover:translate-x-0.5 inline-block transition-all text-emerald-400 font-semibold" href="/about/trust-centre">
+                  Trust &amp; Governance Centre ?
                 </Link>
               </li>
               <li>

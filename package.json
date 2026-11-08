@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "verify": "npm run test:architecture && npm run test:separation && npm run test:instructor && npm run test:homepage && npm run test:foundation && npm run test:layer-b && npm run test:demo && npm run test:s7 && npm run typecheck",
+    "verify": "npm run test:architecture && npm run test:separation && npm run test:instructor && npm run test:homepage && npm run test:foundation && npm run test:layer-b && npm run test:demo && npm run test:a3 && npm run test:arena:entry && npm run test:s7 && npm run typecheck",
     "test:layer-b": "npx tsx scripts/test-layer-b-dynamic-slots.ts",
     "test:homepage": "npx tsx scripts/test-homepage-layer-a.ts",
     "test:instructor": "npx tsx scripts/test-instructor-portal-architecture.ts",
@@ -17,7 +17,9 @@
     "test:separation": "npx tsx scripts/test-public-and-portal-separation.ts",
     "typecheck": "npx tsc --noEmit",
     "test:s7": "node scripts/check-marketing-figures.mjs",
-    "test:demo": "npx tsx scripts/test-public-stem-and-ai-demo.ts"
+    "test:demo": "npx tsx scripts/test-public-stem-and-ai-demo.ts",
+    "test:a3": "npx tsx scripts/test-website-a3-pages.ts",
+    "test:arena:entry": "npx tsx scripts/test-competition-exam-entry-repair.ts"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
