@@ -137,7 +137,7 @@ export default function PrototypeHero() {
 
                 <div className="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                   <span>Standard 400-Point Scoring</span>
-                  <span>180 Questions • 120 Mins</span>
+                  <span>Official 4-Subject Combination • Timed Session</span>
                 </div>
               </div>
             </div>

@@ -25,6 +25,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/products/ai-study",
+        destination: "/products/ai-learning",
+        permanent: true,
+      },
+      {
+        source: "/products/arena",
+        destination: "/products/challenge-arena",
+        permanent: true,
+      },
+      {
         source: "/tutors",
         destination: "/for-tutors",
         permanent: true,

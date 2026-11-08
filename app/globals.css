@@ -61,6 +61,7 @@
   --bl-shadow-lg: 0 10px 15px -3px rgba(11, 21, 54, 0.08), 0 4px 6px -4px rgba(11, 21, 54, 0.04);
   --bl-shadow-xl: 0 20px 25px -5px rgba(11, 21, 54, 0.1), 0 8px 10px -6px rgba(11, 21, 54, 0.04);
   --bl-shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #1356e8;
+  --bl-focus-ring: 0 0 0 2px var(--bl-color-brand-primary);
 
   /* Motion */
   --bl-duration-instant: 100ms;
@@ -110,6 +111,7 @@
   --bl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.45);
   --bl-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
   --bl-shadow-focus: 0 0 0 2px #070d18, 0 0 0 4px #3b82f6;
+  --bl-focus-ring: 0 0 0 2px var(--bl-color-brand-primary);
 }
 
 /* ==========================================================================

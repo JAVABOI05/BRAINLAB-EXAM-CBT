@@ -20,6 +20,8 @@ import { getUserGamificationProfile, type UserGamificationProfile } from "../lib
 import { CardSkeleton, StatsSkeleton } from "../components/SkeletonLoader";
 import ActivePresenceBar from "../components/ActivePresenceBar";
 import DeviceNotificationPrompt from "../components/DeviceNotificationPrompt";
+import ExamCountdownBanner from "../components/ExamCountdownBanner";
+import WhatsAppChannelHeroBanner from "../components/WhatsAppChannelHeroBanner";
 
 type RecentExam = {
   result_id: string;
@@ -425,6 +427,20 @@ export default function LearnerDashboardPage() {
             >
               Timetable
             </Link>
+          </div>
+        </div>
+
+        {/* Exam Countdown & Official WhatsApp Community Row */}
+        <div className="grid gap-4 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <ExamCountdownBanner
+              variant="dashboard"
+              examLabel="2027 JAMB UTME National Examination"
+              showCta={true}
+            />
+          </div>
+          <div className="lg:col-span-4">
+            <WhatsAppChannelHeroBanner variant="card" />
           </div>
         </div>
 

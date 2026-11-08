@@ -45,7 +45,7 @@ const LOOP_STAGES: LoopStage[] = [
     ],
     stemRole: "Hands-on virtual logic gates bench and science calculation labs reinforce practical understanding.",
     metricLabel: "Simulation Authenticity",
-    metricPlaceholder: "180 Questions • Standard UTME Blueprint",
+    metricPlaceholder: "Official 4-Subject Blueprint • Standard UTME Duration",
   },
   {
     id: "diagnose",
