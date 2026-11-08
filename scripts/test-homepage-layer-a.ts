@@ -10,7 +10,7 @@
  * 6. Product showcase (CBT, Hub, STEM, AI, Live, Arena)
  * 7. STEM Studio spotlight with real science capabilities
  * 8. Conditional suppression of unapproved sections (Trust outcomes & Founder note)
- * 9. Reserved dynamic slots (Countdown & Live stats render null until Prompt 6)
+ * 9. Integration of dynamic slots (Countdown & Live stats connected in Prompt 6)
  * 10. Dynamic pricing teaser reading from getSubscriptionPlans without hardcoded figures
  * 11. Viewport boundary constraints (no horizontal overflow at 320px+)
  */
@@ -206,9 +206,9 @@ async function runHomepageSuite() {
   });
 
   // -----------------------------------------------------------------------
-  // TEST GROUP 7: DYNAMIC SLOTS RESERVATION (PROMPT 6)
+  // TEST GROUP 7: DYNAMIC SLOTS INTEGRATION (PROMPT 6)
   // -----------------------------------------------------------------------
-  console.log("\n7. DYNAMIC SLOTS RESERVATION");
+  console.log("\n7. DYNAMIC SLOTS INTEGRATION");
 
   const countdownSlot = fs.readFileSync(
     path.join(appDir, "components/home/DynamicCountdownSlot.tsx"),
@@ -219,14 +219,12 @@ async function runHomepageSuite() {
     "utf8"
   );
 
-  it("DynamicCountdownSlot renders nothing until Prompt 6 is approved", () => {
-    assert(countdownSlot.includes("isPrompt6Approved = false"));
-    assert(countdownSlot.includes("return null;"));
+  it("DynamicCountdownSlot renders active ExamCountdownBanner", () => {
+    assert(countdownSlot.includes("ExamCountdownBanner"));
   });
 
-  it("DynamicLiveStatisticsSlot renders nothing until Prompt 6 is approved", () => {
-    assert(liveStatsSlot.includes("isPrompt6Approved = false"));
-    assert(liveStatsSlot.includes("return null;"));
+  it("DynamicLiveStatisticsSlot renders active VerifiedLiveStatsBar", () => {
+    assert(liveStatsSlot.includes("VerifiedLiveStatsBar"));
   });
 
   // -----------------------------------------------------------------------

@@ -334,6 +334,9 @@ export default function AdminConfigPage() {
             </div>
 
             <div className="admin-actions">
+              <Link href="/admin/calendar" className="admin-btn-light border-blue-300 text-blue-700 font-bold">
+                📅 Exam Calendar &amp; Channels
+              </Link>
               <Link href="/admin/questions/blueprints" className="admin-btn-light border-blue-300 text-blue-700 font-bold">
                 📖 Section Blueprints &amp; Quotas
               </Link>

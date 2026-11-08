@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { CONTACT_CONFIG } from "@/app/lib/contactConfig";
 
 export interface ChannelPlatformConfig {
@@ -37,10 +37,10 @@ function isValidChannelUrl(url?: string | null): boolean {
 }
 
 export function HomeJoinChannel({
-  channelName = "BrainLab Academy Official WhatsApp Channel",
-  channelUrl = CONTACT_CONFIG.whatsapp.channelUrl,
+  channelName: defaultChannelName = "BrainLab Academy Official WhatsApp Channel",
+  channelUrl: defaultChannelUrl = CONTACT_CONFIG.whatsapp.channelUrl,
   description = "Get daily CBT practice challenges, syllabus updates, exam registration alerts, and revision masterclass links delivered directly to your phone.",
-  platforms = [
+  platforms: defaultPlatforms = [
     {
       id: "whatsapp",
       name: "WhatsApp Broadcast Channel",
@@ -51,7 +51,7 @@ export function HomeJoinChannel({
     {
       id: "telegram",
       name: "Telegram Community",
-      enabled: false, // Disabled until approved
+      enabled: false,
       url: "",
       description: "Community discussion and archives.",
     },
@@ -59,6 +59,62 @@ export function HomeJoinChannel({
   onChannelClick,
   className = "",
 }: HomeJoinChannelProps) {
+  const [channelName, setChannelName] = useState(defaultChannelName);
+  const [channelUrl, setChannelUrl] = useState(defaultChannelUrl);
+  const [verifiedCount, setVerifiedCount] = useState<string | null>(null);
+  const [asOfDate, setAsOfDate] = useState<string | null>(null);
+  const [platforms, setPlatforms] = useState<ChannelPlatformConfig[]>(defaultPlatforms);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/calendar")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.channelConfig) {
+          const cfg = data.channelConfig;
+          if (cfg.is_active === false || cfg.show_on_landing === false) {
+            setVisible(false);
+            return;
+          }
+          if (cfg.whatsapp_url) {
+            setChannelUrl(cfg.whatsapp_url);
+          }
+          if (cfg.whatsapp_title) {
+            setChannelName(cfg.whatsapp_title);
+          }
+          if (typeof cfg.verified_member_count === "number" && cfg.verified_member_count > 0) {
+            setVerifiedCount(`${cfg.verified_member_count.toLocaleString("en-NG")}+`);
+          }
+          if (cfg.as_of_date) {
+            setAsOfDate(cfg.as_of_date);
+          }
+          if (cfg.telegram_url) {
+            setPlatforms([
+              {
+                id: "whatsapp",
+                name: "WhatsApp Broadcast Channel",
+                enabled: true,
+                url: cfg.whatsapp_url || defaultChannelUrl,
+                description: "Direct alerts and daily practice challenges.",
+              },
+              {
+                id: "telegram",
+                name: "Telegram Community",
+                enabled: true,
+                url: cfg.telegram_url,
+                description: "Community discussion and archives.",
+              },
+            ]);
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback to static defaults
+      });
+  }, [defaultChannelUrl]);
+
+  if (!visible) return null;
+
   // If primary channel URL is missing or invalid, do not render block
   if (!isValidChannelUrl(channelUrl)) {
     return null;
@@ -102,9 +158,20 @@ export function HomeJoinChannel({
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
             {/* Information Column */}
             <div className="lg:col-span-8 space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3.5 py-1 text-xs font-bold text-emerald-300">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>OFFICIAL BROADCAST CHANNEL</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3.5 py-1 text-xs font-bold text-emerald-300">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>OFFICIAL BROADCAST CHANNEL</span>
+                </div>
+
+                {/* Rule S7: Verified count displayed only when verified */}
+                {verifiedCount && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-900/60 border border-emerald-400/40 px-3 py-1 text-xs font-semibold text-emerald-200">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                    <span>{verifiedCount} Active Candidates</span>
+                    {asOfDate && <span className="text-emerald-300/80 font-normal">({asOfDate})</span>}
+                  </span>
+                )}
               </div>
 
               <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl">
@@ -159,7 +226,7 @@ export function HomeJoinChannel({
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
-                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.09 2.53.73 2.99.69.45-.04 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.11-.23-.17-.48-.29z" />
+                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z" />
                 </svg>
                 <span>Join Channel Now</span>
                 <span className="text-slate-900" aria-hidden="true">↗</span>

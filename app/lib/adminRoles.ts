@@ -211,6 +211,8 @@ export const ADMIN_PERMISSION_KEYS = [
   "stem.resource.publish",
   "stem.resource.review",
   "stem.experiments.grade",
+  // National Exam Calendar & Live Dynamic Slots
+  "exam.calendar.manage",
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSION_KEYS)[number];

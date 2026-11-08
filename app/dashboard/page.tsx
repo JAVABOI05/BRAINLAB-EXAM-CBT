@@ -435,7 +435,7 @@ export default function LearnerDashboardPage() {
           <div className="lg:col-span-8">
             <ExamCountdownBanner
               variant="dashboard"
-              examLabel="2027 JAMB UTME National Examination"
+              studentProgramme={user?.user_metadata?.programme || user?.user_metadata?.target_exam}
               showCta={true}
             />
           </div>
