@@ -260,3 +260,52 @@ export interface CohortPsychometrics {
   average_time_spent_seconds: number;
   disqualified_count: number;
 }
+
+
+// ==============================================================================
+// PHASE 5: VERIFIED LEARNING QUESTS & DAILY FEED
+// ==============================================================================
+
+export type LearningQuestType =
+  | "cbt_drill"
+  | "stem_simulation"
+  | "group_assessment"
+  | "live_class"
+  | "streak_maintain";
+
+export interface LearningQuest {
+  id: string;
+  title: string;
+  description?: string | null;
+  quest_type: LearningQuestType;
+  subject?: string | null;
+  target_count: number;
+  xp_reward: number;
+  is_daily: boolean;
+  is_active: boolean;
+  starts_at: string;
+  expires_at?: string | null;
+  // Computed caller state
+  current_count?: number;
+  is_completed?: boolean;
+  is_claimed?: boolean;
+}
+
+export interface UserQuestProgress {
+  id: string;
+  user_id: string;
+  quest_id: string;
+  current_count: number;
+  is_completed: boolean;
+  completed_at?: string | null;
+  is_claimed: boolean;
+  claimed_at?: string | null;
+}
+
+export interface StudentDailyFeed {
+  streak_days: number;
+  total_xp: number;
+  today_assessments: GroupAssessmentSchedule[];
+  active_quests: LearningQuest[];
+  recent_announcements: CommunityAnnouncement[];
+}

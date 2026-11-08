@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, getUserFromRequest } from "../../../../../lib/supabaseServer";
-import { getGroupBySlug, joinCommunityGroup } from "../../../../../lib/community/communityService";
+import { getSupabaseServerClient, getUserFromRequest } from "@/app/lib/supabaseServer";
+import { getGroupBySlug, joinCommunityGroup } from "@/app/lib/community/communityService";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
     const user = await getUserFromRequest(request);
@@ -14,7 +14,7 @@ export async function POST(
       return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     }
 
-    const slug = params?.slug;
+    const { slug } = await context.params;
     if (!slug) {
       return NextResponse.json({ ok: false, error: "missing_slug" }, { status: 400 });
     }

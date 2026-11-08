@@ -22,6 +22,7 @@ import ActivePresenceBar from "../components/ActivePresenceBar";
 import DeviceNotificationPrompt from "../components/DeviceNotificationPrompt";
 import ExamCountdownBanner from "../components/ExamCountdownBanner";
 import WhatsAppChannelHeroBanner from "../components/WhatsAppChannelHeroBanner";
+import DailyLearningFeedWidget from "../components/dashboard/DailyLearningFeedWidget";
 
 type RecentExam = {
   result_id: string;
@@ -133,18 +134,39 @@ export default function LearnerDashboardPage() {
   const [readiness, setReadiness] = useState<ExamReadiness | null>(null);
   const [dueSpacedCount, setDueSpacedCount] = useState<number>(0);
   const [gamification, setGamification] = useState<UserGamificationProfile | null>(null);
+  const [userCohorts, setUserCohorts] = useState<any[]>([]);
 
   useEffect(() => {
-    // Check localStorage for recent CBT attempt summary
-    try {
-      const summaryRaw = localStorage.getItem("exam_summary");
-      if (summaryRaw) {
-        const parsed = JSON.parse(summaryRaw);
-        if (parsed && typeof parsed.score === "number" && typeof parsed.total === "number") {
-          setRecentExam(parsed as RecentExam);
+    let active = true;
+    async function loadRecentAttempt() {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser || !active) return;
+
+        // Fetch authoritative recent attempt from learning_test_attempts
+        const { data: attempts } = await supabase
+          .from("learning_test_attempts")
+          .select("id, score, total_marks, status, submitted_at")
+          .eq("student_id", currentUser.id)
+          .order("submitted_at", { ascending: false })
+          .limit(1);
+
+        if (active && attempts && attempts[0]) {
+          setRecentExam({
+            result_id: attempts[0].id,
+            score: attempts[0].score || 0,
+            total: attempts[0].total_marks || 100,
+            status: attempts[0].status,
+          });
         }
+      } catch {
+        // Honest defensive handling
       }
-    } catch {}
+    }
+    void loadRecentAttempt();
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -173,6 +195,16 @@ export default function LearnerDashboardPage() {
         void getUserGamificationProfile(currentUser.id).then((gp) => {
           if (active && gp) setGamification(gp);
         });
+
+        void supabase
+          .from("community_group_memberships")
+          .select("group_role, status, group:community_groups(id, slug, name, icon_emoji, category)")
+          .eq("user_id", currentUser.id)
+          .eq("status", "active")
+          .limit(3)
+          .then(({ data }) => {
+            if (active && data) setUserCohorts(data);
+          });
 
         const summary = await getLearnerDashboardSummary(
           currentUser.id,
@@ -316,10 +348,10 @@ export default function LearnerDashboardPage() {
                   <svg className="h-3.5 w-3.5 text-slate-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>Formulas
                 </Link>
                 <Link
-                  href="/study-groups"
+                  href="/community"
                   className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-900 hover:bg-emerald-100 transition shadow-xs"
                 >
-                  <svg className="h-3.5 w-3.5 text-emerald-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Study Groups
+                  <svg className="h-3.5 w-3.5 text-emerald-600 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Communities
                 </Link>
                 <Link
                   href="/leaderboard"
@@ -444,6 +476,9 @@ export default function LearnerDashboardPage() {
           </div>
         </div>
 
+        {/* Phase 5: Unified Daily Learning Feed & Cohort Quests */}
+        <DailyLearningFeedWidget />
+
         {/* Real Learner Progress Metrics Bar */}
         <section aria-labelledby="stats-heading" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -558,13 +593,13 @@ export default function LearnerDashboardPage() {
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">Predicted JAMB</span>
                   <span className="text-2xl font-black text-indigo-950">
-                    {readiness ? readiness.predictedJambScore : 260} <span className="text-xs text-slate-400 font-bold">/ 400</span>
+                    {readiness ? readiness.predictedJambScore : "—"} {readiness && <span className="text-xs text-slate-400 font-bold">/ 400</span>}
                   </span>
                 </div>
                 <div className="border-l border-slate-200 pl-3">
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">WAEC / NECO</span>
                   <span className="text-2xl font-black text-emerald-700">
-                    {readiness ? readiness.predictedWaecPercent : 65}%
+                    {readiness ? `${readiness.predictedWaecPercent}%` : "—"}
                   </span>
                 </div>
               </div>
@@ -592,8 +627,21 @@ export default function LearnerDashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="mt-4 text-xs text-slate-500">
-                Practise more subjects to generate a detailed topic mastery breakdown.
+              <div className="mt-4 rounded-xl border border-dashed border-indigo-200/80 bg-white/70 p-4 text-center">
+                <p className="text-xs font-semibold text-slate-600">
+                  No verified CBT diagnostic attempts recorded yet.
+                </p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Complete your first timed practice or subject drill to unlock your predicted examination standing and personalized syllabus weak spots.
+                </p>
+                <div className="mt-3">
+                  <Link
+                    href="/cbt"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 px-4 py-2 text-xs font-bold text-white transition shadow-xs"
+                  >
+                    <span>✍️ Take Diagnostic CBT Drill</span>
+                  </Link>
+                </div>
               </div>
             )}
           </div>
