@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PublicAiTutorDemo } from "@/app/components/public/PublicAiTutorDemo";
 
 export const metadata: Metadata = {
   title: "AI Study Studio & Diagnostic Revision",
@@ -146,6 +147,13 @@ export default function AiLearningProductPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Interactive Public AI Tutor Demo Component */}
+      <section className="py-12 sm:py-16 bg-slate-100/60 dark:bg-[#060c18] border-b border-slate-200 dark:border-slate-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <PublicAiTutorDemo />
         </div>
       </section>
 
