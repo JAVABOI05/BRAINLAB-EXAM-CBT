@@ -343,3 +343,54 @@
   color: #ffffff;
   border-color: var(--arena-brand-blue);
 }
+
+
+/* Admin workspace semantic theme bridge: legacy utility classes inherit Arena tokens. */
+.arena-admin {
+  color: var(--arena-text-primary);
+}
+.arena-admin .bg-white {
+  background-color: var(--arena-bg-surface) !important;
+}
+.arena-admin .bg-gray-50,
+.arena-admin .bg-slate-50 {
+  background-color: var(--arena-bg-page) !important;
+}
+.arena-admin .bg-gray-100,
+.arena-admin .bg-slate-100 {
+  background-color: var(--arena-bg-elevated) !important;
+}
+.arena-admin .text-gray-900,
+.arena-admin .text-slate-900 {
+  color: var(--arena-text-primary) !important;
+}
+.arena-admin .text-gray-800,
+.arena-admin .text-gray-700,
+.arena-admin .text-slate-800,
+.arena-admin .text-slate-700 {
+  color: var(--arena-text-secondary) !important;
+}
+.arena-admin .text-gray-600,
+.arena-admin .text-gray-500,
+.arena-admin .text-slate-600,
+.arena-admin .text-slate-500 {
+  color: var(--arena-text-muted) !important;
+}
+.arena-admin .border-gray-200,
+.arena-admin .border-gray-300,
+.arena-admin .border-slate-200,
+.arena-admin .border-slate-300 {
+  border-color: var(--arena-border-default) !important;
+}
+.arena-admin input,
+.arena-admin select,
+.arena-admin textarea {
+  color: var(--arena-text-primary);
+  background-color: var(--arena-bg-surface);
+  border-color: var(--arena-border-default);
+}
+.arena-admin input::placeholder,
+.arena-admin textarea::placeholder {
+  color: var(--arena-text-muted);
+  opacity: 1;
+}

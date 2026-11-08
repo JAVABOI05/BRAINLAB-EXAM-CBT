@@ -4,6 +4,7 @@ import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
 import AnimatedLaunchScreen from "./components/AnimatedLaunchScreen";
 import "./globals.css";
 import "./dashboard/dashboard-dark.css";
+import "./arena/arena-theme.css";
 
 const siteUrl = "https://www.brainlabacademy.com.ng";
 

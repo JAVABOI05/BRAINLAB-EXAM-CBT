@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useId } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
 import { getAdminSession, AdminUser } from "@/app/lib/adminAuth";
 import {
   COMPETITION_PERMISSIONS,
@@ -95,6 +96,7 @@ export default function CompetitionArenaAdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingCompetitionId, setDeletingCompetitionId] = useState<string | null>(null);
 
   // Data states
   const [competitions, setCompetitions] = useState<CompetitionRecord[]>([]);
@@ -143,6 +145,25 @@ export default function CompetitionArenaAdminPage() {
   const [newCompDuration, setNewCompDuration] = useState(300);
   const [newComp1v1Identical, setNewComp1v1Identical] = useState(false);
   const [newCompVisibility, setNewCompVisibility] = useState("public");
+  const [newCompAccessMode, setNewCompAccessMode] = useState<"free" | "code" | "request" | "paid">("free");
+  const [newCompEntryFeeNaira, setNewCompEntryFeeNaira] = useState("0");
+  const [newCompApprovalMode, setNewCompApprovalMode] = useState<"automatic" | "manual">("automatic");
+  const [newCompRegistrationOpen, setNewCompRegistrationOpen] = useState("");
+  const [newCompRegistrationClose, setNewCompRegistrationClose] = useState("");
+  const [newCompStartTime, setNewCompStartTime] = useState("");
+  const [newCompEndTime, setNewCompEndTime] = useState("");
+  const [newCompMaxParticipants, setNewCompMaxParticipants] = useState("");
+  const [newCompAllowSpectators, setNewCompAllowSpectators] = useState(true);
+  const [newCompSpectatorMode, setNewCompSpectatorMode] = useState<"view_only" | "reactions" | "moderated_chat">("view_only");
+  const [newCompSpectatorQuestions, setNewCompSpectatorQuestions] = useState(false);
+  const [newCompSpectatorScoreboard, setNewCompSpectatorScoreboard] = useState(true);
+  const [newCompResultsVisibility, setNewCompResultsVisibility] = useState<"hidden" | "participants" | "public" | "after_completion">("after_completion");
+  const [newCompAnswerReveal, setNewCompAnswerReveal] = useState<"never" | "after_question" | "after_round" | "after_match" | "after_competition">("after_match");
+  const [newCompNegativeMarking, setNewCompNegativeMarking] = useState(false);
+  const [newCompNegativeValue, setNewCompNegativeValue] = useState("0.25");
+  const [newCompSpeedBonus, setNewCompSpeedBonus] = useState(false);
+  const [newCompSpeedBonusMax, setNewCompSpeedBonusMax] = useState("2");
+  const [newCompSpeedBonusWindow, setNewCompSpeedBonusWindow] = useState("30");
 
   // New Bank modal states
   const [showNewBankModal, setShowNewBankModal] = useState(false);
@@ -175,6 +196,9 @@ export default function CompetitionArenaAdminPage() {
   });
   const [emergencyPin, setEmergencyPin] = useState("");
   const [emergencySaving, setEmergencySaving] = useState(false);
+  const [emergencyScope, setEmergencyScope] = useState<"global" | "competition" | "match" | "challenge" | "registration">("global");
+  const [emergencyTargetId, setEmergencyTargetId] = useState("all");
+  const [scopedEmergencyControls, setScopedEmergencyControls] = useState<Record<string, unknown>[]>([]);
 
   const searchInputId = useId();
 
@@ -318,9 +342,50 @@ export default function CompetitionArenaAdminPage() {
       if (res.ok) {
         const d = await res.json();
         if (d.controls) setEmergencyControls(d.controls);
+        setScopedEmergencyControls(d.scopedControls || []);
       }
     } catch {}
   }, []);
+
+  const handleSaveEmergencyControls = async () => {
+    if (adminUser?.role !== "super_admin") {
+      setError("Only Super Admin may change Arena emergency controls.");
+      return;
+    }
+    if (!emergencyPin.trim()) {
+      setError("Enter the Admin Security PIN to continue.");
+      return;
+    }
+    if (emergencyScope !== "global" && !emergencyTargetId.trim()) {
+      setError("Enter the target ID for this scoped emergency control.");
+      return;
+    }
+    setEmergencySaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await authFetch("/api/competition/emergency-controls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scope: emergencyScope,
+          target_id: emergencyScope === "global" ? "all" : emergencyTargetId.trim(),
+          ...emergencyControls,
+          pin: emergencyPin,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to save emergency controls.");
+      setEmergencyControls(data.controls);
+      setEmergencyPin("");
+      setMessage("Arena emergency controls updated and audit recorded.");
+      await loadEmergencyControls();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save emergency controls.");
+    } finally {
+      setEmergencySaving(false);
+    }
+  };
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
@@ -377,6 +442,27 @@ export default function CompetitionArenaAdminPage() {
           question_source_mode: newCompSourceMode,
           question_bank_id: newCompSourceMode !== "main_bank" ? newCompBankId : null,
           visibility: newCompVisibility,
+          access_mode: newCompAccessMode,
+          entry_fee_kobo: newCompAccessMode === "paid" ? Math.round((Number(newCompEntryFeeNaira) || 0) * 100) : 0,
+          approval_mode: newCompApprovalMode,
+          registration_opens_at: newCompRegistrationOpen || null,
+          registration_closes_at: newCompRegistrationClose || null,
+          start_time: newCompStartTime || null,
+          end_time: newCompEndTime || null,
+          max_participants: newCompMaxParticipants ? Number(newCompMaxParticipants) : null,
+          allow_spectators: newCompAllowSpectators,
+          spectator_mode: newCompSpectatorMode,
+          spectator_questions_visible: newCompSpectatorQuestions,
+          spectator_scoreboard_visible: newCompSpectatorScoreboard,
+          results_visibility: newCompResultsVisibility,
+          answer_reveal_mode: newCompAnswerReveal,
+          scoring_config: {
+            negative_marking_enabled: newCompNegativeMarking,
+            negative_marking_value: newCompNegativeMarking ? Math.max(0, Number(newCompNegativeValue) || 0) : 0,
+            speed_bonus_enabled: newCompSpeedBonus,
+            speed_bonus_max_points: newCompSpeedBonus ? Math.max(0, Number(newCompSpeedBonusMax) || 0) : 0,
+            speed_bonus_window_seconds: Math.max(1, Number(newCompSpeedBonusWindow) || 30),
+          },
           rules: {
             question_count: Number(newCompQCount),
             duration_seconds: Number(newCompDuration),
@@ -411,8 +497,10 @@ export default function CompetitionArenaAdminPage() {
       if (!res.ok) throw new Error(data.error || `Failed to ${action} competition`);
       if (data.status === "pending_approval") {
         setMessage("Public quiz submitted for independent administrator approval.");
+      } else if (action === "publish" && data.discoverable === false) {
+        setMessage(data.message || "Competition published, but it is not listed publicly. Check its visibility setting.");
       } else {
-        setMessage(`Competition ${action}ed successfully.`);
+        setMessage(data.message || `Competition ${action}ed successfully.`);
       }
       await loadCompetitions();
     } catch (err: unknown) {
@@ -420,26 +508,37 @@ export default function CompetitionArenaAdminPage() {
     }
   };
 
-  // Permanently delete a competition
-  const handleDeleteCompetition = async (compId: string, compTitle: string) => {
-    if (
-      !window.confirm(
-        `Are you absolutely sure you want to permanently delete '${compTitle}'? This will completely remove the competition, participant records, and associated attempts.`
-      )
-    ) {
+  const handleDeleteCompetition = async (comp: CompetitionRecord) => {
+    if (adminUser?.role !== "super_admin") {
+      setError("Only Super Admin can permanently delete a competition.");
       return;
     }
+    const confirmation = window.prompt(
+      `This permanently deletes "${comp.title}" and its competition matches, participants, answers and related records. This cannot be undone.\n\nType the exact competition title to continue:`
+    );
+    if (confirmation === null) return;
+    if (confirmation !== comp.title) {
+      setError("The title did not match. Nothing was deleted.");
+      return;
+    }
+
+    setDeletingCompetitionId(comp.id);
     setError(null);
+    setMessage(null);
     try {
-      const res = await authFetch(`/api/competition/competitions/${compId}`, {
+      const response = await authFetch(`/api/competition/competitions/${comp.id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to delete competition");
-      setMessage(data.message || `Competition '${compTitle}' deleted permanently.`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to permanently delete competition.");
+      setMessage(`"${data.title || comp.title}" was permanently deleted.`);
       await loadCompetitions();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error deleting competition");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to permanently delete competition.");
+    } finally {
+      setDeletingCompetitionId(null);
     }
   };
 
@@ -607,7 +706,7 @@ export default function CompetitionArenaAdminPage() {
   };
 
   return (
-    <div className="admin-page-container p-6 max-w-7xl mx-auto space-y-6">
+    <div className="admin-page-container arena-admin p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner / Hero */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-950 text-white rounded-2xl p-6 shadow-xl border border-blue-700/40">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -623,14 +722,24 @@ export default function CompetitionArenaAdminPage() {
               Multi-source question architecture (Dedicated, Main CBT, Combined), 4/5-option MCQs, duplicate intelligence, separation of duties, and immutable attempt snapshots.
             </p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-xs space-y-1">
-            <div className="text-blue-200">Active Operator Identity:</div>
-            <div className="font-semibold text-white truncate max-w-xs">{adminUser?.email || "Checking auth..."}</div>
-            <div className="inline-block bg-emerald-500/30 text-emerald-300 font-mono text-[11px] px-2 py-0.5 rounded border border-emerald-400/30">
-              Role: {adminUser?.role || "authenticated"}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-xs space-y-1">
+              <div className="text-blue-200">Active Operator Identity:</div>
+              <div className="font-semibold text-white truncate max-w-xs">{adminUser?.email || "Checking auth..."}</div>
+              <div className="inline-block bg-emerald-500/30 text-emerald-300 font-mono text-[11px] px-2 py-0.5 rounded border border-emerald-400/30">
+                Role: {adminUser?.role || "authenticated"}
+              </div>
             </div>
+            <ArenaThemeToggle compact />
           </div>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Link href="/admin/competitions/team-requests" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Review Permanent Team Requests</Link>
+        <Link href="/admin/competitions/access-codes" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Manage Access Codes</Link>
+        <Link href="/admin/competitions/seasons" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Manage Seasons</Link>
+        <Link href="/challenge-arena/appeals" className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold hover:border-blue-500">Appeals Centre</Link>
       </div>
 
       {/* Alerts */}
@@ -794,6 +903,9 @@ export default function CompetitionArenaAdminPage() {
                     {comp.competition_question_banks && (
                       <span className="truncate">({comp.competition_question_banks.name})</span>
                     )}
+                    <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                      {comp.visibility || "public"}
+                    </span>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs bg-gray-50 p-2 rounded-lg border border-gray-100">
                     <div>Questions: <span className="font-bold">{comp.rules?.question_count || 10}</span></div>
@@ -836,13 +948,15 @@ export default function CompetitionArenaAdminPage() {
                       Cancel
                     </button>
                   )}
-                  <button
-                    onClick={() => handleDeleteCompetition(comp.id, comp.title)}
-                    className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1 shadow-sm"
-                    title="Permanently delete competition"
-                  >
-                    <span>🗑️</span> Delete
-                  </button>
+                  {adminUser?.role === "super_admin" && (
+                    <button
+                      onClick={() => handleDeleteCompetition(comp)}
+                      disabled={deletingCompetitionId === comp.id}
+                      className="text-xs border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 px-3 py-1.5 rounded-lg font-semibold transition"
+                    >
+                      {deletingCompetitionId === comp.id ? "Deleting…" : "Permanently Delete"}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1465,11 +1579,64 @@ export default function CompetitionArenaAdminPage() {
       )}
 
       {/* ========================================================================= */}
+      {/* SUPER ADMIN EMERGENCY CONTROLS */}
+      {/* ========================================================================= */}
+      {activeTab === "emergency" && (
+        <section className="rounded-2xl border border-rose-200 dark:border-rose-900 bg-white dark:bg-[#0d172e] p-6 space-y-5">
+          <div>
+            <h2 className="text-xl font-black text-rose-700 dark:text-rose-300">Arena Emergency Control Centre</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-slate-300">Separate controls for the entire Arena, individual competitions, matches, student challenges and registration. Every change requires the Super Admin security PIN.</p>
+          </div>
+          {adminUser?.role !== "super_admin" ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">Emergency controls are restricted to Super Admin. Other Arena administrators may monitor but cannot activate platform-wide or scoped emergency switches.</div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="text-sm font-bold">Control scope
+                  <select value={emergencyScope} onChange={e => { const value = e.target.value as typeof emergencyScope; setEmergencyScope(value); setEmergencyTargetId(value === "global" ? "all" : ""); }} className="mt-1 w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+                    <option value="global">Entire Competition Arena</option>
+                    <option value="competition">Specific competition</option>
+                    <option value="match">Specific match</option>
+                    <option value="challenge">All student challenges</option>
+                    <option value="registration">All competition registration</option>
+                  </select>
+                </label>
+                {emergencyScope !== "global" && <label className="text-sm font-bold">Target ID
+                  <input value={emergencyTargetId} onChange={e => setEmergencyTargetId(e.target.value)} placeholder={emergencyScope === "challenge" || emergencyScope === "registration" ? "all" : "Paste target UUID"} className="mt-1 w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3" />
+                </label>}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <label className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900 p-4"><input type="checkbox" checked={emergencyControls.is_paused} onChange={e => setEmergencyControls(v => ({ ...v, is_paused: e.target.checked }))} /><span><strong className="block text-sm">Pause activity</strong><span className="text-xs text-gray-500">Block new activity in the selected scope</span></span></label>
+                <label className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-900 p-4"><input type="checkbox" checked={emergencyControls.freeze_leaderboards} onChange={e => setEmergencyControls(v => ({ ...v, freeze_leaderboards: e.target.checked }))} /><span><strong className="block text-sm">Freeze leaderboards</strong><span className="text-xs text-gray-500">Suspend ranking updates</span></span></label>
+                <label className="flex items-center gap-3 rounded-xl border border-rose-200 dark:border-rose-900 p-4"><input type="checkbox" checked={emergencyControls.maintenance_mode} onChange={e => setEmergencyControls(v => ({ ...v, maintenance_mode: e.target.checked }))} /><span><strong className="block text-sm">Maintenance mode</strong><span className="text-xs text-gray-500">Display maintenance state for this scope</span></span></label>
+              </div>
+              <label className="block text-sm font-bold">Emergency announcement
+                <textarea value={emergencyControls.announcement} onChange={e => setEmergencyControls(v => ({ ...v, announcement: e.target.value }))} rows={2} maxLength={500} className="mt-1 w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3" placeholder="Optional notice shown to affected Arena users" />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <input type="password" value={emergencyPin} onChange={e => setEmergencyPin(e.target.value)} placeholder="Admin Security PIN" className="w-full rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3" />
+                <button onClick={handleSaveEmergencyControls} disabled={emergencySaving} className="rounded-xl bg-rose-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50">{emergencySaving ? "Applying…" : "Apply emergency control"}</button>
+              </div>
+            </>
+          )}
+          <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
+            <h3 className="font-bold text-sm">Active scoped controls</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {scopedEmergencyControls.filter(item => Boolean(item.is_paused || item.maintenance_mode || item.freeze_leaderboards)).map((item, index) => (
+                <span key={String(item.id || index)} className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900">{String(item.scope)} · {String(item.target_id)} · {item.is_paused ? "Paused" : item.maintenance_mode ? "Maintenance" : "Frozen"}</span>
+              ))}
+              {scopedEmergencyControls.every(item => !item.is_paused && !item.maintenance_mode && !item.freeze_leaderboards) && <span className="text-xs text-gray-500">No active scoped emergency switches.</span>}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ========================================================================= */}
       {/* MODAL: CREATE COMPETITION */}
       {/* ========================================================================= */}
       {showNewCompModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
               <h3 className="text-base font-bold text-gray-900">Create Competition / Challenge</h3>
               <button onClick={() => setShowNewCompModal(false)} className="text-gray-400 hover:text-gray-700 font-bold">&times;</button>
@@ -1572,6 +1739,93 @@ export default function CompetitionArenaAdminPage() {
                 <label htmlFor="chk1v1Identical" className="text-xs text-gray-700 cursor-pointer">
                   Preserve Identical Questions for all participants (Synchronized battle equivalence)
                 </label>
+              </div>
+
+
+              <div className="border-t border-gray-100 pt-3 space-y-3">
+                <h4 className="font-bold text-gray-900">Match Scoring Rules</h4>
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                  <input type="checkbox" checked={newCompNegativeMarking} onChange={(e) => setNewCompNegativeMarking(e.target.checked)} />
+                  Enable negative marking for incorrect answers
+                </label>
+                {newCompNegativeMarking && <label className="block text-xs font-semibold text-gray-700">Penalty per incorrect answer (marks)
+                  <input type="number" min="0" step="0.05" value={newCompNegativeValue} onChange={(e) => setNewCompNegativeValue(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                </label>}
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                  <input type="checkbox" checked={newCompSpeedBonus} onChange={(e) => setNewCompSpeedBonus(e.target.checked)} />
+                  Enable server-timed speed bonus for correct answers
+                </label>
+                {newCompSpeedBonus && <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Maximum bonus points
+                    <input type="number" min="0" step="0.25" value={newCompSpeedBonusMax} onChange={(e) => setNewCompSpeedBonusMax(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Speed window (seconds)
+                    <input type="number" min="1" step="1" value={newCompSpeedBonusWindow} onChange={(e) => setNewCompSpeedBonusWindow(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                </div>}
+                <p className="text-[11px] text-gray-500">Answer timing and scoring are calculated on the server. These rules are stored with the competition and cannot be changed for an active match.</p>
+              </div>
+
+              <div className="border-t border-gray-100 pt-3 space-y-3">
+                <h4 className="font-bold text-gray-900">Registration & Access</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Access Mode
+                    <select value={newCompAccessMode} onChange={e => setNewCompAccessMode(e.target.value as typeof newCompAccessMode)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="free">Free entry</option><option value="code">Access code</option><option value="request">Request approval</option><option value="paid">Paid (BACHS)</option>
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Approval
+                    <select value={newCompApprovalMode} onChange={e => setNewCompApprovalMode(e.target.value as typeof newCompApprovalMode)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="automatic">Automatic</option><option value="manual">Manual organiser approval</option>
+                    </select>
+                  </label>
+                </div>
+                {newCompAccessMode === "paid" && <label className="block text-xs font-semibold text-gray-700">Entry fee (₦)
+                  <input type="number" min="1" step="1" required value={newCompEntryFeeNaira} onChange={e => setNewCompEntryFeeNaira(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                </label>}
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Registration opens
+                    <input type="datetime-local" value={newCompRegistrationOpen} onChange={e => setNewCompRegistrationOpen(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Registration closes
+                    <input type="datetime-local" value={newCompRegistrationClose} onChange={e => setNewCompRegistrationClose(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Competition starts
+                    <input type="datetime-local" value={newCompStartTime} onChange={e => setNewCompStartTime(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Competition ends
+                    <input type="datetime-local" value={newCompEndTime} onChange={e => setNewCompEndTime(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                  </label>
+                </div>
+                <label className="block text-xs font-semibold text-gray-700">Maximum participants (optional)
+                  <input type="number" min="1" step="1" value={newCompMaxParticipants} onChange={e => setNewCompMaxParticipants(e.target.value)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl" />
+                </label>
+              </div>
+
+              <div className="border-t border-gray-100 pt-3 space-y-3">
+                <h4 className="font-bold text-gray-900">Spectator & Result Rules</h4>
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={newCompAllowSpectators} onChange={e => setNewCompAllowSpectators(e.target.checked)} />Allow spectators</label>
+                {newCompAllowSpectators && <>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={newCompSpectatorQuestions} onChange={e => setNewCompSpectatorQuestions(e.target.checked)} />Allow spectators to view live questions</label>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={newCompSpectatorScoreboard} onChange={e => setNewCompSpectatorScoreboard(e.target.checked)} />Allow spectators to view live scoreboard</label>
+                </>}
+                {newCompAllowSpectators && <label className="block text-xs font-semibold text-gray-700">Spectator interaction
+                  <select value={newCompSpectatorMode} onChange={e => setNewCompSpectatorMode(e.target.value as typeof newCompSpectatorMode)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                    <option value="view_only">View only</option><option value="reactions">Reactions</option><option value="moderated_chat">Moderated chat</option>
+                  </select>
+                </label>}
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Results visibility
+                    <select value={newCompResultsVisibility} onChange={e => setNewCompResultsVisibility(e.target.value as typeof newCompResultsVisibility)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="hidden">Hidden</option><option value="participants">Participants</option><option value="public">Public</option><option value="after_completion">After completion</option>
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold text-gray-700">Answer reveal
+                    <select value={newCompAnswerReveal} onChange={e => setNewCompAnswerReveal(e.target.value as typeof newCompAnswerReveal)} className="mt-1 w-full p-2.5 border border-gray-300 rounded-xl">
+                      <option value="never">Never</option><option value="after_question">After each question</option><option value="after_round">After round</option><option value="after_match">After match</option><option value="after_competition">After competition</option>
+                    </select>
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">

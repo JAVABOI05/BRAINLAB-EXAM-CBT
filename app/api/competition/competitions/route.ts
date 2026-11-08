@@ -107,7 +107,49 @@ export async function POST(req: NextRequest) {
       visibility = "public",
       start_time,
       end_time,
+      access_mode = "free",
+      entry_fee_kobo = 0,
+      approval_mode = "automatic",
+      registration_opens_at = null,
+      registration_closes_at = null,
+      max_participants = null,
+      allow_spectators = true,
+      spectator_mode = "view_only",
+      spectator_questions_visible = false,
+      spectator_scoreboard_visible = true,
+      results_visibility = "after_completion",
+      answer_reveal_mode = "after_match",
+      scoring_config = {},
+      access_config = {},
     } = body;
+
+    if (!["free", "code", "request", "paid"].includes(access_mode)) {
+      return NextResponse.json({ error: "Invalid competition access mode." }, { status: 400 });
+    }
+    const normalizedEntryFee = Math.max(0, Math.round(Number(entry_fee_kobo) || 0));
+    if (access_mode === "paid" && normalizedEntryFee < 1) {
+      return NextResponse.json({ error: "Paid competitions require an entry fee greater than zero." }, { status: 400 });
+    }
+    if (!["automatic", "manual"].includes(approval_mode)) {
+      return NextResponse.json({ error: "Invalid participant approval mode." }, { status: 400 });
+    }
+    const normalizedMaxParticipants = max_participants === null || max_participants === "" ? null : Number(max_participants);
+    if (normalizedMaxParticipants !== null && (!Number.isInteger(normalizedMaxParticipants) || normalizedMaxParticipants < 1)) {
+      return NextResponse.json({ error: "Maximum participants must be a positive whole number." }, { status: 400 });
+    }
+    const registrationOpen = registration_opens_at ? new Date(registration_opens_at) : null;
+    const registrationClose = registration_closes_at ? new Date(registration_closes_at) : null;
+    if ((registrationOpen && Number.isNaN(registrationOpen.getTime())) || (registrationClose && Number.isNaN(registrationClose.getTime()))) {
+      return NextResponse.json({ error: "Invalid registration date/time." }, { status: 400 });
+    }
+    if (registrationOpen && registrationClose && registrationClose <= registrationOpen) {
+      return NextResponse.json({ error: "Registration closing time must be after opening time." }, { status: 400 });
+    }
+    if (!["view_only", "reactions", "moderated_chat"].includes(spectator_mode) ||
+        !["hidden", "participants", "public", "after_completion"].includes(results_visibility) ||
+        !["never", "after_question", "after_round", "after_match", "after_competition"].includes(answer_reveal_mode)) {
+      return NextResponse.json({ error: "Invalid spectator, result visibility or answer-reveal setting." }, { status: 400 });
+    }
 
     if (!title) {
       return NextResponse.json({ error: "Competition title is required" }, { status: 400 });
@@ -154,6 +196,20 @@ export async function POST(req: NextRequest) {
         creator_id: actor.id,
         start_time: start_time || null,
         end_time: end_time || null,
+        access_mode,
+        entry_fee_kobo: access_mode === "paid" ? normalizedEntryFee : 0,
+        approval_mode,
+        registration_opens_at: registrationOpen?.toISOString() || null,
+        registration_closes_at: registrationClose?.toISOString() || null,
+        max_participants: normalizedMaxParticipants,
+        allow_spectators: Boolean(allow_spectators),
+        spectator_mode,
+        spectator_questions_visible: Boolean(spectator_questions_visible),
+        spectator_scoreboard_visible: Boolean(spectator_scoreboard_visible),
+        results_visibility,
+        answer_reveal_mode,
+        scoring_config: scoring_config && typeof scoring_config === "object" ? scoring_config : {},
+        access_config: access_config && typeof access_config === "object" ? access_config : {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

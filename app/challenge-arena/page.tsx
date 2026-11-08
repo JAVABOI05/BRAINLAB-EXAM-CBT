@@ -16,7 +16,10 @@ interface Competition {
   status: "draft" | "pending_approval" | "scheduled" | "published" | "active" | "paused" | "cancelled" | "concluded";
   start_time: string | null;
   end_time: string | null;
-  entry_fee: number;
+  entry_fee?: number;
+  entry_fee_kobo?: number;
+  access_mode?: "free" | "code" | "request" | "paid";
+  approval_mode?: "automatic" | "manual";
   prize_pool?: string;
   current_participants?: number;
   max_participants?: number;
@@ -43,22 +46,26 @@ interface CBTQuestion {
 
 interface Challenge {
   id: string;
-  challenger_id: string;
-  challenged_id: string | null;
+  is_outgoing: boolean;
   subject: string;
   question_count: number;
   duration_minutes: number;
   difficulty: string;
   status: "pending" | "accepted" | "declined" | "expired" | "completed" | "cancelled";
+  challenge_type?: "individual" | "team";
+  challenger_team_id?: string | null;
+  challenged_team_id?: string | null;
+  challenger_team?: { id: string; name: string; slug: string; avatar_url: string | null } | null;
+  challenged_team?: { id: string; name: string; slug: string; avatar_url: string | null } | null;
   match_id?: string | null;
   created_at: string;
   challenger?: {
-    full_name?: string;
-    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
   };
   challenged?: {
-    full_name?: string;
-    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
   } | null;
 }
 
@@ -78,9 +85,11 @@ interface Team {
   is_my_team?: boolean;
 }
 
+type FounderSearchResult = { display_name: string; slug: string; avatar_url: string | null };
+
 interface LeaderboardEntry {
   rank: number | string;
-  user_id: string;
+  is_me: boolean;
   elo_rating: number;
   peak_elo: number;
   matches_played: number;
@@ -126,9 +135,11 @@ export default function ChallengeArenaPage() {
   // Data states
   const [loading, setLoading] = useState(true);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitionLoadError, setCompetitionLoadError] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
+  const [myTeamRole, setMyTeamRole] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [spectatorMatches, setSpectatorMatches] = useState<SpectatorMatch[]>([]);
 
@@ -141,12 +152,21 @@ export default function ChallengeArenaPage() {
   const [newChallengeQCount, setNewChallengeQCount] = useState(10);
   const [newChallengeDuration, setNewChallengeDuration] = useState(5);
   const [newChallengeDifficulty, setNewChallengeDifficulty] = useState("medium");
+  const [newChallengeMatchMode, setNewChallengeMatchMode] = useState<"ranked" | "friendly">("ranked");
   const [submittingChallenge, setSubmittingChallenge] = useState(false);
+  const [showTeamChallengeModal, setShowTeamChallengeModal] = useState(false);
+  const [teamChallengeTargetId, setTeamChallengeTargetId] = useState("");
+  const [teamChallengeRosterSize, setTeamChallengeRosterSize] = useState(2);
+  const [submittingTeamChallenge, setSubmittingTeamChallenge] = useState(false);
 
   // Squad modal
   const [showCreateSquadModal, setShowCreateSquadModal] = useState(false);
   const [newSquadName, setNewSquadName] = useState("");
   const [newSquadMotto, setNewSquadMotto] = useState("");
+  const [founderSearch, setFounderSearch] = useState("");
+  const [founderSearchResults, setFounderSearchResults] = useState<FounderSearchResult[]>([]);
+  const [selectedFounders, setSelectedFounders] = useState<FounderSearchResult[]>([]);
+  const [founderSearchLoading, setFounderSearchLoading] = useState(false);
   const [submittingSquad, setSubmittingSquad] = useState(false);
 
   // Tournament registration state
@@ -196,18 +216,26 @@ export default function ChallengeArenaPage() {
         .catch(() => {});
 
       // 3. Fetch Competitions with auth token to reflect candidate registration
-      const compRes = await fetch("/api/competition/competitions", { headers: authHeaders });
+      const compRes = await fetch("/api/competition/competitions", { headers: authHeaders, cache: "no-store" });
       if (compRes.ok) {
         const compJson = await compRes.json();
-        setCompetitions(compJson.competitions || []);
+        setCompetitions(Array.isArray(compJson.competitions) ? compJson.competitions : []);
+        setCompetitionLoadError(null);
+      } else {
+        const compError = await compRes.json().catch(() => ({}));
+        setCompetitions([]);
+        setCompetitionLoadError(compError.error || `Competition listings could not be loaded (HTTP ${compRes.status}).`);
       }
 
       // 4. Fetch Challenges
-      const chalRes = await fetch("/api/competition/challenges?filter=all", { headers: authHeaders });
-      if (chalRes.ok) {
-        const chalJson = await chalRes.json();
-        setChallenges(chalJson.challenges || []);
-      }
+      const [chalRes, openChallengeRes] = await Promise.all([
+        fetch("/api/competition/challenges?filter=all", { headers: authHeaders }),
+        fetch("/api/competition/challenges?filter=open", { headers: authHeaders }),
+      ]);
+      const ownChallengeJson = chalRes.ok ? await chalRes.json() : { challenges: [] };
+      const openChallengeJson = openChallengeRes.ok ? await openChallengeRes.json() : { challenges: [] };
+      const challengeRows = [...(ownChallengeJson.challenges || []), ...(openChallengeJson.challenges || [])];
+      setChallenges(Array.from(new Map(challengeRows.map((challenge) => [challenge.id, challenge])).values()));
 
       // 5. Fetch Teams
       const teamRes = await fetch("/api/competition/teams", { headers: authHeaders });
@@ -215,6 +243,7 @@ export default function ChallengeArenaPage() {
         const teamJson = await teamRes.json();
         setTeams(teamJson.teams || []);
         setMyTeamId(teamJson.my_team_id || null);
+        setMyTeamRole(teamJson.my_team_role || null);
       }
 
       // 6. Fetch Leaderboard & User Rating
@@ -264,6 +293,7 @@ export default function ChallengeArenaPage() {
           question_count: newChallengeQCount,
           duration_minutes: newChallengeDuration,
           difficulty: newChallengeDifficulty,
+          match_mode: newChallengeMatchMode,
           challenged_id: null,
         }),
       });
@@ -281,8 +311,50 @@ export default function ChallengeArenaPage() {
     }
   };
 
+  const handleCreateTeamChallenge = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!currentUser || !myTeamId) {
+      alert("You must be an active member of a team before issuing a team challenge.");
+      return;
+    }
+    if (myTeamRole !== "captain" && myTeamRole !== "co_captain") {
+      alert("Only your team's captain or co-captain can issue a team challenge.");
+      return;
+    }
+    try {
+      setSubmittingTeamChallenge(true);
+      const response = await fetch("/api/competition/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_type: "team",
+          challenger_team_id: myTeamId,
+          challenged_team_id: teamChallengeTargetId || null,
+          roster_size: teamChallengeRosterSize,
+          subject: newChallengeSubject,
+          question_count: newChallengeQCount,
+          duration_minutes: newChallengeDuration,
+          difficulty: newChallengeDifficulty,
+          match_mode: newChallengeMatchMode,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to issue team challenge.");
+      setShowTeamChallengeModal(false);
+      setTeamChallengeTargetId("");
+      await loadArenaData();
+      alert(teamChallengeTargetId
+        ? "Team challenge sent to the selected team."
+        : "Open team challenge published to the Arena.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to issue team challenge.");
+    } finally {
+      setSubmittingTeamChallenge(false);
+    }
+  };
+
   // Handle Accept Challenge
-  const handleAcceptChallenge = async (challengeId: string) => {
+  const handleAcceptChallenge = async (challengeId: string, acceptingTeamId?: string) => {
     if (!currentUser) {
       router.push("/auth/signin?redirect=/challenge-arena");
       return;
@@ -295,6 +367,7 @@ export default function ChallengeArenaPage() {
         body: JSON.stringify({
           challenge_id: challengeId,
           action: "accept",
+          ...(acceptingTeamId ? { accepting_team_id: acceptingTeamId } : {}),
         }),
       });
 
@@ -310,6 +383,34 @@ export default function ChallengeArenaPage() {
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Error accepting challenge");
     }
+  };
+
+  const searchFoundingMembers = async () => {
+    if (founderSearch.trim().length < 2) return;
+    setFounderSearchLoading(true);
+    try {
+      const response = await fetch(`/api/competition/profiles/search?q=${encodeURIComponent(founderSearch.trim())}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to search players.");
+      setFounderSearchResults(data.players || []);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Unable to search players.");
+    } finally {
+      setFounderSearchLoading(false);
+    }
+  };
+
+  const addFoundingMember = (player: FounderSearchResult) => {
+    setSelectedFounders(current => {
+      if (current.some(item => item.slug === player.slug)) return current;
+      if (current.length >= 9) {
+        alert("A team request can invite up to nine other founding members.");
+        return current;
+      }
+      return [...current, player];
+    });
+    setFounderSearchResults([]);
+    setFounderSearch("");
   };
 
   // Handle Create Squad
@@ -328,6 +429,7 @@ export default function ChallengeArenaPage() {
         body: JSON.stringify({
           name: newSquadName,
           motto: newSquadMotto,
+          founding_member_slugs: selectedFounders.map((founder) => founder.slug),
         }),
       });
 
@@ -337,10 +439,11 @@ export default function ChallengeArenaPage() {
       setShowCreateSquadModal(false);
       setNewSquadName("");
       setNewSquadMotto("");
+      setSelectedFounders([]);
+      setFounderSearch("");
+      setFounderSearchResults([]);
       loadArenaData();
-      if (data.team?.id) {
-        router.push(`/challenge-arena/teams/${data.team.id}`);
-      }
+      alert(data.message || "Your team request has been submitted for review.");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Error creating squad");
     } finally {
@@ -360,14 +463,26 @@ export default function ChallengeArenaPage() {
       setRegistrationMessage(null);
 
       const { data: { session } } = await supabase.auth.getSession();
+      const competition = competitions.find((item) => item.id === competitionId);
+      let accessCode: string | undefined;
+      if (competition?.access_mode === "code") {
+        const enteredCode = window.prompt("Enter the access code supplied by the competition organiser:");
+        if (!enteredCode?.trim()) {
+          setRegisteringCompId(null);
+          return;
+        }
+        accessCode = enteredCode.trim().toUpperCase();
+      }
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (session?.access_token) {
         headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
       }
 
       const res = await fetch(`/api/competition/competitions/${competitionId}/register`, {
         method: "POST",
         headers,
+        body: JSON.stringify({ accessCode }),
       });
 
       const data = await res.json();
@@ -379,7 +494,12 @@ export default function ChallengeArenaPage() {
         return;
       }
 
-      setRegistrationMessage({ text: "✓ Registered successfully for this competition!", ok: true });
+      setRegistrationMessage({
+        text: data.message || (competition?.access_mode === "request" || competition?.approval_mode === "manual"
+          ? "✓ Registration request submitted for organiser approval."
+          : "✓ Registered successfully for this competition!"),
+        ok: true,
+      });
       loadArenaData();
     } catch (err: unknown) {
       setRegistrationMessage({ text: err instanceof Error ? err.message : "Registration failed", ok: false });
@@ -531,6 +651,13 @@ export default function ChallengeArenaPage() {
             </Link>
           )}
 
+          <Link href="/challenge-arena/appeals" className="hidden sm:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-300 transition">
+            Appeals Centre
+          </Link>
+          <Link href="/challenge-arena/team-requests" className="hidden md:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">Team Requests</Link>
+          <Link href="/challenge-arena/rating-history" className="hidden md:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">Rating History</Link>
+          {currentUser && <Link href="/challenge-arena/profile" className="hidden md:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">My Profile</Link>}
+          {currentUser && <Link href="/challenge-arena/connections" className="hidden lg:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">Connections</Link>}
           <ArenaThemeToggle />
         </div>
       </header>
@@ -632,7 +759,13 @@ export default function ChallengeArenaPage() {
               </div>
             )}
 
-            {competitions.length === 0 ? (
+            {competitionLoadError ? (
+              <div role="alert" className={`p-6 rounded-3xl border text-center ${isDark ? "bg-rose-950/30 border-rose-800 text-rose-200" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                <h3 className="font-black">Competition listings are temporarily unavailable</h3>
+                <p className="mt-2 text-sm">{competitionLoadError}</p>
+                <button onClick={() => void loadArenaData()} className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white">Retry</button>
+              </div>
+            ) : competitions.length === 0 ? (
               <div className={`p-12 rounded-3xl border text-center shadow-lg ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
                 <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-3xl">🏆</div>
                 <h3 className="text-lg font-black">No Active Tournaments Scheduled</h3>
@@ -737,14 +870,22 @@ export default function ChallengeArenaPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black">1v1 Direct & Open Challenges</h2>
-                <p className="text-slate-400 text-xs">Accept open challenges from students online or launch your own duel</p>
+                <p className="text-slate-400 text-xs">Compete in individual duels and coordinated team battles.</p>
               </div>
-              <button
-                onClick={() => setShowCreateChallengeModal(true)}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2 self-start sm:self-auto"
-              >
-                <span>⚔️</span> Issue Challenge
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setShowCreateChallengeModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2"
+                >
+                  <span>⚔️</span> Issue 1v1
+                </button>
+                {myTeamId && (myTeamRole === "captain" || myTeamRole === "co_captain") && <button
+                  onClick={() => setShowTeamChallengeModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] text-white font-bold text-xs transition flex items-center gap-2"
+                >
+                  <span>🛡️</span> Challenge a Team
+                </button>}
+              </div>
             </div>
 
             {/* OFFICIAL 1V1 BATTLE COMPETITIONS */}
@@ -828,7 +969,7 @@ export default function ChallengeArenaPage() {
             {/* OPEN CHALLENGES BOARD */}
             <div className={`p-6 rounded-3xl border shadow-xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
               <h3 className="text-base font-bold mb-4 flex items-center gap-2">
-                <span>🔥</span> Open Challenges Waiting for Contenders ({challenges.filter((c) => c.status === "pending").length})
+                <span>🔥</span> Pending Challenges ({challenges.filter((c) => c.status === "pending").length})
               </h3>
 
               {challenges.filter((c) => c.status === "pending").length === 0 ? (
@@ -854,15 +995,26 @@ export default function ChallengeArenaPage() {
                             <span className="text-[11px] text-slate-400">{chal.duration_minutes} Mins</span>
                           </div>
                           <h4 className="font-bold text-sm">
-                            {chal.challenger?.full_name || chal.challenger?.username || "Anonymous Contender"}
+                            {chal.challenge_type === "team"
+                              ? (chal.challenger_team?.name || "Arena team")
+                              : (chal.challenger?.display_name || "Private player")}
                           </h4>
+                          {chal.challenge_type === "team" && <p className="text-[11px] font-bold text-[#FF5238] mt-1">TEAM BATTLE · {chal.challenged_team?.name || "OPEN CHALLENGE"}</p>}
                           <p className="text-xs text-slate-400 mt-1">
                             {chal.question_count} Questions • {chal.difficulty.toUpperCase()} Difficulty
                           </p>
                         </div>
 
-                        {chal.challenger_id === currentUser?.id ? (
-                          <span className="text-xs text-slate-400 italic text-center py-2">Your Open Challenge</span>
+                        {chal.is_outgoing ? (
+                          <span className="text-xs text-slate-400 italic text-center py-2">Your challenge is awaiting acceptance</span>
+                        ) : chal.challenge_type === "team" ? (
+                          <button
+                            disabled={!myTeamId || (myTeamRole !== "captain" && myTeamRole !== "co_captain") || submittingTeamChallenge}
+                            onClick={() => myTeamId && handleAcceptChallenge(chal.id, myTeamId)}
+                            className="w-full py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] disabled:opacity-40 text-white font-bold text-xs transition"
+                          >
+                            {!myTeamId ? "Join a team to accept" : myTeamRole === "captain" || myTeamRole === "co_captain" ? "Accept with My Team" : "Team leaders can accept"}
+                          </button>
                         ) : (
                           <button
                             onClick={() => handleAcceptChallenge(chal.id)}
@@ -988,10 +1140,10 @@ export default function ChallengeArenaPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-800/40">
                     {leaderboard.map((item) => {
-                      const isMe = item.user_id === currentUser?.id;
+                      const isMe = item.is_me;
                       return (
                         <tr
-                          key={item.user_id}
+                          key={item.rank}
                           className={`transition ${
                             isMe
                               ? "bg-blue-500/10 font-bold"
@@ -1004,7 +1156,7 @@ export default function ChallengeArenaPage() {
                             {item.rank === 1 ? "🥇 1" : item.rank === 2 ? "🥈 2" : item.rank === 3 ? "🥉 3" : `#${item.rank}`}
                           </td>
                           <td className="py-3.5 px-4 font-semibold">
-                            {item.profile?.full_name || item.profile?.username || "Candidate"}
+                            {item.profile?.full_name || item.profile?.username || "Private player"}
                             {isMe && <span className="text-xs text-blue-400 ml-1.5">(You)</span>}
                           </td>
                           <td className="py-3.5 px-4">
@@ -1105,6 +1257,12 @@ export default function ChallengeArenaPage() {
                 </select>
               </div>
 
+              <label className="text-xs font-bold text-slate-400 block">Difficulty
+                <select value={newChallengeDifficulty} onChange={(event) => setNewChallengeDifficulty(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="mixed">Mixed</option>
+                </select>
+              </label>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-400 block mb-1">Questions</label>
@@ -1131,6 +1289,18 @@ export default function ChallengeArenaPage() {
                     <option value={10}>10 Minutes</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-400 block mb-1">Match Type</label>
+                <select
+                  value={newChallengeMatchMode}
+                  onChange={(e) => setNewChallengeMatchMode(e.target.value as "ranked" | "friendly")}
+                  className={`w-full p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                >
+                  <option value="ranked">Ranked — affects competitive rating</option>
+                  <option value="friendly">Friendly — practice, no rating change</option>
+                </select>
               </div>
 
               <div className="flex gap-2 justify-end mt-2">
@@ -1389,6 +1559,61 @@ export default function ChallengeArenaPage() {
           </div>
         </div>
       )}
+      {/* CREATE TEAM CHALLENGE MODAL */}
+      {showTeamChallengeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className={`max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 rounded-3xl border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
+            <h3 className="text-xl font-black mb-1">Create a Team Battle</h3>
+            <p className="text-slate-400 text-xs mb-5">Only your team captain or co-captain can publish the challenge. Rosters are locked when the opposing team accepts.</p>
+            <form onSubmit={handleCreateTeamChallenge} className="flex flex-col gap-4">
+              <label className="text-xs font-bold text-slate-400">Opposing team
+                <select value={teamChallengeTargetId} onChange={(event) => setTeamChallengeTargetId(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="">Open challenge — any eligible team</option>
+                  {teams.filter((team) => team.id !== myTeamId).map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+                </select>
+              </label>
+              <label className="text-xs font-bold text-slate-400">Battle format
+                <select value={teamChallengeRosterSize} onChange={(event) => setTeamChallengeRosterSize(Number(event.target.value))} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value={2}>2 vs 2</option><option value={3}>3 vs 3</option><option value={4}>4 vs 4</option><option value={5}>5 vs 5</option>
+                </select>
+              </label>
+              <label className="text-xs font-bold text-slate-400">Subject
+                <select value={newChallengeSubject} onChange={(event) => setNewChallengeSubject(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  {["Mathematics","English","Physics","Chemistry","Biology","Economics","Government","General"].map((subject) => <option key={subject} value={subject}>{subject}</option>)}
+                </select>
+              </label>
+              <label className="text-xs font-bold text-slate-400">Difficulty
+                <select value={newChallengeDifficulty} onChange={(event) => setNewChallengeDifficulty(event.target.value)} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="mixed">Mixed</option>
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-xs font-bold text-slate-400">Questions
+                  <select value={newChallengeQCount} onChange={(event) => setNewChallengeQCount(Number(event.target.value))} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                    {[5,10,15,20].map((count) => <option key={count} value={count}>{count}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs font-bold text-slate-400">Duration
+                  <select value={newChallengeDuration} onChange={(event) => setNewChallengeDuration(Number(event.target.value))} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                    {[3,5,10].map((minutes) => <option key={minutes} value={minutes}>{minutes} min</option>)}
+                  </select>
+                </label>
+              </div>
+              <label className="text-xs font-bold text-slate-400">Match type
+                <select value={newChallengeMatchMode} onChange={(event) => setNewChallengeMatchMode(event.target.value as "ranked" | "friendly")} className={`mt-1 w-full p-3 rounded-xl border text-sm ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                  <option value="ranked">Ranked — affects team rating</option><option value="friendly">Friendly — no rating change</option>
+                </select>
+              </label>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowTeamChallengeModal(false)} className="px-4 py-2.5 rounded-xl text-slate-400 text-sm font-bold">Cancel</button>
+                <button type="submit" disabled={submittingTeamChallenge} className="px-5 py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] text-white text-sm font-bold disabled:opacity-50">{submittingTeamChallenge ? "Publishing…" : "Publish Team Challenge"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE SQUAD MODAL */}
       {showCreateSquadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
           <div className={`max-w-md w-full p-6 rounded-3xl border shadow-2xl ${isDark ? "bg-[#0D172E] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}>
@@ -1429,10 +1654,10 @@ export default function ChallengeArenaPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingSquad || !newSquadName.trim()}
+                  disabled={submittingSquad || !newSquadName.trim() || selectedFounders.length < 1}
                   className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition shadow-lg shadow-blue-600/25"
                 >
-                  {submittingSquad ? "Creating..." : "Establish Squad 🛡️"}
+                  {submittingSquad ? "Submitting..." : "Submit team request 🛡️"}
                 </button>
               </div>
             </form>

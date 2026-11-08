@@ -28,27 +28,36 @@ export async function GET(req: NextRequest) {
 
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from("user_profiles")
-          .select("id, full_name, username, avatar_url")
-          .in("id", userIds);
+          .from("competition_public_profiles")
+          .select("user_id, display_name, avatar_url")
+          .in("user_id", userIds)
+          .eq("visibility", "public");
 
         if (profiles) {
-          profilesMap = Object.fromEntries(profiles.map((p) => [p.id, p]));
+          profilesMap = Object.fromEntries(profiles.map((profile) => [profile.user_id, {
+            full_name: profile.display_name,
+            username: profile.display_name,
+            avatar_url: profile.avatar_url || undefined,
+          }]));
         }
       }
 
-      const individualRanked = (individualRows || []).map((r, idx) => ({
-        rank: idx + 1,
-        ...r,
-        profile: profilesMap[r.user_id] || { full_name: "Contender" },
-        win_rate: r.matches_played > 0 ? Math.round((r.matches_won / r.matches_played) * 100) : 0,
-      }));
+      const individualRanked = (individualRows || []).map((row, idx) => {
+        const { user_id: _privateUserId, ...publicRating } = row;
+        return {
+          rank: idx + 1,
+          ...publicRating,
+          profile: profilesMap[row.user_id] || { full_name: "Private player" },
+          is_me: Boolean(user && row.user_id === user.id),
+          win_rate: row.matches_played > 0 ? Math.round((row.matches_won / row.matches_played) * 100) : 0,
+        };
+      });
 
       responseData.individuals = individualRanked;
 
       // Personal user rank
       if (user) {
-        const myRankIndex = individualRanked.findIndex((r) => r.user_id === user.id);
+        const myRankIndex = (individualRows || []).findIndex((row) => row.user_id === user.id);
         if (myRankIndex >= 0) {
           responseData.my_rank = individualRanked[myRankIndex];
         } else {
@@ -61,7 +70,7 @@ export async function GET(req: NextRequest) {
           if (myRating) {
             responseData.my_rank = {
               rank: "50+",
-              ...myRating,
+              ...(({ user_id: _privateUserId, ...publicRating }) => publicRating)(myRating),
               win_rate: myRating.matches_played > 0 ? Math.round((myRating.matches_won / myRating.matches_played) * 100) : 0,
             };
           }
@@ -103,7 +112,10 @@ export async function GET(req: NextRequest) {
 
       if (mErr) throw mErr;
 
-      responseData.recent_matches = matches || [];
+      responseData.recent_matches = (matches || []).map((match) => {
+        const { winner_id: _winnerId, participant_a_id: _participantAId, participant_b_id: _participantBId, ...publicMatch } = match;
+        return publicMatch;
+      });
     }
 
     return NextResponse.json(responseData);

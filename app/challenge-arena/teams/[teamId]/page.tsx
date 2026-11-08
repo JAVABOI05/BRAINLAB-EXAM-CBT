@@ -7,10 +7,11 @@ import { useLearnerTheme } from "@/app/components/LearnerThemeProvider";
 import ArenaThemeToggle from "@/app/components/arena/ArenaThemeToggle";
 
 interface Member {
-  id: string;
-  user_id: string;
+  public_member_id: string;
+  is_me: boolean;
   role: "captain" | "co_captain" | "member" | "substitute";
   joined_at: string;
+  is_active: boolean;
   profile?: {
     full_name?: string;
     username?: string;
@@ -24,8 +25,8 @@ interface TeamData {
   slug: string;
   motto: string;
   avatar_url: string | null;
-  captain_id: string;
-  co_captain_id: string | null;
+  captain_member_id: string | null;
+  co_captain_member_id: string | null;
   is_recruiting: boolean;
   elo_rating: number;
   matches_played: number;
@@ -41,7 +42,8 @@ interface ElectionData {
   team_id: string;
   election_type: "captaincy" | "no_confidence";
   initiated_by: string;
-  candidate_ids: string[];
+  candidate_member_ids: string[];
+  winner_member_id?: string | null;
   status: string;
   start_time: string;
   end_time: string;
@@ -49,7 +51,6 @@ interface ElectionData {
 
 interface ApplicationData {
   id: string;
-  user_id: string;
   message: string;
   created_at: string;
   profile?: {
@@ -95,6 +96,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
       setTeam(data.team);
       setMembers(data.members || []);
       setActiveElection(data.activeElection || null);
+      setVoteSubmitted(Boolean(data.has_voted));
       setApplications(data.applications || []);
       setIsMyTeam(data.is_my_team);
       setMyRole(data.my_role);
@@ -182,7 +184,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
           action: "start_election",
           team_id: teamId,
           election_type: electionType,
-          candidate_ids: members.map((m) => m.user_id),
+          candidate_member_ids: members.map((m) => m.public_member_id),
         }),
       });
       const data = await res.json();
@@ -197,8 +199,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
   };
 
   // Handle Cast Vote
-  const handleVote = async () => {
-    if (!activeElection || !selectedCandidate) return;
+  const handleVote = async (voteChoice: "candidate" | "support" | "oppose" = "candidate") => {
+    if (!activeElection) return;
+    const candidateMemberId = activeElection.election_type === "no_confidence" ? team?.captain_member_id : selectedCandidate;
+    if (!candidateMemberId) return;
     try {
       setSubmittingAction(true);
       const res = await fetch("/api/competition/teams", {
@@ -207,7 +211,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
         body: JSON.stringify({
           action: "vote",
           election_id: activeElection.id,
-          candidate_id: selectedCandidate,
+          candidate_member_id: candidateMemberId,
+          vote_choice: voteChoice,
         }),
       });
       const data = await res.json();
@@ -217,6 +222,26 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
       fetchTeam();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Error casting vote");
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleFinalizeElection = async () => {
+    if (!activeElection) return;
+    try {
+      setSubmittingAction(true);
+      const response = await fetch("/api/competition/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "finalize_election", election_id: activeElection.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to finalise election.");
+      await fetchTeam();
+      alert("Election finalisation processed. The updated team leadership and ballot result are now available.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Unable to finalise election.");
     } finally {
       setSubmittingAction(false);
     }
@@ -354,39 +379,62 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
                 <h3 className="text-lg font-black text-amber-400">
                   {activeElection.election_type === "captaincy" ? "Democratic Captaincy Election" : "Vote of No-Confidence"}
                 </h3>
-                <p className="text-xs text-slate-400">All registered team members are eligible to cast 1 confidential vote.</p>
+                <p className="text-xs text-slate-400">All active team members are eligible for one confidential ballot.</p>
               </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/20 bg-slate-950/5 dark:bg-slate-950/30 p-3">
+              <p className="text-xs text-slate-500">Ballot deadline: {new Date(activeElection.end_time).toLocaleString()}</p>
+              {isMyTeam && (
+                <button
+                  onClick={handleFinalizeElection}
+                  disabled={submittingAction}
+                  className="rounded-lg border border-amber-500/50 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 disabled:opacity-50"
+                >
+                  Finalise after deadline
+                </button>
+              )}
             </div>
 
             {voteSubmitted ? (
               <div className="p-4 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm font-bold text-center mt-3">
-                ✓ Ballot submitted successfully! Thank you for participating in squad democracy.
+                ✓ Confidential ballot submitted. Thank you for participating in team democracy.
               </div>
             ) : isMyTeam ? (
-              <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
-                <select
-                  value={selectedCandidate || ""}
-                  onChange={(e) => setSelectedCandidate(e.target.value)}
-                  className={`flex-1 p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}
-                >
-                  <option value="">Select candidate nominee...</option>
-                  {members.map((m) => (
-                    <option key={m.user_id} value={m.user_id}>
-                      {m.profile?.full_name || m.profile?.username || "Member"} ({m.role.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={handleVote}
-                  disabled={submittingAction || !selectedCandidate}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-sm transition shadow-lg shadow-amber-500/25"
-                >
-                  Cast Official Vote
-                </button>
-              </div>
+              activeElection.election_type === "no_confidence" ? (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-slate-300">Do you support removing the current captain from office? Your ballot is confidential.</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button onClick={() => handleVote("support")} disabled={submittingAction} className="rounded-xl bg-rose-600 px-5 py-3 text-sm font-black text-white disabled:opacity-50">Support no-confidence</button>
+                    <button onClick={() => handleVote("oppose")} disabled={submittingAction} className="rounded-xl border border-slate-500 px-5 py-3 text-sm font-bold text-slate-200 disabled:opacity-50">Oppose no-confidence</button>
+                  </div>
+                  <p className="text-[11px] text-slate-500">The motion must reach the configured support threshold among eligible members. If it passes, a new captaincy election opens.</p>
+                </div>
+              ) : (
+                <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
+                  <select
+                    value={selectedCandidate || ""}
+                    onChange={(e) => setSelectedCandidate(e.target.value)}
+                    className={`flex-1 p-3 rounded-xl border text-sm font-semibold ${isDark ? "bg-[#0B1536] border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}
+                  >
+                    <option value="">Select candidate nominee...</option>
+                    {members.filter(member => member.is_active).map((m) => (
+                      <option key={m.public_member_id} value={m.public_member_id}>
+                        {m.profile?.full_name || m.profile?.username || "Member"} ({m.role.toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleVote("candidate")}
+                    disabled={submittingAction || !selectedCandidate}
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-sm transition shadow-lg shadow-amber-500/25"
+                  >
+                    Cast Official Vote
+                  </button>
+                </div>
+              )
             ) : (
-              <p className="text-xs text-slate-400 mt-2">Only squad members may cast a ballot in this internal election.</p>
+              <p className="text-xs text-slate-400 mt-2">Only active squad members may cast a confidential ballot.</p>
             )}
           </div>
         )}
@@ -449,7 +497,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ teamId: s
 
               return (
                 <div
-                  key={m.id}
+                  key={m.public_member_id}
                   className={`p-4 rounded-2xl border flex items-center gap-3.5 transition-all ${
                     isCap
                       ? "border-amber-500/40 bg-amber-500/5 shadow-md"
