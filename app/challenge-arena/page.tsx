@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import ArenaThemeToggle from "../components/arena/ArenaThemeToggle";
+import { normalizeQuestionOptions, normalizeClientQuestion, type ClientCompetitionQuestion } from "../lib/competitionEngine";
 
 interface Competition {
   id: string;
@@ -176,7 +177,8 @@ export default function ChallengeArenaPage() {
   // CBT Exam Simulation states
   const [activeExamComp, setActiveExamComp] = useState<Competition | null>(null);
   const [activeExamSessionId, setActiveExamSessionId] = useState<string | null>(null);
-  const [activeExamQuestions, setActiveExamQuestions] = useState<CBTQuestion[]>([]);
+  const [activeExamQuestions, setActiveExamQuestions] = useState<ClientCompetitionQuestion[]>([]);
+  const [examLaunchError, setExamLaunchError] = useState<{ message: string; comp?: Competition } | null>(null);
   const [activeExamIndex, setActiveExamIndex] = useState(0);
   const [activeExamAnswers, setActiveExamAnswers] = useState<Record<string, string>>({});
   const [activeExamTimeRemaining, setActiveExamTimeRemaining] = useState<number>(0);
@@ -190,7 +192,6 @@ export default function ChallengeArenaPage() {
     xpEarned?: number;
   } | null>(null);
   const [examLoading, setExamLoading] = useState(false);
-  const [examLaunchError, setExamLaunchError] = useState<string | null>(null);
 
   // Fetch initial user & arena data
   const loadArenaData = useCallback(async () => {
@@ -508,8 +509,7 @@ export default function ChallengeArenaPage() {
     }
   };
 
-  // Launch Active Competition CBT Attempt. Validate the server payload before
-  // opening the exam UI so malformed competition metadata cannot crash React.
+  // Launch Active Competition CBT Attempt
   const handleStartAttempt = async (comp: Competition) => {
     if (examLoading) return;
     try {
@@ -517,7 +517,9 @@ export default function ChallengeArenaPage() {
       setExamLaunchError(null);
       const { data: { session } } = await supabase.auth.getSession();
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
 
       const res = await fetch(`/api/competition/competitions/${comp.id}/start-attempt`, {
         method: "POST",
@@ -525,64 +527,51 @@ export default function ChallengeArenaPage() {
         cache: "no-store",
         body: JSON.stringify({ displayName: currentUser?.email?.split("@")[0] || "Contender" }),
       });
+
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `Unable to start this exam (HTTP ${res.status}). Please try again.`);
-
       if (typeof data.sessionId !== "string" || !data.sessionId.trim()) {
-        throw new Error("The exam service did not return a valid session. No exam has been opened; please try again.");
-      }
-      if (!Array.isArray(data.questions) || data.questions.length === 0) {
-        throw new Error(data.error || "This competition does not currently have enough valid questions. Please contact the organiser.");
+        throw new Error("The exam service did not return a valid session. Please try again.");
       }
 
-      const questions: CBTQuestion[] = data.questions.map((rawQuestion: unknown, index: number) => {
-        if (!rawQuestion || typeof rawQuestion !== "object" || Array.isArray(rawQuestion)) {
-          throw new Error(`Question ${index + 1} is incomplete. Please contact the competition organiser.`);
+      const rawQuestions = Array.isArray(data.questions) ? data.questions : [];
+      const normalizedQuestions = rawQuestions.map(normalizeClientQuestion);
+
+      if (normalizedQuestions.length === 0) {
+        throw new Error("No approved questions could be loaded for this competition.");
+      }
+
+      setActiveExamComp(comp);
+      setActiveExamSessionId(data.sessionId);
+      setActiveExamQuestions(normalizedQuestions);
+      setActiveExamIndex(0);
+
+      // Attempt recovery: restore saved answers from localStorage if available
+      try {
+        const saved = localStorage.getItem(`bl_arena_answers_${data.sessionId}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            setActiveExamAnswers(parsed);
+          } else {
+            setActiveExamAnswers({});
+          }
+        } else {
+          setActiveExamAnswers({});
         }
-        const question = rawQuestion as Record<string, unknown>;
-        // The assessment engine stores options as a keyed object ({ A: "...", B: "..." }),
-        // while this student UI renders a list. Support both shapes explicitly.
-        const rawOptions = question.options;
-        const options: Array<{ key: string; text: string }> = Array.isArray(rawOptions)
-          ? rawOptions
-              .flatMap((rawOption: unknown) => {
-                if (!rawOption || typeof rawOption !== "object" || Array.isArray(rawOption)) return [];
-                const option = rawOption as Record<string, unknown>;
-                if (typeof option.key !== "string" || typeof option.text !== "string") return [];
-                return [{ key: option.key.toUpperCase(), text: option.text }];
-              })
-          : rawOptions && typeof rawOptions === "object"
-            ? Object.entries(rawOptions as Record<string, unknown>)
-                .filter(([key, value]) => /^[A-E]$/i.test(key) && typeof value === "string" && value.trim().length > 0)
-                .map(([key, value]) => ({ key: key.toUpperCase(), text: value as string }))
-                .sort((a, b) => a.key.localeCompare(b.key))
-            : [];
-        if (typeof question.id !== "string" || typeof question.question !== "string" || options.length < 2) {
-          throw new Error(`Question ${index + 1} is incomplete. Please contact the competition organiser.`);
-        }
-        return { ...question, options } as unknown as CBTQuestion;
-      });
+      } catch {
+        setActiveExamAnswers({});
+      }
 
       const durationSeconds = Number(data.durationSeconds || comp.rules?.duration_seconds || 300);
       if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
-        throw new Error("The competition has an invalid exam duration. Please contact the organiser.");
+        throw new Error("This competition has an invalid exam duration. Please contact the organiser.");
       }
-
-      setActiveExamComp({
-        ...comp,
-        competition_type: comp.competition_type || "competition",
-        code: comp.code || "",
-        title: comp.title || "Competition Exam",
-      });
-      setActiveExamSessionId(data.sessionId);
-      setActiveExamQuestions(questions);
-      setActiveExamIndex(0);
-      setActiveExamAnswers({});
       setActiveExamTimeRemaining(Math.floor(durationSeconds));
       setActiveExamResult(null);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An unexpected error occurred while opening the exam.";
-      setExamLaunchError(message);
+      const msg = err instanceof Error ? err.message : "Error launching exam";
+      setExamLaunchError({ message: msg, comp });
     } finally {
       setExamLoading(false);
     }
@@ -1371,22 +1360,6 @@ export default function ChallengeArenaPage() {
         </div>
       )}
 
-      {(examLoading || examLaunchError) && (
-        <div role="status" aria-live="polite" className="fixed bottom-5 left-1/2 z-[70] w-[min(92vw,34rem)] -translate-x-1/2">
-          <div className={`rounded-2xl border p-4 shadow-2xl ${isDark ? "border-slate-700 bg-[#0D172E] text-white" : "border-slate-200 bg-white text-slate-900"}`}>
-            {examLoading ? (
-              <p className="text-sm font-semibold">Preparing your examination securely…</p>
-            ) : (
-              <>
-                <p className="text-sm font-bold text-rose-500">We couldn&apos;t open this examination</p>
-                <p className="mt-1 text-sm">{examLaunchError}</p>
-                <button type="button" onClick={() => setExamLaunchError(null)} className="mt-3 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white">Dismiss</button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* CBT EXAM SIMULATOR MODAL */}
       {activeExamComp && activeExamQuestions.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -1399,9 +1372,9 @@ export default function ChallengeArenaPage() {
             }`}>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">
-                  {(activeExamComp.competition_type || "COMPETITION").replace(/_/g, " ").toUpperCase()} • {activeExamComp.code || "ARENA"}
+                  {(activeExamComp.competition_type || "arena").replace(/_/g, " ").toUpperCase()} • {activeExamComp.code || "BL-ARENA"}
                 </span>
-                <h2 className="text-base sm:text-lg font-black truncate max-w-md">{activeExamComp.title}</h2>
+                <h2 className="text-base sm:text-lg font-black truncate max-w-md">{activeExamComp.title || "Examination"}</h2>
               </div>
 
               <div className="flex items-center gap-3">
@@ -1517,14 +1490,17 @@ export default function ChallengeArenaPage() {
 
                       {/* OPTIONS LIST */}
                       <div className="grid grid-cols-1 gap-3">
-                        {currentQ.options.map((opt) => {
+                        {normalizeQuestionOptions(currentQ.options).map((opt) => {
                           const isSelected = chosenOption === opt.key;
                           return (
                             <button
                               key={opt.key}
                               type="button"
                               onClick={() => {
-                                setActiveExamAnswers((prev) => ({ ...prev, [currentQ.id]: opt.key }));
+                                const next = { ...activeExamAnswers, [currentQ.id]: opt.key };
+                                setActiveExamAnswers(next);
+                                if (activeExamSessionId) {
+                                  try { localStorage.setItem("bl_arena_answers_" + activeExamSessionId, JSON.stringify(next)); } catch {}}
                               }}
                               className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all ${
                                 isSelected
