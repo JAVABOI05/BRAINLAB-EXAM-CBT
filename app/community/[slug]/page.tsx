@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
-import type { CommunityGroup } from "@/app/lib/community/types";
+import type {
+  CommunityGroup,
+  CommunityAnnouncement,
+  CommunityPoll,
+  PollOption,
+} from "@/app/lib/community/types";
 
 export default function CommunityGroupSpacePage() {
   const params = useParams();
@@ -17,38 +22,54 @@ export default function CommunityGroupSpacePage() {
   const [isJoining, setIsJoining] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  // Phase 2: Live Announcements & Polls State
+  const [announcements, setAnnouncements] = useState<CommunityAnnouncement[]>([]);
+  const [polls, setPolls] = useState<CommunityPoll[]>([]);
+  const [selectedPollOptions, setSelectedPollOptions] = useState<Record<string, string>>({});
+  const [votingId, setVotingId] = useState<string | null>(null);
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
 
-    async function loadGroup() {
-      try {
-        setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        const headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-        }
-
-        const res = await fetch(`/api/community/groups/${slug}`, { headers });
-        const json = await res.json();
-        if (active && json.ok && json.data) {
-          setGroup(json.data);
-        }
-      } catch {
-        // Fallback or error handled below
-      } finally {
-        if (active) setLoading(false);
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
       }
-    }
 
-    if (slug) {
-      void loadGroup();
-    }
+      // 1. Fetch group
+      const resGroup = await fetch(`/api/community/groups/${slug}`, { headers });
+      const jsonGroup = await resGroup.json();
+      if (jsonGroup.ok && jsonGroup.data) {
+        setGroup(jsonGroup.data);
+      }
 
-    return () => {
-      active = false;
-    };
+      // 2. Fetch announcements
+      const resAnn = await fetch(`/api/community/groups/${slug}/announcements`, { headers });
+      const jsonAnn = await resAnn.json();
+      if (jsonAnn.ok && Array.isArray(jsonAnn.data)) {
+        setAnnouncements(jsonAnn.data);
+      }
+
+      // 3. Fetch polls
+      const resPolls = await fetch(`/api/community/groups/${slug}/polls`, { headers });
+      const jsonPolls = await resPolls.json();
+      if (jsonPolls.ok && Array.isArray(jsonPolls.data)) {
+        setPolls(jsonPolls.data);
+      }
+    } catch {
+      // Handled gracefully
+    } finally {
+      setLoading(false);
+    }
   }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      void loadData();
+    }
+  }, [slug, loadData]);
 
   const handleJoin = async () => {
     if (!group) return;
@@ -94,6 +115,88 @@ export default function CommunityGroupSpacePage() {
       setActionMessage("Connection error. Please try again.");
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handleAcknowledge = async (announcementId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      setAcknowledgingId(announcementId);
+
+      const res = await fetch(`/api/community/groups/${slug}/announcements/${announcementId}/read`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ acknowledge: true }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        setAnnouncements((prev) =>
+          prev.map((a) => (a.id === announcementId ? { ...a, is_read: true, acknowledged_at: new Date().toISOString() } : a))
+        );
+      }
+    } catch {
+      // Non-fatal
+    } finally {
+      setAcknowledgingId(null);
+    }
+  };
+
+  const handleVote = async (pollId: string) => {
+    const selected = selectedPollOptions[pollId];
+    if (!selected) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        router.push(`/login?redirect=/community/${slug}`);
+        return;
+      }
+
+      setVotingId(pollId);
+
+      const res = await fetch(`/api/community/groups/${slug}/polls/${pollId}/vote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ selected_options: [selected] }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        setPolls((prev) =>
+          prev.map((p) => {
+            if (p.id !== pollId) return p;
+            const updatedTotal = (p.total_votes || 0) + 1;
+            const updatedOptions = p.options.map((opt: PollOption) => {
+              const newCount = opt.id === selected ? (opt.votes_count || 0) + 1 : opt.votes_count || 0;
+              return {
+                ...opt,
+                votes_count: newCount,
+                percentage: Math.round((newCount / updatedTotal) * 100),
+              };
+            });
+            return {
+              ...p,
+              total_votes: updatedTotal,
+              user_voted: true,
+              user_selected_options: [selected],
+              options: updatedOptions,
+            };
+          })
+        );
+      }
+    } catch {
+      // Non-fatal
+    } finally {
+      setVotingId(null);
     }
   };
 
@@ -218,7 +321,7 @@ export default function CommunityGroupSpacePage() {
       <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {activeTab === "feed" && (
           <div className="grid gap-6 md:grid-cols-3">
-            {/* Left 2 Cols: Activity Feed */}
+            {/* Left 2 Cols: Activity Feed, Announcements & Polls */}
             <div className="md:col-span-2 space-y-6">
               {/* Daily Assessment Alert Card */}
               <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white p-6 shadow-sm dark:border-indigo-950 dark:from-slate-900 dark:to-slate-950">
@@ -250,25 +353,165 @@ export default function CommunityGroupSpacePage() {
                 </div>
               </div>
 
-              {/* Tutor Announcements */}
+              {/* Announcements Section (Phase 2 Live Engine) */}
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>📢</span> Cohort Announcements
-                </h4>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+                  <h4 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>📢</span> Faculty Announcements ({announcements.length})
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-400">Moderated Feed</span>
+                </div>
+
                 <div className="mt-4 space-y-4">
-                  <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">
-                        Faculty Notice: Review Session Timetable
-                      </span>
-                      <span className="text-[10px] text-slate-400">2 hours ago</span>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      Please ensure you have completed the Saturday speed drill before the live review session on Monday at 5:00 PM. High-error questions will be analyzed in detail.
-                    </p>
-                  </div>
+                  {announcements.map((ann) => (
+                    <article
+                      key={ann.id}
+                      className={`rounded-2xl p-4 transition border ${
+                        ann.priority === "urgent" || ann.priority === "critical"
+                          ? "bg-rose-50/50 border-rose-200 dark:bg-rose-950/20 dark:border-rose-900/40"
+                          : "bg-slate-50 border-slate-200/80 dark:bg-slate-950 dark:border-slate-800"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {ann.is_pinned && <span className="text-xs">📌</span>}
+                          <h5 className="text-xs font-extrabold text-slate-950 dark:text-white">
+                            {ann.title}
+                          </h5>
+                          {ann.priority !== "normal" && (
+                            <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-rose-600 border border-rose-500/20">
+                              {ann.priority}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 shrink-0">
+                          {new Date(ann.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                        {ann.content}
+                      </p>
+
+                      {/* Acknowledgement and Status */}
+                      {ann.requires_acknowledgement && (
+                        <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                            ⚠️ Faculty Acknowledgement Required
+                          </span>
+                          {ann.acknowledged_at ? (
+                            <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                              ✓ Acknowledged
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleAcknowledge(ann.id)}
+                              disabled={acknowledgingId === ann.id}
+                              className="rounded-lg bg-blue-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-blue-500 transition disabled:opacity-50"
+                            >
+                              {acknowledgingId === ann.id ? "Confirming..." : "Acknowledge Notice"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  ))}
                 </div>
               </div>
+
+              {/* Checkpoint Polls Section (Phase 2 Live Engine) */}
+              {polls.length > 0 && (
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>📊</span> Cohort Checkpoint Poll
+                    </h4>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Live Feedback</span>
+                  </div>
+
+                  <div className="mt-4 space-y-6">
+                    {polls.map((poll) => {
+                      const isVoting = votingId === poll.id;
+                      const userSelected = selectedPollOptions[poll.id] || poll.user_selected_options?.[0];
+
+                      return (
+                        <div key={poll.id} className="rounded-2xl bg-slate-50 p-5 dark:bg-slate-950">
+                          <h5 className="text-xs font-bold text-slate-900 dark:text-white">
+                            {poll.question}
+                          </h5>
+
+                          <div className="mt-3 space-y-2">
+                            {poll.options.map((opt: PollOption) => {
+                              const isChosen = userSelected === opt.id;
+                              return (
+                                <div key={opt.id} className="space-y-1">
+                                  <label
+                                    className={`flex items-center justify-between rounded-xl border p-3 text-xs transition cursor-pointer ${
+                                      isChosen
+                                        ? "border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200"
+                                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <input
+                                        type="radio"
+                                        name={`poll-${poll.id}`}
+                                        checked={isChosen}
+                                        onChange={() =>
+                                          !poll.user_voted &&
+                                          setSelectedPollOptions((prev) => ({ ...prev, [poll.id]: opt.id }))
+                                        }
+                                        disabled={poll.user_voted || poll.is_closed}
+                                        className="text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                                        {opt.text}
+                                      </span>
+                                    </div>
+                                    {(poll.user_voted || poll.is_closed) && (
+                                      <span className="text-[11px] font-black text-slate-600 dark:text-slate-400">
+                                        {opt.percentage || 0}%
+                                      </span>
+                                    )}
+                                  </label>
+
+                                  {(poll.user_voted || poll.is_closed) && (
+                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                                      <div
+                                        className="h-full bg-blue-600 transition-all duration-500"
+                                        style={{ width: `${opt.percentage || 0}%` }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-4 flex items-center justify-between pt-2">
+                            <span className="text-[10px] text-slate-400">
+                              {poll.total_votes || 0} votes cast • {poll.is_anonymous ? "Anonymous" : "Named"}
+                            </span>
+                            {!poll.user_voted && !poll.is_closed ? (
+                              <button
+                                onClick={() => handleVote(poll.id)}
+                                disabled={isVoting || !selectedPollOptions[poll.id]}
+                                className="rounded-xl bg-[#012153] px-4 py-1.5 text-xs font-bold text-white hover:bg-blue-900 transition disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500"
+                              >
+                                {isVoting ? "Submitting..." : "Submit Vote"}
+                              </button>
+                            ) : (
+                              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                ✓ Vote Recorded
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right 1 Col: Cohort Stats & Leaderboard Widget */}

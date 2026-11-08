@@ -27,6 +27,22 @@ export default function TutorGroupsManagementPage() {
   const [formSuccess, setFormSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Announcement & Poll Modals
+  const [selectedGroup, setSelectedGroup] = useState<CommunityGroup | null>(null);
+  const [isAnnouncing, setIsAnnouncing] = useState(false);
+  const [annTitle, setAnnTitle] = useState("");
+  const [annContent, setAnnContent] = useState("");
+  const [annPriority, setAnnPriority] = useState<"normal" | "urgent" | "critical">("normal");
+  const [annRequiresAck, setAnnRequiresAck] = useState(false);
+
+  const [isPolling, setIsPolling] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOpt1, setPollOpt1] = useState("");
+  const [pollOpt2, setPollOpt2] = useState("");
+  const [pollOpt3, setPollOpt3] = useState("");
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+
   const loadTutorGroups = useCallback(async () => {
     try {
       setLoading(true);
@@ -108,6 +124,93 @@ export default function TutorGroupsManagementPage() {
       setFormError("Connection error while creating group.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePostAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup || !annTitle.trim() || !annContent.trim()) return;
+    try {
+      setModalSubmitting(true);
+      setModalMessage("");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`/api/community/groups/${selectedGroup.slug}/announcements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          title: annTitle.trim(),
+          content: annContent.trim(),
+          priority: annPriority,
+          requires_acknowledgement: annRequiresAck,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        setModalMessage("Announcement successfully broadcast to cohort!");
+        setAnnTitle("");
+        setAnnContent("");
+        setTimeout(() => {
+          setIsAnnouncing(false);
+          setModalMessage("");
+        }, 1500);
+      } else {
+        setModalMessage(json.error || "Failed to broadcast announcement.");
+      }
+    } catch {
+      setModalMessage("Network error broadcasting announcement.");
+    } finally {
+      setModalSubmitting(false);
+    }
+  };
+
+  const handlePostPoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup || !pollQuestion.trim() || !pollOpt1.trim() || !pollOpt2.trim()) return;
+    try {
+      setModalSubmitting(true);
+      setModalMessage("");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const options = [pollOpt1.trim(), pollOpt2.trim()];
+      if (pollOpt3.trim()) options.push(pollOpt3.trim());
+
+      const res = await fetch(`/api/community/groups/${selectedGroup.slug}/polls`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          question: pollQuestion.trim(),
+          options,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        setModalMessage("Checkpoint poll successfully published!");
+        setPollQuestion("");
+        setPollOpt1("");
+        setPollOpt2("");
+        setPollOpt3("");
+        setTimeout(() => {
+          setIsPolling(false);
+          setModalMessage("");
+        }, 1500);
+      } else {
+        setModalMessage(json.error || "Failed to publish poll.");
+      }
+    } catch {
+      setModalMessage("Network error publishing poll.");
+    } finally {
+      setModalSubmitting(false);
     }
   };
 
@@ -306,24 +409,240 @@ export default function TutorGroupsManagementPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <Link
-                    href={`/community/${group.slug}`}
-                    className="text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
-                  >
-                    Open Space →
-                  </Link>
-                  <Link
-                    href={`/cbt?cohort=${group.slug}`}
-                    className="rounded-xl bg-slate-100 px-3 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    Assign Test
-                  </Link>
+                <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroup(group);
+                        setIsAnnouncing(true);
+                        setIsPolling(false);
+                      }}
+                      className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300"
+                    >
+                      📢 Broadcast
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroup(group);
+                        setIsPolling(true);
+                        setIsAnnouncing(false);
+                      }}
+                      className="rounded-lg bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300"
+                    >
+                      📊 Poll
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/community/${group.slug}`}
+                      className="text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      Open Space →
+                    </Link>
+                    <Link
+                      href={`/cbt?cohort=${group.slug}`}
+                      className="rounded-xl bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+                    >
+                      Assign Test
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Modal: Broadcast Announcement */}
+        {isAnnouncing && selectedGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  📢 Broadcast to {selectedGroup.name}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAnnouncing(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {modalMessage && (
+                <div className="mt-4 rounded-xl bg-blue-50 p-3 text-xs font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                  {modalMessage}
+                </div>
+              )}
+
+              <form onSubmit={handlePostAnnouncement} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Announcement Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={annTitle}
+                    onChange={(e) => setAnnTitle(e.target.value)}
+                    placeholder="e.g. Saturday Timed Diagnostic Exam Guidelines"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Notice Content
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={annContent}
+                    onChange={(e) => setAnnContent(e.target.value)}
+                    placeholder="Provide full instructions and requirements for candidates..."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Priority Level
+                    </label>
+                    <select
+                      value={annPriority}
+                      onChange={(e) => setAnnPriority(e.target.value as "normal" | "urgent" | "critical")}
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="urgent">Urgent</option>
+                      <option value="critical">Critical (Mandatory)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center pt-5">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={annRequiresAck}
+                        onChange={(e) => setAnnRequiresAck(e.target.checked)}
+                        className="rounded border-slate-300 text-blue-600"
+                      />
+                      Require Candidate Ack
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsAnnouncing(false)}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={modalSubmitting}
+                    className="rounded-xl bg-[#012153] px-5 py-2 text-xs font-bold text-white hover:bg-blue-900 disabled:opacity-50 dark:bg-blue-600"
+                  >
+                    {modalSubmitting ? "Broadcasting..." : "Publish Broadcast"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Launch Checkpoint Poll */}
+        {isPolling && selectedGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  📊 Checkpoint Poll for {selectedGroup.name}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsPolling(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {modalMessage && (
+                <div className="mt-4 rounded-xl bg-purple-50 p-3 text-xs font-bold text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
+                  {modalMessage}
+                </div>
+              )}
+
+              <form onSubmit={handlePostPoll} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Poll Question / Checkpoint
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    placeholder="e.g. Which area of Organic Chemistry needs live revision this Friday?"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Options
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={pollOpt1}
+                    onChange={(e) => setPollOpt1(e.target.value)}
+                    placeholder="Option 1 (e.g. Reaction Mechanisms & Synthesis)"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                  <input
+                    type="text"
+                    required
+                    value={pollOpt2}
+                    onChange={(e) => setPollOpt2(e.target.value)}
+                    placeholder="Option 2 (e.g. Nomenclature & Isomerism)"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                  <input
+                    type="text"
+                    value={pollOpt3}
+                    onChange={(e) => setPollOpt3(e.target.value)}
+                    placeholder="Option 3 (Optional: Spectroscopy & Laboratory tests)"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsPolling(false)}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={modalSubmitting}
+                    className="rounded-xl bg-purple-600 px-5 py-2 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {modalSubmitting ? "Publishing..." : "Launch Poll"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </InstructorPortalShell>
   );

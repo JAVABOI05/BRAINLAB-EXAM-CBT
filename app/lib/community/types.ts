@@ -84,3 +84,72 @@ export interface CommunityFilterOptions {
   subject_id?: string;
   search?: string;
 }
+
+
+export type CommunityAnnouncementPriority = "normal" | "urgent" | "critical";
+
+export interface CommunityAnnouncementAttachment {
+  title: string;
+  url: string;
+  file_type?: string;
+  size_bytes?: number;
+}
+
+export interface CommunityAnnouncement {
+  id: string;
+  group_id: string;
+  author_id: string;
+  title: string;
+  content: string;
+  priority: CommunityAnnouncementPriority;
+  is_pinned: boolean;
+  requires_acknowledgement: boolean;
+  attachments: CommunityAnnouncementAttachment[];
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Computed / Caller-specific fields
+  is_read?: boolean;
+  acknowledged_at?: string | null;
+  author_name?: string;
+}
+
+export interface CommunityAnnouncementReceipt {
+  id: string;
+  announcement_id: string;
+  user_id: string;
+  read_at: string;
+  acknowledged_at: string | null;
+}
+
+export interface PollOption {
+  id: string;
+  text: string;
+  votes_count?: number;
+  percentage?: number;
+}
+
+export interface CommunityPoll {
+  id: string;
+  group_id: string;
+  created_by: string;
+  question: string;
+  options: PollOption[];
+  is_anonymous: boolean;
+  is_multiple_choice: boolean;
+  closes_at: string;
+  is_closed: boolean;
+  created_at: string;
+  // Computed / Aggregated fields
+  total_votes?: number;
+  user_voted?: boolean;
+  user_selected_options?: string[];
+}
+
+export interface CommunityPollVote {
+  id: string;
+  poll_id: string;
+  user_id: string;
+  selected_options: string[];
+  created_at: string;
+}
