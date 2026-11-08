@@ -3,10 +3,9 @@ import {
   getSupabasePublicServerClient,
   getSupabaseServerClient,
   getUserFromRequest,
-  resolveAdminRole,
 } from "@/app/lib/supabaseServer";
 import { getStemResourceBySlug } from "@/app/lib/stem/stemService";
-import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
+import { getStemResourceAccess, resolveStemAccessContext } from "@/app/lib/stem/stemAccess";
 
 export async function GET(
   request: NextRequest,
@@ -22,11 +21,8 @@ export async function GET(
     const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
     const user = await getUserFromRequest(request);
 
-    let isAuthorizedReviewer = false;
-    if (user) {
-      const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
-      isAuthorizedReviewer = isInstructorRole(role) || isGovernanceAdminRole(role);
-    }
+    const accessContext = await resolveStemAccessContext(user, token);
+    const isAuthorizedReviewer = accessContext.isPrivileged;
 
     const client = isAuthorizedReviewer && token
       ? getSupabaseServerClient(token)
@@ -42,6 +38,18 @@ export async function GET(
       return NextResponse.json({ ok: false, error: "STEM resource not found" }, { status: 404 });
     }
 
+    const stem_access = getStemResourceAccess(accessContext, resource);
+    if (stem_access.locked) {
+      return NextResponse.json({
+        ok: false,
+        locked: true,
+        error: "This STEM resource requires a higher subscription access level.",
+        required_access_level: stem_access.requiredLevel,
+        current_access_level: stem_access.currentLevel,
+        upgrade_url: "/pricing?feature=stem",
+      }, { status: 403 });
+    }
+
     // Also fetch curriculum mappings
     const { data: mappings } = await client
       .from("stem_curriculum_mappings")
@@ -50,7 +58,7 @@ export async function GET(
 
     return NextResponse.json({
       ok: true,
-      resource,
+      resource: { ...resource, stem_access },
       curriculum_mappings: mappings || [],
     });
   } catch (err) {
