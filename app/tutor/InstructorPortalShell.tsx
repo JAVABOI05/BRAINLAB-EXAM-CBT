@@ -20,6 +20,7 @@ const INSTRUCTOR_NAV_LINKS = [
   { href: "/classroom/studio", label: "Lesson Studio", icon: "🎬" },
   { href: "/classroom/stem", label: "STEM Studio", icon: "🧪" },
   { href: "/tutor/stem-grading", label: "Virtual Lab Grading", icon: "🔬" },
+  { href: "/tutor/groups", label: "Student Cohorts", icon: "👥" },
   { href: "/tutor/assignments", label: "Assignments", icon: "📝" },
   { href: "/recordings", label: "Recordings", icon: "🎥" },
   { href: "/messages", label: "Learner Chat", icon: "💬" },

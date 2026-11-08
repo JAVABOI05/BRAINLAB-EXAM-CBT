@@ -11,6 +11,7 @@ import { useLearnerTheme, type AppearancePreference } from "../components/Learne
 export const STUDENT_NAV_LINKS = [
   { href: "/dashboard", label: "Overview", icon: "📊" },
   { href: "/learn", label: "Learning Hub", icon: "📚" },
+  { href: "/community", label: "Communities", icon: "👥" },
   { href: "/ai-learning", label: "AI Tutor", icon: "🤖" },
   { href: "/cbt", label: "CBT Practice", icon: "✍️" },
   { href: "/classroom", label: "Live Stage", icon: "🎥" },

@@ -150,6 +150,15 @@ export default function TutorHomePage() {
                 <h4 className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">Virtual Lab Grading</h4>
                 <p className="mt-1 text-[11px] text-slate-500">Grade STEM experiment worksheets &amp; hypotheses</p>
               </Link>
+
+              <Link
+                href="/tutor/groups"
+                className="rounded-2xl border border-blue-200 bg-blue-50/20 p-4 hover:border-blue-400 hover:shadow-sm transition dark:border-slate-800 dark:bg-slate-950"
+              >
+                <span className="text-2xl">👥</span>
+                <h4 className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">Student Cohorts</h4>
+                <p className="mt-1 text-[11px] text-slate-500">Manage academic cohorts &amp; daily tests</p>
+              </Link>
             </div>
           </div>
           <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
