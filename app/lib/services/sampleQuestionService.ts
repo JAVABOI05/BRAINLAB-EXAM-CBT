@@ -7,7 +7,7 @@
  * 3. Server-side answer verification without leaking answer keys to client bundles
  */
 
-import { getSupabasePublicServerClient } from "../supabaseServer";
+import { getSupabaseServerClient } from "../supabaseServer";
 
 export interface SampleOption {
   letter: "A" | "B" | "C" | "D" | "E";
@@ -201,7 +201,7 @@ export async function getNextSampleQuestion(
   const normSlug = (subjectSlug || "use-of-english").trim().toLowerCase();
 
   try {
-    const supabase = getSupabasePublicServerClient();
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("curated_sample_questions")
       .select("id, subject_slug, topic_context, question_text, options, difficulty, display_order")
@@ -261,7 +261,7 @@ export async function verifySampleAnswer(
   const cleanOption = selectedOption.trim().toUpperCase() as "A" | "B" | "C" | "D" | "E";
 
   try {
-    const supabase = getSupabasePublicServerClient();
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("curated_sample_questions")
       .select("id, correct_letter, explanation, rule_title")
