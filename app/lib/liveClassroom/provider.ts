@@ -13,6 +13,10 @@ export interface IVideoProvider {
   generateRoomToken(request: LiveRoomTokenRequest): Promise<LiveRoomTokenResponse>;
 }
 
+function clampDuration(durationSeconds?: number): number {
+  return Math.min(86400, Math.max(300, Number(durationSeconds) || 7200));
+}
+
 // ----------------------------------------------------------------------------
 // 1. Built-in Adaptive WebRTC Provider (Zero External Credential Requirement)
 // ----------------------------------------------------------------------------
@@ -30,8 +34,9 @@ export class StandardWebRTCProvider implements IVideoProvider {
   }
 
   async generateRoomToken(request: LiveRoomTokenRequest): Promise<LiveRoomTokenResponse> {
+    const safeDuration = clampDuration(request.durationSeconds);
     const expiresAt = new Date(
-      Date.now() + (request.durationSeconds || 7200) * 1000
+      Date.now() + safeDuration * 1000
     ).toISOString();
 
     const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || "brainlab-webrtc-room-secret";
@@ -60,6 +65,7 @@ export class StandardWebRTCProvider implements IVideoProvider {
       expiresAt,
       identity: request.userId,
       permissions: request.permissions,
+      role: request.role,
     };
   }
 }
@@ -97,8 +103,9 @@ export class LiveKitProvider implements IVideoProvider {
   }
 
   async generateRoomToken(request: LiveRoomTokenRequest): Promise<LiveRoomTokenResponse> {
+    const safeDuration = clampDuration(request.durationSeconds);
     const expiresAt = new Date(
-      Date.now() + (request.durationSeconds || 7200) * 1000
+      Date.now() + safeDuration * 1000
     ).toISOString();
 
     if (!this.isConfigured()) {
@@ -107,18 +114,28 @@ export class LiveKitProvider implements IVideoProvider {
       );
     }
 
+    // Role-based LiveKit grant permissions:
+    // Host has full room admin privileges.
+    // Listeners/students cannot publish tracks without permission, but have data channel
+    // enabled for whiteboard sync, chat, and live telemetry.
+    const canPublishTracks = Boolean(
+      request.permissions.canPublishAudio ||
+      request.permissions.canPublishVideo ||
+      request.permissions.canPublishScreen
+    );
+
     // Header & Payload for LiveKit JWT
     const header = { alg: "HS256", typ: "JWT" };
     const payload = {
       sub: request.userId,
       name: request.userName,
       iss: this.apiKey,
-      exp: Math.floor(Date.now() / 1000) + (request.durationSeconds || 7200),
+      exp: Math.floor(Date.now() / 1000) + safeDuration,
       video: {
         room: request.roomName,
         roomJoin: true,
-        canPublish: request.permissions.canPublishAudio || request.permissions.canPublishVideo,
-        canPublishData: request.permissions.canChat,
+        canPublish: canPublishTracks,
+        canPublishData: true, // Data channel for whiteboard sync, chat, and telemetry
         canSubscribe: true,
         roomAdmin: request.role === "host",
       },
@@ -141,6 +158,7 @@ export class LiveKitProvider implements IVideoProvider {
       expiresAt,
       identity: request.userId,
       permissions: request.permissions,
+      role: request.role,
     };
   }
 }
@@ -173,8 +191,9 @@ export class AgoraProvider implements IVideoProvider {
   }
 
   async generateRoomToken(request: LiveRoomTokenRequest): Promise<LiveRoomTokenResponse> {
+    const safeDuration = clampDuration(request.durationSeconds);
     const expiresAt = new Date(
-      Date.now() + (request.durationSeconds || 7200) * 1000
+      Date.now() + safeDuration * 1000
     ).toISOString();
 
     if (!this.isConfigured()) {
@@ -198,6 +217,7 @@ export class AgoraProvider implements IVideoProvider {
       expiresAt,
       identity: request.userId,
       permissions: request.permissions,
+      role: request.role,
     };
   }
 }
@@ -230,8 +250,9 @@ export class DailyProvider implements IVideoProvider {
   }
 
   async generateRoomToken(request: LiveRoomTokenRequest): Promise<LiveRoomTokenResponse> {
+    const safeDuration = clampDuration(request.durationSeconds);
     const expiresAt = new Date(
-      Date.now() + (request.durationSeconds || 7200) * 1000
+      Date.now() + safeDuration * 1000
     ).toISOString();
 
     if (!this.isConfigured()) {
@@ -253,6 +274,7 @@ export class DailyProvider implements IVideoProvider {
       expiresAt,
       identity: request.userId,
       permissions: request.permissions,
+      role: request.role,
     };
   }
 }

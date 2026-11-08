@@ -382,6 +382,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     const [currentLaserPoint, setCurrentLaserPoint] = useState<{ x: number; y: number; color: string } | null>(null);
     const laserAnimFrameRef = useRef<number | null>(null);
     const laserLastSendRef = useRef<number>(0);
+    const drawLastSendRef = useRef<number>(0);
 
     const addLaserPoint = useCallback((x: number, y: number, ptColor: string) => {
       const now = Date.now();
@@ -1075,11 +1076,27 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         }
       };
 
+      const handleRemoteStrokeChunk = ({ payload }: { payload: any }) => {
+        if (!payload || payload.senderId === currentUserId) return;
+        if (payload.pageIndex === activePageIndex && payload.element) {
+          setElements((prev) => {
+            const exists = prev.some((el) => el.id === payload.element.id);
+            if (exists) {
+              return prev.map((el) => (el.id === payload.element.id ? payload.element : el));
+            }
+            return [...prev, payload.element];
+          });
+        }
+      };
+
       const handleRemoteDraw = ({ payload }: { payload: any }) => {
         if (!payload || payload.senderId === currentUserId) return;
         if (payload.pageIndex === activePageIndex && payload.element) {
           setElements((prev) => {
-            if (prev.some((el) => el.id === payload.element.id)) return prev;
+            const exists = prev.some((el) => el.id === payload.element.id);
+            if (exists) {
+              return prev.map((el) => (el.id === payload.element.id ? payload.element : el));
+            }
             return [...prev, payload.element];
           });
         }
@@ -1151,6 +1168,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       };
 
       channel.on?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteElementsSync);
+      channel.on?.("broadcast", { event: "whiteboard_stroke_chunk" }, handleRemoteStrokeChunk);
       channel.on?.("broadcast", { event: "whiteboard_draw" }, handleRemoteDraw);
       channel.on?.("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
       channel.on?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
@@ -1174,6 +1192,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
 
       return () => {
         channel.off?.("broadcast", { event: "whiteboard_elements_sync" }, handleRemoteElementsSync);
+        channel.off?.("broadcast", { event: "whiteboard_stroke_chunk" }, handleRemoteStrokeChunk);
         channel.off?.("broadcast", { event: "whiteboard_draw" }, handleRemoteDraw);
         channel.off?.("broadcast", { event: "whiteboard_page_change" }, handleRemotePageChange);
         channel.off?.("broadcast", { event: "whiteboard_clear" }, handleRemoteClear);
@@ -1572,7 +1591,25 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         }
 
         if (current.type === "pen" || current.type === "highlighter") {
-          current.points?.push({ x: drawX, y: drawY });
+          const qX = Math.round(drawX * 10) / 10;
+          const qY = Math.round(drawY * 10) / 10;
+          current.points?.push({ x: qX, y: qY });
+          // Throttle active stroke sync to peers at 25fps (40ms) for low-bandwidth resilience
+          const moveNow = Date.now();
+          if (channel && moveNow - drawLastSendRef.current > 40) {
+            drawLastSendRef.current = moveNow;
+            try {
+              channel.send({
+                type: "broadcast",
+                event: "whiteboard_stroke_chunk",
+                payload: {
+                  element: { ...current, points: [...(current.points || [])] },
+                  pageIndex: activePageIndex,
+                  senderId: currentUserId,
+                },
+              });
+            } catch {}
+          }
           redrawCanvas();
           const canvas = canvasRef.current;
           if (canvas) {

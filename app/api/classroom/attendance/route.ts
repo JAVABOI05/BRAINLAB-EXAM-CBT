@@ -236,13 +236,17 @@ export async function POST(request: NextRequest) {
         const totalDuration = durationSeconds ?? calculatedSeconds;
 
         const durationMinutes = totalDuration / 60;
-        const status = durationMinutes >= config.attendance_min_minutes ? "present" : "partial";
+        const expectedDurationMinutes = config.default_duration_minutes || 60;
+        const attendancePercentage = Math.min(100, Math.round((durationMinutes / expectedDurationMinutes) * 100));
+        const threshold = config.attendance_threshold_percent || 60;
+        const status = attendancePercentage >= threshold || durationMinutes >= config.attendance_min_minutes ? "present" : "partial";
 
         await supabase
           .from("class_attendance_records")
           .update({
             leave_time: action === "leave" ? now : null,
             total_duration_seconds: totalDuration,
+            attendance_percentage: attendancePercentage,
             attendance_status: status,
             updated_at: now,
           })
