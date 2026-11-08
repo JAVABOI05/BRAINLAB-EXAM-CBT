@@ -6,7 +6,7 @@ import {
   resolveAdminRole,
 } from "@/app/lib/supabaseServer";
 import { listStemResources, createStemResource } from "@/app/lib/stem/stemService";
-import { isGovernanceAdminRole, isInstructorRole } from "@/app/lib/adminRoles";
+import { getStemResourceAccess, resolveStemAccessContext } from "@/app/lib/stem/stemAccess";
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,12 +24,8 @@ export async function GET(request: NextRequest) {
     const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
     const user = await getUserFromRequest(request);
 
-    let isAuthorizedReviewer = false;
-    if (user) {
-      const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
-      isAuthorizedReviewer = isInstructorRole(role) || isGovernanceAdminRole(role);
-    }
-
+    const accessContext = await resolveStemAccessContext(user, token);
+    const isAuthorizedReviewer = accessContext.isPrivileged;
     // Public / unauthenticated callers can ONLY view published resources
     const effectiveStatus = isAuthorizedReviewer && requestedStatus
       ? (requestedStatus as any)
@@ -45,7 +41,27 @@ export async function GET(request: NextRequest) {
       client
     );
 
-    return NextResponse.json({ ok: true, resources });
+    const decoratedResources = resources.map((resource) => {
+      const stem_access = getStemResourceAccess(accessContext, resource);
+      if (stem_access.locked && resource.current_version) {
+        return {
+          ...resource,
+          stem_access,
+          current_version: {
+            ...resource.current_version,
+            initial_state: {},
+            content_payload: {},
+          },
+        };
+      }
+      return { ...resource, stem_access };
+    });
+
+    return NextResponse.json({ ok: true, resources: decoratedResources, plan_access: {
+      plan_id: accessContext.planId,
+      access_level: accessContext.accessLevel,
+      monthly_lab_quota: accessContext.monthlyLabQuota,
+    } });
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: err instanceof Error ? err.message : "Failed to load STEM resources" },
@@ -61,12 +77,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify role: tutor, instructor, or admin
+    // STEM authoring is limited to verified teachers/tutors and governance administrators.
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
     const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
 
-    const isPermitted = isInstructorRole(role) || isGovernanceAdminRole(role);
+    const isStemGovernanceRole = ["super_admin", "platform_admin", "content_reviewer", "ai_learning_admin", "admin"].includes(role || "");
+    const { data: approvedTutor } = await getSupabaseServerClient(token)
+      .from("tutor_profiles")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("profile_status", "approved")
+      .maybeSingle();
+    const isPermitted = role === "teacher" || Boolean(approvedTutor) || isStemGovernanceRole;
     if (!isPermitted) {
       return NextResponse.json(
         { ok: false, error: "Only tutors, instructors and administrators can author STEM resources." },
