@@ -49,7 +49,7 @@ export async function GET(
     if (signedError || !signed?.signedUrl) {
       return NextResponse.json({ error: "Could not create a secure download link." }, { status: 500 });
     }
-    return NextResponse.json({ success: true, url: signed.signedUrl });
+    return NextResponse.json({ success: true, url: signed.signedUrl }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Could not download recording." }, { status: 500 });
   }
