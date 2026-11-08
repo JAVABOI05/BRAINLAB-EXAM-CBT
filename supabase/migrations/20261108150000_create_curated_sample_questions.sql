@@ -43,9 +43,11 @@ CREATE POLICY "Administrators can manage sample questions"
     FOR ALL
     USING (
         EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            WHERE ur.user_id = auth.uid()
-              AND ur.role IN ('super_admin', 'platform_admin', 'cbt_admin')
+            SELECT 1 FROM public.admin_users WHERE admin_users.id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.admin_profiles WHERE admin_profiles.user_id = auth.uid()
+              AND admin_profiles.role IN ('super_admin', 'platform_admin', 'cbt_admin', 'academic_director')
         )
         OR EXISTS (
             SELECT 1 FROM public.platform_configuration pc
@@ -54,9 +56,11 @@ CREATE POLICY "Administrators can manage sample questions"
     )
     WITH CHECK (
         EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            WHERE ur.user_id = auth.uid()
-              AND ur.role IN ('super_admin', 'platform_admin', 'cbt_admin')
+            SELECT 1 FROM public.admin_users WHERE admin_users.id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.admin_profiles WHERE admin_profiles.user_id = auth.uid()
+              AND admin_profiles.role IN ('super_admin', 'platform_admin', 'cbt_admin', 'academic_director')
         )
     );
 
