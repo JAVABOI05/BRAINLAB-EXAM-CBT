@@ -771,10 +771,29 @@ export async function setPlatformConfig<T>(
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const plans = await getPlatformConfig<SubscriptionPlan[]>("subscription_plans", DEFAULT_PLANS);
   return plans
-    .map((p) => ({
-      ...p,
-      entitlements: normalizePlanEntitlements(p.entitlements, p.id === "free"),
-    }))
+    .map((p) => {
+      const defaults = p.id === "free"
+        ? { stem_studio_access: true, stem_access_level: "discover" as const, stem_monthly_lab_quota: 3 }
+        : p.id === "premium"
+        ? { stem_studio_access: true, stem_access_level: "practise" as const, stem_monthly_lab_quota: 25 }
+        : p.id === "plus"
+        ? { stem_studio_access: true, stem_access_level: "advanced" as const, stem_monthly_lab_quota: 75 }
+        : p.id === "pro"
+        ? { stem_studio_access: true, stem_access_level: "complete" as const, stem_monthly_lab_quota: 999999 }
+        : { stem_studio_access: false, stem_access_level: "none" as const, stem_monthly_lab_quota: 0 };
+      const normalized = normalizePlanEntitlements(p.entitlements, p.id === "free");
+      const raw = (p.entitlements || {}) as Record<string, unknown>;
+      return {
+        ...p,
+        entitlements: {
+          ...normalized,
+          ...defaults,
+          stem_studio_access: typeof raw.stem_studio_access === "boolean" ? raw.stem_studio_access : defaults.stem_studio_access,
+          stem_access_level: typeof raw.stem_access_level === "string" ? normalized.stem_access_level : defaults.stem_access_level,
+          stem_monthly_lab_quota: typeof raw.stem_monthly_lab_quota === "number" ? normalized.stem_monthly_lab_quota : defaults.stem_monthly_lab_quota,
+        },
+      };
+    })
     .sort((a, b) => a.display_order - b.display_order);
 }
 
