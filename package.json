@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "verify": "npm run test:architecture && npm run test:separation && npm run test:homepage && npm run test:foundation && npm run test:s7 && npm run typecheck",
+    "verify": "npm run test:architecture && npm run test:separation && npm run test:instructor && npm run test:homepage && npm run test:foundation && npm run test:s7 && npm run typecheck",
     "test:homepage": "npx tsx scripts/test-homepage-layer-a.ts",
     "test:instructor": "npx tsx scripts/test-instructor-portal-architecture.ts",
     "test:foundation": "npx tsx scripts/test-foundation-layer.ts",
