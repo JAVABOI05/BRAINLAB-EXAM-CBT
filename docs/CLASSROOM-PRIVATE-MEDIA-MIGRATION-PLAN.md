@@ -251,3 +251,26 @@ The tutor assignment dashboard previously queried `assignment_submissions` and j
 A further audit found that the tutor assignment listing treated every `teacher` role as globally privileged, exposing assignments and submission counts beyond that tutor's own work. It now lists all assignments only to platform admins; other tutors are restricted to assignments whose `tutor_id` is their own.
 
 Assignment creation also previously accepted any course ID when the caller had a membership in any subject. It now verifies that the caller owns the selected course or has an explicit tutor membership for that course's subject. Platform admins retain global access. The course's subject is authoritative, and the automatically generated course-feed announcement now includes the required `course_id`.
+
+
+### 8 November staging audit — recording RLS bypass closed in migration source
+
+Read-only inspection of staging confirmed the existing `class_recordings_select_visible_or_owner` policy grants SELECT when `is_visible_to_students = true` and `processing_status = 'ready'`, without checking `access_policy`, course enrolment, or class attendance. This means API-side filtering alone is insufficient: an authenticated client can query the table directly and bypass those route checks.
+
+The staging schema also confirms:
+- `course_enrollments` exposes each learner's own enrollment rows to that learner, with `status` and `expires_at`.
+- `class_attendance_records` exposes each learner's own attendance rows, with statuses used by replay authorization (`present`, `partial`, `manual_verified`).
+- `admin_users` is the administrator identity table used by the existing recording RLS policies.
+- The staging `class_recordings` table currently has zero rows, so policy behavior could not be tested against existing recording fixtures.
+
+A new unapplied migration source has been committed:
+`supabase/migrations/20261108090000_harden_class_recording_visibility_rls.sql`
+
+It replaces the broad student-visible SELECT condition with:
+- creator, assigned class tutor, and platform-admin access;
+- published/ready `public` recordings for signed-in learners;
+- published/ready `enrolled_only` course recordings only for an active, unexpired course enrolment;
+- published/ready `enrolled_only` standalone class recordings only for learners with qualifying recorded attendance;
+- no ordinary learner access to `tutors_only` recordings.
+
+The migration changes only the `class_recordings` SELECT policy. It does not modify recording rows, buckets, Storage objects, or other policies. It has **not** been applied to staging or production. Before application, test the policy using authenticated learner fixtures for public, enrolled, expired, unrelated, attended-standalone, absent-standalone, creator, assigned-tutor, and admin cases. Also verify policy subqueries against the deployed RLS configuration and confirm there are no additional permissive SELECT policies that would OR around this policy.
