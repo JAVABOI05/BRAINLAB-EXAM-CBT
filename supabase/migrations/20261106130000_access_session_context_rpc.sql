@@ -3,7 +3,10 @@
 -- Consumers must enforce each scoped grant against the target resource.
 begin;
 
-create or replace function public.access_get_session_context()
+create schema if not exists private;
+revoke all on schema private from public,anon;
+
+create or replace function private.access_get_session_context_impl()
 returns jsonb
 language sql
 stable
@@ -70,10 +73,21 @@ as $function$
   where auth.uid() is not null;
 $function$;
 
-revoke all on function public.access_get_session_context() from public,anon;
+
+-- Public PostgREST entry point is SECURITY INVOKER; privileged reads stay private.
+create or replace function public.access_get_session_context()
+returns jsonb
+language sql stable security invoker
+set search_path=''
+as $function$ select private.access_get_session_context_impl(); $function$;
+
+-- Final function privileges are centralised in the fourth hardening migration.
+/*
 grant execute on function public.access_get_session_context() to authenticated;
 
-comment on function public.access_get_session_context() is
+comment on function private.access_get_session_context_impl() is
   'Returns only the caller own active role assignments. Unscoped permissions are global; resource-scoped permissions remain attached to their scope and must be enforced by the consuming module.';
+
+*/
 
 commit;
