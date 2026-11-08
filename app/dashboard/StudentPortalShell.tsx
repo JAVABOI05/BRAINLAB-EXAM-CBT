@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useLearnerTheme, type AppearancePreference } from "../components/LearnerThemeProvider";
+import { isGovernanceAdminRole, isInstructorRole } from "../lib/adminRoles";
 
 export const STUDENT_NAV_LINKS = [
   { href: "/dashboard", label: "Overview", icon: "📊" },
@@ -29,6 +30,7 @@ export default function StudentPortalShell({ children }: { children: React.React
   const router = useRouter();
   const { resolvedTheme, appearance, setAppearance } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -40,6 +42,12 @@ export default function StudentPortalShell({ children }: { children: React.React
       if (!active) return;
       if (session?.user) {
         setUser(session.user);
+        try {
+          const { data: role } = await supabase.rpc("get_admin_role");
+          if (active && typeof role === "string" && role.trim()) {
+            setUserRole(role.trim());
+          }
+        } catch {}
       }
     }
     void fetchUser();
@@ -112,6 +120,35 @@ export default function StudentPortalShell({ children }: { children: React.React
               >
                 <span>🌐 Public Site</span>
               </Link>
+
+              {/* Super Admin / Admin Cross-Portal Switchers */}
+              {isGovernanceAdminRole(userRole) && (
+                <div className="hidden sm:flex items-center gap-1.5">
+                  <Link
+                    href="/admin/dashboard"
+                    className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-black text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition shadow-xs"
+                    title="Open Administrator Command Center"
+                  >
+                    <span>🛡️ Admin Console</span>
+                  </Link>
+                  <Link
+                    href="/tutor"
+                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1 text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition shadow-xs"
+                    title="Open Instructor & Tutor Studio"
+                  >
+                    <span>👨‍🏫 Instructor Studio</span>
+                  </Link>
+                </div>
+              )}
+              {!isGovernanceAdminRole(userRole) && isInstructorRole(userRole) && (
+                <Link
+                  href="/tutor"
+                  className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1 text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition shadow-xs"
+                  title="Open Instructor Studio"
+                >
+                  <span>👨‍🏫 Instructor Studio</span>
+                </Link>
+              )}
             </div>
 
             {/* Desktop Nav Items */}
@@ -201,6 +238,28 @@ export default function StudentPortalShell({ children }: { children: React.React
                       >
                         <span>⚡</span> Subscriptions &amp; Plans
                       </Link>
+                      {isGovernanceAdminRole(userRole) && (
+                        <>
+                          <div className="border-t border-amber-200/50 dark:border-amber-800/40 my-1" />
+                          <div className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                            Administrator Controls
+                          </div>
+                          <Link
+                            href="/admin/dashboard"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition"
+                          >
+                            <span>👑</span> Admin Command Centre
+                          </Link>
+                          <Link
+                            href="/tutor"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 transition"
+                          >
+                            <span>👨‍🏫</span> Instructor Studio
+                          </Link>
+                        </>
+                      )}
                       <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
                       <Link
                         href="/"

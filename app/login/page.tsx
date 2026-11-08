@@ -111,6 +111,14 @@ function CentralLoginForm() {
         role: roleStr as any,
       };
       setCachedAdminSession(adminObj);
+
+      const redirectParam = searchParams.get("redirect") || searchParams.get("next");
+      if (redirectParam && redirectParam !== "/admin/dashboard" && redirectParam !== "/admin/login") {
+        const safeTarget = sanitizeRedirectUrl(redirectParam, "/dashboard");
+        router.replace(safeTarget);
+        return;
+      }
+
       if (isAdminPinLocallyVerified()) {
         router.replace("/admin/dashboard");
       } else {
@@ -122,6 +130,12 @@ function CentralLoginForm() {
     // 3. Route Instructor / Tutor
     if (isInstructorRole(roleStr)) {
       await clearOperatorGate();
+      const redirectParam = searchParams.get("redirect") || searchParams.get("next");
+      if (redirectParam) {
+        const safeTarget = sanitizeRedirectUrl(redirectParam, "/tutor");
+        router.replace(safeTarget);
+        return;
+      }
       router.replace("/tutor");
       return;
     }
