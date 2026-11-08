@@ -6,6 +6,12 @@ import {
   resolveAdminRole,
 } from "@/app/lib/supabaseServer";
 import { isGovernanceAdminRole } from "@/app/lib/adminRoles";
+import {
+  checkRateLimit,
+  getClientIp,
+  isHoneypotTriggered,
+  generateReferenceCode,
+} from "@/app/lib/abuseProtection";
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,7 +49,37 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    // 1. Abuse Protection: Rate Limiting
+    const ip = getClientIp(req);
+    const rateCheck = checkRateLimit(`school-inquiry:${ip}`, 3, 10 * 60 * 1000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Too many inquiries submitted from this connection. Please wait ${rateCheck.retryAfterSeconds} seconds before submitting again.`,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateCheck.retryAfterSeconds) },
+        }
+      );
+    }
+
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "Invalid inquiry payload." }, { status: 400 });
+    }
+
+    // 2. Abuse Protection: Honeypot check
+    if (isHoneypotTriggered(body.website_url_hp)) {
+      return NextResponse.json({
+        ok: true,
+        referenceCode: generateReferenceCode("BL-SCH"),
+        message: "Your inquiry has been received.",
+        submittedAt: new Date().toISOString(),
+      });
+    }
+
     const { schoolName, contactName, email, phone, location, studentCount, examType, notes } = body;
 
     if (!schoolName || !contactName || !email || !phone) {
@@ -62,9 +98,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate cryptographic reference code BL-SCH-[Random 5 chars]
-    const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const referenceCode = `BL-SCH-${randomHex}`;
+    // Generate cryptographic reference code BL-SCH-XXXXX
+    const referenceCode = generateReferenceCode("BL-SCH");
+    const submittedAt = new Date().toISOString();
 
     // 1. Persist to database using public client (RLS enforces INSERT-only for anon)
     const publicClient = getSupabasePublicServerClient();
@@ -80,6 +116,8 @@ export async function POST(req: NextRequest) {
         exam_type: examType || "JAMB UTME Mocks",
         notes: notes ? notes.trim() : null,
         status: "Pending",
+        consent_recorded: true,
+        consent_ndpa_at: submittedAt,
       },
     ]);
 
@@ -103,8 +141,6 @@ export async function POST(req: NextRequest) {
         event: "new_school_inquiry",
         payload: {
           referenceCode,
-          schoolName,
-          contactName,
           location: location || "Nigeria",
           studentCount: studentCount || "Unspecified",
           examType: examType || "JAMB CBT",
@@ -118,14 +154,73 @@ export async function POST(req: NextRequest) {
     // 3. Sanitized log without unredacted personal contact details (PII protection)
     console.info(`[INSTITUTIONAL INQUIRY] Ref: ${referenceCode} | Status: Recorded`);
 
-    return NextResponse.json({
-      ok: true,
-      referenceCode,
-      message: "Your institutional inquiry has been received. A BrainLab Academic Partner Manager will contact you within 24 hours.",
-      submittedAt: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        referenceCode,
+        message: "Your institutional inquiry has been received. A BrainLab Academic Partner Manager will contact you within 24 hours.",
+        submittedAt: new Date().toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json({ ok: false, error: errorMsg }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await getUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const role = await resolveAdminRole(user.id, token, user.email ?? undefined);
+
+    if (!isGovernanceAdminRole(role)) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id, status, adminNotes } = body;
+
+    if (!id) {
+      return NextResponse.json({ ok: false, error: "Inquiry ID is required." }, { status: 400 });
+    }
+
+    const validStatuses = ["Pending", "Contacted", "Quoted", "Active Partner"];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json({ ok: false, error: "Invalid status value." }, { status: 400 });
+    }
+
+    const supabase = getSupabaseServerClient(token);
+    const updatePayload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+    };
+    if (status) updatePayload.status = status;
+    if (typeof adminNotes === "string") updatePayload.admin_notes = adminNotes.trim();
+
+    const { data, error } = await supabase
+      .from("school_inquiries")
+      .update(updatePayload)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, inquiry: data });
+  } catch (err: unknown) {
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : "Internal server error" },
+      { status: 500 }
+    );
   }
 }

@@ -89,6 +89,8 @@ export default function SchoolsPage() {
   const [inquiryCount, setInquiryCount] = useState("100-300 students");
   const [inquiryExam, setInquiryExam] = useState("JAMB UTME Mocks");
   const [inquiryNotes, setInquiryNotes] = useState("");
+  const [inquiryHoneypot, setInquiryHoneypot] = useState("");
+  const [inquiryConsent, setInquiryConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ ok: boolean; ref?: string; message?: string } | null>(null);
   const [supportPhone, setSupportPhone] = useState(DEFAULT_SUPPORT_PHONE);
@@ -152,6 +154,10 @@ export default function SchoolsPage() {
       return;
     }
 
+    if (!inquiryConsent) {
+      toast.error("Please agree to the Nigeria Data Protection Act (NDPA) privacy terms before submitting.");
+      return;
+    }
     setIsSubmitting(true);
     setSubmitResult(null);
 
@@ -168,6 +174,8 @@ export default function SchoolsPage() {
           studentCount: inquiryCount,
           examType: inquiryExam,
           notes: inquiryNotes,
+          website_url_hp: inquiryHoneypot,
+          consentNdpa: true,
         }),
       });
 
@@ -899,6 +907,60 @@ export default function SchoolsPage() {
                     placeholder="Tell us about your computer lab setup, preferred mock dates, or any special requests..."
                     className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   />
+                </div>
+
+                <div className="hidden" aria-hidden="true">
+                  <label htmlFor="school_website_url_hp">Leave empty</label>
+                  <input
+                    id="school_website_url_hp"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={inquiryHoneypot}
+                    onChange={(e) => setInquiryHoneypot(e.target.value)}
+                  />
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900/60 text-xs text-slate-700 dark:text-slate-300">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={inquiryConsent}
+                      onChange={(e) => setInquiryConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded-sm border-slate-300 text-blue-600 accent-blue-600"
+                    />
+                    <span>
+                      <strong className="text-slate-900 dark:text-white">Institutional Authorization &amp; NDPA Consent:</strong> I confirm I am an authorized officer representing this school. I consent to BrainLab Academy processing this information under our NDPA 2023 Privacy Policy solely for mock delivery and school onboarding.
+                    </span>
+                  </label>
+                </div>
+
+                {/* Honeypot field (hidden from genuine users) */}
+                <div style={{ position: "absolute", left: "-9999px", opacity: 0 }} aria-hidden="true">
+                  <input
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={inquiryHoneypot}
+                    onChange={(e) => setInquiryHoneypot(e.target.value)}
+                  />
+                </div>
+
+                {/* NDPA 2023 Privacy Notice & Consent Checkbox */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/60 text-xs">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={inquiryConsent}
+                      onChange={(e) => setInquiryConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700"
+                    />
+                    <span className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      <strong>NDPA 2023 Consent:</strong> I agree that BrainLab Academy collects and processes our institutional contact details solely for evaluating this school request and providing CBT mock solutions in accordance with the Nigeria Data Protection Act 2023. Data is never shared with third parties.
+                    </span>
+                  </label>
                 </div>
 
                 <div className="pt-2">

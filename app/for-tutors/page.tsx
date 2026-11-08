@@ -119,7 +119,7 @@ export default function ForTutorsPage() {
 
           <div className="flex flex-col sm:flex-row justify-center gap-3.5 pt-2">
             <Link
-              href="/contact?subject=Tutor+Application"
+              href="/for-tutors/apply"
               className="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-700 hover:bg-blue-800 px-7 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 active:scale-95"
             >
               Apply to Teach on BrainLab <span aria-hidden="true" className="ml-2">→</span>
@@ -211,10 +211,16 @@ export default function ForTutorsPage() {
           </p>
           <div className="flex justify-center gap-3.5">
             <Link
-              href="/contact?subject=Tutor+Application"
+              href="/for-tutors/apply"
               className="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-700 hover:bg-blue-800 px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 active:scale-95"
             >
               Submit Tutor Application →
+            </Link>
+            <Link
+              href="/contact?subject=Tutor+Application"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-6 py-3.5 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+            >
+              Contact Educator Desk
             </Link>
           </div>
         </div>
