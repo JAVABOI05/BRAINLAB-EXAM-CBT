@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import PublicAiTutorDemo from "@/app/components/public/PublicAiTutorDemo";
 
 export const metadata: Metadata = {
   title: "AI Study Studio & Diagnostic Revision",
@@ -146,6 +147,25 @@ export default function AiLearningProductPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Interactive AI Tutor Demonstration Section */}
+      <section className="border-b border-slate-200/80 bg-slate-100/50 py-12 sm:py-16 dark:border-slate-800/80 dark:bg-[#070f20]/50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="max-w-2xl space-y-1">
+            <span className="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
+              Interactive Socratic Demonstration
+            </span>
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+              See How BrainLab AI Explains Difficult Concepts
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Select one of our verified examination breakdowns or try a short concept question in the live guest preview.
+            </p>
+          </div>
+
+          <PublicAiTutorDemo />
         </div>
       </section>
 

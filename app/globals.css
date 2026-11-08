@@ -1560,3 +1560,111 @@ button:disabled,
   background-color: #111f36 !important;
   border-color: #34465f !important;
 }
+
+
+/* ==========================================================================
+   BRAINLAB MOTION SYSTEM & ACCESSIBILITY SPECIFICATION (TASK 2)
+   Micro-interactions, staggered entrances, and strict reduced-motion overrides.
+   ========================================================================== */
+@keyframes bl-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bl-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bl-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bl-pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+.animate-bl-fade-in {
+  animation: bl-fade-in 250ms cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
+.animate-bl-fade-up {
+  animation: bl-fade-up 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bl-scale-in {
+  animation: bl-scale-in 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bl-pulse {
+  animation: bl-pulse-subtle 2s ease-in-out infinite;
+}
+
+.bl-stagger-1 {
+  animation-delay: 50ms;
+}
+
+.bl-stagger-2 {
+  animation-delay: 100ms;
+}
+
+.bl-stagger-3 {
+  animation-delay: 150ms;
+}
+
+.bl-stagger-4 {
+  animation-delay: 200ms;
+}
+
+/* Interactive Feedback Micro-Interactions */
+.bl-interactive-hover {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bl-interactive-hover:hover {
+  transform: translateY(-2px);
+}
+
+.bl-interactive-hover:active {
+  transform: scale(0.98);
+}
+
+/* Strict prefers-reduced-motion compliance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .bl-interactive-hover:hover,
+  .bl-interactive-hover:active {
+    transform: none !important;
+  }
+}
