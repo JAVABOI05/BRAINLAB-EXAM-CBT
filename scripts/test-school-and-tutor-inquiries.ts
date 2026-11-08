@@ -12,7 +12,6 @@
  */
 
 import fs from "fs";
-import path from "path";
 
 let passed = 0;
 let failed = 0;
@@ -33,8 +32,8 @@ console.log("===================================================================
 
 // 1. MIGRATION DDL & RLS POLICIES
 console.log("1. DATABASE MIGRATION & RLS ARCHITECTURE");
-const migrationPath = "supabase/migrations/20261108110000_school_and_tutor_inquiries_b2.sql";
-const rollbackPath = "supabase/migrations/20261108110000_rollback_school_and_tutor_inquiries_b2.sql";
+const migrationPath = "supabase/migrations/20261108110000_create_tutor_applications.sql";
+const rollbackPath = "supabase/migrations/20261108110000_rollback_tutor_applications.sql";
 
 assert(fs.existsSync(migrationPath), `${migrationPath} exists`);
 assert(fs.existsSync(rollbackPath), `${rollbackPath} exists`);
@@ -44,22 +43,22 @@ if (fs.existsSync(migrationPath)) {
   assert(sql.includes("CREATE TABLE IF NOT EXISTS public.tutor_applications"), "Creates public.tutor_applications table");
   assert(sql.includes("reference_code TEXT NOT NULL UNIQUE"), "Enforces unique reference_code on tutor applications");
   assert(sql.includes("ALTER TABLE public.tutor_applications ENABLE ROW LEVEL SECURITY"), "Enables RLS on tutor_applications");
-  assert(sql.includes("CREATE POLICY \"Public anonymous visitors can submit tutor applications\""), "Configures INSERT policy for public anon submitters");
+  assert(sql.includes("CREATE POLICY \"Public applicants can submit tutor application\""), "Configures INSERT policy for public anon submitters");
   assert(sql.includes("CREATE POLICY \"Administrators can read and manage tutor applications\""), "Restricts SELECT and UPDATE to verified administrators only");
-  assert(sql.includes("consent_ndpa_at TIMESTAMPTZ"), "Records explicit NDPA consent timestamp");
+  assert(sql.includes("consent_recorded_at TIMESTAMPTZ"), "Records explicit NDPA consent timestamp");
   assert(sql.includes("reviewed_by UUID"), "Maintains administrative review identity");
 }
 
 if (fs.existsSync(rollbackPath)) {
   const rollbackSql = fs.readFileSync(rollbackPath, "utf8");
   assert(rollbackSql.includes("DROP TABLE IF EXISTS public.tutor_applications CASCADE"), "Rollback drops tutor_applications table cleanly");
-  assert(rollbackSql.includes("DROP COLUMN IF EXISTS consent_ndpa_at"), "Rollback cleans up audit columns on school_inquiries");
+  assert(rollbackSql.includes("DROP POLICY IF EXISTS \"Administrators can read and manage tutor applications\""), "Rollback drops administrator RLS policy");
 }
 
 // 2. ENDPOINTS & ABUSE PROTECTION
 console.log("\n2. ROUTE HANDLERS, ABUSE PROTECTION & FAIL-CLOSED HANDLING");
 const schoolRoutePath = "app/api/schools/inquiry/route.ts";
-const tutorRoutePath = "app/api/tutors/application/route.ts";
+const tutorRoutePath = "app/api/tutors/apply/route.ts";
 
 assert(fs.existsSync(schoolRoutePath), `${schoolRoutePath} exists`);
 assert(fs.existsSync(tutorRoutePath), `${tutorRoutePath} exists`);
@@ -68,9 +67,9 @@ if (fs.existsSync(schoolRoutePath)) {
   const schoolCode = fs.readFileSync(schoolRoutePath, "utf8");
   assert(schoolCode.includes("checkRateLimit"), "School inquiry enforces sliding-window IP rate limiting");
   assert(schoolCode.includes("isHoneypotTriggered"), "School inquiry detects and silently deflects honeypot bot traps");
-  assert(schoolCode.includes("generateReferenceCode(\"BL-SCH\")"), "School inquiry generates authentic BL-SCH-XXXXX reference codes");
+  assert(schoolCode.includes('generateReferenceCode("BL-SCH")'), "School inquiry generates authentic BL-SCH-XXXXX reference codes");
   assert(schoolCode.includes("status: 503"), "School inquiry fails closed with HTTP 503 if database persistence fails");
-  assert(!schoolCode.includes("console.log(email)") && !schoolCode.includes("console.info(`[INSTITUTIONAL INQUIRY] Ref: ${referenceCode} | Status: Recorded`);"), "Zero unredacted PII emitted in server logs");
+  assert(!schoolCode.includes("console.log(email)") && schoolCode.includes("[INSTITUTIONAL INQUIRY] Ref: ${referenceCode} | Status: Recorded"), "Zero unredacted PII emitted in server logs");
   assert(schoolCode.includes("isGovernanceAdminRole"), "Restricts inquiry reading to governance admin roles");
 }
 
@@ -78,11 +77,12 @@ if (fs.existsSync(tutorRoutePath)) {
   const tutorCode = fs.readFileSync(tutorRoutePath, "utf8");
   assert(tutorCode.includes("checkRateLimit"), "Tutor application enforces sliding-window IP rate limiting");
   assert(tutorCode.includes("isHoneypotTriggered"), "Tutor application detects honeypot bot submissions");
-  assert(tutorCode.includes("generateReferenceCode(\"BL-TTR\")"), "Tutor application generates authentic BL-TTR-XXXXX reference codes");
+  assert(tutorCode.includes('generateReferenceCode("BL-TTR")'), "Tutor application generates authentic BL-TTR-XXXXX reference codes");
   assert(tutorCode.includes("status: 503"), "Tutor application fails closed with HTTP 503 if database persistence fails");
-  assert(tutorCode.includes("consentNdpa !== true"), "Rejects submission if NDPA 2023 consent checkbox is missing");
+  assert(tutorCode.includes("!privacyConsent"), "Rejects submission if NDPA 2023 consent checkbox is missing");
+  assert(tutorCode.includes("!isAdultConfirmed"), "Rejects submission if applicant does not confirm adult age");
   assert(tutorCode.includes("isGovernanceAdminRole"), "Restricts application reading to governance admin roles");
-  assert(tutorCode.includes("sendEmail"), "Dispatches server-side confirmation email to applicant");
+  assert(tutorCode.includes("admin_live_alerts"), "Dispatches secure realtime alert to admin desk");
 }
 
 // 3. PUBLIC FORMS & SERVER-CONFIRMED SUCCESS
@@ -106,8 +106,8 @@ if (fs.existsSync(schoolsPagePath)) {
 
 if (fs.existsSync(tutorFormPath)) {
   const formCode = fs.readFileSync(tutorFormPath, "utf8");
-  assert(formCode.includes("consentNdpa"), "Tutor form binds mandatory NDPA 2023 consent state");
-  assert(formCode.includes("honeypot"), "Tutor form contains invisible honeypot input");
+  assert(formCode.includes("privacyConsent"), "Tutor form binds mandatory NDPA 2023 consent state");
+  assert(formCode.includes("website_url_hp"), "Tutor form contains invisible honeypot input");
   assert(formCode.includes("submitResult && submitResult.ok"), "Tutor form renders success ticket only upon confirmed HTTP 200/201 response");
   assert(formCode.includes("submitResult.ref"), "Tutor form renders server-generated reference code with copy capability");
   assert(formCode.includes("CANONICAL_PHONE_DIGITS"), "Provides direct WhatsApp Academic Desk follow-up on error or success");
@@ -117,8 +117,8 @@ if (fs.existsSync(tutorFormPath)) {
 console.log("\n4. TUTOR ROLE ISOLATION & DATA MINIMISATION (NDPA 2023)");
 if (fs.existsSync(tutorRoutePath)) {
   const tutorCode = fs.readFileSync(tutorRoutePath, "utf8");
-  assert(!tutorCode.includes("admin_users") && !tutorCode.includes("admin_profiles") && !tutorCode.includes("user_roles"), "POST /api/tutors/application NEVER writes to admin_profiles or user_roles");
-  assert(!tutorCode.includes("bvn") && !tutorCode.includes("nin") && !tutorCode.includes("bank_account"), "Data minimisation: Strictly excludes BVN, NIN, and financial data");
+  assert(!tutorCode.includes("admin_users") && !tutorCode.includes("admin_profiles") && !tutorCode.includes("user_roles"), "POST /api/tutors/apply NEVER writes to admin_profiles or user_roles");
+  assert(!/\bbvn\b/i.test(tutorCode) && !/\bnin\b/i.test(tutorCode) && !tutorCode.includes("bank_account"), "Data minimisation: Strictly excludes BVN, NIN, and financial data");
 }
 
 // 5. ADMIN REVIEW SCREENS & AUDIT LOGGING
@@ -138,10 +138,10 @@ if (fs.existsSync(adminSchoolsPath)) {
 
 if (fs.existsSync(adminTutorsPath)) {
   const code = fs.readFileSync(adminTutorsPath, "utf8");
-  assert(code.includes("/api/tutors/application"), "Admin tutors page connects to live /api/tutors/application");
+  assert(code.includes("/api/tutors/apply"), "Admin tutors page connects to live /api/tutors/apply");
   assert(code.includes("handleStatusChange"), "Admin tutors page supports status review transitions");
   assert(code.includes("handleExportCsv"), "Admin tutors page provides CSV export functionality");
-  assert(code.includes("consent_ndpa_at"), "Admin tutors page displays verified NDPA consent timestamp");
+  assert(code.includes("consent_recorded_at"), "Admin tutors page displays verified NDPA consent timestamp");
 }
 
 console.log("\n=========================================================================");
@@ -150,6 +150,4 @@ console.log("===================================================================
 
 if (failed > 0) {
   process.exit(1);
-} else {
-  process.exit(0);
 }
