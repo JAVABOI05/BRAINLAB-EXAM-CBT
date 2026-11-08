@@ -108,6 +108,9 @@ runTest("Test 1: Analytics migration and rollback SQL files exist with strict RL
     "Has admin-only SELECT policy"
   );
 
+  assert.ok(sql.includes("analytics_payload_allowed_keys"), "Restricts stored payload keys to an explicit allowlist");
+  assert.ok(sql.includes("analytics_payload_no_sensitive_keys"), "Rejects sensitive payload keys at database level");
+  assert.ok(sql.includes("analytics_payload_size"), "Caps analytics payload size");
   // Check that all 12 events are constrained in SQL check
   for (const eventName of EXPECTED_EVENTS) {
     assert.ok(

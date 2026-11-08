@@ -1,11 +1,43 @@
 -- ====================================================================
 -- BRAINLAB ACADEMY: EXAM CALENDAR & DYNAMIC SLOTS SCHEMA
 -- Migration: 20261108100000_exam_calendar_and_statistics.sql
+-- Safe for the production schema: uses the existing admin permission
+-- function and creates the configuration table required by this feature.
 -- ====================================================================
 
 BEGIN;
 
--- 1. Create table exam_calendar_events
+-- The calendar API also stores public channel configuration here.
+-- Production did not previously have this table; staging already does.
+CREATE TABLE IF NOT EXISTS public.platform_configuration (
+    key TEXT PRIMARY KEY,
+    category TEXT NOT NULL DEFAULT 'general',
+    value JSONB NOT NULL DEFAULT '{}'::jsonb,
+    description TEXT,
+    is_secret BOOLEAN NOT NULL DEFAULT false,
+    updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.platform_configuration ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON public.platform_configuration TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.platform_configuration TO authenticated;
+
+DROP POLICY IF EXISTS "Public can read non-secret platform configuration" ON public.platform_configuration;
+CREATE POLICY "Public can read non-secret platform configuration"
+    ON public.platform_configuration
+    FOR SELECT
+    TO anon, authenticated
+    USING (is_secret = false);
+
+DROP POLICY IF EXISTS "Admins can manage platform configuration" ON public.platform_configuration;
+CREATE POLICY "Admins can manage platform configuration"
+    ON public.platform_configuration
+    FOR ALL
+    TO authenticated
+    USING (public.admin_has_permission('platform.config.manage'))
+    WITH CHECK (public.admin_has_permission('platform.config.manage'));
+
 CREATE TABLE IF NOT EXISTS public.exam_calendar_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -24,66 +56,41 @@ CREATE TABLE IF NOT EXISTS public.exam_calendar_events (
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT check_exam_calendar_dates CHECK (end_time IS NULL OR end_time >= start_time)
 );
 
--- 2. Indexes for high-performance filtered retrieval
-CREATE INDEX IF NOT EXISTS idx_exam_calendar_published_active 
+CREATE INDEX IF NOT EXISTS idx_exam_calendar_published_active
     ON public.exam_calendar_events (status, placement, priority ASC, start_time ASC)
     WHERE status = 'published';
 
-CREATE INDEX IF NOT EXISTS idx_exam_calendar_programme 
+CREATE INDEX IF NOT EXISTS idx_exam_calendar_programme
     ON public.exam_calendar_events (programme, status, start_time ASC)
     WHERE status = 'published';
 
--- 3. Enable Row-Level Security
 ALTER TABLE public.exam_calendar_events ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON public.exam_calendar_events TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.exam_calendar_events TO authenticated;
 
--- 4. RLS Policy: Public read access for published events only
 DROP POLICY IF EXISTS "Public can view published exam calendar events" ON public.exam_calendar_events;
 CREATE POLICY "Public can view published exam calendar events"
     ON public.exam_calendar_events
     FOR SELECT
+    TO anon, authenticated
     USING (status = 'published');
 
--- 5. RLS Policy: Administrative access for exam management
 DROP POLICY IF EXISTS "Admins can manage all exam calendar events" ON public.exam_calendar_events;
 CREATE POLICY "Admins can manage all exam calendar events"
     ON public.exam_calendar_events
     FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            WHERE ur.user_id = auth.uid()
-              AND ur.role IN ('super_admin', 'platform_admin', 'cbt_admin')
-        )
-        OR EXISTS (
-            SELECT 1 FROM public.platform_configuration pc
-            WHERE pc.key = 'super_admin_override' AND auth.uid() IS NOT NULL
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            WHERE ur.user_id = auth.uid()
-              AND ur.role IN ('super_admin', 'platform_admin', 'cbt_admin')
-        )
-    );
+    TO authenticated
+    USING (public.admin_has_permission('exam.calendar.manage'))
+    WITH CHECK (public.admin_has_permission('exam.calendar.manage'));
 
--- 6. Seed canonical 2027 JAMB UTME National Examination (WAT: 2027-04-18 08:00 WAT = 07:00 UTC)
 INSERT INTO public.exam_calendar_events (
-    name,
-    short_name,
-    programme,
-    start_time,
-    end_time,
-    short_note,
-    official_source_url,
-    placement,
-    priority,
-    status
+    name, short_name, programme, start_time, end_time, short_note,
+    official_source_url, placement, priority, status
 ) VALUES (
     '2027 JAMB UTME National Examination',
     'JAMB UTME',

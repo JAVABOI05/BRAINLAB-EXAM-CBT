@@ -36,29 +36,35 @@ CREATE POLICY "Public can view published sample questions"
     FOR SELECT
     USING (is_published = true);
 
--- 2. RLS Policy: Administrators have full management rights
+-- 2. Administrative management uses the permission function present in production.
 DROP POLICY IF EXISTS "Administrators can manage sample questions" ON public.curated_sample_questions;
 CREATE POLICY "Administrators can manage sample questions"
     ON public.curated_sample_questions
     FOR ALL
+    TO authenticated
     USING (
-        EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            WHERE ur.user_id = auth.uid()
-              AND ur.role IN ('super_admin', 'platform_admin', 'cbt_admin')
-        )
+        public.admin_has_permission('cbt.questions.manage')
         OR EXISTS (
-            SELECT 1 FROM public.platform_configuration pc
-            WHERE pc.key = 'super_admin_override' AND auth.uid() IS NOT NULL
+            SELECT 1 FROM public.admin_profiles ap
+            WHERE ap.user_id = auth.uid() AND ap.role = 'super_admin'
         )
     )
     WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            WHERE ur.user_id = auth.uid()
-              AND ur.role IN ('super_admin', 'platform_admin', 'cbt_admin')
+        public.admin_has_permission('cbt.questions.manage')
+        OR EXISTS (
+            SELECT 1 FROM public.admin_profiles ap
+            WHERE ap.user_id = auth.uid() AND ap.role = 'super_admin'
         )
     );
+
+-- Do not expose answer keys or explanations through the public PostgREST role.
+-- The server-side verifier uses the service-role client; public clients can
+-- retrieve only the fields required to render the question.
+REVOKE ALL ON TABLE public.curated_sample_questions FROM anon, authenticated;
+GRANT SELECT (
+    id, subject_slug, topic_context, question_text, options,
+    difficulty, display_order, is_published
+) ON public.curated_sample_questions TO anon, authenticated;
 
 -- 3. Seed Verified High-Yield Public Sample Questions
 INSERT INTO public.curated_sample_questions (

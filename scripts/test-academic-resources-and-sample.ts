@@ -60,6 +60,12 @@ async function runSuite() {
     assert(ddl.includes("CREATE POLICY \"Public can view published sample questions\""), "Configures SELECT policy for published sample questions");
     assert(ddl.includes("CREATE POLICY \"Administrators can manage sample questions\""), "Configures management policy for verified administrators");
     assert(ddl.includes("idx_sample_questions_subject_published"), "Builds compound index for fast filtered retrieval");
+    assert(ddl.includes("REVOKE ALL ON TABLE public.curated_sample_questions FROM anon, authenticated"), "Revokes public table-wide access to answer-key columns");
+    assert(ddl.includes("GRANT SELECT ("), "Grants public access only to question-rendering columns");
+    assert(ddl.includes("admin_has_permission('cbt.questions.manage')"), "Uses the production admin permission function");
+    assert(!ddl.includes("public.user_roles") && !ddl.includes("public.platform_configuration"), "Does not depend on absent role/configuration tables");
+    const serverService = fs.readFileSync("app/lib/services/sampleQuestionService.ts", "utf8");
+    assert(serverService.includes("getSupabaseServerClient") && !serverService.includes("getSupabasePublicServerClient"), "Answer verification uses server-side privileged access");
   }
 
   if (fs.existsSync(rollbackPath)) {
