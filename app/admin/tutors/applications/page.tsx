@@ -14,18 +14,19 @@ interface TutorApplication {
   full_name: string;
   email: string;
   phone: string;
-  location: string;
-  subjects: string[];
+  state_of_residence: string;
   highest_qualification: string;
-  years_of_experience: string;
-  curriculum_experience: string[];
-  linkedin_or_cv_url?: string;
-  intro_statement: string;
-  consent_ndpa_at: string;
-  status: "Pending" | "Reviewing" | "Interview_Scheduled" | "Approved" | "Rejected" | "Withdrawn";
+  primary_subjects: string[];
+  target_curricula: string[];
+  years_experience: string;
+  portfolio_url?: string;
+  statement_of_pedagogy: string;
+  status: "Pending" | "Shortlisted" | "Interviewed" | "Approved" | "Rejected";
   admin_notes?: string;
   reviewed_by?: string;
   reviewed_at?: string;
+  consent_recorded_at: string;
+  consent_version?: string;
   created_at: string;
 }
 
@@ -50,7 +51,7 @@ export default function AdminTutorApplicationsPage() {
       setAdminUser(admin);
 
       try {
-        const res = await fetch("/api/tutors/application");
+        const res = await fetch("/api/tutors/apply");
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.applications)) {
@@ -73,7 +74,7 @@ export default function AdminTutorApplicationsPage() {
   ) => {
     setIsUpdating(true);
     try {
-      const res = await fetch("/api/tutors/application", {
+      const res = await fetch("/api/tutors/apply", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -121,7 +122,7 @@ export default function AdminTutorApplicationsPage() {
       "Reference_Code,Full_Name,Email,Phone,Location,Subjects,Highest_Qualification,Experience,Status,NDPA_Consent_At,Submitted_At\n";
     const rows = filteredApplications
       .map((app) =>
-        `"${app.reference_code}","${app.full_name.replace(/"/g, '""')}","${app.email}","${app.phone}","${app.location}","${app.subjects.join("; ")}","${app.highest_qualification}","${app.years_of_experience}","${app.status}","${app.consent_ndpa_at}","${app.created_at}"`
+        `"${app.reference_code}","${app.full_name.replace(/"/g, '""')}","${app.email}","${app.phone}","${app.state_of_residence}","${app.primary_subjects.join("; ")}","${app.highest_qualification}","${app.years_experience}","${app.status}","${app.consent_recorded_at}","${app.created_at}"`
       )
       .join("\n");
 
@@ -143,13 +144,13 @@ export default function AdminTutorApplicationsPage() {
       app.full_name.toLowerCase().includes(q) ||
       app.email.toLowerCase().includes(q) ||
       app.reference_code.toLowerCase().includes(q) ||
-      app.subjects.some((s) => s.toLowerCase().includes(q));
+      (Array.isArray(app.primary_subjects) && app.primary_subjects.some((s) => s.toLowerCase().includes(q)));
     return matchesStatus && matchesQuery;
   });
 
   const countPending = applications.filter((a) => a.status === "Pending").length;
-  const countReviewing = applications.filter((a) => a.status === "Reviewing").length;
-  const countInterview = applications.filter((a) => a.status === "Interview_Scheduled").length;
+  const countShortlisted = applications.filter((a) => a.status === "Shortlisted").length;
+  const countInterviewed = applications.filter((a) => a.status === "Interviewed").length;
   const countApproved = applications.filter((a) => a.status === "Approved").length;
 
   if (loading) {
@@ -200,12 +201,12 @@ export default function AdminTutorApplicationsPage() {
             <p className="mt-1 text-2xl font-black text-amber-600">{countPending}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">In Review</span>
-            <p className="mt-1 text-2xl font-black text-blue-600">{countReviewing}</p>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Shortlisted</span>
+            <p className="mt-1 text-2xl font-black text-blue-600">{countShortlisted}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Interview Scheduled</span>
-            <p className="mt-1 text-2xl font-black text-purple-600">{countInterview}</p>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Interviewed</span>
+            <p className="mt-1 text-2xl font-black text-purple-600">{countInterviewed}</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Approved Candidates</span>
@@ -218,7 +219,7 @@ export default function AdminTutorApplicationsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Status:</span>
             <div className="flex flex-wrap gap-1.5 text-xs">
-              {["All", "Pending", "Reviewing", "Interview_Scheduled", "Approved", "Rejected"].map((st) => (
+              {["All", "Pending", "Shortlisted", "Interviewed", "Approved", "Rejected"].map((st) => (
                 <button
                   key={st}
                   type="button"
@@ -229,7 +230,7 @@ export default function AdminTutorApplicationsPage() {
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
                   }`}
                 >
-                  {st.replace("_", " ")}
+                  {st}
                 </button>
               ))}
             </div>
@@ -282,16 +283,16 @@ export default function AdminTutorApplicationsPage() {
                       className={`rounded-full px-2.5 py-0.5 font-black text-[10px] ${
                         app.status === "Pending"
                           ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300"
-                          : app.status === "Reviewing"
+                          : app.status === "Shortlisted"
                           ? "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300"
-                          : app.status === "Interview_Scheduled"
+                          : app.status === "Interviewed"
                           ? "bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300"
                           : app.status === "Approved"
                           ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
                           : "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300"
                       }`}
                     >
-                      ● {app.status.replace("_", " ")}
+                      ● {app.status}
                     </span>
                     <span className="text-slate-400">•</span>
                     <span className="text-slate-500 dark:text-slate-400 text-[11px]">
@@ -305,26 +306,27 @@ export default function AdminTutorApplicationsPage() {
                     </h3>
                     <p className="text-xs text-slate-600 dark:text-slate-400">
                       <strong>Qualification:</strong> {app.highest_qualification} •{" "}
-                      <strong>Experience:</strong> {app.years_of_experience} •{" "}
-                      <strong>Location:</strong> {app.location}
+                      <strong>Experience:</strong> {app.years_experience} •{" "}
+                      <strong>Location:</strong> {app.state_of_residence}
                     </p>
                   </div>
 
                   {/* Subjects Badges */}
                   <div className="flex flex-wrap gap-1.5">
-                    {app.subjects.map((sub) => (
-                      <span
-                        key={sub}
-                        className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-800 dark:bg-slate-800 dark:text-slate-200"
-                      >
-                        {sub}
-                      </span>
-                    ))}
+                    {Array.isArray(app.primary_subjects) &&
+                      app.primary_subjects.map((sub) => (
+                        <span
+                          key={sub}
+                          className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                        >
+                          {sub}
+                        </span>
+                      ))}
                   </div>
 
                   {/* Teaching Statement Preview */}
                   <p className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800 line-clamp-2">
-                    &ldquo;{app.intro_statement}&rdquo;
+                    &ldquo;{app.statement_of_pedagogy}&rdquo;
                   </p>
                 </div>
 
@@ -346,23 +348,23 @@ export default function AdminTutorApplicationsPage() {
                       <button
                         type="button"
                         disabled={isUpdating}
-                        onClick={() => handleStatusChange(app.id, "Reviewing")}
+                        onClick={() => handleStatusChange(app.id, "Shortlisted")}
                         className="w-full rounded-lg border border-blue-600/40 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-900 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-200 transition"
                       >
-                        Move to Reviewing
+                        Shortlist Candidate
                       </button>
                     )}
-                    {(app.status === "Pending" || app.status === "Reviewing") && (
+                    {(app.status === "Pending" || app.status === "Shortlisted") && (
                       <button
                         type="button"
                         disabled={isUpdating}
-                        onClick={() => handleStatusChange(app.id, "Interview_Scheduled")}
+                        onClick={() => handleStatusChange(app.id, "Interviewed")}
                         className="w-full rounded-lg border border-purple-600/40 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-900 hover:bg-purple-100 dark:bg-purple-950 dark:text-purple-200 transition"
                       >
-                        Schedule Audition
+                        Record Interview
                       </button>
                     )}
-                    {app.status === "Interview_Scheduled" && (
+                    {app.status === "Interviewed" && (
                       <button
                         type="button"
                         disabled={isUpdating}
@@ -420,7 +422,7 @@ export default function AdminTutorApplicationsPage() {
                 </div>
                 <div>
                   <span className="text-slate-500 font-bold">Location:</span>
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">{selectedApp.location}</p>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">{selectedApp.state_of_residence}</p>
                 </div>
                 <div>
                   <span className="text-slate-500 font-bold">Qualification:</span>
@@ -428,27 +430,27 @@ export default function AdminTutorApplicationsPage() {
                 </div>
                 <div>
                   <span className="text-slate-500 font-bold">Experience:</span>
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">{selectedApp.years_of_experience}</p>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">{selectedApp.years_experience}</p>
                 </div>
                 <div>
                   <span className="text-slate-500 font-bold">NDPA 2023 Consent Timestamp:</span>
                   <p className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
-                    {new Date(selectedApp.consent_ndpa_at).toLocaleString()}
+                    {new Date(selectedApp.consent_recorded_at).toLocaleString()}
                   </p>
                 </div>
               </div>
 
-              {selectedApp.linkedin_or_cv_url && (
+              {selectedApp.portfolio_url && (
                 <div className="text-xs">
                   <span className="text-slate-500 font-bold">CV / Portfolio Link:</span>
                   <p className="mt-0.5">
                     <a
-                      href={selectedApp.linkedin_or_cv_url}
+                      href={selectedApp.portfolio_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 dark:text-blue-400 hover:underline break-all"
                     >
-                      {selectedApp.linkedin_or_cv_url} ↗
+                      {selectedApp.portfolio_url} ↗
                     </a>
                   </p>
                 </div>
@@ -457,7 +459,7 @@ export default function AdminTutorApplicationsPage() {
               <div className="space-y-1">
                 <span className="text-xs text-slate-500 font-bold">Teaching Philosophy Statement:</span>
                 <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                  {selectedApp.intro_statement}
+                  {selectedApp.statement_of_pedagogy}
                 </p>
               </div>
 
@@ -489,10 +491,18 @@ export default function AdminTutorApplicationsPage() {
                   <button
                     type="button"
                     disabled={isUpdating}
-                    onClick={() => handleStatusChange(selectedApp.id, "Interview_Scheduled", editingNotes)}
+                    onClick={() => handleStatusChange(selectedApp.id, "Shortlisted", editingNotes)}
+                    className="rounded-xl border border-blue-600/40 bg-blue-50 px-3.5 py-2 font-bold text-blue-900 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-200 transition"
+                  >
+                    Shortlist
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    onClick={() => handleStatusChange(selectedApp.id, "Interviewed", editingNotes)}
                     className="rounded-xl border border-purple-600/40 bg-purple-50 px-3.5 py-2 font-bold text-purple-900 hover:bg-purple-100 dark:bg-purple-950 dark:text-purple-200 transition"
                   >
-                    Schedule Audition
+                    Record Interview
                   </button>
                   <button
                     type="button"
