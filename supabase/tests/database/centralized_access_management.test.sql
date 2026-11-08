@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(20);
 
 select ok(
   (select count(*) = 4
@@ -96,6 +96,14 @@ select ok(
 );
 
 select ok(
+  position('role_row.role_key=''super_admin'''
+    in pg_get_functiondef('private.access_assign_role_impl(uuid,uuid,jsonb,timestamp with time zone)'::regprocedure)) > 0
+  and position('Super Admin grants require the separate break-glass governance process'
+    in pg_get_functiondef('private.access_assign_role_impl(uuid,uuid,jsonb,timestamp with time zone)'::regprocedure)) > 0,
+  'Super Admin role assignment is blocked outside the break-glass process'
+);
+
+select ok(
   position('Super Admin role revocation requires the separate break-glass governance process'
     in pg_get_functiondef('private.access_revoke_role_impl(uuid,uuid)'::regprocedure)) > 0,
   'Super Admin role revocation is blocked outside the break-glass process'
@@ -131,8 +139,9 @@ select ok(
 
 select ok(
   position('scoped_permissions' in pg_get_functiondef('private.access_get_session_context_impl()'::regprocedure)) > 0
-  and position('resource_scope' in pg_get_functiondef('private.access_get_session_context_impl()'::regprocedure)) > 0,
-  'session context keeps resource-scoped permissions separate from global permissions'
+  and position('where ap.resource_scope=''{}''::jsonb' in pg_get_functiondef('private.access_get_session_context_impl()'::regprocedure)) > 0
+  and position('where resource_scope<>''{}''::jsonb' in pg_get_functiondef('private.access_get_session_context_impl()'::regprocedure)) > 0,
+  'only unscoped grants become global permissions; scoped grants remain attached to their resource scope'
 );
 
 select ok(
