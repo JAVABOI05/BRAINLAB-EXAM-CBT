@@ -56,6 +56,8 @@ create unique index if not exists access_assignments_one_active_role_uidx
   where revoked_at is null;
 create index if not exists access_role_permissions_key_idx
   on public.access_role_permissions(permission_key);
+create unique index if not exists access_roles_name_ci_uidx
+  on public.access_roles(lower(name));
 
 -- The catalogue is explicit: a permission key never becomes valid merely because a role name contains "admin".
 insert into public.access_permissions(permission_key,module_key,label,description,is_sensitive) values
@@ -370,6 +372,12 @@ begin
     where ap.user_id=auth.uid() and ap.role='super_admin'
   ) then raise exception 'Insufficient permission' using errcode='42501'; end if;
   if target_user_id=auth.uid() then raise exception 'You cannot revoke your own access here' using errcode='42501'; end if;
+  if exists (
+    select 1 from public.access_roles r
+    where r.id=target_role_id and r.role_key='super_admin'
+  ) then
+    raise exception 'Super Admin role revocation requires the separate break-glass governance process' using errcode='42501';
+  end if;
   update public.access_user_role_assignments set revoked_at=now(),revoked_by=auth.uid()
   where user_id=target_user_id and role_id=target_role_id and revoked_at is null;
   if found then
