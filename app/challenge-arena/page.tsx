@@ -190,6 +190,7 @@ export default function ChallengeArenaPage() {
     xpEarned?: number;
   } | null>(null);
   const [examLoading, setExamLoading] = useState(false);
+  const [examLaunchError, setExamLaunchError] = useState<string | null>(null);
 
   // Fetch initial user & arena data
   const loadArenaData = useCallback(async () => {
@@ -507,34 +508,73 @@ export default function ChallengeArenaPage() {
     }
   };
 
-  // Launch Active Competition CBT Attempt
+  // Launch Active Competition CBT Attempt. Validate the server payload before
+  // opening the exam UI so malformed competition metadata cannot crash React.
   const handleStartAttempt = async (comp: Competition) => {
+    if (examLoading) return;
     try {
       setExamLoading(true);
+      setExamLaunchError(null);
       const { data: { session } } = await supabase.auth.getSession();
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (session?.access_token) {
-        headers["Authorization"] = `Bearer ${session.access_token}`;
-      }
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
 
       const res = await fetch(`/api/competition/competitions/${comp.id}/start-attempt`, {
         method: "POST",
         headers,
+        cache: "no-store",
         body: JSON.stringify({ displayName: currentUser?.email?.split("@")[0] || "Contender" }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Unable to start this exam (HTTP ${res.status}). Please try again.`);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to launch competition attempt");
+      if (typeof data.sessionId !== "string" || !data.sessionId.trim()) {
+        throw new Error("The exam service did not return a valid session. No exam has been opened; please try again.");
+      }
+      if (!Array.isArray(data.questions) || data.questions.length === 0) {
+        throw new Error(data.error || "This competition does not currently have enough valid questions. Please contact the organiser.");
+      }
 
-      setActiveExamComp(comp);
+      const questions: CBTQuestion[] = data.questions.map((question: any, index: number) => {
+        // The assessment engine stores options as a keyed object ({ A: "...", B: "..." }),
+        // while this student UI renders a list. Support both shapes explicitly.
+        const rawOptions = question?.options;
+        const options = Array.isArray(rawOptions)
+          ? rawOptions
+              .filter((option: any) => option && typeof option.key === "string" && typeof option.text === "string")
+              .map((option: any) => ({ key: option.key.toUpperCase(), text: option.text }))
+          : rawOptions && typeof rawOptions === "object"
+            ? Object.entries(rawOptions)
+                .filter(([key, value]) => /^[A-E]$/i.test(key) && typeof value === "string" && value.trim().length > 0)
+                .map(([key, value]) => ({ key: key.toUpperCase(), text: value as string }))
+                .sort((a, b) => a.key.localeCompare(b.key))
+            : [];
+        if (!question || typeof question.id !== "string" || typeof question.question !== "string" || options.length < 2) {
+          throw new Error(`Question ${index + 1} is incomplete. Please contact the competition organiser.`);
+        }
+        return { ...question, options } as CBTQuestion;
+      });
+
+      const durationSeconds = Number(data.durationSeconds || comp.rules?.duration_seconds || 300);
+      if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+        throw new Error("The competition has an invalid exam duration. Please contact the organiser.");
+      }
+
+      setActiveExamComp({
+        ...comp,
+        competition_type: comp.competition_type || "competition",
+        code: comp.code || "",
+        title: comp.title || "Competition Exam",
+      });
       setActiveExamSessionId(data.sessionId);
-      setActiveExamQuestions(data.questions || []);
+      setActiveExamQuestions(questions);
       setActiveExamIndex(0);
       setActiveExamAnswers({});
-      setActiveExamTimeRemaining(data.durationSeconds || comp.rules?.duration_seconds || 300);
+      setActiveExamTimeRemaining(Math.floor(durationSeconds));
       setActiveExamResult(null);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error launching exam");
+      const message = err instanceof Error ? err.message : "An unexpected error occurred while opening the exam.";
+      setExamLaunchError(message);
     } finally {
       setExamLoading(false);
     }
@@ -1323,6 +1363,22 @@ export default function ChallengeArenaPage() {
         </div>
       )}
 
+      {(examLoading || examLaunchError) && (
+        <div role="status" aria-live="polite" className="fixed bottom-5 left-1/2 z-[70] w-[min(92vw,34rem)] -translate-x-1/2">
+          <div className={`rounded-2xl border p-4 shadow-2xl ${isDark ? "border-slate-700 bg-[#0D172E] text-white" : "border-slate-200 bg-white text-slate-900"}`}>
+            {examLoading ? (
+              <p className="text-sm font-semibold">Preparing your examination securely…</p>
+            ) : (
+              <>
+                <p className="text-sm font-bold text-rose-500">We couldn't open this examination</p>
+                <p className="mt-1 text-sm">{examLaunchError}</p>
+                <button type="button" onClick={() => setExamLaunchError(null)} className="mt-3 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white">Dismiss</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* CBT EXAM SIMULATOR MODAL */}
       {activeExamComp && activeExamQuestions.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -1335,7 +1391,7 @@ export default function ChallengeArenaPage() {
             }`}>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">
-                  {activeExamComp.competition_type.replace("_", " ").toUpperCase()} • {activeExamComp.code}
+                  {(activeExamComp.competition_type || "COMPETITION").replace(/_/g, " ").toUpperCase()} • {activeExamComp.code || "ARENA"}
                 </span>
                 <h2 className="text-base sm:text-lg font-black truncate max-w-md">{activeExamComp.title}</h2>
               </div>

@@ -19,11 +19,16 @@ export async function POST(
     const displayName = body.displayName || (user?.email ? user.email.split("@")[0] : `Guest_${guestSessionId.slice(-4)}`);
 
     const supabase = getSupabaseServerClient();
-    const { data: comp } = await supabase
+    const { data: comp, error: competitionError } = await supabase
       .from("competitions")
       .select("*")
       .eq("id", id)
       .maybeSingle();
+
+    if (competitionError) {
+      console.error("[Arena start-attempt] Competition lookup failed:", competitionError);
+      return NextResponse.json({ error: "We couldn't load this competition. Please retry shortly." }, { status: 503 });
+    }
 
     if (!comp) return NextResponse.json({ error: "Competition not found" }, { status: 404 });
 
@@ -60,11 +65,16 @@ export async function POST(
     }
 
     // Check attempt limits based on submitted/finished attempts
-    const { data: existingAttempts } = await supabase
+    const { data: existingAttempts, error: attemptsError } = await supabase
       .from("competition_participants")
       .select("id, status")
       .eq("competition_id", id)
       .or(user ? `user_id.eq.${user.id}` : `guest_session_id.eq.${guestSessionId}`);
+
+    if (attemptsError) {
+      console.error("[Arena start-attempt] Participant lookup failed:", attemptsError);
+      return NextResponse.json({ error: "We couldn't verify your previous attempts. Please retry shortly." }, { status: 503 });
+    }
 
     const finishedAttempts = (existingAttempts || []).filter(
       (a) => a.status === "submitted" || a.status === "disqualified"
@@ -86,12 +96,16 @@ export async function POST(
 
     if (sourceMode === "competition_bank" || sourceMode === "combined") {
       if (comp.question_bank_id) {
-        const { data: bq } = await supabase
+        const { data: bq, error: bankQuestionsError } = await supabase
           .from("competition_questions")
           .select("*")
           .eq("bank_id", comp.question_bank_id)
           .eq("is_archived", false)
           .in("status", ["approved", "published"]);
+        if (bankQuestionsError) {
+          console.error("[Arena start-attempt] Competition question-bank query failed:", bankQuestionsError);
+          return NextResponse.json({ error: "We couldn't load the competition question bank. Please retry shortly." }, { status: 503 });
+        }
         compQuestions = (bq || []).filter((row) =>
           typeof row.correct_answer === "string" &&
           ["A", "B", "C", "D", "E"].includes(row.correct_answer.trim().toUpperCase())
@@ -112,7 +126,11 @@ export async function POST(
       }
 
       // Load the full filtered source pool so passage groups are never silently truncated.
-      const { data: mq } = await mqQuery.limit(5000);
+      const { data: mq, error: mainQuestionsError } = await mqQuery.limit(5000);
+      if (mainQuestionsError) {
+        console.error("[Arena start-attempt] Main question-bank query failed:", mainQuestionsError);
+        return NextResponse.json({ error: "We couldn't load the selected question bank. Please retry shortly." }, { status: 503 });
+      }
 
       mainQuestions = (mq || [])
         // Never manufacture an answer key. Ignore malformed source rows instead
@@ -145,7 +163,10 @@ export async function POST(
     }
 
     const sessionId = crypto.randomUUID();
-    const rules = comp.rules as CompetitionSelectionRules;
+    const rules = (comp.rules || {}) as CompetitionSelectionRules;
+    if (!["competition_bank", "main_bank", "combined"].includes(sourceMode)) {
+      return NextResponse.json({ error: "This competition has an invalid question-source configuration. Please contact the organiser." }, { status: 422 });
+    }
 
     // Seed generation: For synchronized 1v1 battle, identical seed ensures identical question content and options
     const participantSeed = rules.identical_questions_for_all ? 42 : Math.floor(Math.random() * 10000);
@@ -176,9 +197,18 @@ export async function POST(
     }
 
     const snapshot = assessmentResult.snapshot;
+    if (!Array.isArray(snapshot.questions_snapshot) || snapshot.questions_snapshot.length === 0 ||
+        !snapshot.scoring_rules || !Number.isFinite(Number(snapshot.scoring_rules.duration_seconds)) ||
+        Number(snapshot.scoring_rules.duration_seconds) <= 0) {
+      console.error("[Arena start-attempt] Generated snapshot failed validation:", {
+        competitionId: id,
+        questionCount: snapshot.questions_snapshot?.length,
+      });
+      return NextResponse.json({ error: "The exam could not be prepared because its question set or duration is invalid. Please contact the organiser." }, { status: 422 });
+    }
 
-    // Save attempt snapshot
-    await supabase.from("competition_attempt_snapshots").insert({
+    // Save attempt snapshot. Do not report a successful launch if persistence fails.
+    const { error: snapshotError } = await supabase.from("competition_attempt_snapshots").insert({
       session_id: sessionId,
       competition_id: id,
       user_id: user?.id || null,
@@ -188,11 +218,15 @@ export async function POST(
       answer_key_snapshot: snapshot.answer_key_snapshot,
       scoring_rules: snapshot.scoring_rules,
     });
+    if (snapshotError) {
+      console.error("[Arena start-attempt] Snapshot persistence failed:", snapshotError);
+      return NextResponse.json({ error: "We couldn't save your exam session. No exam was started; please try again." }, { status: 503 });
+    }
 
     // Update existing registered participant or insert active participant
     const existing = existingAttempts?.[0];
     if (existing) {
-      await supabase
+      const { error: participantUpdateError } = await supabase
         .from("competition_participants")
         .update({
           status: "active",
@@ -200,8 +234,13 @@ export async function POST(
           joined_at: new Date().toISOString(),
         })
         .eq("id", existing.id);
+      if (participantUpdateError) {
+        console.error("[Arena start-attempt] Participant activation failed:", participantUpdateError);
+        await supabase.from("competition_attempt_snapshots").delete().eq("session_id", sessionId);
+        return NextResponse.json({ error: "We couldn't activate your exam entry. Please retry; your previous answers have not been changed." }, { status: 503 });
+      }
     } else {
-      await supabase.from("competition_participants").insert({
+      const { error: participantInsertError } = await supabase.from("competition_participants").insert({
         competition_id: id,
         user_id: user?.id || null,
         guest_session_id: user ? null : guestSessionId,
@@ -210,6 +249,11 @@ export async function POST(
         status: "active",
         joined_at: new Date().toISOString(),
       });
+      if (participantInsertError) {
+        console.error("[Arena start-attempt] Participant registration failed:", participantInsertError);
+        await supabase.from("competition_attempt_snapshots").delete().eq("session_id", sessionId);
+        return NextResponse.json({ error: "We couldn't register your exam entry. Please retry; no exam was started." }, { status: 503 });
+      }
     }
 
     // Strip answers from returned payload to prevent client-side answer key leakage!
