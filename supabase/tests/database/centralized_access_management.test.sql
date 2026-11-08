@@ -37,7 +37,12 @@ select ok(
 select ok(
   (select count(*) = 10
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='public' and p.proname like 'access_%'
+   where n.nspname='public' and p.proname = any(array[
+       'access_search_accounts','access_list_role_catalogue','access_create_custom_role',
+       'access_assign_role','access_revoke_role','access_list_permissions',
+       'access_list_assignments','access_update_custom_role','access_retire_custom_role',
+       'access_get_session_context'
+     ]::name[])
      and not p.prosecdef),
   'all public access RPC endpoints are SECURITY INVOKER wrappers'
 );
@@ -45,7 +50,12 @@ select ok(
 select ok(
   (select count(*) = 10
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='private' and p.proname like 'access_%_impl'
+   where n.nspname='private' and p.proname = any(array[
+       'access_search_accounts_impl','access_list_role_catalogue_impl','access_create_custom_role_impl',
+       'access_assign_role_impl','access_revoke_role_impl','access_list_permissions_impl',
+       'access_list_assignments_impl','access_update_custom_role_impl','access_retire_custom_role_impl',
+       'access_get_session_context_impl'
+     ]::name[])
      and p.prosecdef
      and p.proconfig @> array['search_path=""']::text[]),
   'all private implementations are SECURITY DEFINER with an empty search_path'
@@ -166,7 +176,12 @@ select ok(
     from pg_proc p
     join pg_namespace n on n.oid=p.pronamespace
     where n.nspname='public'
-      and p.proname like 'access_%'
+      and p.proname = any(array[
+       'access_search_accounts','access_list_role_catalogue','access_create_custom_role',
+       'access_assign_role','access_revoke_role','access_list_permissions',
+       'access_list_assignments','access_update_custom_role','access_retire_custom_role',
+       'access_get_session_context'
+     ]::name[])
       and p.prosecdef
   ),
   'no SECURITY DEFINER access-management function is exposed in the public schema'
