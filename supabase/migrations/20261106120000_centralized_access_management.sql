@@ -220,7 +220,7 @@ on conflict do nothing;
 insert into public.access_user_role_assignments(user_id,role_id,assigned_at)
 select ap.user_id,r.id,coalesce(ap.created_at,now())
 from public.admin_profiles ap join public.access_roles r on r.role_key=ap.role
-on conflict (user_id,role_id) do nothing;
+on conflict (user_id,role_id) where revoked_at is null do nothing;
 
 -- Super Admin is the only authority for directory lookup and role management.
 create or replace function private.access_search_accounts_impl(search_text text)

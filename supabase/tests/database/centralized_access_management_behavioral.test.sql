@@ -66,7 +66,7 @@ select throws_ok(
 select throws_ok(
   $$select public.access_assign_role(
       '33333333-3333-3333-3333-333333333333'::uuid,
-      (select id from public.access_roles where role_key='teacher'),
+      '44444444-4444-4444-4444-444444444444'::uuid,
       '{}'::jsonb,
       null
     )$$,
@@ -85,7 +85,7 @@ set local "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111"
 select throws_ok(
   $$select public.access_assign_role(
       '11111111-1111-1111-1111-111111111111'::uuid,
-      (select id from public.access_roles where role_key='platform_admin'),
+      (select id from public.access_list_role_catalogue() where role_key='platform_admin'),
       '{}'::jsonb,
       null
     )$$,
@@ -98,7 +98,7 @@ select throws_ok(
 select throws_ok(
   $$select public.access_assign_role(
       '33333333-3333-3333-3333-333333333333'::uuid,
-      (select id from public.access_roles where role_key='super_admin'),
+      (select id from public.access_list_role_catalogue() where role_key='super_admin'),
       '{}'::jsonb,
       null
     )$$,
@@ -130,6 +130,7 @@ select lives_ok(
 );
 
 -- Test 9: Audit Log Generation for Role Creation
+reset role;
 select ok(
   exists(
     select 1 from public.audit_logs
@@ -139,11 +140,15 @@ select ok(
   'role creation writes structured audit record to public.audit_logs'
 );
 
+-- Restore Super Admin context
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111"}';
+
 -- Test 10: Valid Role Assignment with Scoping
 select lives_ok(
   $$select public.access_assign_role(
       '33333333-3333-3333-3333-333333333333'::uuid,
-      (select id from public.access_roles where role_key='teacher'),
+      (select id from public.access_list_role_catalogue() where role_key='teacher'),
       '{"subject_id": "chem-101"}'::jsonb,
       now() + interval '30 days'
     )$$,
@@ -154,7 +159,7 @@ select lives_ok(
 select lives_ok(
   $$select public.access_assign_role(
       '33333333-3333-3333-3333-333333333333'::uuid,
-      (select id from public.access_roles where role_key='teacher'),
+      (select id from public.access_list_role_catalogue() where role_key='teacher'),
       '{"subject_id": "chem-102"}'::jsonb,
       now() + interval '60 days'
     )$$,
@@ -165,11 +170,12 @@ select lives_ok(
 select lives_ok(
   $$select public.access_revoke_role(
       '33333333-3333-3333-3333-333333333333'::uuid,
-      (select id from public.access_roles where role_key='teacher')
+      (select id from public.access_list_role_catalogue() where role_key='teacher')
     )$$,
   'Super Admin can revoke role assignment'
 );
 
+reset role;
 select ok(
   exists(
     select 1 from public.access_user_role_assignments
