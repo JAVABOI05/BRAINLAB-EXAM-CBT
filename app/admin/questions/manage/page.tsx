@@ -38,6 +38,7 @@ export default function AdminQuestionManagerPage() {
 
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -68,51 +69,61 @@ export default function AdminQuestionManagerPage() {
     setLoading(true);
     setMessage("");
 
-    // Supabase Data API defaults to a maximum of 1,000 rows per response.
-    // Fetch in smaller deterministic pages so the manager is not capped at
-    // the API's per-request row limit as the question bank grows.
-    const pageSize = 500;
+    // Fetch the full bank in bounded requests. The table itself is rendered
+    // in small UI pages below so thousands of rows never enter the DOM at once.
+    const fetchPageSize = 500;
     const columns =
       "id, source_question_id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, marks, difficulty, is_active";
     const allQuestions: QuestionRow[] = [];
     let lastId: number | null = null;
 
-    while (true) {
-      let query = supabase
-        .from("questions")
-        .select(columns)
-        .order("id", { ascending: false })
-        .limit(pageSize);
+    try {
+      while (true) {
+        let query = supabase
+          .from("questions")
+          .select(columns)
+          .order("id", { ascending: false })
+          .limit(fetchPageSize);
 
-      if (lastId !== null) {
-        query = query.lt("id", lastId);
+        if (lastId !== null) {
+          query = query.lt("id", lastId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          setQuestions(allQuestions);
+          setCurrentPage(1);
+          setMessage(
+            `Question loading stopped after ${allQuestions.length} records: ${error.message}. The records already loaded are still available; refresh to retry.`
+          );
+          return;
+        }
+
+        const page = (data || []) as QuestionRow[];
+        allQuestions.push(...page);
+
+        if (page.length < fetchPageSize) break;
+
+        // Primary-key cursor prevents overlap and offset drift as new rows arrive.
+        lastId = page[page.length - 1].id;
       }
 
-      const { data, error } = await query;
-
-      if (error) {
-        setQuestions(allQuestions);
-        setMessage(
-          `Failed to load the complete question bank after ${allQuestions.length} questions: ${error.message}. Refresh to retry.`
-        );
-        setLoading(false);
-        return;
+      setQuestions(allQuestions);
+      setCurrentPage(1);
+      if (allQuestions.length === 0) {
+        setMessage("The database returned no questions for this administrator session. Check the question-bank access policy and refresh.");
       }
-
-      const page = (data || []) as QuestionRow[];
-      allQuestions.push(...page);
-
-      if (page.length < pageSize) {
-        break;
-      }
-
-      // The primary-key cursor avoids offset drift if new questions are added
-      // while pages are being fetched and prevents duplicate rows between pages.
-      lastId = page[page.length - 1].id;
+    } catch (error) {
+      setQuestions(allQuestions);
+      setCurrentPage(1);
+      const detail = error instanceof Error ? error.message : "Unexpected network error";
+      setMessage(
+        `Could not finish loading the question bank after ${allQuestions.length} records: ${detail}. Please refresh to retry.`
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setQuestions(allQuestions);
-    setLoading(false);
   }
 
   async function toggleQuestionStatus(question: QuestionRow) {
@@ -287,6 +298,18 @@ export default function AdminQuestionManagerPage() {
     });
   }, [questions, subjectFilter, sectionFilter, searchText]);
 
+  const tablePageSize = 50;
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / tablePageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const visibleQuestions = useMemo(() => {
+    const start = (safeCurrentPage - 1) * tablePageSize;
+    return filteredQuestions.slice(start, start + tablePageSize);
+  }, [filteredQuestions, safeCurrentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [subjectFilter, sectionFilter, searchText]);
+
   const activeCount = filteredQuestions.filter((q) => q.is_active).length;
   const inactiveCount = filteredQuestions.length - activeCount;
 
@@ -452,7 +475,10 @@ export default function AdminQuestionManagerPage() {
         <section className="admin-section admin-card">
           <h2 className="admin-card-title">Question Bank</h2>
           <p className="admin-card-text">
-            Showing {filteredQuestions.length} question(s).
+            Showing {filteredQuestions.length} question(s) across the complete loaded bank.
+            {filteredQuestions.length > 0 && (
+              <> Displaying {((safeCurrentPage - 1) * tablePageSize) + 1}–{Math.min(safeCurrentPage * tablePageSize, filteredQuestions.length)}.</>
+            )}
           </p>
 
           {loading ? (
@@ -478,7 +504,7 @@ export default function AdminQuestionManagerPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredQuestions.map((question) => (
+                  {visibleQuestions.map((question) => (
                     <tr key={question.id}>
                       <td>{question.id}</td>
                       <td>{question.source_question_id || "-"}</td>
@@ -524,6 +550,29 @@ export default function AdminQuestionManagerPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {!loading && filteredQuestions.length > tablePageSize && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={safeCurrentPage <= 1}
+                className="admin-btn-light"
+              >
+                Previous
+              </button>
+              <span className="text-sm" aria-live="polite">
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={safeCurrentPage >= totalPages}
+                className="admin-btn-light"
+              >
+                Next
+              </button>
             </div>
           )}
         </section>
