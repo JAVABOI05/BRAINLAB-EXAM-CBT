@@ -20,6 +20,7 @@ interface CandidateSummary {
   lastSignInAt: string | null;
   emailConfirmed: boolean;
   isSuspended: boolean;
+  isAtRisk?: boolean;
   bannedUntil: string | null;
   subscription: {
     planId: string;
@@ -341,6 +342,7 @@ export default function CandidatesAdminPage() {
             >
               <option value="all">All Statuses</option>
               <option value="active">Active Only</option>
+              <option value="at-risk">⚠️ At-Risk Intervention</option>
               <option value="suspended">Suspended Only</option>
               <option value="unverified">Email Unverified</option>
             </select>
@@ -432,6 +434,10 @@ export default function CandidatesAdminPage() {
                         ) : !cand.emailConfirmed ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                             Unconfirmed
+                          </span>
+                        ) : cand.isAtRisk ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900" title="Candidate inactive or zero study streak">
+                            ⚠️ At-Risk
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
