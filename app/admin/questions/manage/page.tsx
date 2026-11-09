@@ -68,21 +68,50 @@ export default function AdminQuestionManagerPage() {
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase
-      .from("questions")
-      .select(
-        "id, source_question_id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, marks, difficulty, is_active"
-      )
-      .order("id", { ascending: false })
-      .range(0, 4999);
+    // Supabase Data API defaults to a maximum of 1,000 rows per response.
+    // Fetch in smaller deterministic pages so the manager is not capped at
+    // the API's per-request row limit as the question bank grows.
+    const pageSize = 500;
+    const columns =
+      "id, source_question_id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, marks, difficulty, is_active";
+    const allQuestions: QuestionRow[] = [];
+    let lastId: number | null = null;
 
-    if (error) {
-      setMessage(`Failed to load questions: ${error.message}`);
-      setLoading(false);
-      return;
+    while (true) {
+      let query = supabase
+        .from("questions")
+        .select(columns)
+        .order("id", { ascending: false })
+        .limit(pageSize);
+
+      if (lastId !== null) {
+        query = query.lt("id", lastId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        setQuestions(allQuestions);
+        setMessage(
+          `Failed to load the complete question bank after ${allQuestions.length} questions: ${error.message}. Refresh to retry.`
+        );
+        setLoading(false);
+        return;
+      }
+
+      const page = (data || []) as QuestionRow[];
+      allQuestions.push(...page);
+
+      if (page.length < pageSize) {
+        break;
+      }
+
+      // The primary-key cursor avoids offset drift if new questions are added
+      // while pages are being fetched and prevents duplicate rows between pages.
+      lastId = page[page.length - 1].id;
     }
 
-    setQuestions((data || []) as QuestionRow[]);
+    setQuestions(allQuestions);
     setLoading(false);
   }
 
