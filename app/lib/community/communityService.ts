@@ -219,3 +219,133 @@ export async function createCommunityGroup(
     return { ok: false, error: err instanceof Error ? err.message : "unknown_error" };
   }
 }
+
+
+/**
+ * List all members of a cohort, including pending approval requests (Tutor / Admin only).
+ */
+export async function listCohortMembers(
+  groupId: string,
+  client: SupabaseClient = supabase
+): Promise<CommunityGroupMembership[]> {
+  try {
+    const { data, error } = await client
+      .from("community_group_memberships")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("joined_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data as CommunityGroupMembership[];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Approve, suspend, or reject a candidate's membership in a cohort.
+ */
+export async function updateCohortMemberStatus(
+  groupId: string,
+  membershipId: string,
+  status: "active" | "rejected" | "suspended",
+  client: SupabaseClient = supabase
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    if (status === "rejected") {
+      const { error } = await client
+        .from("community_group_memberships")
+        .delete()
+        .eq("id", membershipId)
+        .eq("group_id", groupId);
+
+      if (error) return { ok: false, error: error.message };
+      return { ok: true };
+    }
+
+    const { error } = await client
+      .from("community_group_memberships")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", membershipId)
+      .eq("group_id", groupId);
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "unknown_error" };
+  }
+}
+
+/**
+ * Add a student directly to a cohort by candidate email or student ID.
+ */
+export async function addCohortMemberByEmail(
+  groupId: string,
+  emailOrId: string,
+  role: CommunityGroupRole = "student",
+  client: SupabaseClient = supabase
+): Promise<{ ok: boolean; error?: string; membership?: CommunityGroupMembership }> {
+  try {
+    const trimmed = emailOrId.trim();
+    if (!trimmed) return { ok: false, error: "Candidate email or ID is required." };
+
+    let targetUserId = trimmed;
+    if (trimmed.includes("@")) {
+      const { data: userProfile } = await client
+        .from("user_profiles")
+        .select("id")
+        .eq("email", trimmed.toLowerCase())
+        .maybeSingle();
+
+      if (userProfile?.id) {
+        targetUserId = userProfile.id;
+      }
+    }
+
+    const { data, error } = await client
+      .from("community_group_memberships")
+      .upsert(
+        {
+          group_id: groupId,
+          user_id: targetUserId,
+          group_role: role,
+          status: "active",
+          joined_via: "admin_assign",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "group_id,user_id" }
+      )
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { ok: false, error: error?.message || "Failed to add candidate to cohort." };
+    }
+
+    return { ok: true, membership: data as CommunityGroupMembership };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "unknown_error" };
+  }
+}
+
+/**
+ * Remove a candidate immediately from a cohort, revoking all permissions and access.
+ */
+export async function removeCohortMember(
+  groupId: string,
+  membershipId: string,
+  client: SupabaseClient = supabase
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { error } = await client
+      .from("community_group_memberships")
+      .delete()
+      .eq("id", membershipId)
+      .eq("group_id", groupId);
+
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "unknown_error" };
+  }
+}

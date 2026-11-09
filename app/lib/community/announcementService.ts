@@ -335,3 +335,28 @@ function getFallbackPolls(groupId: string): CommunityPoll[] {
     },
   ];
 }
+
+
+/**
+ * Toggle poll lifecycle state (take down / close, or bring up / reopen).
+ */
+export async function toggleCohortPollStatus(
+  pollId: string,
+  isClosed: boolean,
+  client: SupabaseClient = supabase
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { error } = await client
+      .from("community_polls")
+      .update({ is_closed: isClosed })
+      .eq("id", pollId);
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    return { ok: true };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "unknown_error" };
+  }
+}

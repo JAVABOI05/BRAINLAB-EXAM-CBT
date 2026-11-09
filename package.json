@@ -31,7 +31,8 @@
     "test:portal": "npx tsx scripts/test-student-portal-upgrade.ts",
     "test:analytics": "npx tsx scripts/test-analytics-and-funnel-architecture.ts",
     "test:password": "npx tsx scripts/test-password-strength-and-seeding.ts",
-    "test:community": "node scripts/test-community-phase1.cjs && node scripts/test-community-phase2.cjs && node scripts/test-community-phase3.cjs && node scripts/test-community-phase4.cjs && node scripts/test-community-phase5.cjs"
+    "test:community": "node scripts/test-community-phase1.cjs && node scripts/test-community-phase2.cjs && node scripts/test-community-phase3.cjs && node scripts/test-community-phase4.cjs && node scripts/test-community-phase5.cjs && node scripts/test-cohort-instructor-studio.cjs",
+    "test:cohort:studio": "node scripts/test-cohort-instructor-studio.cjs"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",

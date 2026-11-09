@@ -15,6 +15,22 @@ interface SubNavItem {
   desc: string;
 }
 
+export const INSTRUCTOR_NAV_MODULES = [
+  { href: "/tutor", label: "My Subjects" },
+  { href: "/tutor/questions", label: "Question Bank" },
+  { href: "/tutor/syllabus", label: "Curriculum & Syllabus" },
+  { href: "/tutor/content", label: "Lessons & Content" },
+  { href: "/tutor/lesson-blocks", label: "Lesson Blocks" },
+  { href: "/tutor/academic", label: "Academic Directory" },
+  { href: "/calendar", label: "Timetable & Classes" },
+  { href: "/classroom/studio", label: "Lesson Studio" },
+  { href: "/classroom/stem", label: "STEM Studio" },
+  { href: "/tutor/stem-grading", label: "Virtual Lab Grading" },
+  { href: "/tutor/assignments", label: "Assignments" },
+  { href: "/recordings", label: "Recordings" },
+  { href: "/messages", label: "Learner Chat" },
+];
+
 const AUTHORING_MENU: SubNavItem[] = [
   { href: "/tutor/questions", label: "Question Bank", desc: "CBT questions, bulk import & option rules" },
   { href: "/tutor/syllabus", label: "Curriculum & Syllabus", desc: "JAMB/WAEC topics & learning milestones" },
