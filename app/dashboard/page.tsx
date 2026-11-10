@@ -23,6 +23,7 @@ import DeviceNotificationPrompt from "../components/DeviceNotificationPrompt";
 import ExamCountdownBanner from "../components/ExamCountdownBanner";
 import WhatsAppChannelHeroBanner from "../components/WhatsAppChannelHeroBanner";
 import DailyLearningFeedWidget from "../components/dashboard/DailyLearningFeedWidget";
+import MigratedStudentBanner from "../components/dashboard/MigratedStudentBanner";
 import { StudentAvatar } from "../components/ui/StudentAvatar";
 import { extractStudentProfile } from "../lib/studentProfile";
 
@@ -309,6 +310,10 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Migrated Student Verified Upgrade Banner (Decision D6) */}
+        <MigratedStudentBanner />
+
         {/* Luxury Glassmorphic Learner Welcome Hero Card */}
         <section
           aria-label="Welcome Hero"

@@ -541,3 +541,88 @@ export async function sendLiveClassReminderEmail(params: LiveClassReminderEmailP
   });
 }
 
+/**
+ * 7. Send Migrated Student Verification & Upgrade Notification (Decision D6).
+ * Dispatched only after an active student's legacy subscription has been verified
+ * and migrated into the central entitlement engine.
+ */
+export interface MigratedStudentEmailParams {
+  to: string;
+  studentName: string;
+  tierName: string;
+  expiryDateText: string;
+  featuresCount?: number;
+  loginUrl?: string;
+}
+
+export async function sendMigratedStudentNotificationEmail(
+  params: MigratedStudentEmailParams
+): Promise<SendEmailResult> {
+  const {
+    to,
+    studentName,
+    tierName,
+    expiryDateText,
+    featuresCount = 14,
+    loginUrl = "https://www.brainlabacademy.com.ng/dashboard",
+  } = params;
+
+  const html = wrapEmailTemplate(
+    `Your BrainLab Subscription is Verified & Upgraded`,
+    `
+    <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:800;color:#0f172a;">
+      Your Account Upgrade is Complete!
+    </h1>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#334155;">
+      Hello ${studentName}, we are pleased to inform you that your BrainLab subscription has been successfully verified and migrated to our new <strong>Central Access &amp; Cohort Management Platform</strong>.
+    </p>
+
+    <div style="background-color:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:20px;margin:24px 0;">
+      <h3 style="margin:0 0 10px 0;font-size:14px;font-weight:700;color:#0369a1;">Verified Subscription Summary:</h3>
+      <table style="width:100%;font-size:13px;line-height:1.8;color:#0c4a6e;">
+        <tr>
+          <td style="font-weight:bold;width:40%;">Active Plan / Tier:</td>
+          <td>${tierName}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Verified Expiry:</td>
+          <td>${expiryDateText}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Features Unlocked:</td>
+          <td>${featuresCount} platform features active</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin:20px 0;">
+      <p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 12px 0;">
+        <strong>What's included in your upgraded access?</strong>
+      </p>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#475569;">
+        <li>Full CBT practice simulator with instant solutions and corrections.</li>
+        <li>AI study tutor hints and question breakdown.</li>
+        <li>Interactive live masterclasses and recorded review sessions.</li>
+        <li>STEM Studio virtual science laboratories and challenge arena.</li>
+      </ul>
+    </div>
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${loginUrl}" style="background-color:#0284c7;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:12px 28px;border-radius:8px;display:inline-block;box-shadow:0 2px 4px rgba(2,132,199,0.25);">
+        Access Your Learner Workspace &rarr;
+      </a>
+    </div>
+
+    <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">
+      All your past progress, mock scores, and test history have been fully preserved. If you have any questions, our support team is always available at <a href="mailto:support@brainlab.edu.ng" style="color:#0284c7;">support@brainlab.edu.ng</a>.
+    </p>
+    `
+  );
+
+  return sendEmail({
+    to,
+    subject: `Your BrainLab Subscription is Verified & Upgraded (${tierName})`,
+    html,
+  });
+}
+
