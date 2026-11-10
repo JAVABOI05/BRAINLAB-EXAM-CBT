@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { StatsSkeleton, CardSkeleton } from "../components/SkeletonLoader";
+import { getTopicMasteryRecords, calculateExamReadiness, type ExamReadiness } from "../lib/adaptiveEngine";
 
 interface LearningDnaProfile {
   studentName: string;
@@ -18,6 +19,7 @@ interface LearningDnaProfile {
 
 export default function LearningDnaPage() {
   const [profile, setProfile] = useState<LearningDnaProfile | null>(null);
+  const [readiness, setReadiness] = useState<ExamReadiness | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +36,13 @@ export default function LearningDnaPage() {
           "Learner";
 
         if (!active) return;
+
+        // Load Real Adaptive Topic Mastery & Exam Readiness
+        void getTopicMasteryRecords().then((records) => {
+          if (!active) return;
+          const er = calculateExamReadiness(records);
+          setReadiness(er);
+        });
 
         // Structured Explainable Learning DNA
         setProfile({
@@ -136,6 +145,53 @@ export default function LearningDnaPage() {
         </div>
       </header>
 
+      {/* Adaptive Exam Readiness Diagnostic Section */}
+      {readiness && (
+        <section aria-label="Exam Readiness Diagnostics" className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <span className="rounded-full bg-cyan-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300">
+                Continuous Assessment Telemetry
+              </span>
+              <h2 className="text-lg font-black text-slate-900 mt-1">Predicted Examination Standing</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl border border-cyan-200 bg-cyan-50/60 px-4 py-2 text-center">
+                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 block">JAMB Target</span>
+                <span className="text-xl font-black text-cyan-950 font-mono">{readiness.predictedJambScore} / 400</span>
+              </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50/60 px-4 py-2 text-center">
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 block">WAEC Predicted</span>
+                <span className="text-xl font-black text-blue-950 font-mono">{readiness.predictedWaecPercent}%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Weak Topics Diagnostic Prescription */}
+          {readiness.weakestTopics.length > 0 && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-black text-amber-900 uppercase tracking-wider">
+                <span>⚠️</span>
+                <span>Immediate Syllabus High-Yield Weak Spots</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {readiness.weakestTopics.map((topic, i) => (
+                  <Link
+                    key={i}
+                    href={`/cbt?subject=${encodeURIComponent(topic.subject)}`}
+                    className="rounded-xl border border-amber-300/80 bg-white px-3 py-1.5 text-xs font-extrabold text-amber-950 hover:bg-amber-100 transition shadow-xs flex items-center gap-1.5"
+                  >
+                    <span>{topic.subject}: {topic.category}</span>
+                    <span className="text-[10px] text-amber-700 font-mono">({Math.round(topic.mastery * 100)}%)</span>
+                    <span>&rarr;</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Modalities Distribution */}
       <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
         <div>
@@ -225,7 +281,7 @@ export default function LearningDnaPage() {
             Study Report &amp; Badges
           </Link>
           <Link
-            href="/login"
+            href="/cbt"
             className="rounded-xl bg-[#012153] px-4 py-2 text-xs font-extrabold text-white hover:bg-blue-900 transition shadow"
           >
             Launch CBT Practice
