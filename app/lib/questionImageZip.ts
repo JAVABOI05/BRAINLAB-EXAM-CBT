@@ -106,6 +106,8 @@ export async function extractQuestionImagesFromZip(file: File): Promise<Question
     const path = normalizeArchivePath(rawName);
     const mime = imageMimeType(path);
     if (!mime) continue;
+    const unixFileType = (externalAttributes >>> 16) & 0o170000;
+    if (unixFileType === 0o120000) throw new Error(`The ZIP image entry "${path}" is a symbolic link and cannot be imported.`);
 
     if (flags & 0x0001) throw new Error(`The image "${path}" is encrypted. Please provide an unencrypted ZIP.`);
     if (method !== 0 && method !== 8) throw new Error(`The image "${path}" uses an unsupported ZIP compression method.`);
