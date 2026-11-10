@@ -6,6 +6,12 @@ import {
   type PlanEntitlements,
   type SubscriptionPlan,
 } from "./platformConfig";
+import {
+  resolveStudentEntitlements,
+  mapResolvedToPlanEntitlements,
+  FEATURE_KEYS,
+  ADMIN_VIP_ENTITLEMENTS as RESOLVER_ADMIN_VIP_ENTITLEMENTS,
+} from "./centralEntitlementsResolver";
 
 export interface StudentEntitlementsResult {
   userId: string | null;
@@ -17,23 +23,7 @@ export interface StudentEntitlementsResult {
   expiresAt: string | null;
 }
 
-export const ADMIN_VIP_ENTITLEMENTS: PlanEntitlements = {
-  cbt_access: true,
-  cbt_unlimited: true,
-  cbt_daily_limit: 999999,
-  cbt_corrections: true,
-  offline_saving: true,
-  ai_tutor_enabled: true,
-  ai_monthly_quota: 999999,
-  ai_voice_tutor: true,
-  classroom_access: true,
-  competitions_included: true,
-  advanced_analytics: true,
-  certificates_issued: true,
-  calculator_type: "scientific",
-  vip_support: true,
-  stem_studio_access: true,
-};
+export const ADMIN_VIP_ENTITLEMENTS: PlanEntitlements = RESOLVER_ADMIN_VIP_ENTITLEMENTS;
 
 export const ADMIN_VIP_PLAN: SubscriptionPlan = {
   id: "admin_vip",
@@ -60,14 +50,6 @@ export const ADMIN_VIP_PLAN: SubscriptionPlan = {
 
 /**
  * Checks whether the current or specified user has an active administrator role.
- * Exhaustively inspects:
- * 1. get_admin_role RPC
- * 2. Supabase Auth session app_metadata / user_metadata (role, is_super_admin)
- * 3. admin_profiles table
- * 4. admin_user_roles table
- * 5. admin_users table
- * 6. Server-side resolveAdminRole helper (if in Node environment)
- * 7. Browser client-side session cache
  */
 export async function isCurrentUserAdmin(userId?: string): Promise<boolean> {
   let authUser: { id: string; email?: string } | null = null;
@@ -188,10 +170,7 @@ export async function isCurrentUserSuperAdmin(userId?: string): Promise<boolean>
 
 /**
  * Resolves the student's active subscription tier and authoritative entitlements
- * configured by the administrator in the database.
- *
- * NOTE: Administrators and Super Admins automatically receive unrestricted Universal VIP access across
- * all platform tools and are NEVER asked to pay for subscriptions or features.
+ * via the central authoritative resolver.
  */
 export async function getStudentSubscriptionAndEntitlements(
   userId?: string
@@ -212,165 +191,41 @@ export async function getStudentSubscriptionAndEntitlements(
   };
 
   try {
-    let targetUserId = userId;
-    if (!targetUserId) {
-      const { data: authData } = await supabase.auth.getUser();
-      targetUserId = authData.user?.id;
-    }
+    // Central Authoritative Resolver delegates to database RPC or fallback
+    const resolved = await resolveStudentEntitlements(userId);
+    const mappedEntitlements = mapResolvedToPlanEntitlements(resolved);
 
-    if (!targetUserId) {
+    if (resolved.tier_key === "apex" && resolved.tier_name.includes("Universal VIP")) {
       return {
-        userId: null,
-        planId: freePlan.id,
-        planName: freePlan.name,
-        plan: freePlan,
-        entitlements: normalizePlanEntitlements(freePlan.entitlements, true),
-        isSubscribed: false,
-        expiresAt: null,
-      };
-    }
-
-    // =========================================================================
-    // ADMIN VIP BYPASS:
-    // Administrators (super_admin, platform_admin, cbt_admin, etc.) NEVER pay
-    // for subscriptions and always possess 100% universal access to all
-    // student, CBT, AI tutor, correction, classroom, and competition features.
-    // =========================================================================
-    const isAdmin = await isCurrentUserAdmin(targetUserId);
-    if (isAdmin) {
-      return {
-        userId: targetUserId,
+        userId: resolved.user_id,
         planId: ADMIN_VIP_PLAN.id,
         planName: ADMIN_VIP_PLAN.name,
         plan: ADMIN_VIP_PLAN,
         entitlements: ADMIN_VIP_ENTITLEMENTS,
         isSubscribed: true,
-        expiresAt: null, // Lifetime / Never expires
+        expiresAt: null,
       };
     }
 
-    // =========================================================================
-    // BROWSER CLIENT OPTIMIZATION:
-    // When executing in browser, call authoritative server API route to guarantee
-    // service-role resolution and auto-repair without RLS or 42501 permission blocks.
-    // =========================================================================
-    if (typeof window !== "undefined") {
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
-        const res = await fetch(`/api/subscription/entitlements?userId=${encodeURIComponent(targetUserId)}`, {
-          method: "POST",
-          headers: {
-            "Cache-Control": "no-cache",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.planId && json.entitlements) {
-            return json as StudentEntitlementsResult;
-          }
-        }
-      } catch (clientFetchErr) {
-        console.warn("[subscriptionEntitlements] Client API fetch fallback:", clientFetchErr);
-      }
-    }
-
-    // Select database client: use server-side client when in Node.js to bypass RLS, or client supabase in browser
-    const dbClient =
-      typeof window === "undefined"
-        ? (await import("./supabaseServer")).getSupabaseServerClient()
-        : supabase;
-
-    // Query both user_subscriptions and learning_entitlements in parallel
-    const [subRes, entRes] = await Promise.all([
-      dbClient
-        .from("user_subscriptions")
-        .select("plan_id, status, current_period_end")
-        .eq("user_id", targetUserId)
-        .eq("status", "active")
-        .maybeSingle(),
-      dbClient
-        .from("learning_entitlements")
-        .select("entitlement_type, membership_type, max_questions, status, starts_at, expires_at, permanent, revoked_at")
-        .eq("user_id", targetUserId)
-        .eq("status", "active"),
-    ]);
-
-    const now = Date.now();
-
-    // Filter valid, unrevoked, active learning entitlements
-    const activeEntitlements = (entRes.data || []).filter((e) => {
-      const startsAt = e.starts_at ? new Date(e.starts_at).getTime() : 0;
-      const expiresAt = e.expires_at ? new Date(e.expires_at).getTime() : Number.POSITIVE_INFINITY;
-      return !e.revoked_at && startsAt <= now && (e.permanent || expiresAt > now);
-    });
-
-    const activeMembership = activeEntitlements.find(
-      (e) =>
-        e.entitlement_type === "membership" &&
-        ["premium", "plus", "pro"].includes((e.membership_type || "").toLowerCase())
-    );
-
-    // Validate active subscription row
-    const subData = subRes.data;
-    const subExpiry = subData?.current_period_end ? new Date(subData.current_period_end).getTime() : 0;
-    const hasValidSub = Boolean(
-      subData &&
-      subData.status === "active" &&
-      subExpiry > now &&
-      ["premium", "plus", "pro"].includes((subData.plan_id || "").toLowerCase())
-    );
-
-    // Tier rankings: pro (3) > plus (2) > premium (1) > free (0)
-    const tierRank = (tier?: string | null): number => {
-      const t = (tier || "").toLowerCase();
-      if (t === "pro") return 3;
-      if (t === "plus") return 2;
-      if (t === "premium") return 1;
-      return 0;
+    const matchedPlan = plans.find((p) => p.id.toLowerCase() === resolved.tier_key.toLowerCase());
+    const finalPlan = matchedPlan || {
+      ...freePlan,
+      id: resolved.tier_key,
+      name: resolved.tier_name,
+      entitlements: mappedEntitlements,
     };
-
-    const entTier = activeMembership?.membership_type?.toLowerCase() || null;
-    const subTier = hasValidSub ? subData!.plan_id.toLowerCase() : null;
-
-    let effectivePlanId = "free";
-    let effectiveExpiry: string | null = null;
-
-    if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
-      effectivePlanId = entTier!;
-      effectiveExpiry = activeMembership!.permanent ? null : (activeMembership!.expires_at || null);
-    } else if (tierRank(subTier) > 0) {
-      effectivePlanId = subTier!;
-      effectiveExpiry = subData!.current_period_end || null;
-    }
-
-    if (effectivePlanId === "free") {
-      return {
-        userId: targetUserId,
-        planId: freePlan.id,
-        planName: freePlan.name,
-        plan: freePlan,
-        entitlements: normalizePlanEntitlements(freePlan.entitlements, true),
-        isSubscribed: false,
-        expiresAt: subData?.current_period_end || null,
-      };
-    }
-
-    const matchedPlan = plans.find((p) => p.id === effectivePlanId);
-    const resolvedPlan = matchedPlan || freePlan;
 
     return {
-      userId: targetUserId,
-      planId: resolvedPlan.id,
-      planName: resolvedPlan.name,
-      plan: resolvedPlan,
-      entitlements: normalizePlanEntitlements(resolvedPlan.entitlements, false),
-      isSubscribed: true,
-      expiresAt: effectiveExpiry,
+      userId: resolved.user_id,
+      planId: resolved.tier_key,
+      planName: resolved.tier_name,
+      plan: finalPlan,
+      entitlements: mappedEntitlements,
+      isSubscribed: resolved.is_subscribed,
+      expiresAt: resolved.expires_at,
     };
   } catch (err) {
-    console.error("[subscriptionEntitlements] Error resolving student tier:", err);
+    console.error("[subscriptionEntitlements] Error in central resolver delegator:", err);
     return {
       userId: null,
       planId: freePlan.id,

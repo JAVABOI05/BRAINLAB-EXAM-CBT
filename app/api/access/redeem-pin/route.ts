@@ -87,7 +87,28 @@ export async function POST(request: NextRequest) {
       } catch {}
     }
 
-    // 1. Try calling the atomic PostgreSQL RPC
+    // 1. Try calling the authoritative hashed code redemption RPC first
+    try {
+      const { data: hashedData, error: hashedError } = await serviceClient.rpc("redeem_hashed_access_code", {
+        p_code: rawCode,
+        p_user_id: userId,
+      });
+
+      if (!hashedError && hashedData) {
+        if (!hashedData.ok) {
+          if (hashedData.error !== "invalid_code") {
+            const status = hashedData.error === "auth_required" ? 401 : hashedData.error === "not_found" ? 404 : 400;
+            return NextResponse.json(hashedData, { status });
+          }
+        } else {
+          return NextResponse.json(hashedData);
+        }
+      }
+    } catch {
+      // Continue to legacy voucher redemption
+    }
+
+    // 2. Fallback to legacy redeem_plan_voucher RPC
     try {
       const { data: rpcData, error: rpcError } = await serviceClient.rpc("redeem_plan_voucher", {
         p_code: rawCode,
