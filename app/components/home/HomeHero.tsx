@@ -62,17 +62,17 @@ export function HomeHero() {
 
   const headline = resolveClaimValue(
     heroConfig.headline,
-    "Master JAMB, WAEC & NECO. Score Higher with Nigeria's Smartest CBT Simulator."
+    "Learn Without Limits. Your Learning. Your Pace. Your Future."
   );
 
   const subhead = resolveClaimValue(
     heroConfig.subhead,
-    "From authentic 4-subject UTME mock timing and instant answer walk-throughs to interactive science virtual labs and verified topic weakness diagnostics—everything Nigerian students need to excel in one sitting."
+    "One platform. Everything you need to learn, practise and excel. Prepare for examinations, master difficult secondary topics, explore 3D science simulations, and challenge yourself with 24/7 AI Tutor guidance."
   );
 
   const disclosure = resolveClaimValue(
     heroConfig.disclosure,
-    "Free tier includes diagnostic tests and daily practice drills."
+    "Free tier includes CBT practice, diagnostic tests and daily learning drills."
   );
 
   const activeOption = SAMPLE_QUESTION.options.find(
@@ -108,17 +108,17 @@ export function HomeHero() {
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
           {/* Left Column: Promise & Actions (Motion: bl-fade-up) */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left animate-bl-fade-up">
-            {/* Category Pill (Slot S1-01 Brand Mark integration) */}
+            {/* Category Pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-sky-300 backdrop-blur-md shadow-xs">
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>NIGERIA&apos;S OFFICIAL CBT &amp; SECONDARY ACADEMY (SLOT S1-01)</span>
+              <span>DIRECT-TO-STUDENT LEARNING &amp; CBT ACADEMY</span>
             </div>
 
-            {/* H1 Primary Promise: High Impact & Outcome-Driven */}
+            {/* H1 Primary Promise: Student-First */}
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl leading-[1.08]">
-              Master JAMB, WAEC &amp; NECO. <br className="hidden sm:inline" />
+              Learn Without Limits. <br className="hidden sm:inline" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400">
-                Score Higher with Smart CBT Practice.
+                Your Learning. Your Pace. Your Future.
               </span>
             </h1>
 

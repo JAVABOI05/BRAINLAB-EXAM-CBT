@@ -25,82 +25,82 @@ export function HomeAudiences() {
   > = {
     students: {
       icon: "🎯",
-      tag: "Candidates & Learners",
+      tag: "UTME & JAMB Candidates",
       accent: "from-blue-600 to-sky-500",
       staggerClass: "bl-stagger-1",
       features: [
-        "Official 8-key timed CBT simulations",
-        "Offline-resilient low data practice (<1.2MB)",
-        "Instant Socratic step-by-step solutions",
+        "Authentic 4-subject 400-mark timed simulations",
+        "Step-by-step master derivations & explanations",
+        "Low-data offline sync (< 1.2 MB data usage)",
       ],
       preview: {
-        badge: "Low-Data Active",
-        title: "Mobile CBT Practice Drill",
+        badge: "CBT Mode",
+        title: "Official 4-Subject Simulator",
         metrics: [
-          { label: "Offline Questions", val: "180 Cached" },
-          { label: "Data Usage", val: "< 1.2 MB" },
+          { label: "Standard Time", val: "120 Mins" },
+          { label: "Question Pool", val: "Verified 2027" },
         ],
-        footerNotice: "Auto-syncs upon network reconnect",
+        footerNotice: "Instant score & speed analysis",
       },
     },
-    parents: {
-      icon: "📊",
-      tag: "Parents & Guardians",
+    secondary: {
+      icon: "📚",
+      tag: "SS1–SS3, WAEC & NECO",
       accent: "from-emerald-600 to-teal-500",
       staggerClass: "bl-stagger-2",
       features: [
-        "Weekly progress dispatches via WhatsApp",
-        "Clear subject & topic weakness indicators",
-        "Objective merit & cut-off benchmarks",
+        "Complete curriculum modules (Science, Arts, Commercial)",
+        "Formula sheets, definitions & theory breakdowns",
+        "Topical quizzes and past examination revisions",
       ],
       preview: {
-        badge: "Weekly Summary",
-        title: "Candidate Performance Report",
+        badge: "Syllabus Aligned",
+        title: "Senior Secondary Hub",
         metrics: [
-          { label: "Syllabus Track", val: "68% Covered" },
-          { label: "Priority Topic", val: "Organic Chemistry" },
+          { label: "NERDC Curriculum", val: "100% Tracked" },
+          { label: "Theory & OBJ", val: "Full Solutions" },
         ],
-        footerNotice: "Sent every Friday 6PM to WhatsApp",
+        footerNotice: "Step-by-step curriculum mastery",
       },
     },
-    schools: {
-      icon: "🏛️",
-      tag: "Institutions & Principals",
-      accent: "from-indigo-600 to-blue-500",
+    stem: {
+      icon: "🔬",
+      tag: "STEM & Science Explorers",
+      accent: "from-indigo-600 to-cyan-500",
       staggerClass: "bl-stagger-3",
       features: [
-        "Multi-lab concurrent batch testing mesh",
-        "Tamper-evident audit & session telemetries",
-        "Centralized institution license management",
+        "3D biological organs, circuits & chemical structures",
+        "Interactive parameter sliders for physics & mechanics",
+        "Kinesthetic visual learning turning formulas into intuition",
       ],
       preview: {
-        badge: "Lab Console",
-        title: "Batch CBT Examination Room",
+        badge: "3D Virtual Lab",
+        title: "Virtual Science Atlas",
         metrics: [
-          { label: "Terminals", val: "Multi-lab mesh" },
-          { label: "Audit Telemetry", val: "Tamper-evident" },
+          { label: "Simulations", val: "Touch & Rotate" },
+          { label: "Visual Depth", val: "Real 3D Atlas" },
         ],
-        footerNotice: "Local network failover redundancy",
+        footerNotice: "Interactive tactile experiments",
       },
     },
-    tutors: {
-      icon: "👨‍🏫",
-      tag: "Educators & Tutors",
+    independent: {
+      icon: "⚡",
+      tag: "Higher Ed & Self-Paced",
       accent: "from-purple-600 to-pink-500",
       staggerClass: "bl-stagger-4",
       features: [
-        "Interactive vector & KaTeX liveboard",
-        "Ultra-low bandwidth 24kbps adaptive audio",
-        "Real-time diagnostic polling in lectures",
+        "National Competition Arena with 1v1 sprint battles",
+        "24/7 AI Tutor with hints without spoiling answers",
+        "Verified skills passports and learning milestones",
       ],
       preview: {
-        badge: "Live Stage",
-        title: "Interactive Liveboard Canvas",
+        badge: "Live 1v1 Sprint",
+        title: "National Challenge Arena",
         metrics: [
-          { label: "Audio Bitrate", val: "24kbps Stream" },
-          { label: "Annotation", val: "Vector + LaTeX" },
+          { label: "Multiplayer", val: "Real-time 1v1" },
+          { label: "AI Guidance", val: "24/7 Active" },
         ],
-        footerNotice: "Instant live diagnostic polls",
+        footerNotice: "Merit badges & scholarships",
       },
     },
   };
@@ -115,13 +115,13 @@ export function HomeAudiences() {
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 animate-bl-fade-up">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 mb-2.5">
-            TAILORED LEARNING PATHWAYS
+            LEARNER-FIRST ACADEMY
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[var(--bl-color-text-primary)] tracking-tight">
-            Built for Every Stakeholder in Academic Success
+            Engineered for Every Stage of Your Academic Journey
           </h2>
           <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300">
-            Dedicated tools engineered for candidate mastery, parental transparency, and institutional scale.
+            Whether you are preparing for high-stakes exams, mastering secondary curriculum, exploring 3D science simulations, or studying at your own pace.
           </p>
         </div>
 

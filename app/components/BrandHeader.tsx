@@ -22,7 +22,7 @@ export const LEGACY_NAV_MAPPING = [
   { href: "/syllabus", label: "Syllabus" },
   { href: "/resources", label: "Resources" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/schools", label: "For Schools" },
+  { href: "/cbt", label: "CBT Practice" },
   { href: "/about", label: "About" },
 ];
 
@@ -418,17 +418,17 @@ export default function BrandHeader() {
             )}
           </div>
 
-          {/* Pillar 3: Schools Direct Link */}
+          {/* Pillar 3: CBT Practice Direct Link */}
           <Link
-            href="/schools"
+            href="/cbt"
             onClick={() => setOpenNavDropdown(null)}
             className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-              pathname === "/schools"
+              pathname === "/cbt"
                 ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
                 : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
-            Schools
+            CBT Practice
           </Link>
 
           {/* Pillar 4: Resources Dropdown */}
@@ -726,12 +726,12 @@ export default function BrandHeader() {
             </div>
             <div className="space-y-1 mt-1">
               <Link
-                href="/schools"
+                href="/cbt"
                 onClick={closeAllMenus}
                 className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <span>🏫</span>
-                <span>For Schools &amp; Institutions</span>
+                <span>🎯</span>
+                <span>CBT Exam Simulator</span>
               </Link>
               {RESOURCES_ITEMS.map((item) => (
                 <Link
