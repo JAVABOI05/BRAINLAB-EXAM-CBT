@@ -961,6 +961,15 @@ export default function ClassroomMaterialImporter({
               Done &amp; Return to Studio
             </button>
           )}
+
+          {activeTab === "stem_models" && (
+            <button
+              onClick={() => generatePageFromStemMolecule(selectedStemMolecule)}
+              className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-6 py-2.5 text-xs font-black text-white shadow-lg shadow-cyan-600/30 transition flex items-center gap-2"
+            >
+              <span>✨ Insert {selectedStemMolecule.name} Slide into Whiteboard</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
