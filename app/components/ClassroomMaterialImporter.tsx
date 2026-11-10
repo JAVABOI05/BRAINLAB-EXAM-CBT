@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import Papa from "papaparse";
 import type { WhiteboardPage, WhiteboardElement } from "./SmartWhiteboard";
 import { detectDocumentAspectRatio } from "./classroom/whiteboard/pdfService";
+import { CURATED_MOLECULES, type CuratedMolecule } from "./stem/Molecular3DViewer";
+import { generateMoleculeSvgDataUrl } from "./stem/molecularSvgExport";
 
 export interface LessonAttachment {
   id: string;
