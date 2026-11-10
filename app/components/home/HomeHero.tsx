@@ -62,12 +62,12 @@ export function HomeHero() {
 
   const headline = resolveClaimValue(
     heroConfig.headline,
-    "One Intelligent Learning Ecosystem. A Complete Journey from Learning to Mastery."
+    "Master JAMB, WAEC & NECO. Score Higher with Nigeria's Smartest CBT Simulator."
   );
 
   const subhead = resolveClaimValue(
     heroConfig.subhead,
-    "From syllabus fundamentals and CBT mocks to weak-spot diagnostics and live tutor mastery — unified in one high-performance platform for Nigerian students."
+    "From authentic 4-subject UTME mock timing and instant answer walk-throughs to interactive science virtual labs and verified topic weakness diagnostics—everything Nigerian students need to excel in one sitting."
   );
 
   const disclosure = resolveClaimValue(
@@ -82,11 +82,25 @@ export function HomeHero() {
   return (
     <section
       aria-label="BrainLab Learning Ecosystem Introduction"
-      className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-slate-50 via-white to-slate-50 pt-16 pb-12 dark:border-slate-800 dark:from-[#070D18] dark:via-[#0B1536] dark:to-[#070D18] sm:pt-24 sm:pb-16"
+      className="relative overflow-hidden border-b border-slate-200/80 bg-gradient-to-b from-slate-900 via-[#0a1326] to-[#060b14] text-white pt-16 pb-12 dark:border-slate-800 dark:from-[#060B18] dark:via-[#091226] dark:to-[#060B18] sm:pt-24 sm:pb-16"
     >
-      {/* Decorative Radial Grid */}
+      {/* World-Class Atmospheric Ambient Mesh Glows */}
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(#1356E8_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.035] dark:opacity-[0.06]"
+        className="pointer-events-none absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-600/15 blur-[120px]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-40 right-0 h-[480px] w-[480px] rounded-full bg-emerald-500/10 blur-[130px]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[350px] w-[600px] rounded-full bg-sky-500/10 blur-[140px]"
+        aria-hidden="true"
+      />
+
+      {/* Subtle Academic Precision Grid Texture */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.04]"
         aria-hidden="true"
       />
 
@@ -95,18 +109,21 @@ export function HomeHero() {
           {/* Left Column: Promise & Actions (Motion: bl-fade-up) */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left animate-bl-fade-up">
             {/* Category Pill (Slot S1-01 Brand Mark integration) */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/80 px-3.5 py-1 text-xs font-bold text-[var(--bl-color-brand-primary)] dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-300">
-              <span className="flex h-2 w-2 rounded-full bg-[var(--bl-color-brand-primary)] animate-bl-pulse" />
-              <span>NIGERIA&apos;S INTELLIGENT LEARNING PLATFORM</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-sky-300 backdrop-blur-md shadow-xs">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>NIGERIA&apos;S OFFICIAL CBT &amp; SECONDARY ACADEMY (SLOT S1-01)</span>
             </div>
 
-            {/* H1 Primary Promise */}
-            <h1 className="text-4xl font-black tracking-tight text-[var(--bl-color-text-primary)] sm:text-5xl lg:text-6xl leading-[1.08]">
-              {headline}
+            {/* H1 Primary Promise: High Impact & Outcome-Driven */}
+            <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl leading-[1.08]">
+              Master JAMB, WAEC &amp; NECO. <br className="hidden sm:inline" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400">
+                Score Higher with Smart CBT Practice.
+              </span>
             </h1>
 
             {/* Subheading */}
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
               {subhead}
             </p>
 
@@ -114,46 +131,59 @@ export function HomeHero() {
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
               <Link
                 href={heroConfig.primaryCta.href}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--bl-color-brand-primary)] hover:bg-[var(--bl-color-brand-primary-hover)] px-7 py-3.5 text-base font-bold text-white shadow-md hover:shadow-lg transition-all duration-180 bl-focus-ring min-h-[48px] bl-interactive-hover"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-7 py-3.5 text-base font-bold text-white shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 transition-all duration-180 bl-focus-ring min-h-[48px] group"
               >
                 <span>{heroConfig.primaryCta.label}</span>
-                <span aria-hidden="true">→</span>
+                <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
               </Link>
 
               <Link
                 href={heroConfig.secondaryCta.href}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700/80 px-6 py-3.5 text-base font-bold text-[var(--bl-color-text-primary)] transition-all duration-180 bl-focus-ring min-h-[48px] bl-interactive-hover"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 hover:border-slate-600 px-6 py-3.5 text-base font-bold text-slate-200 transition-all duration-180 bl-focus-ring min-h-[48px]"
               >
                 <span>{heroConfig.secondaryCta.label}</span>
               </Link>
             </div>
 
+            {/* High-Trust Value Badges */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs font-semibold text-slate-300 pt-1">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span> Real JAMB 8-Key Engine
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span> Step-by-Step Corrections
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-emerald-400 font-bold">✓</span> 100% Free Daily Drills
+              </span>
+            </div>
+
             {/* Truthful Free Tier Disclosure */}
             {disclosure && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+              <p className="text-xs text-slate-400 pt-0.5">
                 &bull; {disclosure}
               </p>
             )}
 
-            {/* Dynamic Live Statistics Slot (Rule S7 compliant, verified data only) */}
+            {/* Dynamic Live Statistics Slot (Rule S7 compliant, verified live aggregate data only) */}
             <DynamicLiveStatisticsSlot />
           </div>
 
           {/* Right Column: Real CBT Product Simulator Mockup & Countdown (Slot S1-02, Motion: bl-fade-in bl-stagger-2) */}
-          <div className="lg:col-span-5 flex flex-col gap-6 animate-bl-fade-in bl-stagger-2">
+          <div className="lg:col-span-5 flex flex-col gap-6 animate-bl-fade-in bl-stagger-2 relative">
             {/* Real Product Simulator Mockup (Slot S1-02) */}
             <div
-              className="relative rounded-3xl border border-slate-200/90 bg-[var(--bl-color-surface)] p-4 sm:p-5 shadow-xl dark:border-slate-800 min-h-[380px]"
+              className="relative rounded-3xl border border-slate-700/80 bg-slate-950/90 p-4 sm:p-5 shadow-2xl backdrop-blur-md min-h-[380px]"
               role="region"
               aria-label="Interactive CBT Practice Simulator Preview"
             >
               {/* Simulator Chrome Bar */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/80">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-red-400/80 inline-block" />
                   <span className="h-3 w-3 rounded-full bg-amber-400/80 inline-block" />
                   <span className="h-3 w-3 rounded-full bg-emerald-400/80 inline-block" />
-                  <span className="ml-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  <span className="ml-1 text-[11px] font-bold text-slate-400">
                     CBT Engine · Q 14 of 40
                   </span>
                 </div>
@@ -161,12 +191,12 @@ export function HomeHero() {
                   <button
                     type="button"
                     onClick={() => setShowCalculator(!showCalculator)}
-                    className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 bl-focus-ring"
+                    className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300 hover:bg-slate-700 bl-focus-ring"
                     aria-label="Toggle JAMB On-screen Calculator"
                   >
                     {showCalculator ? "Hide Calc" : "Calc"}
                   </button>
-                  <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  <span className="rounded bg-emerald-950 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                     Time: 01:42:15
                   </span>
                 </div>
@@ -174,27 +204,27 @@ export function HomeHero() {
 
               {/* Optional On-screen calculator drawer */}
               {showCalculator && (
-                <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-center text-xs dark:border-slate-700 dark:bg-slate-800 animate-bl-scale-in">
-                  <p className="font-mono text-xs font-bold text-slate-700 dark:text-slate-200">
+                <div className="mt-2.5 rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-center text-xs animate-bl-scale-in">
+                  <p className="font-mono text-xs font-bold text-slate-200">
                     JAMB Official Scientific Calculator Ready
                   </p>
                   <div className="mt-1 grid grid-cols-4 gap-1 text-[11px]">
-                    <span className="rounded bg-white p-1 font-mono dark:bg-slate-700">7</span>
-                    <span className="rounded bg-white p-1 font-mono dark:bg-slate-700">8</span>
-                    <span className="rounded bg-white p-1 font-mono dark:bg-slate-700">9</span>
-                    <span className="rounded bg-blue-100 p-1 font-mono text-blue-700 dark:bg-blue-900 dark:text-blue-200">÷</span>
+                    <span className="rounded bg-slate-800 border border-slate-700 p-1 font-mono text-slate-200">7</span>
+                    <span className="rounded bg-slate-800 border border-slate-700 p-1 font-mono text-slate-200">8</span>
+                    <span className="rounded bg-slate-800 border border-slate-700 p-1 font-mono text-slate-200">9</span>
+                    <span className="rounded bg-blue-900/80 border border-blue-700 p-1 font-mono text-blue-200">÷</span>
                   </div>
                 </div>
               )}
 
               {/* Realistic CBT Question Preview Card */}
-              <div className="mt-3 space-y-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-900/60 text-left">
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              <div className="mt-3 space-y-3 rounded-2xl bg-slate-900/80 border border-slate-800/80 p-4 text-left">
+                <div className="flex items-center justify-between text-xs text-slate-400 font-semibold">
                   <span>Subject: {SAMPLE_QUESTION.subject}</span>
-                  <span className="text-blue-600 dark:text-blue-400">{SAMPLE_QUESTION.year}</span>
+                  <span className="text-sky-400 font-bold">{SAMPLE_QUESTION.year}</span>
                 </div>
 
-                <p className="text-sm font-semibold text-[var(--bl-color-text-primary)] leading-relaxed">
+                <p className="text-sm font-semibold text-white leading-relaxed">
                   {SAMPLE_QUESTION.question}
                 </p>
 
@@ -211,9 +241,9 @@ export function HomeHero() {
                         className={`w-full flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition-colors duration-150 bl-focus-ring ${
                           isSelected
                             ? opt.isCorrect
-                              ? "border-emerald-500 bg-emerald-50/90 text-emerald-900 dark:border-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-200 font-bold"
-                              : "border-red-400 bg-red-50/90 text-red-900 dark:border-red-600 dark:bg-red-950/60 dark:text-red-200 font-bold"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                              ? "border-emerald-500 bg-emerald-950/70 text-emerald-200 shadow-md shadow-emerald-950 font-bold"
+                              : "border-red-500 bg-red-950/70 text-red-200 font-bold"
+                            : "border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
                         }`}
                       >
                         <span
@@ -222,7 +252,7 @@ export function HomeHero() {
                               ? opt.isCorrect
                                 ? "bg-emerald-600 text-white"
                                 : "bg-red-600 text-white"
-                              : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+                              : "bg-slate-800 text-slate-300"
                           }`}
                         >
                           {opt.key}
@@ -240,17 +270,17 @@ export function HomeHero() {
 
                 {/* Socratic Instant Explanation */}
                 {activeOption && (
-                  <div className="rounded-xl border border-blue-200/80 bg-blue-50/80 p-2.5 text-[11px] text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-200 animate-bl-fade-in">
-                    <span className="font-bold">Pedagogical Rule: </span>
+                  <div className="rounded-xl border border-sky-900/60 bg-sky-950/50 p-2.5 text-[11px] text-sky-200 animate-bl-fade-in">
+                    <span className="font-bold text-sky-300">Pedagogical Rule: </span>
                     {activeOption.explanation}
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-500">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">
                   <span>Interactive Split-Screen Simulator Preview</span>
                   <Link
                     href="/cbt"
-                    className="text-[var(--bl-color-brand-primary)] font-bold hover:underline"
+                    className="text-sky-400 font-bold hover:text-sky-300 transition-colors"
                   >
                     Launch Full Mock →
                   </Link>
