@@ -33,8 +33,11 @@ export function HomeBrainLabLoop() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 mb-3">
-            THE BRAINLAB LOOP (SLOTS S3-01 &amp; S3-02)
+          <span
+            data-slot="THE BRAINLAB LOOP (SLOTS S3-01 & S3-02)"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 mb-3"
+          >
+            THE BRAINLAB LOOP • 5-STAGE MASTERY CYCLE
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--bl-color-text-primary)] tracking-tight">
             A Continuous 5-Stage Journey from Concept to Mastery
@@ -222,7 +225,7 @@ export function HomeBrainLabLoop() {
                       {/* Cognitive Radar Diagnostic (Slot S3-02) */}
                       <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900 dark:text-white">Diagnostic Cognitive Radar (Slot S3-02)</span>
+                          <span className="font-bold text-slate-900 dark:text-white" data-slot="Slot S3-02">Diagnostic Cognitive Radar</span>
                           <span className="text-[10px] font-mono font-bold text-purple-600 dark:text-purple-400">Topic-by-Topic Drilldown</span>
                         </div>
                         <div className="space-y-1.5">
