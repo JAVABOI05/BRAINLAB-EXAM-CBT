@@ -6,6 +6,114 @@ import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentCon
 
 type ProductPreviewTab = "cbt-simulator" | "learning-hub" | "ai-tutor" | "challenge-arena" | "live-classroom" | "stem-studio";
 
+const PRODUCT_VISUAL_FEATURES: Record<
+  ProductPreviewTab,
+  { icon: string; title: string; desc: string }[]
+> = {
+  "cbt-simulator": [
+    {
+      icon: "⌨️",
+      title: "Official 8-Key Engine",
+      desc: "JAMB standard keys (A, B, C, D, P, N, S, R) with 4-subject combo timing.",
+    },
+    {
+      icon: "🧮",
+      title: "On-Screen Scientific Calc",
+      desc: "Built-in official calculator runtime with full keyboard navigation.",
+    },
+    {
+      icon: "💾",
+      title: "Zero-Loss Offline Sync",
+      desc: "Resilient against spotty connections; auto-syncs when online.",
+    },
+  ],
+  "learning-hub": [
+    {
+      icon: "📖",
+      title: "NERDC Curriculum Maps",
+      desc: "Structured syllabus breakdowns with secondary learning milestones.",
+    },
+    {
+      icon: "🎧",
+      title: "Voice Audio Notes",
+      desc: "Ultra low-data audio explainers for high-yield auditory review.",
+    },
+    {
+      icon: "📑",
+      title: "Sprint Cheatsheets",
+      desc: "High-yield formula summaries and verified past question cross-references.",
+    },
+  ],
+  "stem-studio": [
+    {
+      icon: "🪐",
+      title: "2D Kinematics Bench",
+      desc: "Interactive projectile & parabolic trajectory simulator with live vector math.",
+    },
+    {
+      icon: "🧪",
+      title: "Acid-Base Titration",
+      desc: "Volumetric endpoint curves and real-time indicator pH reactions.",
+    },
+    {
+      icon: "💡",
+      title: "Digital Logic Gates",
+      desc: "Interactive breadboard with live curriculum truth tables.",
+    },
+  ],
+  "ai-tutor": [
+    {
+      icon: "🤖",
+      title: "Socratic Hint Ladder",
+      desc: "Guides candidates without spoiling answers; develops first-principles reasoning.",
+    },
+    {
+      icon: "⚠️",
+      title: "Examiner Trap Alerts",
+      desc: "Highlights deceptive distractors and common arithmetic calculation traps.",
+    },
+    {
+      icon: "🎯",
+      title: "Targeted Micro-Packs",
+      desc: "Auto-generates 5 focused drill questions for any detected weakness.",
+    },
+  ],
+  "live-classroom": [
+    {
+      icon: "📻",
+      title: "24kbps Low-Data Audio",
+      desc: "Ultra-lean audio streaming engineered specifically for Nigerian mobile networks.",
+    },
+    {
+      icon: "📐",
+      title: "Vector & LaTeX Liveboard",
+      desc: "Interactive whiteboard canvas with formula typesetting and drawing tools.",
+    },
+    {
+      icon: "📼",
+      title: "Instant Video Replays",
+      desc: "Session recordings archive with timestamped review markers.",
+    },
+  ],
+  "challenge-arena": [
+    {
+      icon: "⚔️",
+      title: "1v1 Speed Sprints",
+      desc: "60-second synchronized duels using real examination questions.",
+    },
+    {
+      icon: "🏆",
+      title: "National Elo Rating",
+      desc: "Transparent competitive rank measuring speed and cognitive accuracy.",
+    },
+    {
+      icon: "🛡️",
+      title: "Anti-Cheat Integrity",
+      desc: "Server-side answer timing and tamper-evident snapshot validation.",
+    },
+  ],
+};
+
 export function HomeProductShowcase() {
   const products = HOMEPAGE_CONTENT_CONFIG.products;
   const [activePreviewId, setActivePreviewId] = useState<ProductPreviewTab>("cbt-simulator");
@@ -82,53 +190,29 @@ export function HomeProductShowcase() {
               {resolveClaimValue(activeProduct.description, "")}
             </p>
 
-            {/* Product Key Advantages */}
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/50 space-y-2 text-xs text-slate-600 dark:text-slate-300">
-              <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] block">
-                Standard Verified Specifications:
+            {/* Clean Visual Feature Cards */}
+            <div className="space-y-2 pt-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                Visual Feature Highlights:
               </span>
-              {activePreviewId === "cbt-simulator" && (
-                <ul className="space-y-1.5 list-disc list-inside">
-                  <li>Official 4-subject combination selection aligned with JAMB guidelines.</li>
-                  <li>On-screen scientific and standard calculator runtime with keyboard shortcuts.</li>
-                  <li>Offline answer synchronization resilient against spotty cybercafé networks.</li>
-                </ul>
-              )}
-              {activePreviewId === "learning-hub" && (
-                <ul className="space-y-1.5 list-disc list-inside">
-                  <li>Structured syllabus breakdowns with NERDC curriculum objectives.</li>
-                  <li>Integrated textbook recommendations and past question cross-references.</li>
-                  <li>High-yield summary cheatsheets for quick revision sprints.</li>
-                </ul>
-              )}
-              {activePreviewId === "stem-studio" && (
-                <ul className="space-y-1.5 list-disc list-inside">
-                  <li>Real-time 2D projectile kinematics and parabolic trajectory explorer.</li>
-                  <li>Acid-base volumetric titration endpoint curve simulation.</li>
-                  <li>Interactive digital logic gate bench with live curriculum truth tables.</li>
-                </ul>
-              )}
-              {activePreviewId === "ai-tutor" && (
-                <ul className="space-y-1.5 list-disc list-inside">
-                  <li>Socratic hints that guide without spoiling the complete answer.</li>
-                  <li>Identifies specific examiner traps and common calculation missteps.</li>
-                  <li>Targeted reinforcement question packs generated for weak concepts.</li>
-                </ul>
-              )}
-              {activePreviewId === "live-classroom" && (
-                <ul className="space-y-1.5 list-disc list-inside">
-                  <li>Low-bandwidth adaptive audio stream designed for Nigerian mobile data.</li>
-                  <li>Interactive vector whiteboard with KaTeX equation rendering.</li>
-                  <li>Instant session recording archive with timestamped review markers.</li>
-                </ul>
-              )}
-              {activePreviewId === "challenge-arena" && (
-                <ul className="space-y-1.5 list-disc list-inside">
-                  <li>1v1 synchronized academic sprint duels with real examination questions.</li>
-                  <li>Standard 60-second speed-rounds rewarding cognitive fluency.</li>
-                  <li>Anti-cheat answer snapshot verification with server-side validation.</li>
-                </ul>
-              )}
+              <div className="grid grid-cols-1 gap-2">
+                {PRODUCT_VISUAL_FEATURES[activePreviewId]?.map((feat, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-slate-50/80 p-2.5 dark:border-slate-800/80 dark:bg-slate-900/60 transition-colors hover:border-blue-200 dark:hover:border-blue-900"
+                  >
+                    <span className="text-lg shrink-0 mt-0.5">{feat.icon}</span>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                        {feat.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">
+                        {feat.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">

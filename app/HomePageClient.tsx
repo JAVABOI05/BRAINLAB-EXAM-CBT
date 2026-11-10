@@ -3,6 +3,7 @@
 import React from "react";
 import {
   HomeHero,
+  HomeUniversityTargetSocialProof,
   HomeJoinChannel,
   HomeAudiences,
   HomeBrainLabLoop,
@@ -50,6 +51,9 @@ export default function HomePageClient() {
     <div className="w-full bg-[var(--bl-color-canvas)] text-[var(--bl-color-text-primary)] transition-colors">
       {/* 1. Hero Section */}
       <HomeHero />
+
+      {/* University Target Badges & Social Proof Bar (Directly beneath hero) */}
+      <HomeUniversityTargetSocialProof />
 
       {/* Prominent Join Our Channel Block (directly beneath hero on mobile & desktop) */}
       <HomeJoinChannel />

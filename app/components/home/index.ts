@@ -1,4 +1,5 @@
 export * from "./HomeHero";
+export * from "./HomeUniversityTargetSocialProof";
 export * from "./HomeJoinChannel";
 export * from "./HomeAudiences";
 export * from "./HomeBrainLabLoop";
