@@ -58,6 +58,14 @@ export default function TutorGroupsManagementPage() {
   const [testEndsAt, setTestEndsAt] = useState(() => new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 16));
   const [testFreezeRoster, setTestFreezeRoster] = useState(true);
 
+  // Live Class Scheduling Modal
+  const [isSchedulingClass, setIsSchedulingClass] = useState(false);
+  const [classTitle, setClassTitle] = useState("");
+  const [classStartsAt, setClassStartsAt] = useState(() => new Date(Date.now() + 3600000).toISOString().slice(0, 16));
+  const [classDuration, setClassDuration] = useState(60);
+  const [classDescription, setClassDescription] = useState("");
+  const [schedulingClassBusy, setSchedulingClassBusy] = useState(false);
+
   // Phase 4: Cohort Psychometrics Modal
   const [isViewingPsychometrics, setIsViewingPsychometrics] = useState(false);
   const [psychometrics, setPsychometrics] = useState<CohortPsychometrics | null>(null);
@@ -411,6 +419,70 @@ export default function TutorGroupsManagementPage() {
     window.open(liveUrl, "_blank", "noopener,noreferrer");
   };
 
+  const handleOpenScheduleClass = (group: CommunityGroup) => {
+    setSelectedGroup(group);
+    setClassTitle(`Live Masterclass: ${group.name}`);
+    setClassDescription(`Interactive live classroom session for members of ${group.name}.`);
+    setIsSchedulingClass(true);
+    setIsAnnouncing(false);
+    setIsPolling(false);
+    setIsSchedulingTest(false);
+    setIsViewingPsychometrics(false);
+    setModalMessage("");
+  };
+
+  const handleCreateScheduledClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup) return;
+    if (!classTitle.trim()) {
+      setModalMessage("Please specify a class title.");
+      return;
+    }
+
+    setSchedulingClassBusy(true);
+    setModalMessage("");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setModalMessage("Authentication session expired.");
+        return;
+      }
+
+      const startTime = new Date(classStartsAt);
+      const endTime = new Date(startTime.getTime() + classDuration * 60000);
+
+      const res = await fetch("/api/classroom/classes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          title: classTitle,
+          description: classDescription,
+          scheduled_start_at: startTime.toISOString(),
+          scheduled_end_at: endTime.toISOString(),
+          class_format: "interactive",
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok) {
+        setModalMessage(`Live Masterclass scheduled successfully! Added to the Academy Timetable.`);
+        setTimeout(() => {
+          setIsSchedulingClass(false);
+        }, 1500);
+      } else {
+        setModalMessage(json.error || "Failed to schedule live class.");
+      }
+    } catch (err: any) {
+      setModalMessage(err.message || "Failed to schedule live class.");
+    } finally {
+      setSchedulingClassBusy(false);
+    }
+  };
+
   const handleViewPsychometrics = async (group: CommunityGroup) => {
     setSelectedGroup(group);
     setIsViewingPsychometrics(true);
@@ -660,6 +732,13 @@ export default function TutorGroupsManagementPage() {
                       className="rounded-lg bg-purple-50 px-2 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300"
                     >
                       📊 Poll
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenScheduleClass(group)}
+                      className="rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300"
+                    >
+                      🗓️ Schedule Class
                     </button>
                     <button
                       type="button"
@@ -1057,6 +1136,113 @@ export default function TutorGroupsManagementPage() {
                     className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
                   >
                     {modalSubmitting ? "Freezing & Publishing..." : "Publish Assessment"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Schedule Live Interactive Class */}
+        {isSchedulingClass && selectedGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>🗓️</span> Schedule Live Class for {selectedGroup.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Creates an interactive live session and adds it to the student Academy Timetable.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSchedulingClass(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {modalMessage && (
+                <div className="mt-4 rounded-xl bg-indigo-50 p-3 text-xs font-bold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                  {modalMessage}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateScheduledClass} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Class Title / Topic
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={classTitle}
+                    onChange={(e) => setClassTitle(e.target.value)}
+                    placeholder="e.g. Organic Chemistry: Isomerism & Mechanism Workshop"
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Start Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={classStartsAt}
+                      onChange={(e) => setClassStartsAt(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Duration (Minutes)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={15}
+                      max={240}
+                      value={classDuration}
+                      onChange={(e) => setClassDuration(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Lesson Description &amp; Objectives
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={classDescription}
+                    onChange={(e) => setClassDescription(e.target.value)}
+                    placeholder="Provide overview, required reference formula sheets, and key goals..."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsSchedulingClass(false)}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={schedulingClassBusy}
+                    className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {schedulingClassBusy ? "Scheduling..." : "Schedule Live Class"}
                   </button>
                 </div>
               </form>
