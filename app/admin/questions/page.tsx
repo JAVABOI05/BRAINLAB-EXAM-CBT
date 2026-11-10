@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import AdminNotificationBell from "@/app/components/AdminNotificationBell";
 import Papa from "papaparse";
 import { supabase } from "../../lib/supabase";
+import { extractQuestionImagesFromZip, normalizeQuestionImagePath, type QuestionImageFiles } from "../../lib/questionImageZip";
 import "../admin.css";
 
 type AdminUser = {
@@ -54,6 +55,17 @@ type RowError = {
   row: number;
   message: string;
 };
+
+const IMAGE_FIELDS = [
+  "question_image_url",
+  "option_a_image_url",
+  "option_b_image_url",
+  "option_c_image_url",
+  "option_d_image_url",
+  "option_e_image_url",
+  "explanation_image_url",
+] as const;
+type ImageField = (typeof IMAGE_FIELDS)[number];
 
 // Aliases dictionary mapping any lowercase-stripped header string to our canonical field name
 const HEADER_KEY_ALIASES: Record<string, string> = {
@@ -212,8 +224,13 @@ export default function AdminQuestionsPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState<string>("");
+  const [zipFileName, setZipFileName] = useState("");
+  const [zipImageFiles, setZipImageFiles] = useState<QuestionImageFiles>(new Map());
+  const [rawCsvRows, setRawCsvRows] = useState<Array<Record<string, unknown>>>([]);
+  const [isExtractingZip, setIsExtractingZip] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const zipInputRef = useRef<HTMLInputElement>(null);
 
   const [rawRowsCount, setRawRowsCount] = useState(0);
   const [parsedRows, setParsedRows] = useState<ParsedQuestionRow[]>([]);
@@ -296,13 +313,29 @@ export default function AdminQuestionsPage() {
     return null;
   }
 
-  // Safe HTTPS URL guard required by PostgreSQL check constraint
-  function normalizeImageUrl(val: unknown): string | null {
-    const raw = normalizeNullable(val);
+  // Resolve HTTPS URLs or local image paths supplied by the paired ZIP archive.
+  function resolveImageReference(
+    value: unknown,
+    label: string,
+    rowNo: number,
+    imageFiles: QuestionImageFiles,
+    nextErrors: RowError[]
+  ): string | null {
+    const raw = normalizeNullable(value);
     if (!raw) return null;
-    if (raw.startsWith("https://")) return raw;
-    if (raw.startsWith("http://")) return raw.replace(/^http:\/\//, "https://");
-    return null;
+    if (/^https:\/\//i.test(raw)) return raw;
+    if (/^http:\/\//i.test(raw)) return raw.replace(/^http:\/\//i, "https://");
+    try {
+      const path = normalizeQuestionImagePath(raw);
+      if (!imageFiles.has(path)) {
+        nextErrors.push({ row: rowNo, message: `${label} "${path}" is missing from the ZIP archive. Upload the matching images ZIP.` });
+        return null;
+      }
+      return path;
+    } catch {
+      nextErrors.push({ row: rowNo, message: `${label} has an invalid local image path.` });
+      return null;
+    }
   }
 
   // Smart header normalization
@@ -316,7 +349,7 @@ export default function AdminQuestionsPage() {
     return canonicalRow;
   }
 
-  function validateAndTransform(rows: Array<Record<string, unknown>>) {
+  function validateAndTransform(rows: Array<Record<string, unknown>>, imageFiles: QuestionImageFiles = zipImageFiles) {
     const nextErrors: RowError[] = [];
     const nextParsed: ParsedQuestionRow[] = [];
 
@@ -372,35 +405,15 @@ export default function AdminQuestionsPage() {
         });
       }
 
-      // Check image constraint if provided
-      const rawQImg = normalizeNullable(row.question_image_url);
-      if (rawQImg && !normalizeImageUrl(rawQImg)) {
-        nextErrors.push({ row: rowNo, message: "Question Image URL must begin with https://" });
-      }
-      const rawOptAImg = normalizeNullable(row.option_a_image_url);
-      if (rawOptAImg && !normalizeImageUrl(rawOptAImg)) {
-        nextErrors.push({ row: rowNo, message: "Option A Image URL must begin with https://" });
-      }
-      const rawOptBImg = normalizeNullable(row.option_b_image_url);
-      if (rawOptBImg && !normalizeImageUrl(rawOptBImg)) {
-        nextErrors.push({ row: rowNo, message: "Option B Image URL must begin with https://" });
-      }
-      const rawOptCImg = normalizeNullable(row.option_c_image_url);
-      if (rawOptCImg && !normalizeImageUrl(rawOptCImg)) {
-        nextErrors.push({ row: rowNo, message: "Option C Image URL must begin with https://" });
-      }
-      const rawOptDImg = normalizeNullable(row.option_d_image_url);
-      if (rawOptDImg && !normalizeImageUrl(rawOptDImg)) {
-        nextErrors.push({ row: rowNo, message: "Option D Image URL must begin with https://" });
-      }
-      const rawOptEImg = normalizeNullable(row.option_e_image_url);
-      if (rawOptEImg && !normalizeImageUrl(rawOptEImg)) {
-        nextErrors.push({ row: rowNo, message: "Option E Image URL must begin with https://" });
-      }
-      const rawExpImg = normalizeNullable(row.explanation_image_url);
-      if (rawExpImg && !normalizeImageUrl(rawExpImg)) {
-        nextErrors.push({ row: rowNo, message: "Explanation Image URL must begin with https://" });
-      }
+      const imageRefs: Record<ImageField, string | null> = {
+        question_image_url: resolveImageReference(row.question_image_url, "Question image", rowNo, imageFiles, nextErrors),
+        option_a_image_url: resolveImageReference(row.option_a_image_url, "Option A image", rowNo, imageFiles, nextErrors),
+        option_b_image_url: resolveImageReference(row.option_b_image_url, "Option B image", rowNo, imageFiles, nextErrors),
+        option_c_image_url: resolveImageReference(row.option_c_image_url, "Option C image", rowNo, imageFiles, nextErrors),
+        option_d_image_url: resolveImageReference(row.option_d_image_url, "Option D image", rowNo, imageFiles, nextErrors),
+        option_e_image_url: resolveImageReference(row.option_e_image_url, "Option E image", rowNo, imageFiles, nextErrors),
+        explanation_image_url: resolveImageReference(row.explanation_image_url, "Explanation image", rowNo, imageFiles, nextErrors),
+      };
 
       if (subject && question && optionA && optionB && optionC && optionD && correctAnswer) {
         nextParsed.push({
@@ -412,26 +425,26 @@ export default function AdminQuestionsPage() {
           passage_title: normalizeNullable(row.passage_title),
           passage_text: normalizeNullable(row.passage_text),
           question,
-          question_image_url: normalizeImageUrl(row.question_image_url),
+          question_image_url: imageRefs.question_image_url,
           question_image_alt: normalizeNullable(row.question_image_alt),
           option_a: optionA,
-          option_a_image_url: normalizeImageUrl(row.option_a_image_url),
+          option_a_image_url: imageRefs.option_a_image_url,
           option_a_image_alt: normalizeNullable(row.option_a_image_alt),
           option_b: optionB,
-          option_b_image_url: normalizeImageUrl(row.option_b_image_url),
+          option_b_image_url: imageRefs.option_b_image_url,
           option_b_image_alt: normalizeNullable(row.option_b_image_alt),
           option_c: optionC,
-          option_c_image_url: normalizeImageUrl(row.option_c_image_url),
+          option_c_image_url: imageRefs.option_c_image_url,
           option_c_image_alt: normalizeNullable(row.option_c_image_alt),
           option_d: optionD,
-          option_d_image_url: normalizeImageUrl(row.option_d_image_url),
+          option_d_image_url: imageRefs.option_d_image_url,
           option_d_image_alt: normalizeNullable(row.option_d_image_alt),
           option_e: optionE,
-          option_e_image_url: normalizeImageUrl(row.option_e_image_url),
+          option_e_image_url: imageRefs.option_e_image_url,
           option_e_image_alt: normalizeNullable(row.option_e_image_alt),
           correct_answer: correctAnswer,
           explanation: normalizeNullable(row.explanation),
-          explanation_image_url: normalizeImageUrl(row.explanation_image_url),
+          explanation_image_url: imageRefs.explanation_image_url,
           explanation_image_alt: normalizeNullable(row.explanation_image_alt),
           marks,
           difficulty,
@@ -469,16 +482,43 @@ export default function AdminQuestionsPage() {
       complete: (results) => {
         const rows = (results.data || []).filter((r) => Object.values(r).some((v) => String(v ?? "").trim() !== ""));
         setRawRowsCount(rows.length);
+        setRawCsvRows(rows);
         if (rows.length === 0) {
           setMessage({ type: "error", text: "The selected CSV file is empty." });
           return;
         }
-        validateAndTransform(rows);
+        validateAndTransform(rows, zipImageFiles);
       },
       error: (error) => {
         setMessage({ type: "error", text: `CSV parsing error: ${error.message}` });
       },
     });
+  }
+
+  async function handleZipFileSelected(file: File) {
+    if (!file.name.toLowerCase().endsWith(".zip")) {
+      setMessage({ type: "error", text: "Please select a valid .zip image archive." });
+      return;
+    }
+    try {
+      setIsExtractingZip(true);
+      setMessage(null);
+      const extracted = await extractQuestionImagesFromZip(file);
+      setZipImageFiles(extracted);
+      setZipFileName(file.name);
+      if (rawCsvRows.length > 0) validateAndTransform(rawCsvRows, extracted);
+      setMessage({
+        type: "success",
+        text: `Extracted ${extracted.size} verified images from ${file.name}. Local image references have been checked against the archive.`,
+      });
+    } catch (error) {
+      setZipImageFiles(new Map());
+      setZipFileName("");
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Could not read the ZIP archive." });
+      setErrors((current) => current);
+    } finally {
+      setIsExtractingZip(false);
+    }
   }
 
   // Duplicate-aware batch uploader with granular fallback isolation.
@@ -490,6 +530,11 @@ export default function AdminQuestionsPage() {
     }
 
     const BATCH_SIZE = 50;
+
+    if (!adminUser) {
+      setMessage({ type: "error", text: "Administrator session is not ready. Please refresh and sign in again." });
+      return;
+    }
 
     try {
       setUploading(true);
@@ -545,14 +590,58 @@ export default function AdminQuestionsPage() {
         return true;
       });
 
-      const totalBatches = Math.ceil(rowsToInsert.length / BATCH_SIZE);
-      for (let i = 0; i < rowsToInsert.length; i += BATCH_SIZE) {
-        const chunk = rowsToInsert.slice(i, i + BATCH_SIZE);
+      // Upload each referenced ZIP image once to the existing question-media bucket.
+      const imagePaths = new Set<string>();
+      rowsToInsert.forEach((row) => {
+        IMAGE_FIELDS.forEach((field) => {
+          const value = row[field];
+          if (value && !/^https:\/\//i.test(value)) imagePaths.add(value);
+        });
+      });
+
+      const imageUrlByPath = new Map<string, string>();
+      const storagePathByImage = new Map<string, string>();
+      const batchFolder = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      const imagePathList = Array.from(imagePaths);
+      for (let imageIndex = 0; imageIndex < imagePathList.length; imageIndex++) {
+        const imagePath = imagePathList[imageIndex];
+        const imageFile = zipImageFiles.get(imagePath);
+        if (!imageFile) throw new Error(`Image "${imagePath}" is missing from the selected ZIP archive.`);
+        const safeName = imagePath.replace(/[^a-zA-Z0-9._/-]/g, "-").replace(/\//g, "-");
+        const storagePath = `${adminUser.id}/bulk-import/${batchFolder}/${safeName}`;
+        setUploadStatus(`Uploading image ${imageIndex + 1} of ${imagePathList.length}...`);
+        const { data, error } = await supabase.storage.from("question-media").upload(storagePath, imageFile, {
+          cacheControl: "31536000",
+          contentType: imageFile.type,
+          upsert: false,
+        });
+        if (error || !data?.path) {
+          throw new Error(`Could not upload image "${imagePath}": ${error?.message || "Storage returned no file path."}`);
+        }
+        const publicUrl = supabase.storage.from("question-media").getPublicUrl(data.path).data.publicUrl;
+        imageUrlByPath.set(imagePath, publicUrl);
+        storagePathByImage.set(imagePath, data.path);
+        setUploadProgress(imagePathList.length ? Math.round(((imageIndex + 1) / imagePathList.length) * 30) : 30);
+      }
+
+      const preparedRows = rowsToInsert.map((row) => {
+        const prepared = { ...row };
+        IMAGE_FIELDS.forEach((field) => {
+          const value = prepared[field];
+          if (value && imageUrlByPath.has(value)) prepared[field] = imageUrlByPath.get(value) || value;
+        });
+        return prepared;
+      });
+      const successfulRows: typeof preparedRows = [];
+      const totalBatches = Math.ceil(preparedRows.length / BATCH_SIZE);
+      for (let i = 0; i < preparedRows.length; i += BATCH_SIZE) {
+        const chunk = preparedRows.slice(i, i + BATCH_SIZE);
         const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
         setUploadStatus(`Uploading batch ${batchNumber} of ${totalBatches} (${i + 1} - ${Math.min(i + BATCH_SIZE, rowsToInsert.length)})...`);
 
         const { error } = await supabase.from("questions").insert(chunk);
+        if (!error) successfulRows.push(...chunk);
 
         if (error) {
           // Isolate row-level failures, including a concurrent duplicate insert.
@@ -569,13 +658,31 @@ export default function AdminQuestionsPage() {
               });
             } else {
               totalInserted++;
+              successfulRows.push(rowItem);
             }
           }
         } else {
           totalInserted += chunk.length;
         }
 
-        setUploadProgress(Math.round((Math.min(i + BATCH_SIZE, rowsToInsert.length) / rowsToInsert.length) * 100));
+        setUploadProgress(30 + Math.round((Math.min(i + BATCH_SIZE, preparedRows.length) / Math.max(preparedRows.length, 1)) * 70));
+      }
+
+      // Remove uploaded images that ended up unused after a partial row-level failure.
+      const usedImageUrls = new Set<string>();
+      successfulRows.forEach((row) => IMAGE_FIELDS.forEach((field) => {
+        const value = row[field];
+        if (value) usedImageUrls.add(value);
+      }));
+      const unusedStoragePaths = Array.from(storagePathByImage.entries())
+        .filter(([imagePath]) => {
+          const uploadedUrl = imageUrlByPath.get(imagePath);
+          return uploadedUrl && !usedImageUrls.has(uploadedUrl);
+        })
+        .map(([, storagePath]) => storagePath);
+      if (unusedStoragePaths.length > 0) {
+        const { error: cleanupError } = await supabase.storage.from("question-media").remove(unusedStoragePaths);
+        if (cleanupError) console.warn("Unused question image cleanup notice:", cleanupError.message);
       }
 
       // Sync subjects only when there were genuinely new rows to import.
@@ -615,7 +722,11 @@ export default function AdminQuestionsPage() {
         setRawRowsCount(0);
         setFileName("");
         setFileSize("");
+        setRawCsvRows([]);
+        setZipFileName("");
+        setZipImageFiles(new Map());
         if (fileInputRef.current) fileInputRef.current.value = "";
+        if (zipInputRef.current) zipInputRef.current.value = "";
       }
     } catch (error) {
       setMessage({
@@ -911,6 +1022,16 @@ export default function AdminQuestionsPage() {
     return Array.from(set).sort();
   }, [parsedRows]);
 
+  const previewImageUrls = useMemo(() => {
+    const urls = new Map<string, string>();
+    zipImageFiles.forEach((file, path) => urls.set(path, URL.createObjectURL(file)));
+    return urls;
+  }, [zipImageFiles]);
+
+  useEffect(() => () => {
+    previewImageUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, [previewImageUrls]);
+
   const filteredPreviewRows = useMemo(() => {
     let list = parsedRows;
     if (filterSubject !== "All") {
@@ -1035,6 +1156,36 @@ export default function AdminQuestionsPage() {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {fileSize ? `File size: ${fileSize}` : "Supports UTF-8 CSV exports from Excel, Google Sheets, or CBT software"}
             </p>
+          </div>
+
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Question images (optional)</h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                If your CSV contains local paths such as images/diagram.png, attach the matching ZIP archive. BrainLab will validate and upload the images to Supabase Storage.
+              </p>
+              <p className="mt-1 text-xs font-bold text-blue-700 dark:text-cyan-300">
+                {isExtractingZip ? "Extracting and validating ZIP..." : zipFileName ? `${zipFileName} • ${zipImageFiles.size} images extracted` : "No image ZIP selected"}
+              </p>
+            </div>
+            <input
+              ref={zipInputRef}
+              type="file"
+              accept=".zip,application/zip"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleZipFileSelected(file);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => zipInputRef.current?.click()}
+              disabled={uploading || isExtractingZip}
+              className="admin-btn-light text-xs py-2 px-3"
+            >
+              {zipFileName ? "Replace Images ZIP" : "Choose Images ZIP"}
+            </button>
           </div>
 
           {/* Upload Progress Bar */}
@@ -1184,8 +1335,17 @@ export default function AdminQuestionsPage() {
                       <td className="max-w-xs text-xs">
                         <div className="font-medium text-slate-800 dark:text-slate-100">{row.question}</div>
                         {row.question_image_url && (
-                          <div className="mt-1 inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-cyan-300">
-                            <span>🖼️ Diagram attached</span>
+                          <div className="mt-2 flex items-center gap-2">
+                            {(previewImageUrls.get(row.question_image_url) || /^https:\/\//i.test(row.question_image_url)) && (
+                              <img
+                                src={previewImageUrls.get(row.question_image_url) || row.question_image_url}
+                                alt={row.question_image_alt || "Question diagram preview"}
+                                className="max-h-20 max-w-28 rounded-lg border border-slate-200 object-contain"
+                              />
+                            )}
+                            <span className="inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-cyan-300">
+                              🖼️ Diagram attached
+                            </span>
                           </div>
                         )}
                       </td>
