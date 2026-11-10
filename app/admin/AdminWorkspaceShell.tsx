@@ -343,6 +343,7 @@ const GROUPS: Group[] = [
       { id: "academic", label: "Academic Structure", href: "/admin/academic", description: "Academic sessions, curricula and subjects", icon: "academic", visible: (u, a) => a["learning.content.manage"] === true || platformAdmin(u) },
       { id: "communication", label: "Communications & Email Hub", href: "/admin/communication", description: "Resend, Zoho, Cloudflare, Termii & broadcast emails", icon: "communication", visible: (u, a) => a["community.moderate"] === true || platformAdmin(u) },
       { id: "roles", label: "Administrator Roles", href: "/admin/users", description: "Assign and review admin roles", icon: "roles", visible: (u) => u.role === "super_admin" },
+      { id: "access", label: "Access & Cohorts", href: "/admin/access", description: "Central entitlement engine, cohorts, grants, quotas and codes", icon: "security", visible: (u, a) => platformAdmin(u) || a["institution.manage"] === true || a["finance.billing.manage"] === true },
       { id: "security", label: "Security & Access", href: "/admin/security", description: "Security workspace and access review", icon: "security", visible: (u, a) => platformAdmin(u) || a["audit.logs.read"] === true },
       { id: "audit", label: "Audit Trail", href: "/admin/audit", description: "Administrative change history", icon: "audit", visible: (u, a) => platformAdmin(u) || a["audit.logs.read"] === true },
       { id: "announcements", label: "Announcements & Maintenance", href: "/admin/announcements", description: "Site-wide broadcast banner and CBT maintenance mode", icon: "communication", visible: (u, a) => platformAdmin(u) || a["cbt.config.manage"] === true },
@@ -460,6 +461,8 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
     "/admin/communication": "Communications & Email Hub",
     "/admin/users": "Administrator Roles",
     "/admin/security": "Security & Audit",
+    "/admin/access": "Access & Cohort Management Centre",
+    "/admin/cohorts": "Access & Cohort Management Centre",
     "/admin/audit": "Audit Trail",
   };
 
