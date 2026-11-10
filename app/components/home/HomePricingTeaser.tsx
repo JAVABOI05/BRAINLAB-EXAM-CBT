@@ -1,9 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { getSubscriptionPlans, DEFAULT_PLANS, type SubscriptionPlan } from "@/app/lib/platformConfig";
 
 export function HomePricingTeaser() {
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
+
+  useEffect(() => {
+    let isMounted = true;
+    void getSubscriptionPlans()
+      .then((livePlans) => {
+        if (isMounted && Array.isArray(livePlans) && livePlans.length > 0) {
+          setPlans(livePlans.filter((p) => p.is_active));
+        }
+      })
+      .catch(() => {
+        // Fall back to DEFAULT_PLANS
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const plan = plans.find((p) => p.id === "plus" || p.id === "apex_cohort" || p.id === "premium") || plans[0];
+
   return (
     <section
       id="apex-cohort"
@@ -172,11 +194,11 @@ export function HomePricingTeaser() {
 
               <div className="my-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                    Cohort Enrolment
+                  <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">
+                    ₦{plan.price_naira.toLocaleString()}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    / per programme session
+                    / per session track
                   </span>
                 </div>
               </div>
@@ -221,13 +243,21 @@ export function HomePricingTeaser() {
           </div>
         </div>
 
-        {/* Link to Apex discovery */}
-        <div className="mt-12 text-center">
+        {/* Link to Apex and Pricing details */}
+        <div className="mt-12 text-center flex flex-col sm:flex-row items-center justify-center gap-6">
           <Link
             href="/apex"
+            className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1.5"
+          >
+            <span>Learn more about upcoming Apex Cohort programmes &amp; timetables</span>
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+          <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            href="/pricing"
             className="text-sm font-bold text-[var(--bl-color-brand-primary)] hover:underline inline-flex items-center gap-1.5"
           >
-            <span>Learn more about upcoming Apex Cohort programmes and admission schedules</span>
+            <span>Compare full access category breakdown</span>
             <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>

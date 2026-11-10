@@ -22,6 +22,7 @@ export const LEGACY_NAV_MAPPING = [
   { href: "/syllabus", label: "Syllabus" },
   { href: "/resources", label: "Resources" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/schools", label: "For Schools" },
   { href: "/cbt", label: "CBT Practice" },
   { href: "/about", label: "About" },
 ];

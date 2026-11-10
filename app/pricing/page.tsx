@@ -305,26 +305,18 @@ function PricingContent() {
 
           <div className="text-center">
             <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-indigo-900">
-              <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg><span>Transparent Monthly Subscriptions</span></span>
+              <span className="flex items-center gap-1.5"><span>🏛️</span><span>Two Clear Access Categories</span></span>
             </span>
             <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-              Invest in your knowledge. <span className="text-indigo-700">Own your score.</span>
+              Independent Learning for Everyone. <br />
+              <span className="text-indigo-700">Guided Structure in Apex Cohort.</span>
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-              Dynamic monthly plans with no lock-in. Full CBT solutions, question corrections, unlimited practice attempts, and AI Tutor derivations.
+              BrainLab is an educational platform, not a paywalled service. Every registered student learns free; Apex Cohort delivers intensive live tutorials, dedicated tutors, and continuous academic accountability.
             </p>
 
             <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-900 shadow-xs">
-              <span className="flex items-center gap-1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg><span>Instant Tier Activation</span> · Verified via Live Gateways, ATM Cards &amp; Bank Transfer</span>
-            </div>
-
-            <div className="mt-4 flex justify-center gap-4 text-xs font-bold text-indigo-700">
-              <Link href="/account/rewards" className="hover:underline">
-                <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12" /><rect width="20" height="5" x="2" y="7" /><line x1="12" x2="12" y1="22" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></svg><span>View Student Promo Codes</span><span aria-hidden="true">→</span></span>
-              </Link>
-              <Link href="/account/subscription/refund" className="hover:underline">
-                <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /></svg><span>24-Hour Refund Portal</span><span aria-hidden="true">→</span></span>
-              </Link>
+              <span className="flex items-center gap-1">✓ <span>Free Public Access for Every Registered Learner (₦0)</span></span>
             </div>
           </div>
 
@@ -334,90 +326,164 @@ function PricingContent() {
             </div>
           )}
 
-          {/* Pricing Grid */}
-          <div className="mt-14 grid gap-8 lg:grid-cols-4 sm:grid-cols-2">
-            {plans.map((plan) => {
-              const isCurrent = activeSub?.plan_id === plan.id;
-              const isPopular = plan.id === "plus";
+          {/* Two Access Categories Direct Grid */}
+          <div className="mt-14 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto items-stretch">
+            {/* 1. Public (₦0, Free) */}
+            <article className="relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 mb-4">
+                  OPEN TO EVERY LEARNER
+                </div>
+                <h2 className="text-2xl font-black text-slate-950">Public Access</h2>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  Comprehensive self-directed practice tools and revision resources for every registered student.
+                </p>
+
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="text-4xl font-black tracking-tight text-slate-950">₦0</span>
+                  <span className="text-xs font-bold text-slate-500">/ free forever</span>
+                </div>
+
+                <div className="mt-6 border-t border-slate-100 pt-6">
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-700">What’s included:</p>
+                  <ul className="mt-3 space-y-2.5 text-xs text-slate-600">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Full CBT Practice:</strong> Unlimited mock exams with JAMB 8-key interface &amp; timing</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Question Bank:</strong> Complete past question library and worked solutions</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>AI Tutor:</strong> Generous fair-use interactive study assistance</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Learning Hub:</strong> Open curriculum syllabus notes and video resources</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Competition Arena:</strong> Live 1v1 duels, challenges, and national leaderboards</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>STEM Studio:</strong> Public 3D interactive molecular and science viewers</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-slate-100">
+                <Link
+                  href="/cbt"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 py-3.5 text-xs font-extrabold transition"
+                >
+                  Get Started, It&apos;s Free →
+                </Link>
+              </div>
+            </article>
+
+            {/* 2. Apex Cohort (Enrolment) */}
+            {(() => {
+              const apexPlan = plans.find((p) => p.id === "plus" || p.id === "apex_cohort" || p.id === "premium") || plans[0];
+              const isEnrolled = activeSub?.status === "active";
 
               return (
-                <article
-                  key={plan.id}
-                  className={`relative flex flex-col justify-between rounded-3xl border bg-white p-7 shadow-sm transition hover:shadow-md ${
-                    isPopular
-                      ? "border-indigo-600 ring-2 ring-indigo-600"
-                      : "border-slate-200"
-                  }`}
-                >
-                  {isPopular && (
-                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-sm">
-                      Most Popular
-                    </span>
-                  )}
+                <article className="relative flex flex-col justify-between rounded-3xl border-2 border-indigo-600 bg-white p-8 shadow-xl">
+                  <span className="absolute -top-3.5 right-6 rounded-full bg-indigo-600 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-sm">
+                    INTENSIVE PROGRAMME
+                  </span>
 
                   <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-50 text-indigo-900 border border-indigo-200 mb-4">
+                      GUIDED TUTORIAL TRACK
+                    </div>
                     <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-extrabold text-slate-950">{plan.name}</h2>
+                      <h2 className="text-2xl font-black text-slate-950">Apex Cohort</h2>
                       {isAdmin ? (
                         <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900">
                           👑 VIP Admin
                         </span>
-                      ) : isCurrent ? (
+                      ) : isEnrolled ? (
                         <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800">
-                          Current
+                          Active Enrolment
                         </span>
                       ) : null}
                     </div>
 
-                    <p className="mt-2 text-xs leading-5 text-slate-500 min-h-[40px]">{plan.description}</p>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Everything in Public, plus live teaching, dedicated tutors, and continuous academic accountability.
+                    </p>
 
                     <div className="mt-6 flex items-baseline gap-1">
                       <span className="text-4xl font-black tracking-tight text-slate-950">
-                        ₦{plan.price_naira.toLocaleString()}
+                        ₦{apexPlan.price_naira.toLocaleString()}
                       </span>
-                      <span className="text-xs font-bold text-slate-500">/{plan.interval}</span>
+                      <span className="text-xs font-bold text-slate-500">/ session track</span>
                     </div>
 
                     <div className="mt-6 border-t border-slate-100 pt-6">
-                      <p className="text-xs font-black uppercase tracking-wider text-slate-700">What’s included:</p>
+                      <p className="text-xs font-black uppercase tracking-wider text-indigo-900">Apex Cohort Advantages:</p>
                       <ul className="mt-3 space-y-2.5 text-xs text-slate-600">
-                        {plan.features.map((feat, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-emerald-600 font-bold">✓</span>
-                            <span>{feat}</span>
-                          </li>
-                        ))}
+                        <li className="flex items-start gap-2">
+                          <span className="text-indigo-600 font-bold">★</span>
+                          <span><strong>Live Intensive Classes:</strong> Scheduled subject-by-subject live classes</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-indigo-600 font-bold">★</span>
+                          <span><strong>Dedicated Tutors:</strong> Personal academic mentorship and direct guidance</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-indigo-600 font-bold">★</span>
+                          <span><strong>Assigned Weekly Roadmap:</strong> Structured milestones and scheduled assessments</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-indigo-600 font-bold">★</span>
+                          <span><strong>Special Cohort Mocks:</strong> Monitored practice with detailed tutor intervention</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-indigo-600 font-bold">★</span>
+                          <span><strong>Full Lesson Library:</strong> Complete recorded video archive and session notes</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-indigo-600 font-bold">★</span>
+                          <span><strong>Enhanced AI Tutor:</strong> Priority quota and deep diagnostic breakdowns</span>
+                        </li>
                       </ul>
                     </div>
                   </div>
 
-                  <div className="mt-8 pt-4 border-t border-slate-100">
+                  <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col gap-2.5">
                     <button
                       type="button"
                       disabled={isAdmin}
-                      onClick={() => handleChoosePlan(plan)}
-                      className={`w-full rounded-xl py-3 text-xs font-extrabold transition active:scale-95 ${
+                      onClick={() => handleChoosePlan(apexPlan)}
+                      className={`w-full rounded-xl py-3.5 text-xs font-extrabold transition active:scale-95 ${
                         isAdmin
                           ? "bg-amber-50 text-amber-800 border border-amber-300 cursor-default"
-                          : isCurrent
-                          ? "bg-slate-100 text-slate-400 cursor-default"
-                          : isPopular
-                          ? "bg-indigo-700 text-white hover:bg-indigo-800"
-                          : "bg-[#012153] text-white hover:bg-[#0a2f72]"
+                          : isEnrolled
+                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                          : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/25"
                       }`}
                     >
                       {isAdmin
                         ? "Universal Access Active (Super Admin)"
-                        : isCurrent
-                        ? "Current Plan"
-                        : plan.price_kobo === 0
-                        ? (user ? "Current Free Tier →" : "Get Started Free →")
-                        : `Choose ${plan.name} →`}
+                        : isEnrolled
+                        ? "Enter Cohort Classroom →"
+                        : "Enrol in Apex Cohort →"}
                     </button>
+                    <Link
+                      href="/apex"
+                      className="text-center text-xs font-bold text-indigo-700 hover:underline"
+                    >
+                      View Full Programme Details &amp; Timetable →
+                    </Link>
                   </div>
                 </article>
               );
-            })}
+            })()}
           </div>
 
           {/* Checkout Modal */}
@@ -427,9 +493,9 @@ function PricingContent() {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700">
-                      Order Summary
+                      Apex Cohort Enrolment
                     </span>
-                    <h3 className="text-xl font-black text-slate-950">{checkoutPlan.name} Plan</h3>
+                    <h3 className="text-xl font-black text-slate-950">Apex Cohort Programme Enrolment</h3>
                   </div>
                   <button
                     onClick={() => setCheckoutPlan(null)}
@@ -441,7 +507,7 @@ function PricingContent() {
 
                 <div className="mt-4 space-y-3">
                   <div className="flex justify-between text-xs text-slate-600">
-                    <span>Base Tier Price ({checkoutPlan.interval}):</span>
+                    <span>Programme Track Enrolment Fee:</span>
                     <span className="font-bold text-slate-900">
                       ₦{checkoutPlan.price_naira.toLocaleString()}
                     </span>
