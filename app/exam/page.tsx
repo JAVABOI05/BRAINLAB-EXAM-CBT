@@ -22,6 +22,7 @@ type Candidate = {
   subject: string;
   subjects?: string[];
   code: string;
+  user_id?: string | null;
 };
 
 type QuestionWithIndex = QuestionRow & {
@@ -173,7 +174,8 @@ export default function ExamPage() {
       setShowMarksInExam(settings.show_marks_in_exam !== false);
       setShowTopicInExam(settings.show_topic_in_exam !== false);
       if (!settings.mock_enabled) { router.push("/access"); return; }
-      if (settings.access_code_required && !localStorage.getItem("access_code")) { router.push("/access"); return; }
+      const hasCandidateAccess = Boolean(parsedCandidate.code || (parsedCandidate.user_id && parsedCandidate.user_id.length > 5));
+      if (settings.access_code_required && !localStorage.getItem("access_code") && !hasCandidateAccess) { router.push("/access"); return; }
 
       // Check if candidate arrived from /instructions with start=true
       const isStartParam = typeof window !== "undefined" && window.location.search.includes("start=true");

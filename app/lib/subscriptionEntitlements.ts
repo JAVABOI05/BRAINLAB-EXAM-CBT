@@ -282,8 +282,9 @@ export async function getStudentSubscriptionAndEntitlements(
         ? (await import("./supabaseServer")).getSupabaseServerClient()
         : supabase;
 
-    // Query both user_subscriptions and learning_entitlements in parallel
-    const [subRes, entRes] = await Promise.all([
+    // Query authoritative student_access_grants, programme_memberships, user_subscriptions, and learning_entitlements
+    const nowIso = new Date().toISOString();
+    const [subRes, entRes, grantRes, progRes] = await Promise.all([
       dbClient
         .from("user_subscriptions")
         .select("plan_id, status, current_period_end")
@@ -295,9 +296,69 @@ export async function getStudentSubscriptionAndEntitlements(
         .select("entitlement_type, membership_type, max_questions, status, starts_at, expires_at, permanent, revoked_at")
         .eq("user_id", targetUserId)
         .eq("status", "active"),
+      dbClient
+        .from("student_access_grants")
+        .select("target_tier_id, status, starts_at, expires_at, access_tiers(tier_key)")
+        .eq("student_id", targetUserId)
+        .eq("status", "active")
+        .is("suspended_at", null)
+        .is("revoked_at", null)
+        .lte("starts_at", nowIso),
+      dbClient
+        .from("programme_memberships")
+        .select("programme_id, membership_status, starts_at, expires_at, access_programmes(associated_tier_id, access_tiers(tier_key))")
+        .eq("student_id", targetUserId)
+        .eq("membership_status", "active")
+        .lte("starts_at", nowIso),
     ]);
 
     const now = Date.now();
+
+    // 1. Authoritative Student Grants
+    const validGrants = (grantRes.data || []).filter((g: any) => {
+      const exp = g.expires_at ? new Date(g.expires_at).getTime() : Number.POSITIVE_INFINITY;
+      return exp > now;
+    });
+
+    // 2. Active Programme Memberships
+    const validProgs = (progRes.data || []).filter((p: any) => {
+      const exp = p.expires_at ? new Date(p.expires_at).getTime() : Number.POSITIVE_INFINITY;
+      return exp > now;
+    });
+
+    // Tier rankings: apex (4) > pro (3) > plus (2) > premium (1) > free (0)
+    const tierRank = (tier?: string | null): number => {
+      const t = (tier || "").toLowerCase();
+      if (t === "apex") return 4;
+      if (t === "pro") return 3;
+      if (t === "plus") return 2;
+      if (t === "premium") return 1;
+      return 0;
+    };
+
+    let bestGrantTier: string | null = null;
+    let bestGrantExpiry: string | null = null;
+    let highestGrantRank = 0;
+
+    for (const g of validGrants as any[]) {
+      const tKey = g.access_tiers?.tier_key;
+      const rank = tierRank(tKey);
+      if (rank > highestGrantRank) {
+        highestGrantRank = rank;
+        bestGrantTier = tKey;
+        bestGrantExpiry = g.expires_at || null;
+      }
+    }
+
+    for (const p of validProgs as any[]) {
+      const tKey = p.access_programmes?.access_tiers?.tier_key;
+      const rank = tierRank(tKey);
+      if (rank > highestGrantRank) {
+        highestGrantRank = rank;
+        bestGrantTier = tKey;
+        bestGrantExpiry = p.expires_at || null;
+      }
+    }
 
     // Filter valid, unrevoked, active learning entitlements
     const activeEntitlements = (entRes.data || []).filter((e) => {
@@ -309,7 +370,7 @@ export async function getStudentSubscriptionAndEntitlements(
     const activeMembership = activeEntitlements.find(
       (e) =>
         e.entitlement_type === "membership" &&
-        ["premium", "plus", "pro"].includes((e.membership_type || "").toLowerCase())
+        ["premium", "plus", "pro", "apex"].includes((e.membership_type || "").toLowerCase())
     );
 
     // Validate active subscription row
@@ -319,17 +380,8 @@ export async function getStudentSubscriptionAndEntitlements(
       subData &&
       subData.status === "active" &&
       subExpiry > now &&
-      ["premium", "plus", "pro"].includes((subData.plan_id || "").toLowerCase())
+      ["premium", "plus", "pro", "apex"].includes((subData.plan_id || "").toLowerCase())
     );
-
-    // Tier rankings: pro (3) > plus (2) > premium (1) > free (0)
-    const tierRank = (tier?: string | null): number => {
-      const t = (tier || "").toLowerCase();
-      if (t === "pro") return 3;
-      if (t === "plus") return 2;
-      if (t === "premium") return 1;
-      return 0;
-    };
 
     const entTier = activeMembership?.membership_type?.toLowerCase() || null;
     const subTier = hasValidSub ? subData!.plan_id.toLowerCase() : null;
@@ -337,7 +389,10 @@ export async function getStudentSubscriptionAndEntitlements(
     let effectivePlanId = "free";
     let effectiveExpiry: string | null = null;
 
-    if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
+    if (highestGrantRank >= tierRank(entTier) && highestGrantRank >= tierRank(subTier) && highestGrantRank > 0) {
+      effectivePlanId = bestGrantTier!;
+      effectiveExpiry = bestGrantExpiry;
+    } else if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
       effectivePlanId = entTier!;
       effectiveExpiry = activeMembership!.permanent ? null : (activeMembership!.expires_at || null);
     } else if (tierRank(subTier) > 0) {
