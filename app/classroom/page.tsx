@@ -196,8 +196,9 @@ function ClassroomLobbyContent() {
     e.preventDefault();
     const code = classCode.trim().toUpperCase() || "BL-LIVE-101";
 
-    // Subscription entitlement gate for students
-    if (subscriptionInfo && (!subscriptionInfo.isSubscribed || subscriptionInfo.planId === "free")) {
+    // Access category check for students: Apex Cohort provides intensive live classes
+    const isApex = subscriptionInfo?.accessCategory === "apex_cohort" || (subscriptionInfo?.isSubscribed && subscriptionInfo.planId !== "free");
+    if (!isApex) {
       const isFreeStage = code === "BL-LIVE-101";
       if (!isFreeStage && !isStaff && !isAdminUser) {
         setShowTierModal(true);
@@ -1304,13 +1305,15 @@ function ClassroomLobbyContent() {
 
       </main>
 
-      {/* Subscription Tier Gate Modal */}
+      {/* Apex Cohort Programme Gate Modal */}
       <TierGateModal
         isOpen={showTierModal}
         onClose={() => setShowTierModal(false)}
-        requiredTierName="BrainLab Pro"
-        featureTitle="BrainLab Academic Masterclasses & Live Stage"
-        featureDescription="Interactive live classes with verified tutors require an active BrainLab Pro or Premium subscription."
+        requiredTierName="Apex Cohort"
+        currentPlanName={subscriptionInfo?.accessCategory === "apex_cohort" ? "Apex Cohort" : "Public Learner"}
+        featureTitle="Apex Cohort Live Intensive Class"
+        featureDescription="Scheduled interactive tutorials with verified tutors are delivered as part of the Apex Cohort educational programme. Public open stages remain freely accessible to every learner."
+        redirectUrl="/apex"
       />
     </div>
   );

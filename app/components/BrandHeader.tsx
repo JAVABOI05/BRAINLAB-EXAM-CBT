@@ -29,23 +29,42 @@ export const LEGACY_NAV_MAPPING = [
 const PROGRAMMES_ITEMS: DropdownItem[] = [
   {
     title: "JAMB UTME Accelerator",
-    description: "Full-length 4-subject CBT mock exams with standard 2027 question banks.",
+    description: "Full-length 4-subject CBT mock exams with standard 2027 question banks and timing.",
     href: "/products/cbt",
-    badge: "Most Popular",
+    badge: "Primary Focus",
     icon: "🎯",
   },
   {
-    title: "WAEC & NECO Senior School",
+    title: "Post-UTME Screening Suite",
+    description: "Institution-specific university screening tests, aptitude practice, and cut-off guides.",
+    href: "/cbt?category=POST_UTME",
+    badge: "University Screening",
+    icon: "🏛️",
+  },
+  {
+    title: "Apex Cohort Programme",
+    description: "Intensive live masterclasses, dedicated tutors, weekly roadmap, and academic accountability.",
+    href: "/apex",
+    badge: "Enrolment",
+    icon: "⚡",
+  },
+  {
+    title: "WAEC SSCE Prep & Past Papers",
     description: "Curriculum theory lessons, formula sheets, and past question analysis.",
     href: "/learn",
     icon: "📚",
   },
   {
-    title: "National Challenge Arena",
+    title: "NECO Senior School Certificate",
+    description: "Standard national examination practice questions and topic revision.",
+    href: "/learn",
+    icon: "📝",
+  },
+  {
+    title: "National Competition Arena",
     description: "Head-to-head live 1v1 academic sprint battles and school leaderboards.",
     href: "/products/challenge-arena",
-    badge: "Live 1v1",
-    icon: "⚡",
+    icon: "🏆",
   },
 ];
 
@@ -604,15 +623,15 @@ export default function BrandHeader() {
                         <span>👤</span> Profile &amp; Bio
                       </Link>
                       <Link
-                        href="/pricing"
+                        href="/apex"
                         onClick={closeAllMenus}
-                        className="flex items-center justify-between rounded-xl px-2.5 py-2 font-bold text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition"
+                        className="flex items-center justify-between rounded-xl px-2.5 py-2 font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition"
                       >
                         <span className="flex items-center gap-2">
-                          <span>⚡</span> Plans &amp; Upgrades
+                          <span>🏛️</span> Apex Cohort
                         </span>
-                        <span className="rounded-md bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 text-[9px] font-black uppercase text-purple-800 dark:text-purple-200">
-                          Pro
+                        <span className="rounded-md bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.5 text-[9px] font-black uppercase text-indigo-800 dark:text-indigo-200">
+                          Cohort
                         </span>
                       </Link>
                     </div>
@@ -789,12 +808,12 @@ export default function BrandHeader() {
                     className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
                   >Student Portal &rarr;</Link>
                   <Link
-                    href="/pricing"
+                    href="/apex"
                     onClick={closeAllMenus}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 text-purple-900 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300 py-2.5 text-xs font-bold"
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 py-2.5 text-xs font-bold"
                   >
-                    <span>⚡</span>
-                    <span>Pro &amp; Plans</span>
+                    <span>🏛️</span>
+                    <span>Apex Cohort</span>
                   </Link>
                 </div>
                 <button

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, resolveAdminRole } from "@/app/lib/supabaseServer";
+import { getUserFromRequest, resolveAdminRole } from "@/app/lib/supabaseServer";
 import {
   getPlatformConfig,
   setPlatformConfig,
@@ -13,14 +13,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getUserFromRequest(request);
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const role = await resolveAdminRole(user.id, supabase, user.email);
+    const role = await resolveAdminRole(user.id, undefined, user.email ?? undefined);
     if (!role) {
       return NextResponse.json({ error: "Forbidden: Admin privileges required" }, { status: 403 });
     }
@@ -38,14 +37,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getUserFromRequest(request);
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const role = await resolveAdminRole(user.id, supabase, user.email);
+    const role = await resolveAdminRole(user.id, undefined, user.email ?? undefined);
     if (role !== "super_admin" && role !== "platform_admin") {
       return NextResponse.json({ error: "Forbidden: Super Admin privileges required to update examination focus" }, { status: 403 });
     }
@@ -75,7 +73,7 @@ export async function POST(request: NextRequest) {
     await setPlatformConfig(
       "seasonal_exam_focus",
       updatedConfig,
-      user.email || user.id,
+      { id: user.id, email: user.email || "" },
       body.change_reason || "Updated seasonal examination focus and priority hierarchy"
     );
 

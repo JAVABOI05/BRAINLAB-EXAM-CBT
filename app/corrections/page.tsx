@@ -300,10 +300,10 @@ export default function CorrectionsPage() {
             ? `${window.location.pathname}${window.location.search}`
             : "/corrections";
           setLockNotice({
-            title: "Detailed Explanations Require Subscription Upgrade",
-            message: `Your current plan (${tierInfo.planName}) provides candidate score summaries. Full step-by-step question solutions, answer keys, and AI tutor explanations are unlocked on Premium Study, Plus, and Pro tiers.`,
-            actionLabel: "Upgrade Plan for Explanations →",
-            actionHref: `/pricing?redirect=${encodeURIComponent(currentUrl)}`,
+            title: "Question Explanations & Step-by-Step Solutions",
+            message: "Sign in with your student account to review full step-by-step master derivations, answer keys, and AI Socratic tutor breakdowns.",
+            actionLabel: "Sign In for Free Solutions →",
+            actionHref: `/login?redirect=${encodeURIComponent(currentUrl)}`,
           });
           setLoading(false);
           return;

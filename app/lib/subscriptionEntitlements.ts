@@ -7,6 +7,8 @@ import {
   type SubscriptionPlan,
 } from "./platformConfig";
 
+export type AccessCategory = "public" | "apex_cohort";
+
 export interface StudentEntitlementsResult {
   userId: string | null;
   planId: string;
@@ -15,6 +17,7 @@ export interface StudentEntitlementsResult {
   entitlements: PlanEntitlements;
   isSubscribed: boolean;
   expiresAt: string | null;
+  accessCategory?: AccessCategory;
 }
 
 export const ADMIN_VIP_ENTITLEMENTS: PlanEntitlements = {
@@ -282,9 +285,9 @@ export async function getStudentSubscriptionAndEntitlements(
         ? (await import("./supabaseServer")).getSupabaseServerClient()
         : supabase;
 
-    // Query authoritative student_access_grants, programme_memberships, user_subscriptions, and learning_entitlements
+    // Query authoritative student_access_grants, programme_memberships, user_subscriptions, learning_entitlements, and apex_enrolments
     const nowIso = new Date().toISOString();
-    const [subRes, entRes, grantRes, progRes] = await Promise.all([
+    const [subRes, entRes, grantRes, progRes, apexRes] = await Promise.all([
       dbClient
         .from("user_subscriptions")
         .select("plan_id, status, current_period_end")
@@ -310,9 +313,21 @@ export async function getStudentSubscriptionAndEntitlements(
         .eq("student_id", targetUserId)
         .eq("membership_status", "active")
         .lte("starts_at", nowIso),
+      Promise.resolve(
+        dbClient
+          .from("apex_enrolments")
+          .select("id, cohort_id, programme_id, status, starts_at, ends_at")
+          .eq("student_id", targetUserId)
+          .eq("status", "active")
+          .lte("starts_at", nowIso)
+          .gt("ends_at", nowIso)
+          .limit(1)
+          .maybeSingle()
+      ).catch(() => ({ data: null })),
     ]);
 
     const now = Date.now();
+    const hasActiveApexEnrolment = Boolean(apexRes?.data && (apexRes.data as any).id);
 
     // 1. Authoritative Student Grants
     const validGrants = (grantRes.data || []).filter((g: any) => {
@@ -361,14 +376,14 @@ export async function getStudentSubscriptionAndEntitlements(
     }
 
     // Filter valid, unrevoked, active learning entitlements
-    const activeEntitlements = (entRes.data || []).filter((e) => {
+    const activeEntitlements = (entRes.data || []).filter((e: any) => {
       const startsAt = e.starts_at ? new Date(e.starts_at).getTime() : 0;
       const expiresAt = e.expires_at ? new Date(e.expires_at).getTime() : Number.POSITIVE_INFINITY;
       return !e.revoked_at && startsAt <= now && (e.permanent || expiresAt > now);
     });
 
     const activeMembership = activeEntitlements.find(
-      (e) =>
+      (e: any) =>
         e.entitlement_type === "membership" &&
         ["premium", "plus", "pro", "apex"].includes((e.membership_type || "").toLowerCase())
     );
@@ -389,7 +404,11 @@ export async function getStudentSubscriptionAndEntitlements(
     let effectivePlanId = "free";
     let effectiveExpiry: string | null = null;
 
-    if (highestGrantRank >= tierRank(entTier) && highestGrantRank >= tierRank(subTier) && highestGrantRank > 0) {
+    // Apex Enrolment is authoritative (Directive Section 4)
+    if (hasActiveApexEnrolment) {
+      effectivePlanId = "apex";
+      effectiveExpiry = apexRes?.data?.ends_at || null;
+    } else if (highestGrantRank >= tierRank(entTier) && highestGrantRank >= tierRank(subTier) && highestGrantRank > 0) {
       effectivePlanId = bestGrantTier!;
       effectiveExpiry = bestGrantExpiry;
     } else if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
@@ -401,14 +420,36 @@ export async function getStudentSubscriptionAndEntitlements(
     }
 
     if (effectivePlanId === "free") {
+      // Directive Section 3: Public (₦0) learners receive full independent practice, full corrections, fair-use AI
+      const publicEntitlements: PlanEntitlements = {
+        ...normalizePlanEntitlements(freePlan.entitlements, true),
+        cbt_access: true,
+        cbt_unlimited: true, // Unlimited independent practice
+        cbt_daily_limit: 0,
+        cbt_corrections: true, // Step-by-step solutions open to every registered learner
+        offline_saving: true,
+        ai_tutor_enabled: true,
+        ai_monthly_quota: 150, // Fair-use quota
+        classroom_access: true, // Public masterclasses
+        competitions_included: true, // Open Competition Arena
+        advanced_analytics: true,
+        calculator_type: "scientific",
+        stem_studio_access: true,
+      };
+
       return {
         userId: targetUserId,
-        planId: freePlan.id,
-        planName: freePlan.name,
-        plan: freePlan,
-        entitlements: normalizePlanEntitlements(freePlan.entitlements, true),
+        planId: "public",
+        planName: "Public Learner",
+        plan: {
+          ...freePlan,
+          name: "Public Learner",
+          entitlements: publicEntitlements,
+        },
+        entitlements: publicEntitlements,
         isSubscribed: false,
         expiresAt: subData?.current_period_end || null,
+        accessCategory: "public",
       };
     }
 
@@ -423,6 +464,7 @@ export async function getStudentSubscriptionAndEntitlements(
       entitlements: normalizePlanEntitlements(resolvedPlan.entitlements, false),
       isSubscribed: true,
       expiresAt: effectiveExpiry,
+      accessCategory: "apex_cohort",
     };
   } catch (err) {
     console.error("[subscriptionEntitlements] Error resolving student tier:", err);
@@ -465,4 +507,13 @@ export function getCbtDailyQuota(entitlements: PlanEntitlements): {
     isUnlimited: Boolean(entitlements.cbt_unlimited),
     dailyLimit: entitlements.cbt_unlimited ? 0 : Math.max(1, entitlements.cbt_daily_limit || 1),
   };
+}
+
+/**
+ * Authoritatively resolves the binary access category ('public' vs 'apex_cohort')
+ * in strict compliance with Directive Section 3.
+ */
+export async function resolveStudentAccessCategory(userId?: string): Promise<AccessCategory> {
+  const result = await getStudentSubscriptionAndEntitlements(userId);
+  return result.accessCategory || (result.isSubscribed ? "apex_cohort" : "public");
 }

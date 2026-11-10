@@ -21,34 +21,34 @@ export interface ProNudgeOptions {
 
 const NUDGE_PRESETS: Record<ProFeatureId, { title: string; message: string; actionLabel: string }> = {
   ai_tutor: {
-    title: "Unlock Unlimited AI Tutor Queries & Derivations",
-    message: "Learning fast? BrainLab Pro unlocks unlimited step-by-step problem derivations, audio explanations, and formula breakdowns.",
-    actionLabel: "Upgrade for Unlimited AI →",
+    title: "Apex Cohort Guided Tutorials",
+    message: "Looking for intensive personal mentoring? Join Apex Cohort for scheduled live masterclasses and dedicated tutor guidance.",
+    actionLabel: "Discover Apex Cohort →",
   },
   cbt_corrections: {
-    title: "Master Mistakes with Full Step-by-Step Solutions",
-    message: "Reviewing your CBT test? Pro members get full step-by-step master workings, examiner tips, and targeted practice for every missed question.",
-    actionLabel: "Unlock Full Solutions →",
+    title: "Step-by-Step Corrections",
+    message: "Full step-by-step master derivations and solutions are open for your independent practice.",
+    actionLabel: "Continue Practice →",
   },
   live_classroom: {
-    title: "Access Live Interactive Classes & Replays",
-    message: "Get complete access to all live tutor sessions, interactive stage participation, and downloadable lecture notes with BrainLab Pro.",
-    actionLabel: "Join Live Masterclasses →",
+    title: "Apex Cohort Live Masterclasses",
+    message: "Structured subject-by-subject live classes with verified Nigerian tutors are conducted inside Apex Cohort rooms.",
+    actionLabel: "Explore Apex Cohort →",
   },
   academic_resources: {
-    title: "Download Printable Formula Sheets & Guides",
-    message: "Take your formulas offline! Pro members get printable PDF packs, formula flashcards, and high-yield UTME/WAEC summary booklets.",
-    actionLabel: "Get Printable Resources →",
+    title: "Curriculum Notes & Study Material",
+    message: "High-yield curriculum formula sheets and notes are available in the Learning Hub.",
+    actionLabel: "Explore Learning Hub →",
   },
   challenge_arena: {
-    title: "Earn 2× XP & Unlock Custom 1v1 Arenas",
-    message: "Power up your leaderboard climb! Pro contenders receive a double XP multiplier and can challenge peers to private custom battle rooms.",
-    actionLabel: "Accelerate XP with Pro →",
+    title: "National Challenge Arena",
+    message: "Challenge peers nationwide to 1v1 academic sprint duels on the national leaderboard.",
+    actionLabel: "Enter Arena →",
   },
   general: {
-    title: "Supercharge Your Exam Preparation",
-    message: "Take your learning to the highest percentile with unlimited CBT tests, AI explanations, and live masterclasses.",
-    actionLabel: "Explore Pro & Plans →",
+    title: "Apex Cohort Intensive Programme",
+    message: "Experience structured live teaching, assigned weekly roadmaps, and dedicated tutor accountability.",
+    actionLabel: "Discover Apex Cohort →",
   },
 };
 
@@ -72,7 +72,7 @@ export async function triggerProFeatureNudge(options: ProNudgeOptions): Promise<
   } = options;
 
   const currentPath = window.location.pathname + window.location.search;
-  const resolvedLinkUrl = linkUrl || `/pricing?redirect=${encodeURIComponent(currentPath)}`;
+  const resolvedLinkUrl = linkUrl || "/apex";
 
   // 1. Check local cooldown to prevent repeated nudges in a short timeframe
   const storageKey = `bl_nudge_last_${feature}`;

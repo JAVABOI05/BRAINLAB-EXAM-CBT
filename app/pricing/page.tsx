@@ -676,6 +676,14 @@ function PricingContent() {
               </div>
             </div>
           </div>
+
+          {/* Institutional & Schools quiet off-ramp */}
+          <div className="mt-8 text-center text-xs text-slate-500">
+            <span>Are you a school administrator or educator looking for cohort deployment? </span>
+            <Link href="/schools" className="font-semibold text-indigo-700 hover:underline">
+              Explore School &amp; Institutional Solutions →
+            </Link>
+          </div>
         </div>
       </main>
     </div>

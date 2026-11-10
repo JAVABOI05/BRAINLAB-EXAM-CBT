@@ -62,17 +62,17 @@ export function HomeHero() {
 
   const headline = resolveClaimValue(
     heroConfig.headline,
-    "Learn Without Limits. Your Learning. Your Pace. Your Future."
+    "A Better Way to Learn, Practise and Achieve More."
   );
 
   const subhead = resolveClaimValue(
     heroConfig.subhead,
-    "One platform. Everything you need to learn, practise and excel. Prepare for examinations, master difficult secondary topics, explore 3D science simulations, and challenge yourself with 24/7 AI Tutor guidance."
+    "Your learning journey starts here. For free."
   );
 
   const disclosure = resolveClaimValue(
     heroConfig.disclosure,
-    "Free tier includes CBT practice, diagnostic tests and daily learning drills."
+    "Public learners receive full access to CBT practice, question banks, AI Tutor fair-use, and Learning Hub at ₦0."
   );
 
   const activeOption = SAMPLE_QUESTION.options.find(
@@ -109,21 +109,21 @@ export function HomeHero() {
           {/* Left Column: Promise & Actions (Motion: bl-fade-up) */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left animate-bl-fade-up">
             {/* Category Pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-sky-300 backdrop-blur-md shadow-xs">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-300 backdrop-blur-md shadow-xs">
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>DIRECT-TO-STUDENT LEARNING &amp; CBT ACADEMY</span>
+              <span>⚡ OPEN TO EVERY LEARNER • FREE CBT &amp; LEARNING HUB</span>
             </div>
 
-            {/* H1 Primary Promise: Student-First */}
+            {/* H1 Primary Promise: Directive Section 7 */}
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl leading-[1.08]">
-              Learn Without Limits. <br className="hidden sm:inline" />
+              A Better Way to Learn, Practise <br className="hidden sm:inline" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400">
-                Your Learning. Your Pace. Your Future.
+                and Achieve More.
               </span>
             </h1>
 
             {/* Subheading */}
-            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+            <p className="text-lg sm:text-xl font-medium text-slate-200 leading-relaxed max-w-2xl mx-auto lg:mx-0">
               {subhead}
             </p>
 

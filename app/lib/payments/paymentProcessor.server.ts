@@ -318,7 +318,46 @@ export async function recordSuccessfulPayment(
         created_at: paidAt,
       });
     } catch (entErr) {
-      console.warn("[paymentProcessor] Learning entitlement bookkeeping warning:", entErr);
+      console.warn("[paymentProcessor] Learning entitlement activation warning:", entErr);
+    }
+
+    // 6c. Authoritative Apex Cohort Enrolment Creation (Directive Section 4 & 5)
+    try {
+      const cohortId = typeof txMetadata.cohort_id === "string" ? txMetadata.cohort_id : null;
+      let targetProgId = typeof txMetadata.programme_id === "string" ? txMetadata.programme_id : null;
+      let targetCohortId = cohortId;
+
+      // If specific cohort not provided in metadata, find default enrolling cohort
+      if (!targetCohortId) {
+        const { data: defaultCohort } = await supabase
+          .from("cohorts")
+          .select("id, programme_id")
+          .eq("status", "enrolling")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (defaultCohort) {
+          targetCohortId = defaultCohort.id;
+          targetProgId = defaultCohort.programme_id;
+        }
+      }
+
+      if (targetCohortId && targetProgId) {
+        await supabase.from("apex_enrolments").insert({
+          student_id: effectiveUserId,
+          cohort_id: targetCohortId,
+          programme_id: targetProgId,
+          academic_session: "2026/2027",
+          starts_at: paidAt,
+          ends_at: periodEnd.toISOString(),
+          status: "active",
+          payment_reference: tx.reference,
+          notes: `Enrolled via verified payment (${tx.provider}) - ${tx.reference}`,
+        });
+      }
+    } catch (apexEnrolErr) {
+      console.warn("[paymentProcessor] Apex enrolment bookkeeping warning:", apexEnrolErr);
     }
 
     // 7. Immutable audit logging

@@ -302,6 +302,7 @@ const GROUPS: Group[] = [
     label: "Academy & Content",
     items: [
       { id: "questions", label: "Question Bank", href: "/admin/questions/manage", description: "Questions and question-bank maintenance", icon: "questions", visible: (_u, a) => a["cbt.questions.manage"] === true },
+      { id: "exam-focus", label: "Seasonal Exam Focus", href: "/admin/exam-focus", description: "Seasonal exam campaign, deadlines, and homepage priority banner", icon: "academic", visible: (u, a) => a["learning.content.manage"] === true || platformAdmin(u) },
       { id: "difficulty-model", label: "Difficulty Model", href: "/admin/questions/difficulty-model", description: "Formal difficulty slider, interpolation & shortage policies", icon: "config", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "blueprints", label: "Exam Blueprints", href: "/admin/questions/blueprints", description: "UTME English & subject blueprints and quotas", icon: "blueprints", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "high-yield", label: "High-Yield Topics", href: "/admin/questions/high-yield", description: "Syllabus topic quotas and shortage alerts", icon: "high-yield", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },

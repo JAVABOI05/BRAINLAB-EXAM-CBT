@@ -20,6 +20,8 @@ import {
   GeneticsPunnettAdapter,
   LogicGatesAdapter,
 } from "@/app/components/classroom/whiteboard/stemAdapter";
+import { CURATED_MOLECULES } from "@/app/components/stem/Molecular3DViewer";
+import { generateMoleculeSvgDataUrl } from "@/app/components/stem/molecularSvgExport";
 
 type Lesson = {
   id: string;
@@ -196,6 +198,8 @@ export default function ClassroomStudioPage() {
       const ad = new GeneticsPunnettAdapter();
       ad.init();
       svgDataUrl = ad.exportSvg(720, 480, "dark");
+    } else if (importStem === "molecular-3d-explorer") {
+      svgDataUrl = generateMoleculeSvgDataUrl(CURATED_MOLECULES[0]);
     }
 
     if (svgDataUrl) {
