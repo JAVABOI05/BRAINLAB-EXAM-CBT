@@ -621,6 +621,11 @@ export default function AdminQuestionsPage() {
           upsert: false,
         });
         if (error || !data?.path) {
+          const uploadedPaths = Array.from(storagePathByImage.values());
+          if (uploadedPaths.length > 0) {
+            const { error: cleanupError } = await supabase.storage.from("question-media").remove(uploadedPaths);
+            if (cleanupError) console.warn("Question image upload cleanup notice:", cleanupError.message);
+          }
           throw new Error(`Could not upload image "${imagePath}": ${error?.message || "Storage returned no file path."}`);
         }
         const publicUrl = supabase.storage.from("question-media").getPublicUrl(data.path).data.publicUrl;
@@ -629,8 +634,10 @@ export default function AdminQuestionsPage() {
         setUploadProgress(imagePathList.length ? Math.round(((imageIndex + 1) / imagePathList.length) * 30) : 30);
       }
 
+      const preparedRowNumbers = new Map<object, number>();
       const preparedRows = rowsToInsert.map((row) => {
         const prepared = { ...row };
+        preparedRowNumbers.set(prepared, parsedRows.indexOf(row) + 2);
         IMAGE_FIELDS.forEach((field) => {
           const value = prepared[field];
           if (value && imageUrlByPath.has(value)) prepared[field] = imageUrlByPath.get(value) || value;
@@ -656,7 +663,7 @@ export default function AdminQuestionsPage() {
             if (rowErr) {
               const isDuplicate = rowErr.code === "23505";
               failedRows.push({
-                row: parsedRows.indexOf(rowItem) + 2,
+                row: preparedRowNumbers.get(rowItem) ?? 0,
                 message: isDuplicate
                   ? `Question ID "${rowItem.source_question_id || "unknown"}" already exists (duplicate insert).`
                   : rowErr.message,
