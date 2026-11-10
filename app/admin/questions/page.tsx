@@ -512,10 +512,11 @@ export default function AdminQuestionsPage() {
         text: `Extracted ${extracted.size} verified images from ${file.name}. Local image references have been checked against the archive.`,
       });
     } catch (error) {
-      setZipImageFiles(new Map());
+      const emptyImages: QuestionImageFiles = new Map();
+      setZipImageFiles(emptyImages);
       setZipFileName("");
+      if (rawCsvRows.length > 0) validateAndTransform(rawCsvRows, emptyImages);
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Could not read the ZIP archive." });
-      setErrors((current) => current);
     } finally {
       setIsExtractingZip(false);
     }
@@ -526,6 +527,10 @@ export default function AdminQuestionsPage() {
   async function handleBatchUpload() {
     if (parsedRows.length === 0) {
       setMessage({ type: "error", text: "No valid questions found to upload." });
+      return;
+    }
+    if (errors.some((item) => /image .* is missing from the ZIP archive|image has an invalid local image path/i.test(item.message))) {
+      setMessage({ type: "error", text: "Import paused: one or more CSV image paths are not matched to the selected ZIP. Attach the correct ZIP and resolve the image validation notices before importing." });
       return;
     }
 
@@ -1208,10 +1213,10 @@ export default function AdminQuestionsPage() {
           <div className="mt-6 flex flex-col sm:flex-row items-center gap-4">
             <button
               onClick={handleBatchUpload}
-              disabled={uploading || parsedRows.length === 0}
+              disabled={uploading || isExtractingZip || parsedRows.length === 0 || errors.some((item) => /image .* is missing from the ZIP archive|image has an invalid local image path/i.test(item.message))}
               className="admin-btn-primary w-full sm:w-auto"
             >
-              {uploading ? "Importing Batches..." : `Import ${parsedRows.length} Questions`}
+              {uploading ? "Importing Batches..." : isExtractingZip ? "Preparing Images..." : `Import ${parsedRows.length} Questions`}
             </button>
             {parsedRows.length > 0 && (
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
