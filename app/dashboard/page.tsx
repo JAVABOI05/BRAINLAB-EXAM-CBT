@@ -23,6 +23,8 @@ import DeviceNotificationPrompt from "../components/DeviceNotificationPrompt";
 import ExamCountdownBanner from "../components/ExamCountdownBanner";
 import WhatsAppChannelHeroBanner from "../components/WhatsAppChannelHeroBanner";
 import DailyLearningFeedWidget from "../components/dashboard/DailyLearningFeedWidget";
+import { StudentAvatar } from "../components/ui/StudentAvatar";
+import { extractStudentProfile } from "../lib/studentProfile";
 
 type RecentExam = {
   result_id: string;
@@ -259,6 +261,7 @@ export default function LearnerDashboardPage() {
   const firstName = fullName ? fullName.split(/\s+/)[0] : "";
   const greeting = timeGreeting();
   const avatar = user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
+  const studentProfile = extractStudentProfile(user);
 
   return (
     <main
@@ -306,124 +309,176 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
         )}
-        {/* Executive Learner Identity Header Card */}
-        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#0c1527] transition-all">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-            <div className="flex items-start sm:items-center gap-4">
-              <Link href="/profile" className="relative group shrink-0" title="View Profile">
-                {avatar && typeof avatar === "string" && /^https:\/\//i.test(avatar) ? (
-                  <img
-                    src={avatar}
-                    alt=""
-                    referrerPolicy="no-referrer"
-                    className="h-16 w-16 rounded-2xl object-cover ring-2 ring-blue-500/30 group-hover:ring-blue-500 transition"
-                  />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#012153] to-blue-600 text-lg font-black text-white shadow-md"
-                  >
-                    {initials(fullName || "BL")}
-                  </span>
-                )}
-                <span className="absolute -bottom-1 -right-1 flex h-4 w-4" title="Active">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white dark:border-slate-900" />
-                </span>
+        {/* Luxury Glassmorphic Learner Welcome Hero Card */}
+        <section
+          aria-label="Welcome Hero"
+          className="relative overflow-hidden rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-[#061129] via-[#0b1c45] to-[#04091a] p-6 sm:p-8 lg:p-10 text-white shadow-[0_25px_60px_-15px_rgba(2,12,38,0.5)] backdrop-blur-2xl transition-all"
+        >
+          {/* Ambient Glowing Orbs & Tech Mesh */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-indigo-500/20 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] opacity-10"
+          />
+
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="flex items-start sm:items-center gap-5">
+              {/* Profile Avatar with Glowing Ring & Presence */}
+              <Link href="/profile" className="relative group shrink-0" title="View & Edit Profile">
+                <StudentAvatar
+                  profile={studentProfile}
+                  size="lg"
+                  showOnlineDot={true}
+                  className="ring-2 ring-cyan-400/50 shadow-xl group-hover:scale-105 group-hover:ring-cyan-300 transition duration-300"
+                />
               </Link>
+
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700 dark:text-cyan-400">
-                    BrainLab Learner Workspace
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-400/15 border border-cyan-400/30 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider text-cyan-300 backdrop-blur-md">
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    BrainLab Academy · Learner Space
                   </span>
                   {stats.accessTier && (
-                    <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 text-[10px] font-black text-blue-800 dark:text-blue-300">
+                    <span className="rounded-full bg-white/10 border border-white/20 px-3 py-0.5 text-[10px] font-black text-white backdrop-blur-md shadow-xs">
                       {stats.accessTier}
                     </span>
                   )}
                 </div>
-                <h1 className="mt-1 text-2xl font-black text-slate-950 dark:text-white sm:text-3xl flex items-center gap-2 flex-wrap">
-                  <span>{greeting}</span>
-                  {firstName ? <span>, {firstName}</span> : null}
+
+                <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-2 flex-wrap">
+                  <span>{timeGreeting()}</span>
+                  {firstName ? <span>, {firstName}! ✨</span> : <span>, Scholar! ✨</span>}
                   {user && <UserBadges userId={user.id} size="sm" maxVisible={3} />}
                 </h1>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Track your topic mastery, complete daily learning quests, and get ready for scheduled tests.
+
+                <p className="mt-1.5 max-w-xl text-xs sm:text-sm text-blue-100/80 leading-relaxed font-medium">
+                  Welcome to your academic sanctuary. Track topic mastery, complete daily quests, and prepare to ace your exams.
                 </p>
+
+                {/* Student Ambition & Vibe Badges */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  {studentProfile.targetCourse && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/25 border border-blue-400/40 px-3 py-1 font-bold text-cyan-200 backdrop-blur-md">
+                      <span>🎯</span> {studentProfile.targetCourse}
+                    </span>
+                  )}
+                  {studentProfile.dreamSchool && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500/25 border border-indigo-400/40 px-3 py-1 font-bold text-indigo-200 backdrop-blur-md">
+                      <span>🏛️</span> {studentProfile.dreamSchool}
+                    </span>
+                  )}
+                  {studentProfile.targetScore && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/25 border border-amber-400/40 px-3 py-1 font-bold text-amber-200 backdrop-blur-md">
+                      <span>⭐</span> Goal: {studentProfile.targetScore}
+                    </span>
+                  )}
+                  {studentProfile.studyVibe && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 px-3 py-1 font-bold text-purple-200 backdrop-blur-md">
+                      <span>✨</span> {studentProfile.studyVibe}
+                    </span>
+                  )}
+                  {!studentProfile.targetCourse && !studentProfile.dreamSchool && (
+                    <Link
+                      href="/profile"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-cyan-400/50 bg-cyan-400/10 px-3 py-1 font-bold text-cyan-200 hover:bg-cyan-400/20 backdrop-blur-md transition"
+                    >
+                      <span>✨ Customise your dream school, course & avatar</span>
+                      <span>→</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Right Status Indicators: Gamification & Presence */}
-            <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
+            {/* Right Status Cluster: Level & Streak & Live Presence */}
+            <div className="flex flex-wrap items-center gap-3 lg:flex-col lg:items-end">
               <ActivePresenceBar activityContext="Studying on Learner Dashboard" variant="pill" />
               {gamification && (
-                <>
-                  <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/50 dark:text-amber-200 shadow-xs">
-                    <span>⭐</span>
-                    <span>Level {gamification.current_level} · {gamification.level_name} ({gamification.lifetime_xp.toLocaleString()} XP)</span>
-                  </span>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-md shadow-inner">
+                    <span className="text-base">⭐</span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-cyan-200 leading-none">Level {gamification.current_level}</p>
+                      <p className="text-xs font-black text-white mt-0.5">{gamification.lifetime_xp.toLocaleString()} XP</p>
+                    </div>
+                  </div>
                   <LearningStreakCard
                     currentStreak={gamification.current_streak_days}
                     longestStreak={gamification.longest_streak_days}
                     lastActiveDate={gamification.last_activity_date}
                     compact={true}
                   />
-                </>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Quick Navigation Action Strip */}
-          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5">
+          {/* Quick-Launch Interactive Action Strip */}
+          <div className="relative mt-7 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/cbt"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 text-xs font-bold transition shadow-xs active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 px-4 py-2 text-xs font-black transition active:scale-95 shadow-md shadow-cyan-500/20"
               >
-                <span>✍️</span> CBT Practice
+                <span>✍️</span>
+                <span>Launch CBT Practice</span>
               </Link>
               <Link
                 href="/ai-learning"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 hover:bg-purple-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>🤖</span> AI Study Mission
+                <span>🤖</span>
+                <span>AI Study Mission</span>
               </Link>
               <Link
                 href="/community"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>👥</span> Communities
+                <span>👥</span>
+                <span>Communities</span>
               </Link>
               <Link
                 href="/challenge-arena"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-300 hover:bg-amber-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>⚡</span> Arena (2× XP)
+                <span>⚡</span>
+                <span>Arena (2× XP)</span>
               </Link>
               <Link
-                href="/learning-dna"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+                href="/classroom/BL-LIVE-101"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/40 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-300 px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>🧬</span> Learning DNA
+                <span>🎥</span>
+                <span>Live Stage</span>
               </Link>
               <Link
                 href="/resources"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 px-3 py-1.5 text-xs font-bold transition active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>📐</span> Formulas
+                <span>📐</span>
+                <span>Formulas</span>
               </Link>
             </div>
-            <div className="flex items-center gap-3 text-xs font-bold">
-              <Link href="/leaderboard" className="text-blue-700 dark:text-blue-400 hover:underline inline-flex items-center gap-1">
+
+            <div className="flex items-center gap-3 text-xs font-bold text-cyan-200">
+              <Link href="/leaderboard" className="hover:text-white transition inline-flex items-center gap-1">
                 <span>🏆</span> Leaderboard
               </Link>
-              <span className="text-slate-300 dark:text-slate-700">·</span>
-              <Link href="/learning/achievements" className="text-amber-700 dark:text-amber-400 hover:underline inline-flex items-center gap-1">
-                <span>🎖️</span> Achievements
+              <span className="text-white/30">·</span>
+              <Link href="/learning/achievements" className="hover:text-white transition inline-flex items-center gap-1">
+                <span>🎖️</span> Badges &amp; Streaks
               </Link>
             </div>
           </div>
-        </div>
+        </section>
 
         {adminRole === "teacher" && (
           <section className="flex flex-col gap-4 rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-50 to-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">

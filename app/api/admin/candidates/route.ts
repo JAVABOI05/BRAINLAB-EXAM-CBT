@@ -91,10 +91,18 @@ export async function GET(request: NextRequest) {
           meta.is_suspended === true ||
           (u.banned_until && new Date(u.banned_until) > new Date());
 
+        const g = gamificationMap.get(u.id);
+        const isAtRisk =
+          !isSuspended &&
+          ((g?.streak_days || 0) === 0 ||
+            !u.last_sign_in_at ||
+            new Date(u.last_sign_in_at).getTime() < Date.now() - 14 * 86400 * 1000);
+
         // Status matching
         if (statusFilter === "active" && isSuspended) return false;
         if (statusFilter === "suspended" && !isSuspended) return false;
         if (statusFilter === "unverified" && u.email_confirmed_at) return false;
+        if (statusFilter === "at-risk" && !isAtRisk) return false;
 
         // Tier matching
         const sub = subMap.get(u.id);
@@ -123,6 +131,12 @@ export async function GET(request: NextRequest) {
           lastSignInAt: u.last_sign_in_at || null,
           emailConfirmed: Boolean(u.email_confirmed_at),
           isSuspended: Boolean(isSuspended),
+          isAtRisk: Boolean(
+            !isSuspended &&
+            ((gamification?.streak_days || 0) === 0 ||
+              !u.last_sign_in_at ||
+              new Date(u.last_sign_in_at).getTime() < Date.now() - 14 * 86400 * 1000)
+          ),
           bannedUntil: u.banned_until || null,
           subscription: {
             planId: sub?.status === "active" ? sub.plan_id : "free",

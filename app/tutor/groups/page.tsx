@@ -38,6 +38,9 @@ export default function TutorGroupsManagementPage() {
   const [annContent, setAnnContent] = useState("");
   const [annPriority, setAnnPriority] = useState<"normal" | "urgent" | "critical">("normal");
   const [annRequiresAck, setAnnRequiresAck] = useState(false);
+  const [attachmentTitle, setAttachmentTitle] = useState("");
+  const [attachmentType, setAttachmentType] = useState<"slides" | "document" | "image" | "link">("slides");
+  const [attachmentUrl, setAttachmentUrl] = useState("");
 
   const [isPolling, setIsPolling] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
@@ -59,6 +62,11 @@ export default function TutorGroupsManagementPage() {
   const [isViewingPsychometrics, setIsViewingPsychometrics] = useState(false);
   const [psychometrics, setPsychometrics] = useState<CohortPsychometrics | null>(null);
   const [loadingPsychometrics, setLoadingPsychometrics] = useState(false);
+  const [isManagingRoster, setIsManagingRoster] = useState(false);
+  const [loadingRoster, setLoadingRoster] = useState(false);
+  const [rosterMembers, setRosterMembers] = useState<any[]>([]);
+  const [newCandidateEmail, setNewCandidateEmail] = useState("");
+  const [rosterActionLoading, setRosterActionLoading] = useState(false);
 
   const [modalSubmitting, setModalSubmitting] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
@@ -277,6 +285,130 @@ export default function TutorGroupsManagementPage() {
     } finally {
       setModalSubmitting(false);
     }
+  };
+
+  const handleOpenRoster = async (group: CommunityGroup) => {
+    setSelectedGroup(group);
+    setIsManagingRoster(true);
+    setIsAnnouncing(false);
+    setIsPolling(false);
+    setIsSchedulingTest(false);
+    setIsViewingPsychometrics(false);
+
+    try {
+      setLoadingRoster(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch(`/api/community/groups/${group.slug}/members`, { headers });
+      const json = await res.json();
+      if (json.ok && Array.isArray(json.data)) {
+        setRosterMembers(json.data);
+      }
+    } catch {
+      // Handled
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
+
+  const handleAddCandidate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup || !newCandidateEmail.trim()) return;
+
+    try {
+      setRosterActionLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`/api/community/groups/${selectedGroup.slug}/members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "add",
+          email: newCandidateEmail.trim(),
+        }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        setNewCandidateEmail("");
+        void handleOpenRoster(selectedGroup);
+      } else {
+        alert(json.error || "Failed to add candidate to cohort.");
+      }
+    } catch {
+      alert("Network error adding candidate.");
+    } finally {
+      setRosterActionLoading(false);
+    }
+  };
+
+  const handleApproveMember = async (memberId: string) => {
+    if (!selectedGroup) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`/api/community/groups/${selectedGroup.slug}/members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "approve",
+          memberId,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        void handleOpenRoster(selectedGroup);
+      }
+    } catch {
+      // Handled
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!selectedGroup) return;
+    if (!confirm("Are you sure you want to remove this candidate from the cohort? Access will be revoked immediately.")) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(`/api/community/groups/${selectedGroup.slug}/members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "remove",
+          memberId,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        void handleOpenRoster(selectedGroup);
+      }
+    } catch {
+      // Handled
+    }
+  };
+
+  const handleLaunchLiveStudio = (group: CommunityGroup) => {
+    const liveUrl = `/classroom/COHORT-${group.slug}?role=host`;
+    window.open(liveUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleViewPsychometrics = async (group: CommunityGroup) => {
@@ -616,6 +748,39 @@ export default function TutorGroupsManagementPage() {
                   />
                 </div>
 
+                {/* Optional Rich Attachment: Slides, Document, Image, Link */}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-950/40 space-y-2.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                    Attach Resource (Slides, Documents, Images, or Links)
+                  </span>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      type="text"
+                      value={attachmentTitle}
+                      onChange={(e) => setAttachmentTitle(e.target.value)}
+                      placeholder="Title: e.g. Week 4 Physics Formulas PDF"
+                      className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                    <select
+                      value={attachmentType}
+                      onChange={(e) => setAttachmentType(e.target.value as "slides" | "document" | "image" | "link")}
+                      className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    >
+                      <option value="slides">Slides / Presentation</option>
+                      <option value="document">PDF / Document</option>
+                      <option value="image">Image / Diagram</option>
+                      <option value="link">Web Link / Reference</option>
+                    </select>
+                  </div>
+                  <input
+                    type="url"
+                    value={attachmentUrl}
+                    onChange={(e) => setAttachmentUrl(e.target.value)}
+                    placeholder="Attachment URL (https://...)"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -895,6 +1060,121 @@ export default function TutorGroupsManagementPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Roster Management (Add/Approve Candidates) */}
+        {isManagingRoster && selectedGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>👥</span> Candidate Roster: {selectedGroup.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Manage enrolled candidates and approve pending admission requests.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsManagingRoster(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Add Candidate Direct Input */}
+              <form onSubmit={handleAddCandidate} className="mt-4 flex gap-2">
+                <input
+                  type="text"
+                  value={newCandidateEmail}
+                  onChange={(e) => setNewCandidateEmail(e.target.value)}
+                  placeholder="Enter candidate email or student ID..."
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  disabled={rosterActionLoading || !newCandidateEmail.trim()}
+                  className="rounded-xl bg-[#012153] px-4 py-2 text-xs font-bold text-white hover:bg-blue-900 disabled:opacity-50 dark:bg-blue-600"
+                >
+                  {rosterActionLoading ? "Adding..." : "+ Add Candidate"}
+                </button>
+              </form>
+
+              {/* Members List */}
+              <div className="mt-4 max-h-80 overflow-y-auto space-y-2">
+                {loadingRoster ? (
+                  <div className="py-8 text-center text-xs text-slate-400 animate-pulse">
+                    Loading roster...
+                  </div>
+                ) : rosterMembers.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400">
+                    No candidates enrolled yet. Add candidates by email above.
+                  </div>
+                ) : (
+                  rosterMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-950/40"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            {member.display_handle || `Candidate #${member.user_id.slice(0, 6)}`}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${
+                              member.status === "active"
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            }`}
+                          >
+                            {member.status === "active" ? "Enrolled" : "Pending Approval"}
+                          </span>
+                          <span className="text-[10px] text-slate-400 capitalize">
+                            ({member.group_role})
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400">
+                          Joined {new Date(member.joined_at).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {member.status === "pending_approval" && (
+                          <button
+                            type="button"
+                            onClick={() => handleApproveMember(member.id)}
+                            className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-black text-white hover:bg-emerald-700 transition"
+                          >
+                            ✓ Approve
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="rounded-lg bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-400 transition"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-5 flex justify-end border-t border-slate-100 pt-3 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsManagingRoster(false)}
+                  className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         )}

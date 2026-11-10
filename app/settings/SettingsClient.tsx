@@ -38,6 +38,7 @@ export default function LearnerSettingsClient() {
   // Privacy & Profile Customization State
   const [customName, setCustomName] = useState("");
   const [hideEmail, setHideEmail] = useState(true);
+  const [shareOnlinePresence, setShareOnlinePresence] = useState(true);
   const [requireMessageRequest, setRequireMessageRequest] = useState(true);
   const [requireGroupApproval, setRequireGroupApproval] = useState(true);
   const [readReceipts, setReadReceipts] = useState(true);
@@ -89,6 +90,7 @@ export default function LearnerSettingsClient() {
       const meta = data.user.user_metadata || {};
       setCustomName(meta.full_name || meta.name || "");
       setHideEmail(meta.hide_email !== false);
+      setShareOnlinePresence(meta.share_online_presence !== false);
       setRequireMessageRequest(meta.require_message_request !== false);
       setRequireGroupApproval(meta.require_group_approval !== false);
       setReadReceipts(meta.read_receipts !== false);
@@ -159,6 +161,7 @@ export default function LearnerSettingsClient() {
         full_name: trimmedName || user.user_metadata?.full_name || "Learner",
         name: trimmedName || user.user_metadata?.name || "Learner",
         hide_email: hideEmail,
+        share_online_presence: shareOnlinePresence,
         require_message_request: requireMessageRequest,
         require_group_approval: requireGroupApproval,
         read_receipts: readReceipts,
@@ -183,6 +186,26 @@ export default function LearnerSettingsClient() {
           // ignore localStorage parsing errors
         }
         setPrivacySuccess("Privacy and profile preferences saved successfully!");
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          if (token) {
+            void fetch("/api/presence", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                status: shareOnlinePresence ? "online" : "offline",
+                isVisible: shareOnlinePresence,
+                activityContext: shareOnlinePresence ? "Active on BrainLab" : "Offline",
+              }),
+            });
+          }
+        } catch {
+          // ignore
+        }
       }
     } catch {
       setPrivacyError("Network error while saving privacy settings. Please try again.");
@@ -380,6 +403,21 @@ export default function LearnerSettingsClient() {
 
             {/* Privacy Checkboxes */}
             <div className="space-y-3 pt-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={shareOnlinePresence}
+                  onChange={(e) => setShareOnlinePresence(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-bold text-slate-900">Show online status &amp; last seen</span>
+                  <p className="text-xs text-slate-500">
+                    Allow study circle peers and tutors to see when you are actively learning on BrainLab or when you were last online. If turned off, you will appear offline and your last seen timestamp will be hidden.
+                  </p>
+                </div>
+              </label>
+
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"

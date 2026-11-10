@@ -7,8 +7,10 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "verify": "npm run test:architecture && npm run test:separation && npm run test:instructor && npm run test:homepage && npm run test:foundation && npm run test:layer-b && npm run test:demo && npm run test:a3 && npm run test:a4 && npm run test:arena:entry && npm run test:admin:pin && npm run test:tutors && npm run test:inquiries && npm run test:portal && npm run test:resources && npm run test:classroom && npm run test:offline-sync && npm run test:s7 && npm run test:analytics && npm run test:password && npm run test:community && npm run test:access && npm run test:entitlements && npm run typecheck",
+    "verify": "npm run test:architecture && npm run test:separation && npm run test:instructor && npm run test:homepage && npm run test:foundation && npm run test:layer-b && npm run test:demo && npm run test:a3 && npm run test:a4 && npm run test:arena:entry && npm run test:admin:pin && npm run test:tutors && npm run test:inquiries && npm run test:portal && npm run test:resources && npm run test:classroom && npm run test:offline-sync && npm run test:s7 && npm run test:analytics && npm run test:password && npm run test:community && npm run test:student-profile && npm run test:ai:diagnostics && npm run test:access && npm run test:entitlements && npm run typecheck",
     "test:access": "npx tsx scripts/test-centralized-access-management.ts",
+    "test:ai:diagnostics": "npx tsx scripts/test-ai-performance-and-at-risk.ts",
+    "test:student-profile": "npx tsx scripts/test-student-profile-customization.ts",
     "test:classroom": "npx tsx scripts/test-live-classroom-whiteboard.ts",
     "test:offline-sync": "npx tsx scripts/test-offline-pwa-exam-sync.ts",
     "test:layer-b": "npx tsx scripts/test-layer-b-dynamic-slots.ts",
@@ -31,7 +33,8 @@
     "test:portal": "npx tsx scripts/test-student-portal-upgrade.ts",
     "test:analytics": "npx tsx scripts/test-analytics-and-funnel-architecture.ts",
     "test:password": "npx tsx scripts/test-password-strength-and-seeding.ts",
-    "test:community": "node scripts/test-community-phase1.cjs && node scripts/test-community-phase2.cjs && node scripts/test-community-phase3.cjs && node scripts/test-community-phase4.cjs && node scripts/test-community-phase5.cjs",
+    "test:community": "node scripts/test-community-phase1.cjs && node scripts/test-community-phase2.cjs && node scripts/test-community-phase3.cjs && node scripts/test-community-phase4.cjs && node scripts/test-community-phase5.cjs && node scripts/test-cohort-instructor-studio.cjs",
+    "test:cohort:studio": "node scripts/test-cohort-instructor-studio.cjs",
     "test:entitlements": "npx tsx scripts/test-central-entitlements.ts"
   },
   "dependencies": {

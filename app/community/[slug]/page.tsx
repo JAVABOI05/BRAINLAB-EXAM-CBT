@@ -320,8 +320,17 @@ export default function CommunityGroupSpacePage() {
                   {isJoining ? "Processing..." : group.membership_policy === "open" ? "Join Cohort" : "Request to Join"}
                 </button>
               ) : (
-                <div className="rounded-2xl bg-emerald-950/60 border border-emerald-500/30 px-5 py-2.5 text-xs font-bold text-emerald-300 text-center">
-                  Active Member Space
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                  <Link
+                    href={`/classroom/COHORT-${group.slug}`}
+                    className="rounded-2xl bg-rose-600 px-4 py-2.5 text-xs font-black text-white hover:bg-rose-500 shadow-lg shadow-rose-950/40 transition flex items-center gap-1.5 shrink-0"
+                    title="Enter this cohort's private live studio classroom"
+                  >
+                    <span>🎙️</span> Join Cohort Live Studio →
+                  </Link>
+                  <div className="rounded-2xl bg-emerald-950/60 border border-emerald-500/30 px-3 py-2 text-xs font-bold text-emerald-300 text-center">
+                    Active Member
+                  </div>
                 </div>
               )}
               <span className="text-[11px] text-slate-400">
@@ -440,6 +449,33 @@ export default function CommunityGroupSpacePage() {
                       <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                         {ann.content}
                       </p>
+
+                      {/* Rich Attachments: Slides, Documents, Images, Links */}
+                      {ann.attachments && ann.attachments.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                          {ann.attachments.map((att, idx) => (
+                            <a
+                              key={idx}
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 py-1.5 text-xs font-bold text-indigo-900 hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 transition"
+                            >
+                              <span>
+                                {att.file_type === "slides"
+                                  ? "📊 Slides:"
+                                  : att.file_type === "image"
+                                  ? "🖼️ Image:"
+                                  : att.file_type === "document"
+                                  ? "📄 Document:"
+                                  : "🔗 Link:"}
+                              </span>
+                              <span className="underline underline-offset-2">{att.title}</span>
+                              <span className="text-[10px] text-indigo-500">↗</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Acknowledgement and Status */}
                       {ann.requires_acknowledgement && (

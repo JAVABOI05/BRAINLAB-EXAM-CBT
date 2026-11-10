@@ -19,6 +19,7 @@ interface OnlineRosterDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   users: ActiveUserPresence[];
+  allUsers?: ActiveUserPresence[];
   onlineCount: number;
   inClassCount: number;
   tutorCount: number;
@@ -29,17 +30,21 @@ export default function OnlineRosterDrawer({
   isOpen,
   onClose,
   users,
+  allUsers,
   onlineCount,
   inClassCount,
   tutorCount,
   currentUserId,
 }: OnlineRosterDrawerProps) {
+  const [scope, setScope] = useState<"active" | "all">("active");
   const [filterRole, setFilterRole] = useState<"all" | "tutors" | "students">("all");
   const [search, setSearch] = useState("");
 
   if (!isOpen) return null;
 
-  const filtered = users.filter((u) => {
+  const sourcePool = scope === "active" ? users : (allUsers && allUsers.length > 0 ? allUsers : users);
+
+  const filtered = sourcePool.filter((u) => {
     if (filterRole === "tutors" && u.role !== "tutor" && u.role !== "admin") return false;
     if (filterRole === "students" && u.role !== "student") return false;
     if (search.trim()) {
@@ -76,11 +81,39 @@ export default function OnlineRosterDrawer({
           </button>
         </div>
 
+        {/* Scope Tabs: Active Now vs All Community */}
+        <div className="flex border-b border-slate-200 bg-slate-100/80 px-4 pt-2.5 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setScope("active")}
+            className={`flex items-center gap-1.5 border-b-2 px-3 pb-2 transition ${
+              scope === "active"
+                ? "border-emerald-600 text-emerald-950"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            Active Now ({onlineCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setScope("all")}
+            className={`flex items-center gap-1.5 border-b-2 px-3 pb-2 transition ${
+              scope === "all"
+                ? "border-blue-600 text-blue-950"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <span>👥</span>
+            All Members ({allUsers?.length || users.length})
+          </button>
+        </div>
+
         {/* Search & Filter Bar */}
         <div className="border-b border-slate-100 bg-slate-50 p-4 space-y-3">
           <input
             type="text"
-            placeholder="Search active peers or tutors…"
+            placeholder="Search peers by name or status…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100"
@@ -93,7 +126,7 @@ export default function OnlineRosterDrawer({
                 filterRole === "all" ? "bg-[#012153] text-white" : "bg-white border border-slate-200 hover:bg-slate-100"
               }`}
             >
-              All ({users.length})
+              All ({sourcePool.length})
             </button>
             <button
               onClick={() => setFilterRole("tutors")}
@@ -125,6 +158,7 @@ export default function OnlineRosterDrawer({
               const isSelf = user.user_id === currentUserId;
               const isTutor = user.role === "tutor" || user.role === "admin";
               const inClass = user.status === "in_class" || Boolean(user.current_class_id);
+              const isOnline = user.status !== "offline";
 
               return (
                 <div
@@ -136,7 +170,7 @@ export default function OnlineRosterDrawer({
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="relative">
+                    <div className="relative shrink-0">
                       <div
                         className={`flex h-10 w-10 items-center justify-center rounded-full font-black text-xs ${
                           isTutor ? "bg-[#012153] text-cyan-200" : "bg-slate-100 text-slate-800"
@@ -144,7 +178,16 @@ export default function OnlineRosterDrawer({
                       >
                         {user.display_name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white ring-1 ring-emerald-300" />
+                      <span
+                        className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ring-1 ${
+                          inClass
+                            ? "bg-rose-500 ring-rose-300 animate-pulse"
+                            : isOnline
+                            ? "bg-emerald-500 ring-emerald-300 animate-pulse"
+                            : "bg-slate-300 ring-slate-200"
+                        }`}
+                        title={inClass ? "In Live Class" : isOnline ? "Online Now" : "Offline"}
+                      />
                     </div>
 
                     <div className="min-w-0">
@@ -165,8 +208,13 @@ export default function OnlineRosterDrawer({
                         )}
                       </div>
 
-                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                        {user.custom_status || user.activity_context || "Active now"}
+                      <p className="text-[11px] text-slate-500 truncate mt-0.5 flex items-center gap-1">
+                        <span>{isOnline ? "🟢" : "⚪"}</span>
+                        <span>
+                          {isOnline
+                            ? user.custom_status || user.activity_context || "Active now"
+                            : user.activity_context || "Offline"}
+                        </span>
                       </p>
                     </div>
                   </div>
