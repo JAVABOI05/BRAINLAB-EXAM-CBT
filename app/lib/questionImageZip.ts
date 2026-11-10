@@ -21,6 +21,10 @@ function normalizeArchivePath(value: string): string {
   return parts.filter(Boolean).join("/");
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
 function imageMimeType(path: string): string | null {
   const ext = path.split(".").pop()?.toLowerCase();
   if (ext === "png") return "image/png";
@@ -46,7 +50,7 @@ async function inflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
   if (typeof DecompressionStream === "undefined") {
     throw new Error("This browser does not support ZIP image extraction. Please use a recent version of Chrome, Edge, or Firefox.");
   }
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  const stream = new Blob([toArrayBuffer(bytes)]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
@@ -133,7 +137,7 @@ export async function extractQuestionImagesFromZip(file: File): Promise<Question
     if (!hasValidImageSignature(imageBytes, mime)) throw new Error(`The file "${path}" is not a valid ${mime} image.`);
     if (images.has(path)) throw new Error(`The ZIP contains a duplicate image path: "${path}".`);
 
-    images.set(path, new File([imageBytes], path.split("/").pop() || "question-image", { type: mime }));
+    images.set(path, new File([toArrayBuffer(imageBytes)], path.split("/").pop() || "question-image", { type: mime }));
   }
 
   if (images.size === 0) throw new Error("No supported image files were found in the ZIP archive.");
