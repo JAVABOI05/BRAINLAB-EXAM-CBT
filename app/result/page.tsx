@@ -25,6 +25,7 @@ type SavedResultRow = {
 
 type Summary = {
   result_id: string;
+  session_id?: string;
   score: number;
   total: number;
   subject_scores: Record<string, number>;
@@ -137,6 +138,32 @@ export default function ResultPage() {
   // Handle Printable PDF
   const handlePrint = () => {
     window.print();
+  };
+
+  const [certDownloading, setCertDownloading] = useState(false);
+
+  const handleDownloadCertificate = async () => {
+    const targetResultId = summary?.result_id || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("id") : null);
+    if (!targetResultId) return;
+    setCertDownloading(true);
+    try {
+      const res = await fetch("/api/certificates/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          result_id: targetResultId,
+          session_id: summary?.session_id,
+        }),
+      });
+      const data = await res.json();
+      if (data?.certificate?.id) {
+        window.open(`/api/certificates/download/${data.certificate.id}`, "_blank");
+      }
+    } catch (err) {
+      console.error("Failed to generate digital certificate:", err);
+    } finally {
+      setCertDownloading(false);
+    }
   };
 
   // Handle WhatsApp Share
@@ -434,6 +461,20 @@ export default function ResultPage() {
           </Link>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownloadCertificate}
+              disabled={certDownloading}
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm active:scale-95 transition disabled:opacity-50"
+            >
+              <span>{certDownloading ? "Generating..." : "Download Verifiable Certificate (PDF)"}</span>
+            </button>
+            <Link
+              href="/student/exams"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            >
+              <span>Exam History</span>
+            </Link>
             <button
               type="button"
               onClick={handlePrint}
