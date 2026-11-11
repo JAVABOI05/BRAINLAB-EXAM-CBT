@@ -114,16 +114,13 @@ export async function generateExamPaper(options: {
       isEnglish
         ? selectEnglishExaminationPaper(pool, blueprint, allHighYield)
         : selectStandardSubjectPaper(subj, pool, blueprint, allHighYield);
-    let selected = runSelector(freshAvailable);
-    const targetCount = blueprint.total_questions || (isEnglish ? 60 : 40);
-    const selectedQuestions = selected.questions || [];
+    // The exclusion set contains only questions the learner previously answered
+    // correctly in a full mock. Incorrect and unanswered questions are deliberately
+    // left in freshAvailable so they can return for reinforcement.
+    // Never fall back to the unrestricted pool: that would reintroduce mastered
+    // questions and violate the learner's mock-rotation rule.
+    const selected = runSelector(freshAvailable);
     const selectionWarnings = [...(selected.warnings || [])];
-    // If unseen questions cannot satisfy the existing blueprint, fall back to the
-    // full eligible pool rather than breaking the mock or its scoring structure.
-    if (excludedIds.size && (selected.errors.length > 0 || selectedQuestions.length < targetCount)) {
-      selected = runSelector(available);
-      selectionWarnings.push("Some previously seen questions were reused because the unseen pool could not satisfy the subject blueprint.");
-    }
     return {
       subj,
       questions: selected.questions,
