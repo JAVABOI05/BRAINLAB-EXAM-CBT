@@ -1,17 +1,25 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals.js";
-import nextTs from "eslint-config-next/typescript.js";
+import { FlatCompat } from "@eslint/eslintrc";
+import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import reactHooks from "eslint-plugin-react-hooks";
 
+const compat = new FlatCompat({
+  baseDirectory: path.dirname(fileURLToPath(import.meta.url)),
+});
+
+const nextConfigs = fixupConfigRules(
+  compat.extends("next/core-web-vitals", "next/typescript"),
+);
+
 const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
+  ...nextConfigs,
   {
-    // Keep the newly surfaced React Compiler diagnostics visible while the
-    // existing application patterns are refactored in focused, tested batches.
-    // These remain warnings rather than blocking the security dependency update.
+    // Keep the existing React Compiler diagnostics visible without blocking
+    // unrelated application changes while those patterns are refactored.
     plugins: {
-      "react-hooks": reactHooks,
+      "react-hooks": fixupPluginRules(reactHooks),
     },
     rules: {
       "react-hooks/immutability": "warn",
@@ -20,9 +28,7 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "warn",
     },
   },
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
