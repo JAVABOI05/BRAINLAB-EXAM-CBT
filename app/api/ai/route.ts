@@ -104,6 +104,40 @@ function buildPrompt(body: JsonRecord, customSystemPrompt?: string): {
     };
   }
 
+  if (body.mode === "socratic") {
+    const question = safeQuestion(body.question);
+    const step = body.step === "formula" ? "formula" : body.step === "derivation" ? "derivation" : "clue";
+
+    let stepInstruction = "";
+    if (step === "clue") {
+      stepInstruction = `Stage 1: Thought Clue & Socratic Questioning.
+DO NOT reveal the correct option letter (A, B, C, D) or state the final answer.
+1. Highlight the core conceptual principle or definition being tested.
+2. Ask 1-2 guiding diagnostic questions that prompt the student to notice the critical clue or constraint.
+3. Warn about common careless traps without spoiling the solution.`;
+    } else if (step === "formula") {
+      stepInstruction = `Stage 2: Core Formula & Governing Method.
+1. State the exact mathematical equation, chemical law, physical principle, or grammatical rule required.
+2. Define what each variable or term represents in the context of this specific problem.
+3. Show how the given numbers map to the equation, but leave the final arithmetic step for the student.`;
+    } else {
+      stepInstruction = `Stage 3: Full Step-by-Step Master Derivation.
+1. Provide the complete worked-out calculation or syntactic proof from start to finish.
+2. Clearly identify the correct answer option and justify why it is uniquely correct.
+3. Analyze why each distractor is wrong and share an examiner speed-strategy for the CBT exam.`;
+    }
+
+    return {
+      system,
+      messages: [
+        {
+          role: "user",
+          content: `You are guiding a Nigerian student through this CBT question using Socratic tutoring:\n\n${question}\n\nTask:\n${stepInstruction}`,
+        },
+      ],
+    };
+  }
+
   if (body.mode === "chat") {
     const question = safeQuestion(body.question);
     const messages = safeMessages(body.messages);

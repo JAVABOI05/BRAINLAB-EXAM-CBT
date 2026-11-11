@@ -243,6 +243,51 @@ export function clearExamLocalSnapshot(sessionId: string): void {
   } catch {}
 }
 
+export interface OfflineExamPack {
+  sessionId: string;
+  token: string;
+  subjects: string[];
+  questions: any[];
+  durationMinutes: number;
+  cachedAt: number;
+  sizeBytes?: number;
+}
+
+export const OFFLINE_EXAM_PACK_PREFIX = "brainlab_exam_pack_";
+
+export async function cacheOfflineExamPack(pack: OfflineExamPack): Promise<boolean> {
+  if (typeof window === "undefined" || !pack?.sessionId) return false;
+  try {
+    const raw = JSON.stringify(pack);
+    pack.sizeBytes = raw.length;
+    localStorage.setItem(`${OFFLINE_EXAM_PACK_PREFIX}${pack.sessionId}`, raw);
+    await idbPut(STORE_SNAPSHOTS, { sessionId: `pack_${pack.sessionId}`, pack });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getOfflineExamPack(sessionId: string): Promise<OfflineExamPack | null> {
+  if (typeof window === "undefined" || !sessionId) return null;
+  try {
+    const raw = localStorage.getItem(`${OFFLINE_EXAM_PACK_PREFIX}${sessionId}`);
+    if (raw) return JSON.parse(raw);
+    const row = await idbGet<{ sessionId: string; pack: OfflineExamPack }>(STORE_SNAPSHOTS, `pack_${sessionId}`);
+    return row?.pack || null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearOfflineExamPack(sessionId: string): void {
+  if (typeof window === "undefined" || !sessionId) return;
+  try {
+    localStorage.removeItem(`${OFFLINE_EXAM_PACK_PREFIX}${sessionId}`);
+    void idbDelete(STORE_SNAPSHOTS, `pack_${sessionId}`);
+  } catch {}
+}
+
 function dispatchSyncStatus(state: SyncState, message?: string, extra?: Record<string, unknown>) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(

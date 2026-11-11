@@ -16,7 +16,11 @@ export type AnalyticsEventName =
   | "enrolment_started"
   | "payment_completed"
   | "school_enquiry_submitted"
-  | "tutor_application_submitted";
+  | "tutor_application_submitted"
+  | "student_goal_wizard_completed"
+  | "instant_mini_mock_answered"
+  | "instant_mini_mock_completed"
+  | "diagnostic_assessment_completed";
 
 export type CookieConsentStatus = "undecided" | "essential_only" | "all";
 

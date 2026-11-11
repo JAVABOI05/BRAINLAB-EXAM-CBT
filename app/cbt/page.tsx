@@ -518,10 +518,16 @@ export default function CBTExamPortalPage() {
               <span>{maintenanceNotice?.active ? "CBT Testing Engine Under Maintenance (Locked)" : (starting ? "Verifying…" : "Proceed to Examination Instructions")}</span><span aria-hidden="true">→</span>
             </button>
 
+            {/* Offline Protection Indicator */}
+            <div className="mt-2.5 flex items-center justify-center gap-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl py-2 px-3 text-center">
+              <span>⚡</span>
+              <span>Low-Data Offline Protection: Paper caches locally into device storage (&lt;1.5MB)</span>
+            </div>
+
             {/* Check Results Action */}
             <button
               onClick={handleCheckResult}
-              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-2.5 text-center text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition"
+              className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 py-2.5 text-center text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition"
             >
               Check My Previous Results
             </button>
@@ -537,6 +543,28 @@ export default function CBTExamPortalPage() {
             </p>
 
             <div className="mt-6 space-y-4">
+              {/* Baseline Diagnostic Assessment CTA */}
+              <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-950/40 dark:to-purple-950/30 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🧬</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300">
+                    Not Sure Where to Begin?
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Take our 10-Question Baseline Diagnostic Assessment to measure your speed, identify weak subjects, and calibrate your Learning DNA.
+                </p>
+                <div className="mt-3">
+                  <Link
+                    href="/cbt/diagnostic"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-xs font-black text-white shadow-sm transition active:scale-95"
+                  >
+                    <span>Start 10-Question Diagnostic</span>
+                    <span>→</span>
+                  </Link>
+                </div>
+              </div>
+
               <div className="rounded-2xl border border-blue-100 dark:border-blue-950/60 bg-blue-50/50 dark:bg-blue-950/20 p-4">
                 <span className="text-xs font-bold text-blue-900 dark:text-cyan-300">
                   <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" /></svg><span>Need a CBT Access Code?</span></span>

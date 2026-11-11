@@ -26,6 +26,7 @@ import DailyLearningFeedWidget from "../components/dashboard/DailyLearningFeedWi
 import MigratedStudentBanner from "../components/dashboard/MigratedStudentBanner";
 import { StudentAvatar } from "../components/ui/StudentAvatar";
 import { extractStudentProfile } from "../lib/studentProfile";
+import StudentGoalWizard from "../components/onboarding/StudentGoalWizard";
 
 type RecentExam = {
   result_id: string;
@@ -138,6 +139,7 @@ export default function LearnerDashboardPage() {
   const [dueSpacedCount, setDueSpacedCount] = useState<number>(0);
   const [gamification, setGamification] = useState<UserGamificationProfile | null>(null);
   const [userCohorts, setUserCohorts] = useState<any[]>([]);
+  const [showGoalWizard, setShowGoalWizard] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -188,6 +190,16 @@ export default function LearnerDashboardPage() {
       }
 
       setUser(currentUser);
+
+      // Check if student needs initial study goal onboarding
+      try {
+        const prof = extractStudentProfile(currentUser);
+        const goalsSet = localStorage.getItem("brainlab_student_goals_set") === "true";
+        const dismissed = localStorage.getItem("brainlab_goal_wizard_dismissed") === "true";
+        if (!prof.isCustomized && !goalsSet && !dismissed) {
+          setShowGoalWizard(true);
+        }
+      } catch {}
 
       // Fetch authentic progress data via consolidated Data Access Layer
       try {
@@ -371,34 +383,53 @@ export default function LearnerDashboardPage() {
                 {/* Student Ambition & Vibe Badges */}
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                   {studentProfile.targetCourse && (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/25 border border-blue-400/40 px-3 py-1 font-bold text-cyan-200 backdrop-blur-md">
+                    <button
+                      type="button"
+                      onClick={() => setShowGoalWizard(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/25 border border-blue-400/40 px-3 py-1 font-bold text-cyan-200 hover:bg-blue-500/40 backdrop-blur-md transition cursor-pointer"
+                      title="Edit Course Goal"
+                    >
                       <span>🎯</span> {studentProfile.targetCourse}
-                    </span>
+                    </button>
                   )}
                   {studentProfile.dreamSchool && (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500/25 border border-indigo-400/40 px-3 py-1 font-bold text-indigo-200 backdrop-blur-md">
+                    <button
+                      type="button"
+                      onClick={() => setShowGoalWizard(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500/25 border border-indigo-400/40 px-3 py-1 font-bold text-indigo-200 hover:bg-indigo-500/40 backdrop-blur-md transition cursor-pointer"
+                      title="Edit Dream School"
+                    >
                       <span>🏛️</span> {studentProfile.dreamSchool}
-                    </span>
+                    </button>
                   )}
                   {studentProfile.targetScore && (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/25 border border-amber-400/40 px-3 py-1 font-bold text-amber-200 backdrop-blur-md">
+                    <button
+                      type="button"
+                      onClick={() => setShowGoalWizard(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/25 border border-amber-400/40 px-3 py-1 font-bold text-amber-200 hover:bg-amber-500/40 backdrop-blur-md transition cursor-pointer"
+                      title="Edit Score Goal"
+                    >
                       <span>⭐</span> Goal: {studentProfile.targetScore}
-                    </span>
+                    </button>
                   )}
                   {studentProfile.studyVibe && (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 px-3 py-1 font-bold text-purple-200 backdrop-blur-md">
-                      <span>✨</span> {studentProfile.studyVibe}
-                    </span>
-                  )}
-                  {!studentProfile.targetCourse && !studentProfile.dreamSchool && (
-                    <Link
-                      href="/profile"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-cyan-400/50 bg-cyan-400/10 px-3 py-1 font-bold text-cyan-200 hover:bg-cyan-400/20 backdrop-blur-md transition"
+                    <button
+                      type="button"
+                      onClick={() => setShowGoalWizard(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 px-3 py-1 font-bold text-purple-200 hover:bg-purple-500/40 backdrop-blur-md transition cursor-pointer"
+                      title="Edit Study Persona"
                     >
-                      <span>✨ Customise your dream school, course & avatar</span>
-                      <span>→</span>
-                    </Link>
+                      <span>✨</span> {studentProfile.studyVibe}
+                    </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setShowGoalWizard(true)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-cyan-400/50 bg-cyan-400/10 px-3 py-1 font-bold text-cyan-200 hover:bg-cyan-400/20 backdrop-blur-md transition cursor-pointer"
+                  >
+                    <span>✨ {studentProfile.isCustomized ? "Update Study Goals" : "Set Your Target Exam, School & Course"}</span>
+                    <span>→</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1047,6 +1078,17 @@ export default function LearnerDashboardPage() {
         </footer>
       </div>
       <DeviceNotificationPrompt />
+      <StudentGoalWizard
+        isOpen={showGoalWizard}
+        onClose={() => {
+          setShowGoalWizard(false);
+          try {
+            localStorage.setItem("brainlab_goal_wizard_dismissed", "true");
+          } catch {}
+        }}
+        currentProfile={studentProfile}
+        onSaved={() => window.location.reload()}
+      />
     </main>
   );
 }
