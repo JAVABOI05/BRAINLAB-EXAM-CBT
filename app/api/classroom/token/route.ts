@@ -227,10 +227,10 @@ export async function POST(request: NextRequest) {
         if (!studentTier.entitlements.classroom_access) {
           return NextResponse.json(
             {
-              error: `Live Academic Classrooms require an active Premium Study, Plus, or Pro subscription. You are currently on the ${studentTier.planName} tier.`,
+              error: `Scheduled live tutorials require an active Apex Cohort enrolment. You are currently in the ${studentTier.planName} category.`,
               requiresSubscription: true,
               currentPlan: studentTier.planName,
-              requiredTier: "Premium Study",
+              requiredTier: "Apex Cohort",
               classDetails: {
                 id: liveClass.id,
                 title: roomConfig?.title || liveClass.title,

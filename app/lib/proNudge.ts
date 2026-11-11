@@ -64,10 +64,10 @@ export async function triggerProFeatureNudge(options: ProNudgeOptions): Promise<
 
   const {
     feature,
-    title = NUDGE_PRESETS[feature]?.title ?? "BrainLab Pro Tip",
-    message = NUDGE_PRESETS[feature]?.message ?? "Accelerate your learning with BrainLab Pro.",
+    title = NUDGE_PRESETS[feature]?.title ?? "BrainLab Academic Insight",
+    message = NUDGE_PRESETS[feature]?.message ?? "Discover Apex Cohort for intensive tutorials and dedicated tutor guidance.",
     linkUrl,
-    actionLabel = NUDGE_PRESETS[feature]?.actionLabel ?? "Explore Pro →",
+    actionLabel = NUDGE_PRESETS[feature]?.actionLabel ?? "Discover Apex Cohort →",
     cooldownHours = 24,
   } = options;
 
