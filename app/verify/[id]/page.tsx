@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { toast } from "@/app/lib/toast";
+import { downloadCertificatePdf } from "@/app/lib/certificatePdfService";
 
 interface VerifiedCertificate {
   id: string;
@@ -69,6 +70,26 @@ export default function CertificateVerificationResultPage() {
       active = false;
     };
   }, [query]);
+
+  function handleDownloadPdf() {
+    if (!cert) return;
+    downloadCertificatePdf({
+      certificateNumber: cert.certificate_number,
+      recipientName: cert.recipient_name,
+      examTitle: cert.title,
+      issuerName: cert.issuer_name,
+      issuedDate: new Date(cert.issued_at).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      score: cert.score ?? 0,
+      percentage: cert.score ?? undefined,
+      grade: cert.grade || undefined,
+      verificationUrl: window.location.href,
+    });
+    toast.success("Certificate PDF downloaded! 📜");
+  }
 
   return (
     <div className="verification-detail-page flex min-h-screen flex-col bg-slate-50 text-slate-900">
@@ -294,10 +315,17 @@ export default function CertificateVerificationResultPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={handleDownloadPdf}
+                    className="rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 font-bold text-white shadow-xs transition active:scale-95 flex items-center gap-1.5"
+                  >
+                    <span>📜 Download Certificate PDF</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => window.print()}
                     className="rounded-xl bg-[#012153] px-4 py-2 font-bold text-white transition hover:bg-[#082e6e]"
                   >
-                    🖨️ Print / Save PDF
+                    🖨️ Print Record
                   </button>
                 </div>
               </div>

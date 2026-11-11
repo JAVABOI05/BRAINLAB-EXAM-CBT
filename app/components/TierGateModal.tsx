@@ -7,8 +7,8 @@ import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
 interface TierGateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  featureTitle: string;
-  featureDescription: string;
+  featureTitle?: string;
+  featureDescription?: string;
   requiredTierName?: string;
   currentPlanName?: string;
   redirectUrl?: string;
@@ -17,14 +17,13 @@ interface TierGateModalProps {
 export default function TierGateModal({
   isOpen,
   onClose,
-  featureTitle,
-  featureDescription,
-  requiredTierName = "Premium Study",
-  currentPlanName = "Free Learner",
-  redirectUrl,
+  featureTitle = "Apex Cohort Intensive Tutorial",
+  featureDescription = "This live guided session is part of the Apex Cohort educational programme. Enrol to access structured timetables, dedicated tutor guidance, and weekly assignments.",
+  requiredTierName = "Apex Cohort",
+  currentPlanName = "Public Learner",
+  redirectUrl = "/apex",
 }: TierGateModalProps) {
   const [isAdminUser, setIsAdminUser] = useState(false);
-  const [resolvedRedirect, setResolvedRedirect] = useState(redirectUrl || "");
 
   useEffect(() => {
     let active = true;
@@ -35,21 +34,15 @@ export default function TierGateModal({
       }
     });
 
-    if (!redirectUrl && typeof window !== "undefined") {
-      setResolvedRedirect(`${window.location.pathname}${window.location.search}`);
-    }
-
     return () => {
       active = false;
     };
-  }, [redirectUrl, onClose]);
+  }, [onClose]);
 
-  // Super Admins and Admins are NEVER shown paywalls or subscription modals
+  // Super Admins and Admins are NEVER shown gating modals
   if (!isOpen || isAdminUser) return null;
 
-  const upgradeHref = resolvedRedirect
-    ? `/pricing?redirect=${encodeURIComponent(resolvedRedirect)}`
-    : "/pricing";
+  const targetHref = redirectUrl || "/apex";
 
   return (
     <div
@@ -63,7 +56,7 @@ export default function TierGateModal({
 
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-indigo-900">
-            🔒 Subscription Upgrade Required
+            🎓 Apex Cohort Programme
           </span>
           <button
             type="button"
@@ -77,11 +70,11 @@ export default function TierGateModal({
 
         <div className="mt-5 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-3xl text-white shadow-lg shadow-indigo-600/30">
-            ⚡
+            🏛️
           </div>
 
           <h3 className="mt-4 text-2xl font-black text-slate-950">
-            Unlock {featureTitle}
+            {featureTitle}
           </h3>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -90,12 +83,12 @@ export default function TierGateModal({
 
           <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span>Your Current Tier:</span>
+              <span>Your Current Category:</span>
               <span className="font-extrabold text-slate-800">{currentPlanName}</span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-indigo-700 font-bold border-t border-slate-200/60 pt-1.5">
-              <span>Required Tier:</span>
-              <span className="font-black text-indigo-900">{requiredTierName}+</span>
+              <span>Programme Track:</span>
+              <span className="font-black text-indigo-900">{requiredTierName}</span>
             </div>
           </div>
         </div>
@@ -106,13 +99,13 @@ export default function TierGateModal({
             onClick={onClose}
             className="w-full rounded-xl border border-slate-300 py-3 text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition"
           >
-            Maybe Later
+            Continue Independent Learning
           </button>
           <Link
-            href={upgradeHref}
+            href={targetHref}
             className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-xs font-black text-white hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-600/25 transition"
           >
-            Upgrade Plan Now →
+            Discover Apex Cohort →
           </Link>
         </div>
       </div>

@@ -12,7 +12,9 @@ export function HomeAudiences() {
     {
       icon: string;
       tag: string;
+      accent: string;
       staggerClass: string;
+      features: string[];
       preview: {
         badge: string;
         title: string;
@@ -23,58 +25,82 @@ export function HomeAudiences() {
   > = {
     students: {
       icon: "🎯",
-      tag: "Candidates & Learners",
+      tag: "UTME & JAMB Candidates",
+      accent: "from-blue-600 to-sky-500",
       staggerClass: "bl-stagger-1",
+      features: [
+        "Authentic 4-subject 400-mark timed simulations",
+        "Step-by-step master derivations & explanations",
+        "Low-data offline sync (< 1.2 MB data usage)",
+      ],
       preview: {
-        badge: "Low-Data Sync Active",
-        title: "Mobile CBT Practice Drill",
+        badge: "CBT Mode",
+        title: "Official 4-Subject Simulator",
         metrics: [
-          { label: "Offline Questions", val: "180 Cached" },
-          { label: "Data Usage", val: "< 1.2 MB" },
+          { label: "Standard Time", val: "120 Mins" },
+          { label: "Question Pool", val: "Verified 2027" },
         ],
-        footerNotice: "Auto-syncs answers upon network reconnection",
+        footerNotice: "Instant score & speed analysis",
       },
     },
-    parents: {
-      icon: "📊",
-      tag: "Parents & Guardians",
+    secondary: {
+      icon: "📚",
+      tag: "SS1–SS3, WAEC & NECO",
+      accent: "from-emerald-600 to-teal-500",
       staggerClass: "bl-stagger-2",
+      features: [
+        "Complete curriculum modules (Science, Arts, Commercial)",
+        "Formula sheets, definitions & theory breakdowns",
+        "Topical quizzes and past examination revisions",
+      ],
       preview: {
-        badge: "WhatsApp Summary Card",
-        title: "Weekly Performance Report",
+        badge: "Syllabus Aligned",
+        title: "Senior Secondary Hub",
         metrics: [
-          { label: "Syllabus Coverage", val: "68% on track" },
-          { label: "Weakness Focus", val: "Organic Chemistry" },
+          { label: "NERDC Curriculum", val: "100% Tracked" },
+          { label: "Theory & OBJ", val: "Full Solutions" },
         ],
-        footerNotice: "Dispatched every Friday evening to parent WhatsApp",
+        footerNotice: "Step-by-step curriculum mastery",
       },
     },
-    schools: {
-      icon: "🏛️",
-      tag: "Institutions & Principals",
+    stem: {
+      icon: "🔬",
+      tag: "STEM & Science Explorers",
+      accent: "from-indigo-600 to-cyan-500",
       staggerClass: "bl-stagger-3",
+      features: [
+        "3D biological organs, circuits & chemical structures",
+        "Interactive parameter sliders for physics & mechanics",
+        "Kinesthetic visual learning turning formulas into intuition",
+      ],
       preview: {
-        badge: "Institutional Console",
-        title: "Batch CBT Examination Room",
+        badge: "3D Virtual Lab",
+        title: "Virtual Science Atlas",
         metrics: [
-          { label: "Simultaneous Terminals", val: "Multi-lab support" },
-          { label: "Audit Telemetry", val: "Tamper-evident logs" },
+          { label: "Simulations", val: "Touch & Rotate" },
+          { label: "Visual Depth", val: "Real 3D Atlas" },
         ],
-        footerNotice: "Centralized licensing with offline local-mesh fallback",
+        footerNotice: "Interactive tactile experiments",
       },
     },
-    tutors: {
-      icon: "👨‍🏫",
-      tag: "Educators & Tutors",
+    independent: {
+      icon: "⚡",
+      tag: "Higher Ed & Self-Paced",
+      accent: "from-purple-600 to-pink-500",
       staggerClass: "bl-stagger-4",
+      features: [
+        "National Competition Arena with 1v1 sprint battles",
+        "24/7 AI Tutor with hints without spoiling answers",
+        "Verified skills passports and learning milestones",
+      ],
       preview: {
-        badge: "Live Stage Canvas",
-        title: "Interactive Classroom Liveboard",
+        badge: "Live 1v1 Sprint",
+        title: "National Challenge Arena",
         metrics: [
-          { label: "Audio Bitrate", val: "Optimized 24kbps" },
-          { label: "Annotation Tools", val: "LaTeX + Vector" },
+          { label: "Multiplayer", val: "Real-time 1v1" },
+          { label: "AI Guidance", val: "24/7 Active" },
         ],
-        footerNotice: "Real-time candidate diagnostic polling during lecture",
+        footerNotice: "Merit badges & scholarships",
       },
     },
   };
@@ -83,29 +109,35 @@ export function HomeAudiences() {
     <section
       id="audiences"
       aria-label="Tailored Experiences for Every Learner"
-      className="py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/60 dark:border-slate-800 dark:bg-[#070e1e]"
+      className="py-14 sm:py-18 lg:py-20 border-b border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-[#070e1e]"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-14 animate-bl-fade-up">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 mb-3">
-            AUDIENCE ENTRY POINTS
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 animate-bl-fade-up">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 mb-2.5">
+            LEARNER-FIRST ACADEMY
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--bl-color-text-primary)] tracking-tight">
-            Designed for Every Stakeholder in Academic Success
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[var(--bl-color-text-primary)] tracking-tight">
+            Engineered for Every Stage of Your Academic Journey
           </h2>
-          <p className="mt-3.5 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-            Whether preparing for competitive examinations, monitoring child progress, managing school-wide testing, or teaching curriculum topics.
+          <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300">
+            Whether you are preparing for high-stakes exams, mastering secondary curriculum, exploring 3D science simulations, or studying at your own pace.
           </p>
         </div>
 
-        {/* 4 Audience Cards Grid (Slots S2-01 to S2-04) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        {/* 4 Clean Visual Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
           {audiences.map((aud) => {
             const meta = AUDIENCE_METADATA[aud.id] || {
               icon: "📚",
               tag: aud.label,
+              accent: "from-blue-600 to-sky-500",
               staggerClass: "",
+              features: [
+                "Full syllabus topic coverage",
+                "Real examination practice drills",
+                "Instant performance analytics",
+              ],
               preview: {
                 badge: "Designed State",
                 title: aud.label,
@@ -114,72 +146,78 @@ export function HomeAudiences() {
               },
             };
             const headline = resolveClaimValue(aud.headline, aud.label);
-            const body = resolveClaimValue(aud.body, "");
 
             return (
               <div
                 key={aud.id}
-                className={`relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-[var(--bl-color-surface)] p-6 sm:p-7 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1 dark:border-slate-800 bl-interactive-hover animate-bl-fade-up ${meta.staggerClass}`}
+                className={`group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-[var(--bl-color-surface)] p-5 sm:p-6 shadow-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1 dark:border-slate-800 dark:bg-slate-900/80 bl-interactive-hover animate-bl-fade-up ${meta.staggerClass}`}
               >
+                {/* Visual Top Highlight Accent */}
+                <div
+                  className={`absolute top-0 inset-x-0 h-1 rounded-t-2xl bg-gradient-to-r ${meta.accent} opacity-80 group-hover:opacity-100 transition-opacity`}
+                  aria-hidden="true"
+                />
+
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-3xl" role="img" aria-hidden="true">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between mb-3.5 pt-1">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-2xl shadow-2xs group-hover:scale-105 transition-transform" role="img" aria-hidden="true">
                       {meta.icon}
                     </span>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       {meta.tag}
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-[var(--bl-color-text-primary)] tracking-tight leading-snug">
+                  {/* Headline */}
+                  <h3 className="text-base sm:text-lg font-black text-[var(--bl-color-text-primary)] tracking-tight leading-snug">
                     {headline}
                   </h3>
 
-                  <p className="mt-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {body}
-                  </p>
+                  {/* Visual Feature Bullet List */}
+                  <ul className="mt-4 space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                    {meta.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
+                        <span className="leading-snug">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-                  {/* Designed Authentic UI Preview Card (Neutral State, Zero Stock Photography) */}
-                  <div
-                    className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900/60 text-left min-h-[135px]"
-                    role="region"
-                    aria-label={`${aud.label} Interface Mockup`}
-                  >
+                  {/* Visual Interface Telemetry Pill */}
+                  <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/80 p-2.5 dark:border-slate-800 dark:bg-slate-950/60">
                     <div className="flex items-center justify-between text-[10px] font-bold">
-                      <span className="text-slate-700 dark:text-slate-300">
+                      <span className="text-slate-700 dark:text-slate-300 truncate font-semibold">
                         {meta.preview.title}
                       </span>
-                      <span className="rounded bg-blue-100 px-1.5 py-0.5 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                      <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] font-bold text-blue-800 dark:bg-blue-950 dark:text-blue-300 shrink-0">
                         {meta.preview.badge}
                       </span>
                     </div>
 
-                    <div className="mt-2.5 grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px]">
                       {meta.preview.metrics.map((m) => (
                         <div
                           key={m.label}
-                          className="rounded-lg border border-slate-200/60 bg-white p-2 dark:border-slate-800 dark:bg-slate-800"
+                          className="rounded-md border border-slate-200/60 bg-white px-2 py-1 dark:border-slate-800/80 dark:bg-slate-900"
                         >
-                          <span className="text-[9px] uppercase font-bold text-slate-400 block">
+                          <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">
                             {m.label}
                           </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">
+                          <span className="font-bold text-slate-800 dark:text-slate-200 truncate block text-[10px]">
                             {m.val}
                           </span>
                         </div>
                       ))}
                     </div>
-
-                    <p className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 border-t border-slate-200/60 pt-1.5 dark:border-slate-800 truncate">
-                      {meta.preview.footerNotice}
-                    </p>
                   </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                {/* Footer Action */}
+                <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800">
                   <Link
                     href={aud.cta.href}
-                    className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--bl-color-brand-primary)] hover:underline bl-focus-ring rounded-lg"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--bl-color-brand-primary)] hover:text-blue-600 dark:hover:text-blue-300 group-hover:translate-x-0.5 transition-all bl-focus-ring rounded-lg"
                   >
                     <span>{aud.cta.label}</span>
                     <span aria-hidden="true">&rarr;</span>

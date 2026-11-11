@@ -6,8 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { getPublicSettings, isError, lookupResult as fetchLookup } from "../lib/examApi";
 import VerificationQRCode from "../components/VerificationQRCode";
-import { downloadCertificatePdf } from "../lib/certificatePdfService";
-import { toast } from "../lib/toast";
 
 type Candidate = {
   name: string;
@@ -27,6 +25,7 @@ type SavedResultRow = {
 
 type Summary = {
   result_id: string;
+  session_id?: string;
   score: number;
   total: number;
   subject_scores: Record<string, number>;
@@ -59,7 +58,6 @@ export default function ResultPage() {
   const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
   const [chiefProctorName, setChiefProctorName] = useState("Chief Examination Proctor");
   const [chiefProctorTitle, setChiefProctorTitle] = useState("BrainLab CBT Directorate");
-  const [downloadingCert, setDownloadingCert] = useState(false);
 
   useEffect(() => {
     async function loadPage() {
@@ -142,56 +140,38 @@ export default function ResultPage() {
     window.print();
   };
 
+  const [certDownloading, setCertDownloading] = useState(false);
+
+  const handleDownloadCertificate = async () => {
+    const targetResultId = summary?.result_id || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("id") : null);
+    if (!targetResultId) return;
+    setCertDownloading(true);
+    try {
+      const res = await fetch("/api/certificates/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          result_id: targetResultId,
+          session_id: summary?.session_id,
+        }),
+      });
+      const data = await res.json();
+      if (data?.certificate?.id) {
+        window.open(`/api/certificates/download/${data.certificate.id}`, "_blank");
+      }
+    } catch (err) {
+      console.error("Failed to generate digital certificate:", err);
+    } finally {
+      setCertDownloading(false);
+    }
+  };
+
   // Handle WhatsApp Share
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
       `🎯 BrainLab UTME Mock Scorecard\nCandidate: ${candidate?.name || "Student"}\nTotal Score: ${totalScore}/${totalPossible} (${percentage}%)\nStrongest Subject: ${bestSubject ? `${bestSubject[0]} (${bestSubject[1]}/100)` : "General"}\nCheck verified scores at https://www.brainlabacademy.com.ng/result`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
-  };
-
-  // Handle Verifiable PDF Certificate Generation & Download
-  const handleDownloadCertificate = async () => {
-    setDownloadingCert(true);
-    try {
-      const res = await fetch("/api/certificates/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          resultId: summary?.result_id || "mock-result",
-          candidateName: candidate?.name || "Verified Candidate",
-          examTitle: `JAMB UTME National Milestone Mock (${candidate?.subjects?.join(", ") || candidate?.subject || "Standard"})`,
-          score: totalScore,
-          total: totalPossible,
-          subjectScores: subjectScores,
-        }),
-      });
-      const data = await res.json();
-      if (data.ok && data.certificate) {
-        const cert = data.certificate;
-        downloadCertificatePdf({
-          certificateNumber: cert.certificate_number,
-          recipientName: candidate?.name || "Verified Candidate",
-          examTitle: cert.title || `JAMB UTME National Milestone Mock (${candidate?.subjects?.join(", ") || candidate?.subject || "Standard"})`,
-          score: totalScore,
-          totalPossible,
-          percentage,
-          grade: cert.grade,
-          standing: totalScore >= 280 ? "Tier 1 University Readiness" : "Qualified Pass",
-          subjectScores: subjectScores,
-          verificationUrl: `https://www.brainlabacademy.com.ng/verify/${cert.certificate_number}`,
-          chiefProctorName,
-          chiefProctorTitle,
-        });
-        toast.success("Verifiable Certificate PDF downloaded! 📜");
-      } else {
-        toast.error(data.message || "Could not generate certificate");
-      }
-    } catch {
-      toast.error("Failed to generate digital certificate");
-    } finally {
-      setDownloadingCert(false);
-    }
   };
 
   const handleLookup = async () => {
@@ -484,11 +464,17 @@ export default function ResultPage() {
             <button
               type="button"
               onClick={handleDownloadCertificate}
-              disabled={downloadingCert}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm active:scale-95 transition disabled:opacity-60"
+              disabled={certDownloading}
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm active:scale-95 transition disabled:opacity-50"
             >
-              <span>{downloadingCert ? "Generating..." : "🎖️ Download Verifiable Certificate (PDF)"}</span>
+              <span>{certDownloading ? "Generating..." : "Download Verifiable Certificate (PDF)"}</span>
             </button>
+            <Link
+              href="/student/exams"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            >
+              <span>Exam History</span>
+            </Link>
             <button
               type="button"
               onClick={handlePrint}
@@ -713,21 +699,13 @@ export default function ResultPage() {
         </div>
 
         {/* Next Step Action Buttons (Hidden in Print) */}
-        <div className="no-print flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+        <div className="no-print flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-2">
           <Link
-            href="/student/exams"
-            className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 px-4 py-3 text-center text-xs font-bold text-blue-900 dark:text-cyan-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
+            href="/learning/revision"
+            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-3 text-center text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition"
           >
-            📜 View Candidate Exam History &amp; Certificates →
+            Add Weak Topics to Revision Plan →
           </Link>
-
-          <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3">
-            <Link
-              href="/learning/revision"
-              className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-3 text-center text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition"
-            >
-              Add Weak Topics to Revision Plan →
-            </Link>
 
           {allowCorrections ? (
             <button
@@ -748,7 +726,6 @@ export default function ResultPage() {
               <span className="text-[10px] text-slate-500 mt-1">Detailed solutions will unlock once the testing cycle closes.</span>
             </div>
           )}
-          </div>
         </div>
       </div>
     </main>

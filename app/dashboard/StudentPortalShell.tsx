@@ -259,6 +259,15 @@ export default function StudentPortalShell({ children }: { children: React.React
                       </Link>
 
                       <Link
+                        href="/student/exams"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80 transition"
+                      >
+                        <span className="text-base">📜</span>
+                        <span>Exam History &amp; Certificates</span>
+                      </Link>
+
+                      <Link
                         href="/learning-dna"
                         onClick={() => setUserDropdownOpen(false)}
                         className="flex items-center gap-2.5 rounded-xl px-3 py-2 font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80 transition"

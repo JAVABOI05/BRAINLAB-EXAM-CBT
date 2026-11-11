@@ -41,7 +41,7 @@ export function HomeFaqCta() {
               Common Questions About BrainLab Academy
             </h2>
             <p className="mt-3.5 text-base text-slate-600 dark:text-slate-300">
-              Clear answers regarding CBT exam simulations, free access, offline synchronization, and institutional partnerships.
+              Clear answers regarding CBT exam simulations, free daily practice, offline synchronization, and student learning plans.
             </p>
           </div>
 
@@ -78,7 +78,7 @@ export function HomeFaqCta() {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Join candidates and educators across Nigeria utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and virtual laboratories.
+            Join thousands of secondary students and examination candidates across Nigeria utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and 3D virtual laboratories.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
@@ -86,15 +86,15 @@ export function HomeFaqCta() {
               href="/cbt"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--bl-color-brand-primary)] hover:bg-[var(--bl-color-brand-primary-hover)] px-8 py-4 text-base font-bold text-white shadow-md hover:shadow-lg transition-all duration-180 bl-focus-ring min-h-[50px] active:scale-[0.98]"
             >
-              <span>Start Free Practice</span>
+              <span>Start Learning for Free</span>
               <span aria-hidden="true">&rarr;</span>
             </Link>
 
             <Link
-              href="/schools"
+              href="/pricing"
               className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700/80 px-7 py-4 text-base font-bold text-[var(--bl-color-text-primary)] transition-all duration-180 bl-focus-ring min-h-[50px] active:scale-[0.98]"
             >
-              Request School Consultation
+              View Student Plans &amp; Pricing
             </Link>
           </div>
 

@@ -108,7 +108,7 @@ export interface LoopStageConfig {
 }
 
 export interface AudienceTabConfig {
-  id: "students" | "parents" | "schools" | "tutors";
+  id: "students" | "secondary" | "stem" | "independent" | "parents" | "schools" | "tutors";
   label: string;
   headline: ClaimNode<string>;
   body: ClaimNode<string>;
@@ -280,25 +280,25 @@ export const HOMEPAGE_CONTENT_CONFIG: HomepageContentConfig = {
     headline: {
       status: "VERIFIED",
       claimId: "CLM-HERO-01",
-      value: "One Intelligent Learning Ecosystem. A Complete Journey from Learning to Mastery.",
-      sourceNote: "Approved Brand Positioning Statement",
-      asOfDate: "2026-11-07",
+      value: "A Better Way to Learn, Practise and Achieve More.",
+      sourceNote: "Directive Section 7 Positioning Statement",
+      asOfDate: "2026-11-11",
     },
     subhead: {
       status: "VERIFIED",
       claimId: "CLM-HERO-02",
-      value: "From syllabus fundamentals and CBT mocks to weak-spot diagnostics and live tutor mastery — unified in one high-performance platform for Nigerian students.",
-      sourceNote: "Approved Brand Value Proposition",
-      asOfDate: "2026-11-07",
+      value: "Your learning journey starts here. For free.",
+      sourceNote: "Directive Section 7 Hero Subheading",
+      asOfDate: "2026-11-11",
     },
-    primaryCta: { label: "Start Free Practice", href: "/cbt" },
-    secondaryCta: { label: "Explore the Platform", href: "/products" },
+    primaryCta: { label: "Get Started, It's Free", href: "/cbt" },
+    secondaryCta: { label: "Discover Apex Cohort", href: "/apex" },
     disclosure: {
       status: "VERIFIED",
       claimId: "CLM-HERO-03",
-      value: "Free tier includes diagnostic tests and daily practice drills.",
-      sourceNote: "Platform Entitlement Specification",
-      asOfDate: "2026-11-07",
+      value: "Full access to CBT practice, question bank, AI Tutor fair-use, and Learning Hub at ₦0.",
+      sourceNote: "Directive Section 3 Public Category Specification",
+      asOfDate: "2026-11-11",
     },
     countdown: {
       targetExam: "JAMB UTME 2027",

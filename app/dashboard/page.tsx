@@ -801,12 +801,18 @@ export default function LearnerDashboardPage() {
                       Review explanations and targeted test strategies.
                     </p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100">
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold">
                     <Link
                       href="/corrections"
-                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-blue-700 hover:text-blue-900"
+                      className="text-blue-700 hover:text-blue-900"
                     >
-                      View Question Corrections →
+                      Corrections →
+                    </Link>
+                    <Link
+                      href="/student/exams"
+                      className="text-amber-700 hover:text-amber-900"
+                    >
+                      📜 Certificates &amp; History →
                     </Link>
                   </div>
                 </div>

@@ -9,6 +9,7 @@ import { supabase } from "../lib/supabase";
 import LeaderboardCard from "../components/LeaderboardCard";
 import { toast } from "../lib/toast";
 import { getFooterConfig } from "../lib/platformConfig";
+import { getStudentSubscriptionAndEntitlements } from "../lib/subscriptionEntitlements";
 
 const CONFIG = {
   accessCodeMessage:
@@ -22,6 +23,7 @@ export default function CBTExamPortalPage() {
 
   const [loadingSession, setLoadingSession] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [hasServerCbtAccess, setHasServerCbtAccess] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -110,6 +112,13 @@ export default function CBTExamPortalPage() {
         if (active) {
           if (user) {
             setCurrentUser(user);
+            getStudentSubscriptionAndEntitlements(user.id)
+              .then((ent) => {
+                if (active && (ent.isSubscribed || ent.entitlements.cbt_access)) {
+                  setHasServerCbtAccess(true);
+                }
+              })
+              .catch(() => {});
             const userFullName =
               user.user_metadata?.full_name ||
               user.user_metadata?.name ||
@@ -249,7 +258,7 @@ export default function CBTExamPortalPage() {
 
     setStarting(true);
 
-    const savedCode = localStorage.getItem("access_code") || "";
+    const savedCode = localStorage.getItem("access_code") || (hasServerCbtAccess ? "SUBSCRIPTION-ACTIVE" : "");
 
     localStorage.setItem(
       "candidate",
@@ -276,7 +285,7 @@ export default function CBTExamPortalPage() {
       subjects_count: selectedSubjects.length,
     });
 
-    if (accessCodeRequired && !savedCode) {
+    if (accessCodeRequired && !savedCode && !hasServerCbtAccess) {
       router.push("/access");
     } else {
       router.push("/instructions");
