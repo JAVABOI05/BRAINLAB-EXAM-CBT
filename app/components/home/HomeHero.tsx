@@ -238,7 +238,7 @@ export function HomeHero() {
                         key={opt.key}
                         type="button"
                         onClick={() => setSelectedOption(opt.key)}
-                        className={`w-full flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition-colors duration-150 bl-focus-ring ${
+                        className={`w-full flex items-center gap-2.5 rounded-xl border p-2.5 min-h-[44px] text-left transition-colors duration-150 bl-focus-ring ${
                           isSelected
                             ? opt.isCorrect
                               ? "border-emerald-500 bg-emerald-950/70 text-emerald-200 shadow-md shadow-emerald-950 font-bold"

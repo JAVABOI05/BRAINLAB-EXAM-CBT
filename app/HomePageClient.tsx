@@ -14,6 +14,7 @@ import {
   HomeFounderNote,
   HomeFaqCta,
 } from "./components/home";
+import HomeInstantMiniMock from "./components/home/HomeInstantMiniMock";
 
 /**
  * Ecosystem pathways mapping to preserve architecture assertions
@@ -60,6 +61,11 @@ export default function HomePageClient() {
 
       {/* 2. Audience Entry Points */}
       <HomeAudiences />
+
+      {/* Interactive 90-Second Instant Sampler Mini-Mock */}
+      <div className="mx-auto max-w-7xl px-5 sm:px-8 py-6">
+        <HomeInstantMiniMock />
+      </div>
 
       {/* 3. The BrainLab Loop */}
       <HomeBrainLabLoop />

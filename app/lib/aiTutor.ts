@@ -31,6 +31,7 @@ export type AiChatMessage = { role: "user" | "assistant"; content: string };
 export type AiTutorRequest =
   | { mode: "explain" | "why_wrong"; question: AiQuestionContext; forceRefresh?: boolean; style?: "standard" | "simple" | "detailed" | "exam_traps" }
   | { mode: "hint"; question: AiQuestionContext }
+  | { mode: "socratic"; question: AiQuestionContext; step: "clue" | "formula" | "derivation" }
   | { mode: "distractor_traps"; question: AiQuestionContext }
   | { mode: "chat"; question: AiQuestionContext; messages: AiChatMessage[] }
   | { mode: "coach"; context: AiCoachContext; messages: AiChatMessage[] };

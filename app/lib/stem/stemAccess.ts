@@ -82,6 +82,21 @@ export function getStemResourceAccess(
   };
 }
 
+export function getMoleculeRequiredAccessLevel(molecule: { type: string; id: string }): StemAccessLevel {
+  if (molecule.type === "small_molecule") return "discover";
+  if (molecule.id === "hemoglobin-sickle") return "practise";
+  return "explore";
+}
+
+export function canAccessMolecule(
+  context: StemAccessContext,
+  molecule: { type: string; id: string }
+): boolean {
+  if (context.isPrivileged) return true;
+  const required = getMoleculeRequiredAccessLevel(molecule);
+  return context.accessLevel !== "none" && ACCESS_RANK[context.accessLevel] >= ACCESS_RANK[required];
+}
+
 /**
  * Resolves learner STEM access from server-side subscription records and the
  * administrator-configured plan entitlements. It deliberately does not trust

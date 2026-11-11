@@ -64,12 +64,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 1. Static assets (JS chunks, CSS, fonts, KaTeX webfonts, icons) -> Cache-first with network fallback
+  // 1. Static assets (JS chunks, CSS, fonts, KaTeX webfonts, icons, 3D molecular structures) -> Cache-first with network fallback
   if (
     url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/structures/") ||
     url.hostname.includes("jsdelivr.net") ||
+    url.hostname.includes("models.rcsb.org") ||
     url.hostname.includes("cdnjs.cloudflare.com") ||
-    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|ico|css)$/i)
+    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|ico|css|bcif|cif|pdb)$/i)
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {
