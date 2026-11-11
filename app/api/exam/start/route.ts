@@ -100,7 +100,8 @@ export async function POST(request: NextRequest) {
       const { data: seenRows, error: seenError } = await supabase
         .from("question_exposure_history")
         .select("question_id")
-        .eq("user_id", registeredUser.id);
+        .eq("user_id", registeredUser.id)
+        .eq("surface", "full_mock");
       if (!seenError && seenRows) {
         previouslySeenIds = [...new Set(seenRows.map((row: { question_id: number }) => Number(row.question_id)).filter(Number.isFinite))];
       } else if (seenError) {
