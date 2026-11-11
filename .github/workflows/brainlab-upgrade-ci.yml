@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   repair-pr118-lockfile:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/fix/tutor-avatar-upload-diagnostics' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/fix/tutor-avatar-upload-diagnostics') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/tutor-avatar-upload-diagnostics' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
