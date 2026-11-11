@@ -52,9 +52,11 @@ export async function generateExamPaper(options: {
   subjects: string[];
   durationSeconds?: number;
   excludeQuestionIds?: number[];
+  previouslySeenQuestionIds?: number[];
 }): Promise<GeneratePaperResult> {
   const { sessionId, token, durationSeconds = 7200 } = options;
   const excludedIds = new Set(options.excludeQuestionIds || []);
+  const previouslySeenIds = new Set(options.previouslySeenQuestionIds || []);
   const warnings: string[] = [];
   const errors: string[] = [];
 
@@ -107,20 +109,31 @@ export async function generateExamPaper(options: {
     }
 
     const available = questionPages.rows;
-    const freshAvailable = excludedIds.size
+    const eligibleAvailable = excludedIds.size
       ? available.filter((question) => !excludedIds.has(question.id))
       : available;
+    const unseenAvailable = previouslySeenIds.size
+      ? eligibleAvailable.filter((question) => !previouslySeenIds.has(question.id))
+      : eligibleAvailable;
+    const reviewAvailable = previouslySeenIds.size
+      ? eligibleAvailable.filter((question) => previouslySeenIds.has(question.id))
+      : [];
     const runSelector = (pool: EngineQuestion[]) =>
       isEnglish
         ? selectEnglishExaminationPaper(pool, blueprint, allHighYield)
         : selectStandardSubjectPaper(subj, pool, blueprint, allHighYield);
-    // The exclusion set contains only questions the learner previously answered
-    // correctly in a full mock. Incorrect and unanswered questions are deliberately
-    // left in freshAvailable so they can return for reinforcement.
-    // Never fall back to the unrestricted pool: that would reintroduce mastered
-    // questions and violate the learner's mock-rotation rule.
-    const selected = runSelector(freshAvailable);
+
+    // First attempt a paper using unseen questions only. If the subject blueprint
+    // cannot be satisfied, retry using unseen + previously attempted incorrect or
+    // unanswered questions. Correctly answered questions remain excluded in both
+    // pools, so mastered questions can never re-enter through fallback.
+    let selected = runSelector(unseenAvailable);
+    const targetCount = blueprint.total_questions || (isEnglish ? 60 : 40);
     const selectionWarnings = [...(selected.warnings || [])];
+    if (selected.errors.length > 0 || (selected.questions || []).length < targetCount) {
+      selected = runSelector([...unseenAvailable, ...reviewAvailable]);
+      selectionWarnings.push("Previously attempted incorrect or unanswered questions were used because the unseen pool could not satisfy the subject blueprint.");
+    }
     return {
       subj,
       questions: selected.questions,
