@@ -113,8 +113,17 @@ export async function POST(request: NextRequest) {
           .map((row: { question_id: number }) => Number(row.question_id))
           .filter(Number.isFinite))];
       } else if (seenError) {
-        // Keep exam launch available if rotation history is not yet readable.
+        // Fail closed for registered candidates: without verified history, the
+        // engine cannot guarantee that correctly mastered questions stay excluded.
         console.error("Unable to load learner question exposure history:", seenError.message);
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "rotation_history_unavailable",
+            message: "We could not verify your mock-exam question history. Please try again shortly.",
+          },
+          { status: 503 }
+        );
       }
     }
     const attemptToken = crypto.randomUUID();
