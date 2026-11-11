@@ -90,8 +90,8 @@ export default function TutorProfileEditorPage() {
   async function onPhotoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
-    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      setError("Choose an image file no larger than 5 MB.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setError("Choose a JPG, PNG or WebP image no larger than 5 MB.");
       event.target.value = "";
       return;
     }
@@ -110,15 +110,35 @@ export default function TutorProfileEditorPage() {
       return;
     }
     setSaving(true);
-    try {
-      let photoUrl = draft.photo_url;
-      if (photo) {
-        const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
-        const path = userId + "/" + Date.now() + "." + extension;
-        const { error: uploadError } = await supabase.storage.from("tutor-avatars").upload(path, photo, { upsert: true, contentType: photo.type });
-        if (uploadError) throw uploadError;
+    let photoUrl = draft.photo_url;
+    if (photo) {
+      const extension = photo.type === "image/png" ? "png" : photo.type === "image/webp" ? "webp" : "jpg";
+      const path = userId + "/" + crypto.randomUUID() + "." + extension;
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from("tutor-avatars")
+          .upload(path, photo, { contentType: photo.type, cacheControl: "3600" });
+        if (uploadError) {
+          console.error("[tutor-profile] photo upload rejected", {
+            name: uploadError.name, message: uploadError.message, statusCode: (uploadError as { statusCode?: string }).statusCode,
+          });
+          throw new Error("PHOTO_UPLOAD_REJECTED: " + uploadError.message);
+        }
         photoUrl = supabase.storage.from("tutor-avatars").getPublicUrl(path).data.publicUrl;
+      } catch (cause) {
+        console.error("[tutor-profile] photo upload request failed", {
+          name: cause instanceof Error ? cause.name : "UnknownError",
+          message: cause instanceof Error ? cause.message : String(cause),
+          mime: photo.type, size: photo.size,
+        });
+        setError(cause instanceof TypeError
+          ? "PHOTO_UPLOAD_NETWORK_ERROR: The browser could not complete the photo upload request. Your profile details were not changed. Please contact BrainLab support with this error code."
+          : cause instanceof Error ? cause.message : "PHOTO_UPLOAD_FAILED: The photo could not be uploaded. Your profile details were not changed.");
+        setSaving(false);
+        return;
       }
+    }
+    try {
       const payload = {
         name: cleanName, slug: cleanSlug, title: draft.title.trim(), bio: cleanBio,
         qualifications: draft.qualifications.trim(), education: draft.education.trim(),
@@ -136,7 +156,11 @@ export default function TutorProfileEditorPage() {
       setPhoto(null);
       setNotice("Your profile has been submitted for review. It will appear publicly after BrainLab approves it.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Your profile could not be saved. Please try again.");
+      console.error("[tutor-profile] profile database save failed", {
+        name: cause instanceof Error ? cause.name : "UnknownError",
+        message: cause instanceof Error ? cause.message : String(cause),
+      });
+      setError(cause instanceof Error ? "PROFILE_SAVE_FAILED: " + cause.message : "PROFILE_SAVE_FAILED: Your profile could not be saved. Please try again.");
     } finally {
       setSaving(false);
     }
