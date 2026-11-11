@@ -23,6 +23,57 @@ permissions:
   contents: read
 
 jobs:
+  sync-pr118-lockfile:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'fix/tutor-avatar-upload-diagnostics' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/tutor-avatar-upload-diagnostics
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Regenerate lockfile if package.json changed
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile only when it changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- package.json
+          changed="$(git status --short | awk '{print $2}')"
+          if [[ -z "$changed" ]]; then
+            echo "Lockfile already matches package.json."
+            exit 0
+          fi
+          if [[ "$changed" != "package-lock.json" ]]; then
+            echo "Unexpected changed paths; refusing to commit:"
+            git status --short
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- package-lock.json
+          git commit -m "chore: sync PR 118 ESLint lockfile"
+          git push origin HEAD:fix/tutor-avatar-upload-diagnostics
+      - name: Verify clean dependency installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify tutor profile lint
+        run: npx eslint app/tutor/profile/page.tsx
+      - name: Verify TypeScript
+        run: npx tsc --noEmit
+      - name: Verify production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-public-anon-key
+          NEXT_PUBLIC_SITE_URL: https://example.com
+
   build:
     if: ${{ !(github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/fix/tutor-avatar-upload-diagnostics') }}
     runs-on: ubuntu-latest
