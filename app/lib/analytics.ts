@@ -20,7 +20,11 @@ export type AnalyticsEventName =
   | "student_goal_wizard_completed"
   | "instant_mini_mock_answered"
   | "instant_mini_mock_completed"
-  | "diagnostic_assessment_completed";
+  | "diagnostic_assessment_completed"
+  | "stem_molecule_viewed"
+  | "stem_3d_action_triggered"
+  | "stem_copilot_prompt_sent"
+  | "stem_representation_changed";
 
 export type CookieConsentStatus = "undecided" | "essential_only" | "all";
 
