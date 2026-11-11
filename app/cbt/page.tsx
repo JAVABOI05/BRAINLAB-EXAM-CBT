@@ -411,34 +411,34 @@ export default function CBTExamPortalPage() {
               </div>
 
               {/* Department Presets */}
-              <div className="mb-3 flex flex-wrap gap-1.5">
+              <div className="mb-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => handleApplyPreset(["English", "Mathematics", "Physics", "Chemistry"])}
-                  className="rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 px-2.5 py-1 text-[11px] font-bold text-blue-800 dark:text-blue-300 hover:bg-blue-100 transition active:scale-95"
+                  className="rounded-lg bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 px-3 py-2 sm:py-1.5 text-xs font-bold text-blue-900 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition active:scale-95 min-h-[44px] sm:min-h-[38px] inline-flex items-center"
                 >
-                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" /><path d="M8.5 2h7" /><path d="M7 16h10" /></svg><span>Science (Eng, Mth, Phy, Chm)</span></span>
+                  <span className="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" /><path d="M8.5 2h7" /><path d="M7 16h10" /></svg><span>Science (Eng, Mth, Phy, Chm)</span></span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApplyPreset(["English", "Biology", "Physics", "Chemistry"])}
-                  className="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 transition active:scale-95"
+                  className="rounded-lg bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 px-3 py-2 sm:py-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition active:scale-95 min-h-[44px] sm:min-h-[38px] inline-flex items-center"
                 >
-                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg><span>Medical (Eng, Bio, Phy, Chm)</span></span>
+                  <span className="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg><span>Medical (Eng, Bio, Phy, Chm)</span></span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApplyPreset(["English", "Mathematics", "Economics", "Commerce"])}
-                  className="rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition active:scale-95"
+                  className="rounded-lg bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 px-3 py-2 sm:py-1.5 text-xs font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition active:scale-95 min-h-[44px] sm:min-h-[38px] inline-flex items-center"
                 >
-                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg><span>Commercial</span></span>
+                  <span className="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg><span>Commercial</span></span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleApplyPreset(["English", "Literature in English", "Government", "Christian Religious Studies"])}
-                  className="rounded-lg bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-2.5 py-1 text-[11px] font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-100 transition active:scale-95"
+                  className="rounded-lg bg-purple-50 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800 px-3 py-2 sm:py-1.5 text-xs font-bold text-purple-900 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition active:scale-95 min-h-[44px] sm:min-h-[38px] inline-flex items-center"
                 >
-                  <span className="flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10" /><path d="M12 3v18" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></svg><span>Arts / Law</span></span>
+                  <span className="flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10" /><path d="M12 3v18" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></svg><span>Arts / Law</span></span>
                 </button>
               </div>
 
@@ -454,7 +454,7 @@ export default function CBTExamPortalPage() {
                       <span className="flex items-center gap-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg><span>All Candidates</span></span>
                     </span>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg border border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-black text-blue-950 dark:text-white">
+                  <div className="flex items-center justify-between rounded-lg border border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-black text-blue-950 dark:text-white min-h-[44px]">
                     <span>English Language</span>
                     <span className="text-[10px] font-bold text-blue-600 dark:text-cyan-400">60 Questions</span>
                   </div>
@@ -464,15 +464,17 @@ export default function CBTExamPortalPage() {
                 {[1, 2, 3].map((slotIdx) => (
                   <div key={slotIdx} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 p-2.5">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="block text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500">
+                      <label htmlFor={`subject-slot-${slotIdx + 1}`} className="block text-[10px] font-extrabold uppercase text-slate-500 dark:text-slate-400">
                         Subject {slotIdx + 1} (Elective)
-                      </span>
+                      </label>
                       <span className="text-[10px] text-slate-500 font-bold">40 Questions</span>
                     </div>
                     <select
+                      id={`subject-slot-${slotIdx + 1}`}
+                      aria-label={`Subject Slot ${slotIdx + 1}`}
                       value={selectedSubjects[slotIdx] || availableElectiveSubjects[slotIdx - 1]}
                       onChange={(e) => handleUpdateSubjectSlot(slotIdx, e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-2 text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px]"
                     >
                       {availableElectiveSubjects.map((s: string) => (
                         <option key={s} value={s}>

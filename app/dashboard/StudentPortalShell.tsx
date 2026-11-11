@@ -172,7 +172,7 @@ export default function StudentPortalShell({ children }: { children: React.React
                 type="button"
                 onClick={cycleTheme}
                 title={`Theme: ${appearance} (Click to toggle)`}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition active:scale-95 text-sm"
+                className="flex h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition active:scale-95 text-sm bl-focus-ring"
                 aria-label="Toggle visual theme"
               >
                 {resolvedTheme === "dark" ? "🌙" : "☀️"}
@@ -183,7 +183,7 @@ export default function StudentPortalShell({ children }: { children: React.React
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/95 py-1 pl-1.5 pr-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800 transition active:scale-95 shadow-xs"
+                  className="flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/95 py-1 pl-1.5 pr-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800 transition active:scale-95 shadow-xs min-h-[44px] sm:min-h-[38px] bl-focus-ring"
                   aria-label="Open student profile menu"
                 >
                   <StudentAvatar profile={studentProfile} size="xs" showOnlineDot={true} />
@@ -339,7 +339,7 @@ export default function StudentPortalShell({ children }: { children: React.React
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 lg:hidden transition active:scale-95 text-base"
+                className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 lg:hidden transition active:scale-95 text-base bl-focus-ring"
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {mobileMenuOpen ? "✕" : "☰"}

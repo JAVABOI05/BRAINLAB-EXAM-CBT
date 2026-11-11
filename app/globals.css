@@ -151,6 +151,7 @@ html {
   padding: 0;
   overflow-x: clip;
   -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
 }
 
 html,
@@ -374,7 +375,9 @@ button:disabled,
 }
 
 .exam-palette-btn {
-  height: 42px;
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
   border-radius: 12px;
   border: 1px solid #cbd5e1;
   font-size: 0.9rem;
