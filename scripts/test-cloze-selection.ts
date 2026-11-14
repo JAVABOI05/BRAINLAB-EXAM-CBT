@@ -387,7 +387,7 @@ async function runAllTests() {
     )!.id;
     const result = selectEnglishExaminationPaper(bank, undefined, [], {
       previouslySeenQuestionIds: [staleIncorrectId, genuinelyIncorrectId],
-      masteredQuestionIds,
+      masteredQuestionIds: masteredIds,
     });
     assert.equal(result.success, true, result.errors.join("; "));
     const selected = result.questions.filter((q) => q.section === "cloze");
