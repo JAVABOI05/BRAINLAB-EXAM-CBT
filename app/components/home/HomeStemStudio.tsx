@@ -40,7 +40,7 @@ export function HomeStemStudio() {
     <section
       id="stem-studio"
       aria-label="STEM Studio Virtual Science Laboratories"
-      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#070D18] overflow-hidden"
+      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-white/10 overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-[#0a1326] to-[#060b14] p-6 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden">

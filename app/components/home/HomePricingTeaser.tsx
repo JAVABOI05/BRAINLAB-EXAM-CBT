@@ -30,7 +30,7 @@ export function HomePricingTeaser() {
     <section
       id="apex-cohort"
       aria-label="BrainLab Access Categories and Apex Cohort"
-      className="py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/60 dark:border-slate-800 dark:bg-[#070e1e]"
+      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-white/10"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Apex Cohort Educational Showcase Banner */}
@@ -111,30 +111,30 @@ export function HomePricingTeaser() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
           {/* Public Category Card */}
-          <div className="flex flex-col justify-between rounded-3xl p-6 sm:p-8 border border-slate-200 bg-[var(--bl-color-surface)] shadow-sm dark:border-slate-800">
+          <div className="flex flex-col justify-between rounded-3xl p-6 sm:p-8 border border-white/10 bg-slate-900/85 shadow-xl backdrop-blur-md">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 mb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 mb-4">
                 OPEN TO EVERY LEARNER
               </div>
-              <h4 className="text-2xl font-black text-[var(--bl-color-text-primary)]">
+              <h4 className="text-2xl font-black text-white">
                 Public Access
               </h4>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              <p className="mt-2 text-sm text-slate-300">
                 Self-directed study and comprehensive practice tools for every registered student.
               </p>
 
               <div className="my-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-[var(--bl-color-text-primary)]">
+                  <span className="text-4xl font-black text-white">
                     ₦0
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-slate-400">
                     / free forever
                   </span>
                 </div>
               </div>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 pt-5 dark:border-slate-800/80">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300 border-t border-white/10 pt-5">
                 <li className="flex items-start gap-2.5">
                   <span className="text-emerald-500 font-bold">✓</span>
                   <span><strong>Full CBT Practice:</strong> Unlimited mock exams with JAMB 8-key timing</span>
@@ -165,7 +165,7 @@ export function HomePricingTeaser() {
             <div className="mt-8 pt-4">
               <Link
                 href="/cbt"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 px-5 py-3 text-sm font-bold transition bl-focus-ring min-h-[44px]"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-white/10 px-5 py-3 text-sm font-bold transition bl-focus-ring min-h-[44px]"
               >
                 <span>Get Started, It&apos;s Free</span>
                 <span aria-hidden="true" className="ml-1">&rarr;</span>
@@ -174,36 +174,36 @@ export function HomePricingTeaser() {
           </div>
 
           {/* Apex Cohort Card */}
-          <div className="flex flex-col justify-between rounded-3xl p-6 sm:p-8 border-2 border-indigo-600 bg-[var(--bl-color-surface)] shadow-xl relative dark:border-indigo-500">
+          <div className="flex flex-col justify-between rounded-3xl p-6 sm:p-8 border-2 border-indigo-500/80 bg-gradient-to-b from-[#0f172a] via-[#0c152a] to-[#070d18] shadow-2xl relative shadow-indigo-950/50">
             <div className="absolute -top-3.5 right-6">
-              <span className="rounded-full bg-indigo-600 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md">
+              <span className="rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-md">
                 INTENSIVE TUTORIALS
               </span>
             </div>
 
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 mb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/80 mb-4">
                 GUIDED PROGRAMME
               </div>
-              <h4 className="text-2xl font-black text-[var(--bl-color-text-primary)]">
+              <h4 className="text-2xl font-black text-white">
                 Apex Cohort
               </h4>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              <p className="mt-2 text-sm text-slate-300">
                 Everything in Public, plus live teaching, dedicated tutors, and continuous academic accountability.
               </p>
 
               <div className="my-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">
+                  <span className="text-3xl font-black text-cyan-300">
                     ₦{plan.price_naira.toLocaleString()}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-slate-400">
                     / per session track
                   </span>
                 </div>
               </div>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 pt-5 dark:border-slate-800/80">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300 border-t border-white/10 pt-5">
                 <li className="flex items-start gap-2.5">
                   <span className="text-indigo-600 font-bold">★</span>
                   <span><strong>Live Intensive Classes:</strong> Scheduled subject-by-subject live classes</span>

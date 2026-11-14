@@ -356,13 +356,13 @@ export function HomeProductShowcase() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400 font-medium">
                   State &amp; National Leaderboards
                 </span>
                 <Link
                   href="/challenge-arena"
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-700 dark:text-amber-300 hover:underline bl-focus-ring rounded-lg"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-300 hover:text-amber-200 hover:underline bl-focus-ring rounded-lg"
                 >
                   <span>Enter Challenge Arena</span>
                   <span aria-hidden="true">&rarr;</span>
@@ -371,22 +371,22 @@ export function HomeProductShowcase() {
             </div>
 
             {/* CARD 4: ZERO-DATA OFFLINE PWA SYNC */}
-            <div className="flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-[var(--bl-color-surface)] p-6 sm:p-7 shadow-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1 dark:border-slate-800 dark:bg-[#0b1329] group">
+            <div className="flex flex-col justify-between rounded-3xl border border-emerald-500/25 bg-slate-900/85 p-6 sm:p-7 shadow-xl backdrop-blur-md transition-all duration-200 hover:shadow-2xl hover:border-emerald-500/40 hover:-translate-y-1 group">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-800/60">
                     <span className="text-base" aria-hidden="true">📶</span>
                     <span>Zero-Data PWA Sync</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
+                  <span className="text-xs font-mono font-bold text-emerald-300 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/60">
                     Works on 2G / 3G
                   </span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-black text-[var(--bl-color-text-primary)] tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   Offline PWA &amp; Low-Data Mode
                 </h3>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="mt-2 text-sm text-slate-300 leading-relaxed">
                   Poor internet in your area? Zero problem. BrainLab installs seamlessly on Android, iOS, and PC, caching complete practice drills locally so you never get interrupted.
                 </p>
 
@@ -445,13 +445,13 @@ export function HomeProductShowcase() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400 font-medium">
                   Installable PWA with IndexedDB
                 </span>
                 <Link
                   href="/for-students"
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-300 hover:underline bl-focus-ring rounded-lg"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-400 hover:text-emerald-300 hover:underline bl-focus-ring rounded-lg"
                 >
                   <span>Student Offline Guide</span>
                   <span aria-hidden="true">&rarr;</span>

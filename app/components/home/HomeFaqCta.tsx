@@ -30,17 +30,17 @@ export function HomeFaqCta() {
       <section
         id="faq"
         aria-label="Frequently Asked Questions"
-        className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#070D18]"
+        className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-white/10"
       >
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 mb-3">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-cyan-300 border border-blue-400/30 mb-3">
               FREQUENTLY ASKED QUESTIONS
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--bl-color-text-primary)] tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
               Common Questions About BrainLab Academy
             </h2>
-            <p className="mt-3.5 text-base text-slate-600 dark:text-slate-300">
+            <p className="mt-3.5 text-base text-slate-300">
               Clear answers regarding CBT exam simulations, free daily practice, offline synchronization, and student learning plans.
             </p>
           </div>
@@ -52,7 +52,7 @@ export function HomeFaqCta() {
           <div className="mt-10 text-center">
             <Link
               href="/faq"
-              className="text-sm font-bold text-[var(--bl-color-brand-primary)] hover:underline inline-flex items-center gap-1.5"
+              className="text-sm font-bold text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1.5"
             >
               <span>Visit the complete Help &amp; FAQ knowledge base</span>
               <span aria-hidden="true">&rarr;</span>
@@ -65,26 +65,29 @@ export function HomeFaqCta() {
       <section
         id="final-cta"
         aria-label="Begin Your Learning Journey"
-        className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-slate-50 to-white dark:from-[#070D18] dark:to-[#0B1536]"
+        className="relative overflow-hidden py-20 sm:py-28 bg-gradient-to-b from-transparent via-[#091530] to-[#060c18]"
       >
+        {/* Atmospheric Ambient Glow */}
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-blue-600/15 blur-[120px]" />
+
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50 px-3.5 py-1 text-xs font-bold text-[var(--bl-color-brand-primary)] dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-300">
-            <span className="h-2 w-2 rounded-full bg-[var(--bl-color-brand-primary)]" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-3.5 py-1 text-xs font-bold text-cyan-300">
+            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
             <span>START PREPARING TODAY</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[var(--bl-color-text-primary)] leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
             Master Your Syllabus. Pass Your Examination with Confidence.
           </h2>
 
-          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Join thousands of secondary students and examination candidates across Nigeria utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and 3D virtual laboratories.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
             <Link
               href="/cbt"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--bl-color-brand-primary)] hover:bg-[var(--bl-color-brand-primary-hover)] px-8 py-4 text-base font-bold text-white shadow-md hover:shadow-lg transition-all duration-180 bl-focus-ring min-h-[50px] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-8 py-4 text-base font-black text-white shadow-xl shadow-blue-600/30 transition-all duration-180 bl-focus-ring min-h-[50px] active:scale-[0.98]"
             >
               <span>Start Learning for Free</span>
               <span aria-hidden="true">&rarr;</span>
@@ -92,13 +95,13 @@ export function HomeFaqCta() {
 
             <Link
               href="/pricing"
-              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700/80 px-7 py-4 text-base font-bold text-[var(--bl-color-text-primary)] transition-all duration-180 bl-focus-ring min-h-[50px] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-white/15 bg-slate-900/90 hover:bg-slate-800 px-7 py-4 text-base font-bold text-white transition-all duration-180 bl-focus-ring min-h-[50px] active:scale-[0.98]"
             >
               View Student Plans &amp; Pricing
             </Link>
           </div>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400 pt-2">
+          <p className="text-xs text-slate-400 pt-2">
             No credit card required &bull; Low-bandwidth optimized &bull; Offline auto-sync protection
           </p>
         </div>
