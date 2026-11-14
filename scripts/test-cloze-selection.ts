@@ -468,6 +468,7 @@ async function runAllTests() {
   });
 
   // Test 14: LIVE DATABASE VERIFICATION against BrainLabCBT-Staging
+  if (process.env.BRAINLAB_RUN_LIVE_CLOZE_DB_TEST === "true") {
   await runTest("Live Database Verification against BrainLabCBT-Staging (23 passages, 230 questions)", async () => {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
@@ -519,6 +520,9 @@ async function runAllTests() {
       assert.equal(q.passage_id, liveSelectedPassageId, "Live paper mixed questions from multiple Cloze passages");
     }
   });
+  } else {
+    console.log("⏭️ SKIP: Live staging database check (set BRAINLAB_RUN_LIVE_CLOZE_DB_TEST=true to run it).");
+  }
 
   console.log("\n-----------------------------------------------------------------");
   console.log(`CLOZE INTEGRATION RESULTS: ${passed} Passed, ${failed} Failed`);
