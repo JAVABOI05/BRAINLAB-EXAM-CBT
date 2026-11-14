@@ -72,7 +72,7 @@ export function HomeProductShowcase() {
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              ⚡ 4 Core Exam Superpowers
+              4 Core Exam Superpowers
             </button>
             <button
               type="button"
@@ -83,7 +83,7 @@ export function HomeProductShowcase() {
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              📦 Full 6-Product Ecosystem
+              Full 6-Product Ecosystem
             </button>
           </div>
         </div>
@@ -102,7 +102,10 @@ export function HomeProductShowcase() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="inline-flex items-center gap-2 rounded-xl bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300 border border-cyan-400/30">
-                    <span className="text-base" aria-hidden="true">⌨️</span>
+                    <svg className="h-4 w-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
+                    </svg>
                     <span>100% Exam Hall Parity</span>
                   </div>
                   <span className="text-xs font-mono font-bold text-emerald-300 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-800/60">
@@ -124,7 +127,13 @@ export function HomeProductShowcase() {
                       <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                       Physics Question 14 of 40
                     </span>
-                    <span className="text-amber-400 font-bold font-mono">⏱️ 01:42:15</span>
+                    <span className="text-amber-400 font-bold font-mono flex items-center gap-1">
+                      <svg className="h-3 w-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>01:42:15</span>
+                    </span>
                   </div>
 
                   <p className="text-xs text-slate-200 font-medium leading-relaxed">
@@ -211,7 +220,10 @@ export function HomeProductShowcase() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="inline-flex items-center gap-2 rounded-xl bg-purple-500/10 px-3 py-1 text-xs font-bold text-purple-300 border border-purple-400/30">
-                    <span className="text-base" aria-hidden="true">🧬</span>
+                    <svg className="h-4 w-4 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
                     <span>Precision Topic Mastery</span>
                   </div>
                   <span className="text-xs font-mono font-bold text-purple-300 bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-800/60">
@@ -268,7 +280,10 @@ export function HomeProductShowcase() {
 
                   {/* Socratic AI Insight Chip */}
                   <div className="rounded-xl bg-purple-950/50 border border-purple-800/60 p-3 text-[11px] text-purple-200 flex items-start gap-2.5">
-                    <span className="text-base shrink-0">💡</span>
+                    <svg className="h-4 w-4 text-purple-300 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
+                    </svg>
                     <span className="leading-relaxed">
                       <strong className="text-white">AI Examiner Insight:</strong> You lose marks in Organic Chemistry due to confusing IUPAC functional priority rules. Focus on targeted drills to boost chemistry score by +18 marks.
                     </span>
@@ -298,7 +313,9 @@ export function HomeProductShowcase() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300 border border-amber-400/30">
-                    <span className="text-base" aria-hidden="true">🏆</span>
+                    <svg className="h-4 w-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
                     <span>Synchronous 1v1 Academic Duels</span>
                   </div>
                   <span className="text-xs font-mono font-bold text-amber-300 bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-800/60">
@@ -331,7 +348,7 @@ export function HomeProductShowcase() {
                     <div className="p-2.5 rounded-xl bg-blue-950/50 border border-blue-800/80">
                       <span className="block text-[11px] text-blue-300 font-bold">You (Candidate)</span>
                       <span className="text-base font-black text-white">850 pts</span>
-                      <span className="text-[10px] text-emerald-400 block font-mono">Streak: 5 Days 🔥</span>
+                      <span className="text-[10px] text-emerald-400 block font-mono">Streak: 5 Days</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-slate-900 border border-white/10">
                       <span className="block text-[11px] text-slate-300 font-bold">Abuja High-Scorer</span>
