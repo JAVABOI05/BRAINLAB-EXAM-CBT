@@ -150,7 +150,7 @@ export function HomeJoinChannel({
       aria-label="Join Official BrainLab WhatsApp Channel"
       className={`relative w-full py-4 sm:py-6 ${className}`}
     >
-      <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Compact, High-Impact Broadcast Ribbon */}
         <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-slate-900/95 via-[#0b1b28]/90 to-slate-900/95 p-3.5 sm:p-4 shadow-xl shadow-emerald-950/20 backdrop-blur-md transition-all hover:border-emerald-500/50 hover:shadow-emerald-900/30">
           {/* Subtle Ambient Radial Glow */}
