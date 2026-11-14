@@ -69,24 +69,32 @@ export function HomeStemStudio() {
 
               {/* Catchy Value Badges */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                <div className="flex items-center gap-2 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
-                  <span className="text-base">⚡</span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
+                  <svg className="h-4 w-4 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
                   <div>
                     <div className="text-[11px] font-bold text-white">60 FPS Motion</div>
                     <div className="text-[10px] text-slate-400">Zero lag physics</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
-                  <span className="text-base">🧪</span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
+                  <svg className="h-4 w-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
+                    <path d="M8.5 2h7M7 16h10" />
+                  </svg>
                   <div>
                     <div className="text-[11px] font-bold text-white">WAEC &amp; JAMB</div>
                     <div className="text-[10px] text-slate-400">Practical syllabus</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
-                  <span className="text-base">📱</span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
+                  <svg className="h-4 w-4 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
+                  </svg>
                   <div>
                     <div className="text-[11px] font-bold text-white">Instant Load</div>
                     <div className="text-[10px] text-slate-400">Low data overhead</div>
@@ -132,8 +140,10 @@ export function HomeStemStudio() {
                       : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                   }`}
                 >
-                  <span>⚡</span>
-                  <span className="truncate">Logic Gates & Circuit Simulators</span>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  <span className="truncate">Logic Gates</span>
                 </button>
 
                 <button
@@ -147,8 +157,11 @@ export function HomeStemStudio() {
                       : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                   }`}
                 >
-                  <span>📐</span>
-                  <span className="truncate">Physics Mechanics & Kinematics</span>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
+                    <line x1="14.5" y1="5.5" x2="18.5" y2="9.5" />
+                  </svg>
+                  <span className="truncate">Physics Mechanics</span>
                 </button>
 
                 <button
@@ -162,8 +175,11 @@ export function HomeStemStudio() {
                       : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                   }`}
                 >
-                  <span>🧪</span>
-                  <span className="truncate">Acid-Base Titration & pH Reactions</span>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
+                    <path d="M8.5 2h7M7 16h10" />
+                  </svg>
+                  <span className="truncate">Acid-Base Titration</span>
                 </button>
 
                 <button
@@ -177,8 +193,11 @@ export function HomeStemStudio() {
                       : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
                   }`}
                 >
-                  <span>🧬</span>
-                  <span className="truncate">Cellular Atlas & Metabolic Pathways</span>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 2a10 10 0 0 0-4 18M12 2a10 10 0 0 1 4 18" />
+                  </svg>
+                  <span className="truncate">Cellular Biology</span>
                 </button>
               </div>
 
@@ -279,9 +298,11 @@ export function HomeStemStudio() {
                             ? "bg-amber-400/20 border-2 border-amber-400 text-amber-300 shadow-2xl shadow-amber-400/50"
                             : "bg-slate-900 border border-slate-800 text-slate-600"
                         }`}>
-                          <span className={`text-4xl transition-transform duration-300 ${isCircuitLit ? "scale-110 drop-shadow-[0_0_15px_rgba(251,191,36,0.9)]" : "grayscale opacity-40"}`}>
-                            💡
-                          </span>
+                          <svg className={`h-8 w-8 transition-transform duration-300 ${isCircuitLit ? "scale-110 text-amber-300 drop-shadow-[0_0_15px_rgba(251,191,36,0.9)]" : "text-slate-600 opacity-40"}`} viewBox="0 0 24 24" fill={isCircuitLit ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M9 18h6" />
+                            <path d="M10 22h4" />
+                            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+                          </svg>
                         </div>
                         <div className="mt-2 text-center">
                           <span className={`text-xs font-black uppercase tracking-wider ${isCircuitLit ? "text-amber-400" : "text-slate-500"}`}>
@@ -299,7 +320,7 @@ export function HomeStemStudio() {
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-900/60 rounded-xl px-4 py-2 border border-slate-800">
-                      <span>⚡ Curriculum Rule: <strong>{gate}</strong> gate outputs active current when its logic condition is met.</span>
+                      <span>Curriculum Rule: <strong>{gate}</strong> gate outputs active current when its logic condition is met.</span>
                       <span className="text-blue-400 font-bold">Physics &amp; Computer Studies</span>
                     </div>
                   </div>
@@ -311,8 +332,11 @@ export function HomeStemStudio() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <span className="text-base">📐</span>
-                          Physics Mechanics & Kinematics
+                          <svg className="h-4 w-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
+                            <line x1="14.5" y1="5.5" x2="18.5" y2="9.5" />
+                          </svg>
+                          <span>Physics Mechanics &amp; Kinematics</span>
                         </div>
                         <p className="text-[11px] text-slate-400">Simulate parabolic projectile motion and gravitational trajectory in real-time</p>
                       </div>
@@ -397,8 +421,11 @@ export function HomeStemStudio() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <span className="text-base">🧪</span>
-                          Acid-Base Titration & pH Reactions
+                          <svg className="h-4 w-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
+                            <path d="M8.5 2h7M7 16h10" />
+                          </svg>
+                          <span>Acid-Base Titration &amp; pH Reactions</span>
                         </div>
                         <p className="text-[11px] text-slate-400">Volumetric analysis, neutralization color shifts, and indicator reaction curves</p>
                       </div>
@@ -444,9 +471,9 @@ export function HomeStemStudio() {
                             }`}
                           >
                             <div className="flex justify-around items-center h-full opacity-60">
-                              <span className="animate-bounce text-xs">⚪</span>
-                              <span className="animate-ping text-[8px]">⚪</span>
-                              <span className="animate-bounce text-[10px]">⚪</span>
+                              <span className="animate-bounce h-2 w-2 rounded-full bg-white/60" />
+                              <span className="animate-ping h-1.5 w-1.5 rounded-full bg-white/50" />
+                              <span className="animate-bounce h-2.5 w-2.5 rounded-full bg-white/70" />
                             </div>
                           </div>
                         </div>
@@ -463,7 +490,7 @@ export function HomeStemStudio() {
                             ? "bg-emerald-950 text-emerald-300 border border-emerald-700 shadow-md shadow-emerald-950"
                             : "bg-purple-950 text-purple-300 border border-purple-800"
                         }`}>
-                          <span>{phLevel < 6.5 ? "🔴 Acidic Solution" : phLevel <= 8.0 ? "🟢 Neutral Endpoint (Titration Done)" : "🟣 Alkaline / Basic Solution"}</span>
+                          <span>{phLevel < 6.5 ? "Acidic Solution" : phLevel <= 8.0 ? "Neutral Endpoint (Titration Done)" : "Alkaline / Basic Solution"}</span>
                         </div>
 
                         <p className="text-xs text-slate-300 leading-relaxed">
@@ -481,7 +508,7 @@ export function HomeStemStudio() {
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-900/60 rounded-xl px-4 py-2 border border-slate-800">
-                      <span>🧪 WAEC Chemistry Alternative to Practical Syllabus (Volumetric Analysis)</span>
+                      <span>WAEC Chemistry Alternative to Practical Syllabus (Volumetric Analysis)</span>
                       <span className="text-emerald-400 font-bold">Standard Lab Model</span>
                     </div>
                   </div>
@@ -493,8 +520,11 @@ export function HomeStemStudio() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <span className="text-base">🧬</span>
-                          Cellular Atlas & Metabolic Pathways
+                          <svg className="h-4 w-4 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 2a10 10 0 0 0-4 18M12 2a10 10 0 0 1 4 18" />
+                          </svg>
+                          <span>Cellular Atlas &amp; Metabolic Pathways</span>
                         </div>
                         <p className="text-[11px] text-slate-400">Interactive eukaryotic cell explorer and double-helix genetics structure</p>
                       </div>
@@ -515,12 +545,12 @@ export function HomeStemStudio() {
 
                         {/* Orbiting Mitochondria */}
                         <div className="absolute top-3 right-6 px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/80 text-[10px] text-amber-300 font-bold animate-bl-scale-in">
-                          ⚡ Mitochondria
+                          Mitochondria
                         </div>
 
                         {/* Ribosomes */}
                         <div className="absolute bottom-4 left-6 px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-600/80 text-[10px] text-purple-300 font-bold">
-                          🧬 Ribosome
+                          Ribosome
                         </div>
                       </div>
 
@@ -549,7 +579,7 @@ export function HomeStemStudio() {
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-900/60 rounded-xl px-4 py-2 border border-slate-800">
-                      <span>🧬 Senior Secondary Biology Syllabus: Cell Structure &amp; Functions</span>
+                      <span>Senior Secondary Biology Syllabus: Cell Structure &amp; Functions</span>
                       <span className="text-sky-400 font-bold">Interactive Anatomy</span>
                     </div>
                   </div>
