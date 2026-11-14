@@ -201,7 +201,7 @@ export function HomeAudiences() {
                           key={m.label}
                           className="rounded-md border border-slate-200/60 bg-white px-2 py-1 dark:border-slate-800/80 dark:bg-slate-900"
                         >
-                          <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">
+                          <span className="text-[8px] uppercase font-bold text-slate-600 dark:text-slate-400 block truncate">
                             {m.label}
                           </span>
                           <span className="font-bold text-slate-800 dark:text-slate-200 truncate block text-[10px]">

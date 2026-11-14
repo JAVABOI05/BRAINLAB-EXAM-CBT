@@ -7,15 +7,82 @@ import type { User } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
-import UserBadges from "./UserBadges";
 
-interface DropdownItem {
+export interface ExploreCardItem {
+  id: string;
   title: string;
   description: string;
-  href: string;
-  badge?: string;
-  icon?: string;
+  targetId: string;
+  badge: string;
+  badgeColor: string;
+  icon: string;
+  tierNote: string;
 }
+
+export interface DirectNavLinkItem {
+  id: string;
+  label: string;
+  targetId: string;
+}
+
+export const EXPLORE_CARDS: ExploreCardItem[] = [
+  {
+    id: "cbt-practice",
+    title: "CBT Practice Simulator",
+    description: "Authentic 8-key JAMB exam hall interface with real-time countdown timer, calculator, and offline sync.",
+    targetId: "products",
+    badge: "8-Key Exam Hall",
+    badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-cyan-300 border-blue-200 dark:border-blue-800/60",
+    icon: "🎯",
+    tierNote: "Free Daily Mocks & Pro Banks",
+  },
+  {
+    id: "learning-hub",
+    title: "Curriculum Learning Hub",
+    description: "Structured lesson modules across Science, Art, and Commercial with verified WAEC & JAMB past questions.",
+    targetId: "products",
+    badge: "WAEC / JAMB",
+    badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60",
+    icon: "📚",
+    tierNote: "Core Curriculum Included",
+  },
+  {
+    id: "stem-studio",
+    title: "Virtual STEM Studio",
+    description: "Interactive 3D molecular biology explorer, physics mechanics lab, and chemical dynamics simulations.",
+    targetId: "stem-studio",
+    badge: "Interactive 3D",
+    badgeColor: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60",
+    icon: "🔬",
+    tierNote: "Visual Science Labs",
+  },
+  {
+    id: "ai-learning",
+    title: "AI Diagnostic Studio",
+    description: "Socratic weak-topic diagnosis, adaptive remediation prompts, and personal cognitive Learning DNA.",
+    targetId: "products",
+    badge: "Socratic AI",
+    badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800/60",
+    icon: "🤖",
+    tierNote: "Guided Diagnostics",
+  },
+  {
+    id: "challenge-arena",
+    title: "Challenge Arena",
+    description: "Head-to-head live 1v1 academic sprint battles, daily quest streaks, and nationwide school rankings.",
+    targetId: "products",
+    badge: "Live 1v1",
+    badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
+    icon: "🏆",
+    tierNote: "Free Daily Sprints",
+  },
+];
+
+export const DIRECT_NAV_LINKS: DirectNavLinkItem[] = [
+  { id: "about", label: "About", targetId: "the-loop" },
+  { id: "founder", label: "Founder", targetId: "founder-note" },
+  { id: "faq", label: "FAQ", targetId: "faq" },
+];
 
 export const LEGACY_NAV_MAPPING = [
   { href: "/products", label: "Products" },
@@ -25,104 +92,6 @@ export const LEGACY_NAV_MAPPING = [
   { href: "/schools", label: "For Schools" },
   { href: "/cbt", label: "CBT Practice" },
   { href: "/about", label: "About" },
-];
-
-const PROGRAMMES_ITEMS: DropdownItem[] = [
-  {
-    title: "JAMB UTME Accelerator",
-    description: "Full-length 4-subject CBT mock exams with standard 2027 question banks and timing.",
-    href: "/products/cbt",
-    badge: "Primary Focus",
-    icon: "🎯",
-  },
-  {
-    title: "Post-UTME Screening Suite",
-    description: "Institution-specific university screening tests, aptitude practice, and cut-off guides.",
-    href: "/cbt?category=POST_UTME",
-    badge: "University Screening",
-    icon: "🏛️",
-  },
-  {
-    title: "Apex Cohort Programme",
-    description: "Intensive live masterclasses, dedicated tutors, weekly roadmap, and academic accountability.",
-    href: "/apex",
-    badge: "Enrolment",
-    icon: "⚡",
-  },
-  {
-    title: "WAEC SSCE Prep & Past Papers",
-    description: "Curriculum theory lessons, formula sheets, and past question analysis.",
-    href: "/learn",
-    icon: "📚",
-  },
-  {
-    title: "NECO Senior School Certificate",
-    description: "Standard national examination practice questions and topic revision.",
-    href: "/learn",
-    icon: "📝",
-  },
-  {
-    title: "National Competition Arena",
-    description: "Head-to-head live 1v1 academic sprint battles and school leaderboards.",
-    href: "/products/challenge-arena",
-    icon: "🏆",
-  },
-];
-
-const PLATFORM_ITEMS: DropdownItem[] = [
-  {
-    title: "CBT Mock Simulator",
-    description: "Authentic JAMB exam interface with timer, calculator, and offline sync.",
-    href: "/products/cbt",
-    icon: "🖥️",
-  },
-  {
-    title: "Curriculum Learning Hub",
-    description: "Structured video and text modules across Science, Art, and Commercial.",
-    href: "/products/learning-hub",
-    icon: "📖",
-  },
-  {
-    title: "Virtual STEM Studio",
-    description: "Interactive Physics, Chemistry, and Math parameter simulations.",
-    href: "/products/stem-studio",
-    badge: "Interactive",
-    icon: "🔬",
-  },
-  {
-    title: "Live Interactive Classroom",
-    description: "Audio, video, and synchronized whiteboard masterclasses with top tutors.",
-    href: "/products/live-classroom",
-    icon: "👨‍🏫",
-  },
-  {
-    title: "AI Diagnostic Studio",
-    description: "Pinpoint weak subtopics and drill targeted reinforcement questions.",
-    href: "/products/ai-learning",
-    icon: "🤖",
-  },
-];
-
-const RESOURCES_ITEMS: DropdownItem[] = [
-  {
-    title: "Official UTME Syllabus",
-    description: "Complete NERDC/JAMB subject syllabus, topics, and recommended texts.",
-    href: "/syllabus",
-    badge: "Official",
-    icon: "📋",
-  },
-  {
-    title: "Downloads & Past Papers",
-    description: "Curated PDF revision summaries and official exam timetables.",
-    href: "/resources",
-    icon: "📥",
-  },
-  {
-    title: "Frequently Asked Questions",
-    description: "Common questions about practice codes, offline mode, and payments.",
-    href: "/faq",
-    icon: "💡",
-  },
 ];
 
 function displayName(user: User) {
@@ -135,57 +104,108 @@ function displayName(user: User) {
 
 export default function BrandHeader() {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
+
+  // Menu states
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [openNavDropdown, setOpenNavDropdown] = useState<"programmes" | "platform" | "resources" | null>(null);
+  const [exploreDropdownOpen, setExploreDropdownOpen] = useState(false);
+
+  // Scroll experience states
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("");
+
+  // Auth and session states
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [checkingSession, setCheckingSession] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
-  const [isLiveClassOn, setIsLiveClassOn] = useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const navDropdownRef = useRef<HTMLDivElement>(null);
+  const exploreRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Poll for active live classes
+  // Passive, GPU-accelerated scroll progress calculation
   useEffect(() => {
-    let isMounted = true;
-    const checkLiveClass = async () => {
-      try {
-        const res = await fetch("/api/classroom/classes?status=live");
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.success && Array.isArray(data.classes)) {
-            setIsLiveClassOn(data.classes.length > 0);
-          }
-        }
-      } catch {
-        // keep default
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollTop = window.scrollY || document.documentElement.scrollTop;
+          const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+          const progress = docHeight > 0 ? Math.min(Math.max(scrollTop / docHeight, 0), 1) : 0;
+          setScrollProgress(progress);
+          setIsScrolled(scrollTop > 20);
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    void checkLiveClass();
-    const interval = setInterval(checkLiveClass, 60_000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close dropdown on outside click
+  // Scrollspy observer for active section reflection
+  useEffect(() => {
+    if (pathname !== "/") {
+      setActiveSection("");
+      return;
+    }
+
+    const sectionIds = ["the-loop", "products", "stem-studio", "founder-note", "faq"];
+    const elements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter((entry) => entry.isIntersecting);
+        if (visibleEntries.length > 0) {
+          visibleEntries.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          setActiveSection(visibleEntries[0].target.id);
+        }
+      },
+      {
+        rootMargin: "-15% 0px -55% 0px",
+        threshold: [0.05, 0.2, 0.5],
+      }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  // Click outside listener & Escape key handler
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (exploreRef.current && !exploreRef.current.contains(e.target as Node)) {
+        setExploreDropdownOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserDropdownOpen(false);
       }
-      if (navDropdownRef.current && !navDropdownRef.current.contains(e.target as Node)) {
-        setOpenNavDropdown(null);
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setExploreDropdownOpen(false);
+        setUserDropdownOpen(false);
+        setMobileMenuOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   // Fetch unread notifications count
@@ -211,7 +231,7 @@ export default function BrandHeader() {
           }
         }
       } catch {
-        // ignore
+        // silent fallback
       }
     };
 
@@ -228,7 +248,7 @@ export default function BrandHeader() {
     };
   }, [user]);
 
-  // Listen to auth state
+  // Listen to Supabase auth state
   useEffect(() => {
     let active = true;
     void supabase.auth
@@ -290,7 +310,7 @@ export default function BrandHeader() {
     await supabase.auth.signOut();
     setUser(null);
     setUserDropdownOpen(false);
-    setOpenNavDropdown(null);
+    setExploreDropdownOpen(false);
     setMobileMenuOpen(false);
     router.replace("/");
     router.refresh();
@@ -300,17 +320,62 @@ export default function BrandHeader() {
   const closeAllMenus = () => {
     setMobileMenuOpen(false);
     setUserDropdownOpen(false);
-    setOpenNavDropdown(null);
+    setExploreDropdownOpen(false);
   };
 
+  // Cross-page navigation and smooth anchor scrolling handler
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    if (pathname === "/") {
+      e.preventDefault();
+      closeAllMenus();
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.history.pushState(null, "", `#${targetId}`);
+      } else if (targetId === "founder-note") {
+        // Graceful fallback if founder statement is awaiting publication
+        const loopEl = document.getElementById("the-loop");
+        if (loopEl) {
+          loopEl.scrollIntoView({ behavior: "smooth", block: "start" });
+          window.history.pushState(null, "", "#the-loop");
+        }
+      }
+    } else {
+      closeAllMenus();
+    }
+  };
+
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname === "/") {
+      e.preventDefault();
+      closeAllMenus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.history.pushState(null, "", "/");
+    } else {
+      closeAllMenus();
+    }
+  };
+
+  // Determine active section states
+  const isExploreActive = activeSection === "products" || activeSection === "stem-studio";
+  const isAboutActive = activeSection === "the-loop";
+  const isFounderActive = activeSection === "founder-note";
+  const isFaqActive = activeSection === "faq";
+
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 text-slate-900 shadow-[0_2px_14px_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-slate-800/80 dark:bg-[#071328]/90 dark:text-slate-100 dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-colors">
-      <div className="mx-auto flex min-h-[70px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header
+      className={`sticky top-0 z-40 border-b transition-all duration-200 ${
+        isScrolled
+          ? "border-slate-200/90 bg-white/95 py-2 shadow-sm backdrop-blur-md dark:border-slate-800/90 dark:bg-[#071328]/95 dark:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+          : "border-slate-200/80 bg-white/85 py-3 shadow-[0_2px_14px_rgba(15,23,42,0.04)] backdrop-blur-md dark:border-slate-800/80 dark:bg-[#071328]/90"
+      } text-slate-900 dark:text-slate-100`}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         
         {/* Brand Logo & Emblem */}
         <Link
           href="/"
-          onClick={closeAllMenus}
+          onClick={handleLogoClick}
           className="group flex shrink-0 items-center gap-2.5 rounded-xl transition-transform hover:scale-[1.02] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
           aria-label="BrainLab Academy home"
         >
@@ -321,7 +386,7 @@ export default function BrandHeader() {
               width={42}
               height={38}
               priority
-              className="h-9 sm:h-10 w-auto drop-shadow-sm transition-transform group-hover:scale-105"
+              className="h-8.5 sm:h-9.5 w-auto drop-shadow-sm transition-transform group-hover:scale-105"
             />
           </div>
           <div className="flex flex-col justify-center leading-none">
@@ -334,189 +399,134 @@ export default function BrandHeader() {
           </div>
         </Link>
 
-        {/* Center Desktop Navigation Pillars (5 Pillars) */}
+        {/* Center Desktop Navigation Pill */}
         <nav
-          ref={navDropdownRef}
-          aria-label="Main navigation"
-          className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/60 bg-slate-50/60 p-1 dark:border-slate-800 dark:bg-slate-900/60"
+          aria-label="Primary navigation"
+          className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/70 bg-slate-50/70 p-1 dark:border-slate-800/80 dark:bg-slate-900/60 shadow-xs"
         >
-          {/* Pillar 1: Programmes Dropdown */}
-          <div className="relative">
+          {/* Primary Explore Dropdown */}
+          <div className="relative" ref={exploreRef}>
             <button
               type="button"
-              onClick={() => setOpenNavDropdown(openNavDropdown === "programmes" ? null : "programmes")}
-              className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                openNavDropdown === "programmes" || pathname.startsWith("/products/cbt") || pathname.startsWith("/products/challenge-arena")
+              aria-haspopup="true"
+              aria-expanded={exploreDropdownOpen}
+              onClick={() => setExploreDropdownOpen(!exploreDropdownOpen)}
+              className={`relative flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                exploreDropdownOpen || isExploreActive
                   ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
                   : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
-              <span>Programmes</span>
-              <svg className={`h-3 w-3 transition-transform ${openNavDropdown === "programmes" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+              <span>Explore</span>
+              <svg
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${exploreDropdownOpen ? "rotate-180 text-blue-600 dark:text-cyan-300" : "text-slate-400"}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden="true"
+              >
+                <path d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
 
-            {openNavDropdown === "programmes" && (
-              <div className="absolute left-0 mt-2 w-72 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-[#0b1528] animate-in fade-in zoom-in-95 duration-100 z-50">
-                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Targeted Curricula
+            {/* Desktop Explore Dropdown Mega-Panel */}
+            {exploreDropdownOpen && (
+              <div
+                className="absolute left-0 mt-2.5 w-[580px] rounded-2xl border border-slate-200/95 bg-white p-3 shadow-2xl dark:border-slate-800 dark:bg-[#0b1528] animate-in fade-in zoom-in-95 duration-150 z-50"
+                role="menu"
+                aria-label="Explore learning experiences"
+              >
+                <div className="flex items-center justify-between px-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    BrainLab Learning Ecosystem
+                  </span>
+                  <span className="text-[10px] font-bold text-blue-600 dark:text-cyan-400">
+                    Interactive Modules
+                  </span>
                 </div>
-                {PROGRAMMES_ITEMS.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpenNavDropdown(null)}
-                    className="flex items-start gap-2.5 rounded-xl p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
-                  >
-                    <span className="text-lg shrink-0 mt-0.5">{item.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300">
-                          {item.title}
-                        </span>
-                        {item.badge && (
-                          <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.2 text-[9px] font-black uppercase text-blue-800 dark:text-cyan-300">
-                            {item.badge}
-                          </span>
-                        )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  {EXPLORE_CARDS.map((card) => (
+                    <Link
+                      key={card.id}
+                      href={pathname === "/" ? `#${card.targetId}` : `/#${card.targetId}`}
+                      onClick={(e) => handleAnchorClick(e, card.targetId)}
+                      className="group flex flex-col justify-between rounded-xl border border-transparent p-2.5 transition hover:border-slate-200 hover:bg-slate-50/90 dark:hover:border-slate-700/60 dark:hover:bg-slate-800/60"
+                      role="menuitem"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-sm dark:bg-slate-800 group-hover:scale-105 transition-transform shrink-0">
+                              {card.icon}
+                            </span>
+                            <span className="text-xs font-black text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-cyan-300 line-clamp-1">
+                              {card.title}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-2 pl-9">
+                          {card.description}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-2 mt-0.5">
-                        {item.description}
-                      </p>
-                    </div>
+
+                      <div className="mt-2.5 flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-800/60 text-[10px]">
+                        <span className="font-semibold text-slate-400 dark:text-slate-400 truncate">
+                          {card.tierNote}
+                        </span>
+                        <span className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase ${card.badgeColor}`}>
+                          {card.badge}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Dropdown Footer Information Banner */}
+                <div className="mt-2.5 rounded-xl bg-slate-50 p-2.5 border border-slate-200/70 text-[11px] text-slate-600 dark:bg-slate-900/60 dark:border-slate-800 dark:text-slate-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <span className="text-emerald-500">✓</span> Free daily practice drills available for every student.
+                  </span>
+                  <Link
+                    href="/pricing"
+                    onClick={closeAllMenus}
+                    className="font-bold text-blue-600 dark:text-cyan-400 hover:underline"
+                  >
+                    View Plan Tiers &rarr;
                   </Link>
-                ))}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Pillar 2: Platform Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setOpenNavDropdown(openNavDropdown === "platform" ? null : "platform")}
-              className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                openNavDropdown === "platform" || pathname.startsWith("/products")
-                  ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
-                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
-              }`}
-            >
-              <span>Platform</span>
-              <svg className={`h-3 w-3 transition-transform ${openNavDropdown === "platform" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 9l-7 7-7-7"/></svg>
-            </button>
+          {/* Direct Anchor Links */}
+          {DIRECT_NAV_LINKS.map((link) => {
+            const isActive =
+              (link.id === "about" && isAboutActive) ||
+              (link.id === "founder" && isFounderActive) ||
+              (link.id === "faq" && isFaqActive);
 
-            {openNavDropdown === "platform" && (
-              <div className="absolute left-0 mt-2 w-80 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-[#0b1528] animate-in fade-in zoom-in-95 duration-100 z-50">
-                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Learning &amp; Testing Ecosystem
-                </div>
-                {PLATFORM_ITEMS.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpenNavDropdown(null)}
-                    className="flex items-start gap-2.5 rounded-xl p-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
-                  >
-                    <span className="text-base shrink-0 mt-0.5">{item.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300">
-                          {item.title}
-                        </span>
-                        {item.badge && (
-                          <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-800 dark:text-emerald-300">
-                            {item.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-1 mt-0.5">
-                        {item.description}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Pillar 3: CBT Practice Direct Link */}
-          <Link
-            href="/cbt"
-            onClick={() => setOpenNavDropdown(null)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-              pathname === "/cbt"
-                ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
-                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
-            }`}
-          >
-            CBT Practice
-          </Link>
-
-          {/* Pillar 4: Resources Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setOpenNavDropdown(openNavDropdown === "resources" ? null : "resources")}
-              className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                openNavDropdown === "resources" || pathname.startsWith("/syllabus") || pathname.startsWith("/resources") || pathname.startsWith("/faq")
-                  ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
-                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
-              }`}
-            >
-              <span>Resources</span>
-              <svg className={`h-3 w-3 transition-transform ${openNavDropdown === "resources" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 9l-7 7-7-7"/></svg>
-            </button>
-
-            {openNavDropdown === "resources" && (
-              <div className="absolute left-0 mt-2 w-72 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-[#0b1528] animate-in fade-in zoom-in-95 duration-100 z-50">
-                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Student &amp; Academic Tools
-                </div>
-                {RESOURCES_ITEMS.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpenNavDropdown(null)}
-                    className="flex items-start gap-2.5 rounded-xl p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
-                  >
-                    <span className="text-base shrink-0 mt-0.5">{item.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300">
-                          {item.title}
-                        </span>
-                        {item.badge && (
-                          <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-800 dark:text-emerald-300">
-                            {item.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-1 mt-0.5">
-                        {item.description}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Pillar 5: About Direct Link */}
-          <Link
-            href="/about"
-            onClick={() => setOpenNavDropdown(null)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-              pathname === "/about"
-                ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
-                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
-            }`}
-          >
-            About
-          </Link>
+            return (
+              <Link
+                key={link.id}
+                href={pathname === "/" ? `#${link.targetId}` : `/#${link.targetId}`}
+                onClick={(e) => handleAnchorClick(e, link.targetId)}
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                  isActive
+                    ? "bg-white text-blue-900 shadow-xs dark:bg-slate-800 dark:text-cyan-300 font-extrabold"
+                    : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Right Desktop Actions & Action Buttons */}
+        {/* Right Desktop Actions & User Session Controls */}
         <div className="hidden md:flex items-center gap-2">
-
           {checkingSession ? (
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-slate-700">
               <span className="h-1.5 w-1.5 animate-ping rounded-full bg-blue-600" />
@@ -524,7 +534,7 @@ export default function BrandHeader() {
             </div>
           ) : user ? (
             <div className="flex items-center gap-2 ml-1">
-              {/* Quick Messages */}
+              {/* Messages Shortcut */}
               <Link
                 href="/messages"
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
@@ -535,7 +545,7 @@ export default function BrandHeader() {
                 </svg>
               </Link>
 
-              {/* Quick Notifications */}
+              {/* Notifications Shortcut */}
               <Link
                 href="/notifications"
                 className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition"
@@ -556,7 +566,7 @@ export default function BrandHeader() {
               {isAdmin && (
                 <Link
                   href="/admin/dashboard"
-                  className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500 hover:to-orange-500 hover:text-slate-950 px-3 py-1.5 text-xs font-black text-amber-600 dark:text-amber-300 transition shadow-sm active:scale-95"
+                  className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500 hover:to-orange-500 hover:text-slate-950 px-3 py-1.5 text-xs font-black text-amber-600 dark:text-amber-300 transition shadow-xs active:scale-95"
                   title="Open Administrator Portal"
                 >
                   <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -569,13 +579,14 @@ export default function BrandHeader() {
                 href="/dashboard"
                 className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 px-3.5 py-2 text-xs font-black text-white shadow-xs transition hover:shadow-sm active:scale-95"
               >
-                <span>Student Portal →</span>
+                <span>Student Portal &rarr;</span>
               </Link>
 
-              {/* User Dropdown Pill */}
-              <div className="relative" ref={dropdownRef}>
+              {/* User Avatar & Dropdown */}
+              <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
+                  aria-expanded={userDropdownOpen}
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white p-1.5 pr-2.5 text-xs font-bold text-slate-800 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition active:scale-95"
                 >
@@ -675,125 +686,80 @@ export default function BrandHeader() {
         <button
           type="button"
           className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 lg:hidden transition active:scale-95 bl-focus-ring"
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           <span className="text-lg leading-none">{mobileMenuOpen ? "✕" : "☰"}</span>
         </button>
       </div>
 
-      {/* Modern Mobile Slide-Down Drawer */}
+      {/* Accessible Mobile Thumb-Friendly Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="border-b border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-[#071328] lg:hidden animate-in fade-in duration-150 max-h-[85vh] overflow-y-auto">
-          {/* Mobile Programmes Pillar */}
-          <div className="mb-3">
-            <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
-              Programmes
+          {/* Explore Experiences Category */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between px-2 py-1 text-[11px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
+              <span>Explore Experiences</span>
+              <span className="text-[10px] text-slate-400 font-normal">Student Products</span>
             </div>
-            <div className="space-y-1 mt-1">
-              {PROGRAMMES_ITEMS.map((item) => (
+            <div className="space-y-1.5 mt-1.5">
+              {EXPLORE_CARDS.map((card) => (
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeAllMenus}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  key={card.id}
+                  href={pathname === "/" ? `#${card.targetId}` : `/#${card.targetId}`}
+                  onClick={(e) => handleAnchorClick(e, card.targetId)}
+                  className="flex min-h-[48px] items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800/60"
                 >
-                  <span className="flex items-center gap-2">
-                    <span>{item.icon}</span>
-                    <span>{item.title}</span>
-                  </span>
-                  {item.badge && (
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black uppercase text-blue-800 dark:bg-blue-900 dark:text-cyan-300">
-                      {item.badge}
+                  <span className="flex items-center gap-2.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-sm shrink-0">
+                      {card.icon}
                     </span>
-                  )}
+                    <span className="flex flex-col">
+                      <span className="font-extrabold text-slate-900 dark:text-white leading-tight">
+                        {card.title}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-normal leading-tight">
+                        {card.tierNote}
+                      </span>
+                    </span>
+                  </span>
+                  <span className={`rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase shrink-0 ${card.badgeColor}`}>
+                    {card.badge}
+                  </span>
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Mobile Platform Pillar */}
-          <div className="mb-3">
-            <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
-              Platform Features
+          {/* Direct Navigation Links */}
+          <div className="mb-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+            <div className="px-2 py-1 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Overview &amp; Help
             </div>
             <div className="space-y-1 mt-1">
-              {PLATFORM_ITEMS.map((item) => (
+              {DIRECT_NAV_LINKS.map((link) => (
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeAllMenus}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  key={link.id}
+                  href={pathname === "/" ? `#${link.targetId}` : `/#${link.targetId}`}
+                  onClick={(e) => handleAnchorClick(e, link.targetId)}
+                  className="flex min-h-[48px] items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  <span className="flex items-center gap-2">
-                    <span>{item.icon}</span>
-                    <span>{item.title}</span>
-                  </span>
-                  {item.badge && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300">
-                      {item.badge}
-                    </span>
-                  )}
+                  <span>{link.label}</span>
+                  <span className="text-slate-400 text-sm">&rarr;</span>
                 </Link>
               ))}
-            </div>
-          </div>
-
-          {/* Mobile Resources Pillar */}
-          <div className="mb-3">
-            <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
-              Resources &amp; Support
-            </div>
-            <div className="space-y-1 mt-1">
-              <Link
-                href="/cbt"
-                onClick={closeAllMenus}
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <span>🎯</span>
-                <span>CBT Exam Simulator</span>
-              </Link>
-              {RESOURCES_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeAllMenus}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>{item.icon}</span>
-                    <span>{item.title}</span>
-                  </span>
-                </Link>
-              ))}
-              <Link
-                href="/about"
-                onClick={closeAllMenus}
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <span>ℹ️</span>
-                <span>About BrainLab Academy</span>
-              </Link>
-
-              <Link
-                href="/contact"
-                onClick={closeAllMenus}
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <span>📞</span>
-                <span>Contact &amp; Helpdesk</span>
-              </Link>
             </div>
           </div>
 
           {/* User actions on mobile */}
-          <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <div className="border-t border-slate-100 pt-3 dark:border-slate-800">
             {checkingSession ? (
               <span className="text-xs text-slate-400">Verifying session…</span>
             ) : user ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 p-1">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-xs font-black text-blue-900 dark:bg-blue-900 dark:text-cyan-200">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-xs font-black text-blue-900 dark:bg-blue-900 dark:text-cyan-200">
                     {displayName(user).charAt(0).toUpperCase()}
                   </span>
                   <div className="truncate text-xs">
@@ -806,12 +772,14 @@ export default function BrandHeader() {
                   <Link
                     href="/dashboard"
                     onClick={closeAllMenus}
-                    className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
-                  >Student Portal &rarr;</Link>
+                    className="flex min-h-[48px] items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
+                  >
+                    Student Portal &rarr;
+                  </Link>
                   <Link
                     href="/apex"
                     onClick={closeAllMenus}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 py-2.5 text-xs font-bold"
+                    className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 py-2.5 text-xs font-bold"
                   >
                     <span>🏛️</span>
                     <span>Apex Cohort</span>
@@ -820,7 +788,7 @@ export default function BrandHeader() {
                 <button
                   type="button"
                   onClick={() => void signOut()}
-                  className="flex w-full items-center justify-center rounded-xl border border-slate-200 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-slate-200 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Sign Out
                 </button>
@@ -830,14 +798,14 @@ export default function BrandHeader() {
                 <Link
                   href="/login"
                   onClick={closeAllMenus}
-                  className="flex items-center justify-center rounded-xl border border-slate-300 py-2.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
+                  className="flex min-h-[48px] items-center justify-center rounded-xl border border-slate-300 py-2.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/login?mode=signup"
                   onClick={closeAllMenus}
-                  className="flex items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white"
+                  className="flex min-h-[48px] items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
                 >
                   Start Free &rarr;
                 </Link>
@@ -846,6 +814,24 @@ export default function BrandHeader() {
           </div>
         </div>
       )}
+
+      {/* Distinctive, Subtle Scroll-Progress Indicator Bar (GPU Accelerated) */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-slate-200/40 dark:bg-slate-800/50 pointer-events-none overflow-hidden"
+        role="progressbar"
+        aria-label="Reading progress across page"
+        aria-valuenow={Math.round(scrollProgress * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-400 transition-transform duration-75 ease-out will-change-transform motion-reduce:transition-none"
+          style={{
+            transform: `scaleX(${scrollProgress})`,
+            transformOrigin: "left",
+          }}
+        />
+      </div>
     </header>
   );
 }

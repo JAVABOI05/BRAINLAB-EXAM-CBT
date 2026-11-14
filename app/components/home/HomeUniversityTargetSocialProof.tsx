@@ -286,7 +286,7 @@ export function HomeUniversityTargetSocialProof() {
                     <span
                       className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
                         isSelected
-                          ? "bg-blue-500 text-white"
+                          ? "bg-blue-600 text-white"
                           : "bg-slate-800 text-slate-300 group-hover:text-white"
                       }`}
                     >

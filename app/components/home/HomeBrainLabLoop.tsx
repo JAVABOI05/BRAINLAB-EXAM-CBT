@@ -28,7 +28,7 @@ export function HomeBrainLabLoop() {
     <section
       id="the-loop"
       aria-label="The BrainLab Pedagogical Loop"
-      className="py-14 sm:py-18 lg:py-20 border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#070D18]"
+      className="scroll-mt-20 sm:scroll-mt-24 py-14 sm:py-18 lg:py-20 border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#070D18]"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -91,7 +91,13 @@ export function HomeBrainLabLoop() {
                 >
                   {stage.title}
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate w-full mt-0.5">
+                <span
+                  className={`text-[11px] truncate w-full mt-0.5 ${
+                    isSelected
+                      ? "text-blue-900 dark:text-blue-200"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
                   {stage.subtitle}
                 </span>
               </button>
@@ -207,7 +213,7 @@ export function HomeBrainLabLoop() {
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 px-1 font-semibold">
                         <span>✓ 100% Syllabus Coverage</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">Verified Curriculum Citation</span>
+                        <span className="text-emerald-700 dark:text-emerald-300">Verified Curriculum Citation</span>
                       </div>
                     </div>
                   )}
@@ -232,7 +238,7 @@ export function HomeBrainLabLoop() {
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 px-1 flex items-center justify-between font-semibold">
                         <span>⚡ 8-Key Keyboard Navigation</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">Offline Autosave Active</span>
+                        <span className="text-emerald-700 dark:text-emerald-300 font-bold">Offline Autosave Active</span>
                       </div>
                     </div>
                   )}
@@ -321,7 +327,7 @@ export function HomeBrainLabLoop() {
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-slate-100 pt-2 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                <div className="border-t border-slate-100 pt-2 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                   <span>BrainLab Pedagogical Engine</span>
                   <span className="font-mono">Real-time Telemetry</span>
                 </div>
