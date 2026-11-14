@@ -58,5 +58,7 @@ jobs:
           fi
       - name: TypeScript
         run: npx tsc --noEmit
+      - name: Cloze passage rotation regression tests
+        run: npx tsx scripts/test-cloze-selection.ts
       - name: Production build
         run: npm run build

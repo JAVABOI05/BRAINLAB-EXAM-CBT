@@ -95,17 +95,35 @@ export async function POST(request: NextRequest) {
 
     // 3. Generate exam paper. Registered candidates receive unseen questions first.
     // Anonymous/open-code attempts retain the existing random-selection behaviour.
-    let previouslySeenIds: number[] = [];
+    let masteredQuestionIds: number[] = [];
+    let previouslySeenQuestionIds: number[] = [];
     if (registeredUser) {
       const { data: seenRows, error: seenError } = await supabase
         .from("question_exposure_history")
-        .select("question_id")
-        .eq("user_id", registeredUser.id);
+        .select("question_id, is_correct")
+        .eq("user_id", registeredUser.id)
+        .eq("surface", "full_mock");
       if (!seenError && seenRows) {
-        previouslySeenIds = [...new Set(seenRows.map((row: { question_id: number }) => Number(row.question_id)).filter(Number.isFinite))];
+        masteredQuestionIds = [...new Set(seenRows
+          .filter((row: { is_correct: boolean | null }) => row.is_correct === true)
+          .map((row: { question_id: number }) => Number(row.question_id))
+          .filter(Number.isFinite))];
+        previouslySeenQuestionIds = [...new Set(seenRows
+          .filter((row: { is_correct: boolean | null }) => row.is_correct !== true)
+          .map((row: { question_id: number }) => Number(row.question_id))
+          .filter(Number.isFinite))];
       } else if (seenError) {
-        // Keep exam launch available if rotation history is not yet readable.
+        // Fail closed for registered candidates: without verified history, the
+        // engine cannot guarantee that correctly mastered questions stay excluded.
         console.error("Unable to load learner question exposure history:", seenError.message);
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "rotation_history_unavailable",
+            message: "We could not verify your mock-exam question history. Please try again shortly.",
+          },
+          { status: 503 }
+        );
       }
     }
     const attemptToken = crypto.randomUUID();
@@ -117,7 +135,8 @@ export async function POST(request: NextRequest) {
       token: attemptToken,
       subjects: selectedSubjects,
       durationSeconds,
-      excludeQuestionIds: previouslySeenIds,
+      excludeQuestionIds: masteredQuestionIds,
+      previouslySeenQuestionIds,
     });
 
     if (!generated.success || generated.paperIds.length !== 180 || generated.clientQuestions.length !== 180) {

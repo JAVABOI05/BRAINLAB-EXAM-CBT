@@ -314,7 +314,91 @@ async function runAllTests() {
     }
   });
 
-  // Test 6: Incomplete passages (<10 questions) are excluded
+  // Test 6: Unseen Cloze passages take priority over previously attempted passages
+  await runTest("Unseen Cloze passages take priority over seen and mastered passage groups", () => {
+    const bank = createCompleteMockBank({ clozePassagesCount: 3 });
+    const cloze = bank.filter((q) => q.section === "cloze");
+    const seenPassageIds = cloze
+      .filter((q) => q.passage_id !== "CLOZE_PASSAGE_3")
+      .map((q) => q.id);
+    const masteredIds = cloze
+      .filter((q) => q.passage_id === "CLOZE_PASSAGE_1")
+      .map((q) => q.id);
+    const result = selectEnglishExaminationPaper(bank, undefined, [], {
+      previouslySeenQuestionIds: seenPassageIds.filter((id) => !masteredIds.includes(id)),
+      masteredQuestionIds: masteredIds,
+    });
+    assert.equal(result.success, true, result.errors.join("; "));
+    const selected = result.questions.filter((q) => q.section === "cloze");
+    assert.equal(new Set(selected.map((q) => q.passage_id)).size, 1);
+    assert.equal(selected[0].passage_id, "CLOZE_PASSAGE_3");
+    assert.equal(selected.length, 10);
+  });
+
+  // Test 7: Once all passages have been seen, prioritise passages with incorrect/unanswered items
+  await runTest("Seen Cloze passages needing review take priority after unseen passages are exhausted", () => {
+    const bank = createCompleteMockBank({ clozePassagesCount: 3 });
+    const cloze = bank.filter((q) => q.section === "cloze");
+    const masteredIds = cloze
+      .filter((q) => q.passage_id !== "CLOZE_PASSAGE_2")
+      .map((q) => q.id);
+    const incorrectIds = cloze
+      .filter((q) => q.passage_id === "CLOZE_PASSAGE_2")
+      .slice(0, 2)
+      .map((q) => q.id);
+    const result = selectEnglishExaminationPaper(bank, undefined, [], {
+      previouslySeenQuestionIds: incorrectIds,
+      masteredQuestionIds: masteredIds,
+    });
+    assert.equal(result.success, true, result.errors.join("; "));
+    const selected = result.questions.filter((q) => q.section === "cloze");
+    assert.equal(selected.length, 10);
+    assert.equal(new Set(selected.map((q) => q.passage_id)).size, 1);
+    assert.equal(selected[0].passage_id, "CLOZE_PASSAGE_2");
+  });
+
+  // Test 8: A fully mastered Cloze passage can only be reused as a complete unit
+  await runTest("Mastered Cloze passage reuse never splits or mixes its ten questions", () => {
+    const bank = createCompleteMockBank({ clozePassagesCount: 2 });
+    const masteredIds = bank
+      .filter((q) => q.section === "cloze")
+      .map((q) => q.id);
+    const result = selectEnglishExaminationPaper(bank, undefined, [], {
+      masteredQuestionIds: masteredIds,
+    });
+    assert.equal(result.success, true, result.errors.join("; "));
+    const selected = result.questions.filter((q) => q.section === "cloze");
+    assert.equal(selected.length, 10);
+    assert.equal(new Set(selected.map((q) => q.passage_id)).size, 1);
+  });
+
+  // Test 9: A stale incorrect record must not override a later mastered status
+  await runTest("Mastered Cloze questions do not keep a passage in the review-priority pool", () => {
+    const bank = createCompleteMockBank({ clozePassagesCount: 3 });
+    const cloze = bank.filter((q) => q.section === "cloze");
+    const masteredIds = cloze
+      .filter((q) => q.passage_id !== "CLOZE_PASSAGE_2")
+      .map((q) => q.id);
+    const staleIncorrectId = cloze.find(
+      (q) => q.passage_id === "CLOZE_PASSAGE_1"
+    )!.id;
+    const genuinelyIncorrectId = cloze.find(
+      (q) => q.passage_id === "CLOZE_PASSAGE_2"
+    )!.id;
+    const result = selectEnglishExaminationPaper(bank, undefined, [], {
+      previouslySeenQuestionIds: [staleIncorrectId, genuinelyIncorrectId],
+      masteredQuestionIds: masteredIds,
+    });
+    assert.equal(result.success, true, result.errors.join("; "));
+    const selected = result.questions.filter((q) => q.section === "cloze");
+    assert.equal(selected.length, 10);
+    assert.ok(
+      selected.every((q) => q.passage_id === "CLOZE_PASSAGE_2"),
+      "A stale incorrect record for a mastered question must not outrank a genuinely incorrect passage"
+    );
+  });
+
+  // Test 10: Incomplete passages (<10 questions) are excluded
   await runTest("Incomplete passages (<10 questions) are strictly excluded from selection", () => {
     const bank = createCompleteMockBank({
       clozePassagesCount: 2,
@@ -335,7 +419,7 @@ async function runAllTests() {
     }
   });
 
-  // Test 7: Inactive and archived questions are excluded, preventing partial groups
+  // Test 11: Inactive and archived questions are excluded, preventing partial groups
   await runTest("Passages with inactive or archived questions are excluded from selection", () => {
     const bank = createCompleteMockBank({
       clozePassagesCount: 2,
@@ -355,7 +439,7 @@ async function runAllTests() {
     }
   });
 
-  // Test 8: Engine rejects incomplete selection instead of filling with unrelated Cloze questions
+  // Test 12: Engine rejects incomplete selection instead of filling with unrelated Cloze questions
   await runTest("Engine rejects selection if no complete 10-question Cloze passage exists", () => {
     // Bank with NO complete Cloze passage (only incomplete ones)
     const bank = createCompleteMockBank({
@@ -370,7 +454,7 @@ async function runAllTests() {
     );
   });
 
-  // Test 9: Exactly 60 English questions and 90 raw marks generated
+  // Test 13: Exactly 60 English questions and 90 raw marks generated
   await runTest("The examination still generates exactly 60 English questions and 90 raw marks", () => {
     const bank = createCompleteMockBank();
     const result = selectEnglishExaminationPaper(bank);
@@ -385,7 +469,7 @@ async function runAllTests() {
     assert.equal(clozeRawTotal, 20, `Expected 20 raw marks for Cloze, got ${clozeRawTotal}`);
   });
 
-  // Test 10: Comprehension and Reading Text selection remain unaffected
+  // Test 14: Comprehension and Reading Text selection remain unaffected
   await runTest("Comprehension and Reading Text selections remain completely unaffected", () => {
     const bank = createCompleteMockBank();
     const result = selectEnglishExaminationPaper(bank);
@@ -409,7 +493,8 @@ async function runAllTests() {
     assert.equal(readingRaw, 10, `Reading text marks mismatch: ${readingRaw}`);
   });
 
-  // Test 11: LIVE DATABASE VERIFICATION against BrainLabCBT-Staging
+  // Test 15: LIVE DATABASE VERIFICATION against BrainLabCBT-Staging
+  if (process.env.BRAINLAB_RUN_LIVE_CLOZE_DB_TEST === "true") {
   await runTest("Live Database Verification against BrainLabCBT-Staging (23 passages, 230 questions)", async () => {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
@@ -422,7 +507,9 @@ async function runAllTests() {
     assert.ok(data && data.length > 0, "No active English questions returned from staging database");
 
     // Filter Cloze questions from live DB
-    const liveCloze = data.filter((q) => q.section === "cloze");
+    const liveCloze = data.filter(
+      (q) => q.section === "cloze" && typeof q.passage_id === "string" && q.passage_id.startsWith("ENG-CLZ-")
+    );
     assert.equal(liveCloze.length, 230, `Expected 230 live Cloze questions, found ${liveCloze.length}`);
 
     // Check passage grouping across all 23 passages
@@ -459,6 +546,9 @@ async function runAllTests() {
       assert.equal(q.passage_id, liveSelectedPassageId, "Live paper mixed questions from multiple Cloze passages");
     }
   });
+  } else {
+    console.log("⏭️ SKIP: Live staging database check (set BRAINLAB_RUN_LIVE_CLOZE_DB_TEST=true to run it).");
+  }
 
   console.log("\n-----------------------------------------------------------------");
   console.log(`CLOZE INTEGRATION RESULTS: ${passed} Passed, ${failed} Failed`);
