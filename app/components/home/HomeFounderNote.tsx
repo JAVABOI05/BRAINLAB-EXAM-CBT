@@ -18,7 +18,7 @@ export function HomeFounderNote() {
     <section
       id="founder-note"
       aria-label="Note from the Founder"
-      className="py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#070D18]"
+      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#070D18]"
     >
       {/* Rendered only when founder note is officially approved */}
     </section>

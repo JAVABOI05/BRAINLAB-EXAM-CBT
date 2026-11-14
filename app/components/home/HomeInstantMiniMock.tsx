@@ -108,10 +108,14 @@ export default function HomeInstantMiniMock() {
   }).length;
 
   return (
-    <section className="relative overflow-hidden rounded-[2.5rem] border border-blue-900/40 bg-gradient-to-br from-[#020b1f] via-[#051638] to-[#010816] p-6 sm:p-10 text-white shadow-2xl">
-      {/* Decorative Glow */}
-      <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-indigo-500/15 blur-3xl" />
+    <section
+      id="instant-mini-mock"
+      aria-label="Interactive 90-Second Instant Sampler Mini-Mock"
+      className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/95 via-[#0b1426]/90 to-slate-900/95 p-6 sm:p-10 text-white shadow-2xl backdrop-blur-xl"
+    >
+      {/* Ambient Radial Accent */}
+      <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-blue-600/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl" />
 
       <div className="relative mx-auto max-w-3xl">
         {/* Banner Pill */}
@@ -119,10 +123,10 @@ export default function HomeInstantMiniMock() {
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse" />
             <span className="text-xs font-black uppercase tracking-wider text-cyan-300">
-              Interactive Test · 90-Second Instant Sampler
+              Interactive Test &bull; 90-Second Instant Sampler
             </span>
           </div>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-300">
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-slate-300">
             {completed ? "Completed 3 of 3" : `Question ${currentIndex + 1} of ${SAMPLE_QUESTIONS.length}`}
           </span>
         </div>
@@ -131,10 +135,10 @@ export default function HomeInstantMiniMock() {
           /* Completion State */
           <div className="py-8 text-center animate-fade-in">
             <span className="text-5xl">🏆</span>
-            <h3 className="mt-4 text-3xl font-black text-white">
+            <h3 className="mt-4 text-2xl sm:text-3xl font-black text-white">
               Mini Mock Finished: You Scored {score} / 3!
             </h3>
-            <p className="mx-auto mt-2 max-w-lg text-sm text-blue-200/80 leading-relaxed">
+            <p className="mx-auto mt-2 max-w-lg text-sm text-slate-300 leading-relaxed">
               {score === 3
                 ? "Outstanding accuracy! You have strong grasp of core fundamentals. Ready to test yourself against the full 400-mark timed simulation?"
                 : "Good attempt! You experienced how examiners engineer subtle trap options. Master every question type with our full question bank."}
@@ -143,10 +147,10 @@ export default function HomeInstantMiniMock() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/cbt"
-                className="inline-flex items-center gap-2 rounded-2xl bg-cyan-400 hover:bg-cyan-300 px-6 py-3.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-400/25 transition active:scale-95"
+                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:translate-y-0.5 px-6 py-3.5 text-xs sm:text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition-all bl-focus-ring min-h-[48px]"
               >
                 <span>🚀 Launch Full Free CBT Mock Exam</span>
-                <span>→</span>
+                <span aria-hidden="true">&rarr;</span>
               </Link>
               <button
                 type="button"
@@ -156,7 +160,7 @@ export default function HomeInstantMiniMock() {
                   setShowExplanation(false);
                   setCompleted(false);
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/10 px-5 py-3.5 text-xs font-bold text-white transition active:scale-95"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-800 hover:bg-slate-700 active:translate-y-0.5 px-5 py-3.5 text-xs font-bold text-white transition-all bl-focus-ring min-h-[48px]"
               >
                 <span>↺ Retake Mini Drill</span>
               </button>
@@ -166,9 +170,9 @@ export default function HomeInstantMiniMock() {
           /* Question Display */
           <div className="mt-6 space-y-6">
             <div>
-              <div className="flex items-center gap-2 text-xs text-cyan-300 font-bold">
+              <div className="flex items-center gap-2 text-xs text-cyan-400 font-bold">
                 <span>{currentQ.subject}</span>
-                <span>•</span>
+                <span>&bull;</span>
                 <span className="text-slate-400">{currentQ.exam}</span>
               </div>
               <h3 className="mt-2 text-lg sm:text-xl font-black text-white leading-snug">
@@ -181,15 +185,15 @@ export default function HomeInstantMiniMock() {
               {currentQ.options.map((opt) => {
                 const isChosen = userChoice === opt.key;
                 const isCorrect = opt.key === currentQ.correct;
-                let btnStyle = "border-white/15 bg-white/5 hover:bg-white/10 text-slate-200";
+                let btnStyle = "border border-white/10 bg-slate-800/80 hover:border-cyan-400/50 hover:bg-slate-800 text-slate-100";
 
                 if (isAnswered) {
                   if (isCorrect) {
-                    btnStyle = "border-emerald-500 bg-emerald-950/60 text-emerald-200 ring-1 ring-emerald-500 font-bold";
+                    btnStyle = "border-2 border-emerald-400 bg-emerald-950/60 text-emerald-100 ring-2 ring-emerald-500/30 font-bold shadow-md shadow-emerald-900/30";
                   } else if (isChosen) {
-                    btnStyle = "border-rose-500 bg-rose-950/60 text-rose-200 ring-1 ring-rose-500 line-through opacity-80";
+                    btnStyle = "border-2 border-rose-400 bg-rose-950/60 text-rose-100 opacity-90 line-through shadow-md shadow-rose-900/30";
                   } else {
-                    btnStyle = "border-white/10 bg-white/5 text-slate-400 opacity-60";
+                    btnStyle = "border border-white/5 bg-slate-900/60 text-slate-500 opacity-50";
                   }
                 }
 
@@ -199,12 +203,12 @@ export default function HomeInstantMiniMock() {
                     type="button"
                     disabled={isAnswered}
                     onClick={() => handleSelect(opt.key)}
-                    className={`flex items-start gap-3 rounded-2xl border p-4 text-left text-xs transition active:scale-98 ${btnStyle}`}
+                    className={`flex items-start gap-3 rounded-2xl p-4 text-left text-xs transition active:translate-y-0.5 min-h-[44px] bl-focus-ring ${btnStyle}`}
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-xs font-black">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-900 text-xs font-black text-white shadow-xs">
                       {opt.key}
                     </span>
-                    <span className="mt-0.5 leading-relaxed">{opt.text}</span>
+                    <span className="mt-1 leading-relaxed font-medium">{opt.text}</span>
                   </button>
                 );
               })}
@@ -212,7 +216,7 @@ export default function HomeInstantMiniMock() {
 
             {/* Step-by-Step Derivation & Examiner Tip */}
             {showExplanation && (
-              <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/30 p-5 backdrop-blur-md animate-fade-in space-y-3">
+              <div className="rounded-2xl border border-blue-500/30 bg-blue-950/40 p-5 animate-fade-in space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-wider text-cyan-300">
                     💡 Master Worked Explanation
@@ -220,19 +224,19 @@ export default function HomeInstantMiniMock() {
                   <span
                     className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
                       userChoice === currentQ.correct
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                        : "bg-rose-500/20 text-rose-300 border border-rose-500/40"
+                        ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/40"
+                        : "bg-rose-950/80 text-rose-300 border border-rose-500/40"
                     }`}
                   >
                     {userChoice === currentQ.correct ? "✓ Correct!" : `✗ Missed (Key: ${currentQ.correct})`}
                   </span>
                 </div>
 
-                <p className="text-xs leading-relaxed text-blue-100">
+                <p className="text-xs sm:text-sm leading-relaxed text-slate-200">
                   {currentQ.explanation}
                 </p>
 
-                <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-[11px] text-amber-200 leading-relaxed">
+                <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200 leading-relaxed">
                   <strong>Examiner Insight:</strong> {currentQ.examinerTip}
                 </div>
 
@@ -240,10 +244,10 @@ export default function HomeInstantMiniMock() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 px-5 py-2 text-xs font-black text-slate-950 shadow-md transition active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/30 active:translate-y-0.5 transition-all bl-focus-ring"
                   >
                     <span>{currentIndex < SAMPLE_QUESTIONS.length - 1 ? "Next Question" : "See Final Score"}</span>
-                    <span>→</span>
+                    <span aria-hidden="true">&rarr;</span>
                   </button>
                 </div>
               </div>

@@ -42,7 +42,7 @@ export function HomeProductShowcase() {
     <section
       id="products"
       aria-label="Integrated Learning Products"
-      className="py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/70 dark:border-slate-800/80 dark:bg-[#070e1e] overflow-hidden"
+      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/70 dark:border-slate-800/80 dark:bg-[#070e1e] overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -98,7 +98,7 @@ export function HomeProductShowcase() {
                     <span className="text-base" aria-hidden="true">⌨️</span>
                     <span>100% Exam Hall Parity</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
+                  <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
                     +15 Min Time Saved
                   </span>
                 </div>
@@ -286,7 +286,7 @@ export function HomeProductShowcase() {
                     <span className="text-base" aria-hidden="true">🏆</span>
                     <span>Synchronous 1v1 Academic Duels</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60">
+                  <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60">
                     Live Leaderboard
                   </span>
                 </div>
@@ -362,7 +362,7 @@ export function HomeProductShowcase() {
                 </span>
                 <Link
                   href="/challenge-arena"
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-600 dark:text-amber-400 hover:underline bl-focus-ring rounded-lg"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-700 dark:text-amber-300 hover:underline bl-focus-ring rounded-lg"
                 >
                   <span>Enter Challenge Arena</span>
                   <span aria-hidden="true">&rarr;</span>
@@ -378,7 +378,7 @@ export function HomeProductShowcase() {
                     <span className="text-base" aria-hidden="true">📶</span>
                     <span>Zero-Data PWA Sync</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
+                  <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
                     Works on 2G / 3G
                   </span>
                 </div>
@@ -451,7 +451,7 @@ export function HomeProductShowcase() {
                 </span>
                 <Link
                   href="/for-students"
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:underline bl-focus-ring rounded-lg"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-300 hover:underline bl-focus-ring rounded-lg"
                 >
                   <span>Student Offline Guide</span>
                   <span aria-hidden="true">&rarr;</span>

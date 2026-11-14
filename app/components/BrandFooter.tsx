@@ -247,7 +247,7 @@ export default function BrandFooter() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-400 shrink-0 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors">
                   <MailIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-500 text-[11px] font-medium">CBT Support:</span>
+                <span className="text-slate-400 text-[11px] font-medium">CBT Support:</span>
                 <a
                   href={`mailto:${supportEmail}?subject=BrainLab%20Technical%20and%20CBT%20Support`}
                   className="text-slate-300 hover:text-white transition-colors"
@@ -260,7 +260,7 @@ export default function BrandFooter() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-400 shrink-0 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors">
                   <AcademicCapIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-500 text-[11px] font-medium">Office Desk:</span>
+                <span className="text-slate-400 text-[11px] font-medium">Office Desk:</span>
                 <a
                   href={`mailto:${academyEmail}?subject=BrainLab%20Academy%20and%20Partnership%20Inquiry`}
                   className="text-slate-300 hover:text-white transition-colors"
@@ -273,7 +273,7 @@ export default function BrandFooter() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-400 shrink-0 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors">
                   <PhoneIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-slate-500 text-[11px] font-medium">Call Support:</span>
+                <span className="text-slate-400 text-[11px] font-medium">Call Support:</span>
                 <a
                   href={`tel:${supportPhoneDial}`}
                   className="text-slate-300 hover:text-white transition-colors"
@@ -287,7 +287,7 @@ export default function BrandFooter() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-slate-400 shrink-0 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors">
                     <WhatsAppIcon className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-slate-500 text-[11px] font-medium">WhatsApp:</span>
+                  <span className="text-slate-400 text-[11px] font-medium">WhatsApp:</span>
                   <a
                     href={whatsappHelpdeskUrl}
                     target="_blank"
@@ -479,7 +479,7 @@ export default function BrandFooter() {
           <div className="text-center md:text-left">
             <span>&copy; {currentYear} {config.copyright_notice}</span>
             <span className="hidden sm:inline text-slate-700 mx-2">&bull;</span>
-            <span className="block sm:inline text-slate-500 text-[11px] mt-0.5 sm:mt-0">
+            <span className="block sm:inline text-slate-400 text-[11px] mt-0.5 sm:mt-0">
               Lagos, Nigeria &bull; NDPA 2023 Compliant
             </span>
           </div>
