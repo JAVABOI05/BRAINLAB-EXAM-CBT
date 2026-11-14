@@ -207,7 +207,7 @@ export function selectEnglishExaminationPaper(
         !questions.some((q) => allSeenIds.has(q.id))
       );
       const passagesNeedingReview = eligibleClozePassages.filter(({ questions }) =>
-        questions.some((q) => previouslySeenIds.has(q.id))
+        questions.some((q) => previouslySeenIds.has(q.id) && !masteredIds.has(q.id))
       );
       const previouslyAttemptedPassages = eligibleClozePassages.filter(({ questions }) =>
         questions.some((q) => allSeenIds.has(q.id))
