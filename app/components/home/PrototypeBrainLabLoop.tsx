@@ -162,7 +162,14 @@ export default function PrototypeBrainLabLoop() {
               {activeStage.stemRole && (
                 <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/30">
                   <div className="flex items-center gap-2 text-xs font-bold text-indigo-900 dark:text-indigo-200">
-                    <span className="text-base">🔬</span>
+                    <svg className="h-4 w-4 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M6 18h8" />
+                      <path d="M3 22h18" />
+                      <path d="M14 22a7 7 0 1 0 0-14h-1" />
+                      <path d="M9 14h2" />
+                      <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z" />
+                      <path d="M12 6V3a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v3" />
+                    </svg>
                     <span>STEM Studio Cross-Cutting Support</span>
                   </div>
                   <p className="mt-1 text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed">

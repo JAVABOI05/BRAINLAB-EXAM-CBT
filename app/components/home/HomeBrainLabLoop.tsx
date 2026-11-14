@@ -4,15 +4,55 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
 
+function LoopStageIcon({ id, className = "h-4 w-4" }: { id: string; className?: string }) {
+  switch (id) {
+    case "learn":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+          <path d="M6 6h10M6 10h10" />
+        </svg>
+      );
+    case "practise":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
+        </svg>
+      );
+    case "diagnose":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+        </svg>
+      );
+    case "improve":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
+        </svg>
+      );
+    case "master":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 const STAGE_ROUTE_MAP: Record<
   string,
-  { href: string; label: string; icon: string; previewBadge: string; themeColor: string; glow: string }
+  { href: string; label: string; previewBadge: string; themeColor: string; glow: string }
 > = {
-  learn: { href: "/learn", label: "Explore Curriculum Lessons", icon: "📖", previewBadge: "Interactive Theory & Formulas", themeColor: "from-blue-600 via-sky-500 to-cyan-400", glow: "border-sky-400/40 shadow-sky-900/30" },
-  practise: { href: "/cbt", label: "Launch Timed CBT Simulator", icon: "⌨️", previewBadge: "Authentic 8-Key Simulator", themeColor: "from-blue-600 via-indigo-500 to-teal-400", glow: "border-teal-400/40 shadow-teal-900/30" },
-  diagnose: { href: "/learning-dna", label: "Inspect Weak Subtopics", icon: "🧬", previewBadge: "AI Cognitive Diagnostic Radar", themeColor: "from-purple-600 via-violet-500 to-fuchsia-400", glow: "border-fuchsia-400/40 shadow-fuchsia-900/30" },
-  improve: { href: "/ai-learning", label: "Launch Socratic AI Drills", icon: "💡", previewBadge: "Step-by-Step AI Derivation", themeColor: "from-indigo-600 via-purple-500 to-amber-400", glow: "border-amber-400/40 shadow-amber-900/30" },
-  master: { href: "/challenge-arena", label: "Join 1v1 National Arena", icon: "🏆", previewBadge: "Live Synchronous Duels", themeColor: "from-amber-500 via-rose-500 to-orange-400", glow: "border-amber-400/40 shadow-amber-900/30" },
+  learn: { href: "/learn", label: "Explore Curriculum Lessons", previewBadge: "Interactive Theory & Formulas", themeColor: "from-blue-600 via-sky-500 to-cyan-400", glow: "border-sky-400/40 shadow-sky-900/30" },
+  practise: { href: "/cbt", label: "Launch Timed CBT Simulator", previewBadge: "Authentic 8-Key Simulator", themeColor: "from-blue-600 via-indigo-500 to-teal-400", glow: "border-teal-400/40 shadow-teal-900/30" },
+  diagnose: { href: "/learning-dna", label: "Inspect Weak Subtopics", previewBadge: "AI Cognitive Diagnostic Radar", themeColor: "from-purple-600 via-violet-500 to-fuchsia-400", glow: "border-fuchsia-400/40 shadow-fuchsia-900/30" },
+  improve: { href: "/ai-learning", label: "Launch Socratic AI Drills", previewBadge: "Step-by-Step AI Derivation", themeColor: "from-indigo-600 via-purple-500 to-amber-400", glow: "border-amber-400/40 shadow-amber-900/30" },
+  master: { href: "/challenge-arena", label: "Join 1v1 National Arena", previewBadge: "Live Synchronous Duels", themeColor: "from-amber-500 via-rose-500 to-orange-400", glow: "border-amber-400/40 shadow-amber-900/30" },
 };
 
 export function HomeBrainLabLoop() {
@@ -86,8 +126,8 @@ export function HomeBrainLabLoop() {
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-2">
-                    <span className="text-xl transition-transform group-hover:scale-120" aria-hidden="true">
-                      {route.icon}
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-cyan-300 border border-white/10 shrink-0 transition-transform group-hover:scale-110" aria-hidden="true">
+                      <LoopStageIcon id={stage.id} className="h-4 w-4" />
                     </span>
                     <span
                       className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
@@ -172,7 +212,12 @@ export function HomeBrainLabLoop() {
               {/* STEM Studio Integration Callout */}
               {activeStage.stemRole && (
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-xs text-emerald-200 flex items-start gap-3 shadow-sm">
-                  <span className="text-emerald-400 font-black text-xl shrink-0">🔬</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 shrink-0" aria-hidden="true">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
+                      <path d="M8.5 2h7M7 16h10" />
+                    </svg>
+                  </span>
                   <div>
                     <span className="font-extrabold text-emerald-300 uppercase tracking-wider block mb-0.5 text-[11px]">
                       STEM Studio Cross-Cutting Integration:
@@ -204,7 +249,9 @@ export function HomeBrainLabLoop() {
                 {/* Header Chrome Bar */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="text-base" aria-hidden="true">{activeRoute.icon}</span>
+                    <span className="flex h-5 w-5 items-center justify-center text-cyan-300" aria-hidden="true">
+                      <LoopStageIcon id={activeStage.id} className="h-4 w-4" />
+                    </span>
                     <span className="font-bold uppercase tracking-wider text-white text-[11px]">
                       {activeStage.title} Mode &bull; Diagnostic Cognitive Radar (Slot S3-02)
                     </span>
@@ -285,7 +332,13 @@ export function HomeBrainLabLoop() {
                   <div className="space-y-4 animate-fade-in">
                     <div className="flex items-center justify-between bg-slate-900/90 border border-white/10 px-3 py-1.5 rounded-xl text-xs">
                       <span className="text-slate-400 font-mono">JAMB UTME Simulation</span>
-                      <span className="font-mono text-amber-400 font-black animate-pulse">⏱ 01:58:42</span>
+                      <span className="font-mono text-amber-400 font-black animate-pulse flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>01:58:42</span>
+                      </span>
                     </div>
 
                     <div className="rounded-xl border border-white/10 bg-slate-900/80 p-3.5 space-y-2.5">
@@ -437,8 +490,9 @@ export function HomeBrainLabLoop() {
                             Examine the sulfuric acid reagent carefully. Is concentrated H₂SO₄ acting as an oxidising agent or a dehydrating catalyst in this temperature range?
                           </p>
                           {showSocraticHint && (
-                            <p className="text-amber-300 text-[11px] font-medium border-t border-purple-800/60 pt-1.5 animate-fade-in">
-                              💡 <strong>Hint:</strong> At 170°C, concentrated sulfuric acid removes water completely to yield an alkene (ethene), not an ester!
+                            <p className="text-amber-300 text-[11px] font-medium border-t border-purple-800/60 pt-1.5 animate-fade-in flex items-start gap-1.5">
+                              <span className="text-amber-400 font-bold uppercase text-[10px] tracking-wider bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">Hint</span>
+                              <span>At 170°C, concentrated sulfuric acid removes water completely to yield an alkene (ethene), not an ester!</span>
                             </p>
                           )}
                         </div>
@@ -448,9 +502,14 @@ export function HomeBrainLabLoop() {
                     <button
                       type="button"
                       onClick={() => setShowSocraticHint(!showSocraticHint)}
-                      className="w-full py-2.5 rounded-xl border border-purple-500/40 bg-purple-950/40 hover:bg-purple-900/50 text-purple-200 font-bold text-xs transition-all cursor-pointer"
+                      className="w-full py-2.5 rounded-xl border border-purple-500/40 bg-purple-950/40 hover:bg-purple-900/50 text-purple-200 font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
                     >
-                      {showSocraticHint ? "Hide Socratic Step" : "💡 Reveal Socratic Step 1 Hint"}
+                      <svg className="h-4 w-4 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      <span>{showSocraticHint ? "Hide Socratic Step" : "Reveal Socratic Step 1 Hint"}</span>
                     </button>
                   </div>
                 )}
@@ -471,7 +530,12 @@ export function HomeBrainLabLoop() {
                         </div>
                         <div className="text-right">
                           <div className="font-mono font-black text-amber-400 text-sm">Elo: 1420</div>
-                          <div className="text-[10px] text-emerald-400 font-bold">🏆 8-Win Streak</div>
+                          <div className="text-[10px] text-emerald-400 font-bold flex items-center justify-end gap-1">
+                            <svg className="h-3 w-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                            <span>8-Win Streak</span>
+                          </div>
                         </div>
                       </div>
 
