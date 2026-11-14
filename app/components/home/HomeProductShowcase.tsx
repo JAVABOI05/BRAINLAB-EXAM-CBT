@@ -42,33 +42,33 @@ export function HomeProductShowcase() {
     <section
       id="products"
       aria-label="Integrated Learning Products"
-      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/70 dark:border-slate-800/80 dark:bg-[#070e1e] overflow-hidden"
+      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-white/10 overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
           <span
             data-slot="SLOTS S4-01 TO S4-04"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/60 mb-3"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-cyan-300 border border-blue-400/30 mb-3"
           >
             ⚡ 4 CORE EXAM SUPERPOWERS
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--bl-color-text-primary)] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
             Everything You Need to Beat the Exam. Clean &amp; Visual.
           </h2>
-          <p className="mt-3.5 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+          <p className="mt-3.5 text-base sm:text-lg text-slate-300 leading-relaxed">
             No endless manuals. Just 4 purpose-built tools engineered to build authentic exam speed, diagnose weak topics, and guarantee readiness.
           </p>
 
           {/* View Mode Switcher */}
-          <div className="mt-6 inline-flex p-1 rounded-2xl bg-slate-200/80 dark:bg-slate-900 border border-slate-300/80 dark:border-slate-800">
+          <div className="mt-6 inline-flex p-1 rounded-2xl bg-slate-900 border border-white/10 shadow-inner">
             <button
               type="button"
               onClick={() => setActiveTab("pillars")}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                 activeTab === "pillars"
-                  ? "bg-white text-[var(--bl-color-brand-primary)] shadow-sm dark:bg-blue-600 dark:text-white"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               🌟 4 Core Exam Superpowers
@@ -78,8 +78,8 @@ export function HomeProductShowcase() {
               onClick={() => setActiveTab("products")}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                 activeTab === "products"
-                  ? "bg-white text-[var(--bl-color-brand-primary)] shadow-sm dark:bg-blue-600 dark:text-white"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               📦 Full 6-Product Ecosystem
@@ -91,19 +91,19 @@ export function HomeProductShowcase() {
         {activeTab === "pillars" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 min-h-[420px]">
             {/* CARD 1: JAMB 8-KEY SPEED ENGINE */}
-            <div className="flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-[var(--bl-color-surface)] p-6 sm:p-7 shadow-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1 dark:border-slate-800 dark:bg-[#0b1329] group">
+            <div className="flex flex-col justify-between rounded-3xl border border-blue-500/25 bg-slate-900/85 p-6 sm:p-7 shadow-xl backdrop-blur-md transition-all duration-200 hover:shadow-2xl hover:border-blue-500/40 hover:-translate-y-1 group">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="inline-flex items-center gap-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 px-3 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-blue-950/60 px-3 py-1 text-xs font-bold text-cyan-300 border border-blue-800/60">
                     <span className="text-base" aria-hidden="true">⌨️</span>
                     <span>100% Exam Hall Parity</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
+                  <span className="text-xs font-mono font-bold text-emerald-300 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/60">
                     +15 Min Time Saved
                   </span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-black text-[var(--bl-color-text-primary)] tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   Official JAMB 8-Key Exam Engine
                 </h3>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -195,22 +195,22 @@ export function HomeProductShowcase() {
             </div>
 
             {/* CARD 2: INSTANT AI DIAGNOSTICS & LEARNING DNA */}
-            <div className="flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-[var(--bl-color-surface)] p-6 sm:p-7 shadow-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1 dark:border-slate-800 dark:bg-[#0b1329] group">
+            <div className="flex flex-col justify-between rounded-3xl border border-purple-500/25 bg-slate-900/85 p-6 sm:p-7 shadow-xl backdrop-blur-md transition-all duration-200 hover:shadow-2xl hover:border-purple-500/40 hover:-translate-y-1 group">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="inline-flex items-center gap-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 px-3 py-1 text-xs font-bold text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-purple-950/60 px-3 py-1 text-xs font-bold text-purple-300 border border-purple-800/60">
                     <span className="text-base" aria-hidden="true">🧬</span>
                     <span>Precision Topic Mastery</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/60">
+                  <span className="text-xs font-mono font-bold text-purple-300 bg-purple-950/50 px-2 py-0.5 rounded border border-purple-800/60">
                     Cognitive Radar
                   </span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-black text-[var(--bl-color-text-primary)] tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   Instant AI Diagnostics &amp; Learning DNA
                 </h3>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="mt-2 text-sm text-slate-300 leading-relaxed">
                   Never practice blindly. Our diagnostic engine evaluates your response patterns across the NERDC syllabus, highlighting weak subtopics before exam day.
                 </p>
 
@@ -264,13 +264,13 @@ export function HomeProductShowcase() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-slate-400 font-medium">
                   Dynamic weakness tracking on every test
                 </span>
                 <Link
                   href="/learning-dna"
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-purple-600 dark:text-purple-400 hover:underline bl-focus-ring rounded-lg"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-purple-400 hover:text-purple-300 hover:underline bl-focus-ring rounded-lg"
                 >
                   <span>Explore Learning DNA</span>
                   <span aria-hidden="true">&rarr;</span>
@@ -279,22 +279,22 @@ export function HomeProductShowcase() {
             </div>
 
             {/* CARD 3: NATIONAL ARENA & DAILY QUESTS */}
-            <div className="flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-[var(--bl-color-surface)] p-6 sm:p-7 shadow-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1 dark:border-slate-800 dark:bg-[#0b1329] group">
+            <div className="flex flex-col justify-between rounded-3xl border border-amber-500/25 bg-slate-900/85 p-6 sm:p-7 shadow-xl backdrop-blur-md transition-all duration-200 hover:shadow-2xl hover:border-amber-500/40 hover:-translate-y-1 group">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="inline-flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-amber-950/60 px-3 py-1 text-xs font-bold text-amber-300 border border-amber-800/60">
                     <span className="text-base" aria-hidden="true">🏆</span>
                     <span>Synchronous 1v1 Academic Duels</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60">
+                  <span className="text-xs font-mono font-bold text-amber-300 bg-amber-950/50 px-2 py-0.5 rounded border border-amber-800/60">
                     Live Leaderboard
                   </span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-black text-[var(--bl-color-text-primary)] tracking-tight">
+                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   National Arena &amp; Daily Quests
                 </h3>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="mt-2 text-sm text-slate-300 leading-relaxed">
                   Compete with thousands of ambitious candidates across Nigeria. Maintain study streaks, conquer daily challenges, and earn peer-verified ranking badges.
                 </p>
 

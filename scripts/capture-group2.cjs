@@ -29,7 +29,10 @@ async function captureGroup2() {
 
     const page = await context.newPage();
     await page.setViewportSize({ width: vp.width, height: vp.height });
-    await page.goto("http://localhost:3000/design-preview", { waitUntil: "networkidle" });
+    await page.goto("http://localhost:3000/design-preview", { waitUntil: "networkidle", timeout: 60000 });
+
+    // Wait until loading screen finishes
+    await page.waitForFunction(() => !document.body.innerText.includes('Preparing your learning space'), { timeout: 30000 });
 
     await page.evaluate(() => {
       document.querySelector('aside[aria-label*="Privacy"]')?.remove();
@@ -104,6 +107,7 @@ async function captureGroup2() {
   const page = await context.newPage();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("http://localhost:3000/design-preview", { waitUntil: "networkidle" });
+  await page.waitForFunction(() => !document.body.innerText.includes('Preparing your learning space'), { timeout: 30000 });
   await page.evaluate(() => {
     document.querySelector('aside[aria-label*="Privacy"]')?.remove();
   });
