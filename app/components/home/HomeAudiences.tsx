@@ -561,7 +561,7 @@ export function HomeAudiences() {
                     </div>
 
                     <div className="rounded-lg bg-emerald-950/40 border border-emerald-800/40 p-2.5 text-[11px] text-emerald-200">
-                      📖 Includes verified 2015–2026 WAEC &amp; NECO past questions with detailed theory step-by-step marking schemes.
+                      Includes verified 2015–2026 WAEC &amp; NECO past questions with detailed theory step-by-step marking schemes.
                     </div>
                   </div>
                 )}
@@ -686,7 +686,7 @@ export function HomeAudiences() {
 
                       <div className="flex items-center justify-between text-[10px] text-slate-300">
                         <span>Sprint Topic: JAMB Use of English</span>
-                        <span className="text-amber-400 font-bold">🏆 8-Win Streak</span>
+                        <span className="text-amber-400 font-bold">8-Win Streak</span>
                       </div>
                     </div>
 
@@ -695,7 +695,7 @@ export function HomeAudiences() {
                       onClick={() => setIsMatchReady(!isMatchReady)}
                       className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow-md shadow-amber-500/20 cursor-pointer"
                     >
-                      {isMatchReady ? "⚡ Enter Next 60-Second Arena Duel" : "Matchmaking Queued..."}
+                      {isMatchReady ? "Enter Next 60-Second Arena Duel" : "Matchmaking Queued..."}
                     </button>
                   </div>
                 )}
