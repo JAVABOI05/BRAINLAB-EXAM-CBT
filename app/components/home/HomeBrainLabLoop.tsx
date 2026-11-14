@@ -16,7 +16,7 @@ const STAGE_ROUTE_MAP: Record<
 };
 
 export function HomeBrainLabLoop() {
-  const loopStages = HOMEPAGE_CONTENT_CONFIG.loop;
+  const loopStages = HOMEPAGE_CONTENT_CONFIG.loopStages;
   const [activeStageId, setActiveStageId] = useState<string>("learn");
 
   const activeStage =
@@ -183,7 +183,7 @@ export function HomeBrainLabLoop() {
                   <div className="flex items-center gap-2">
                     <span className="text-base" aria-hidden="true">{activeRoute.icon}</span>
                     <span className="font-bold uppercase tracking-wider text-white text-[11px]">
-                      {activeStage.title} Mode Telemetry
+                      {activeStage.title} Mode &bull; Diagnostic Cognitive Radar (Slot S3-02)
                     </span>
                   </div>
                   <span className="rounded-md bg-blue-900/60 border border-blue-700/60 px-2 py-0.5 text-[9px] font-black uppercase text-cyan-300">
@@ -215,7 +215,7 @@ export function HomeBrainLabLoop() {
                         {activeStage.id === "practise" && "100% 8-Key Exam Parity"}
                         {activeStage.id === "diagnose" && "Real-time Telemetry"}
                         {activeStage.id === "improve" && "Zero Answer Spoilers"}
-                        {activeStage.id === "master" && "Top 2% Accuracy Tier"}
+                        {activeStage.id === "master" && "National Master Tier"}
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">

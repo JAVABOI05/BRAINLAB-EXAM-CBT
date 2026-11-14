@@ -225,7 +225,7 @@ export function HomeAudiences() {
                     href={aud.cta.href}
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-400 hover:text-cyan-300 group-hover:translate-x-1 transition-all bl-focus-ring rounded-lg"
                   >
-                    <span>{resolveClaimValue(aud.cta.label, "Explore Pathway")}</span>
+                    <span>{aud.cta.label}</span>
                     <span aria-hidden="true">&rarr;</span>
                   </Link>
                 </div>
