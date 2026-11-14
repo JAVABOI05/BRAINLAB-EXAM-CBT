@@ -579,7 +579,7 @@ export default function BrandHeader() {
                 href="/dashboard"
                 className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 px-3.5 py-2 text-xs font-black text-white shadow-xs transition hover:shadow-sm active:scale-95"
               >
-                <span>Student Portal &rarr;</span>
+                <span>Student Portal →</span>
               </Link>
 
               {/* User Avatar & Dropdown */}
@@ -774,7 +774,7 @@ export default function BrandHeader() {
                     onClick={closeAllMenus}
                     className="flex min-h-[48px] items-center justify-center rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs"
                   >
-                    Student Portal &rarr;
+                    Student Portal →
                   </Link>
                   <Link
                     href="/apex"
