@@ -109,24 +109,36 @@ export async function generateExamPaper(options: {
     }
 
     const available = questionPages.rows;
-    const eligibleAvailable = excludedIds.size
-      ? available.filter((question) => !excludedIds.has(question.id))
-      : available;
-    const unseenAvailable = previouslySeenIds.size
-      ? eligibleAvailable.filter((question) => !previouslySeenIds.has(question.id))
-      : eligibleAvailable;
-    const reviewAvailable = previouslySeenIds.size
-      ? eligibleAvailable.filter((question) => previouslySeenIds.has(question.id))
-      : [];
+    const isClozeQuestion = (question: EngineQuestion) =>
+      isEnglish &&
+      ((question.section || "").toLowerCase().trim() === "cloze" ||
+        (question.category || "").toLowerCase().includes("cloze") ||
+        (question.topic || "").toLowerCase().includes("cloze"));
+
+    // Cloze questions are retained as complete passage units. The English
+    // selector applies passage-level history priority without splitting a group.
+    // Mastered-question exclusion remains strict for every other section/subject.
+    const eligibleAvailable = available.filter(
+      (question) => isClozeQuestion(question) || !excludedIds.has(question.id)
+    );
+    const unseenAvailable = eligibleAvailable.filter(
+      (question) => isClozeQuestion(question) || !previouslySeenIds.has(question.id)
+    );
+    const reviewAvailable = eligibleAvailable.filter(
+      (question) => !isClozeQuestion(question) && previouslySeenIds.has(question.id)
+    );
     const runSelector = (pool: EngineQuestion[]) =>
       isEnglish
-        ? selectEnglishExaminationPaper(pool, blueprint, allHighYield)
+        ? selectEnglishExaminationPaper(pool, blueprint, allHighYield, {
+            previouslySeenQuestionIds: [...previouslySeenIds],
+            masteredQuestionIds: [...excludedIds],
+          })
         : selectStandardSubjectPaper(subj, pool, blueprint, allHighYield);
 
     // First attempt a paper using unseen questions only. If the subject blueprint
     // cannot be satisfied, retry using unseen + previously attempted incorrect or
-    // unanswered questions. Correctly answered questions remain excluded in both
-    // pools, so mastered questions can never re-enter through fallback.
+    // unanswered questions. Cloze is the explicit exception: its complete passage
+    // remains intact and unseen passage groups take priority over all seen groups.
     let selected = runSelector(unseenAvailable);
     const targetCount = blueprint.total_questions || (isEnglish ? 60 : 40);
     const selectionWarnings = [...(selected.warnings || [])];
