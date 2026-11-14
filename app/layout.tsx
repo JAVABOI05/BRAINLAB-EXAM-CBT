@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import SiteChrome from "./components/SiteChrome";
 import { LearnerThemeProvider } from "./components/LearnerThemeProvider";
 import AnimatedLaunchScreen from "./components/AnimatedLaunchScreen";
@@ -129,6 +130,7 @@ export default function RootLayout({
           <AnimatedLaunchScreen />
           <SiteChrome>{children}</SiteChrome>
         </LearnerThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
