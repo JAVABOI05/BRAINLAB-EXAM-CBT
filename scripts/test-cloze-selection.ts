@@ -480,7 +480,9 @@ async function runAllTests() {
     assert.ok(data && data.length > 0, "No active English questions returned from staging database");
 
     // Filter Cloze questions from live DB
-    const liveCloze = data.filter((q) => q.section === "cloze");
+    const liveCloze = data.filter(
+      (q) => q.section === "cloze" && typeof q.passage_id === "string" && q.passage_id.startsWith("ENG-CLZ-")
+    );
     assert.equal(liveCloze.length, 230, `Expected 230 live Cloze questions, found ${liveCloze.length}`);
 
     // Check passage grouping across all 23 passages
