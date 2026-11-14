@@ -38,9 +38,9 @@ function isValidChannelUrl(url?: string | null): boolean {
 }
 
 export function HomeJoinChannel({
-  channelName: defaultChannelName = "BrainLab Academy Official WhatsApp Channel",
+  channelName: defaultChannelName = "Official WhatsApp Broadcast Channel",
   channelUrl: defaultChannelUrl = CONTACT_CONFIG.whatsapp.channelUrl,
-  description = "Get daily CBT practice challenges, syllabus updates, exam registration alerts, and revision masterclass links delivered directly to your phone.",
+  description = "Daily worked solutions, syllabus breakdowns & official JAMB timetable updates delivered directly to your phone.",
   platforms: defaultPlatforms = [
     {
       id: "whatsapp",
@@ -121,7 +121,6 @@ export function HomeJoinChannel({
     return null;
   }
 
-  // No-op analytics logger hook for prompt 12
   const handleClick = (platformId: string) => {
     try {
       trackEvent("channel_join_clicked", {
@@ -131,7 +130,6 @@ export function HomeJoinChannel({
       if (typeof onChannelClick === "function") {
         onChannelClick(platformId);
       } else if (typeof window !== "undefined") {
-        // Safe anonymous client-side telemetry event (no personal data)
         window.dispatchEvent(
           new CustomEvent("brainlab:channel-click", {
             detail: { platform: platformId, timestamp: Date.now() },
@@ -149,97 +147,70 @@ export function HomeJoinChannel({
 
   return (
     <section
-      aria-label="Join Official BrainLab Channel"
-      className={`relative w-full overflow-hidden border-y border-emerald-500/30 bg-emerald-950 py-12 text-white dark:border-emerald-500/20 dark:bg-[#03150e] sm:py-16 ${className}`}
+      aria-label="Join Official BrainLab WhatsApp Channel"
+      className={`relative w-full py-4 sm:py-6 ${className}`}
     >
-      {/* Background glow decoration */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,211,102,0.18),transparent_60%)]"
-        aria-hidden="true"
-      />
+      <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
+        {/* Compact, High-Impact Broadcast Ribbon */}
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-slate-900/95 via-[#0b1b28]/90 to-slate-900/95 p-3.5 sm:p-4 shadow-xl shadow-emerald-950/20 backdrop-blur-md transition-all hover:border-emerald-500/50 hover:shadow-emerald-900/30">
+          {/* Subtle Ambient Radial Glow */}
+          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-blue-500/15 blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-emerald-500/40 bg-gradient-to-br from-emerald-900/80 via-emerald-950/90 to-slate-950 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-md">
-          <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
-            {/* Information Column */}
-            <div className="lg:col-span-8 space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3.5 py-1 text-xs font-bold text-emerald-300">
-                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>OFFICIAL BROADCAST CHANNEL</span>
-                </div>
-
-                {/* Rule S7: Verified count displayed only when verified */}
-                {verifiedCount && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-900/60 border border-emerald-400/40 px-3 py-1 text-xs font-semibold text-emerald-200">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                    <span>{verifiedCount} Active Candidates</span>
-                    {asOfDate && <span className="text-emerald-300/80 font-normal">({asOfDate})</span>}
-                  </span>
-                )}
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 sm:gap-4">
+            {/* Left: Icon & Channel Details */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30 ring-1 ring-white/20">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z" />
+                </svg>
+                <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping absolute" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
               </div>
 
-              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl">
-                {channelName}
-              </h2>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-black text-white tracking-tight truncate">
+                    {channelName}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    LIVE ALERTS
+                  </span>
+                  {verifiedCount && (
+                    <span className="hidden sm:inline-flex items-center text-[11px] font-semibold text-slate-300">
+                      &bull; <strong className="text-white ml-1">{verifiedCount}</strong>&nbsp;Active Candidates
+                      {asOfDate && <span className="text-slate-400 font-normal ml-1">({asOfDate})</span>}
+                    </span>
+                  )}
+                </div>
 
-              <p className="text-sm sm:text-base text-emerald-100/90 leading-relaxed max-w-2xl">
-                {description}
-              </p>
-
-              {/* Verified Value Points */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs sm:text-sm text-emerald-200/90">
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Daily Question Drills &amp; Solutions</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>JAMB &amp; WAEC Official Timetable Alerts</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Syllabus Breakdown Summaries</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Weekend Revision Masterclass Links</span>
-                </div>
+                <p className="text-xs text-slate-300 leading-snug line-clamp-1 sm:line-clamp-none mt-0.5">
+                  {description}
+                </p>
               </div>
             </div>
 
-            {/* Action Column */}
-            <div className="lg:col-span-4 flex flex-col items-stretch sm:items-start lg:items-end justify-center gap-3">
+            {/* Right: Compact Action Button */}
+            <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+              <span className="hidden lg:block text-[11px] text-slate-400 font-medium">
+                Free &bull; Instant Updates
+              </span>
               <a
                 href={channelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => handleClick("whatsapp")}
-                className="inline-flex w-full sm:w-auto items-center justify-center gap-3 rounded-2xl bg-[#25D366] hover:bg-[#20ba5a] px-7 py-4 text-base font-extrabold text-slate-950 shadow-xl transition-all duration-180 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] bl-focus-ring min-h-[52px]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-4 py-2 text-xs sm:text-sm font-black text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95"
               >
-                <svg
-                  className="h-6 w-6 shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z" />
-                </svg>
-                <span>Join Channel Now</span>
-                <span className="text-slate-900" aria-hidden="true">↗</span>
+                <span>Join Channel</span>
+                <span aria-hidden="true">&rarr;</span>
               </a>
 
-              {/* Multi-platform secondary links if enabled */}
               {activePlatforms.length > 1 && (
-                <div className="flex items-center gap-3 text-xs text-emerald-300">
+                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
                   {activePlatforms
                     .filter((p) => p.id !== "whatsapp")
                     .map((p) => (
@@ -249,17 +220,13 @@ export function HomeJoinChannel({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => handleClick(p.id)}
-                        className="underline hover:text-white"
+                        className="underline hover:text-emerald-400"
                       >
-                        Join on {p.name} ↗
+                        {p.name} ↗
                       </a>
                     ))}
                 </div>
               )}
-
-              <p className="text-[11px] text-emerald-300/80 text-center sm:text-left lg:text-right">
-                Free to join &bull; Instant WhatsApp notification
-              </p>
             </div>
           </div>
         </div>
