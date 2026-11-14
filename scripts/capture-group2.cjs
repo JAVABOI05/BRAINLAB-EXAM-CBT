@@ -9,19 +9,6 @@ async function captureGroup2() {
     fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  const cleanPage = async (p) => {
-    await p.evaluate(() => {
-      localStorage.setItem("brainlab-cookie-consent", "all");
-      const banner = document.querySelector('section[aria-label*="Privacy"], div[aria-label*="Privacy"]');
-      if (banner) banner.remove();
-      document.querySelectorAll('div, section').forEach(el => {
-        if (el.textContent && el.textContent.includes('Privacy Choices & First-Party Measurement') && el.querySelector('button')) {
-          el.remove();
-        }
-      });
-    });
-  };
-
   const viewports = [
     { name: "desktop-1440", width: 1440, height: 1100, isDark: false },
     { name: "tablet-768", width: 768, height: 1024, isDark: false },
@@ -33,10 +20,20 @@ async function captureGroup2() {
 
   for (const vp of viewports) {
     const context = await browser.newContext();
+    await context.addInitScript(() => {
+      try {
+        localStorage.setItem("brainlab_cookie_consent_v1", "all");
+        localStorage.setItem("brainlab-cookie-consent", "all");
+      } catch (e) {}
+    });
+
     const page = await context.newPage();
     await page.setViewportSize({ width: vp.width, height: vp.height });
     await page.goto("http://localhost:3000/design-preview", { waitUntil: "networkidle" });
-    await cleanPage(page);
+
+    await page.evaluate(() => {
+      document.querySelector('aside[aria-label*="Privacy"]')?.remove();
+    });
 
     if (vp.isDark) {
       await page.evaluate(() => {
@@ -55,15 +52,13 @@ async function captureGroup2() {
     // 1. Audiences section
     try {
       const audSection = page.locator('#audiences');
-      if (await audSection.count() > 0) {
-        await audSection.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(250);
-        await page.screenshot({
-          path: path.join(targetDir, `audiences-${vp.name}.png`),
-          fullPage: false,
-        });
-        console.log(`Saved audiences-${vp.name}.png`);
-      }
+      await audSection.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200);
+      await page.screenshot({
+        path: path.join(targetDir, `audiences-${vp.name}.png`),
+        fullPage: false,
+      });
+      console.log(`Saved audiences-${vp.name}.png`);
     } catch (e) {
       console.warn(`Could not capture audiences-${vp.name}: ${e.message}`);
     }
@@ -71,15 +66,13 @@ async function captureGroup2() {
     // 2. Mini-Mock section
     try {
       const mockSection = page.locator('#instant-mini-mock');
-      if (await mockSection.count() > 0) {
-        await mockSection.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(250);
-        await page.screenshot({
-          path: path.join(targetDir, `mini-mock-${vp.name}.png`),
-          fullPage: false,
-        });
-        console.log(`Saved mini-mock-${vp.name}.png`);
-      }
+      await mockSection.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200);
+      await page.screenshot({
+        path: path.join(targetDir, `mini-mock-${vp.name}.png`),
+        fullPage: false,
+      });
+      console.log(`Saved mini-mock-${vp.name}.png`);
     } catch (e) {
       console.warn(`Could not capture mini-mock-${vp.name}: ${e.message}`);
     }
@@ -87,15 +80,13 @@ async function captureGroup2() {
     // 3. Loop section
     try {
       const loopSection = page.locator('#the-loop');
-      if (await loopSection.count() > 0) {
-        await loopSection.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(250);
-        await page.screenshot({
-          path: path.join(targetDir, `loop-${vp.name}.png`),
-          fullPage: false,
-        });
-        console.log(`Saved loop-${vp.name}.png`);
-      }
+      await loopSection.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200);
+      await page.screenshot({
+        path: path.join(targetDir, `loop-${vp.name}.png`),
+        fullPage: false,
+      });
+      console.log(`Saved loop-${vp.name}.png`);
     } catch (e) {
       console.warn(`Could not capture loop-${vp.name}: ${e.message}`);
     }
@@ -105,12 +96,19 @@ async function captureGroup2() {
 
   // Interactive interaction capture on Loop (Click Step 3 Diagnose)
   const context = await browser.newContext();
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("brainlab_cookie_consent_v1", "all");
+    } catch (e) {}
+  });
   const page = await context.newPage();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("http://localhost:3000/design-preview", { waitUntil: "networkidle" });
-  await cleanPage(page);
+  await page.evaluate(() => {
+    document.querySelector('aside[aria-label*="Privacy"]')?.remove();
+  });
 
-  const loopSection = page.locator('#the-loop').first();
+  const loopSection = page.locator('#the-loop');
   await loopSection.scrollIntoViewIfNeeded();
   await page.waitForTimeout(200);
 

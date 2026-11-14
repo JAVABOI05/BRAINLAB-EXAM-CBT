@@ -8,36 +8,11 @@ const STAGE_ROUTE_MAP: Record<
   string,
   { href: string; label: string; icon: string; previewBadge: string }
 > = {
-  learn: {
-    href: "/learn",
-    label: "Explore Curriculum Lessons",
-    icon: "📖",
-    previewBadge: "Interactive Theory & Formulas",
-  },
-  practise: {
-    href: "/cbt",
-    label: "Launch Timed CBT Simulator",
-    icon: "⌨️",
-    previewBadge: "Authentic 8-Key Simulator",
-  },
-  diagnose: {
-    href: "/learning-dna",
-    label: "Inspect Weak Subtopics",
-    icon: "🧬",
-    previewBadge: "AI Cognitive Diagnostic Radar",
-  },
-  improve: {
-    href: "/ai-learning",
-    label: "Launch Socratic AI Drills",
-    icon: "💡",
-    previewBadge: "Step-by-Step AI Derivation",
-  },
-  master: {
-    href: "/arena",
-    label: "Join 1v1 National Arena",
-    icon: "🏆",
-    previewBadge: "Live Synchronous Duels",
-  },
+  learn: { href: "/learn", label: "Explore Curriculum Lessons", icon: "📖", previewBadge: "Interactive Theory & Formulas" },
+  practise: { href: "/cbt", label: "Launch Timed CBT Simulator", icon: "⌨️", previewBadge: "Authentic 8-Key Simulator" },
+  diagnose: { href: "/learning-dna", label: "Inspect Weak Subtopics", icon: "🧬", previewBadge: "AI Cognitive Diagnostic Radar" },
+  improve: { href: "/ai-learning", label: "Launch Socratic AI Drills", icon: "💡", previewBadge: "Step-by-Step AI Derivation" },
+  master: { href: "/challenge-arena", label: "Join 1v1 National Arena", icon: "🏆", previewBadge: "Live Synchronous Duels" },
 };
 
 export function HomeBrainLabLoop() {
