@@ -1,10 +1,34 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getWhatsAppChatUrl } from "@/app/lib/whatsapp";
+import { getSubscriptionPlans, DEFAULT_PLANS, type SubscriptionPlan } from "@/app/lib/platformConfig";
 
 export function HomePricingTeaser() {
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
+
+  useEffect(() => {
+    let isMounted = true;
+    void getSubscriptionPlans()
+      .then((livePlans) => {
+        if (isMounted && Array.isArray(livePlans) && livePlans.length > 0) {
+          setPlans(livePlans.filter((p) => p.is_active));
+        }
+      })
+      .catch(() => {
+        // Fall back to DEFAULT_PLANS
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const plan =
+    plans.find((p) => p.id === "plus" || p.id === "apex_cohort" || p.id === "premium") ||
+    plans[0];
+
   const apexWhatsAppUrl = getWhatsAppChatUrl(
     "Hello BrainLab Academy, I am visiting the website and would like to make enquiries about the Apex Cohort intensive JAMB preparatory class."
   );
@@ -156,7 +180,7 @@ export function HomePricingTeaser() {
                   📚
                 </span>
                 <span className="rounded-full bg-indigo-900/60 border border-indigo-700/60 px-2.5 py-0.5 text-[10px] font-black uppercase text-indigo-300">
-                  20,000+ Questions
+                  Verified Question Pool
                 </span>
               </div>
               <h4 className="text-xl font-black text-white tracking-tight">
@@ -351,7 +375,10 @@ export function HomePricingTeaser() {
               Ready to start your exam preparation?
             </p>
             <p className="text-xs text-slate-400 mt-0.5">
-              Zero payment card required &bull; Free instant practice &bull; Works on phone &amp; laptop
+              Zero payment card required &bull; Free instant practice &bull; Optional intensive cohort from ₦{plan.price_naira.toLocaleString()} &bull;{" "}
+              <Link href="/pricing" className="text-cyan-400 hover:text-cyan-300 font-bold underline">
+                View full plans breakdown &rarr;
+              </Link>
             </p>
           </div>
 

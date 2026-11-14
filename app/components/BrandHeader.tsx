@@ -15,8 +15,49 @@ export interface ExploreCardItem {
   targetId: string;
   badge: string;
   badgeColor: string;
-  icon: string;
   tierNote: string;
+}
+
+export function NavProductIcon({ id }: { id: string }) {
+  switch (id) {
+    case "cbt-practice":
+      return (
+        <svg className="h-4 w-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
+        </svg>
+      );
+    case "learning-hub":
+      return (
+        <svg className="h-4 w-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+          <path d="M6 6h10M6 10h10" />
+        </svg>
+      );
+    case "stem-studio":
+      return (
+        <svg className="h-4 w-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
+          <path d="M8.5 2h7M7 16h10" />
+        </svg>
+      );
+    case "ai-learning":
+      return (
+        <svg className="h-4 w-4 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
+        </svg>
+      );
+    case "challenge-arena":
+      return (
+        <svg className="h-4 w-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 3" />
+        </svg>
+      );
+    default:
+      return null;
+  }
 }
 
 export interface DirectNavLinkItem {
@@ -33,7 +74,6 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     targetId: "products",
     badge: "8-Key Exam Hall",
     badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-cyan-300 border-blue-200 dark:border-blue-800/60",
-    icon: "🎯",
     tierNote: "Free Daily Mocks & Pro Banks",
   },
   {
@@ -43,7 +83,6 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     targetId: "products",
     badge: "WAEC / JAMB",
     badgeColor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60",
-    icon: "📚",
     tierNote: "Core Curriculum Included",
   },
   {
@@ -53,7 +92,6 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     targetId: "stem-studio",
     badge: "Interactive 3D",
     badgeColor: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60",
-    icon: "🔬",
     tierNote: "Visual Science Labs",
   },
   {
@@ -63,7 +101,6 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     targetId: "products",
     badge: "Socratic AI",
     badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800/60",
-    icon: "🤖",
     tierNote: "Guided Diagnostics",
   },
   {
@@ -73,7 +110,6 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     targetId: "products",
     badge: "Live 1v1",
     badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
-    icon: "🏆",
     tierNote: "Free Daily Sprints",
   },
 ];
@@ -390,10 +426,10 @@ export default function BrandHeader() {
             />
           </div>
           <div className="flex flex-col justify-center leading-none">
-            <span className="text-xl font-black tracking-tight text-slate-950 dark:text-white">
+            <span className="text-xl font-black tracking-tight text-white">
               BrainLab
             </span>
-            <span className="text-[10px] font-black tracking-[0.2em] uppercase text-blue-700 dark:text-cyan-400 mt-0.5">
+            <span className="text-[10px] font-black tracking-[0.2em] uppercase text-cyan-300 mt-0.5">
               ACADEMY
             </span>
           </div>
@@ -459,7 +495,7 @@ export default function BrandHeader() {
                         <div className="flex items-center justify-between gap-1.5 mb-1.5">
                           <div className="flex items-center gap-2">
                             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-sm group-hover:scale-105 transition-transform shrink-0 border border-white/10">
-                              {card.icon}
+                              <NavProductIcon id={card.id} />
                             </span>
                             <span className="text-xs font-black text-white group-hover:text-cyan-300 line-clamp-1">
                               {card.title}
@@ -625,14 +661,23 @@ export default function BrandHeader() {
                         onClick={closeAllMenus}
                         className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                       >
-                        <span>📊</span> Student Dashboard
+                        <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="3" y="12" width="4" height="8" rx="1"/>
+                          <rect x="10" y="8" width="4" height="12" rx="1"/>
+                          <rect x="17" y="4" width="4" height="16" rx="1"/>
+                        </svg>
+                        <span>Student Dashboard</span>
                       </Link>
                       <Link
                         href="/profile"
                         onClick={closeAllMenus}
                         className="flex items-center gap-2 rounded-xl px-2.5 py-2 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                       >
-                        <span>👤</span> Profile &amp; Bio
+                        <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span>Profile &amp; Bio</span>
                       </Link>
                       <Link
                         href="/apex"
@@ -640,7 +685,10 @@ export default function BrandHeader() {
                         className="flex items-center justify-between rounded-xl px-2.5 py-2 font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition"
                       >
                         <span className="flex items-center gap-2">
-                          <span>🏛️</span> Apex Cohort
+                          <svg className="h-4 w-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M4 21V10M20 21V10M12 21V10M2 10h20M12 3l10 7H2zM2 21h20"/>
+                          </svg>
+                          <span>Apex Cohort</span>
                         </span>
                         <span className="rounded-md bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.5 text-[9px] font-black uppercase text-indigo-800 dark:text-indigo-200">
                           Cohort
@@ -655,7 +703,9 @@ export default function BrandHeader() {
                         disabled={signingOut}
                         className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 text-xs"
                       >
-                        <span>🚪</span>
+                        <svg className="h-4 w-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                        </svg>
                         <span>{signingOut ? "Signing out…" : "Sign Out"}</span>
                       </button>
                     </div>
@@ -707,7 +757,7 @@ export default function BrandHeader() {
                 >
                   <span className="flex items-center gap-2.5">
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-sm shrink-0">
-                      {card.icon}
+                      <NavProductIcon id={card.id} />
                     </span>
                     <span className="flex flex-col">
                       <span className="font-extrabold text-slate-900 dark:text-white leading-tight">
@@ -775,7 +825,9 @@ export default function BrandHeader() {
                     onClick={closeAllMenus}
                     className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 py-2.5 text-xs font-bold"
                   >
-                    <span>🏛️</span>
+                    <svg className="h-4 w-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 21V10M20 21V10M12 21V10M2 10h20M12 3l10 7H2zM2 21h20"/>
+                    </svg>
                     <span>Apex Cohort</span>
                   </Link>
                 </div>
