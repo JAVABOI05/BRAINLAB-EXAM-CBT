@@ -44,7 +44,11 @@ function extractQuestionSequence(q: EngineQuestion): number {
 export function selectEnglishExaminationPaper(
   allEnglishQuestions: EngineQuestion[],
   blueprint: ExamBlueprint = OFFICIAL_UTME_ENGLISH_BLUEPRINT,
-  highYieldRules: HighYieldRule[] = []
+  highYieldRules: HighYieldRule[] = [],
+  rotation?: {
+    previouslySeenQuestionIds?: number[];
+    masteredQuestionIds?: number[];
+  }
 ): EnglishSelectionResult {
   const warnings: string[] = [];
   const errors: string[] = [];
@@ -193,8 +197,30 @@ export function selectEnglishExaminationPaper(
         };
       }
 
-      // Randomly select ONE complete eligible Cloze passage unit
-      const selectedGroup = shuffle(eligibleClozePassages)[0];
+      // Cloze is rotated as a complete passage unit. Never remove individual
+      // questions from a passage because of answer history: doing so would break
+      // the ten-question passage. Unseen passages always take priority.
+      const previouslySeenIds = new Set(rotation?.previouslySeenQuestionIds || []);
+      const masteredIds = new Set(rotation?.masteredQuestionIds || []);
+      const allSeenIds = new Set([...previouslySeenIds, ...masteredIds]);
+      const unseenPassages = eligibleClozePassages.filter(({ questions }) =>
+        !questions.some((q) => allSeenIds.has(q.id))
+      );
+      const passagesNeedingReview = eligibleClozePassages.filter(({ questions }) =>
+        questions.some((q) => previouslySeenIds.has(q.id))
+      );
+      const previouslyAttemptedPassages = eligibleClozePassages.filter(({ questions }) =>
+        questions.some((q) => allSeenIds.has(q.id))
+      );
+
+      const priorityPassages = unseenPassages.length > 0
+        ? unseenPassages
+        : passagesNeedingReview.length > 0
+          ? passagesNeedingReview
+          : previouslyAttemptedPassages.length > 0
+            ? previouslyAttemptedPassages
+            : eligibleClozePassages;
+      const selectedGroup = shuffle(priorityPassages)[0];
 
       for (const q of selectedGroup.questions) {
         selectedIds.add(q.id);
