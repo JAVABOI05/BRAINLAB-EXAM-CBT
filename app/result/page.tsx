@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { getPublicSettings, isError, lookupResult as fetchLookup } from "../lib/examApi";
 import VerificationQRCode from "../components/VerificationQRCode";
+import { resolveCutoffScore, type UniversityCutoff } from "../lib/universityCutoffs";
+import { trackEvent } from "../lib/analytics";
 
 type Candidate = {
   name: string;
@@ -13,6 +15,7 @@ type Candidate = {
   subject: string;
   subjects?: string[];
   code?: string;
+  dreamSchool?: string;
 };
 
 type SavedResultRow = {
@@ -58,6 +61,7 @@ export default function ResultPage() {
   const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
   const [chiefProctorName, setChiefProctorName] = useState("Chief Examination Proctor");
   const [chiefProctorTitle, setChiefProctorTitle] = useState("BrainLab CBT Directorate");
+  const [dreamCutoff, setDreamCutoff] = useState<UniversityCutoff | null>(null);
 
   useEffect(() => {
     async function loadPage() {
@@ -92,6 +96,36 @@ export default function ResultPage() {
           }
         }
         setCandidate(activeCandidate);
+
+        // --- Cut-off Margin Engine: resolve dream school from localStorage candidate/profile ---
+        try {
+          const profileRaw = localStorage.getItem("brainlab_student_profile");
+          const metaRaw = localStorage.getItem("brainlab_user_metadata");
+          let dreamSchool: string | null = activeCandidate.dreamSchool ?? null;
+          if (!dreamSchool && profileRaw) {
+            const profile = JSON.parse(profileRaw) as { dreamSchool?: string };
+            dreamSchool = profile.dreamSchool ?? null;
+          }
+          if (!dreamSchool && metaRaw) {
+            const meta = JSON.parse(metaRaw) as { dream_school?: string };
+            dreamSchool = meta.dream_school ?? null;
+          }
+          if (dreamSchool) {
+            const cutoff = resolveCutoffScore(dreamSchool);
+            if (cutoff) {
+              setDreamCutoff(cutoff);
+              const computedScore = Math.min(400, Math.max(0, parsedSummary.score ?? 0));
+              trackEvent("result_margin_computed", {
+                institution: cutoff.shortName,
+                targetScore: cutoff.cutoffScore,
+                candidateScore: computedScore,
+                margin: computedScore - cutoff.cutoffScore,
+              });
+            }
+          }
+        } catch {
+          // Profile read failure is non-fatal; margin badge simply hidden
+        }
 
         if (!isResultsReleased || parsedSummary.show_results === false) {
           setHeldForReview(true);
@@ -574,6 +608,60 @@ export default function ResultPage() {
                   ? "Competitive Pass (Above National Cutoff)"
                   : "Revision Pass (Targeted Practice Needed)"}
               </div>
+
+              {/* Dream School Cut-off Margin Badge */}
+              {dreamCutoff && (
+                <div
+                  className={`mt-4 rounded-xl border p-3 text-left transition-all ${
+                    totalScore >= dreamCutoff.cutoffScore
+                      ? "border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200"
+                      : totalScore >= dreamCutoff.cutoffScore - 15
+                      ? "border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200"
+                      : "border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 text-rose-950 dark:text-rose-200"
+                  }`}
+                  data-testid="cutoff-margin-badge"
+                >
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      🎯 {dreamCutoff.shortName} Target
+                    </span>
+                    <span
+                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                        totalScore >= dreamCutoff.cutoffScore
+                          ? "bg-emerald-600 text-white"
+                          : totalScore >= dreamCutoff.cutoffScore - 15
+                          ? "bg-amber-600 text-white"
+                          : "bg-rose-600 text-white"
+                      }`}
+                    >
+                      {totalScore >= dreamCutoff.cutoffScore
+                        ? "Above Target ✅"
+                        : totalScore >= dreamCutoff.cutoffScore - 15
+                        ? "On Target ⚡"
+                        : "Below Target 🎯"}
+                    </span>
+                  </div>
+
+                  <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      Merit: {dreamCutoff.cutoffScore} / 400
+                    </span>
+                    <span className="text-xs font-extrabold">
+                      {totalScore - dreamCutoff.cutoffScore >= 0
+                        ? `+${totalScore - dreamCutoff.cutoffScore} pts margin`
+                        : `${totalScore - dreamCutoff.cutoffScore} pts margin`}
+                    </span>
+                  </div>
+
+                  <p className="mt-1 text-[11px] leading-tight text-slate-600 dark:text-slate-300">
+                    {totalScore >= dreamCutoff.cutoffScore
+                      ? `Clears ${dreamCutoff.shortName}'s competitive merit benchmark for high-demand faculties.`
+                      : totalScore >= dreamCutoff.cutoffScore - 15
+                      ? `Within 15 marks of ${dreamCutoff.shortName}'s merit threshold (${dreamCutoff.cutoffScore}). Target weak topics to bridge the gap.`
+                      : `Requires ${dreamCutoff.cutoffScore - totalScore} more marks to meet ${dreamCutoff.shortName}'s merit standard (${dreamCutoff.cutoffScore}).`}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Diagnostic Metrics (7 cols) */}

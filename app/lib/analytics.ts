@@ -24,7 +24,8 @@ export type AnalyticsEventName =
   | "stem_molecule_viewed"
   | "stem_3d_action_triggered"
   | "stem_copilot_prompt_sent"
-  | "stem_representation_changed";
+  | "stem_representation_changed"
+  | "result_margin_computed";
 
 export type CookieConsentStatus = "undecided" | "essential_only" | "all";
 
