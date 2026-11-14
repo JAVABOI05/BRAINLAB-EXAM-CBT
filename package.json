@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "build": "next build --no-lint",
     "start": "next start",
     "lint": "eslint",
     "verify": "npm run test:architecture && npm run test:separation && npm run test:instructor && npm run test:homepage && npm run test:foundation && npm run test:layer-b && npm run test:demo && npm run test:a3 && npm run test:a4 && npm run test:arena:entry && npm run test:admin:pin && npm run test:tutors && npm run test:inquiries && npm run test:portal && npm run test:resources && npm run test:classroom && npm run test:offline-sync && npm run test:cutoff && npm run test:s7 && npm run test:analytics && npm run test:password && npm run test:community && npm run test:student-profile && npm run test:ai:diagnostics && npm run test:access && npm run test:entitlements && npm run test:certificates && npm run typecheck",
