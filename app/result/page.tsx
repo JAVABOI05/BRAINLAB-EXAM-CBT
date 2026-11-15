@@ -203,7 +203,7 @@ export default function ResultPage() {
   // Handle WhatsApp Share
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🎯 BrainLab UTME Mock Scorecard\nCandidate: ${candidate?.name || "Student"}\nTotal Score: ${totalScore}/${totalPossible} (${percentage}%)\nStrongest Subject: ${bestSubject ? `${bestSubject[0]} (${bestSubject[1]}/100)` : "General"}\nCheck verified scores at https://www.brainlabacademy.com.ng/result`
+      `[BrainLab UTME Mock Scorecard]\nCandidate: ${candidate?.name || "Student"}\nTotal Score: ${totalScore}/${totalPossible} (${percentage}%)\nStrongest Subject: ${bestSubject ? `${bestSubject[0]} (${bestSubject[1]}/100)` : "General"}\nCheck verified scores at https://www.brainlabacademy.com.ng/result`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
@@ -623,7 +623,7 @@ export default function ResultPage() {
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                      🎯 {dreamCutoff.shortName} Target
+                      <span className="inline-flex items-center gap-1"><svg className="h-3 w-3 text-cyan-600 dark:text-cyan-400 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>{dreamCutoff.shortName} Target</span>
                     </span>
                     <span
                       className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
@@ -635,10 +635,10 @@ export default function ResultPage() {
                       }`}
                     >
                       {totalScore >= dreamCutoff.cutoffScore
-                        ? "Above Target ✅"
+                        ? "Above Target"
                         : totalScore >= dreamCutoff.cutoffScore - 15
-                        ? "On Target ⚡"
-                        : "Below Target 🎯"}
+                        ? "On Target"
+                        : "Below Target"}
                     </span>
                   </div>
 

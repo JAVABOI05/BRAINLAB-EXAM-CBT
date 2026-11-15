@@ -192,6 +192,59 @@ export const TARGET_SCORES = [
   "350+ / 400 (BrainLab Legend)",
 ];
 
+export const AVAILABLE_UTME_ELECTIVE_SUBJECTS = [
+  "Mathematics",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Government",
+  "Literature in English",
+  "Economics",
+  "Commerce",
+  "Christian Religious Studies",
+];
+
+export interface SubjectPreset {
+  id: string;
+  label: string;
+  description: string;
+  subjects: [string, string, string, string];
+}
+
+export const FACULTY_SUBJECT_PRESETS: SubjectPreset[] = [
+  {
+    id: "medical",
+    label: "Medical & Health Sciences",
+    description: "Medicine, Nursing, Pharmacy, Dentistry, Anatomy",
+    subjects: ["English", "Biology", "Physics", "Chemistry"],
+  },
+  {
+    id: "engineering",
+    label: "Engineering & Computing",
+    description: "Mechanical, Software, Electrical, Computer Science",
+    subjects: ["English", "Mathematics", "Physics", "Chemistry"],
+  },
+  {
+    id: "law_arts",
+    label: "Law, Arts & Humanities",
+    description: "Law, Mass Comm, International Relations, Linguistics",
+    subjects: ["English", "Literature in English", "Government", "Christian Religious Studies"],
+  },
+  {
+    id: "commercial",
+    label: "Commercial & Management",
+    description: "Accounting, Economics, Business Admin, Banking & Finance",
+    subjects: ["English", "Economics", "Mathematics", "Commerce"],
+  },
+];
+
+export const DEFAULT_CANDIDATE_SUBJECTS: [string, string, string, string] = [
+  "English",
+  "Mathematics",
+  "Physics",
+  "Chemistry",
+];
+
 export interface StudentProfileData {
   displayName: string;
   email: string;
@@ -205,6 +258,7 @@ export interface StudentProfileData {
   bio: string;
   initials: string;
   isCustomized: boolean;
+  selectedSubjects: [string, string, string, string];
 }
 
 /**
@@ -232,6 +286,32 @@ export function extractStudentProfile(user: any): StudentProfileData {
   const studyVibe = meta.study_vibe || "";
   const bio = meta.bio || meta.motto || "";
 
+  // Resolve persistent 4-subject combination across cloud metadata and local fallback
+  let subjects: [string, string, string, string] = [...DEFAULT_CANDIDATE_SUBJECTS];
+  if (Array.isArray(meta.selected_subjects) && meta.selected_subjects.length === 4) {
+    subjects = [
+      "English",
+      meta.selected_subjects[1] || "Mathematics",
+      meta.selected_subjects[2] || "Physics",
+      meta.selected_subjects[3] || "Chemistry",
+    ];
+  } else if (typeof window !== "undefined") {
+    try {
+      const savedCandidate = localStorage.getItem("candidate");
+      if (savedCandidate) {
+        const parsed = JSON.parse(savedCandidate);
+        if (Array.isArray(parsed.subjects) && parsed.subjects.length === 4) {
+          subjects = [
+            "English",
+            parsed.subjects[1] || "Mathematics",
+            parsed.subjects[2] || "Physics",
+            parsed.subjects[3] || "Chemistry",
+          ];
+        }
+      }
+    } catch {}
+  }
+
   const isCustomized = Boolean(
     customAvatarId ||
     avatarUrl ||
@@ -239,7 +319,8 @@ export function extractStudentProfile(user: any): StudentProfileData {
     targetCourse ||
     academicInterests.length > 0 ||
     studyVibe ||
-    bio
+    bio ||
+    (Array.isArray(meta.selected_subjects) && meta.selected_subjects.length === 4)
   );
 
   return {
@@ -255,6 +336,7 @@ export function extractStudentProfile(user: any): StudentProfileData {
     bio,
     initials,
     isCustomized,
+    selectedSubjects: subjects,
   };
 }
 

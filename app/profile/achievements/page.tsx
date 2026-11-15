@@ -19,6 +19,134 @@ import {
   type BadgeDefinition,
 } from "../../lib/gamification";
 
+
+function AchievementIcon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
+  switch (name) {
+    case "trophy":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1h10v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34" /><path d="M6 4h12v7a6 6 0 0 1-12 0V4z" />
+        </svg>
+      );
+    case "medal":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="6" /><path d="m15.477 12.89 2.523 8.11-6-3-6 3 2.523-8.11" />
+        </svg>
+      );
+    case "crown":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+        </svg>
+      );
+    case "target":
+    case "bullseye":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+        </svg>
+      );
+    case "flame":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
+        </svg>
+      );
+    case "zap":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    case "gift":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 12 20 22 4 22 4 12" /><rect width="20" height="5" x="2" y="7" /><line x1="12" y1="22" x2="12" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      );
+    case "lock":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      );
+    case "star":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      );
+    case "book":
+    case "cap":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      );
+    case "rocket":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+        </svg>
+      );
+    case "shield":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    case "video":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="23 7 16 12 23 17 23 7" /><rect width="15" height="14" x="1" y="5" rx="2" ry="2" />
+        </svg>
+      );
+    case "handshake":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4l-2-2" /><path d="m18 10 1.4-1.4a1 1 0 0 0 0-1.4l-3-3a1 1 0 0 0-1.4 0L13.6 5.6" /><path d="m7 21 1.4-1.4a1 1 0 0 0 0-1.4l-2-2" /><rect x="2" y="6" width="9" height="9" rx="1" transform="rotate(45 6.5 10.5)" />
+        </svg>
+      );
+    case "bulb":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 18h6" /><path d="M10 22h4" /><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5" />
+        </svg>
+      );
+    case "swords":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" />
+        </svg>
+      );
+    case "diamond":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 3h12l4 6-10 12L2 9z" /><path d="M11 3 8 9l4 12 4-12-3-6" />
+        </svg>
+      );
+    case "institution":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 21h18" /><path d="M5 21V10" /><path d="M19 21V10" /><path d="M9 21v-7" /><path d="M15 21v-7" /><path d="m2 10 10-6 10 6" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="6" /><path d="m15.477 12.89 2.523 8.11-6-3-6 3 2.523-8.11" />
+        </svg>
+      );
+  }
+}
+
 const ALL_INITIAL_BADGES: BadgeDefinition[] = [
   // Academic
   {
@@ -27,7 +155,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Verified top-performing learner across subject cohorts.",
     category: "academic",
     rarity: "legendary",
-    icon: "🏆",
+    icon: "trophy",
     visual_style: { color: "#f59e0b", glow: true },
     award_type: "temporary_ranking",
     is_active: true,
@@ -39,7 +167,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Highest eligible scorer in an official assessment window.",
     category: "academic",
     rarity: "epic",
-    icon: "🥇",
+    icon: "medal",
     visual_style: { color: "#eab308" },
     award_type: "temporary_ranking",
     display_order: 2,
@@ -51,7 +179,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Winner of an official BrainLab CBT competition event.",
     category: "academic",
     rarity: "legendary",
-    icon: "👑",
+    icon: "crown",
     visual_style: { color: "#ec4899", sparkle: true },
     award_type: "permanent",
     display_order: 3,
@@ -63,7 +191,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Scored 100% on a verified examination or practice test.",
     category: "academic",
     rarity: "epic",
-    icon: "💯",
+    icon: "bullseye",
     visual_style: { color: "#10b981" },
     award_type: "permanent",
     display_order: 4,
@@ -75,7 +203,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Completed full topic syllabus and achieved mastery threshold.",
     category: "academic",
     rarity: "rare",
-    icon: "🎓",
+    icon: "cap",
     visual_style: { color: "#6366f1" },
     award_type: "permanent",
     display_order: 5,
@@ -87,7 +215,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Completed multi-topic lesson series and revision checklists.",
     category: "academic",
     rarity: "common",
-    icon: "📚",
+    icon: "book",
     visual_style: { color: "#3b82f6" },
     award_type: "permanent",
     display_order: 6,
@@ -99,7 +227,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Consistently met high performance criteria on coursework.",
     category: "academic",
     rarity: "rare",
-    icon: "⭐",
+    icon: "star",
     visual_style: { color: "#8b5cf6" },
     award_type: "permanent",
     display_order: 7,
@@ -113,7 +241,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Submitted assessments well before closing deadlines.",
     category: "consistency",
     rarity: "common",
-    icon: "🌅",
+    icon: "zap",
     visual_style: { color: "#f97316" },
     award_type: "permanent",
     display_order: 8,
@@ -125,7 +253,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Maintained continuous weekly study without missed days.",
     category: "consistency",
     rarity: "rare",
-    icon: "⚡",
+    icon: "zap",
     visual_style: { color: "#06b6d4" },
     award_type: "permanent",
     display_order: 9,
@@ -137,7 +265,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Maintained an active 7-day or higher continuous learning streak.",
     category: "consistency",
     rarity: "epic",
-    icon: "🔥",
+    icon: "flame",
     visual_style: { color: "#ef4444", flame: true },
     award_type: "permanent",
     display_order: 10,
@@ -149,7 +277,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Demonstrated verified score improvements over successive tests.",
     category: "consistency",
     rarity: "rare",
-    icon: "🚀",
+    icon: "rocket",
     visual_style: { color: "#0ea5e9" },
     award_type: "permanent",
     display_order: 11,
@@ -161,7 +289,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Recovered from lower assessment marks to achieve excellence.",
     category: "consistency",
     rarity: "rare",
-    icon: "🛡️",
+    icon: "shield",
     visual_style: { color: "#14b8a6" },
     award_type: "permanent",
     display_order: 12,
@@ -173,7 +301,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Completed 100 or more qualifying CBT practice sessions.",
     category: "consistency",
     rarity: "epic",
-    icon: "🎯",
+    icon: "target",
     visual_style: { color: "#d946ef" },
     award_type: "permanent",
     display_order: 13,
@@ -185,7 +313,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Attended and participated in interactive academic streams.",
     category: "consistency",
     rarity: "common",
-    icon: "🎥",
+    icon: "video",
     visual_style: { color: "#64748b" },
     award_type: "permanent",
     display_order: 14,
@@ -199,7 +327,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Provided helpful peer support and verified study assistance.",
     category: "community",
     rarity: "rare",
-    icon: "🤝",
+    icon: "handshake",
     visual_style: { color: "#22c55e" },
     award_type: "permanent",
     display_order: 15,
@@ -211,7 +339,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Appointed peer study guide assisting younger learners.",
     category: "community",
     rarity: "epic",
-    icon: "💡",
+    icon: "bulb",
     visual_style: { color: "#a855f7" },
     award_type: "permanent",
     display_order: 16,
@@ -223,7 +351,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Recognized student ambassador representing excellence.",
     category: "community",
     rarity: "rare",
-    icon: "🌟",
+    icon: "star",
     visual_style: { color: "#eab308" },
     award_type: "permanent",
     display_order: 17,
@@ -235,7 +363,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Founding cohort member of BrainLab Academy.",
     category: "community",
     rarity: "legendary",
-    icon: "🎖️",
+    icon: "medal",
     visual_style: { color: "#f43f5e" },
     award_type: "permanent",
     display_order: 18,
@@ -247,7 +375,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Triumphed in an official BrainLab Challenge Arena tournament.",
     category: "community",
     rarity: "epic",
-    icon: "⚔️",
+    icon: "swords",
     visual_style: { color: "#f59e0b" },
     award_type: "permanent",
     display_order: 19,
@@ -261,7 +389,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Active premium subscription tier holder.",
     category: "membership",
     rarity: "rare",
-    icon: "💎",
+    icon: "diamond",
     visual_style: { color: "#38bdf8", border: true },
     award_type: "entitlement",
     display_order: 20,
@@ -273,7 +401,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Verified scholarship or institutional sponsored access.",
     category: "membership",
     rarity: "rare",
-    icon: "🏛️",
+    icon: "institution",
     visual_style: { color: "#4ade80" },
     award_type: "entitlement",
     display_order: 21,
@@ -285,7 +413,7 @@ const ALL_INITIAL_BADGES: BadgeDefinition[] = [
     description: "Verified student status through school or institution credential.",
     category: "membership",
     rarity: "common",
-    icon: "✓",
+    icon: "check",
     visual_style: { color: "#3b82f6" },
     award_type: "entitlement",
     display_order: 22,
@@ -430,7 +558,7 @@ export default function AchievementsPage() {
                   href="/leaderboard"
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-sm transition hover:bg-slate-100"
                 >
-                  🏆 Global Leaderboard →
+                  <AchievementIcon name="trophy" className="h-4 w-4 inline mr-1 text-amber-300" />Global Leaderboard →
                 </Link>
               </div>
             </div>
@@ -482,7 +610,7 @@ export default function AchievementsPage() {
               {/* Streaks & Stats */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                  <span className="text-3xl">🔥</span>
+                  <AchievementIcon name="flame" className="h-8 w-8 text-rose-400 mx-auto" />
                   <p className="mt-2 text-2xl font-black text-rose-300">
                     {profile?.current_streak_days ?? 0}{" "}
                     <span className="text-xs font-medium text-slate-300">Days</span>
@@ -491,7 +619,7 @@ export default function AchievementsPage() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                  <span className="text-3xl">⚡</span>
+                  <AchievementIcon name="zap" className="h-8 w-8 text-amber-400 mx-auto" />
                   <p className="mt-2 text-2xl font-black text-amber-300">
                     {profile?.longest_streak_days ?? 0}{" "}
                     <span className="text-xs font-medium text-slate-300">Days</span>
@@ -500,7 +628,7 @@ export default function AchievementsPage() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                  <span className="text-3xl">💯</span>
+                  <AchievementIcon name="bullseye" className="h-8 w-8 text-emerald-400 mx-auto" />
                   <p className="mt-2 text-2xl font-black text-emerald-300">
                     {profile?.perfect_scores_count ?? 0}
                   </p>
@@ -508,7 +636,7 @@ export default function AchievementsPage() {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                  <span className="text-3xl">🎖️</span>
+                  <AchievementIcon name="medal" className="h-8 w-8 text-purple-400 mx-auto" />
                   <p className="mt-2 text-2xl font-black text-purple-300">
                     {earnedBadges.length} / {ALL_INITIAL_BADGES.length}
                   </p>
@@ -528,7 +656,7 @@ export default function AchievementsPage() {
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
-              🏅 Badges &amp; Achievements ({earnedBadges.length})
+              <AchievementIcon name="medal" className="h-4 w-4 inline mr-1.5 text-blue-800" />Badges &amp; Achievements ({earnedBadges.length})
             </button>
             <button
               onClick={() => setActiveTab("rewards")}
@@ -538,7 +666,7 @@ export default function AchievementsPage() {
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
-              🎁 Rewards Catalog &amp; Claims ({claims.length} claimed)
+              <AchievementIcon name="gift" className="h-4 w-4 inline mr-1.5 text-blue-800" />Rewards Catalog &amp; Claims ({claims.length} claimed)
             </button>
           </div>
 
@@ -592,7 +720,7 @@ export default function AchievementsPage() {
                                 : "bg-slate-100 grayscale border-slate-200"
                             }`}
                           >
-                            {badge.icon}
+                            <AchievementIcon name={badge.icon} className="h-6 w-6 text-blue-700" />
                           </span>
                           <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                             {badge.rarity}
@@ -610,7 +738,7 @@ export default function AchievementsPage() {
                       <div className="mt-4 border-t border-slate-200/60 pt-3">
                         {isEarned ? (
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className="font-extrabold text-emerald-700">✓ Unlocked</span>
+                            <span className="font-extrabold text-emerald-700 inline-flex items-center gap-1"><AchievementIcon name="check" className="h-3 w-3" />Unlocked</span>
                             <button
                               type="button"
                               onClick={() => handleToggleFeatured(badge.id, award.is_featured)}
@@ -621,12 +749,12 @@ export default function AchievementsPage() {
                               }`}
                               title="Toggle featured badge beside your name"
                             >
-                              {award.is_featured ? "⭐ Featured" : "Set Featured"}
+                              {award.is_featured ? "Featured" : "Set Featured"}
                             </button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
-                            <span>🔒 Locked</span>
+                            <span className="inline-flex items-center gap-1"><AchievementIcon name="lock" className="h-3 w-3" />Locked</span>
                           </div>
                         )}
                       </div>

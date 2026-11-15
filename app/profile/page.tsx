@@ -24,6 +24,85 @@ import {
 } from "../lib/studentProfile";
 import { StudentAvatar } from "../components/ui/StudentAvatar";
 
+function ProfileIcon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
+  switch (name) {
+    case "flame":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
+        </svg>
+      );
+    case "target":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+        </svg>
+      );
+    case "school":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      );
+    case "star":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      );
+    case "sparkle":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+        </svg>
+      );
+    case "medal":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="6" /><path d="m15.477 12.89 2.523 8.11-6-3-6 3 2.523-8.11" />
+        </svg>
+      );
+    case "dna":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m8 8 8 8" /><path d="m9 16 6-6" /><path d="M2 12c1 0 2-1 2-2s1-2 2-2 2 1 2 2 1 2 2 2" /><path d="M14 12c1 0 2-1 2-2s1-2 2-2 2 1 2 2 1 2 2 2" />
+        </svg>
+      );
+    case "persona":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="5" /><path d="M20 21a8 8 0 1 0-16 0" />
+        </svg>
+      );
+    case "gear":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      );
+    case "image":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+        </svg>
+      );
+    case "mail":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        </svg>
+      );
+    case "shield":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 export default function LearnerProfilePage() {
   const router = useRouter();
   const { resolvedTheme } = useLearnerTheme();
@@ -167,7 +246,7 @@ export default function LearnerProfilePage() {
         }
       } catch {}
 
-      setMessage("✨ Profile updated successfully! Your new avatar and academic goals are active across BrainLab.");
+      setMessage("Profile updated successfully! Your new avatar and academic goals are active across BrainLab.");
     } catch {
       setError("We could not save your profile changes. Please check your connection and try again.");
     } finally {
@@ -242,7 +321,7 @@ export default function LearnerProfilePage() {
               disabled={saving}
               className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 px-5 py-2 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-blue-900/30 transition active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              {saving ? "Saving…" : "Save Changes ✨"}
+              {saving ? "Saving…" : "Save Changes"}
             </button>
           </div>
         </div>
@@ -289,12 +368,12 @@ export default function LearnerProfilePage() {
                     </span>
                     {gamification && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-400/20 px-3 py-0.5 text-[10px] font-extrabold text-amber-200">
-                        ⭐ Level {gamification.current_level} · {gamification.level_name}
+                        <ProfileIcon name="star" className="h-3 w-3 text-amber-300" /> Level {gamification.current_level} · {gamification.level_name}
                       </span>
                     )}
                     {gamification && gamification.current_streak_days > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/30 bg-rose-500/20 px-3 py-0.5 text-[10px] font-extrabold text-rose-200">
-                        🔥 {gamification.current_streak_days} Day Streak
+                        <ProfileIcon name="flame" className="h-3 w-3 text-rose-400" /> {gamification.current_streak_days} Day Streak
                       </span>
                     )}
                   </div>
@@ -314,22 +393,22 @@ export default function LearnerProfilePage() {
                   <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
                     {targetCourse && (
                       <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/20 border border-blue-400/30 px-3 py-1 font-bold text-cyan-200">
-                        <span>🎯</span> Course: {targetCourse}
+                        <ProfileIcon name="target" className="h-3.5 w-3.5 text-cyan-300" /> Course: {targetCourse}
                       </span>
                     )}
                     {dreamSchool && (
                       <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500/20 border border-indigo-400/30 px-3 py-1 font-bold text-indigo-200">
-                        <span>🏛️</span> {dreamSchool}
+                        <ProfileIcon name="school" className="h-3.5 w-3.5 text-indigo-300" /> {dreamSchool}
                       </span>
                     )}
                     {targetScore && (
                       <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/20 border border-amber-400/30 px-3 py-1 font-bold text-amber-200">
-                        <span>⭐</span> Goal: {targetScore}
+                        <ProfileIcon name="star" className="h-3.5 w-3.5 text-amber-300" /> Goal: {targetScore}
                       </span>
                     )}
                     {studyVibe && (
                       <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/20 border border-purple-400/30 px-3 py-1 font-bold text-purple-200">
-                        <span>✨</span> {studyVibe}
+                        <ProfileIcon name="sparkle" className="h-3.5 w-3.5 text-purple-300" /> {studyVibe}
                       </span>
                     )}
                   </div>
@@ -346,15 +425,15 @@ export default function LearnerProfilePage() {
               <div className="flex flex-wrap items-center gap-3 lg:flex-col lg:items-end">
                 <Link
                   href="/skills-passport"
-                  className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-md transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-md transition"
                 >
-                  🏅 Badges &amp; Passport →
+                  <ProfileIcon name="medal" className="h-3.5 w-3.5 text-amber-100" /> Badges &amp; Passport →
                 </Link>
                 <Link
                   href="/learning-dna"
-                  className="rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-2 text-xs font-bold text-white transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-2 text-xs font-bold text-white transition"
                 >
-                  🧬 Learning DNA
+                  <ProfileIcon name="dna" className="h-3.5 w-3.5 text-cyan-300" /> Learning DNA
                 </Link>
               </div>
             </div>
@@ -372,7 +451,7 @@ export default function LearnerProfilePage() {
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
-            <span>🎭</span>
+            <ProfileIcon name="persona" className="h-4 w-4" />
             <span>Avatar &amp; Persona</span>
           </button>
           <button
@@ -384,7 +463,7 @@ export default function LearnerProfilePage() {
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
-            <span>🎯</span>
+            <ProfileIcon name="target" className="h-4 w-4" />
             <span>Dream School &amp; Course</span>
           </button>
           <button
@@ -396,7 +475,7 @@ export default function LearnerProfilePage() {
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
-            <span>✨</span>
+            <ProfileIcon name="sparkle" className="h-4 w-4" />
             <span>Academic Passions &amp; Vibe</span>
           </button>
           <button
@@ -408,7 +487,7 @@ export default function LearnerProfilePage() {
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
-            <span>⚙️</span>
+            <ProfileIcon name="gear" className="h-4 w-4" />
             <span>Display Name &amp; Bio</span>
           </button>
         </div>
@@ -418,7 +497,7 @@ export default function LearnerProfilePage() {
           <section className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-[#0c1629] space-y-6 animate-in fade-in">
             <div>
               <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>🎭</span> Choose Your Academic Scholar Avatar
+                <ProfileIcon name="persona" className="h-5 w-5 text-blue-600 dark:text-cyan-400" /><span>Choose Your Academic Scholar Avatar</span>
               </h3>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Select a persona that represents your field, mindset, or ambition. It appears across tests, leaderboards, and the student portal.
@@ -455,7 +534,7 @@ export default function LearnerProfilePage() {
                     </span>
                     {isSelected && (
                       <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white text-[9px] font-bold">
-                        ✓
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
                       </span>
                     )}
                   </button>
@@ -466,7 +545,7 @@ export default function LearnerProfilePage() {
             {/* Custom Photo URL Option */}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
               <label htmlFor="avatar-photo-url" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                🖼️ Or Use a Custom Profile Picture URL
+                <ProfileIcon name="image" className="h-4 w-4 text-blue-600 dark:text-cyan-400 inline mr-1.5" />Or Use a Custom Profile Picture URL
               </label>
               <div className="flex gap-2">
                 <input
@@ -506,7 +585,7 @@ export default function LearnerProfilePage() {
             {/* Dream Course */}
             <div>
               <label htmlFor="target-course-input" className="block text-sm font-bold text-slate-900 dark:text-white">
-                🎓 Aspiring Course of Study / Career Focus
+                <ProfileIcon name="school" className="h-4 w-4 text-blue-600 dark:text-cyan-400 inline mr-1.5" />Aspiring Course of Study / Career Focus
               </label>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 What programme are you preparing for?
@@ -541,7 +620,7 @@ export default function LearnerProfilePage() {
             {/* Dream Institution */}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
               <label htmlFor="dream-school-input" className="block text-sm font-bold text-slate-900 dark:text-white">
-                🏛️ Dream Institution / Target University
+                <ProfileIcon name="school" className="h-4 w-4 text-indigo-600 dark:text-indigo-400 inline mr-1.5" />Dream Institution / Target University
               </label>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 Which higher institution do you aim to gain admission to?
@@ -576,7 +655,7 @@ export default function LearnerProfilePage() {
             {/* Target Score */}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
               <label htmlFor="target-score-select" className="block text-sm font-bold text-slate-900 dark:text-white">
-                ⭐ Target JAMB UTME Score Goal
+                <ProfileIcon name="star" className="h-4 w-4 text-amber-500 inline mr-1.5" />Target JAMB UTME Score Goal
               </label>
               <select
                 id="target-score-select"
@@ -600,7 +679,7 @@ export default function LearnerProfilePage() {
           <section className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm dark:border-slate-800 dark:bg-[#0c1629] space-y-6 animate-in fade-in">
             <div>
               <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>✨</span> Academic Passions &amp; Specializations
+                <ProfileIcon name="sparkle" className="h-5 w-5 text-cyan-500" /><span>Academic Passions &amp; Specializations</span>
               </h3>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Select up to 6 topics you find most exciting. This customises your recommendations and community study group matches.
@@ -623,7 +702,7 @@ export default function LearnerProfilePage() {
                   >
                     <span className="text-lg leading-none">{item.emoji}</span>
                     <span className="truncate">{item.label}</span>
-                    {isSelected && <span className="ml-auto text-cyan-600 dark:text-cyan-400 font-bold">✓</span>}
+                    {isSelected && <span className="ml-auto text-cyan-600 dark:text-cyan-400 font-bold"><svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span>}
                   </button>
                 );
               })}
@@ -632,7 +711,7 @@ export default function LearnerProfilePage() {
             {/* Study Vibe Selection */}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
               <label className="block text-sm font-bold text-slate-900 dark:text-white">
-                🧬 Your Learning Superpower &amp; Study Vibe
+                <ProfileIcon name="dna" className="h-4 w-4 text-purple-500 inline mr-1.5" />Your Learning Superpower &amp; Study Vibe
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {STUDY_VIBES.map((vibe) => {
@@ -707,7 +786,7 @@ export default function LearnerProfilePage() {
                   Authenticated Sign-in Email
                 </label>
                 <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                  <span>✉️</span>
+                  <ProfileIcon name="mail" className="h-4 w-4 text-slate-500" />
                   <span>{user?.email}</span>
                 </div>
               </div>
@@ -726,7 +805,7 @@ export default function LearnerProfilePage() {
         {/* Bottom Action Row */}
         <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-5">
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span>🛡️</span>
+            <ProfileIcon name="shield" className="h-4 w-4 text-emerald-600 shrink-0" />
             <span>Your academic ambitions and preferences are saved securely to your BrainLab profile.</span>
           </div>
           <div className="flex items-center gap-3">
@@ -742,7 +821,7 @@ export default function LearnerProfilePage() {
               disabled={saving}
               className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-5 py-2 text-xs font-black uppercase text-white shadow-md transition cursor-pointer"
             >
-              {saving ? "Saving…" : "Save All Changes ✨"}
+              {saving ? "Saving…" : "Save All Changes"}
             </button>
           </div>
         </div>

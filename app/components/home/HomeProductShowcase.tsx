@@ -58,7 +58,7 @@ const SHOWCASE_QUESTIONS: ShowcaseQuestion[] = [
       { key: "D", label: "0.80 V" },
     ],
     correct: "A",
-    derivation: "Current I = E / (R + r) = 2.0 / 5 = 0.4 A. Terminal p.d. V = I × R = 0.4 × 4 = 1.6 V.",
+    derivation: "Current I = E / (R + r) = 2.0V / 5.0Ω = 0.4 A. Terminal p.d. V = I × R = 0.4 × 4 = 1.6 V.",
     examinerTrap: "Trap: Confusing terminal potential difference (1.6V) with internal lost volts (0.4V).",
   },
 ];
@@ -96,32 +96,32 @@ export function HomeProductShowcase() {
     <section
       id="products"
       aria-label="BrainLab Learning Ecosystem Products and Interactive Showcase"
-      className="scroll-mt-20 py-24 sm:py-32 bg-[#FAFBFD] text-slate-900 relative overflow-hidden border-b border-slate-200/80"
+      className="scroll-mt-20 py-24 sm:py-32 bg-[#020B1A] text-white relative overflow-hidden border-y border-blue-950/60"
     >
-      {/* Generous Positive/Negative Ambient Lighting Texture */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:28px_28px] opacity-40" aria-hidden="true" />
-      <div className="pointer-events-none absolute -top-40 right-1/4 h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[120px]" aria-hidden="true" />
-      <div className="pointer-events-none absolute bottom-10 left-10 h-[400px] w-[400px] rounded-full bg-emerald-500/5 blur-[120px]" aria-hidden="true" />
+      {/* Universal Ambient Atmosphere (Harmonious Dual-Tone Blue & White Lighting Mesh) */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(19,86,232,0.25),transparent_70%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.12),transparent_50%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_50%)]" aria-hidden="true" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-20 sm:space-y-28">
-        {/* Section Header with Generous Negative Space */}
+        {/* Universal Header with Generous Negative Space & High Contrast */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div
             data-slot="SLOTS S4-01 TO S4-04 • THE BRAINLAB ECOSYSTEM"
-            className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-blue-700 shadow-2xs"
+            className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-cyan-300 shadow-sm"
           >
-            <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+            <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
             <span>CORE LEARNING TOOLS &bull; THE BRAINLAB ECOSYSTEM</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-950 leading-[1.12]">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.12]">
             Everything You Need to Master <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-emerald-600">
-              Your Core Examination &amp; STEM Subjects.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400">
+              JAMB, WAEC &amp; STEM Subjects.
             </span>
           </h2>
 
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
+          <p className="text-base sm:text-lg text-blue-100/80 leading-relaxed max-w-2xl mx-auto font-normal">
             Bite-sized, purposeful tools designed to replace passive textbook cramming with active recall, tactile problem-solving, and diagnostic clarity.
           </p>
         </div>
@@ -129,29 +129,28 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 1: 24/7 AI STUDY STUDIO
             Story: Concept Breakdown & Socratic Step-by-Step Factoring
-            Text Left on Deep Blue, Card Right on Luminous Light Space
+            Left: Deep Blue with Pure White Explanation Text
+            Fade: Smooth horizontal gradient transition into light space
+            Right: Luminous Light Space hosting the 3D Socratic Card
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 shadow-[0_20px_50px_-20px_rgba(0,17,43,0.08)] hover:shadow-[0_30px_70px_-20px_rgba(0,17,43,0.13)] transition-all duration-500 overflow-hidden bg-white">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
-            {/* Left: Deep Royal Blue Chamber with Pure White Explanation Text */}
-            <div className="lg:col-span-6 bg-gradient-to-br from-[#00112B] via-[#051C44] to-[#0A2554] p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative overflow-hidden">
-              {/* Subtle ambient diagonal mesh overlay */}
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(6,182,212,0.15),transparent_60%)]" aria-hidden="true" />
-
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-300 self-start relative z-10">
+            {/* Left: Deep Royal Blue Space with Pure White Explanation Text */}
+            <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-300 self-start">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>01 &bull; 24/7 AI STUDY STUDIO</span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight relative z-10">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
                 Always by your side when you get stuck.
               </h3>
 
-              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal relative z-10">
+              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal">
                 Ask questions in natural conversational language. Instead of simply spoon-feeding final answers, the AI Tutor guides you step-by-step through the underlying theorem and mathematical proofs.
               </p>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left relative z-10">
+              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">✓</span>
                   <span>Socratic question-and-answer hints that build genuine comprehension</span>
@@ -166,7 +165,7 @@ export function HomeProductShowcase() {
                 </li>
               </ul>
 
-              <div className="pt-2 relative z-10">
+              <div className="pt-2">
                 <Link
                   href="/products/ai-learning"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20 transition-all group"
@@ -177,18 +176,24 @@ export function HomeProductShowcase() {
               </div>
             </div>
 
-            {/* Right: Crisp Luminous Light Space with 3D Socratic Card */}
-            <div className="lg:col-span-6 bg-[#F8FAFC] p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container">
-              {/* Subtle ambient light pool */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(19,86,232,0.06),transparent_70%)] pointer-events-none" aria-hidden="true" />
+            {/* Right: Luminous Light Space hosting 3D Socratic Card */}
+            <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container">
+              {/* Subtle Ambient Radial Light Aura */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(19,86,232,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
 
-              {/* 3D Elevated Card */}
-              <div className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.16),0_10px_20px_-5px_rgba(0,17,43,0.06)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group">
+              {/* 3D Floating Ground Shadow */}
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
+
+              {/* 3D Elevated Socratic Card */}
+              <div
+                className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.22),0_10px_20px_-5px_rgba(0,17,43,0.10)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group"
+                style={{ transformStyle: "preserve-3d" }}
+              >
                 {/* 3D Specular Sheen Effect */}
-                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-blue-500/5 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
+                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-blue-500/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
 
-                {/* Card Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10">
+                {/* Card Header (Parallax Z=18) */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-600 shadow-2xs">
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -210,8 +215,8 @@ export function HomeProductShowcase() {
                   </span>
                 </div>
 
-                {/* Dialogue Area */}
-                <div className="space-y-3.5 my-3 text-xs leading-relaxed relative z-10">
+                {/* Dialogue Area (Parallax Z=24) */}
+                <div className="space-y-3.5 my-3 text-xs leading-relaxed relative z-10" style={{ transform: "translateZ(24px)" }}>
                   {/* User Message */}
                   <div className="flex justify-end">
                     <div className="rounded-2xl rounded-tr-xs bg-blue-600 text-white px-4 py-2.5 max-w-[85%] shadow-md font-medium text-xs">
@@ -229,7 +234,7 @@ export function HomeProductShowcase() {
                         Multiply the first and last coefficients: <strong>2 &times; 3 = 6</strong>. What two numbers multiply to <strong>6</strong> and add up to <strong>5</strong>?
                       </p>
 
-                      {/* 3D Tactile Factor Buttons */}
+                      {/* 3D Tactile Factor Buttons with Physical Bevel */}
                       <div className="flex flex-wrap gap-2 pt-1">
                         {[
                           { key: "a", label: "2 and 3", correct: true },
@@ -243,12 +248,12 @@ export function HomeProductShowcase() {
                               setAiSelectedFactor(item.label);
                               setAiTutorStep(item.correct ? 2 : 1);
                             }}
-                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold font-mono transition-all cursor-pointer border shadow-[0_2px_0_rgba(15,23,42,0.12)] active:shadow-none active:translate-y-0.5 ${
+                            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold font-mono transition-all cursor-pointer border shadow-[0_3px_0_rgba(15,23,42,0.18)] active:shadow-none active:translate-y-1 ${
                               aiSelectedFactor === item.label
                                 ? item.correct
-                                  ? "bg-emerald-600 text-white border-emerald-700 shadow-[0_2px_0_#065f46]"
-                                  : "bg-rose-600 text-white border-rose-700 shadow-[0_2px_0_#9f1239]"
-                                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                                  ? "bg-emerald-600 text-white border-emerald-700 shadow-[0_3px_0_#065f46]"
+                                  : "bg-rose-600 text-white border-rose-700 shadow-[0_3px_0_#9f1239]"
+                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
                             }`}
                           >
                             {item.label}
@@ -271,7 +276,7 @@ export function HomeProductShowcase() {
                 </div>
 
                 {/* Bottom Status */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <span>Free fair-use tier included</span>
                   <span className="text-emerald-600 font-bold flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -286,27 +291,33 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 2: CBT PRACTICE ENGINE
             Story: Authentic 8-Key Hardware Emulation & Test-Hall Readiness
-            Card Left on Luminous Light Space, Text Right on Deep Blue
+            Left: Luminous Light Space hosting 3D CBT Simulator Cockpit
+            Fade: Smooth horizontal gradient transition into deep blue
+            Right: Deep Blue with Pure White Explanation Text
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 shadow-[0_20px_50px_-20px_rgba(0,17,43,0.08)] hover:shadow-[0_30px_70px_-20px_rgba(0,17,43,0.13)] transition-all duration-500 overflow-hidden bg-white">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
-            {/* Left: Crisp Luminous Light Space with 3D CBT Cockpit */}
-            <div className="lg:col-span-6 bg-[#F8FAFC] p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">
-              {/* Subtle ambient light pool */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.06),transparent_70%)] pointer-events-none" aria-hidden="true" />
+            {/* Left: Luminous Light Space hosting 3D CBT Cockpit */}
+            <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">
+              {/* Subtle Ambient Radial Light Aura */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
+
+              {/* 3D Floating Ground Shadow */}
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
 
               {/* 3D Elevated CBT Simulator Card */}
               <div
-                className="w-full max-w-md rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900 via-[#0a1329] to-[#060c18] text-white p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.22),0_10px_25px_-5px_rgba(0,17,43,0.10)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group"
+                className="w-full max-w-md rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-900 via-[#0a1329] to-[#060c18] text-white p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.30),0_10px_25px_-5px_rgba(0,17,43,0.15)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group"
                 data-testid="cbt-simulator"
+                style={{ transformStyle: "preserve-3d" }}
               >
                 {/* Cockpit Top Glass Specular Bezel */}
-                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" aria-hidden="true" />
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent" aria-hidden="true" />
 
-                {/* Cockpit Top Bar */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                {/* Cockpit Top Bar (Parallax Z=18) */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <div className="flex items-center gap-2">
-                    <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse" />
                     <span className="text-xs font-mono font-black uppercase tracking-wider text-cyan-300">
                       {currentQ.subject} Cockpit
                     </span>
@@ -317,24 +328,24 @@ export function HomeProductShowcase() {
                         FLAGGED [R]
                       </span>
                     )}
-                    <span className="font-mono text-amber-400 font-bold text-xs px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                    <span className="font-mono text-amber-400 font-bold text-xs px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 shadow-inner">
                       01:42:15
                     </span>
                   </div>
                 </div>
 
-                {/* Question Body */}
-                <div className="space-y-2.5 my-2.5 text-left">
+                {/* Question Body (Parallax Z=24) */}
+                <div className="space-y-2.5 my-2.5 text-left relative z-10" style={{ transform: "translateZ(24px)" }}>
                   <div className="flex items-center justify-between text-[11px] text-slate-400">
                     <span>Topic: {currentQ.topic}</span>
-                    <span className="font-mono text-cyan-400">Q{currentQ.id} of 40</span>
+                    <span className="font-mono text-cyan-400 font-bold">Q{currentQ.id} of 40</span>
                   </div>
 
                   <p className="text-xs sm:text-sm font-semibold text-white leading-relaxed">
                     {currentQ.question}
                   </p>
 
-                  {/* Options */}
+                  {/* 3D Option Keycaps */}
                   <div className="space-y-1.5">
                     {currentQ.options.map((opt) => {
                       const isSelected = userChoice === opt.key;
@@ -345,16 +356,16 @@ export function HomeProductShowcase() {
                           key={opt.key}
                           type="button"
                           onClick={() => handleSelectCbtAnswer(opt.key)}
-                          className={`w-full flex items-center gap-2.5 rounded-xl border p-2 text-left text-xs transition-all cursor-pointer min-h-[44px] ${
+                          className={`w-full flex items-center gap-2.5 rounded-xl border p-2 text-left text-xs transition-all cursor-pointer min-h-[44px] shadow-[0_2px_0_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 ${
                             isSelected
                               ? isCorrect
-                                ? "border-emerald-500 bg-emerald-950/60 text-emerald-100 font-bold shadow-2xs"
-                                : "border-rose-500 bg-rose-950/60 text-rose-100 font-bold shadow-2xs"
-                              : "border-white/10 bg-slate-900/60 text-slate-200 hover:bg-slate-900 hover:border-white/20"
+                                ? "border-emerald-500 bg-emerald-950/70 text-emerald-100 font-bold shadow-emerald-500/20"
+                                : "border-rose-500 bg-rose-950/70 text-rose-100 font-bold shadow-rose-500/20"
+                              : "border-white/10 bg-slate-900/80 text-slate-200 hover:bg-slate-800 hover:border-cyan-400/40"
                           }`}
                         >
                           <span
-                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-xs font-black ${
+                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-xs font-black shadow-xs ${
                               isSelected
                                 ? isCorrect
                                   ? "bg-emerald-500 text-slate-950"
@@ -379,15 +390,15 @@ export function HomeProductShowcase() {
 
                   {/* Examiner Trap & Derivation */}
                   {userChoice && (
-                    <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-2.5 text-[11px] text-cyan-200 space-y-1 animate-bl-fade-in">
+                    <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/50 p-2.5 text-[11px] text-cyan-200 space-y-1 animate-bl-fade-in shadow-inner">
                       <p className="leading-snug text-[10px] sm:text-[11px]">{currentQ.derivation}</p>
                       <p className="text-[10px] text-amber-300 font-mono italic">{currentQ.examinerTrap}</p>
                     </div>
                   )}
                 </div>
 
-                {/* 8-Key Controls Strip */}
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                {/* 8-Key Controls Strip (Parallax Z=20) */}
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between relative z-10" style={{ transform: "translateZ(20px)" }}>
                   <div className="flex items-center gap-1.5">
                     {[
                       { key: "P", label: "Prev" },
@@ -409,7 +420,7 @@ export function HomeProductShowcase() {
                             setActiveQIndex((prev) => (prev + 1) % SHOWCASE_QUESTIONS.length);
                           }
                         }}
-                        className="px-2 py-1 rounded bg-slate-900 border border-white/15 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:border-cyan-400 shadow-[0_2px_0_rgba(255,255,255,0.12)] active:shadow-none active:translate-y-0.5 transition cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 border border-white/20 text-[10px] font-mono font-bold text-slate-300 hover:text-white hover:border-cyan-400 shadow-[0_3px_0_rgba(0,0,0,0.4)] active:shadow-none active:translate-y-1 transition cursor-pointer"
                       >
                         <span className="text-cyan-400 font-black">[{k.key}]</span> {k.label}
                       </button>
@@ -418,32 +429,31 @@ export function HomeProductShowcase() {
 
                   <Link
                     href="/products/cbt"
-                    className="text-cyan-400 text-xs font-bold hover:text-cyan-300 transition-colors"
+                    className="text-cyan-400 text-xs font-bold hover:text-cyan-300 transition-colors flex items-center gap-1"
                   >
-                    Full Mock &rarr;
+                    <span>Full Mock</span>
+                    <span aria-hidden="true">&rarr;</span>
                   </Link>
                 </div>
               </div>
             </div>
 
-            {/* Right: Deep Royal Blue Chamber with Pure White Explanation Text */}
-            <div className="lg:col-span-6 bg-gradient-to-bl from-[#00112B] via-[#051C44] to-[#0A2554] p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative overflow-hidden order-1 lg:order-2">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.15),transparent_60%)]" aria-hidden="true" />
-
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-cyan-300 self-start relative z-10">
+            {/* Right: Deep Royal Blue Space with Pure White Explanation Text */}
+            <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10 order-1 lg:order-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-cyan-300 self-start">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 <span>02 &bull; CBT PRACTICE ENGINE</span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight relative z-10">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
                 Simulate the real 8-key examination terminal.
               </h3>
 
-              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal relative z-10">
+              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal">
                 Train under authentic test-hall conditions with official 8-key hardware navigation, strict countdown timers, question review flagging, and instant score diagnostics.
               </p>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left relative z-10">
+              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">✓</span>
                   <span>Hardware key emulation (A, B, C, D, P, N, S, R) for rapid answering</span>
@@ -458,7 +468,7 @@ export function HomeProductShowcase() {
                 </li>
               </ul>
 
-              <div className="pt-2 relative z-10">
+              <div className="pt-2">
                 <Link
                   href="/products/cbt"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20 transition-all group"
@@ -474,28 +484,28 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 3: STEM VIRTUAL LABS
             Story: Tactile Physical Experimentation & Interactive Logic Gates
-            Text Left on Deep Blue, Card Right on Luminous Light Space
+            Left: Deep Blue with Pure White Explanation Text
+            Fade: Smooth horizontal gradient transition into light space
+            Right: Luminous Light Space hosting 3D Circuit Workbench
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 shadow-[0_20px_50px_-20px_rgba(0,17,43,0.08)] hover:shadow-[0_30px_70px_-20px_rgba(0,17,43,0.13)] transition-all duration-500 overflow-hidden bg-white">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
-            {/* Left: Deep Royal Blue Chamber with Pure White Explanation Text */}
-            <div className="lg:col-span-6 bg-gradient-to-br from-[#00112B] via-[#051C44] to-[#0A2554] p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative overflow-hidden">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(168,85,247,0.15),transparent_60%)]" aria-hidden="true" />
-
-              <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-purple-300 self-start relative z-10">
+            {/* Left: Deep Royal Blue Space with Pure White Explanation Text */}
+            <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10">
+              <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-purple-300 self-start">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-pulse" />
                 <span>03 &bull; STEM STUDIO VIRTUAL LABS</span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight relative z-10">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
                 Touch the science. Not just dry formulas.
               </h3>
 
-              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal relative z-10">
+              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal">
                 Bridge classroom theory with interactive laboratories. From thin-lens optics ray tracing to digital logic gate circuits and volumetric acid-base titrations, watch real physical reactions happen in real time.
               </p>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left relative z-10">
+              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-black">✓</span>
                   <span>Thin lens ray tracing with real-time focal point and image nature metrics</span>
@@ -510,7 +520,7 @@ export function HomeProductShowcase() {
                 </li>
               </ul>
 
-              <div className="pt-2 relative z-10">
+              <div className="pt-2">
                 <Link
                   href="/products/stem-studio"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/20 transition-all group"
@@ -521,18 +531,24 @@ export function HomeProductShowcase() {
               </div>
             </div>
 
-            {/* Right: Crisp Luminous Light Space with 3D Circuit Workbench */}
-            <div className="lg:col-span-6 bg-[#F8FAFC] p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container">
-              {/* Subtle ambient light pool */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.06),transparent_70%)] pointer-events-none" aria-hidden="true" />
+            {/* Right: Luminous Light Space hosting 3D Circuit Workbench */}
+            <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container">
+              {/* Subtle Ambient Radial Light Aura */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
+
+              {/* 3D Floating Ground Shadow */}
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
 
               {/* 3D Elevated Circuit Card */}
-              <div className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.16),0_10px_20px_-5px_rgba(0,17,43,0.06)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group">
+              <div
+                className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.22),0_10px_20px_-5px_rgba(0,17,43,0.10)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group"
+                style={{ transformStyle: "preserve-3d" }}
+              >
                 {/* 3D Specular Sheen Effect */}
-                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-purple-500/5 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
+                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-purple-500/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
 
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10">
+                {/* Header (Parallax Z=18) */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <div className="flex items-center gap-2">
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/15 border border-purple-500/20 text-purple-600 shadow-2xs">
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -552,7 +568,7 @@ export function HomeProductShowcase() {
                         key={g}
                         type="button"
                         onClick={() => setStemGate(g)}
-                        className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all cursor-pointer shadow-[0_1px_0_rgba(15,23,42,0.08)] active:shadow-none active:translate-y-0.5 ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer shadow-[0_2px_0_rgba(15,23,42,0.1)] active:shadow-none active:translate-y-0.5 ${
                           stemGate === g
                             ? "bg-purple-600 text-white shadow-xs"
                             : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
@@ -564,17 +580,17 @@ export function HomeProductShowcase() {
                   </div>
                 </div>
 
-                {/* 3D Interactive Circuit Board */}
-                <div className="my-4 rounded-2xl bg-slate-50 border border-slate-200 p-5 flex items-center justify-around gap-3 relative shadow-inner z-10">
-                  {/* Switches */}
+                {/* 3D Interactive Circuit Board (Parallax Z=26) */}
+                <div className="my-4 rounded-2xl bg-slate-50 border border-slate-200 p-5 flex items-center justify-around gap-3 relative shadow-inner z-10" style={{ transform: "translateZ(26px)" }}>
+                  {/* Physical 3D Rocker Switches */}
                   <div className="space-y-3 z-10">
                     <button
                       type="button"
                       onClick={() => setSwitchA(!switchA)}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_2px_0_rgba(15,23,42,0.1)] active:shadow-none active:translate-y-0.5 ${
+                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_3px_0_rgba(15,23,42,0.18)] active:shadow-none active:translate-y-1 ${
                         switchA
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-emerald-500/10"
-                          : "bg-white border-slate-200 text-slate-500"
+                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-emerald-500/20"
+                          : "bg-white border-slate-300 text-slate-500"
                       }`}
                     >
                       <span className={`h-2.5 w-2.5 rounded-full ${switchA ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-slate-400"}`} />
@@ -584,10 +600,10 @@ export function HomeProductShowcase() {
                     <button
                       type="button"
                       onClick={() => setSwitchB(!switchB)}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_2px_0_rgba(15,23,42,0.1)] active:shadow-none active:translate-y-0.5 ${
+                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_3px_0_rgba(15,23,42,0.18)] active:shadow-none active:translate-y-1 ${
                         switchB
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-emerald-500/10"
-                          : "bg-white border-slate-200 text-slate-500"
+                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-emerald-500/20"
+                          : "bg-white border-slate-300 text-slate-500"
                       }`}
                     >
                       <span className={`h-2.5 w-2.5 rounded-full ${switchB ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-slate-400"}`} />
@@ -596,10 +612,10 @@ export function HomeProductShowcase() {
                   </div>
 
                   {/* 3D Gate Chip */}
-                  <div className={`z-10 px-4 py-3 rounded-2xl border-2 text-center transition-all shadow-[0_4px_12px_rgba(0,0,0,0.06)] ${
+                  <div className={`z-10 px-4 py-3 rounded-2xl border-2 text-center transition-all shadow-[0_6px_16px_rgba(0,0,0,0.08)] ${
                     isStemLit
-                      ? "border-purple-500 bg-purple-50 text-purple-950 shadow-purple-500/20 scale-105"
-                      : "border-slate-200 bg-white text-slate-400"
+                      ? "border-purple-500 bg-purple-50 text-purple-950 shadow-purple-500/30 scale-105"
+                      : "border-slate-300 bg-white text-slate-400"
                   }`}>
                     <span className="text-[9px] font-mono uppercase tracking-wider block font-bold text-purple-600">CHIP</span>
                     <span className="text-lg font-black text-slate-900">{stemGate}</span>
@@ -610,8 +626,8 @@ export function HomeProductShowcase() {
                   <div className="z-10 flex flex-col items-center">
                     <div className={`w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                       isStemLit
-                        ? "border-amber-400 bg-amber-100 text-amber-500 shadow-[0_0_25px_rgba(245,158,11,0.5)] scale-110"
-                        : "border-slate-200 bg-slate-100 text-slate-400"
+                        ? "border-amber-400 bg-amber-100 text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.6)] scale-110"
+                        : "border-slate-300 bg-slate-100 text-slate-400"
                     }`}>
                       <svg className={`h-7 w-7 transition-all duration-300 ${isStemLit ? "text-amber-500 drop-shadow-[0_0_12px_#f59e0b]" : "opacity-30 text-slate-400"}`} viewBox="0 0 24 24" fill={isStemLit ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                         <path d="M9 18h6" />
@@ -619,14 +635,14 @@ export function HomeProductShowcase() {
                         <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
                       </svg>
                     </div>
-                    <span className={`text-[10px] font-mono font-bold mt-1.5 uppercase ${isStemLit ? "text-amber-600" : "text-slate-400"}`}>
+                    <span className={`text-[10px] font-mono font-bold mt-1.5 uppercase ${isStemLit ? "text-amber-600 font-black" : "text-slate-400"}`}>
                       {isStemLit ? "Output = 1" : "Output = 0"}
                     </span>
                   </div>
                 </div>
 
                 {/* Bottom Rule */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <span>Rule: <strong>{stemGate}</strong> outputs high (1) when its condition is met</span>
                   <span className="text-purple-600 font-bold">Standard Benchmarks</span>
                 </div>
@@ -638,22 +654,30 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 4: LEARNING DNA & DIAGNOSTICS
             Story: Topic-by-Topic Diagnostic Telemetry & Score Prediction
-            Card Left on Luminous Light Space, Text Right on Deep Blue
+            Left: Luminous Light Space hosting 3D Learning DNA Radar
+            Fade: Smooth horizontal gradient transition into deep blue
+            Right: Deep Blue with Pure White Explanation Text
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 shadow-[0_20px_50px_-20px_rgba(0,17,43,0.08)] hover:shadow-[0_30px_70px_-20px_rgba(0,17,43,0.13)] transition-all duration-500 overflow-hidden bg-white">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
-            {/* Left: Crisp Luminous Light Space with 3D Learning DNA Radar */}
-            <div className="lg:col-span-6 bg-[#F8FAFC] p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">
-              {/* Subtle ambient light pool */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.06),transparent_70%)] pointer-events-none" aria-hidden="true" />
+            {/* Left: Luminous Light Space hosting 3D Learning DNA Radar */}
+            <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">
+              {/* Subtle Ambient Radial Light Aura */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
+
+              {/* 3D Floating Ground Shadow */}
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
 
               {/* 3D Elevated Learning DNA Card */}
-              <div className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.16),0_10px_20px_-5px_rgba(0,17,43,0.06)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group">
+              <div
+                className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.22),0_10px_20px_-5px_rgba(0,17,43,0.10)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group"
+                style={{ transformStyle: "preserve-3d" }}
+              >
                 {/* 3D Specular Sheen Effect */}
-                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-blue-500/5 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
+                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-blue-500/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
 
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10">
+                {/* Header (Parallax Z=18) */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/15 border border-blue-500/20 text-blue-600 shadow-2xs">
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -673,8 +697,8 @@ export function HomeProductShowcase() {
                   </span>
                 </div>
 
-                {/* Multi-Subject Progress Bars */}
-                <div className="space-y-3.5 my-3 relative z-10">
+                {/* Multi-Subject Progress Bars (Parallax Z=24) */}
+                <div className="space-y-3.5 my-3 relative z-10" style={{ transform: "translateZ(24px)" }}>
                   {[
                     { subject: "Use of English", score: 88, target: "290+ High Merit", color: "bg-blue-600" },
                     { subject: "Mathematics", score: 82, target: "Premier Target", color: "bg-cyan-500" },
@@ -689,7 +713,7 @@ export function HomeProductShowcase() {
                           <span className="font-mono font-black text-slate-900">{item.score}%</span>
                         </div>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner">
+                      <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner">
                         <div
                           className={`h-full ${item.color} rounded-full transition-all duration-700 shadow-xs`}
                           style={{ width: `${item.score}%` }}
@@ -699,8 +723,8 @@ export function HomeProductShowcase() {
                   ))}
                 </div>
 
-                {/* Diagnostic Recommendation Box */}
-                <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3 text-xs space-y-1 shadow-2xs relative z-10">
+                {/* Diagnostic Recommendation Box (Parallax Z=20) */}
+                <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs space-y-1 shadow-2xs relative z-10" style={{ transform: "translateZ(20px)" }}>
                   <span className="font-bold text-amber-900 flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                     Adaptive Recommendation:
@@ -711,7 +735,7 @@ export function HomeProductShowcase() {
                 </div>
 
                 {/* Bottom Info */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <span>Updated after every CBT drill</span>
                   <Link
                     href="/products/learning-hub"
@@ -723,24 +747,22 @@ export function HomeProductShowcase() {
               </div>
             </div>
 
-            {/* Right: Deep Royal Blue Chamber with Pure White Explanation Text */}
-            <div className="lg:col-span-6 bg-gradient-to-bl from-[#00112B] via-[#051C44] to-[#0A2554] p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative overflow-hidden order-1 lg:order-2">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.15),transparent_60%)]" aria-hidden="true" />
-
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-sky-300 self-start relative z-10">
+            {/* Right: Deep Royal Blue Space with Pure White Explanation Text */}
+            <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10 order-1 lg:order-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/15 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-sky-300 self-start">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
                 <span>04 &bull; LEARNING DNA &amp; DIAGNOSTICS</span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight relative z-10">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
                 Pinpoint exactly where you are losing marks.
               </h3>
 
-              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal relative z-10">
+              <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg font-normal">
                 Never waste time revising topics you already know. BrainLab&apos;s cognitive diagnostic engine tracks every attempt topic-by-topic, exposing knowledge gaps and recommending targeted drills to maximize your exam score.
               </p>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left relative z-10">
+              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-black">✓</span>
                   <span>Cumulative readiness prediction against your dream university cut-off</span>
@@ -755,7 +777,7 @@ export function HomeProductShowcase() {
                 </li>
               </ul>
 
-              <div className="pt-2 relative z-10">
+              <div className="pt-2">
                 <Link
                   href="/products/learning-hub"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 hover:border-sky-400 hover:shadow-lg hover:shadow-sky-500/20 transition-all group"

@@ -15,10 +15,102 @@ import {
   type DevicePermissionStatus,
 } from "../lib/clientNotifications";
 
+
+function SettingsIcon({ name, className = "h-5 w-5" }: { name: string; className?: string }) {
+  switch (name) {
+    case "sun":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+      );
+    case "moon":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+        </svg>
+      );
+    case "system":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      );
+    case "lock":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      );
+    case "bell":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+        </svg>
+      );
+    case "phone":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" />
+        </svg>
+      );
+    case "zap":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    case "cap":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      );
+    case "video":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="23 7 16 12 23 17 23 7" /><rect width="15" height="14" x="1" y="5" rx="2" ry="2" />
+        </svg>
+      );
+    case "flame":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
+        </svg>
+      );
+    case "doc":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
+        </svg>
+      );
+    case "megaphone":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m3 11 18-5v12L3 13v-2z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      );
+    case "alert":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 const appearanceChoices: { value: AppearancePreference; title: string; description: string; icon: string }[] = [
-  { value: "light", title: "Light", description: "A bright, clear learning space.", icon: "☀" },
-  { value: "dark", title: "Dark", description: "A darker screen for low-light study.", icon: "☾" },
-  { value: "system", title: "System", description: "Follow your device appearance automatically.", icon: "◐" },
+  { value: "light", title: "Light", description: "A bright, clear learning space.", icon: "sun" },
+  { value: "dark", title: "Dark", description: "A darker screen for low-light study.", icon: "moon" },
+  { value: "system", title: "System", description: "Follow your device appearance automatically.", icon: "system" },
 ];
 
 function initials(name: string) {
@@ -232,7 +324,7 @@ export default function LearnerSettingsClient() {
       const data = await res.json();
       if (res.ok && data.success) {
         setNotifPrefs(data.preferences);
-        setNotifSuccess("✓ Notification preference updated.");
+        setNotifSuccess("Notification preference updated.");
       } else {
         setNotifError(data.error || "Could not update preference.");
       }
@@ -273,8 +365,8 @@ export default function LearnerSettingsClient() {
         setNotifPrefs(data.preferences);
         setNotifSuccess(
           isUnsub
-            ? "✓ You have unsubscribed from all notifications."
-            : "✓ You have resubscribed to BrainLab notifications."
+            ? "You have unsubscribed from all notifications."
+            : "You have resubscribed to BrainLab notifications."
         );
       } else {
         setNotifError(data.error || "Could not update subscription status.");
@@ -309,7 +401,7 @@ export default function LearnerSettingsClient() {
           quiet_hours_end: end,
           timezone: tz,
         }));
-        setNotifSuccess("✓ Quiet hours and timezone updated successfully.");
+        setNotifSuccess("Quiet hours and timezone updated successfully.");
       } else {
         setNotifError(data.error || "Could not update quiet hours.");
       }
@@ -353,14 +445,14 @@ export default function LearnerSettingsClient() {
         {/* 1. Appearance Section */}
         <section aria-labelledby="appearance-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-start gap-4">
-            <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-2xl text-blue-900">◐</span>
+            <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-900"><SettingsIcon name="system" className="h-6 w-6" /></span>
             <div><h2 id="appearance-heading" className="text-xl font-extrabold">Appearance</h2><p className="mt-1 text-sm leading-6 text-slate-600">Your choice is saved in this browser and applies across BrainLab pages, including the CBT exam interface. System mode follows your device preference.</p></div>
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             {appearanceChoices.map((choice) => {
               const selected = appearance === choice.value;
               return <button key={choice.value} type="button" aria-pressed={selected} onClick={() => setAppearance(choice.value)} className={`min-h-36 rounded-2xl border p-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${selected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"}`}>
-                <span className="flex items-center justify-between gap-3"><span className="text-2xl" aria-hidden="true">{choice.icon}</span><span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? "border-blue-800 bg-blue-800 text-white" : "border-slate-300"}`}>{selected ? <span aria-hidden="true" className="text-xs">✓</span> : null}</span></span>
+                <span className="flex items-center justify-between gap-3"><span className="text-blue-900" aria-hidden="true"><SettingsIcon name={choice.icon} className="h-6 w-6" /></span><span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? "border-blue-800 bg-blue-800 text-white" : "border-slate-300"}`}>{selected ? <SettingsIcon name="check" className="h-3 w-3" /> : null}</span></span>
                 <span className="mt-4 block text-base font-extrabold">{choice.title}</span>
                 <span className="mt-1 block text-sm leading-5 text-slate-600">{choice.description}</span>
               </button>;
@@ -372,7 +464,7 @@ export default function LearnerSettingsClient() {
         {/* 2. Privacy & Communication Controls */}
         <section aria-labelledby="privacy-heading" className="rounded-3xl border border-blue-200/80 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-start gap-4">
-            <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-2xl text-blue-900">🔒</span>
+            <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-900"><SettingsIcon name="lock" className="h-6 w-6" /></span>
             <div className="flex-1 min-w-0">
               <h2 id="privacy-heading" className="text-xl font-extrabold">Privacy &amp; Communication Preferences</h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -473,7 +565,7 @@ export default function LearnerSettingsClient() {
                 <div>
                   <span className="text-sm font-bold text-slate-900">Read receipts (blue ticks)</span>
                   <p className="text-xs text-slate-500">
-                    Show blue checkmarks (✓✓) when messages are read. If turned off, other learners will only see grey delivered ticks (✓✓), and you will not see blue ticks on sent messages.
+                    Show double checkmarks when messages are read. If turned off, other learners will only see delivered ticks, and you will not see read receipts on sent messages.
                   </p>
                 </div>
               </label>
@@ -491,12 +583,12 @@ export default function LearnerSettingsClient() {
 
             {privacySuccess && (
               <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">
-                ✓ {privacySuccess}
+                <span className="inline-flex items-center gap-1.5"><SettingsIcon name="check" className="h-3 w-3 inline" />{privacySuccess}</span>
               </p>
             )}
             {privacyError && (
               <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-800">
-                ⚠ {privacyError}
+                <span className="inline-flex items-center gap-1.5"><SettingsIcon name="alert" className="h-3.5 w-3.5 inline" />{privacyError}</span>
               </p>
             )}
           </form>
@@ -564,9 +656,7 @@ export default function LearnerSettingsClient() {
         <section aria-labelledby="notifications-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-2xl text-purple-900">
-                🔔
-              </span>
+              <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-900"><SettingsIcon name="bell" className="h-6 w-6" /></span>
               <div>
                 <h2 id="notifications-heading" className="text-xl font-extrabold text-slate-900">
                   Notification Subscriptions
@@ -585,7 +675,7 @@ export default function LearnerSettingsClient() {
                   onClick={toggleUnsubscribeAll}
                   className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-black text-white transition active:scale-95 disabled:opacity-60 shadow-sm"
                 >
-                  {notifSaving ? "Updating…" : "✓ Resubscribe to All"}
+                  {notifSaving ? "Updating…" : "Resubscribe to All"}
                 </button>
               ) : (
                 <button
@@ -617,9 +707,7 @@ export default function LearnerSettingsClient() {
           {/* Device Push Notifications Status & Activation Card */}
           <div className="mt-5 rounded-2xl border border-purple-200 bg-purple-50/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-lg text-white shadow-sm">
-                📲
-              </span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm"><SettingsIcon name="phone" className="h-5 w-5" /></span>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-black text-slate-900">Device Push Notifications</h3>
@@ -661,8 +749,7 @@ export default function LearnerSettingsClient() {
                   }}
                   className="rounded-xl border border-purple-300 bg-white hover:bg-purple-100 px-3.5 py-2 text-xs font-bold text-purple-900 shadow-xs transition active:scale-95 disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
-                  <span>⚡</span>
-                  <span>{testingAlert ? "Sending…" : "Test Device Alert"}</span>
+                  <SettingsIcon name="zap" className="h-3.5 w-3.5" /><span>{testingAlert ? "Sending…" : "Test Device Alert"}</span>
                 </button>
               ) : (
                 <button
@@ -676,8 +763,7 @@ export default function LearnerSettingsClient() {
                   }}
                   className="rounded-xl bg-purple-700 hover:bg-purple-600 px-4 py-2 text-xs font-black text-white shadow-sm transition active:scale-95 inline-flex items-center gap-1.5"
                 >
-                  <span>🔔</span>
-                  <span>Enable on this Device</span>
+                  <SettingsIcon name="bell" className="h-3.5 w-3.5" /><span>Enable on this Device</span>
                 </button>
               )}
             </div>
@@ -688,7 +774,7 @@ export default function LearnerSettingsClient() {
             {/* Exam Results */}
             <div className="pt-4 first:pt-0 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl">🎓</span>
+                <span className="text-blue-700 flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50"><SettingsIcon name="cap" className="h-4 w-4" /></span>
                 <div>
                   <p className="text-sm font-bold text-slate-900">Exam &amp; Mock Results</p>
                   <p className="text-xs text-slate-500">
@@ -715,7 +801,7 @@ export default function LearnerSettingsClient() {
             {/* Live Classroom */}
             <div className="pt-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl">📹</span>
+                <span className="text-indigo-700 flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50"><SettingsIcon name="video" className="h-4 w-4" /></span>
                 <div>
                   <p className="text-sm font-bold text-slate-900">Live Classroom &amp; Masterclasses</p>
                   <p className="text-xs text-slate-500">
@@ -742,7 +828,7 @@ export default function LearnerSettingsClient() {
             {/* Streaks & Daily Practice */}
             <div className="pt-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl">🔥</span>
+                <span className="text-rose-600 flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50"><SettingsIcon name="flame" className="h-4 w-4" /></span>
                 <div>
                   <p className="text-sm font-bold text-slate-900">Daily Revision Streaks</p>
                   <p className="text-xs text-slate-500">
@@ -769,7 +855,7 @@ export default function LearnerSettingsClient() {
             {/* Assignments & Homework */}
             <div className="pt-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl">📝</span>
+                <span className="text-amber-700 flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50"><SettingsIcon name="doc" className="h-4 w-4" /></span>
                 <div>
                   <p className="text-sm font-bold text-slate-900">Assignments &amp; Homework Feedback</p>
                   <p className="text-xs text-slate-500">
@@ -796,7 +882,7 @@ export default function LearnerSettingsClient() {
             {/* Platform Announcements */}
             <div className="pt-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl">📢</span>
+                <span className="text-purple-700 flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50"><SettingsIcon name="megaphone" className="h-4 w-4" /></span>
                 <div>
                   <p className="text-sm font-bold text-slate-900">Announcements &amp; Exam Updates</p>
                   <p className="text-xs text-slate-500">
@@ -823,7 +909,7 @@ export default function LearnerSettingsClient() {
             {/* SMS Alerts */}
             <div className="pt-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-xl">📱</span>
+                <span className="text-emerald-700 flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50"><SettingsIcon name="phone" className="h-4 w-4" /></span>
                 <div>
                   <p className="text-sm font-bold text-slate-900">SMS Notifications</p>
                   <p className="text-xs text-slate-500">
@@ -851,7 +937,7 @@ export default function LearnerSettingsClient() {
           {/* Quiet Hours & Timezone Configuration */}
           <div className="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 sm:p-5">
             <div className="flex items-start gap-3">
-              <span className="text-xl">🌙</span>
+              <span className="text-indigo-600 flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50"><SettingsIcon name="moon" className="h-4 w-4" /></span>
               <div className="flex-1">
                 <h3 className="text-sm font-bold text-slate-900">Quiet Hours &amp; Study Schedule</h3>
                 <p className="mt-0.5 text-xs text-slate-600 leading-relaxed">
@@ -913,7 +999,7 @@ export default function LearnerSettingsClient() {
           )}
           {notifError && (
             <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-800">
-              ⚠ {notifError}
+              <span className="inline-flex items-center gap-1.5"><SettingsIcon name="alert" className="h-3.5 w-3.5 inline" />{notifError}</span>
             </p>
           )}
 
@@ -940,7 +1026,7 @@ export default function LearnerSettingsClient() {
 
         {/* 4. Password & Security */}
         <section aria-labelledby="security-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex items-start gap-4"><span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-2xl text-emerald-800">⌑</span><div><h2 id="security-heading" className="text-xl font-extrabold">Password and security</h2><p className="mt-1 text-sm leading-6 text-slate-600">Send a password recovery link to the email address on this account. BrainLab will not display or ask you to share your current password here.</p></div></div>
+          <div className="flex items-start gap-4"><span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800"><SettingsIcon name="lock" className="h-6 w-6" /></span><div><h2 id="security-heading" className="text-xl font-extrabold">Password and security</h2><p className="mt-1 text-sm leading-6 text-slate-600">Send a password recovery link to the email address on this account. BrainLab will not display or ask you to share your current password here.</p></div></div>
           <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" disabled={resetBusy || !user?.email} onClick={() => void sendPasswordReset()} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0b2a5b] px-4 py-2 text-sm font-extrabold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60">{resetBusy ? "Sending recovery link…" : "Email me a password reset link"}</button><Link href="/account" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Account sign-in</Link></div>
           {resetError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{resetError}</p>}
           {resetMessage && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{resetMessage}</p>}

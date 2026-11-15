@@ -668,15 +668,15 @@ export default function LearnerDashboardPage() {
         </div>
 
         {/* Exam Countdown & Official WhatsApp Community Row */}
-        <div className="grid gap-4 lg:grid-cols-12">
-          <div className="lg:col-span-8">
+        <div className="grid gap-4 lg:grid-cols-12 items-stretch">
+          <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-center">
             <ExamCountdownBanner
               variant="dashboard"
               studentProgramme={user?.user_metadata?.programme || user?.user_metadata?.target_exam}
               showCta={true}
             />
           </div>
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-center">
             <WhatsAppChannelHeroBanner variant="card" />
           </div>
         </div>
@@ -1090,7 +1090,7 @@ export default function LearnerDashboardPage() {
               Targeted diagnostic drills, timed national examination simulations, and live competitive tournaments.
             </p>
           </div>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <article className="group relative overflow-hidden flex min-h-[265px] flex-col justify-between rounded-[2rem] border border-indigo-200/80 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/70 via-white to-indigo-50/30 dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md hover-lift">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
@@ -1120,28 +1120,45 @@ export default function LearnerDashboardPage() {
                     <circle cx="12" cy="12" r="2" />
                   </svg>
                 </span>
-                <h3 className="mt-3 text-base font-black text-slate-950 dark:text-white">Quizzes &amp; Contests</h3>
+                <h3 className="mt-3 text-base font-black text-slate-950 dark:text-white">Organisation Assessments</h3>
                 <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-400">
-                  Participate in published organisation quizzes and competition assessments.
+                  Participate in published organisation tests, school term assessments, and timed curriculum quizzes.
                 </p>
               </div>
-              <div className="mt-4 flex flex-col gap-2">
-                <Link
-                  href="/challenge-arena"
-                  className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-500 hover:to-indigo-500 transition active-press"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
+              <Link
+                href="/assessments"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] dark:bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 dark:hover:bg-amber-500 active-press hover-lift"
+              >
+                Browse Assessments →
+              </Link>
+            </article>
+
+            <article className="group relative overflow-hidden flex min-h-[265px] flex-col justify-between rounded-[2rem] border border-rose-200/80 dark:border-rose-900/40 bg-gradient-to-br from-rose-50/60 via-white to-amber-50/30 dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-rose-300 dark:hover:border-rose-500/50 hover:shadow-md hover-lift">
+              <div>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-sm shadow-rose-600/30">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-white" aria-hidden="true">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                   </svg>
-                  <span>Competition Arena →</span>
-                </Link>
-                <Link
-                  href="/assessments"
-                  className="inline-flex min-h-9 items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081021] px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-                >
-                  Browse Quizzes →
-                </Link>
+                </span>
+                <div className="flex items-center gap-2 mt-3">
+                  <h3 className="text-base font-black text-slate-950 dark:text-white">Competition Arena</h3>
+                  <span className="rounded-full bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 px-2 py-0.5 text-[9px] font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider">
+                    2× XP
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-400">
+                  Live head-to-head sprint duels, speed tournament matches, and national leaderboard challenges.
+                </p>
               </div>
+              <Link
+                href="/challenge-arena"
+                className="mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-orange-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition active-press hover-lift"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-200" aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                <span>Enter Arena →</span>
+              </Link>
             </article>
 
             <article className="group relative overflow-hidden flex min-h-[265px] flex-col justify-between rounded-[2rem] border border-blue-200/80 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/70 via-white to-blue-50/30 dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md hover-lift">
