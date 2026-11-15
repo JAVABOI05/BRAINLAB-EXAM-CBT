@@ -652,7 +652,12 @@ export function HomeProductShowcase() {
                     <span>Zero-Data PWA Sync</span>
                   </div>
                   <span className="text-xs font-mono font-bold text-teal-800 dark:text-teal-300 bg-teal-100/80 dark:bg-teal-950/80 px-3 py-1 rounded-full border border-teal-300 dark:border-teal-700/60 shadow-xs flex items-center gap-1.5">
-                    <span className="font-sans">📶</span>
+                    <svg className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                      <line x1="12" y1="20" x2="12.01" y2="20" />
+                    </svg>
                     <span>Works on 2G / 3G / Offline</span>
                   </span>
                 </div>
