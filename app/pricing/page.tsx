@@ -541,6 +541,195 @@ function PricingContent() {
             })()}
           </div>
 
+          {/* Compact Alternating (Zig-Zag) Comparison Showcase */}
+          <div className="mt-20 space-y-12 sm:space-y-16">
+            <div className="text-center max-w-2xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800/80 bg-blue-50/80 dark:bg-blue-950/60 px-4 py-1.5 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs">
+                <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
+                <span>ACCESS TRANSPARENCY</span>
+              </div>
+              <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                Designed for Educational Equity
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-normal">
+                How we balance free high-yield public tools with intensive structured cohort mentorship.
+              </p>
+            </div>
+
+            {/* Row 1: Public Access (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-emerald-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Free Forever · ₦0 Public Access</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Every Registered Learner Studies Free
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    We believe serious academic preparation should not be gated behind expensive debit card paywalls. Unlimited mock tests, question banks, AI diagnostics, and STEM virtual labs remain free forever.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Full 4-subject CBT practice with authentic UTME 8-key hardware controls</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Thousands of verified past questions with step-by-step master workings</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Interactive 3D molecular and physics ray-tracing laboratory viewers</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/cbt"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Start Free Practice Now</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-emerald-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          PUBLIC ENTITLEMENTS
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                        ₦0 UNLIMITED
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs font-mono">
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="text-slate-300">CBT Mock Simulator</span>
+                        <span className="text-emerald-400 font-bold">100% Free (Unlimited)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="text-slate-300">Verified Past Questions</span>
+                        <span className="text-emerald-400 font-bold">2000 – 2026 Free</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="text-slate-300">Socratic AI Assistant</span>
+                        <span className="text-cyan-400 font-bold">Generous Fair-Use</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                        <span className="text-slate-300">Virtual STEM Studios</span>
+                        <span className="text-emerald-400 font-bold">60fps Open Access</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Apex Cohort (Visual Preview Left, Text Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-indigo-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+                <div className="lg:col-span-5 order-2 lg:order-1">
+                  <div className="rounded-2xl border border-indigo-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          COHORT DIRECTORY
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-indigo-300 bg-indigo-950/80 border border-indigo-800/80 px-2 py-0.5 rounded">
+                        INTENSIVE TRACK
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs font-mono">
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white font-bold">Live Vector Masterclasses</span>
+                          <span className="text-cyan-400">Scheduled Weekly</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">Interactive chalkboard derivations with subject specialists</p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white font-bold">Assigned Subject Mentor</span>
+                          <span className="text-emerald-400">Dedicated</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">Weekly progress reviews, homework checks &amp; accountability</p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white font-bold">Diagnostic Mock Series</span>
+                          <span className="text-purple-400">Intervention</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">Pinpoints syllabus blind spots before official JAMB exam</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+                <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-300 dark:border-indigo-700/60 bg-indigo-50 dark:bg-indigo-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-indigo-800 dark:text-indigo-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                    <span>Intensive Guided Preparatory Track</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Apex Cohort: Structured Academic Mentorship
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    For ambitious candidates targeting premier faculties (Medicine, Law, Engineering, Pharmacy) who require disciplined timetables, live teaching, and continuous mentor accountability.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold">✓</span>
+                      <span>Scheduled live masterclasses covering every objective in the JAMB syllabus</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold">✓</span>
+                      <span>Direct mentor access for rapid homework problem resolution</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold">✓</span>
+                      <span>Continuous diagnostic telemetry shared with candidates and parents</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <a
+                      href="https://wa.me/2349071988887?text=Hello%20BrainLab%2C%20I%20am%20coming%20from%20the%20website%20and%20would%20like%20to%20make%20enquiries%20about%20the%20intensive%20Apex%20Cohort%20JAMB%20Preparatory%20Class."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Enquire on WhatsApp (Apex Cohort)</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Checkout Modal */}
           {checkoutPlan && !isAdmin && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 animate-fade-in backdrop-blur-xs">

@@ -151,16 +151,16 @@ export function HomeJoinChannel({
       className={`relative w-full py-4 sm:py-6 ${className}`}
     >
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Compact, High-Impact Broadcast Ribbon */}
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-slate-900/95 via-[#0b1b28]/90 to-slate-900/95 p-3.5 sm:p-4 shadow-xl shadow-emerald-950/20 backdrop-blur-md transition-all hover:border-emerald-500/50 hover:shadow-emerald-900/30">
+        {/* Compact, High-Impact Broadcast Ribbon (Luminous in Light Mode) */}
+        <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-r from-emerald-50/60 via-white to-emerald-50/60 p-3.5 sm:p-4 shadow-sm hover:shadow-md transition-all dark:border-emerald-500/30 dark:bg-gradient-to-r dark:from-slate-900/95 dark:via-[#0b1b28]/90 dark:to-slate-900/95">
           {/* Subtle Ambient Radial Glow */}
-          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl" />
-          <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-blue-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
 
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 sm:gap-4">
             {/* Left: Icon & Channel Details */}
             <div className="flex items-center gap-3 min-w-0">
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30 ring-1 ring-white/20">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 ring-1 ring-white/20">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z" />
                 </svg>
@@ -172,22 +172,22 @@ export function HomeJoinChannel({
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-black text-white tracking-tight truncate">
+                  <span className="text-sm font-black text-slate-950 dark:text-white tracking-tight truncate">
                     {channelName}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     LIVE ALERTS
                   </span>
                   {verifiedCount && (
-                    <span className="hidden sm:inline-flex items-center text-[11px] font-semibold text-slate-300">
-                      &bull; <strong className="text-white ml-1">{verifiedCount}</strong>&nbsp;Active Candidates
-                      {asOfDate && <span className="text-slate-400 font-normal ml-1">({asOfDate})</span>}
+                    <span className="hidden sm:inline-flex items-center text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                      &bull; <strong className="text-slate-950 dark:text-white ml-1">{verifiedCount}</strong>&nbsp;Active Candidates
+                      {asOfDate && <span className="text-slate-500 dark:text-slate-400 font-normal ml-1">({asOfDate})</span>}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-300 leading-snug line-clamp-1 sm:line-clamp-none mt-0.5">
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-snug line-clamp-1 sm:line-clamp-none mt-0.5">
                   {description}
                 </p>
               </div>
@@ -195,7 +195,7 @@ export function HomeJoinChannel({
 
             {/* Right: Compact Action Button */}
             <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-              <span className="hidden lg:block text-[11px] text-slate-400 font-medium">
+              <span className="hidden lg:block text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 Free &bull; Instant Updates
               </span>
               <a
@@ -203,7 +203,7 @@ export function HomeJoinChannel({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => handleClick("whatsapp")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-4 py-2 text-xs sm:text-sm font-black text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs sm:text-sm font-black text-white shadow-sm hover:shadow transition-all hover:scale-[1.02] active:scale-95"
               >
                 <span>Join Channel</span>
                 <span aria-hidden="true">&rarr;</span>

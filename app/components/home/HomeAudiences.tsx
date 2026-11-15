@@ -276,30 +276,30 @@ export function HomeAudiences() {
     <section
       id="audiences"
       aria-label="Tailored Experiences for Every Learner"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-white/10"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200/80 bg-white text-slate-900 dark:border-white/10 dark:bg-[#050811] dark:text-white transition-colors"
     >
       {/* Dynamic Ambient Lighting */}
       <div
-        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r ${activeMeta.glowGradient} blur-[140px] opacity-75 transition-all duration-700`}
+        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r ${activeMeta.glowGradient} blur-[140px] opacity-40 dark:opacity-75 transition-all duration-700`}
         aria-hidden="true"
       />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header with Refined Editorial Voice */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-500/10 text-cyan-300 border border-blue-400/30 mb-3 shadow-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-500/10 dark:text-cyan-300 dark:border-blue-400/30 mb-3 shadow-2xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
             <span>LEARNER-FIRST ACADEMIC ECOSYSTEM</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
             Engineered Specifically for How You Learn
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto font-normal">
             Choose your academic path below to explore tailored simulation engines, real-time diagnostic telemetry, and targeted learning tools.
           </p>
         </div>
 
-        {/* 1. INTERACTIVE PERSONA SELECTOR STRIP (NO BORING BOXES) */}
+        {/* 1. INTERACTIVE PERSONA SELECTOR STRIP (Luminous in Light Mode) */}
         <div
           role="tablist"
           aria-label="Academic Learner Pathways"
@@ -320,14 +320,14 @@ export function HomeAudiences() {
                 onClick={() => setActiveAudienceId(aud.id)}
                 className={`group relative flex items-center gap-2.5 rounded-2xl px-4 sm:px-6 py-3 text-xs sm:text-sm font-bold transition-all duration-300 bl-focus-ring cursor-pointer ${
                   isActive
-                    ? `bg-[#0E172A] text-white shadow-xl border-2 ${meta.accentBg.split(" ")[0]} scale-102`
-                    : "bg-[#0A101D]/80 text-slate-300 hover:text-white hover:bg-[#111A2E] border border-white/[0.08]"
+                    ? "bg-slate-950 text-white shadow-lg border-2 border-slate-900 scale-102 dark:bg-[#0E172A] dark:border-cyan-400"
+                    : "bg-slate-100/80 text-slate-700 hover:text-slate-950 hover:bg-slate-200/80 border border-slate-200/80 dark:bg-[#0A101D]/80 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#111A2E] dark:border-white/[0.08]"
                 }`}
               >
-                <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${isActive ? meta.accentBg : "bg-slate-800 text-slate-400"} border border-white/10 shrink-0 transition-transform group-hover:scale-105`} aria-hidden="true">
+                <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${isActive ? meta.accentBg : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-400"} border border-slate-200 dark:border-white/10 shrink-0 transition-transform group-hover:scale-105`} aria-hidden="true">
                   <AudienceIcon type={meta.icon} className="h-3.5 w-3.5" />
                 </span>
-                <span className={`font-extrabold tracking-tight ${isActive ? meta.themeColor : "text-slate-200"}`}>{meta.tag}</span>
+                <span className={`font-extrabold tracking-tight ${isActive ? "text-white dark:text-white" : "text-slate-800 dark:text-slate-200"}`}>{meta.tag}</span>
                 {isActive && (
                   <span className={`flex h-2 w-2 rounded-full ${meta.themeColor.replace("text-", "bg-")} shadow-xs animate-pulse ml-0.5`} />
                 )}
@@ -336,15 +336,15 @@ export function HomeAudiences() {
           })}
         </div>
 
-        {/* 2. THE WIDESCREEN INTERACTIVE PERSONA CANVAS */}
+        {/* 2. THE WIDESCREEN INTERACTIVE PERSONA CANVAS (Crisp White Surface) */}
         <div
           role="tabpanel"
           id={`panel-${activeAudience.id}`}
           aria-labelledby={`tab-${activeAudience.id}`}
-          className="relative rounded-3xl border border-white/15 bg-gradient-to-br from-[#0B1222]/95 via-[#081226]/90 to-[#040814]/95 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden"
+          className="relative rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-lg backdrop-blur-xl transition-all duration-500 overflow-hidden dark:border-white/15 dark:bg-gradient-to-br dark:from-[#0B1222]/95 dark:via-[#081226]/90 dark:to-[#040814]/95 dark:shadow-2xl"
         >
           {/* Subtle Top Gradient Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-amber-400" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-400" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* LEFT COLUMN: Editorial Value & Feature Highlights */}
@@ -354,34 +354,34 @@ export function HomeAudiences() {
                   <AudienceIcon type={activeMeta.icon} className="h-3.5 w-3.5" />
                   <span>{activeMeta.badge}</span>
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                   Dedicated Pathway
                 </span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
                 {headline}
               </h3>
 
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
                 {body}
               </p>
 
-              {/* High-Contrast Illustrated Feature Modules (Not Generic Bullets) */}
+              {/* High-Contrast Illustrated Feature Modules */}
               <div className="space-y-3 pt-2">
                 {activeMeta.features.map((feat, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3.5 rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 sm:p-4 transition-all hover:border-white/20 hover:bg-slate-950/80 shadow-xs"
+                    className="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4 transition-all hover:border-slate-300 hover:bg-slate-100/80 shadow-2xs dark:border-white/10 dark:bg-slate-950/60 dark:hover:border-white/20 dark:hover:bg-slate-950/80"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 border border-white/15 text-cyan-300 shadow-inner">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-blue-700 shadow-2xs dark:bg-slate-900 dark:border-white/15 dark:text-cyan-300 dark:shadow-inner">
                       <AudienceIcon type={feat.icon} className="h-4 w-4" />
                     </span>
                     <div className="space-y-0.5">
-                      <div className="text-xs sm:text-sm font-bold text-white tracking-tight">
+                      <div className="text-xs sm:text-sm font-bold text-slate-950 dark:text-white tracking-tight">
                         {feat.title}
                       </div>
-                      <div className="text-xs text-slate-300 leading-relaxed">
+                      <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
                         {feat.desc}
                       </div>
                     </div>
@@ -393,13 +393,13 @@ export function HomeAudiences() {
               <div className="pt-3 flex flex-wrap items-center gap-4">
                 <Link
                   href={activeAudience.cta.href}
-                  className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 active:translate-y-0.5 px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/25 transition-all bl-focus-ring min-h-[48px]"
+                  className="inline-flex items-center gap-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:translate-y-0.5 px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-black text-white shadow-md shadow-blue-600/25 transition-all bl-focus-ring min-h-[48px]"
                 >
                   <span>{activeAudience.cta.label}</span>
                   <span aria-hidden="true" className="text-base font-bold">&rarr;</span>
                 </Link>
 
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                   100% Free Starter Access &bull; No Credit Card Required
                 </span>
               </div>
@@ -407,7 +407,7 @@ export function HomeAudiences() {
 
             {/* RIGHT COLUMN: Bespoke Interactive Live Simulator Widget */}
             <div className="lg:col-span-5">
-              <div className="rounded-2xl border border-white/15 bg-[#030712]/90 p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6 shadow-sm dark:border-white/15 dark:bg-[#030712]/90 dark:shadow-2xl relative overflow-hidden">
                 {/* Glow pill header */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
                   <div className="flex items-center gap-2">
@@ -704,7 +704,7 @@ export function HomeAudiences() {
           </div>
         </div>
 
-        {/* 3. MULTI-PATHWAY QUICK ACCESS DOCK (DISCOVERABLE JUMP TRAY) */}
+        {/* 3. MULTI-PATHWAY QUICK ACCESS DOCK (DISCOVERABLE JUMP TRAY - Luminous in Light Mode) */}
         <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {audiences.map((aud) => {
             const meta = AUDIENCE_METADATA[aud.id] || AUDIENCE_METADATA.students;
@@ -715,24 +715,24 @@ export function HomeAudiences() {
                 key={aud.id}
                 className={`rounded-2xl p-4 transition-all duration-200 border ${
                   isCurrent
-                    ? "bg-slate-900/90 border-cyan-400/40 shadow-lg"
-                    : "bg-slate-900/40 border-white/5 hover:border-white/15 hover:bg-slate-900/70"
+                    ? "bg-white border-2 border-blue-600 shadow-md dark:bg-slate-900/90 dark:border-cyan-400/40"
+                    : "bg-slate-50/80 border-slate-200/80 hover:border-slate-300 hover:bg-white shadow-2xs dark:bg-slate-900/40 dark:border-white/5 dark:hover:border-white/15 dark:hover:bg-slate-900/70"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 text-cyan-400 border border-white/10" aria-hidden="true">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-700 border border-blue-200 dark:bg-slate-800 dark:text-cyan-400 dark:border-white/10" aria-hidden="true">
                     <AudienceIcon type={meta.icon} className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-[9px] font-mono text-slate-400 uppercase font-bold">
+                  <span className="text-[9px] font-mono text-slate-500 dark:text-slate-400 uppercase font-bold">
                     {aud.label}
                   </span>
                 </div>
-                <div className="text-xs font-bold text-white mb-2 line-clamp-1">
+                <div className="text-xs font-bold text-slate-950 dark:text-white mb-2 line-clamp-1">
                   {meta.tag}
                 </div>
                 <Link
                   href={aud.cta.href}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors bl-focus-ring"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-cyan-400 hover:text-blue-700 dark:hover:text-cyan-300 transition-colors bl-focus-ring"
                 >
                   <span>Explore Pathway</span>
                   <span aria-hidden="true">&rarr;</span>

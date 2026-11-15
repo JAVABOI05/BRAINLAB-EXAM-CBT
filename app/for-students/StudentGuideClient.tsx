@@ -99,149 +99,415 @@ export function StudentGuideClient() {
           </p>
         </div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Card 1: Daily Free Full-Length Practice Test (Span 7) */}
-          <div className="md:col-span-7 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 relative overflow-hidden group hover:border-blue-400/50 transition">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-cyan-400 border border-blue-200 dark:border-blue-800">
-                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
-                  </svg>
-                </span>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs">
-                  1 Free Full Mock / Day
-                </span>
-              </div>
-
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Daily Free Full-Length Practice Test
-              </h3>
-
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-                Every registered learner can sit one full 4-subject timed CBT mock paper every single day (180 questions, 120 minutes) without paying a kobo or entering debit card details.
-              </p>
-
-              {/* Realistic Cockpit Preview Mini Bar */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4 space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono text-slate-600 dark:text-slate-400">
-                  <span>Physical Keypad: [P] Prev · [N] Next · [S] Submit</span>
-                  <span className="text-cyan-800 dark:text-cyan-300 font-bold">120:00 Countdown</span>
+        {/* Compact Alternating (Zig-Zag) Feature Cards */}
+        <div className="space-y-12 sm:space-y-16">
+          {/* Row 1: Daily Free Full-Length Practice Test (Text Left, Visual Preview Right) */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-blue-400/50">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Text Side (Span 7) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>1 Free Full Mock / Day</span>
                 </div>
-                <div className="grid grid-cols-4 gap-2 text-center text-xs font-mono">
-                  <span className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-white">ENG (60 Qs)</span>
-                  <span className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-white">BIO (40 Qs)</span>
-                  <span className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-white">CHM (40 Qs)</span>
-                  <span className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-white">PHY (40 Qs)</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="pt-2 flex items-center justify-between">
-              <Link
-                href="/cbt"
-                className="inline-flex items-center gap-2 text-sm font-bold text-blue-700 dark:text-cyan-300 hover:underline"
-              >
-                <span>Launch Free Practice Engine</span>
-                <span aria-hidden="true">&rarr;</span>
-              </Link>
-              <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">Resets Daily at 00:00 WAT</span>
-            </div>
-          </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Daily Free Full-Length Practice Test
+                </h3>
 
-          {/* Card 2: Offline Answer Auto-Sync Protection (Span 5) */}
-          <div className="md:col-span-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 group hover:border-emerald-400/50 transition">
-            <div className="space-y-4">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
-                </svg>
-              </span>
-
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Offline Auto-Sync Protection
-              </h3>
-
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-                Never lose test progress due to sudden power outages or fluctuating network bars. Responses are stored in durable device storage and synced automatically once internet restores.
-              </p>
-
-              <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
-                <div className="font-bold flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Ultra-Low Data Footprint</span>
-                </div>
-                <p className="text-[11px] leading-relaxed opacity-90">
-                  Full PWA download is under 1.2 MB. You can take an entire 180-question test on airplane mode with zero mobile data consumption.
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  Every registered learner can sit one full 4-subject timed CBT mock paper every single day (180 questions, 120 minutes) without paying a kobo or entering debit card details.
                 </p>
+
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                    <span>180 questions across your customized 4-subject UTME combination</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                    <span>Official 120-minute countdown with automatic submission</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                    <span>Authentic 8-key terminal keyboard shortcuts ([P], [N], [R], [S])</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2 flex flex-wrap items-center gap-4">
+                  <Link
+                    href="/cbt"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                  >
+                    <span>Launch Free Practice Engine</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    Resets daily at 00:00 WAT
+                  </span>
+                </div>
+              </div>
+
+              {/* Visual Preview Side (Span 5) */}
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl border border-slate-700/80 bg-slate-950 p-5 text-white shadow-lg space-y-4">
+                  {/* Cockpit Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                        JAMB CBT TERMINAL
+                      </span>
+                    </div>
+                    <span className="font-mono text-xs font-black text-cyan-400 bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
+                      119:42
+                    </span>
+                  </div>
+
+                  {/* Subject Badges */}
+                  <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[11px]">
+                    <span className="py-1 px-1 rounded-md bg-blue-600 text-white font-bold shadow-xs">ENG (60)</span>
+                    <span className="py-1 px-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300">BIO (40)</span>
+                    <span className="py-1 px-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300">CHM (40)</span>
+                    <span className="py-1 px-1 rounded-md bg-slate-900 border border-slate-800 text-slate-300">PHY (40)</span>
+                  </div>
+
+                  {/* Mini Question Card */}
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                      <span>Question 14 of 60</span>
+                      <span className="text-emerald-400 font-bold">Antonyms</span>
+                    </div>
+                    <p className="text-xs text-slate-200 leading-snug">
+                      The witness gave a <span className="underline decoration-cyan-400 font-bold">candid</span> testimony in court.
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono">
+                      <span className="p-1.5 rounded-lg bg-slate-800/70 border border-slate-700/60 text-slate-300">A. Truthful</span>
+                      <span className="p-1.5 rounded-lg bg-cyan-950/90 border border-cyan-500/80 text-cyan-300 font-bold">B. Evasive</span>
+                      <span className="p-1.5 rounded-lg bg-slate-800/70 border border-slate-700/60 text-slate-300">C. Blunt</span>
+                      <span className="p-1.5 rounded-lg bg-slate-800/70 border border-slate-700/60 text-slate-300">D. Sincere</span>
+                    </div>
+                  </div>
+
+                  {/* Hardware Keycap Bar */}
+                  <div className="flex items-center justify-between text-[11px] font-mono pt-1 text-slate-400 border-t border-slate-800/80">
+                    <div className="flex items-center gap-1.5">
+                      <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[10px]">[P]</kbd>
+                      <span>Prev</span>
+                      <kbd className="ml-1 px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[10px]">[N]</kbd>
+                      <span>Next</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[10px]">[R]</kbd>
+                      <span>Flag</span>
+                      <kbd className="ml-1 px-1.5 py-0.5 rounded bg-blue-900 border border-blue-700 text-cyan-300 font-bold text-[10px]">[S]</kbd>
+                      <span>Submit</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <Link
-              href="/products/cbt"
-              className="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 dark:text-emerald-300 hover:underline"
-            >
-              <span>Explore Offline Architecture</span>
-              <span aria-hidden="true">&rarr;</span>
-            </Link>
           </div>
 
-          {/* Card 3: Socratic AI Misconception Diagnostics (Span 6) */}
-          <div className="md:col-span-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 group hover:border-purple-400/50 transition">
-            <div className="space-y-4">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
-                </svg>
-              </span>
+          {/* Row 2: Offline Answer Auto-Sync Protection (Visual Preview Left, Text Right) */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-emerald-400/50">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+              <div className="lg:col-span-5 order-2 lg:order-1">
+                <div className="rounded-2xl border border-emerald-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-4">
+                  {/* Status Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                        PWA RUNTIME METER
+                      </span>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                      OFFLINE-READY
+                    </span>
+                  </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                AI Misconception Diagnostics
-              </h3>
+                  {/* Data & Bundle Specs */}
+                  <div className="grid grid-cols-2 gap-2 text-center font-mono">
+                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <div className="text-[10px] text-slate-400 uppercase">Client Payload</div>
+                      <div className="text-base font-black text-emerald-400 mt-0.5">1.18 MB</div>
+                      <div className="text-[10px] text-slate-500">Zero remote fonts</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                      <div className="text-[10px] text-slate-400 uppercase">Live Network</div>
+                      <div className="text-base font-black text-cyan-400 mt-0.5">0.0 KB/s</div>
+                      <div className="text-[10px] text-slate-500">Airplane mode safe</div>
+                    </div>
+                  </div>
 
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-                Don&apos;t just read correct option letters. Understand why your chosen distractor was wrong through Socratic rule derivations and get targeted 5-question reinforcement drills.
-              </p>
+                  {/* Storage Persistence Meter */}
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-slate-300 font-bold">Encrypted IndexedDB Cache</span>
+                      <span className="text-emerald-400 font-bold">180 / 180 Saved</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div className="h-full rounded-full bg-emerald-500 w-full" />
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-snug">
+                      Responses stored cryptographically on-device. Auto-flushes to cloud when 3G/4G returns.
+                    </p>
+                  </div>
+
+                  {/* Sync Status Badge */}
+                  <div className="flex items-center gap-2 text-xs font-mono text-emerald-300 bg-emerald-950/50 border border-emerald-900/60 p-2.5 rounded-xl">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                    <span className="text-[11px]">Zero exam loss guaranteed during NEPA power cuts</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+              <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-teal-300 dark:border-teal-700/60 bg-teal-50 dark:bg-teal-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-500 animate-pulse" />
+                  <span>Offline-First Engine</span>
+                </div>
+
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Offline Answer Auto-Sync Protection
+                </h3>
+
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  Never lose test progress due to sudden power outages, dead generator fuel, or fluctuating network bars. Responses are stored in durable device storage and synced automatically once internet restores.
+                </p>
+
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-950 text-teal-600 dark:text-teal-400 text-xs font-bold">✓</span>
+                    <span>Ultra-low data footprint: full client download is under 1.2 MB</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-950 text-teal-600 dark:text-teal-400 text-xs font-bold">✓</span>
+                    <span>Take complete 180-question tests on airplane mode with zero data</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-950 text-teal-600 dark:text-teal-400 text-xs font-bold">✓</span>
+                    <span>Automated conflict-free reconciliation when network reconnects</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2">
+                  <Link
+                    href="/products/cbt"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                  >
+                    <span>Explore Offline Architecture</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </div>
             </div>
-
-            <Link
-              href="/products/ai-learning"
-              className="inline-flex items-center gap-2 text-sm font-bold text-purple-800 dark:text-purple-300 hover:underline"
-            >
-              <span>Learn About Socratic AI</span>
-              <span aria-hidden="true">&rarr;</span>
-            </Link>
           </div>
 
-          {/* Card 4: Interactive Virtual STEM Labs (Span 6) */}
-          <div className="md:col-span-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 group hover:border-cyan-400/50 transition">
-            <div className="space-y-4">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.8 22h12.4a2 2 0 0 0 1.7-2.66L14 9.31V2" />
-                  <path d="M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0" />
-                </svg>
-              </span>
+          {/* Row 3: Socratic AI Misconception Diagnostics (Text Left, Visual Preview Right) */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-purple-400/50">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Text Side (Span 7) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-purple-300 dark:border-purple-700/60 bg-purple-50 dark:bg-purple-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+                  <span>Socratic AI Pedagogy</span>
+                </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Interactive Virtual STEM Labs
-              </h3>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  AI Misconception Diagnostics
+                </h3>
 
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-                Physics mechanics, acid-base titration curves, and cellular biology diagrams brought to life with 60fps parameter manipulation directly in your browser.
-              </p>
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  Don&apos;t just read correct option letters. Understand why your chosen distractor was wrong through Socratic rule derivations and get targeted 5-question reinforcement drills.
+                </p>
+
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                    <span>Deconstruct examiner trap options with root-cause curriculum derivations</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                    <span>Instant rule cards for grammar concord, redox balancing &amp; organic mechanisms</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                    <span>Adaptive 5-question reinforcement drills to turn errors into lasting retention</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2">
+                  <Link
+                    href="/products/ai-learning"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                  >
+                    <span>Learn About Socratic AI</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Visual Preview Side (Span 5) */}
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl border border-purple-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-4">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                        SOCRATIC DIAGNOSTIC
+                      </span>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-purple-300 bg-purple-950/80 border border-purple-800/80 px-2 py-0.5 rounded">
+                      CHEMISTRY
+                    </span>
+                  </div>
+
+                  {/* Distractor Deconstruction */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-rose-400 font-bold flex items-center gap-1.5">
+                        <span>✕</span> Selected: [C] Basic Oxide
+                      </span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                        <span>✓</span> Correct: [B] Amphoteric
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-purple-900/60 bg-purple-950/40 p-3 text-xs space-y-1.5 text-purple-200">
+                      <div className="font-mono font-bold text-cyan-300 text-[11px]">
+                        Pedagogical Misconception:
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-slate-300">
+                        Aluminum oxide (Al₂O₃) is metallic, leading many candidates to assume it is purely basic. However, it reacts with both HCl and NaOH to yield salts, making it <strong>amphoteric</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Reinforcement Action */}
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-white">Targeted Reinforcement Drill</div>
+                      <div className="text-[10px] text-slate-400 font-mono">5 High-Yield Period 3 Oxide Questions</div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-purple-600 text-white font-mono font-bold text-[10px] shadow-xs">
+                      Drill Ready
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <Link
-              href="/products/stem"
-              className="inline-flex items-center gap-2 text-sm font-bold text-cyan-800 dark:text-cyan-300 hover:underline"
-            >
-              <span>Launch Virtual STEM Labs</span>
-              <span aria-hidden="true">&rarr;</span>
-            </Link>
+          {/* Row 4: Interactive Virtual STEM Labs (Visual Preview Left, Text Right) */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-cyan-400/50">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+              <div className="lg:col-span-5 order-2 lg:order-1">
+                <div className="rounded-2xl border border-cyan-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-4">
+                  {/* Lab Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                        VIRTUAL OPTICS LAB
+                      </span>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
+                      THIN LENS RAY-TRACING
+                    </span>
+                  </div>
+
+                  {/* SVG Ray Diagram */}
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3">
+                    <svg viewBox="0 0 320 120" className="w-full h-auto text-slate-300">
+                      {/* Principal Axis */}
+                      <line x1="10" y1="60" x2="310" y2="60" stroke="#475569" strokeWidth="1.5" strokeDasharray="3 3" />
+                      {/* Convex Lens */}
+                      <ellipse cx="160" cy="60" rx="8" ry="48" fill="#0284c7" fillOpacity="0.25" stroke="#38bdf8" strokeWidth="1.5" />
+                      {/* Focal Points */}
+                      <circle cx="100" cy="60" r="3" fill="#38bdf8" />
+                      <text x="96" y="75" fontSize="9" fill="#94a3b8" fontFamily="monospace">F</text>
+                      <circle cx="220" cy="60" r="3" fill="#38bdf8" />
+                      <text x="216" y="75" fontSize="9" fill="#94a3b8" fontFamily="monospace">F&apos;</text>
+                      {/* 2F Points */}
+                      <circle cx="40" cy="60" r="3" fill="#94a3b8" />
+                      <text x="34" y="75" fontSize="9" fill="#94a3b8" fontFamily="monospace">2F</text>
+                      <circle cx="280" cy="60" r="3" fill="#94a3b8" />
+                      <text x="274" y="75" fontSize="9" fill="#94a3b8" fontFamily="monospace">2F&apos;</text>
+                      {/* Object Arrow at 2F (x=40, height 30) */}
+                      <line x1="40" y1="60" x2="40" y2="30" stroke="#f43f5e" strokeWidth="2.5" />
+                      <polygon points="37,34 40,28 43,34" fill="#f43f5e" />
+                      {/* Parallel Ray to Lens, then through F' */}
+                      <line x1="40" y1="30" x2="160" y2="30" stroke="#38bdf8" strokeWidth="1.5" />
+                      <line x1="160" y1="30" x2="280" y2="90" stroke="#38bdf8" strokeWidth="1.5" />
+                      {/* Ray through Optical Center (160, 60) to image */}
+                      <line x1="40" y1="30" x2="280" y2="90" stroke="#fbbf24" strokeWidth="1.5" strokeDasharray="4 2" />
+                      {/* Inverted Image Arrow at 2F' (x=280, height 30 downward) */}
+                      <line x1="280" y1="60" x2="280" y2="90" stroke="#10b981" strokeWidth="2.5" />
+                      <polygon points="277,86 280,92 283,86" fill="#10b981" />
+                    </svg>
+                  </div>
+
+                  {/* Physics Readout */}
+                  <div className="grid grid-cols-2 gap-2 text-center font-mono text-xs">
+                    <div className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+                      <span className="text-[10px] text-slate-400 block uppercase">Object Position</span>
+                      <span className="font-bold text-white">dₒ = 2F (Equal Size)</span>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+                      <span className="text-[10px] text-slate-400 block uppercase">Image Nature</span>
+                      <span className="font-bold text-emerald-400">Real &amp; Inverted</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+              <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300 dark:border-cyan-700/60 bg-cyan-50 dark:bg-cyan-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                  <span>Interactive STEM Labs</span>
+                </div>
+
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Interactive Virtual STEM Labs
+                </h3>
+
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  Physics mechanics, acid-base titration curves, and cellular biology diagrams brought to life with 60fps parameter manipulation directly in your browser.
+                </p>
+
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                    <span>Direct parameter manipulation of focal lengths, object distances &amp; angles</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                    <span>Instant ray convergence and image characteristics calculation</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                    <span>Zero plugin downloads required; runs at 60fps on modest mobile phones</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2">
+                  <Link
+                    href="/products/stem"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                  >
+                    <span>Launch Virtual STEM Labs</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

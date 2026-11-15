@@ -229,98 +229,276 @@ export function TutorSuiteClient() {
         </div>
       </section>
 
-      {/* 2. Specialized Teaching Tools Bento Grid */}
+      {/* 2. Specialized Teaching Tools - Compact Alternating Cards */}
       <section aria-label="Specialized Educator Tools" className="space-y-10">
         <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800/80 bg-blue-50/80 dark:bg-blue-950/60 px-4 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-xs">
+            <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
+            <span>EDUCATOR WORKSPACE SUITE</span>
+          </div>
           <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight">
             Specialized Educator Capabilities
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 font-normal">
-            Every feature built deliberately for Nigerian secondary, WAEC and UTME curriculum delivery.
+            Every feature built deliberately for Nigerian secondary, WAEC, and UTME curriculum delivery.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Tool 1 */}
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 space-y-3 shadow-xs hover:border-blue-400/50 transition">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-cyan-400 border border-blue-200 dark:border-blue-800">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 9h18M9 21V9" />
-              </svg>
-            </span>
-            <h3 className="text-base font-extrabold text-slate-950 dark:text-white">Vector Academic Whiteboard</h3>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
-              Low-latency drawing engine with coordinate grids, ruled lined note sheets, and dark high-contrast chalkboards.
-            </p>
+        <div className="space-y-12 sm:space-y-16">
+          {/* Row 1: Vector Academic Whiteboard & KaTeX Stamps (Text Left, Visual Preview Right) */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-blue-400/50">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Text Side (Span 7) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-300 dark:border-blue-700/60 bg-blue-50 dark:bg-blue-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-blue-800 dark:text-cyan-300 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span>Low-Latency Lecture Canvas</span>
+                </div>
+
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Vector Academic Whiteboard &amp; KaTeX Stamps
+                </h3>
+
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  Low-latency drawing engine with coordinate grids, ruled lined note sheets, and dark high-contrast chalkboards. Insert mathematical symbols, DC circuits, ray diagrams, and benzene rings without tedious hand drawing.
+                </p>
+
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                    <span>Sub-45ms drawing latency optimized for 3G/4G networks across Nigeria</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                    <span>Instant KaTeX mathematical formulas, physics apparatus &amp; reaction mechanisms</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                    <span>Multi-surface toggle: Dark Chalkboard, Cartesian Grid, and Ruled College Ruled</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2">
+                  <Link
+                    href="/for-tutors/apply"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                  >
+                    <span>Apply for Educator Workspace</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Visual Preview Side (Span 5) */}
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl border border-blue-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                        WHITEBOARD STAMP HUD
+                      </span>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
+                      &lt; 45ms Latency
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-[#0A1624] p-4 space-y-2">
+                    <div className="text-[11px] text-cyan-300 font-mono flex items-center justify-between">
+                      <span>Simple Harmonic Motion</span>
+                      <span className="text-emerald-400 font-bold">KaTeX Stamp</span>
+                    </div>
+                    <div className="font-mono text-sm font-black text-white bg-slate-900/90 p-2.5 rounded-lg border border-white/10">
+                      d²x/dt² + &omega;²x = 0 &rArr; x(t) = A &middot; cos(&omega;t + &phi;)
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      Velocity v = &plusmn;&omega;&radic;(A² - x²) &bull; Maximum at x = 0
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 text-center font-mono text-[11px]">
+                    <span className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">Cartesian</span>
+                    <span className="p-1.5 rounded-lg bg-blue-950 border border-blue-700 text-cyan-300 font-bold">Chalkboard</span>
+                    <span className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">Ruled Lines</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Tool 2 */}
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 space-y-3 shadow-xs hover:border-cyan-400/50 transition">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-                <path d="M6 6h10M6 10h10" />
-              </svg>
-            </span>
-            <h3 className="text-base font-extrabold text-slate-950 dark:text-white">KaTeX Science Diagram Stamps</h3>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
-              Insert mathematical symbols, DC circuits, ray diagrams, and organic benzene rings without tedious hand drawing.
-            </p>
+          {/* Row 2: Live Socratic Checkpoint Polling (Visual Preview Left, Text Right) */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-cyan-400/50">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+              <div className="lg:col-span-5 order-2 lg:order-1">
+                <div className="rounded-2xl border border-cyan-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                        LIVE CONCEPT CHECK
+                      </span>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-amber-300 bg-amber-950/80 border border-amber-800/80 px-2 py-0.5 rounded">
+                      42 Responded
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
+                    <p className="text-xs text-white font-bold leading-snug">
+                      A simple pendulum is taken to Earth&apos;s centre. What happens to period T?
+                    </p>
+                    <div className="space-y-1.5 text-[11px] font-mono">
+                      <div className="flex items-center justify-between p-1.5 rounded-md bg-slate-800/60 border border-slate-700/50 text-slate-300">
+                        <span>[A] Remains 2.0s</span>
+                        <span className="text-slate-400 font-bold">8%</span>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 rounded-md bg-cyan-950/80 border border-cyan-600/80 text-cyan-300 font-bold">
+                        <span>[B] Infinitely large (stops)</span>
+                        <span className="text-emerald-400 font-bold">78% ✓</span>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 rounded-md bg-slate-800/60 border border-slate-700/50 text-slate-300">
+                        <span>[C] Decreases to zero</span>
+                        <span className="text-slate-400 font-bold">10%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] font-mono text-slate-400 bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                    <strong className="text-cyan-300">Tutor Insight:</strong> At Earth center g = 0 &rArr; T = 2&pi;&radic;(L/g) &rArr; infinite.
+                  </div>
+                </div>
+              </div>
+
+              {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+              <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span>Real-Time Checkpoint Polling</span>
+                </div>
+
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Instant Socratic Polls &amp; Active Recall
+                </h3>
+
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  Fire instantaneous concept checks during lectures to gauge comprehension and clarify derivation stumbling blocks. Students respond anonymously from any phone or browser.
+                </p>
+
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 text-xs font-bold">✓</span>
+                    <span>Instant response distribution reveals misconceptions immediately</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 text-xs font-bold">✓</span>
+                    <span>Pair polling results with Socratic hints and step-by-step physical models</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 text-xs font-bold">✓</span>
+                    <span>100% anonymous candidate submission preserves psychological safety</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2">
+                  <Link
+                    href="/products/live-classroom"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                  >
+                    <span>Explore Classroom Capabilities</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Tool 3 */}
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 space-y-3 shadow-xs hover:border-emerald-400/50 transition">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M18 20V10M12 20V4M6 20v-6" />
-              </svg>
-            </span>
-            <h3 className="text-base font-extrabold text-slate-950 dark:text-white">Real-Time Checkpoint Polling</h3>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
-              Fire instantaneous concept checks during lectures to gauge comprehension and clarify derivation stumbling blocks.
-            </p>
-          </div>
+          {/* Row 3: Cohort Diagnostic Radar (Text Left, Visual Preview Right) */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-purple-400/50">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Text Side (Span 7) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-purple-300 dark:border-purple-700/60 bg-purple-50 dark:bg-purple-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 shadow-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+                  <span>Cohort Diagnostic Radar</span>
+                </div>
 
-          {/* Tool 4 */}
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 space-y-3 shadow-xs hover:border-purple-400/50 transition">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-              </svg>
-            </span>
-            <h3 className="text-base font-extrabold text-slate-950 dark:text-white">Curriculum Authoring Studio</h3>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
-              Design structured syllabus lessons, standardized questions with full worked solutions, and set difficulty tags.
-            </p>
-          </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Cohort Misconception Diagnostics &amp; Analytics
+                </h3>
 
-          {/* Tool 5 */}
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 space-y-3 shadow-xs hover:border-cyan-400/50 transition">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.8 22h12.4a2 2 0 0 0 1.7-2.66L14 9.31V2" />
-                <path d="M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0" />
-              </svg>
-            </span>
-            <h3 className="text-base font-extrabold text-slate-950 dark:text-white">STEM Simulation Presenter</h3>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
-              Stage interactive laboratory simulations live on your screen, adjust variables with sliders, and prompt student discovery.
-            </p>
-          </div>
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  Track attendance, average scores, and specific misconceptions across your student cohorts to plan high-impact reviews. Identify syllabus blind spots before mock exam day.
+                </p>
 
-          {/* Tool 6 */}
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 space-y-3 shadow-xs hover:border-amber-400/50 transition">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 3v18h18" />
-                <path d="m19 9-5 5-4-4-3 3" />
-              </svg>
-            </span>
-            <h3 className="text-base font-extrabold text-slate-950 dark:text-white">Cohort Diagnostic Analytics</h3>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 font-normal">
-              Track attendance, average scores, and specific misconceptions across your student cohorts to plan high-impact reviews.
-            </p>
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                    <span>Automated syllabus mastery heatmaps across Physics, Chemistry, Biology &amp; Math</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                    <span>Identify high-error distractor traps (e.g. Faraday&apos;s Laws calculation errors)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                    <span>Exportable diagnostic reports for parents, schools &amp; tutorial centres</span>
+                  </li>
+                </ul>
+
+                <div className="pt-2">
+                  <Link
+                    href="/contact?subject=Tutor+Application"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                  >
+                    <span>Contact Educator Desk</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Visual Preview Side (Span 5) */}
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl border border-purple-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                        MASTERY RADAR
+                      </span>
+                    </div>
+                    <span className="font-mono text-[11px] font-bold text-purple-300 bg-purple-950/80 border border-purple-800/80 px-2 py-0.5 rounded">
+                      MOCK SERIES 4
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-1">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="text-slate-200 font-bold">Electrolysis &amp; Faraday</span>
+                        <span className="text-rose-400 font-bold">42% (At Risk)</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="h-full rounded-full bg-rose-500 w-[42%]" />
+                      </div>
+                      <div className="text-[10px] text-slate-400">Common error: charge Q = It vs molar electrons</div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-1">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="text-slate-200 font-bold">Concord &amp; Subject-Verb</span>
+                        <span className="text-emerald-400 font-bold">84% (Strong)</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="h-full rounded-full bg-emerald-500 w-[84%]" />
+                      </div>
+                      <div className="text-[10px] text-slate-400">Excellent retention across collective pronouns</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

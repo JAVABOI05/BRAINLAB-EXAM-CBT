@@ -664,59 +664,306 @@ export default function SchoolsPage() {
       {/* -------------------------------------------------------------------
           4. Three-Step Institutional Rollout Architecture
       ------------------------------------------------------------------- */}
+      {/* -------------------------------------------------------------------
+          4. Three-Step Institutional Rollout Architecture
+      ------------------------------------------------------------------- */}
       <section className="border-b border-slate-200/80 bg-white py-16 transition-colors dark:border-slate-800/80 dark:bg-[#00112b]/60 sm:py-24">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="text-center max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-sky-400">
-              Simple Deployment
-            </span>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 space-y-12 sm:space-y-16">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800/80 bg-blue-50/80 dark:bg-blue-950/60 px-4 py-1.5 text-xs font-bold text-blue-700 dark:text-sky-300 shadow-xs">
+              <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-sky-400 animate-pulse" />
+              <span>SIMPLE DEPLOYMENT ARCHITECTURE</span>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
               Zero Server Installation. Ready In 3 Steps.
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base">
+            <p className="text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-base font-normal">
               You do not need to purchase an expensive local server or install cumbersome desktop
               software. BrainLab runs securely in any modern web browser.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">
-                1
-              </span>
-              <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
-                Upload Student Roster
-              </h3>
-              <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
-                Upload your students’ names and subject combinations using our simple Excel / CSV
-                template. Instant account provisioning in seconds.
-              </p>
+          <div className="space-y-12 sm:space-y-16">
+            {/* Step 1: Upload Student Roster (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-blue-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-blue-300 dark:border-blue-700/60 bg-blue-50 dark:bg-blue-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-blue-800 dark:text-sky-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    <span>Step 01 · Instant Provisioning</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Upload Candidate Roster via CSV / Excel
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Upload your students’ names and subject combinations using our simple Excel / CSV template. Instant account provisioning in seconds with automated faculty stream classification.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-sky-400 text-xs font-bold">✓</span>
+                      <span>Bulk upload hundreds of candidates across Science, Commercial &amp; Arts</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-sky-400 text-xs font-bold">✓</span>
+                      <span>Automatic format validation prevents typo errors in subject combinations</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-sky-400 text-xs font-bold">✓</span>
+                      <span>Zero software dependencies: works from any laptop or staff desktop</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleDownloadCsvTemplate}
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95 cursor-pointer"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      <span>Download Sample CSV Template</span>
+                    </button>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      UTF-8 CSV &bull; Excel Compatible
+                    </span>
+                  </div>
+                </div>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-blue-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          ROSTER VALIDATION
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                        150 Processed
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 overflow-hidden text-[11px] font-mono">
+                      <div className="grid grid-cols-12 bg-slate-800/80 p-2 text-slate-400 font-bold border-b border-slate-700/60">
+                        <span className="col-span-3">ID</span>
+                        <span className="col-span-5">Name</span>
+                        <span className="col-span-4 text-right">Stream</span>
+                      </div>
+                      <div className="divide-y divide-slate-800/80">
+                        <div className="grid grid-cols-12 p-2 text-slate-200">
+                          <span className="col-span-3 text-cyan-400">BL-001</span>
+                          <span className="col-span-5 truncate">Adebayo Chioma</span>
+                          <span className="col-span-4 text-right text-emerald-400">Science</span>
+                        </div>
+                        <div className="grid grid-cols-12 p-2 text-slate-200">
+                          <span className="col-span-3 text-cyan-400">BL-002</span>
+                          <span className="col-span-5 truncate">Ibrahim Chukwuma</span>
+                          <span className="col-span-4 text-right text-blue-400">Commercial</span>
+                        </div>
+                        <div className="grid grid-cols-12 p-2 text-slate-200">
+                          <span className="col-span-3 text-cyan-400">BL-003</span>
+                          <span className="col-span-5 truncate">Okonkwo Aisha</span>
+                          <span className="col-span-4 text-right text-purple-400">Arts</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1">
+                      <span>Verification Checksum: Valid</span>
+                      <span className="text-emerald-400 font-bold">100% Ready</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">
-                2
-              </span>
-              <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
-                Print Lab Access Slips
-              </h3>
-              <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
-                Generate clean, printable slips containing unique 6-digit candidate PINs and lab
-                seat allocations for each student.
-              </p>
+            {/* Step 2: Print Lab Access Slips (Visual Preview Left, Text Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-cyan-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+                <div className="lg:col-span-5 order-2 lg:order-1">
+                  <div className="rounded-2xl border border-cyan-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          EXAMINATION ACCESS SLIP
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
+                        A4 8-UP PRINT
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-700 bg-slate-900/95 p-4 space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div>
+                          <div className="text-xs font-black text-white">{simSchoolName}</div>
+                          <div className="text-[10px] text-slate-400">Official UTME Mock Simulation</div>
+                        </div>
+                        <div className="h-7 w-7 rounded bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] font-mono font-bold text-cyan-300">
+                          SEAL
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Candidate:</span>
+                          <span className="text-white font-bold">Adebayo Chioma</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block">Seat Allocation:</span>
+                          <span className="text-cyan-300 font-bold">LAB 2 &bull; Seat 14</span>
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-blue-950/70 border border-blue-800 text-center font-mono">
+                        <span className="text-[10px] text-slate-400 block">Single-Session Login PIN</span>
+                        <span className="text-base font-black tracking-widest text-cyan-300">849 201</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] font-mono text-slate-400 text-center">
+                      Auto-generated slips ready for 1-click batch printing
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+                <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300 dark:border-cyan-700/60 bg-cyan-50 dark:bg-cyan-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-cyan-800 dark:text-sky-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                    <span>Step 02 · Physical Lab Access</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Generate Clean, Printable Candidate Slips
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Generate clean, printable slips containing unique 6-digit candidate PINs and lab seat allocations for each student. Prevent login collisions with cryptographically unique tokens.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-sky-400 text-xs font-bold">✓</span>
+                      <span>Unique 6-digit PIN prevents unauthorized multiple logins</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-sky-400 text-xs font-bold">✓</span>
+                      <span>Printed seat allocations maintain orderly computer lab rotation</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-sky-400 text-xs font-bold">✓</span>
+                      <span>Optimized for standard A4 paper: prints 8 slips per sheet</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <a
+                      href="#pricing"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Explore School Licensing Plans</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white">
-                3
-              </span>
-              <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
-                Conduct Exam &amp; Review
-              </h3>
-              <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
-                Students enter their PIN on lab computers and start. Results score immediately with
-                instant PDF report cards ready for parents.
-              </p>
+            {/* Step 3: Conduct Exam & Instant Telemetry (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0A1424] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-emerald-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Step 03 · Zero Network Dropouts</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Conduct Exam &amp; Review Parent-Ready Cards
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Students enter their PIN on lab computers and start. Results score immediately with instant PDF report cards ready for parents, complete with school crest and principal signature.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Strict browser lockdown: tab switches incur warnings or penalties</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Instant automated grading eliminates manual teacher marking delays</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Full offline endurance: no student is kicked out during network blips</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <a
+                      href="#inquiry"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Book School Partnership Demo</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-emerald-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          LIVE LAB TELEMETRY
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                        ACTIVE SESSION
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center font-mono">
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">Stations Online</div>
+                        <div className="text-base font-black text-cyan-400 mt-0.5">50 / 50 Lab PCs</div>
+                        <div className="text-[10px] text-emerald-400">0 Network Drops</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">Lockdown Status</div>
+                        <div className="text-base font-black text-emerald-400 mt-0.5">Armed</div>
+                        <div className="text-[10px] text-slate-400">Anti-Malpractice Active</div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 flex items-center justify-between text-xs font-mono">
+                      <div>
+                        <div className="text-white font-bold">Instant Grade Engine</div>
+                        <div className="text-[10px] text-slate-400">PDF Report Slips Ready</div>
+                      </div>
+                      <span className="px-2 py-1 rounded-md bg-emerald-950 text-emerald-300 font-bold border border-emerald-800">
+                        Auto-Graded
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
