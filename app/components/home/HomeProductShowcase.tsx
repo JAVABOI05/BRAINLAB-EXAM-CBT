@@ -58,7 +58,7 @@ const SHOWCASE_QUESTIONS: ShowcaseQuestion[] = [
       { key: "D", label: "0.80 V" },
     ],
     correct: "A",
-    derivation: "Current I = E / (R + r) = 2.0 / 5 = 0.4 A. Terminal p.d. V = I × R = 0.4 × 4 = 1.6 V.",
+    derivation: "Current I = E / (R + r) = 2.0 / (4 + 1) = 0.4 A. Terminal p.d. V = I × R = 0.4 × 4 = 1.6 V.",
     examinerTrap: "Trap: Confusing terminal potential difference (1.6V) with internal lost volts (0.4V).",
   },
 ];
@@ -272,10 +272,10 @@ export function HomeProductShowcase() {
 
                 {/* Bottom Status */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10">
-                  <span>Free fair-use tier included</span>
+                  <span>Diagnostic Socratic assistance</span>
                   <span className="text-emerald-600 font-bold flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    No sign-up required for trial
+                    Instant step-by-step guidance
                   </span>
                 </div>
               </div>

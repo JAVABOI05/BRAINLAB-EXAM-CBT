@@ -52,35 +52,74 @@ type OnlinePeer = {
   public_profile_slug?: string;
 };
 
+function CircleIcon({ id }: { id: string }) {
+  switch (id) {
+    case "pre_med":
+      return (
+        <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
+          <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
+          <circle cx="20" cy="10" r="2" />
+        </svg>
+      );
+    case "engineering":
+      return (
+        <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      );
+    case "legal":
+      return (
+        <svg className="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+          <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+          <path d="M7 21h10" />
+          <path d="M12 3v18" />
+          <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+        </svg>
+      );
+    case "commercial":
+      return (
+        <svg className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
+      );
+    case "sprint_2026":
+    default:
+      return (
+        <svg className="h-5 w-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+  }
+}
+
 const CURATED_STUDY_CIRCLES = [
   {
     id: "pre_med",
     name: "Pre-Med & Healthcare Study Circle",
-    icon: "🩺",
     description: "Biology, Chemistry, Physics & Human Physiology JAMB drills",
   },
   {
     id: "engineering",
     name: "Engineering & Physical Sciences Guild",
-    icon: "⚙️",
     description: "Calculus, Mechanics, Thermodynamics & Technical Drawing",
   },
   {
     id: "legal",
     name: "Legal Studies & Humanities Syndicate",
-    icon: "⚖️",
     description: "Government, Literature in English, CRS/IRS & History",
   },
   {
     id: "commercial",
     name: "Commercial & Management Sciences Circle",
-    icon: "💼",
     description: "Economics, Financial Accounting, Commerce & Mathematics",
   },
   {
     id: "sprint_2026",
     name: "2026 JAMB/UTME Speed Sprint Group",
-    icon: "⚡",
     description: "High-yield daily question marathons and past question speed drills",
   },
 ];
@@ -817,7 +856,12 @@ export default function MessagesPage() {
           {/* Search Box with ⌘K Badge (Google Stitch Design) */}
           <div className="px-3 pb-2.5 border-b border-slate-100">
             <div className="relative flex items-center">
-              <span className="absolute left-3 text-slate-400 text-xs">🔍</span>
+              <span className="absolute left-3 text-slate-400 text-xs" aria-hidden="true">
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </span>
               <input
                 type="text"
                 placeholder={activeTab === "chats" ? "Search circles, mentors, formulas…" : "Search real classmates or tutors…"}
@@ -894,7 +938,9 @@ export default function MessagesPage() {
                         className="w-full p-3 rounded-2xl border border-slate-200/90 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-left transition flex items-center justify-between group shadow-2xs"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="text-2xl shrink-0">{circle.icon}</span>
+                          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 shrink-0">
+                            <CircleIcon id={circle.id} />
+                          </span>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-slate-900 group-hover:text-blue-900 truncate">
                               {circle.name}
@@ -914,7 +960,7 @@ export default function MessagesPage() {
                   const isSelected = conv.id === activeConvId;
                   const isGroup = conv.type === "group";
                   const initials = isGroup
-                    ? "👥"
+                    ? "GRP"
                     : conv.title
                         .split(" ")
                         .map((w) => w[0])
@@ -1125,8 +1171,8 @@ export default function MessagesPage() {
                       </div>
 
                       {/* Context indicator */}
-                      <p className="text-[11px] text-slate-600 bg-slate-50 rounded-xl px-2.5 py-1 font-medium truncate flex items-center gap-1 border border-slate-100">
-                        <span>{isOnline ? "🟢" : "⚪"}</span> {peer.activity_context || (isOnline ? "Active on BrainLab" : "Offline")}
+                      <p className="text-[11px] text-slate-600 bg-slate-50 rounded-xl px-2.5 py-1 font-medium truncate flex items-center gap-1.5 border border-slate-100">
+                        <span className={`h-2 w-2 rounded-full shrink-0 ${isOnline ? "bg-emerald-500" : "bg-slate-300"}`} /> {peer.activity_context || (isOnline ? "Active on BrainLab" : "Offline")}
                       </p>
 
                       {/* 3 Direct Actions: Message, Add Friend, Add to Study Group */}
@@ -1162,7 +1208,7 @@ export default function MessagesPage() {
                           }`}
                           title={isFriend ? "Already study buddies" : "Add as study partner"}
                         >
-                          <span>{isFriend ? "✓" : "🤝"}</span> {isFriend ? "Friend" : "Add Friend"}
+                          <span>{isFriend ? "✓ Friend" : "+ Add Friend"}</span>
                         </button>
 
                         <button
@@ -1208,7 +1254,16 @@ export default function MessagesPage() {
                         : "bg-[#012153]"
                     }`}
                   >
-                    {activeConv.type === "group" ? "👥" : activeConv.title.charAt(0).toUpperCase()}
+                    {activeConv.type === "group" ? (
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    ) : (
+                      activeConv.title.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-slate-950 flex items-center gap-2">
@@ -1253,7 +1308,6 @@ export default function MessagesPage() {
                       }`}
                       title={isPeerBlocked ? "Unblock this learner" : "Block this learner"}
                     >
-                      <span>{isPeerBlocked ? "✓" : "🚫"}</span>
                       <span>{isPeerBlocked ? "Unblock" : "Block"}</span>
                     </button>
                   )}
@@ -1264,7 +1318,8 @@ export default function MessagesPage() {
                     }}
                     className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
                   >
-                    <span>🟢</span> Online Peers
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Online Peers</span>
                   </button>
                   <Link
                     href="/dashboard"
@@ -1279,7 +1334,14 @@ export default function MessagesPage() {
               {isGroupInvitePending && (
                 <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xl">👥</span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700 shrink-0">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </span>
                     <div>
                       <h4 className="text-xs font-bold text-blue-950">
                         Group Invitation to {activeConv.title}
@@ -1312,7 +1374,12 @@ export default function MessagesPage() {
               {isMessageRequestPending && (
                 <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-xl">📩</span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-800 shrink-0">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </span>
                     <div>
                       <h4 className="text-xs font-bold text-amber-950">
                         Message Request from {activeConv.title}
@@ -1366,7 +1433,11 @@ export default function MessagesPage() {
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center text-xs text-slate-400 p-8 text-center">
-                    <span className="text-3xl mb-2">💬</span>
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 mb-3 border border-blue-100">
+                      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                    </span>
                     <p className="font-bold text-slate-600">Start the discussion</p>
                     <p className="mt-1 max-w-xs text-slate-400">
                       Send a question, exam strategy, voice memo, or type <strong>@</strong> to mention someone.
@@ -1582,7 +1653,12 @@ export default function MessagesPage() {
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-900 transition active-press"
                       title="Record Voice Note"
                     >
-                      🎙️
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                      </svg>
                     </button>
 
                     <button
@@ -1618,7 +1694,11 @@ export default function MessagesPage() {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
-              <span className="text-4xl">💬</span>
+              <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-700 mb-2 border border-blue-100">
+                <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </span>
               <h2 className="mt-3 text-base font-bold text-slate-700">Select a Conversation or Connect with a Peer</h2>
               <p className="mt-1 text-xs max-w-sm text-slate-500">
                 Choose a conversation from the left, or browse the <strong>Online Peers</strong> tab to start studying
@@ -1667,7 +1747,9 @@ export default function MessagesPage() {
                   onClick={() => void handleJoinOrCreateStudyGroup(circle.name)}
                   className="w-full text-left p-3 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-purple-50/80 hover:border-purple-300 transition flex items-center gap-3 active-press"
                 >
-                  <span className="text-2xl shrink-0">{circle.icon}</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 shrink-0">
+                    <CircleIcon id={circle.id} />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-900 truncate">{circle.name}</p>
                     <p className="text-[10px] text-slate-500 truncate">{circle.description}</p>

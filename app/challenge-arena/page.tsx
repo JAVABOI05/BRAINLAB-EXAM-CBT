@@ -7,6 +7,56 @@ import { supabase } from "../lib/supabase";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import ArenaThemeToggle from "../components/arena/ArenaThemeToggle";
 import { normalizeQuestionOptions, normalizeClientQuestion, type ClientCompetitionQuestion } from "../lib/competitionEngine";
+import { toast } from "../lib/toast";
+
+function ArenaTabIcon({ id, className = "w-4 h-4" }: { id: string; className?: string }) {
+  switch (id) {
+    case "tournaments":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+          <path d="M4 22h16" />
+          <path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34" />
+          <path d="M6 4h12v7a6 6 0 0 1-12 0V4z" />
+        </svg>
+      );
+    case "challenges":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+          <line x1="13" y1="19" x2="19" y2="13" />
+          <line x1="16" y1="16" x2="20" y2="20" />
+          <line x1="19" y1="21" x2="21" y2="19" />
+          <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" />
+          <line x1="5" y1="14" x2="9" y2="18" />
+          <line x1="7" y1="17" x2="4" y2="20" />
+          <line x1="3" y1="19" x2="5" y2="21" />
+        </svg>
+      );
+    case "teams":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    case "leaderboard":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z" />
+        </svg>
+      );
+    case "spectate":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
 
 interface Competition {
   id: string;
@@ -305,9 +355,9 @@ export default function ChallengeArenaPage() {
 
       setShowCreateChallengeModal(false);
       loadArenaData();
-      alert("⚔️ Challenge created and posted to the Arena!");
+      toast.success("1v1 Challenge created and posted to the Arena!");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error creating challenge");
+      toast.error(err instanceof Error ? err.message : "Error creating challenge");
     } finally {
       setSubmittingChallenge(false);
     }
@@ -316,11 +366,11 @@ export default function ChallengeArenaPage() {
   const handleCreateTeamChallenge = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!currentUser || !myTeamId) {
-      alert("You must be an active member of a team before issuing a team challenge.");
+      toast.error("You must be an active member of a team before issuing a team challenge.");
       return;
     }
     if (myTeamRole !== "captain" && myTeamRole !== "co_captain") {
-      alert("Only your team's captain or co-captain can issue a team challenge.");
+      toast.error("Only your team's captain or co-captain can issue a team challenge.");
       return;
     }
     try {
@@ -345,11 +395,11 @@ export default function ChallengeArenaPage() {
       setShowTeamChallengeModal(false);
       setTeamChallengeTargetId("");
       await loadArenaData();
-      alert(teamChallengeTargetId
+      toast.success(teamChallengeTargetId
         ? "Team challenge sent to the selected team."
         : "Open team challenge published to the Arena.");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to issue team challenge.");
+      toast.error(error instanceof Error ? error.message : "Unable to issue team challenge.");
     } finally {
       setSubmittingTeamChallenge(false);
     }
@@ -383,7 +433,7 @@ export default function ChallengeArenaPage() {
         loadArenaData();
       }
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error accepting challenge");
+      toast.error(err instanceof Error ? err.message : "Error accepting challenge");
     }
   };
 
@@ -396,7 +446,7 @@ export default function ChallengeArenaPage() {
       if (!response.ok) throw new Error(data.error || "Unable to search players.");
       setFounderSearchResults(data.players || []);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Unable to search players.");
+      toast.error(err instanceof Error ? err.message : "Unable to search players.");
     } finally {
       setFounderSearchLoading(false);
     }
@@ -406,7 +456,7 @@ export default function ChallengeArenaPage() {
     setSelectedFounders(current => {
       if (current.some(item => item.slug === player.slug)) return current;
       if (current.length >= 9) {
-        alert("A team request can invite up to nine other founding members.");
+        toast.info("A team request can invite up to nine other founding members.");
         return current;
       }
       return [...current, player];
@@ -445,9 +495,9 @@ export default function ChallengeArenaPage() {
       setFounderSearch("");
       setFounderSearchResults([]);
       loadArenaData();
-      alert(data.message || "Your team request has been submitted for review.");
+      toast.success(data.message || "Your team request has been submitted for review.");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error creating squad");
+      toast.error(err instanceof Error ? err.message : "Error creating squad");
     } finally {
       setSubmittingSquad(false);
     }
@@ -598,7 +648,7 @@ export default function ChallengeArenaPage() {
       setActiveExamResult(data);
       loadArenaData();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error submitting exam attempt");
+      toast.error(err instanceof Error ? err.message : "Error submitting exam attempt");
     } finally {
       setActiveExamSubmitting(false);
     }
@@ -652,7 +702,7 @@ export default function ChallengeArenaPage() {
           </Link>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20">
-              ⚡
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -671,7 +721,10 @@ export default function ChallengeArenaPage() {
                 {myRating?.tier || "Bronze"}
               </span>
               <span className="text-blue-500 font-mono font-black">{myRating?.elo_rating || 1200} ELO</span>
-              <span className="text-orange-500 font-mono">🔥 {myRating?.win_streak || 0} Streak</span>
+              <span className="text-orange-500 font-mono flex items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                <span>{myRating?.win_streak || 0} Streak</span>
+              </span>
             </div>
           ) : (
             <Link href="/auth/signin?redirect=/challenge-arena" className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition">
@@ -693,7 +746,8 @@ export default function ChallengeArenaPage() {
       {/* EMERGENCY ANNOUNCEMENT BANNER */}
       {emergencyAlert && (
         <div className="bg-gradient-to-r from-red-600 to-[#FF5238] text-white px-6 py-2.5 text-center text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-md">
-          <span>⚠️ ARENA ADVISORY:</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span className="font-extrabold uppercase">Arena Advisory:</span>
           <span>{emergencyAlert.announcement || "Match generation temporarily paused for scheduled maintenance."}</span>
         </div>
       )}
@@ -714,7 +768,8 @@ export default function ChallengeArenaPage() {
               onClick={() => setShowCreateChallengeModal(true)}
               className="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm shadow-xl shadow-blue-600/25 transition transform active:scale-95 flex items-center gap-2"
             >
-              <span>⚔️</span> Issue 1v1 Challenge
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /><line x1="5" y1="14" x2="9" y2="18" /><line x1="7" y1="17" x2="4" y2="20" /><line x1="3" y1="19" x2="5" y2="21" /></svg>
+              <span>Issue 1v1 Challenge</span>
             </button>
 
             <button
@@ -723,7 +778,8 @@ export default function ChallengeArenaPage() {
                 isDark ? "border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200" : "border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800"
               }`}
             >
-              <span>🛡️</span> Form Squad Team
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+              <span>Form Squad Team</span>
             </button>
           </div>
         </div>
@@ -733,11 +789,11 @@ export default function ChallengeArenaPage() {
       <div className={`border-b sticky top-[61px] z-30 backdrop-blur-md px-6 ${isDark ? "bg-[#060B18]/90 border-slate-800" : "bg-slate-50/90 border-slate-200"}`}>
         <div className="max-w-6xl mx-auto flex overflow-x-auto gap-2 py-2.5 no-scrollbar">
           {[
-            { id: "tournaments", label: "Official Tournaments", icon: "🏆", count: competitions.length },
-            { id: "challenges", label: "1v1 Battle Arena", icon: "⚔️", count: challenges.filter((c) => c.status === "pending").length },
-            { id: "teams", label: "Squad Teams", icon: "🛡️", count: teams.length },
-            { id: "leaderboard", label: "Elo Leaderboards", icon: "👑" },
-            { id: "spectate", label: "Live Spectate", icon: "👁️", count: spectatorMatches.length },
+            { id: "tournaments", label: "Official Tournaments", count: competitions.length },
+            { id: "challenges", label: "1v1 Battle Arena", count: challenges.filter((c) => c.status === "pending").length },
+            { id: "teams", label: "Squad Teams", count: teams.length },
+            { id: "leaderboard", label: "Elo Leaderboards" },
+            { id: "spectate", label: "Live Spectate", count: spectatorMatches.length },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -748,6 +804,23 @@ export default function ChallengeArenaPage() {
                   : isDark
                   ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
+            >
+              <ArenaTabIcon id={tab.id} />
+              <span>{tab.label}</span>
+              {typeof tab.count === "number" && (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                    activeTab === tab.id ? "bg-white/20 text-white" : "bg-blue-500/20 text-blue-400"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
               }`}
             >
               <span>{tab.icon}</span>

@@ -384,7 +384,7 @@ export function HomeAudiences() {
                 </Link>
 
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                  100% Free Starter Access &bull; No Credit Card Required
+                  Instant Candidate Access &bull; Real Exam Environment
                 </span>
               </div>
             </div>

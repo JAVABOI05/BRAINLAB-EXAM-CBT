@@ -92,7 +92,7 @@ export function HomeHero() {
 
   const subhead = resolveClaimValue(
     heroConfig.subhead,
-    "Your learning journey starts here. For free."
+    "Unified examination preparation for UTME, O Level, and Post-UTME candidates."
   );
 
   const disclosure = resolveClaimValue(

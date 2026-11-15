@@ -157,7 +157,7 @@ export default function HomeInstantMiniMock() {
                 href="/cbt"
                 className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:translate-y-0.5 px-6 py-3.5 text-xs sm:text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition-all bl-focus-ring min-h-[48px]"
               >
-                <span>Launch Full Free CBT Mock Exam</span>
+                <span>Launch Full CBT Mock Exam</span>
                 <span aria-hidden="true">&rarr;</span>
               </Link>
               <button

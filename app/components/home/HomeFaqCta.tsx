@@ -51,7 +51,7 @@ export function HomeFaqCta() {
               Common Questions About BrainLab Academy
             </h2>
             <p className="mt-3.5 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto">
-              Clear answers regarding CBT exam simulations, free daily practice, offline synchronization, and student learning plans.
+              Clear answers regarding UTME 4-subject blueprints, O Level WAEC/NECO syllabus coverage, Post-UTME screening, and offline synchronization.
             </p>
           </div>
 
@@ -98,7 +98,7 @@ export function HomeFaqCta() {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
-            Join thousands of secondary students and examination candidates across Nigeria utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and 3D virtual laboratories.
+            Join secondary students and examination candidates across Nigeria utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and 3D virtual laboratories across UTME, O Level, and Post-UTME tracks.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -106,7 +106,7 @@ export function HomeFaqCta() {
               href="/cbt"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 text-slate-950 px-8 py-4 text-base font-black shadow-lg shadow-cyan-500/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
             >
-              <span>Start Learning for Free</span>
+              <span>Start Candidate Preparation</span>
               <span aria-hidden="true">&rarr;</span>
             </Link>
 
@@ -119,7 +119,7 @@ export function HomeFaqCta() {
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400 pt-2 font-medium">
-            No credit card required &bull; Low-bandwidth optimized &bull; Offline auto-sync protection
+            Instant candidate access &bull; Low-bandwidth optimized &bull; Offline auto-sync protection
           </p>
         </div>
       </section>

@@ -37,47 +37,47 @@ export function HomePricingTeaser() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 mb-3">
-            100% FREE FOR EVERY STUDENT &bull; NO SUBSCRIPTION REQUIRED
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-cyan-300 border border-cyan-500/30 mb-3">
+            UNIFIED EXAMINATION PREPARATION &bull; 3 CANDIDATE TRACKS
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-            Complete Academic Superpowers. Open to Every Candidate.
+            Complete Academic Superpowers for Every Candidate
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
-            BrainLab is an educational platform, not a paywalled service. All registered Nigerian candidates get unlimited CBT mock exams, syllabus-aligned past questions, AI study assistance, and 3D science labs completely free.
+            Comprehensive curriculum coverage, timed CBT mock engines, and diagnostic telemetry engineered specifically for UTME, O Level, and Post-UTME candidates across Nigeria.
           </p>
         </div>
 
-        {/* Free Public Access Showcase Bento Card */}
-        <div className="max-w-4xl mx-auto rounded-3xl p-6 sm:p-10 border border-emerald-500/30 bg-gradient-to-br from-[#0c1829] via-[#081220] to-[#050b14] shadow-2xl relative backdrop-blur-xl">
+        {/* Candidate Standard Suite Bento Card */}
+        <div className="max-w-4xl mx-auto rounded-3xl p-6 sm:p-10 border border-cyan-500/30 bg-gradient-to-br from-[#0c1829] via-[#081220] to-[#050b14] shadow-2xl relative backdrop-blur-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6 mb-6">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 mb-2">
-                OPEN TO EVERY LEARNER
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-950/80 text-cyan-300 border border-cyan-700/60 mb-2">
+                OPEN CANDIDATE PLATFORM
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Public Access Plan
+                Candidate Standard Suite
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Zero fees &bull; No credit card &bull; Permanent access to all core study tools
+                Standard access across UTME, O Level, and Post-UTME core study and simulation engines
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <span className="text-4xl font-black text-emerald-400">₦0</span>
-              <span className="text-xs text-slate-400 block font-medium">/ free forever</span>
+              <span className="text-4xl font-black text-cyan-400">₦0</span>
+              <span className="text-xs text-slate-400 block font-medium">/ candidate standard tier</span>
             </div>
           </div>
 
           {/* 6 Core Feature Pillars */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm text-slate-200">
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 mt-0.5" aria-hidden="true">
                 <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </span>
               <div>
-                <strong className="text-white block font-bold">Full CBT Practice Simulator</strong>
+                <strong className="text-white block font-bold">UTME 4-Subject Simulator</strong>
                 <span className="text-slate-400 text-xs">Authentic 4-subject 400-mark timed mock exams matching JAMB 8-key hall parity.</span>
               </div>
             </div>
@@ -88,12 +88,23 @@ export function HomePricingTeaser() {
                 </svg>
               </span>
               <div>
-                <strong className="text-white block font-bold">Curriculum Question Bank</strong>
-                <span className="text-slate-400 text-xs">Verified past questions across WAEC, JAMB, and NECO with step-by-step master derivations.</span>
+                <strong className="text-white block font-bold">O Level Curriculum Bank</strong>
+                <span className="text-slate-400 text-xs">Verified past questions across WAEC, NECO, and GCE with step-by-step master derivations.</span>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 mt-0.5" aria-hidden="true">
+                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+              <div>
+                <strong className="text-white block font-bold">Post-UTME Screening Drills</strong>
+                <span className="text-slate-400 text-xs">Timed 30-min university screening papers with composite aggregate admission calculator.</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-purple-400 mt-0.5" aria-hidden="true">
                 <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
@@ -104,7 +115,7 @@ export function HomePricingTeaser() {
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-400 mt-0.5" aria-hidden="true">
                 <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
@@ -115,18 +126,7 @@ export function HomePricingTeaser() {
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
-                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </span>
-              <div>
-                <strong className="text-white block font-bold">National Challenge Arena</strong>
-                <span className="text-slate-400 text-xs">Real-time 1v1 sprint battles, daily study streaks, XP, and state leaderboards.</span>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-500/20 text-teal-400 mt-0.5" aria-hidden="true">
                 <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
@@ -141,9 +141,9 @@ export function HomePricingTeaser() {
           <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link
               href="/cbt"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 px-8 py-3.5 text-sm font-black text-slate-950 shadow-lg shadow-emerald-500/25 transition active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 px-8 py-3.5 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/25 transition active:scale-95"
             >
-              <span>Get Started, It&apos;s Free</span>
+              <span>Launch Candidate Simulator</span>
               <span aria-hidden="true">&rarr;</span>
             </Link>
 
