@@ -380,7 +380,7 @@ export function HomeUniversityTargetSocialProof() {
             {/* Launch Call To Action */}
             <div className="md:col-span-3 flex flex-col justify-center gap-2.5 text-center md:text-right">
               <Link
-                href="/cbt"
+                href={`/cbt?target=${selectedUni.id}`}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 active:translate-y-0.5 px-6 py-3.5 text-xs sm:text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/25 transition-all bl-focus-ring min-h-[48px]"
               >
                 <span>Practice for {selectedUni.shortName}</span>

@@ -13,52 +13,224 @@ interface QuestionOption {
   explanation: string;
 }
 
-const SAMPLE_QUESTION: {
+interface HeroQuestion {
   subject: string;
+  subjectBadge: string;
   year: string;
+  questionNumber: string;
   question: string;
   options: QuestionOption[];
-} = {
-  subject: "Use of English",
-  year: "JAMB UTME Blueprint",
-  question:
-    "Choose the option that best completes the sentence: 'Neither the principal nor the teachers _______ present at the valedictory service.'",
-  options: [
-    {
-      key: "A",
-      text: "were",
-      isCorrect: true,
-      explanation:
-        "Correct. Under the grammatical rule of proximity, when subjects are connected by 'neither... nor', the verb agrees in number with the nearer subject ('teachers' = plural -> 'were').",
-    },
-    {
-      key: "B",
-      text: "was",
-      isCorrect: false,
-      explanation:
-        "Incorrect. 'Was' would agree with 'principal', but the closer subject is plural 'teachers'.",
-    },
-    {
-      key: "C",
-      text: "is",
-      isCorrect: false,
-      explanation:
-        "Incorrect. The sentence refers to a completed past event ('valedictory service').",
-    },
-    {
-      key: "D",
-      text: "are",
-      isCorrect: false,
-      explanation:
-        "Incorrect. The past tense is required for this context.",
-    },
-  ],
+  examinerTrap: string;
+}
+
+const HERO_SUBJECTS: Array<{ id: string; label: string; iconType: "book" | "ruler" | "bolt" | "flask" }> = [
+  { id: "english", label: "English", iconType: "book" },
+  { id: "math", label: "Mathematics", iconType: "ruler" },
+  { id: "physics", label: "Physics", iconType: "bolt" },
+  { id: "chemistry", label: "Chemistry", iconType: "flask" },
+];
+
+function HeroSubjectIcon({ type }: { type: "book" | "ruler" | "bolt" | "flask" }) {
+  if (type === "book") {
+    return (
+      <svg className="h-3 w-3 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+        <path d="M6 6h10" />
+        <path d="M6 10h10" />
+      </svg>
+    );
+  }
+  if (type === "ruler") {
+    return (
+      <svg className="h-3 w-3 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      </svg>
+    );
+  }
+  if (type === "bolt") {
+    return (
+      <svg className="h-3 w-3 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="h-3 w-3 shrink-0 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M10 2v7.31L4.2 19.5A2 2 0 0 0 6 22h12a2 2 0 0 0 1.8-2.5L14 9.31V2" />
+      <path d="M8.5 2h7" />
+    </svg>
+  );
+}
+
+const HERO_QUESTIONS: Record<string, HeroQuestion> = {
+  english: {
+    subject: "Use of English",
+    subjectBadge: "Lexis & Concord",
+    year: "JAMB UTME Blueprint",
+    questionNumber: "Question 14 of 40",
+    question:
+      "Choose the option that best completes the sentence: 'Neither the principal nor the teachers _______ present at the valedictory service.'",
+    options: [
+      {
+        key: "A",
+        text: "were",
+        isCorrect: true,
+        explanation:
+          "Rule of Proximity: In 'neither... nor' constructions, the verb agrees with the nearer subject ('teachers' = plural ⟹ 'were').",
+      },
+      {
+        key: "B",
+        text: "was",
+        isCorrect: false,
+        explanation:
+          "'Was' would agree with 'principal', but the closer subject is plural 'teachers'.",
+      },
+      {
+        key: "C",
+        text: "is",
+        isCorrect: false,
+        explanation:
+          "The sentence refers to a completed past event ('valedictory service').",
+      },
+      {
+        key: "D",
+        text: "are",
+        isCorrect: false,
+        explanation:
+          "Past tense is required for this historical occurrence.",
+      },
+    ],
+    examinerTrap:
+      "Trap: Instinctively matching the verb to the singular subject 'principal' instead of the nearest plural subject 'teachers'.",
+  },
+  math: {
+    subject: "Mathematics",
+    subjectBadge: "Algebra & Polynomials",
+    year: "JAMB UTME Blueprint",
+    questionNumber: "Question 8 of 40",
+    question:
+      "Find the values of x that satisfy the quadratic equation: 2x² + 5x + 3 = 0.",
+    options: [
+      {
+        key: "A",
+        text: "x = -1 or x = -3/2",
+        isCorrect: true,
+        explanation:
+          "Factorise: 2x² + 2x + 3x + 3 = 0 ⟹ 2x(x + 1) + 3(x + 1) = 0 ⟹ (2x + 3)(x + 1) = 0. Hence x = -3/2 or x = -1.",
+      },
+      {
+        key: "B",
+        text: "x = 1 or x = 3/2",
+        isCorrect: false,
+        explanation:
+          "Sign inversion error: setting (x + 1) = 0 gives x = -1, not +1.",
+      },
+      {
+        key: "C",
+        text: "x = -1 or x = 3/2",
+        isCorrect: false,
+        explanation:
+          "Only one root is correct (-1); (2x + 3) = 0 gives x = -3/2, not +3/2.",
+      },
+      {
+        key: "D",
+        text: "x = 1 or x = -3/2",
+        isCorrect: false,
+        explanation:
+          "Sign mistake when factoring the first bracket.",
+      },
+    ],
+    examinerTrap:
+      "Trap: Forgetting to reverse signs when moving from factors to roots (x + 1 = 0 ⟹ x = -1).",
+  },
+  physics: {
+    subject: "Physics",
+    subjectBadge: "Current Electricity",
+    year: "JAMB UTME Blueprint",
+    questionNumber: "Question 21 of 40",
+    question:
+      "A cell of e.m.f. 2.0 V and internal resistance 1.0 Ω is connected across an external resistor of 4.0 Ω. Calculate the terminal potential difference.",
+    options: [
+      {
+        key: "A",
+        text: "1.60 V",
+        isCorrect: true,
+        explanation:
+          "Total resistance R_total = 4 + 1 = 5 Ω. Current I = 2.0 / 5 = 0.4 A. Terminal p.d. V = I × R = 0.4 × 4 = 1.6 V.",
+      },
+      {
+        key: "B",
+        text: "2.00 V",
+        isCorrect: false,
+        explanation:
+          "2.0 V is open-circuit e.m.f.; internal resistance produces lost volts (Ir = 0.4 V).",
+      },
+      {
+        key: "C",
+        text: "0.40 V",
+        isCorrect: false,
+        explanation:
+          "0.40 V is the lost voltage across internal resistance, not the terminal potential difference.",
+      },
+      {
+        key: "D",
+        text: "0.80 V",
+        isCorrect: false,
+        explanation:
+          "Incorrect formula application.",
+      },
+    ],
+    examinerTrap:
+      "Trap: Confusing terminal potential difference (V = IR = 1.6V) with internal lost volts (v = Ir = 0.4V).",
+  },
+  chemistry: {
+    subject: "Chemistry",
+    subjectBadge: "Redox & States",
+    year: "JAMB UTME Blueprint",
+    questionNumber: "Question 17 of 40",
+    question:
+      "Determine the oxidation number of Manganese (Mn) in potassium permanganate (KMnO₄).",
+    options: [
+      {
+        key: "A",
+        text: "+7",
+        isCorrect: true,
+        explanation:
+          "In neutral KMnO₄: K = +1, O = -2. (+1) + Mn + 4(-2) = 0 ⟹ 1 + Mn - 8 = 0 ⟹ Mn = +7.",
+      },
+      {
+        key: "B",
+        text: "+5",
+        isCorrect: false,
+        explanation:
+          "Mistakenly computing 8 - 3 without balancing 4 oxygen atoms (-8).",
+      },
+      {
+        key: "C",
+        text: "+6",
+        isCorrect: false,
+        explanation:
+          "+6 is the oxidation state in potassium manganate (K₂MnO₄), not permanganate.",
+      },
+      {
+        key: "D",
+        text: "+4",
+        isCorrect: false,
+        explanation:
+          "+4 is the oxidation state in manganese dioxide (MnO₂).",
+      },
+    ],
+    examinerTrap:
+      "Trap: Confusing permanganate (KMnO₄: Mn = +7) with manganate (K₂MnO₄: Mn = +6).",
+  },
 };
 
 export function HomeHero() {
   const heroConfig = HOMEPAGE_CONTENT_CONFIG.hero;
+  const [activeSubject, setActiveSubject] = useState<string>("english");
   const [selectedOption, setSelectedOption] = useState<string>("A");
   const [showCalculator, setShowCalculator] = useState(false);
+  const [isFlagged, setIsFlagged] = useState(false);
 
   const headline = resolveClaimValue(
     heroConfig.headline,
@@ -75,9 +247,14 @@ export function HomeHero() {
     "Public learners receive full access to CBT practice, question banks, AI Tutor fair-use, and Learning Hub at ₦0."
   );
 
-  const activeOption = SAMPLE_QUESTION.options.find(
-    (opt) => opt.key === selectedOption
-  );
+  const currentQ = HERO_QUESTIONS[activeSubject] || HERO_QUESTIONS.english;
+  const activeOption = currentQ.options.find((opt) => opt.key === selectedOption);
+
+  function handleSubjectChange(subId: string) {
+    setActiveSubject(subId);
+    setSelectedOption("A");
+    setIsFlagged(false);
+  }
 
   return (
     <section
@@ -213,6 +390,33 @@ export function HomeHero() {
                 </div>
               </div>
 
+              {/* Subject Tabs Switcher Strip */}
+              <div
+                role="tablist"
+                aria-label="Mock Drill Subject Selection"
+                className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-1 scrollbar-none"
+              >
+                {HERO_SUBJECTS.map((sub) => {
+                  const isActive = sub.id === activeSubject;
+                  return (
+                    <button
+                      key={sub.id}
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => handleSubjectChange(sub.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                        isActive
+                          ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-xs"
+                          : "text-slate-400 hover:text-slate-200 bg-slate-900/40 border border-white/5"
+                      }`}
+                    >
+                      <HeroSubjectIcon type={sub.iconType} />
+                      <span>{sub.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Optional On-screen calculator modal/drawer (zero layout shift) */}
               {showCalculator && (
                 <div className="absolute inset-x-4 top-14 z-30 rounded-2xl border-2 border-cyan-500/50 bg-slate-950/98 p-4 text-center text-xs animate-bl-scale-in shadow-2xl backdrop-blur-xl">
@@ -249,32 +453,40 @@ export function HomeHero() {
               )}
 
               {/* Realistic CBT Question Preview Card */}
-              <div className="mt-3.5 space-y-3 rounded-2xl bg-slate-950/80 border border-white/10 p-4 text-left shadow-inner">
+              <div className="mt-2 space-y-2.5 rounded-2xl bg-slate-950/80 border border-white/10 p-3.5 sm:p-4 text-left shadow-inner">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-300 font-bold flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                    <span>Subject: {SAMPLE_QUESTION.subject}</span>
+                    <span>{currentQ.subject}</span>
+                    <span className="text-[10px] font-normal text-slate-400">({currentQ.subjectBadge})</span>
                   </span>
-                  <span className="text-cyan-400 font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">
-                    Question 14 of 40
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {isFlagged && (
+                      <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/40">
+                        FLAGGED
+                      </span>
+                    )}
+                    <span className="text-cyan-400 font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">
+                      {currentQ.questionNumber}
+                    </span>
+                  </div>
                 </div>
 
-                <p className="text-sm font-semibold text-white leading-relaxed">
-                  {SAMPLE_QUESTION.question}
+                <p className="text-xs sm:text-sm font-semibold text-white leading-relaxed">
+                  {currentQ.question}
                 </p>
 
                 {/* Interactive Question Options with Tactile 3D Keycaps */}
-                <fieldset className="space-y-2 text-xs" aria-label="Exam Options">
+                <fieldset className="space-y-1.5 text-xs" aria-label="Exam Options">
                   <legend className="sr-only">Select your answer</legend>
-                  {SAMPLE_QUESTION.options.map((opt) => {
+                  {currentQ.options.map((opt) => {
                     const isSelected = selectedOption === opt.key;
                     return (
                       <button
                         key={opt.key}
                         type="button"
                         onClick={() => setSelectedOption(opt.key)}
-                        className={`w-full flex items-center gap-3 rounded-xl border p-2.5 min-h-[44px] text-left transition-all duration-150 cursor-pointer ${
+                        className={`w-full flex items-center gap-2.5 rounded-xl border p-2 min-h-[44px] text-left transition-all duration-150 cursor-pointer ${
                           isSelected
                             ? opt.isCorrect
                               ? "border-emerald-500/80 bg-emerald-950/60 text-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.2)] font-bold"
@@ -294,10 +506,10 @@ export function HomeHero() {
                         >
                           {opt.key}
                         </span>
-                        <span className="flex-1 text-xs">{opt.text}</span>
+                        <span className="flex-1 text-[11px] sm:text-xs">{opt.text}</span>
                         {isSelected && (
                           <span
-                            className={`text-[10px] uppercase font-black tracking-wide px-2 py-0.5 rounded flex items-center gap-1 ${
+                            className={`text-[9px] uppercase font-black tracking-wide px-1.5 py-0.5 rounded flex items-center gap-1 ${
                               opt.isCorrect
                                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                                 : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
@@ -328,9 +540,9 @@ export function HomeHero() {
 
                 {/* Authentic Physical JAMB 8-Key Navigation Strip */}
                 <div className="pt-2 border-t border-white/10">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>Physical JAMB 8-Keypad:</span>
-                    <span className="text-cyan-400 font-semibold">Active Mode</span>
+                  <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+                    <span>JAMB 8-Keypad Controls:</span>
+                    <span className="text-cyan-400 font-semibold">Active Hardware Emulation</span>
                   </div>
                   <div className="grid grid-cols-4 gap-1.5">
                     {[
@@ -351,9 +563,16 @@ export function HomeHero() {
                             const keys = ["A", "B", "C", "D"];
                             const currIdx = keys.indexOf(selectedOption);
                             setSelectedOption(keys[(currIdx - 1 + keys.length) % keys.length]);
+                          } else if (k.key === "R") {
+                            setIsFlagged(!isFlagged);
+                          } else if (k.key === "S") {
+                            // Cycle to next subject for quick exploration
+                            const subKeys = HERO_SUBJECTS.map((s) => s.id);
+                            const nextIdx = (subKeys.indexOf(activeSubject) + 1) % subKeys.length;
+                            handleSubjectChange(subKeys[nextIdx]);
                           }
                         }}
-                        className="py-1.5 px-2 rounded-lg bg-slate-900 border border-white/15 text-center font-mono text-xs font-bold text-slate-300 hover:text-white hover:border-cyan-400/50 shadow-[0_2px_0_#0f172a] active:translate-y-0.5 active:shadow-none transition cursor-pointer flex items-center justify-center gap-1"
+                        className="py-1.5 px-2 rounded-lg bg-slate-900 border border-white/15 text-center font-mono text-xs font-bold text-slate-300 hover:text-white hover:border-cyan-400/50 shadow-[0_2px_0_#0f172a] active:translate-y-0.5 active:shadow-none transition cursor-pointer flex items-center justify-center gap-1 min-h-[44px]"
                       >
                         <span className="text-cyan-400 font-black">[{k.key}]</span>
                         <span className="text-[10px] font-sans">{k.label}</span>
@@ -362,26 +581,29 @@ export function HomeHero() {
                   </div>
                 </div>
 
-                {/* Socratic Instant Explanation */}
+                {/* Socratic Instant Explanation & Examiner Trap */}
                 {activeOption && (
                   <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-2.5 text-[11px] text-cyan-200 animate-bl-fade-in space-y-1">
                     <div className="font-bold text-cyan-300 flex items-center gap-1.5">
-                      <svg className="h-3.5 w-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg className="h-3.5 w-3.5 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="16" x2="12" y2="12" />
                         <line x1="12" y1="8" x2="12.01" y2="8" />
                       </svg>
-                      <span>Pedagogical Grammar Rule:</span>
+                      <span>Socratic Rule:</span>
                     </div>
-                    <p className="leading-relaxed pl-5">{activeOption.explanation}</p>
+                    <p className="leading-relaxed pl-5 text-[10px] sm:text-[11px]">{activeOption.explanation}</p>
+                    <p className="text-[10px] text-amber-300/90 pl-5 font-mono italic">
+                      {currentQ.examinerTrap}
+                    </p>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px] text-slate-400">
-                  <span>Interactive Split-Screen Simulator Preview</span>
+                <div className="flex items-center justify-between pt-1.5 border-t border-white/10 text-[11px] text-slate-400">
+                  <span className="text-[10px]">Split-Screen Simulator Preview</span>
                   <Link
                     href="/cbt"
-                    className="text-cyan-400 font-bold hover:text-cyan-300 transition-colors inline-flex items-center gap-1"
+                    className="text-cyan-400 font-bold hover:text-cyan-300 transition-colors inline-flex items-center gap-1 text-[11px]"
                   >
                     <span>Launch Full Mock</span>
                     <span aria-hidden="true">&rarr;</span>
