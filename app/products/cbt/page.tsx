@@ -292,35 +292,278 @@ export default function CbtProductPage() {
         </div>
       </section>
 
-      {/* Feature Architecture Cards */}
+      {/* Feature Architecture - Compact Alternating Cards */}
       <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800/80 bg-blue-50/80 dark:bg-blue-950/60 px-4 py-1.5 text-xs font-bold text-blue-700 dark:text-cyan-300 shadow-xs">
+              <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
+              <span>CORE CBT ENGINE CAPABILITIES</span>
+            </div>
+            <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight sm:text-4xl">
               Engineered for Nigerian CBT Realities
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-normal">
               Exam preparation is about more than multiple-choice questions. It requires authentic timing, anti-panic familiarity, and network resilience.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((feat, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80 space-y-3"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60">
-                  <CbtFeatureIcon id={feat.iconId} />
+          <div className="space-y-12 sm:space-y-16">
+            {/* Row 1: Authentic 2-Hour Countdown & 8-Key Controls (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-blue-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-blue-300 dark:border-blue-700/60 bg-blue-50 dark:bg-blue-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-blue-800 dark:text-cyan-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    <span>Official UTME Timing &amp; Pacing</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Authentic 2-Hour Countdown &amp; 8-Key Hardware Controls
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Practise with strict examination pacing. The timer replicates Joint Admissions and Matriculation Board standards, training you to allocate minutes efficiently across English and your three elective papers.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>180 questions across 4 subjects under strict 120-minute countdown</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Physical 8-key shortcuts: [A, B, C, D] options and [P, N, R, S] navigation</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Built-in on-screen scientific calculator with drag-and-minimize capabilities</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/cbt"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Launch Free CBT Practice Test</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
                 </div>
-                <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
-                  {feat.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  {feat.description}
-                </p>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-blue-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          JAMB TERMINAL HUD
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
+                        118:24
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1 text-center font-mono text-[11px]">
+                      <span className="py-1 rounded bg-blue-600 text-white font-bold">ENG (60)</span>
+                      <span className="py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">BIO (40)</span>
+                      <span className="py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">CHM (40)</span>
+                      <span className="py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">PHY (40)</span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
+                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                        <span>Question 24 of 40 (Physics)</span>
+                        <span className="text-cyan-300 font-bold">Projectiles</span>
+                      </div>
+                      <p className="text-xs text-slate-200">
+                        A ball is projected horizontally at 15 m/s from a cliff 45 m high. Find the horizontal range.
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono">
+                        <span className="p-1 rounded bg-slate-800 border border-slate-700 text-slate-300">A. 30.0 m</span>
+                        <span className="p-1 rounded bg-cyan-950 border border-cyan-600 text-cyan-300 font-bold">B. 45.0 m ✓</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                      <span>Keycaps: [P] Prev &bull; [N] Next</span>
+                      <span className="text-cyan-300 font-bold">[S] Submit</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Row 2: Low-Data Offline Protection (Visual Preview Left, Text Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-emerald-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+                <div className="lg:col-span-5 order-2 lg:order-1">
+                  <div className="rounded-2xl border border-emerald-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          OFFLINE RELIABILITY
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                        ACTIVE
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center font-mono">
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">IndexedDB Cache</div>
+                        <div className="text-base font-black text-emerald-400 mt-0.5">180 / 180</div>
+                        <div className="text-[10px] text-slate-500">Fully Cached</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">Network Lost</div>
+                        <div className="text-base font-black text-cyan-400 mt-0.5">0 Answers Lost</div>
+                        <div className="text-[10px] text-slate-500">Auto-Queued</div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-800 text-[11px] font-mono text-emerald-200">
+                      ✓ Instant client reconciliation when cellular or Wi-Fi reconnects
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+                <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Offline-First Architecture</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Low-Data Offline Answer Auto-Sync
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Fluctuating Nigerian 3G/4G or sudden cybercafé power cuts won&apos;t wipe your paper. Responses are cached locally in your browser storage and automatically sync to the server once reconnected.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Under 1.2 MB total client bundle: zero remote font downloads</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Encrypted IndexedDB storage protects your answers from sudden battery death</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Runs smoothly on budget Android phones, cybercafé PCs, and laptops</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/about"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Explore System Specifications</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Standardized 400-Mark Diagnostic Scoring (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-purple-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-purple-300 dark:border-purple-700/60 bg-purple-50 dark:bg-purple-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+                    <span>Instant Psychometric Review</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Standardized 400-Mark Diagnostic Scoring &amp; Proofs
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Get instant score breakdowns by subject immediately upon submission, with percentile benchmarks showing exactly where you stand among thousands of candidates nationwide.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>Immediate 4-subject aggregate scoring with university tier comparison</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>Step-by-step worked solutions and examiner distractor derivations</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>Instant bridge to targeted 5-question Socratic reinforcement drills</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/syllabus"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>View Tested Subject Syllabi</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-purple-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          DIAGNOSTIC SCORECARD
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                        294 / 400
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs font-mono">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span>Use of English (60 Qs)</span>
+                        <span className="text-cyan-400 font-bold">74%</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span>Mathematics (40 Qs)</span>
+                        <span className="text-emerald-400 font-bold">82%</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span>Physics (40 Qs)</span>
+                        <span className="text-amber-400 font-bold">68%</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span>Chemistry (40 Qs)</span>
+                        <span className="text-cyan-400 font-bold">70%</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] font-mono text-slate-400 bg-purple-950/40 p-2.5 rounded-xl border border-purple-900/60 flex items-center justify-between">
+                      <span>Admission Target: UNILAG Engineering</span>
+                      <span className="text-emerald-400 font-bold">Competitive ✓</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

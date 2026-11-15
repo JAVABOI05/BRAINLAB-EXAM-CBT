@@ -153,8 +153,11 @@ export default function SubjectLearningPage() {
               <span className="rounded-full border border-white/20 px-3 py-1.5">{topics.length} published {topics.length === 1 ? "topic" : "topics"}</span>
               <span className="rounded-full border border-white/20 px-3 py-1.5">{lessonCount} published {lessonCount === 1 ? "lesson" : "lessons"}</span>
               <span className="rounded-full border border-white/20 px-3 py-1.5">{contentItemCount} learning resources</span>
-              <Link href={`/learn/${subject.slug}/feed`} className="rounded-full bg-white text-[#061a3a] font-bold px-4 py-1.5 hover:bg-blue-50 transition shadow-sm">
-                📢 Course Feed & Updates →
+              <Link href={`/learn/${subject.slug}/feed`} className="rounded-full bg-white text-[#061a3a] font-bold px-4 py-1.5 hover:bg-blue-50 transition shadow-sm inline-flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5 text-[#061a3a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 11l19-9-9 19-2-8-8-2z" />
+                </svg>
+                <span>Course Feed &amp; Updates →</span>
               </Link>
             </div>
           </header>

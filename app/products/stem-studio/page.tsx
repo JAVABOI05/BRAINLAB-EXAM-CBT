@@ -265,55 +265,361 @@ export default function StemStudioProductPage() {
         </div>
       </section>
 
-      {/* 6 Multidisciplinary Benches */}
+      {/* Multidisciplinary Laboratory Benches - Compact Alternating Cards */}
       <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
-              Six Virtual Laboratory Benches
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 dark:border-cyan-800/80 bg-cyan-50/80 dark:bg-cyan-950/60 px-4 py-1.5 text-xs font-bold text-cyan-800 dark:text-cyan-300 shadow-xs">
+              <span className="flex h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
+              <span>VIRTUAL SIMULATION BENCHES</span>
+            </div>
+            <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight sm:text-4xl">
+              Specialized Laboratory Benches
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-normal">
               Designed around the most heavily calculated and conceptual topics in Nigerian examination syllabi.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {LAB_BENCHES.map((lab, idx) => (
-              <div
-                key={idx}
-                className={`rounded-2xl border ${lab.color} bg-white p-6 shadow-xs dark:bg-slate-900/80 space-y-3 flex flex-col justify-between`}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
-                      <BenchIcon id={lab.iconId} />
-                    </div>
-                    <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300">
-                      {lab.badge}
-                    </span>
+          <div className="space-y-12 sm:space-y-16">
+            {/* Row 1: Projectile Motion & Ballistics Lab (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-blue-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-blue-300 dark:border-blue-700/60 bg-blue-50 dark:bg-blue-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-blue-800 dark:text-cyan-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    <span>Physics &amp; Mechanics</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
-                      {lab.discipline}
-                    </span>
-                    <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
-                      {lab.title}
-                    </h3>
-                  </div>
-                  <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                    {lab.description}
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Projectile Motion &amp; Ballistics Lab
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Adjust velocity, launch angle (0° to 90°), and gravitational acceleration (Earth 9.8 m/s² vs Moon 1.62 m/s²). Observe instantaneous trajectory curves, time of flight, and maximum range in real time.
                   </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Real-time vector decomposition into horizontal vx and vertical vy components</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Direct verification of Range R = (u² sin 2&theta;) / g at 45° launch optimum</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Linked directly to official JAMB UTME kinematics past questions</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/classroom/stem"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Launch Kinematics Bench</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
                 </div>
-                <div className="pt-2">
-                  <Link
-                    href="/classroom/stem"
-                    className="text-xs font-bold text-cyan-700 hover:text-cyan-900 dark:text-cyan-400 dark:hover:text-cyan-300"
-                  >
-                    Open Simulator Bench →
-                  </Link>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-blue-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                          BALLISTICS TELEMETRY
+                        </span>
+                      </div>
+                      <span className="text-cyan-400 font-bold bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded text-[11px]">
+                        &theta; = 45.0&deg;
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3">
+                      <svg viewBox="0 0 300 80" className="w-full h-16 text-cyan-400" fill="none">
+                        <path d="M 10 75 Q 150 10 290 75" stroke="currentColor" strokeWidth="2.5" strokeDasharray="4 2" />
+                        <circle cx="150" cy="10" r="4" fill="#38bdf8" />
+                        <text x="135" y="28" fill="#94a3b8" fontSize="9" fontFamily="monospace">H_max: 15.9m</text>
+                      </svg>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center text-[11px]">
+                      <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[10px] text-slate-400 block uppercase">Max Range</span>
+                        <span className="text-white font-bold">R = 63.8 m</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[10px] text-slate-400 block uppercase">Flight Time</span>
+                        <span className="text-emerald-400 font-bold">T = 3.61 s</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Row 2: Optics Thin-Lens Ray Tracing (Visual Preview Left, Text Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-cyan-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+                <div className="lg:col-span-5 order-2 lg:order-1">
+                  <div className="rounded-2xl border border-cyan-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                          RAY TRACING BENCH
+                        </span>
+                      </div>
+                      <span className="text-cyan-300 font-bold bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded text-[11px]">
+                        f = 10 cm
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3">
+                      <svg viewBox="0 0 320 110" className="w-full h-auto text-slate-300">
+                        <line x1="10" y1="55" x2="310" y2="55" stroke="#475569" strokeWidth="1.5" strokeDasharray="3 3" />
+                        <ellipse cx="160" cy="55" rx="7" ry="44" fill="#0284c7" fillOpacity="0.25" stroke="#38bdf8" strokeWidth="1.5" />
+                        <circle cx="100" cy="55" r="3" fill="#38bdf8" />
+                        <circle cx="220" cy="55" r="3" fill="#38bdf8" />
+                        <circle cx="40" cy="55" r="3" fill="#94a3b8" />
+                        <circle cx="280" cy="55" r="3" fill="#94a3b8" />
+                        <line x1="40" y1="55" x2="40" y2="25" stroke="#f43f5e" strokeWidth="2.5" />
+                        <polygon points="37,29 40,23 43,29" fill="#f43f5e" />
+                        <line x1="40" y1="25" x2="160" y2="25" stroke="#38bdf8" strokeWidth="1.5" />
+                        <line x1="160" y1="25" x2="280" y2="85" stroke="#38bdf8" strokeWidth="1.5" />
+                        <line x1="40" y1="25" x2="280" y2="85" stroke="#fbbf24" strokeWidth="1.5" strokeDasharray="4 2" />
+                        <line x1="280" y1="55" x2="280" y2="85" stroke="#10b981" strokeWidth="2.5" />
+                        <polygon points="277,81 280,87 283,81" fill="#10b981" />
+                      </svg>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center text-[11px]">
+                      <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[10px] text-slate-400 block uppercase">Object Position</span>
+                        <span className="text-white font-bold">do = 2F (Equal Size)</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-slate-900 border border-slate-800">
+                        <span className="text-[10px] text-slate-400 block uppercase">Image Nature</span>
+                        <span className="text-emerald-400 font-bold">Real &amp; Inverted</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+                <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300 dark:border-cyan-700/60 bg-cyan-50 dark:bg-cyan-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                    <span>Physics &amp; Geometrical Optics</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Thin-Lens Ray-Tracing &amp; Optical Geometry
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Move real-time sliders for focal length f and object distance do. Watch three principal rays refract dynamically, instantly rendering real vs virtual, inverted vs upright images.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Real-time verification of Gaussian lens equation: 1/f = 1/do + 1/di</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Dynamic magnification and optical device mapping (Camera, Eye, Magnifier)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Silky 60fps SVG rendering on any low-power smartphone browser</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/classroom/stem"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Launch Optics Ray Bench</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Acid-Base Titration & pH Curve (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-pink-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-pink-300 dark:border-pink-700/60 bg-pink-50 dark:bg-pink-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-pink-800 dark:text-pink-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-pink-500 animate-pulse" />
+                    <span>Chemistry &amp; Volumetric Analysis</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Acid-Base Titration &amp; pH Curve Bench
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Titrate strong and weak acids with standardized burette titrant volumes. Watch the interactive pH curve rise and observe the phenolphthalein indicator shift sharply from colorless to vibrant pink at equivalence.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400 text-xs font-bold">✓</span>
+                      <span>Real-time sigmoidal pH curve graphing as burette drops are dispensed</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400 text-xs font-bold">✓</span>
+                      <span>Instant molarity stoichiometric calculation: CaVa / CbVb = na / nb</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400 text-xs font-bold">✓</span>
+                      <span>Prepares students for WAEC Alternative to Practical Chemistry papers</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/classroom/stem"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-pink-700 hover:bg-pink-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Launch Titration Bench</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-pink-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-pink-400 animate-pulse" />
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                          TITRATION ANALYZER
+                        </span>
+                      </div>
+                      <span className="text-pink-400 font-bold bg-pink-950/80 border border-pink-800/80 px-2 py-0.5 rounded text-[11px]">
+                        pH = 8.4 Equivalence
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
+                      <div className="flex items-center justify-between text-slate-300 text-[11px]">
+                        <span>Burette Titrant (0.1M NaOH):</span>
+                        <span className="text-pink-400 font-bold">25.00 cm³</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-300 text-[11px]">
+                        <span>Conical Flask (0.1M HCl):</span>
+                        <span className="text-cyan-400 font-bold">25.00 cm³</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-pink-950/60 border border-pink-800/70 text-center text-pink-200 text-[11px]">
+                        Indicator: Phenolphthalein (Sharp Pink Transition)
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                      <span>Equivalence Ratio: 1:1</span>
+                      <span className="text-emerald-400 font-bold">Endpoint Verified ✓</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 4: Digital Electronics & Logic Gates (Visual Preview Left, Text Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-emerald-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+                <div className="lg:col-span-5 order-2 lg:order-1">
+                  <div className="rounded-2xl border border-emerald-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                          LOGIC GATE BENCH
+                        </span>
+                      </div>
+                      <span className="text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded text-[11px]">
+                        XOR GATE ACTIVE
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">Binary Input A:</span>
+                        <span className="px-2 py-0.5 rounded bg-blue-950 text-cyan-300 font-bold border border-blue-800">1 (HIGH)</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400">Binary Input B:</span>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold border border-slate-700">0 (LOW)</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-800">
+                        <span className="text-slate-200 font-bold">XOR Output Y:</span>
+                        <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold border border-emerald-800">1 (HIGH)</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                      <span>Truth Table Rule: A &ne; B &rArr; 1</span>
+                      <span className="text-emerald-400 font-bold">Valid ✓</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+                <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Digital Electronics &amp; Logic</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Boolean Logic Gates &amp; Microprocessor Logic
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Toggle digital binary inputs (0 and 1) across AND, OR, NOT, NAND, NOR, and XOR gates. Verify dynamic truth tables and understand the foundational building blocks of microprocessors.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Interactive binary switch toggling with immediate output propagation</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Automated truth table verification for all 6 foundational logic gates</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Essential preparation for UTME Physics &amp; Computer Studies papers</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/classroom/stem"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Launch Logic Gate Bench</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -237,9 +237,13 @@ export default function SubjectFeedPage({
 
           <Link
             href="/assignments"
-            className="rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-900 hover:bg-purple-100 transition active-press"
+            className="rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-900 hover:bg-purple-100 transition active-press inline-flex items-center gap-1.5"
           >
-            📝 Assignments
+            <svg className="h-3.5 w-3.5 text-purple-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            </svg>
+            <span>Assignments</span>
           </Link>
 
           <Link
@@ -372,8 +376,13 @@ export default function SubjectFeedPage({
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
-            <span className="text-3xl">📌</span>
-            <h3 className="mt-2 text-base font-bold text-slate-900">No feed items yet</h3>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="12" y1="17" x2="12" y2="22" />
+                <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a3 3 0 0 0-6 0v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+              </svg>
+            </div>
+            <h3 className="mt-3 text-base font-bold text-slate-900">No feed items yet</h3>
             <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
               Announcements, lesson notes, and revision voice notes will appear here as the course progresses.
             </p>
@@ -391,8 +400,12 @@ export default function SubjectFeedPage({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   {post.is_pinned && (
-                    <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-blue-900">
-                      📌 Pinned
+                    <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-blue-900 inline-flex items-center gap-1">
+                      <svg className="h-3 w-3 text-blue-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <line x1="12" y1="17" x2="12" y2="22" />
+                        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a3 3 0 0 0-6 0v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+                      </svg>
+                      <span>Pinned</span>
                     </span>
                   )}
                   {post.content_tags?.map((ct, idx) => (
