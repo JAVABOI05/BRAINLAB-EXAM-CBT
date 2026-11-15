@@ -38,11 +38,11 @@ export default function NotFound() {
           </Link>
         </div>
 
-        <p className="mt-10 text-xs text-slate-400">
+        <p className="mt-10 text-xs text-slate-600 dark:text-slate-400">
           Need academic or technical support? Email{" "}
           <a
             href="mailto:support@brainlab.edu.ng"
-            className="font-bold text-blue-800 underline underline-offset-2"
+            className="font-bold text-blue-800 dark:text-cyan-400 underline underline-offset-2"
           >
             support@brainlab.edu.ng
           </a>
