@@ -286,7 +286,7 @@ export default function CandidateSyllabusPage() {
                 {/* Scope & Objectives */}
                 <div className="mt-6 space-y-6">
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       Syllabus Aim &amp; Scope
                     </h3>
                     <p className="mt-1.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -339,7 +339,7 @@ export default function CandidateSyllabusPage() {
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Examination Topics &amp; Detailed Breakdown ({activeSubject.topics.length})
                   </h3>
-                  <span className="text-xs text-slate-400">Click any topic to expand learning targets</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400">Click any topic to expand learning targets</span>
                 </div>
 
                 <div className="space-y-3">

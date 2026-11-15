@@ -249,21 +249,24 @@ function PricingContent() {
   const payableAmountNaira = Math.round(payableAmountKobo / 100);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-[#070D18] text-slate-900 dark:text-slate-100 transition-colors">
       <main id="main" className="flex-1 py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           {/* SUPER ADMIN VIP ACCESS BANNER */}
           {isAdmin && (
-            <div className="mb-10 overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-6 sm:p-8 text-slate-950 shadow-xl backdrop-blur-xs animate-in fade-in">
+            <div className="mb-10 overflow-hidden rounded-3xl border-2 border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 p-6 sm:p-8 text-slate-950 dark:text-amber-100 shadow-xl backdrop-blur-xs animate-in fade-in">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-slate-950 shadow-sm">
-                    👑 Super Administrator · Universal VIP Access
+                    <svg className="h-3.5 w-3.5 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    <span>Super Administrator · Universal VIP Access</span>
                   </span>
-                  <h2 className="mt-3 text-2xl font-black text-slate-950">
+                  <h2 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">
                     Universal Root Access Active (Exempt From Payment)
                   </h2>
-                  <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-700">
+                  <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-amber-200/80">
                     As an authorized Administrator or Super Admin, you are completely exempt from all subscription charges. You possess unrestricted access to all CBT exam attempts, complete question explanations, step-by-step master workings, AI tutor queries, and live classrooms.
                   </p>
                 </div>
@@ -271,7 +274,7 @@ function PricingContent() {
                   <div className="flex-shrink-0">
                     <Link
                       href={returnUrl}
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3.5 text-xs font-black text-white hover:bg-slate-800 shadow-md transition active:scale-95"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 dark:bg-amber-400 px-6 py-3.5 text-xs font-black text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-amber-300 shadow-md transition active:scale-95"
                     >
                       ← Return to Where You Were
                     </Link>
@@ -280,7 +283,7 @@ function PricingContent() {
                   <div className="flex-shrink-0">
                     <Link
                       href="/admin/dashboard"
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3.5 text-xs font-black text-white hover:bg-slate-800 shadow-md transition active:scale-95"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 dark:bg-amber-400 px-6 py-3.5 text-xs font-black text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-amber-300 shadow-md transition active:scale-95"
                     >
                       Go to Admin Console →
                     </Link>
@@ -292,31 +295,43 @@ function PricingContent() {
 
           {/* User returning from specific page notice */}
           {returnUrl && !isAdmin && (
-            <div className="mb-6 flex items-center justify-between rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-xs text-indigo-950 shadow-xs">
+            <div className="mb-6 flex items-center justify-between rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/80 dark:bg-blue-950/40 px-4 py-3 text-xs text-blue-950 dark:text-blue-200 shadow-xs">
               <span className="flex items-center gap-2 font-bold">
-                <span>⚡</span>
+                <svg className="h-4 w-4 text-blue-600 dark:text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
                 <span>You will be automatically returned to your previous page after upgrading your plan.</span>
               </span>
-              <Link href={returnUrl} className="font-extrabold text-indigo-700 hover:underline">
+              <Link href={returnUrl} className="font-extrabold text-blue-700 dark:text-cyan-400 hover:underline">
                 Cancel &amp; Return ←
               </Link>
             </div>
           )}
 
           <div className="text-center">
-            <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-indigo-900">
-              <span className="flex items-center gap-1.5"><span>🏛️</span><span>Two Clear Access Categories</span></span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-blue-900 dark:text-cyan-300">
+              <svg className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span>Two Clear Access Categories</span>
             </span>
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
               Independent Learning for Everyone. <br />
-              <span className="text-indigo-700">Guided Structure in Apex Cohort.</span>
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
+                Guided Structure in Apex Cohort.
+              </span>
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
               BrainLab is an educational platform, not a paywalled service. Every registered student learns free; Apex Cohort delivers intensive live tutorials, dedicated tutors, and continuous academic accountability.
             </p>
 
-            <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-900 shadow-xs">
-              <span className="flex items-center gap-1">✓ <span>Free Public Access for Every Registered Learner (₦0)</span></span>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-4 py-2 text-xs font-bold text-emerald-900 dark:text-emerald-300 shadow-xs">
+              <span className="flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Free Public Access for Every Registered Learner (₦0)</span>
+              </span>
             </div>
           </div>
 
@@ -329,156 +344,184 @@ function PricingContent() {
           {/* Two Access Categories Direct Grid */}
           <div className="mt-14 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto items-stretch">
             {/* 1. Public (₦0, Free) */}
-            <article className="relative flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <article className="relative flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 mb-4">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 mb-4">
                   OPEN TO EVERY LEARNER
                 </div>
-                <h2 className="text-2xl font-black text-slate-950">Public Access</h2>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
+                <h2 className="text-2xl font-black text-slate-950 dark:text-white">Public Access</h2>
+                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                   Comprehensive self-directed practice tools and revision resources for every registered student.
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black tracking-tight text-slate-950">₦0</span>
-                  <span className="text-xs font-bold text-slate-500">/ free forever</span>
+                  <span className="text-4xl font-black tracking-tight text-slate-950 dark:text-white">₦0</span>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ free forever</span>
                 </div>
 
-                <div className="mt-6 border-t border-slate-100 pt-6">
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-700">What’s included:</p>
-                  <ul className="mt-3 space-y-2.5 text-xs text-slate-600">
+                <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">What’s included:</p>
+                  <ul className="mt-3 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
                       <span><strong>Full CBT Practice:</strong> Unlimited mock exams with JAMB 8-key interface &amp; timing</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
                       <span><strong>Question Bank:</strong> Complete past question library and worked solutions</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
                       <span><strong>AI Tutor:</strong> Generous fair-use interactive study assistance</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
                       <span><strong>Learning Hub:</strong> Open curriculum syllabus notes and video resources</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
                       <span><strong>Competition Arena:</strong> Live 1v1 duels, challenges, and national leaderboards</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
                       <span><strong>STEM Studio:</strong> Public 3D interactive molecular and science viewers</span>
                     </li>
                   </ul>
                 </div>
               </div>
 
-              <div className="mt-8 pt-4 border-t border-slate-100">
+              <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <Link
                   href="/cbt"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 py-3.5 text-xs font-extrabold transition"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white py-3.5 text-xs font-extrabold transition"
                 >
                   Get Started, It&apos;s Free →
                 </Link>
               </div>
             </article>
 
-            {/* 2. Apex Cohort (Enrolment) */}
+            {/* 2. Apex Cohort (Intensive JAMB Preparatory Class) */}
             {(() => {
-              const apexPlan = plans.find((p) => p.id === "plus" || p.id === "apex_cohort" || p.id === "premium") || plans[0];
               const isEnrolled = activeSub?.status === "active";
+              const WHATSAPP_COHORT_URL = "https://wa.me/2349071988887?text=Hello%20BrainLab%2C%20I%20am%20coming%20from%20the%20website%20and%20would%20like%20to%20make%20enquiries%20about%20the%20intensive%20Apex%20Cohort%20JAMB%20Preparatory%20Class.";
 
               return (
-                <article className="relative flex flex-col justify-between rounded-3xl border-2 border-indigo-600 bg-white p-8 shadow-xl">
-                  <span className="absolute -top-3.5 right-6 rounded-full bg-indigo-600 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-sm">
-                    INTENSIVE PROGRAMME
+                <article className="relative flex flex-col justify-between rounded-3xl border-2 border-indigo-600 dark:border-indigo-500 bg-white dark:bg-slate-900 p-8 shadow-xl">
+                  <span className="absolute -top-3.5 right-6 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-sm">
+                    INTENSIVE PREPARATORY CLASS
                   </span>
 
                   <div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-50 text-indigo-900 border border-indigo-200 mb-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 mb-4">
                       GUIDED TUTORIAL TRACK
                     </div>
                     <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-black text-slate-950">Apex Cohort</h2>
+                      <h2 className="text-2xl font-black text-slate-950 dark:text-white">Apex Cohort</h2>
                       {isAdmin ? (
-                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900">
-                          👑 VIP Admin
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300 border border-amber-300/40">
+                          <svg className="h-3 w-3 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                          <span>VIP Admin</span>
                         </span>
                       ) : isEnrolled ? (
-                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                        <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
                           Active Enrolment
                         </span>
                       ) : null}
                     </div>
 
-                    <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Everything in Public, plus live teaching, dedicated tutors, and continuous academic accountability.
+                    <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      Our intensive BrainLab JAMB preparatory class featuring live lectures, dedicated subject mentors, and continuous academic accountability.
                     </p>
 
-                    <div className="mt-6 flex items-baseline gap-1">
-                      <span className="text-4xl font-black tracking-tight text-slate-950">
-                        ₦{apexPlan.price_naira.toLocaleString()}
+                    <div className="mt-6 flex flex-col">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-950 dark:text-white">
+                          Admissions Open
+                        </span>
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                          Free Enquiry
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+                        Intensive JAMB Preparatory Class · Direct Mentor Guidance
                       </span>
-                      <span className="text-xs font-bold text-slate-500">/ session track</span>
                     </div>
 
-                    <div className="mt-6 border-t border-slate-100 pt-6">
-                      <p className="text-xs font-black uppercase tracking-wider text-indigo-900">Apex Cohort Advantages:</p>
-                      <ul className="mt-3 space-y-2.5 text-xs text-slate-600">
+                    <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+                      <p className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300">Apex Cohort Advantages:</p>
+                      <ul className="mt-3 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
                         <li className="flex items-start gap-2">
-                          <span className="text-indigo-600 font-bold">★</span>
-                          <span><strong>Live Intensive Classes:</strong> Scheduled subject-by-subject live classes</span>
+                          <svg className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span><strong>Live Intensive Classes:</strong> Scheduled subject-by-subject master lectures</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-indigo-600 font-bold">★</span>
-                          <span><strong>Dedicated Tutors:</strong> Personal academic mentorship and direct guidance</span>
+                          <svg className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span><strong>Dedicated Tutors:</strong> Personal academic mentorship and direct homework guidance</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-indigo-600 font-bold">★</span>
+                          <svg className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                           <span><strong>Assigned Weekly Roadmap:</strong> Structured milestones and scheduled assessments</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-indigo-600 font-bold">★</span>
+                          <svg className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                           <span><strong>Special Cohort Mocks:</strong> Monitored practice with detailed tutor intervention</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-indigo-600 font-bold">★</span>
+                          <svg className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                           <span><strong>Full Lesson Library:</strong> Complete recorded video archive and session notes</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="text-indigo-600 font-bold">★</span>
+                          <svg className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                           <span><strong>Enhanced AI Tutor:</strong> Priority quota and deep diagnostic breakdowns</span>
                         </li>
                       </ul>
                     </div>
                   </div>
 
-                  <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col gap-2.5">
-                    <button
-                      type="button"
-                      disabled={isAdmin}
-                      onClick={() => handleChoosePlan(apexPlan)}
-                      className={`w-full rounded-xl py-3.5 text-xs font-extrabold transition active:scale-95 ${
-                        isAdmin
-                          ? "bg-amber-50 text-amber-800 border border-amber-300 cursor-default"
-                          : isEnrolled
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/25"
-                      }`}
-                    >
-                      {isAdmin
-                        ? "Universal Access Active (Super Admin)"
-                        : isEnrolled
-                        ? "Enter Cohort Classroom →"
-                        : "Enrol in Apex Cohort →"}
-                    </button>
+                  <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2.5">
+                    {isAdmin ? (
+                      <div className="w-full rounded-xl py-3.5 text-xs font-extrabold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 text-center">
+                        Universal Access Active (Super Admin)
+                      </div>
+                    ) : isEnrolled ? (
+                      <Link
+                        href="/classroom"
+                        className="w-full rounded-xl py-3.5 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white text-center shadow-md transition"
+                      >
+                        Enter Cohort Classroom →
+                      </Link>
+                    ) : (
+                      <a
+                        href={WHATSAPP_COHORT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3.5 text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-900/20 transition active:scale-95 cursor-pointer"
+                      >
+                        <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                        </svg>
+                        <span>Enquire on WhatsApp (Apex Cohort) →</span>
+                      </a>
+                    )}
                     <Link
-                      href="/apex"
-                      className="text-center text-xs font-bold text-indigo-700 hover:underline"
+                      href="/cbt"
+                      className="text-center text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition py-1"
                     >
-                      View Full Programme Details &amp; Timetable →
+                      Or start 100% free self-practice in CBT Simulator →
                     </Link>
                   </div>
                 </article>

@@ -318,7 +318,7 @@ export default function SchoolsPage() {
                     }`}
                   >
                     Full Session (3 Terms)
-                    <span className="ml-1.5 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                    <span className="ml-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 text-[10px] font-black text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                       Save 25%
                     </span>
                   </button>
@@ -497,10 +497,12 @@ export default function SchoolsPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label htmlFor="simExamType" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Mock Target Curriculum:
                   </label>
                   <select
+                    id="simExamType"
+                    aria-label="Mock Target Curriculum"
                     value={simExamType}
                     onChange={(e) => setSimExamType(e.target.value)}
                     className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -869,10 +871,12 @@ export default function SchoolsPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label htmlFor="inquiryCount" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Candidate Count
                     </label>
                     <select
+                      id="inquiryCount"
+                      aria-label="Candidate Count"
                       value={inquiryCount}
                       onChange={(e) => setInquiryCount(e.target.value)}
                       className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -885,10 +889,12 @@ export default function SchoolsPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label htmlFor="inquiryExam" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Target Exam Type
                     </label>
                     <select
+                      id="inquiryExam"
+                      aria-label="Target Exam Type"
                       value={inquiryExam}
                       onChange={(e) => setInquiryExam(e.target.value)}
                       className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"

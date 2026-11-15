@@ -123,13 +123,13 @@ export default function CookieConsentBanner() {
             <button
               type="button"
               onClick={() => setShowDetails(true)}
-              className="text-slate-500 dark:text-slate-400 hover:underline font-bold"
+              className="text-slate-700 dark:text-slate-300 hover:underline font-bold"
             >
               Customize &amp; Learn More ↓
             </button>
             <Link
               href="/privacy"
-              className="text-slate-500 dark:text-slate-400 hover:underline"
+              className="text-slate-700 dark:text-slate-300 hover:underline"
             >
               Privacy Policy
             </Link>

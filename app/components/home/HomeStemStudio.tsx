@@ -43,53 +43,50 @@ export function HomeStemStudio() {
       className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-white/10 overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-[#0a1326] to-[#060b14] p-6 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden">
-          {/* Ambient Background Glow Effect */}
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
-
+        <div className="rounded-3xl border-2 border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-6 sm:p-10 lg:p-12 text-slate-900 dark:text-white shadow-sm relative overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
             {/* Left Column: Catchy Educational Overview */}
             <div className="lg:col-span-5 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/20 px-3.5 py-1 text-xs font-bold text-blue-300">
-                <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/60 px-3.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300">
+                <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
                 <span>VIRTUAL SCIENCE &amp; STEM LABORATORIES (SLOT S5-01)</span>
               </div>
 
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
                 Interactive Science in Motion. <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400">
+                <span className="text-blue-600 dark:text-blue-400">
                   Not Just Dry Textbooks.
                 </span>
               </h2>
 
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
                 Rather than memorizing abstract formulas, candidates manipulate live variables and watch real physical outcomes happen instantly—bridging classroom theory directly with WAEC &amp; JAMB practical CBT exams.
               </p>
 
               {/* Catchy Value Badges */}
+              {/* Catchy Value Badges */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                <div className="flex items-center gap-2 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
-                  <span className="text-base">⚡</span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2 text-left">
+                  <span className="text-base" aria-hidden="true">⚡</span>
                   <div>
-                    <div className="text-[11px] font-bold text-white">60 FPS Motion</div>
-                    <div className="text-[10px] text-slate-400">Zero lag physics</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">60 FPS Motion</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Zero lag physics</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
-                  <span className="text-base">🧪</span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2 text-left">
+                  <span className="text-base" aria-hidden="true">🧪</span>
                   <div>
-                    <div className="text-[11px] font-bold text-white">WAEC &amp; JAMB</div>
-                    <div className="text-[10px] text-slate-400">Practical syllabus</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">WAEC &amp; JAMB</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Practical syllabus</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3 py-2 text-left">
-                  <span className="text-base">📱</span>
+                <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2 text-left">
+                  <span className="text-base" aria-hidden="true">📱</span>
                   <div>
-                    <div className="text-[11px] font-bold text-white">Instant Load</div>
-                    <div className="text-[10px] text-slate-400">Low data overhead</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Instant Load</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Low data overhead</div>
                   </div>
                 </div>
               </div>
@@ -98,7 +95,7 @@ export function HomeStemStudio() {
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                 <Link
                   href="/classroom/stem"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 transition-all bl-focus-ring min-h-[46px] group"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border-b-4 border-blue-800 bg-blue-600 hover:bg-blue-500 active:border-b-2 active:translate-y-0.5 px-6 py-3.5 text-sm font-black text-white shadow-md transition-all bl-focus-ring min-h-[48px] group"
                 >
                   <span>Launch STEM Studio</span>
                   <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
@@ -106,7 +103,7 @@ export function HomeStemStudio() {
 
                 <Link
                   href="/products/stem-studio"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-5 py-3.5 text-sm font-bold text-slate-200 transition-all bl-focus-ring min-h-[46px]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-b-4 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:border-b-2 active:translate-y-0.5 px-5 py-3.5 text-sm font-bold text-slate-800 dark:text-slate-200 transition-all bl-focus-ring min-h-[48px]"
                 >
                   Explore Virtual Labs
                 </Link>
@@ -119,20 +116,20 @@ export function HomeStemStudio() {
               <div
                 role="tablist"
                 aria-label="STEM Laboratory Subjects"
-                className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-slate-950/90 border border-slate-800"
+                className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
               >
                 <button
                   type="button"
                   role="tab"
                   aria-selected={activeTab === "circuits"}
                   onClick={() => setActiveTab("circuits")}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "circuits"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-900/40"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                      ? "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 shadow-sm border-slate-200 dark:border-slate-700 font-black"
+                      : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <span>⚡</span>
+                  <span aria-hidden="true">⚡</span>
                   <span className="truncate">Logic Gates & Circuit Simulators</span>
                 </button>
 
@@ -141,13 +138,13 @@ export function HomeStemStudio() {
                   role="tab"
                   aria-selected={activeTab === "physics"}
                   onClick={() => setActiveTab("physics")}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "physics"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-900/40"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                      ? "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 shadow-sm border-slate-200 dark:border-slate-700 font-black"
+                      : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <span>📐</span>
+                  <span aria-hidden="true">📐</span>
                   <span className="truncate">Physics Mechanics & Kinematics</span>
                 </button>
 
@@ -156,13 +153,13 @@ export function HomeStemStudio() {
                   role="tab"
                   aria-selected={activeTab === "chemistry"}
                   onClick={() => setActiveTab("chemistry")}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "chemistry"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-900/40"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                      ? "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 shadow-sm border-slate-200 dark:border-slate-700 font-black"
+                      : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <span>🧪</span>
+                  <span aria-hidden="true">🧪</span>
                   <span className="truncate">Acid-Base Titration & pH Reactions</span>
                 </button>
 
@@ -171,20 +168,20 @@ export function HomeStemStudio() {
                   role="tab"
                   aria-selected={activeTab === "biology"}
                   onClick={() => setActiveTab("biology")}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "biology"
-                      ? "bg-blue-600 text-white shadow-md shadow-blue-900/40"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                      ? "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 shadow-sm border-slate-200 dark:border-slate-700 font-black"
+                      : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <span>🧬</span>
+                  <span aria-hidden="true">🧬</span>
                   <span className="truncate">Cellular Atlas & Metabolic Pathways</span>
                 </button>
               </div>
 
               {/* Main Interactive Animated Stage */}
               <div
-                className="rounded-2xl border border-slate-700/80 bg-slate-950/95 p-5 sm:p-6 shadow-2xl min-h-[360px] flex flex-col justify-between"
+                className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-5 sm:p-6 shadow-inner min-h-[360px] flex flex-col justify-between"
                 role="region"
                 aria-label="Interactive Logic Gate Bench and Virtual Science Stage"
               >
@@ -192,26 +189,26 @@ export function HomeStemStudio() {
                 {activeTab === "circuits" && (
                   <div className="space-y-5 animate-bl-fade-in">
                     {/* Header Controls: Gate Selection Chips */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
                       <div>
-                        <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                        <div className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
                           Interactive Logic Gate Bench
                         </div>
-                        <p className="text-[11px] text-slate-400">Click a gate or flip switches to see the circuit power up</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">Click a gate or flip switches to see the circuit power up</p>
                       </div>
 
                       {/* Gate Type Toggle */}
-                      <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                      <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                         {(["AND", "OR", "XOR", "NOT"] as const).map((g) => (
                           <button
                             key={g}
                             type="button"
                             onClick={() => setGate(g)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                               gate === g
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-slate-400 hover:text-white"
+                                ? "bg-blue-600 text-white shadow-xs"
+                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                             }`}
                           >
                             {g}
@@ -221,19 +218,19 @@ export function HomeStemStudio() {
                     </div>
 
                     {/* Animated Circuit Board Visual */}
-                    <div className="relative rounded-2xl bg-[#040813] border border-slate-800 p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden">
+                    <div className="relative rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 p-6 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden shadow-xs">
                       {/* Interactive Switch Controls */}
                       <div className="flex sm:flex-col gap-3 z-10">
                         <button
                           type="button"
                           onClick={() => setInputA(!inputA)}
-                          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border font-bold text-xs transition-all ${
+                          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 border-b-4 font-bold text-xs transition-all cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                             inputA
-                              ? "bg-emerald-950/60 border-emerald-500/80 text-emerald-300 shadow-lg shadow-emerald-950/40"
-                              : "bg-slate-900 border-slate-800 text-slate-400"
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-600 text-emerald-900 dark:text-emerald-200 shadow-xs"
+                              : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                           }`}
                         >
-                          <span className={`h-3 w-3 rounded-full ${inputA ? "bg-emerald-400 shadow-md shadow-emerald-400" : "bg-slate-700"}`} />
+                          <span className={`h-3 w-3 rounded-full ${inputA ? "bg-emerald-500 shadow-xs" : "bg-slate-400 dark:bg-slate-600"}`} />
                           <span>Switch A: {inputA ? "ON (1)" : "OFF (0)"}</span>
                         </button>
 
@@ -241,17 +238,17 @@ export function HomeStemStudio() {
                           <button
                             type="button"
                             onClick={() => setInputB(!inputB)}
-                            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border font-bold text-xs transition-all ${
+                            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 border-b-4 font-bold text-xs transition-all cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                               inputB
-                                ? "bg-emerald-950/60 border-emerald-500/80 text-emerald-300 shadow-lg shadow-emerald-950/40"
-                                : "bg-slate-900 border-slate-800 text-slate-400"
+                                ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-600 text-emerald-900 dark:text-emerald-200 shadow-xs"
+                                : "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                             }`}
                           >
-                            <span className={`h-3 w-3 rounded-full ${inputB ? "bg-emerald-400 shadow-md shadow-emerald-400" : "bg-slate-700"}`} />
+                            <span className={`h-3 w-3 rounded-full ${inputB ? "bg-emerald-500 shadow-xs" : "bg-slate-400 dark:bg-slate-600"}`} />
                             <span>Switch B: {inputB ? "ON (1)" : "OFF (0)"}</span>
                           </button>
                         ) : (
-                          <div className="px-4 py-2.5 rounded-xl border border-dashed border-slate-800 text-slate-500 text-[11px] italic text-center">
+                          <div className="px-4 py-2.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-500 text-[11px] italic text-center">
                             Single Input (Inverter)
                           </div>
                         )}
@@ -261,12 +258,12 @@ export function HomeStemStudio() {
                       <div className="flex flex-col items-center justify-center z-10">
                         <div className={`relative px-5 py-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center ${
                           isCircuitLit
-                            ? "border-sky-400 bg-sky-950/50 shadow-xl shadow-sky-500/20"
-                            : "border-slate-800 bg-slate-900/60 text-slate-500"
+                            ? "border-blue-600 bg-blue-50 dark:bg-blue-950/60 shadow-md text-blue-950 dark:text-blue-100"
+                            : "border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60 text-slate-500"
                         }`}>
-                          <span className="text-[10px] font-mono tracking-widest text-sky-400 font-bold uppercase">LOGIC CHIP</span>
-                          <span className="text-xl font-black text-white">{gate}</span>
-                          <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          <span className="text-[10px] font-mono tracking-widest text-blue-600 dark:text-blue-400 font-bold uppercase">LOGIC CHIP</span>
+                          <span className="text-xl font-black text-slate-900 dark:text-white">{gate}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 font-bold">
                             {gate === "NOT" ? "Q = ¬A" : `Q = A ${gate} B`}
                           </span>
                         </div>
@@ -276,15 +273,15 @@ export function HomeStemStudio() {
                       <div className="flex flex-col items-center justify-center z-10">
                         <div className={`relative flex items-center justify-center w-20 h-20 rounded-full transition-all duration-500 ${
                           isCircuitLit
-                            ? "bg-amber-400/20 border-2 border-amber-400 text-amber-300 shadow-2xl shadow-amber-400/50"
-                            : "bg-slate-900 border border-slate-800 text-slate-600"
+                            ? "bg-amber-100 dark:bg-amber-400/20 border-2 border-amber-500 text-amber-500 shadow-xl shadow-amber-400/30"
+                            : "bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-400"
                         }`}>
                           <span className={`text-4xl transition-transform duration-300 ${isCircuitLit ? "scale-110 drop-shadow-[0_0_15px_rgba(251,191,36,0.9)]" : "grayscale opacity-40"}`}>
                             💡
                           </span>
                         </div>
                         <div className="mt-2 text-center">
-                          <span className={`text-xs font-black uppercase tracking-wider ${isCircuitLit ? "text-amber-400" : "text-slate-500"}`}>
+                          <span className={`text-xs font-black uppercase tracking-wider ${isCircuitLit ? "text-amber-600 dark:text-amber-400" : "text-slate-500"}`}>
                             {isCircuitLit ? "Current Active" : "Circuit Open"}
                           </span>
                         </div>
@@ -292,15 +289,15 @@ export function HomeStemStudio() {
 
                       {/* Animated Circuit Wire Traces */}
                       <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" xmlns="http://www.w3.org/2000/svg">
-                        <line x1="25%" y1="35%" x2="50%" y2="50%" stroke={inputA ? "#10b981" : "#334155"} strokeWidth="2" strokeDasharray={isCircuitLit ? "4,4" : "none"} />
-                        <line x1="25%" y1="65%" x2="50%" y2="50%" stroke={inputB ? "#10b981" : "#334155"} strokeWidth="2" strokeDasharray={isCircuitLit ? "4,4" : "none"} />
-                        <line x1="50%" y1="50%" x2="80%" y2="50%" stroke={isCircuitLit ? "#38bdf8" : "#334155"} strokeWidth="3" />
+                        <line x1="25%" y1="35%" x2="50%" y2="50%" stroke={inputA ? "#10b981" : "#94a3b8"} strokeWidth="2" strokeDasharray={isCircuitLit ? "4,4" : "none"} />
+                        <line x1="25%" y1="65%" x2="50%" y2="50%" stroke={inputB ? "#10b981" : "#94a3b8"} strokeWidth="2" strokeDasharray={isCircuitLit ? "4,4" : "none"} />
+                        <line x1="50%" y1="50%" x2="80%" y2="50%" stroke={isCircuitLit ? "#0284c7" : "#94a3b8"} strokeWidth="3" />
                       </svg>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-900/60 rounded-xl px-4 py-2 border border-slate-800">
-                      <span>⚡ Curriculum Rule: <strong>{gate}</strong> gate outputs active current when its logic condition is met.</span>
-                      <span className="text-blue-400 font-bold">Physics &amp; Computer Studies</span>
+                    <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900/60 rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-800">
+                      <span>Curriculum Rule: <strong>{gate}</strong> gate outputs active current when its logic condition is met.</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">Physics &amp; Computer Studies</span>
                     </div>
                   </div>
                 )}
