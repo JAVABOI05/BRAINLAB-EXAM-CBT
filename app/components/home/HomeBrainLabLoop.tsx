@@ -266,7 +266,9 @@ export function HomeBrainLabLoop() {
                   {activeStage.stemRole ? (
                     <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-3 shadow-xs">
                       <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 shrink-0 font-bold" aria-hidden="true">
-                        ⚡
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
                       </span>
                       <div>
                         <span className="font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block mb-0.5 text-[11px]">
@@ -278,7 +280,11 @@ export function HomeBrainLabLoop() {
                   ) : (
                     <div className="rounded-2xl border-2 border-blue-200 dark:border-blue-800/80 bg-blue-50/70 dark:bg-blue-950/40 p-3.5 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-3 shadow-xs">
                       <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700 shrink-0 font-bold" aria-hidden="true">
-                        🎯
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <circle cx="12" cy="12" r="6" />
+                          <circle cx="12" cy="12" r="2" />
+                        </svg>
                       </span>
                       <div>
                         <span className="font-extrabold text-blue-800 dark:text-blue-300 uppercase tracking-wider block mb-0.5 text-[11px]">
