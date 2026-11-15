@@ -71,9 +71,6 @@ export default function HomePageClient() {
         {/* 1. Hero Section */}
         <HomeHero />
 
-        {/* University Target Badges & Social Proof Bar (Directly beneath hero) */}
-        <HomeUniversityTargetSocialProof />
-
         {/* Compact, High-Impact Broadcast Channel Ribbon */}
         <HomeJoinChannel />
 
@@ -91,6 +88,9 @@ export default function HomePageClient() {
 
         {/* 6. Trust and Outcomes (Conditional) */}
         <HomeTrustOutcomes />
+
+        {/* University Target Benchmarks & Social Proof (Lower Page Positioning) */}
+        <HomeUniversityTargetSocialProof />
 
         {/* 7. Pricing Teaser (Real Data) */}
         <HomePricingTeaser />

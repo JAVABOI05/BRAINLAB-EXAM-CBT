@@ -40,7 +40,7 @@ function isValidChannelUrl(url?: string | null): boolean {
 export function HomeJoinChannel({
   channelName: defaultChannelName = "Official WhatsApp Broadcast Channel",
   channelUrl: defaultChannelUrl = CONTACT_CONFIG.whatsapp.channelUrl,
-  description = "Daily worked solutions, syllabus breakdowns & official JAMB timetable updates delivered directly to your phone.",
+  description = "Daily worked solutions, syllabus breakdowns & official UTME, O Level and Post-UTME updates delivered directly to your phone.",
   platforms: defaultPlatforms = [
     {
       id: "whatsapp",
@@ -196,7 +196,7 @@ export function HomeJoinChannel({
             {/* Right: Compact Action Button */}
             <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
               <span className="hidden lg:block text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Free &bull; Instant Updates
+                Official &bull; Instant Updates
               </span>
               <a
                 href={channelUrl}

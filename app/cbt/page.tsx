@@ -352,7 +352,7 @@ export default function CBTExamPortalPage() {
               href="/challenge-arena"
               className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-black text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition flex items-center gap-1.5 shadow-xs"
             >
-              <span>⚔️</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /><line x1="5" y1="14" x2="9" y2="18" /><line x1="7" y1="17" x2="4" y2="20" /><line x1="3" y1="19" x2="5" y2="21" /></svg>
               <span>Competition Arena &amp; 1v1</span>
             </Link>
           </div>
@@ -493,7 +493,7 @@ export default function CBTExamPortalPage() {
             {maintenanceNotice?.active && (
               <div className="mt-4 rounded-2xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs">
                 <div className="flex items-start gap-2.5">
-                  <span className="text-xl">🛠️</span>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-rose-200/60 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg></span>
                   <div className="space-y-1 text-rose-950 dark:text-rose-200">
                     <p className="font-bold text-xs uppercase tracking-wide text-rose-800 dark:text-rose-300">
                       {maintenanceNotice.title || "CBT Examination Engine Maintenance"}
@@ -502,8 +502,9 @@ export default function CBTExamPortalPage() {
                       {maintenanceNotice.message}
                     </p>
                     {maintenanceNotice.estimated_resumption && (
-                      <p className="text-[11px] font-bold text-rose-700 dark:text-rose-400 pt-1">
-                        ⏱️ Estimated Resumption: {maintenanceNotice.estimated_resumption}
+                      <p className="text-[11px] font-bold text-rose-700 dark:text-rose-400 pt-1 flex items-center gap-1.5">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                        <span>Estimated Resumption: {maintenanceNotice.estimated_resumption}</span>
                       </p>
                     )}
                   </div>
@@ -522,7 +523,7 @@ export default function CBTExamPortalPage() {
 
             {/* Offline Protection Indicator */}
             <div className="mt-2.5 flex items-center justify-center gap-2 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl py-2 px-3 text-center">
-              <span>⚡</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
               <span>Low-Data Offline Protection: Paper caches locally into device storage (&lt;1.5MB)</span>
             </div>
 
@@ -548,7 +549,7 @@ export default function CBTExamPortalPage() {
               {/* Baseline Diagnostic Assessment CTA */}
               <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-950/40 dark:to-purple-950/30 p-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🧬</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 15c6.667-6 13.333 0 20-6" /><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993" /><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993" /><path d="m17 6-2.5-2.5" /><path d="m14 8-1-1" /><path d="m7 18 2.5 2.5" /><path d="m3.5 14.5.5.5" /><path d="m20 9 .5.5" /><path d="m6.5 12.5 1 1" /><path d="m16.5 10.5 1 1" /><path d="m10 16 1 1" /></svg></span>
                   <span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300">
                     Not Sure Where to Begin?
                   </span>

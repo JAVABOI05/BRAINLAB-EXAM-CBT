@@ -343,7 +343,12 @@ export default function ChallengeArenaProductPage() {
                       </div>
                       <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                         <div className="text-[10px] text-slate-400 uppercase">Daily Streak</div>
-                        <div className="text-base font-black text-orange-400 mt-0.5">14 Days 🔥</div>
+                        <div className="text-base font-black text-orange-400 mt-0.5 inline-flex items-center gap-1 justify-center">
+                          <span>14 Days</span>
+                          <svg className="h-4 w-4 text-orange-500 fill-orange-500" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                          </svg>
+                        </div>
                         <div className="text-[10px] text-slate-500">Streak Shield Active</div>
                       </div>
                     </div>

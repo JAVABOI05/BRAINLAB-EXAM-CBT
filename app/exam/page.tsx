@@ -71,6 +71,141 @@ function highlightPassageText(text: string, query: string): React.ReactNode {
   );
 }
 
+function Jamb8KeypadConsole({
+  selectedAnswer,
+  onSelectOption,
+  onPrevious,
+  onNext,
+  onClear,
+  onSubmit,
+  canPrevious,
+  canNext,
+  hasSelectedAnswer,
+  onToggleCalculator,
+  showCalculator,
+  hasOptionE,
+}: {
+  selectedAnswer?: Option;
+  onSelectOption: (option: Option) => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  onClear: () => void;
+  onSubmit: () => void;
+  canPrevious: boolean;
+  canNext: boolean;
+  hasSelectedAnswer: boolean;
+  onToggleCalculator: () => void;
+  showCalculator: boolean;
+  hasOptionE?: boolean;
+}) {
+  const optionKeys = hasOptionE ? (["A", "B", "C", "D", "E"] as const) : (["A", "B", "C", "D"] as const);
+
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/80 p-3 sm:p-4 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+          <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            JAMB 8-Keypad Hardware Terminal
+          </span>
+          <span className="hidden sm:inline-flex rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800">
+            Active Emulation
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleCalculator}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition active:scale-95 border ${
+              showCalculator
+                ? "bg-sky-600 text-white border-sky-500 shadow-xs"
+                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+            }`}
+            title="Press [C] or click to toggle on-screen calculator"
+          >
+            <span className="font-mono font-black text-[10px] text-sky-600 dark:text-sky-400">[C]</span>
+            <span>Calc</span>
+          </button>
+          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 hidden md:inline">
+            Physical Keys: <kbd className="font-mono font-bold text-slate-700 dark:text-slate-300">A-D</kbd>, <kbd className="font-mono font-bold text-slate-700 dark:text-slate-300">P</kbd>, <kbd className="font-mono font-bold text-slate-700 dark:text-slate-300">N</kbd>, <kbd className="font-mono font-bold text-slate-700 dark:text-slate-300">R</kbd>, <kbd className="font-mono font-bold text-slate-700 dark:text-slate-300">S</kbd>
+          </span>
+        </div>
+      </div>
+
+      <div className={`grid gap-2 ${hasOptionE ? "grid-cols-5 sm:grid-cols-9" : "grid-cols-4 sm:grid-cols-8"}`}>
+        {optionKeys.map((key) => {
+          const isSelected = selectedAnswer === key;
+          return (
+            <button
+              key={`hardware-key-${key}`}
+              type="button"
+              onClick={() => onSelectOption(key)}
+              className={`flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 transition-all active:scale-95 border border-b-2 sm:border-b-4 ${
+                isSelected
+                  ? "bg-[#012153] dark:bg-blue-600 text-white border-blue-800 dark:border-blue-400 shadow-md ring-2 ring-blue-400/40"
+                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-xs"
+              }`}
+              title={`Press [${key}] on physical keyboard to select Option ${key}`}
+            >
+              <span className="font-mono text-base sm:text-lg font-black leading-none">[{key}]</span>
+              <span className={`text-[9px] font-extrabold mt-1 uppercase tracking-wider ${isSelected ? "text-blue-200" : "text-slate-400 dark:text-slate-500"}`}>
+                {isSelected ? "Selected" : "Option"}
+              </span>
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={onPrevious}
+          disabled={!canPrevious}
+          className="flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 border-b-2 sm:border-b-4 hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none shadow-xs"
+          title="Press [P] or Left Arrow for Previous question"
+        >
+          <span className="font-mono text-base sm:text-lg font-black leading-none text-slate-700 dark:text-slate-300">[P]</span>
+          <span className="text-[9px] font-extrabold mt-1 uppercase tracking-wider text-slate-500 dark:text-slate-400">Prev</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={!canNext}
+          className="flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 border-b-2 sm:border-b-4 hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none shadow-xs"
+          title="Press [N] or Right Arrow for Next question"
+        >
+          <span className="font-mono text-base sm:text-lg font-black leading-none text-slate-700 dark:text-slate-300">[N]</span>
+          <span className="text-[9px] font-extrabold mt-1 uppercase tracking-wider text-slate-500 dark:text-slate-400">Next</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onClear}
+          disabled={!hasSelectedAnswer}
+          className={`flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 border border-b-2 sm:border-b-4 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs ${
+            hasSelectedAnswer
+              ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/60"
+              : "bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700"
+          }`}
+          title="Press [R] to Reverse (Clear current selection)"
+        >
+          <span className="font-mono text-base sm:text-lg font-black leading-none">[R]</span>
+          <span className="text-[9px] font-extrabold mt-1 uppercase tracking-wider">Reverse</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onSubmit}
+          className="flex flex-col items-center justify-center rounded-xl p-2 sm:p-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-600 border-b-2 sm:border-b-4 font-black shadow-xs active:scale-95 transition-all"
+          title="Press [S] to Submit Examination"
+        >
+          <span className="font-mono text-base sm:text-lg font-black leading-none">[S]</span>
+          <span className="text-[9px] font-extrabold mt-1 uppercase tracking-wider">Submit</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ExamPage() {
   const router = useRouter();
   const { resolvedTheme, setAppearance } = useLearnerTheme();
@@ -454,10 +589,14 @@ export default function ExamPage() {
         handleNext();
       } else if (key === "P" || event.key === "ArrowLeft") {
         handlePrevious();
-      } else if (key === "F" || key === "R") {
+      } else if (key === "R") {
+        handleClearAnswer();
+      } else if (key === "F") {
         toggleFlag();
       } else if (key === "S") {
         handleSubmit();
+      } else if (key === "C") {
+        setShowCalculator((prev) => !prev);
       } else if (key === "Q") {
         setMobilePaletteOpen((prev) => !prev);
       }
@@ -607,6 +746,55 @@ export default function ExamPage() {
       if (sequence === answerSaveSequenceRef.current) {
         setCurrentIndex((prev) => (
           prev === questionIndex ? Math.min(prev + 1, totalQuestions - 1) : prev
+        ));
+      }
+    });
+
+    answerSaveQueueRef.current = saveTask.then(() => undefined, () => undefined);
+  };
+
+  const handleClearAnswer = () => {
+    if (!currentQuestion) return;
+    const qId = String(currentQuestion.id);
+    if (!answers[qId]) return;
+
+    const nextAnswers = { ...answers };
+    delete nextAnswers[qId];
+
+    setAnswers(nextAnswers);
+    try {
+      localStorage.setItem("exam_answers", JSON.stringify(nextAnswers));
+    } catch {
+      // Local storage fallback
+    }
+
+    if (!sessionId || !sessionToken) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      queueProgress(sessionId, sessionToken, nextAnswers);
+      setSyncStatus("offline");
+      return;
+    }
+
+    setSyncStatus("syncing");
+    const saveTask = answerSaveQueueRef.current.then(async () => {
+      const saved = await saveProgress(sessionId, sessionToken, nextAnswers);
+      if (isError(saved)) {
+        if (saved.error === "network") {
+          queueProgress(sessionId, sessionToken, nextAnswers);
+          setSyncStatus("offline");
+          setError("");
+        } else {
+          setSyncStatus("error");
+          setError(saved.message || "Failed to update answer on server.");
+        }
+        return;
+      }
+
+      setSyncStatus("synced");
+      setError("");
+      if (typeof saved.time_left_seconds === "number" && Number.isFinite(saved.time_left_seconds)) {
+        setTimeLeft((prev) => (
+          Math.abs(prev - saved.time_left_seconds) > 3 ? saved.time_left_seconds : prev
         ));
       }
     });
@@ -790,7 +978,11 @@ export default function ExamPage() {
                   title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
                   aria-label="Toggle Theme"
                 >
-                  <span>{resolvedTheme === "dark" ? "☀️" : "🌙"}</span>
+                  {resolvedTheme === "dark" ? (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                  ) : (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  )}
                   <span>{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
                 </button>
                 <button
@@ -800,7 +992,7 @@ export default function ExamPage() {
                   title="Test On-Screen Calculator"
                   aria-label="Test Calculator"
                 >
-                  <span>🧮</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
                   <span>Calculator</span>
                 </button>
                 <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-3 py-1.5 text-xs font-black text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
@@ -905,10 +1097,10 @@ export default function ExamPage() {
           <button
             type="button"
             onClick={() => setResumedNotice(null)}
-            className="ml-2 rounded px-1.5 py-0.5 text-emerald-200 hover:bg-emerald-800 hover:text-white"
+            className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded text-emerald-200 hover:bg-emerald-800 hover:text-white"
             aria-label="Dismiss notice"
           >
-            ✕
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       )}
@@ -999,7 +1191,11 @@ export default function ExamPage() {
               title={`Switch to ${resolvedTheme === "dark" ? "Light" : "Dark"} Mode`}
               aria-label="Toggle Theme"
             >
-              <span>{resolvedTheme === "dark" ? "☀️" : "🌙"}</span>
+              {resolvedTheme === "dark" ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              )}
               <span className="hidden sm:inline">{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
             </button>
 
@@ -1012,10 +1208,10 @@ export default function ExamPage() {
                   ? "bg-sky-600 text-white border-sky-500 ring-2 ring-sky-300/40"
                   : "bg-slate-900 text-white border-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 hover:bg-slate-800"
               }`}
-              title="Toggle On-Screen Calculator"
+              title="Toggle On-Screen Calculator (Shortcut: C)"
               aria-label="Toggle Calculator"
             >
-              <span>🧮</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
               <span>{showCalculator ? "Hide Calc" : "Calculator"}</span>
             </button>
 
@@ -1181,9 +1377,11 @@ export default function ExamPage() {
                         <button
                           type="button"
                           onClick={() => setPassageSearchQuery("")}
-                          className="text-xs font-bold text-slate-400 hover:text-slate-600 px-1"
+                          className="inline-flex items-center justify-center h-6 w-6 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          title="Clear search query"
+                          aria-label="Clear search query"
                         >
-                          ✕
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         </button>
                       )}
                     </div>
@@ -1272,6 +1470,21 @@ export default function ExamPage() {
                       </label>
                     ))}
                   </div>
+
+                  <Jamb8KeypadConsole
+                    selectedAnswer={selectedAnswer}
+                    onSelectOption={handleSelectAnswer}
+                    onPrevious={handlePrevious}
+                    onNext={handleNext}
+                    onClear={handleClearAnswer}
+                    onSubmit={() => handleSubmit()}
+                    canPrevious={currentIndex > 0}
+                    canNext={currentIndex < totalQuestions - 1}
+                    hasSelectedAnswer={Boolean(selectedAnswer)}
+                    onToggleCalculator={() => setShowCalculator((prev) => !prev)}
+                    showCalculator={showCalculator}
+                    hasOptionE={Boolean(optionE?.trim()) || Boolean(safeImageUrl(currentQuestion.option_e_image_url))}
+                  />
 
                   <div className="mt-8 flex items-center justify-between gap-3 sm:gap-4">
                     <button
@@ -1373,6 +1586,21 @@ export default function ExamPage() {
                     </label>
                   ))}
                 </div>
+
+                <Jamb8KeypadConsole
+                  selectedAnswer={selectedAnswer}
+                  onSelectOption={handleSelectAnswer}
+                  onPrevious={handlePrevious}
+                  onNext={handleNext}
+                  onClear={handleClearAnswer}
+                  onSubmit={() => handleSubmit()}
+                  canPrevious={currentIndex > 0}
+                  canNext={currentIndex < totalQuestions - 1}
+                  hasSelectedAnswer={Boolean(selectedAnswer)}
+                  onToggleCalculator={() => setShowCalculator((prev) => !prev)}
+                  showCalculator={showCalculator}
+                  hasOptionE={Boolean(optionE?.trim()) || Boolean(safeImageUrl(currentQuestion.option_e_image_url))}
+                />
 
                 <div className="mt-8 flex items-center justify-between gap-3 sm:gap-4">
                   <button
@@ -1612,8 +1840,10 @@ export default function ExamPage() {
                 type="button"
                 onClick={() => setMobilePassageOpen(false)}
                 className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center font-bold"
+                title="Close Reading Passage"
+                aria-label="Close Reading Passage"
               >
-                ✕
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
@@ -1695,9 +1925,10 @@ export default function ExamPage() {
               <button
                 type="button"
                 onClick={() => setZoomImageUrl(null)}
-                className="rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition active:scale-95"
+                className="flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 transition active:scale-95"
               >
-                ✕ Close (Esc)
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span>Close (Esc)</span>
               </button>
             </div>
             <div className="mt-4 flex items-center justify-center overflow-auto max-h-[75vh]">
@@ -1756,8 +1987,10 @@ export default function ExamPage() {
                 type="button"
                 onClick={() => setMobilePaletteOpen(false)}
                 className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center font-bold cursor-pointer"
+                title="Close Question Palette"
+                aria-label="Close Question Palette"
               >
-                ✕
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 

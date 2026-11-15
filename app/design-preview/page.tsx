@@ -455,8 +455,7 @@ export default function DesignPreviewPage() {
       {/* Hero Render */}
       <BrilliantHero />
 
-      {/* Group 1: University Target Social Proof & Join Our Channel */}
-      <HomeUniversityTargetSocialProof />
+      {/* Group 1: Join Our Channel */}
       <HomeJoinChannel />
 
       {/* Group 2: Audience Entry Points & The BrainLab Loop */}
@@ -470,8 +469,9 @@ export default function DesignPreviewPage() {
       <HomeProductShowcase />
       <HomeStemStudio />
 
-      {/* Group 4: Trust Outcomes & Pricing Teaser */}
+      {/* Group 4: Trust Outcomes, University Targets & Pricing Teaser */}
       <HomeTrustOutcomes />
+      <HomeUniversityTargetSocialProof />
       <HomePricingTeaser />
 
       {/* Group 5: Founder Note & FAQ */}

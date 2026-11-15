@@ -1656,6 +1656,37 @@ button:disabled,
   transform: scale(0.98);
 }
 
+/* 3D Showcase Card Motion & Perspective */
+@keyframes bl-float-3d {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotateX(1.5deg);
+  }
+}
+
+.animate-bl-float-3d {
+  animation: bl-float-3d 5s ease-in-out infinite;
+}
+
+.bl-perspective-container {
+  perspective: 1200px;
+}
+
+.bl-3d-card-stage {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+}
+
+.bl-3d-card-right:hover {
+  transform: perspective(1200px) rotateY(-3.5deg) rotateX(2deg) translateY(-4px);
+}
+
+.bl-3d-card-left:hover {
+  transform: perspective(1200px) rotateY(3.5deg) rotateX(2deg) translateY(-4px);
+}
+
 /* Strict prefers-reduced-motion compliance */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1667,7 +1698,12 @@ button:disabled,
     scroll-behavior: auto !important;
   }
   .bl-interactive-hover:hover,
-  .bl-interactive-hover:active {
+  .bl-interactive-hover:active,
+  .animate-bl-float-3d,
+  .bl-3d-card-stage,
+  .bl-3d-card-right:hover,
+  .bl-3d-card-left:hover {
     transform: none !important;
+    animation: none !important;
   }
 }

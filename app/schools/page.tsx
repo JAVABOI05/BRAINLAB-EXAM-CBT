@@ -210,23 +210,24 @@ export default function SchoolsPage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-[#000814] dark:text-slate-100">
       {/* -------------------------------------------------------------------
-          1. Hero Section
+          1. Hero Section (Luminous White Space in Light Mode)
       ------------------------------------------------------------------- */}
-      <section className="relative overflow-hidden border-b border-blue-900/40 bg-[#00112b] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent pointer-events-none" />
+      <section className="relative overflow-hidden border-b border-slate-200/80 bg-white text-slate-900 py-16 sm:py-24 lg:py-28 dark:border-white/[0.08] dark:bg-[#00112b] dark:text-white transition-colors">
+        {/* Soft Ambient Light (Airy & Non-Suffocating) */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent dark:from-blue-900/40 pointer-events-none" />
 
-        <div className="relative mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-24 lg:py-28">
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-950/60 px-3.5 py-1.5 text-xs font-semibold text-sky-300 backdrop-blur-sm">
-              <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1.5 text-xs font-bold text-blue-800 backdrop-blur-sm dark:border-sky-400/30 dark:bg-sky-950/60 dark:text-sky-300">
+              <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-sky-400 animate-pulse" />
               Institutional CBT &amp; Multi-Lab Suite
             </span>
 
-            <h1 className="mt-6 text-3xl font-black tracking-tight sm:text-5xl lg:text-6xl text-white">
+            <h1 className="mt-6 text-3xl font-black tracking-tight sm:text-5xl lg:text-6xl text-slate-950 dark:text-white leading-[1.1]">
               Power Your School With Stress-Free, Offline-Resilient CBT.
             </h1>
 
-            <p className="mt-6 text-base leading-relaxed text-slate-300 sm:text-lg sm:leading-8">
+            <p className="mt-6 text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg sm:leading-8">
               Deploy standard JAMB UTME, WAEC, NECO and custom internal mock exams across your
               school computer laboratories. Zero internet hiccups, automated grading, branded PDF
               result slips, and deep subject teacher analytics.
@@ -235,35 +236,35 @@ export default function SchoolsPage() {
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <a
                 href="#inquiry"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/40 transition-all hover:bg-blue-500 hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 active:scale-95"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 px-7 py-3.5 text-sm font-black text-white shadow-md shadow-blue-600/25 transition-all hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:scale-95"
               >
                 Request School Demo &amp; Pilot
               </a>
               <a
                 href="#pricing"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-700 bg-white/5 px-6 py-3 text-sm font-bold text-slate-200 backdrop-blur-sm transition-all hover:bg-white/10 hover:text-white"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border-2 border-slate-300 bg-white hover:bg-slate-50 px-6 py-3.5 text-sm font-extrabold text-slate-800 transition-all hover:border-slate-400 dark:border-slate-700 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 Calculate School Licensing →
               </a>
             </div>
 
             {/* Quick Metrics Bar */}
-            <div className="mt-12 grid grid-cols-2 gap-4 border-t border-slate-800/80 pt-8 sm:grid-cols-4">
+            <div className="mt-12 grid grid-cols-2 gap-4 border-t border-slate-200 dark:border-slate-800/80 pt-8 sm:grid-cols-4">
               <div>
-                <p className="text-2xl font-black text-sky-400 sm:text-3xl">99.98%</p>
-                <p className="mt-1 text-xs text-slate-400">Exam session uptime with local caching</p>
+                <p className="text-2xl font-black text-blue-600 dark:text-sky-400 sm:text-3xl">99.98%</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Exam session uptime with local caching</p>
               </div>
               <div>
-                <p className="text-2xl font-black text-sky-400 sm:text-3xl">100%</p>
-                <p className="mt-1 text-xs text-slate-400">Official JAMB/WAEC question compliance</p>
+                <p className="text-2xl font-black text-blue-600 dark:text-sky-400 sm:text-3xl">100%</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Official JAMB/WAEC question compliance</p>
               </div>
               <div>
-                <p className="text-2xl font-black text-sky-400 sm:text-3xl">&lt; 3 Secs</p>
-                <p className="mt-1 text-xs text-slate-400">Instant PDF report slip generation</p>
+                <p className="text-2xl font-black text-blue-600 dark:text-sky-400 sm:text-3xl">&lt; 3 Secs</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Instant PDF report slip generation</p>
               </div>
               <div>
-                <p className="text-2xl font-black text-sky-400 sm:text-3xl">Zero</p>
-                <p className="mt-1 text-xs text-slate-400">Expensive local server hardware needed</p>
+                <p className="text-2xl font-black text-blue-600 dark:text-sky-400 sm:text-3xl">Zero</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Expensive local server hardware needed</p>
               </div>
             </div>
           </div>

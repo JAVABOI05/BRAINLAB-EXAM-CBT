@@ -287,16 +287,16 @@ export const HOMEPAGE_CONTENT_CONFIG: HomepageContentConfig = {
     subhead: {
       status: "VERIFIED",
       claimId: "CLM-HERO-02",
-      value: "Your learning journey starts here. For free.",
+      value: "Unified examination preparation across UTME, O Level, and Post-UTME candidate tracks.",
       sourceNote: "Directive Section 7 Hero Subheading",
       asOfDate: "2026-11-11",
     },
-    primaryCta: { label: "Get Started, It's Free", href: "/cbt" },
+    primaryCta: { label: "Launch Candidate Simulator", href: "/cbt" },
     secondaryCta: { label: "Discover Apex Cohort", href: "/apex" },
     disclosure: {
       status: "VERIFIED",
       claimId: "CLM-HERO-03",
-      value: "Full access to CBT practice, question bank, AI Tutor fair-use, and Learning Hub at ₦0.",
+      value: "Standard candidate access across UTME mock engine, O Level curriculum syllabus, and Post-UTME drills.",
       sourceNote: "Directive Section 3 Public Category Specification",
       asOfDate: "2026-11-11",
     },
@@ -534,12 +534,12 @@ export const HOMEPAGE_CONTENT_CONFIG: HomepageContentConfig = {
       question: {
         status: "VERIFIED",
         claimId: "CLM-FAQ-03",
-        value: "Is there a free practice option available?",
+        value: "What examination programmes does BrainLab support?",
       },
       answer: {
         status: "VERIFIED",
         claimId: "CLM-FAQ-04",
-        value: "Yes. Students can access diagnostic sample tests, daily subject drills, and syllabus explorer tools for free without requiring a debit card.",
+        value: "BrainLab covers three primary candidate tracks: UTME (JAMB CBT simulation & 4-subject blueprints), O Level (WAEC & NECO Senior Secondary SS1–SS3 theory & objective papers), and Post-UTME (university screening speed drills & aggregate calculators).",
       },
     },
     {

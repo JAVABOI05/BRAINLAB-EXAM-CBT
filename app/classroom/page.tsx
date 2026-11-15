@@ -386,7 +386,7 @@ function ClassroomLobbyContent() {
   const handleWhatsAppShare = (roomCode = "BL-LIVE-101", title = "Academic Masterclass") => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://brainlabacademy.com.ng";
     const link = `${origin}/classroom/${roomCode.trim()}`;
-    const text = `🎓 *BrainLab Live Academic Masterclass*\n📌 *Topic:* ${title}\n🎙️ *Format:* Interactive Audio, Whiteboard Derivations & Live Quizzes\n🔗 *Join Room Now:* ${link}\n\n_Works directly in phone or PC browser. No download required._`;
+    const text = `*BrainLab Live Academic Masterclass*\n*Topic:* ${title}\n*Format:* Interactive Audio, Whiteboard Derivations & Live Quizzes\n*Join Room Now:* ${link}\n\n_Works directly in phone or PC browser. No download required._`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };

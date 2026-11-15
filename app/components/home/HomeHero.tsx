@@ -192,7 +192,7 @@ export function HomeHero() {
                         </div>
 
                         <span className="rounded-full bg-blue-100 px-3 py-1 text-[11px] font-black text-blue-800 dark:bg-blue-900/50 dark:text-cyan-300 border border-blue-200 dark:border-blue-700/60">
-                          ₦0 Public CBT
+                          National CBT Standard
                         </span>
                       </div>
 
@@ -238,8 +238,8 @@ export function HomeHero() {
                           <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Avg Target</div>
                         </div>
                         <div className="rounded-xl bg-white/80 p-2.5 border border-slate-200/70 dark:bg-white/[0.04] dark:border-white/[0.06]">
-                          <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">100%</div>
-                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Free Starter</div>
+                          <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">3 Tracks</div>
+                          <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">UTME &bull; O Level &bull; Post-UTME</div>
                         </div>
                         <div className="rounded-xl bg-white/80 p-2.5 border border-slate-200/70 dark:bg-white/[0.04] dark:border-white/[0.06]">
                           <div className="text-base sm:text-lg font-black text-blue-600 dark:text-cyan-400 font-mono">2026/27</div>
@@ -295,7 +295,7 @@ export function HomeHero() {
             {/* Category Pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-blue-800 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300 shadow-2xs">
               <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
-              <span>NIGERIA&apos;S PREMIER ACADEMIC CBT &bull; 100% FREE STARTER</span>
+              <span>NIGERIA&apos;S PREMIER ACADEMIC CBT &bull; UTME, O LEVEL &amp; POST-UTME</span>
             </div>
 
             {/* Authoritative Primary Headline with Playful Underline Accent */}
@@ -319,35 +319,35 @@ export function HomeHero() {
 
             {/* High-Legibility Subheading with Generous Breathing Room */}
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl font-normal">
-              {subhead} Practice under real JAMB UTME test-hall conditions, master Senior Secondary concepts through interactive STEM models, and pinpoint your weaknesses with instant diagnostic scoring.
+              {subhead} Practice under real JAMB UTME test-hall conditions, master Senior Secondary WAEC/NECO concepts through step-by-step derivations, and conquer university Post-UTME screening sprints with instant diagnostic scoring.
             </p>
 
-            {/* Khan Academy-Style Audience Pathway Buttons */}
+            {/* Candidate Pathway Buttons */}
             <div className="space-y-3 pt-1">
               <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Start your journey as:
+                Select your candidate pathway:
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Link
-                  href={heroConfig.primaryCta.href}
+                  href="/cbt"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-black px-7 py-3.5 text-sm sm:text-base shadow-md shadow-blue-600/25 transition-all duration-200 active:scale-95 group min-h-[48px]"
                 >
-                  <span>Learners</span>
+                  <span>UTME Candidates</span>
                   <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
                 </Link>
 
                 <Link
-                  href="/for-tutors"
+                  href="/learn"
                   className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
-                  <span>Teachers &amp; Tutors</span>
+                  <span>O Level (WAEC/NECO)</span>
                 </Link>
 
                 <Link
-                  href="/schools"
+                  href="/programmes/post-utme"
                   className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
-                  <span>Schools &amp; Parents</span>
+                  <span>Post-UTME Screening</span>
                 </Link>
               </div>
             </div>
@@ -358,7 +358,7 @@ export function HomeHero() {
                 <svg className="h-4 w-4 text-emerald-500 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <span>100% Free Public CBT Practice</span>
+                <span>Official 8-Key CBT Simulator</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-500 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">

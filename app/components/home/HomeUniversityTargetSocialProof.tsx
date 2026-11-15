@@ -199,7 +199,7 @@ export function HomeUniversityTargetSocialProof() {
                   </svg>
                   <span>Syllabus Alignment</span>
                 </div>
-                <div className="text-sm sm:text-base font-black text-slate-950 dark:text-white">JAMB &amp; WAEC</div>
+                <div className="text-sm sm:text-base font-black text-slate-950 dark:text-white">UTME, O Level &amp; Post-UTME</div>
               </div>
 
               <div className="border-l border-slate-200 dark:border-slate-800 pl-3">
@@ -376,7 +376,7 @@ export function HomeUniversityTargetSocialProof() {
                 <span aria-hidden="true" className="text-base font-bold">&rarr;</span>
               </Link>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                100% Free Starter CBT Simulation Included
+                Official Combinations &bull; Verified Cut-offs
               </span>
             </div>
           </div>

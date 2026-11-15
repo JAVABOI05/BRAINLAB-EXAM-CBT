@@ -6,15 +6,84 @@ import { toast } from "../lib/toast";
 import { getWhatsAppChatUrl, DEFAULT_WHATSAPP_NUMBER } from "../lib/whatsapp";
 import { getFooterConfig } from "../lib/platformConfig";
 
+function PrivacySectionIcon({ id }: { id: string }) {
+  switch (id) {
+    case "core-commitments":
+      return (
+        <svg className="h-4 w-4 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    case "ai-ethics":
+      return (
+        <svg className="h-4 w-4 text-purple-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="10" rx="2" />
+          <circle cx="12" cy="5" r="2" />
+          <path d="M12 7v4" />
+          <line x1="8" y1="16" x2="8" y2="16" />
+          <line x1="16" y1="16" x2="16" y2="16" />
+        </svg>
+      );
+    case "cryptographic-backend":
+      return (
+        <svg className="h-4 w-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      );
+    case "cbt-integrity":
+      return (
+        <svg className="h-4 w-4 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    case "data-collected":
+      return (
+        <svg className="h-4 w-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+      );
+    case "candidate-rights":
+      return (
+        <svg className="h-4 w-4 text-cyan-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+          <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+          <path d="M7 21h10" />
+          <path d="M12 3v18" />
+          <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+        </svg>
+      );
+    case "terminal-safety":
+      return (
+        <svg className="h-4 w-4 text-teal-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      );
+    case "dpo-contact":
+    default:
+      return (
+        <svg className="h-4 w-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      );
+  }
+}
+
 const SECTIONS = [
-  { id: "core-commitments", label: "Core Security Commitments", icon: "🛡️" },
-  { id: "ai-ethics", label: "AI Tutor & Inference Ethics", icon: "🤖" },
-  { id: "cryptographic-backend", label: "Cryptographic Architecture", icon: "🔐" },
-  { id: "cbt-integrity", label: "CBT Anti-Cheat & Telemetry", icon: "⏱️" },
-  { id: "data-collected", label: "Data Collected & Minimization", icon: "📋" },
-  { id: "candidate-rights", label: "Your Rights (NDPA 2023)", icon: "⚖️" },
-  { id: "terminal-safety", label: "Cybercafé Terminal Safety", icon: "🧹" },
-  { id: "dpo-contact", label: "DPO & Compliance Inquiries", icon: "💬" },
+  { id: "core-commitments", label: "Core Security Commitments" },
+  { id: "ai-ethics", label: "AI Tutor & Inference Ethics" },
+  { id: "cryptographic-backend", label: "Cryptographic Architecture" },
+  { id: "cbt-integrity", label: "CBT Anti-Cheat & Telemetry" },
+  { id: "data-collected", label: "Data Collected & Minimization" },
+  { id: "candidate-rights", label: "Your Rights (NDPA 2023)" },
+  { id: "terminal-safety", label: "Cybercafé Terminal Safety" },
+  { id: "dpo-contact", label: "DPO & Compliance Inquiries" },
 ];
 
 export default function PrivacyPolicyPage() {
@@ -180,7 +249,7 @@ export default function PrivacyPolicyPage() {
                         }`}
                       >
                         <span className="flex items-center gap-2 truncate">
-                          <span>{sec.icon}</span>
+                          <PrivacySectionIcon id={sec.id} />
                           <span className="truncate">{sec.label}</span>
                         </span>
                         {isActive && <span className="text-indigo-600 dark:text-cyan-400 text-sm">&bull;</span>}
@@ -235,7 +304,10 @@ export default function PrivacyPolicyPage() {
                   {/* Card 1 */}
                   <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
                     <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 flex items-center justify-center text-lg mb-4 text-indigo-600 dark:text-indigo-400">
-                      🚫
+                      <svg className="h-5 w-5 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                      </svg>
                     </div>
                     <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Zero Student Model Training</h3>
                     <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -246,7 +318,10 @@ export default function PrivacyPolicyPage() {
                   {/* Card 2 */}
                   <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
                     <div className="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 flex items-center justify-center text-lg mb-4 text-emerald-600 dark:text-emerald-400">
-                      🔐
+                      <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
                     </div>
                     <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Application-Level AES-256-GCM</h3>
                     <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -257,7 +332,9 @@ export default function PrivacyPolicyPage() {
                   {/* Card 3 */}
                   <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
                     <div className="h-10 w-10 rounded-2xl bg-sky-50 dark:bg-sky-950/80 flex items-center justify-center text-lg mb-4 text-sky-600 dark:text-cyan-400">
-                      ⚡
+                      <svg className="h-5 w-5 text-sky-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
                     </div>
                     <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Zero Client Answer Leakage</h3>
                     <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -268,7 +345,9 @@ export default function PrivacyPolicyPage() {
                   {/* Card 4 */}
                   <div className="group rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-6 shadow-sm hover:shadow-md transition">
                     <div className="h-10 w-10 rounded-2xl bg-amber-50 dark:bg-amber-950/80 flex items-center justify-center text-lg mb-4 text-amber-600 dark:text-amber-400">
-                      🧹
+                      <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                      </svg>
                     </div>
                     <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Cybercafé Memory Shredder</h3>
                     <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -312,7 +391,7 @@ export default function PrivacyPolicyPage() {
 
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0a1424] p-5">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>🇳🇬</span> National Curriculum Alignment &amp; Anti-Bias
+                      <span className="rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-black px-1.5 py-0.5 border border-emerald-300 dark:border-emerald-700">NG</span> National Curriculum Alignment &amp; Anti-Bias
                     </h4>
                     <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                       AI tutor prompts are calibrated specifically to Nigerian examination blueprints (NERDC, JAMB UTME, WAEC SSCE, and NECO). Deterministic checkers verify mathematical constants and grammatical conventions to prevent misleading hallucinations.

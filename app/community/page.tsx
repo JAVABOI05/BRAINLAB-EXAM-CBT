@@ -158,7 +158,12 @@ export default function CommunityDiscoveryPage() {
             {/* Search Input */}
             <div className="mt-8 max-w-xl">
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-lg">🔍</span>
+                <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400" aria-hidden="true">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
                 <input
                   type="text"
                   value={searchQuery}
@@ -290,7 +295,15 @@ export default function CommunityDiscoveryPage() {
                     </p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      <span>👥 {group.member_count || 1} members</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        <span>{group.member_count || 1} members</span>
+                      </span>
                       <span>•</span>
                       <span>Policy: {group.membership_policy === "open" ? "Instant Join" : "Approval Required"}</span>
                     </div>
