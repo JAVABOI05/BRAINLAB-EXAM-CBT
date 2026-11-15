@@ -76,12 +76,16 @@ export function HomeProductShowcase() {
   const userChoice = selectedAnswers[currentQ.id];
   const isAnswered = Boolean(userChoice);
 
-  // Interactive state for Card 3: Daily Quests
+  // Interactive state for Card 3: Daily Quests & Streak Bonus
   const [completedQuests, setCompletedQuests] = useState<Record<string, boolean>>({
     quest1: true,
     quest2: true,
     quest3: false,
   });
+  const [streakBonusClaimed, setStreakBonusClaimed] = useState<boolean>(false);
+
+  // Interactive state for Card 2: Diagnostic Topic Focus
+  const [activeDiagnosticTopic, setActiveDiagnosticTopic] = useState<"chem" | "calc" | "eng">("chem");
 
   // Interactive state for Card 4: Offline Toggle
   const [isOfflineSimulated, setIsOfflineSimulated] = useState<boolean>(true);
