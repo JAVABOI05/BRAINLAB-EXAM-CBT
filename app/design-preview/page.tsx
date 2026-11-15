@@ -12,6 +12,10 @@ import HomeInstantMiniMock from "@/app/components/home/HomeInstantMiniMock";
 import { HomeBrainLabLoop } from "@/app/components/home/HomeBrainLabLoop";
 import { HomeProductShowcase } from "@/app/components/home/HomeProductShowcase";
 import { HomeStemStudio } from "@/app/components/home/HomeStemStudio";
+import { HomeTrustOutcomes } from "@/app/components/home/HomeTrustOutcomes";
+import { HomePricingTeaser } from "@/app/components/home/HomePricingTeaser";
+import { HomeFounderNote } from "@/app/components/home/HomeFounderNote";
+import { HomeFaqCta } from "@/app/components/home/HomeFaqCta";
 
 // Exact Verified Question Content
 const SAMPLE_QUESTION = {
@@ -466,8 +470,16 @@ export default function DesignPreviewPage() {
       <HomeProductShowcase />
       <HomeStemStudio />
 
-      {/* Craftsmanship & Design Quality Documentation Footer */}
-      <footer className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 border-t border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-400">
+      {/* Group 4: Trust Outcomes & Pricing Teaser */}
+      <HomeTrustOutcomes />
+      <HomePricingTeaser />
+
+      {/* Group 5: Founder Note & FAQ */}
+      <HomeFounderNote />
+      <HomeFaqCta />
+
+      {/* Craftsmanship & Design Quality Documentation Note */}
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 border-t border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-400" role="complementary" aria-label="Preview Design Documentation">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50 dark:bg-slate-900/50">
             <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white mb-2">
@@ -499,7 +511,7 @@ export default function DesignPreviewPage() {
             </p>
           </div>
         </div>
-      </footer>
+      </div>
     </main>
   );
 }

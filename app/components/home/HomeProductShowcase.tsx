@@ -4,12 +4,77 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
 
+interface ShowcaseCbtQuestion {
+  id: number;
+  subject: string;
+  topic: string;
+  question: string;
+  options: { key: "A" | "B" | "C" | "D"; label: string }[];
+  correct: "A" | "B" | "C" | "D";
+  derivation: string;
+  examinerTrap: string;
+}
+
+const SHOWCASE_QUESTIONS: ShowcaseCbtQuestion[] = [
+  {
+    id: 1,
+    subject: "Physics",
+    topic: "Uniform Acceleration & Motion",
+    question: "A body accelerates uniformly from rest at 2.0 m/s² for 5.0 seconds. Calculate the total distance covered.",
+    options: [
+      { key: "A", label: "10.0 meters" },
+      { key: "B", label: "25.0 meters (s = ½at²)" },
+      { key: "C", label: "50.0 meters" },
+      { key: "D", label: "100.0 meters" },
+    ],
+    correct: "B",
+    derivation: "Since starting from rest, initial velocity u = 0. Using s = ut + ½at²: s = 0 + ½(2.0)(5.0)² = 25.0 meters.",
+    examinerTrap: "Trap: Candidates frequently forget to square time (using t instead of t² = 25), leading to 10.0 m.",
+  },
+  {
+    id: 2,
+    subject: "English",
+    topic: "Lexis & Concord (Rule of Proximity)",
+    question: "Neither the principal nor the teachers _______ present at the annual school meeting.",
+    options: [
+      { key: "A", label: "was" },
+      { key: "B", label: "were" },
+      { key: "C", label: "is" },
+      { key: "D", label: "are being" },
+    ],
+    correct: "B",
+    derivation: "In correlative 'Neither... nor' constructions, the verb agrees with the nearer subject. 'teachers' (plural) is closest to the verb.",
+    examinerTrap: "Trap: Blindly agreeing with the singular head noun 'principal' instead of the nearest subject.",
+  },
+  {
+    id: 3,
+    subject: "Chemistry",
+    topic: "Oxidation Numbers & Redox",
+    question: "What is the oxidation state of Manganese (Mn) in potassium permanganate (KMnO₄)?",
+    options: [
+      { key: "A", label: "+5" },
+      { key: "B", label: "+6" },
+      { key: "C", label: "+7" },
+      { key: "D", label: "+4" },
+    ],
+    correct: "C",
+    derivation: "In neutral KMnO₄: (+1) + Mn + 4(-2) = 0  =>  1 + Mn - 8 = 0  =>  Mn = +7.",
+    examinerTrap: "Trap: Forgetting that each oxygen is -2 (giving -8 total), leading candidates to guess +5.",
+  },
+];
+
 export function HomeProductShowcase() {
   const products = HOMEPAGE_CONTENT_CONFIG.products;
 
-  // Interactive state for Card 1: 8-Key Simulator
-  const [selected8KeyOption, setSelected8KeyOption] = useState<string>("B");
+  // Interactive state for Card 1: Live Interactive 8-Key CBT Drill Engine
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
+  const [showExplanation, setShowExplanation] = useState<boolean>(false);
   const [selectedKeyStroke, setSelectedKeyStroke] = useState<string>("B");
+
+  const currentQ = SHOWCASE_QUESTIONS[activeQuestionIndex];
+  const userChoice = selectedAnswers[currentQ.id];
+  const isAnswered = Boolean(userChoice);
 
   // Interactive state for Card 3: Daily Quests
   const [completedQuests, setCompletedQuests] = useState<Record<string, boolean>>({
@@ -29,8 +94,30 @@ export function HomeProductShowcase() {
 
   const handleKeyClick = (key: string) => {
     setSelectedKeyStroke(key);
+
     if (["A", "B", "C", "D"].includes(key)) {
-      setSelected8KeyOption(key);
+      const choice = key as "A" | "B" | "C" | "D";
+      setSelectedAnswers((prev) => ({ ...prev, [currentQ.id]: choice }));
+      setShowExplanation(true);
+    } else if (key === "N") {
+      // Next Question
+      setShowExplanation(false);
+      setActiveQuestionIndex((prev) => (prev + 1) % SHOWCASE_QUESTIONS.length);
+    } else if (key === "P") {
+      // Previous Question
+      setShowExplanation(false);
+      setActiveQuestionIndex((prev) => (prev - 1 + SHOWCASE_QUESTIONS.length) % SHOWCASE_QUESTIONS.length);
+    } else if (key === "S") {
+      // Toggle Explanation
+      setShowExplanation((prev) => !prev);
+    } else if (key === "R") {
+      // Reset Drill for this question
+      setSelectedAnswers((prev) => {
+        const next = { ...prev };
+        delete next[currentQ.id];
+        return next;
+      });
+      setShowExplanation(false);
     }
   };
 
@@ -91,7 +178,7 @@ export function HomeProductShowcase() {
         {/* MODE 1: 4 VISUAL DIGESTIBLE CARDS (OPTION B) */}
         {activeTab === "pillars" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 min-h-[420px]">
-            {/* CARD 1: JAMB 8-KEY SPEED ENGINE */}
+            {/* CARD 1: LIVE INTERACTIVE 8-KEY CBT EXAM ENGINE */}
             <div
               id="cbt-simulator"
               className="flex flex-col justify-between rounded-3xl border-2 border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-6 sm:p-8 shadow-sm transition-all duration-200 hover:border-blue-400 dark:hover:border-blue-500"
@@ -106,7 +193,7 @@ export function HomeProductShowcase() {
                     <span>100% Exam Hall Parity</span>
                   </div>
                   <span className="text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                    +15 Min Time Saved
+                    +15 Min Speed Parity
                   </span>
                 </div>
 
@@ -117,12 +204,33 @@ export function HomeProductShowcase() {
                   Practice without a mouse — exactly like the real CBT center. Tap keys <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-blue-700 dark:text-cyan-300 font-bold">A</kbd> <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-blue-700 dark:text-cyan-300 font-bold">B</kbd> <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-blue-700 dark:text-cyan-300 font-bold">C</kbd> <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-blue-700 dark:text-cyan-300 font-bold">D</kbd> to answer, and <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300 font-bold">P</kbd> <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300 font-bold">N</kbd> <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300 font-bold">S</kbd> <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300 font-bold">R</kbd> to navigate.
                 </p>
 
+                {/* Subject Question Quick Selector */}
+                <div className="mt-4 flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                  {SHOWCASE_QUESTIONS.map((q, idx) => (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveQuestionIndex(idx);
+                        setShowExplanation(Boolean(selectedAnswers[q.id]));
+                      }}
+                      className={`px-3 py-1 rounded-lg border transition-all cursor-pointer ${
+                        activeQuestionIndex === idx
+                          ? "bg-blue-600 text-white border-blue-700 shadow-xs"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      <span>{q.subject} (Q{q.id})</span>
+                    </button>
+                  ))}
+                </div>
+
                 {/* Tactile Hardware Terminal Widget */}
-                <div className="mt-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 sm:p-5 space-y-3.5 shadow-inner">
+                <div className="mt-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 sm:p-5 space-y-3.5 shadow-inner">
                   <div className="flex items-center justify-between text-[11px] font-mono border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-600 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold">
                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Physics Question 14 of 40
+                      <span>{currentQ.subject} &bull; {currentQ.topic}</span>
                     </span>
                     <span className="text-amber-700 dark:text-amber-400 font-bold font-mono flex items-center gap-1">
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -133,42 +241,69 @@ export function HomeProductShowcase() {
                     </span>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
-                    A body accelerates uniformly from rest at 2.0 m/s² for 5.0 seconds. Calculate the total distance covered.
+                  <p className="text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-medium leading-relaxed">
+                    {currentQ.question}
                   </p>
 
                   {/* Interactive Options HUD */}
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {[
-                      { key: "A", label: "10.0 meters" },
-                      { key: "B", label: "25.0 meters (s = ½at²)" },
-                      { key: "C", label: "50.0 meters" },
-                      { key: "D", label: "100.0 meters" },
-                    ].map((opt) => {
-                      const isSelected = selected8KeyOption === opt.key;
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {currentQ.options.map((opt) => {
+                      const isSelected = userChoice === opt.key;
+                      const isCorrect = opt.key === currentQ.correct;
+
+                      let btnTheme = "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700";
+
+                      if (isAnswered) {
+                        if (isCorrect) {
+                          btnTheme = "bg-emerald-50 border-emerald-500 dark:bg-emerald-950/60 dark:border-emerald-500 text-emerald-950 dark:text-emerald-100 font-bold shadow-xs";
+                        } else if (isSelected) {
+                          btnTheme = "bg-rose-50 border-rose-500 dark:bg-rose-950/60 dark:border-rose-500 text-rose-950 dark:text-rose-100 line-through opacity-90 shadow-xs";
+                        } else {
+                          btnTheme = "bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-60";
+                        }
+                      }
+
                       return (
                         <button
                           key={opt.key}
                           type="button"
                           onClick={() => handleKeyClick(opt.key)}
-                          className={`flex items-center gap-2 p-2.5 rounded-xl text-left transition-all border-2 border-b-4 cursor-pointer active:border-b-2 active:translate-y-0.5 ${
-                            isSelected
-                              ? "bg-blue-50/80 border-blue-600 dark:bg-blue-950/60 dark:border-blue-500 text-blue-950 dark:text-blue-100 font-bold shadow-xs"
-                              : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
-                          }`}
+                          className={`flex items-center gap-2 p-2.5 rounded-xl text-left transition-all border-2 border-b-4 cursor-pointer active:border-b-2 active:translate-y-0.5 ${btnTheme}`}
                         >
                           <span
-                            className={`flex h-5 w-5 items-center justify-center rounded-md font-mono text-[10px] font-bold ${
-                              isSelected ? "bg-blue-600 text-white font-black" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold ${
+                              isSelected
+                                ? isCorrect
+                                  ? "bg-emerald-600 text-white font-black"
+                                  : "bg-rose-600 text-white font-black"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                             }`}
                           >
                             {opt.key}
                           </span>
-                          <span className="text-[11px] truncate">{opt.label}</span>
+                          <span className="text-[11px] truncate leading-tight">{opt.label}</span>
                         </button>
                       );
                     })}
                   </div>
+
+                  {/* Worked Derivation & Examiner Insight */}
+                  {showExplanation && (
+                    <div className="rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/40 p-3 space-y-1.5 text-xs text-blue-950 dark:text-blue-100 animate-fade-in">
+                      <div className="flex items-center justify-between font-bold text-blue-700 dark:text-blue-300 text-[11px]">
+                        <span>Master Worked Derivation:</span>
+                        <span className={userChoice === currentQ.correct ? "text-emerald-600 font-black" : "text-rose-600 font-black"}>
+                          {userChoice === currentQ.correct ? "✓ Correct!" : `✗ Trap Missed (Key: ${currentQ.correct})`}
+                        </span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">
+                        {currentQ.derivation}
+                      </p>
+                      <p className="text-[10px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 p-2 rounded-lg border border-amber-200 dark:border-amber-800/60 leading-snug">
+                        <strong>Examiner Trap:</strong> {currentQ.examinerTrap}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Physical 3D Beveled Mechanical Keycaps */}
                   <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
@@ -181,6 +316,17 @@ export function HomeProductShowcase() {
                           key={k}
                           type="button"
                           onClick={() => handleKeyClick(k)}
+                          title={
+                            k === "P"
+                              ? "Previous Question"
+                              : k === "N"
+                              ? "Next Question"
+                              : k === "S"
+                              ? "Toggle Derivation"
+                              : k === "R"
+                              ? "Reset Question"
+                              : `Option ${k}`
+                          }
                           className={`h-7 w-7 rounded-lg font-mono text-xs font-black transition-all cursor-pointer border-2 border-b-4 active:border-b-2 active:translate-y-0.5 shadow-xs ${
                             selectedKeyStroke === k
                               ? "bg-blue-600 text-white border-blue-800 dark:border-blue-950 scale-105"

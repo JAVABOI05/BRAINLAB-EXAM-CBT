@@ -13,8 +13,8 @@ import {
   HomePricingTeaser,
   HomeFounderNote,
   HomeFaqCta,
+  HomeBrilliantConceptExplorer,
 } from "./components/home";
-import HomeInstantMiniMock from "./components/home/HomeInstantMiniMock";
 
 /**
  * Ecosystem pathways mapping to preserve architecture assertions
@@ -49,26 +49,22 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
  */
 export default function HomePageClient() {
   return (
-    <div className="relative w-full bg-[#070D18] text-slate-100 overflow-hidden selection:bg-blue-600 selection:text-white">
-      {/* Global Atmospheric Mesh Glow & High-Tech Grid Structure */}
+    <div className="relative w-full bg-white dark:bg-[#070D18] text-slate-900 dark:text-slate-100 overflow-hidden selection:bg-blue-600 selection:text-white transition-colors">
+      {/* Brilliant Subtle Dot Matrix Texture */}
       <div
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]"
+        className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.05]"
+        style={{
+          backgroundImage: `radial-gradient(#1e293b 1.2px, transparent 1.2px)`,
+          backgroundSize: "24px 24px",
+        }}
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[650px] bg-gradient-to-b from-blue-600/15 via-indigo-600/10 to-transparent blur-[140px]"
+        className="pointer-events-none absolute -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-blue-500/10 dark:bg-blue-600/15 blur-[140px]"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute top-[28%] -left-48 w-[600px] h-[600px] bg-cyan-500/10 blur-[150px]"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute top-[55%] -right-48 w-[700px] h-[700px] bg-purple-600/10 blur-[160px]"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute top-[80%] left-1/3 w-[650px] h-[650px] bg-blue-500/10 blur-[150px]"
+        className="pointer-events-none absolute top-1/2 -left-32 h-[450px] w-[450px] rounded-full bg-emerald-500/10 dark:bg-emerald-500/10 blur-[130px]"
         aria-hidden="true"
       />
 
@@ -85,9 +81,9 @@ export default function HomePageClient() {
         {/* 2. Audience Entry Points */}
         <HomeAudiences />
 
-        {/* Interactive 90-Second Instant Sampler Mini-Mock */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <HomeInstantMiniMock />
+        {/* Brilliant-Style Interactive STEM Concept Explorer */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+          <HomeBrilliantConceptExplorer />
         </div>
 
         {/* 3. The BrainLab Loop */}

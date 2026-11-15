@@ -11,3 +11,4 @@ export * from "./HomeFounderNote";
 export * from "./HomeFaqCta";
 export * from "./DynamicCountdownSlot";
 export * from "./DynamicLiveStatisticsSlot";
+export * from "./HomeBrilliantConceptExplorer";
