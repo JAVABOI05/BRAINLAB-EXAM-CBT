@@ -27,6 +27,7 @@ function CentralLoginForm() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [selectedTrack, setSelectedTrack] = useState<"medicine" | "engineering" | "law" | "accounting">("medicine");
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetBusy, setResetBusy] = useState(false);
@@ -339,7 +340,7 @@ function CentralLoginForm() {
         <div className="w-full max-w-5xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
-            {/* Left Column: Brand Identity, Value Proposition & Trust Badges */}
+            {/* Left Column: Interactive Admissions Target Cockpit & Ecosystem Badges */}
             <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
               {/* Category Pill */}
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-300 backdrop-blur-md shadow-xs">
@@ -356,15 +357,114 @@ function CentralLoginForm() {
               </h1>
 
               {/* Subtitle */}
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-lg mx-auto lg:mx-0">
+              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-lg mx-auto lg:mx-0 font-normal">
                 Create a free student account to practise with official JAMB 8-key simulation, explore interactive STEM labs, and master tough concepts with Socratic AI explanations.
               </p>
 
-              {/* 4 Feature Badges */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
-                <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm space-y-1">
+              {/* Interactive Target Discipline Selector Tabs */}
+              <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 backdrop-blur-md shadow-xl text-left space-y-3.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-300 uppercase tracking-wider font-mono text-[11px]">Select Your Ambition:</span>
+                  <span className="text-cyan-400 font-bold font-mono text-[11px]">Target Score Matrix</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {(
+                    [
+                      { id: "medicine", label: "Medicine", score: "325+" },
+                      { id: "engineering", label: "Engineering", score: "298+" },
+                      { id: "law", label: "Law", score: "305+" },
+                      { id: "accounting", label: "Management", score: "280+" },
+                    ] as const
+                  ).map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedTrack(t.id)}
+                      className={`px-2.5 py-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer border ${
+                        selectedTrack === t.id
+                          ? "bg-blue-600/30 border-cyan-400 text-white shadow-xs"
+                          : "bg-slate-950/60 border-white/5 text-slate-400 hover:text-slate-200 hover:border-white/15"
+                      }`}
+                    >
+                      <div className="leading-tight">{t.label}</div>
+                      <div className="text-[10px] text-cyan-300 font-mono mt-0.5">{t.score}</div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Dynamic Subject Breakdown Pill Rail */}
+                <div className="pt-1">
+                  {selectedTrack === "medicine" && (
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Subject Plan (UNILAG · UI · OAU):</span>
+                        <span className="text-emerald-400 font-mono font-bold">Aggregate: 325 / 400</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-white">78</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">BIO</span><strong className="text-emerald-400">84</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">CHM</span><strong className="text-emerald-400">82</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">PHY</span><strong className="text-cyan-400">81</strong></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTrack === "engineering" && (
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Subject Plan (FUTA · UNILAG · OAU):</span>
+                        <span className="text-cyan-400 font-mono font-bold">Aggregate: 298 / 400</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-white">74</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">MTH</span><strong className="text-cyan-400">78</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">PHY</span><strong className="text-cyan-400">76</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">CHM</span><strong className="text-white">70</strong></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTrack === "law" && (
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Subject Plan (UI · UNILAG · UNN):</span>
+                        <span className="text-purple-400 font-mono font-bold">Aggregate: 305 / 400</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-purple-300">84</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">LIT</span><strong className="text-purple-300">78</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">GOV</span><strong className="text-white">74</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">CRS</span><strong className="text-white">69</strong></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTrack === "accounting" && (
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Subject Plan (UNILAG · UNIBEN · ABU):</span>
+                        <span className="text-amber-400 font-mono font-bold">Aggregate: 280 / 400</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-white">72</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">MTH</span><strong className="text-white">70</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ECN</span><strong className="text-amber-300">72</strong></div>
+                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ACC</span><strong className="text-white">66</strong></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 4 Feature Badges with Custom SVG Glyphs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-left">
+                <div className="p-3.5 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-sm space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">⌨️</span>
+                    <svg className="h-4 w-4 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
+                    </svg>
                     <h3 className="font-bold text-white text-xs">JAMB 8-Key Engine</h3>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
@@ -372,9 +472,12 @@ function CentralLoginForm() {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm space-y-1">
+                <div className="p-3.5 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-sm space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">🔬</span>
+                    <svg className="h-4 w-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.8 22h12.4a2 2 0 0 0 1.7-2.66L14 9.31V2" />
+                      <path d="M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0" />
+                    </svg>
                     <h3 className="font-bold text-white text-xs">STEM Virtual Labs</h3>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
@@ -382,9 +485,12 @@ function CentralLoginForm() {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm space-y-1">
+                <div className="p-3.5 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-sm space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">🧠</span>
+                    <svg className="h-4 w-4 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
+                    </svg>
                     <h3 className="font-bold text-white text-xs">Socratic AI Tutor</h3>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
@@ -392,9 +498,11 @@ function CentralLoginForm() {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm space-y-1">
+                <div className="p-3.5 rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur-sm space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">📶</span>
+                    <svg className="h-4 w-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
+                    </svg>
                     <h3 className="font-bold text-white text-xs">Zero-Data Offline PWA</h3>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
@@ -404,7 +512,7 @@ function CentralLoginForm() {
               </div>
 
               {/* University Target Social Proof */}
-              <div className="pt-2 text-xs text-slate-400 flex flex-wrap items-center justify-center lg:justify-start gap-2">
+              <div className="pt-1 text-xs text-slate-400 flex flex-wrap items-center justify-center lg:justify-start gap-2">
                 <span className="font-bold text-slate-300">Targeting:</span>
                 <span className="px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 font-mono text-[11px]">UNILAG</span>
                 <span className="px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 font-mono text-[11px]">UI</span>
@@ -472,7 +580,11 @@ function CentralLoginForm() {
                     role="alert"
                     className="rounded-2xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs text-rose-200 leading-relaxed flex items-start gap-2.5 animate-in fade-in"
                   >
-                    <span className="text-rose-400 text-base leading-none">⚠️</span>
+                    <svg className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
                     <span>{error}</span>
                   </div>
                 )}
@@ -481,7 +593,9 @@ function CentralLoginForm() {
                     role="status"
                     className="rounded-2xl border border-emerald-500/40 bg-emerald-950/40 p-3.5 text-xs text-emerald-200 leading-relaxed flex items-start gap-2.5 animate-in fade-in"
                   >
-                    <span className="text-emerald-400 text-base leading-none">✓</span>
+                    <svg className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
                     <span>{message}</span>
                   </div>
                 )}
@@ -589,10 +703,20 @@ function CentralLoginForm() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition text-sm p-1"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition p-1 cursor-pointer"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
-                        {showPassword ? "👁️" : "👁️‍🗨️"}
+                        {showPassword ? (
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        ) : (
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        )}
                       </button>
                     </div>
                     {mode === "signup" && (

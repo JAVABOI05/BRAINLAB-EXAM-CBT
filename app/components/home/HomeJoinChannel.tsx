@@ -222,7 +222,7 @@ export function HomeJoinChannel({
                         onClick={() => handleClick(p.id)}
                         className="underline hover:text-emerald-400"
                       >
-                        {p.name} ↗
+                        {p.name} &nearr;
                       </a>
                     ))}
                 </div>

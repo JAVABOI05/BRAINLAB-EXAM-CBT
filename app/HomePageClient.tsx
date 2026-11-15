@@ -49,7 +49,7 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
  */
 export default function HomePageClient() {
   return (
-    <div className="relative w-full bg-white dark:bg-[#070D18] text-slate-900 dark:text-slate-100 overflow-hidden selection:bg-blue-600 selection:text-white transition-colors">
+    <div className="relative w-full bg-white dark:bg-[#050811] text-slate-900 dark:text-slate-100 overflow-hidden selection:bg-blue-600 selection:text-white transition-colors">
       {/* Brilliant Subtle Dot Matrix Texture */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.05]"

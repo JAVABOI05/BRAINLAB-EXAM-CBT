@@ -71,42 +71,66 @@ export function HomePricingTeaser() {
           {/* 6 Core Feature Pillars */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm text-slate-200">
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="text-emerald-400 font-bold text-base mt-0.5">✓</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               <div>
                 <strong className="text-white block font-bold">Full CBT Practice Simulator</strong>
                 <span className="text-slate-400 text-xs">Authentic 4-subject 400-mark timed mock exams matching JAMB 8-key hall parity.</span>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="text-emerald-400 font-bold text-base mt-0.5">✓</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               <div>
                 <strong className="text-white block font-bold">Curriculum Question Bank</strong>
                 <span className="text-slate-400 text-xs">Verified past questions across WAEC, JAMB, and NECO with step-by-step master derivations.</span>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="text-emerald-400 font-bold text-base mt-0.5">✓</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               <div>
                 <strong className="text-white block font-bold">Socratic AI Study Assistant</strong>
                 <span className="text-slate-400 text-xs">Interactive guiding hints that explain difficult formulas without spoiling the answers.</span>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="text-emerald-400 font-bold text-base mt-0.5">✓</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               <div>
                 <strong className="text-white block font-bold">Virtual STEM Studio 3D</strong>
                 <span className="text-slate-400 text-xs">Interactive 3D molecular structures, circuits, and physics mechanics simulations.</span>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="text-emerald-400 font-bold text-base mt-0.5">✓</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               <div>
                 <strong className="text-white block font-bold">National Challenge Arena</strong>
                 <span className="text-slate-400 text-xs">Real-time 1v1 sprint battles, daily study streaks, XP, and state leaderboards.</span>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 border border-white/5">
-              <span className="text-emerald-400 font-bold text-base mt-0.5">✓</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mt-0.5" aria-hidden="true">
+                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
               <div>
                 <strong className="text-white block font-bold">Offline PWA Sync (&lt; 1.2 MB)</strong>
                 <span className="text-slate-400 text-xs">Installable on Android, iOS, or PC with zero-data offline practice capabilities.</span>

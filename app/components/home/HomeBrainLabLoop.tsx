@@ -46,13 +46,67 @@ function LoopStageIcon({ id, className = "h-4 w-4" }: { id: string; className?: 
 
 const STAGE_ROUTE_MAP: Record<
   string,
-  { href: string; label: string; previewBadge: string; themeColor: string; glow: string }
+  {
+    href: string;
+    label: string;
+    previewBadge: string;
+    themeColor: string;
+    glow: string;
+    accentBorder: string;
+    accentText: string;
+    accentBg: string;
+  }
 > = {
-  learn: { href: "/learn", label: "Explore Curriculum Lessons", previewBadge: "Interactive Theory & Formulas", themeColor: "from-blue-600 via-sky-500 to-cyan-400", glow: "border-sky-400/40 shadow-sky-900/30" },
-  practise: { href: "/cbt", label: "Launch Timed CBT Simulator", previewBadge: "Authentic 8-Key Simulator", themeColor: "from-blue-600 via-indigo-500 to-teal-400", glow: "border-teal-400/40 shadow-teal-900/30" },
-  diagnose: { href: "/learning-dna", label: "Inspect Weak Subtopics", previewBadge: "AI Cognitive Diagnostic Radar", themeColor: "from-purple-600 via-violet-500 to-fuchsia-400", glow: "border-fuchsia-400/40 shadow-fuchsia-900/30" },
-  improve: { href: "/ai-learning", label: "Launch Socratic AI Drills", previewBadge: "Step-by-Step AI Derivation", themeColor: "from-indigo-600 via-purple-500 to-amber-400", glow: "border-amber-400/40 shadow-amber-900/30" },
-  master: { href: "/challenge-arena", label: "Join 1v1 National Arena", previewBadge: "Live Synchronous Duels", themeColor: "from-amber-500 via-rose-500 to-orange-400", glow: "border-amber-400/40 shadow-amber-900/30" },
+  learn: {
+    href: "/learn",
+    label: "Explore Curriculum Lessons",
+    previewBadge: "Interactive Theory & Formulas",
+    themeColor: "from-blue-600 via-sky-500 to-cyan-400",
+    glow: "border-cyan-400/50 shadow-cyan-950/40",
+    accentBorder: "border-cyan-400",
+    accentText: "text-cyan-300",
+    accentBg: "bg-cyan-500/10",
+  },
+  practise: {
+    href: "/cbt",
+    label: "Launch Timed CBT Simulator",
+    previewBadge: "Authentic 8-Key Simulator",
+    themeColor: "from-teal-500 via-emerald-500 to-cyan-400",
+    glow: "border-teal-400/50 shadow-teal-950/40",
+    accentBorder: "border-teal-400",
+    accentText: "text-teal-300",
+    accentBg: "bg-teal-500/10",
+  },
+  diagnose: {
+    href: "/learning-dna",
+    label: "Inspect Weak Subtopics",
+    previewBadge: "AI Cognitive Diagnostic Radar",
+    themeColor: "from-fuchsia-600 via-purple-500 to-pink-400",
+    glow: "border-fuchsia-400/50 shadow-fuchsia-950/40",
+    accentBorder: "border-fuchsia-400",
+    accentText: "text-fuchsia-300",
+    accentBg: "bg-fuchsia-500/10",
+  },
+  improve: {
+    href: "/ai-learning",
+    label: "Launch Socratic AI Drills",
+    previewBadge: "Step-by-Step AI Derivation",
+    themeColor: "from-violet-600 via-purple-500 to-amber-400",
+    glow: "border-amber-400/50 shadow-amber-950/40",
+    accentBorder: "border-amber-400",
+    accentText: "text-amber-300",
+    accentBg: "bg-amber-500/10",
+  },
+  master: {
+    href: "/challenge-arena",
+    label: "Join 1v1 National Arena",
+    previewBadge: "Live Synchronous Duels",
+    themeColor: "from-amber-500 via-orange-500 to-rose-400",
+    glow: "border-orange-400/50 shadow-orange-950/40",
+    accentBorder: "border-orange-400",
+    accentText: "text-orange-300",
+    accentBg: "bg-orange-500/10",
+  },
 };
 
 export function HomeBrainLabLoop() {
@@ -121,18 +175,23 @@ export function HomeBrainLabLoop() {
                   onClick={() => setActiveStageId(stage.id)}
                   className={`group relative flex flex-col items-start p-4 rounded-2xl text-left transition-all duration-300 bl-focus-ring cursor-pointer ${
                     isSelected
-                      ? `bg-slate-900 text-white shadow-2xl border-2 border-cyan-400 scale-102 ${route.glow}`
-                      : "border border-white/10 bg-slate-900/60 hover:bg-slate-800/80 hover:border-white/20 text-slate-300 hover:text-white"
+                      ? `bg-[#0E172A] text-white shadow-2xl border-2 ${route.accentBorder} scale-102 ${route.glow}`
+                      : "border border-white/[0.08] bg-[#0A101D]/80 hover:bg-[#111A2E] hover:border-white/20 text-slate-300 hover:text-white"
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-cyan-300 border border-white/10 shrink-0 transition-transform group-hover:scale-110" aria-hidden="true">
+                    <span
+                      className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+                        isSelected ? route.accentBg + " " + route.accentText : "bg-slate-800 text-slate-400"
+                      } border border-white/10 shrink-0 transition-transform group-hover:scale-110`}
+                      aria-hidden="true"
+                    >
                       <LoopStageIcon id={stage.id} className="h-4 w-4" />
                     </span>
                     <span
                       className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                         isSelected
-                          ? "bg-gradient-to-r from-blue-500 to-cyan-400 text-slate-950 font-black shadow-xs"
+                          ? `bg-gradient-to-r ${route.themeColor} text-slate-950 font-black shadow-xs`
                           : "bg-white/10 text-slate-300"
                       }`}
                     >
@@ -142,7 +201,7 @@ export function HomeBrainLabLoop() {
 
                   <span
                     className={`text-sm sm:text-base font-black tracking-tight ${
-                      isSelected ? "text-cyan-300" : "text-white"
+                      isSelected ? route.accentText : "text-white"
                     }`}
                   >
                     {stage.title}
@@ -152,7 +211,7 @@ export function HomeBrainLabLoop() {
                   </span>
 
                   {isSelected && (
-                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-cyan-400 shadow-md shadow-cyan-400/50" />
+                    <span className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-gradient-to-r ${route.themeColor} shadow-md`} />
                   )}
                 </button>
               );
@@ -168,17 +227,17 @@ export function HomeBrainLabLoop() {
           className="relative rounded-3xl border border-white/15 bg-gradient-to-br from-slate-900/95 via-[#071124]/90 to-[#030612]/95 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden"
         >
           {/* Glowing Top Edge Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500" />
+          <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${activeRoute.themeColor}`} />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* LEFT COLUMN: Stage Identity, Narrative & Capabilities */}
             <div className="lg:col-span-6 space-y-6">
               <div className="flex items-center gap-3.5">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-slate-950 text-lg font-black shadow-lg shadow-cyan-500/25 border border-white/20">
+                <span className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${activeRoute.themeColor} text-slate-950 text-lg font-black shadow-lg border border-white/20`}>
                   {activeStage.number}
                 </span>
                 <div>
-                  <div className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                  <div className={`text-xs font-mono font-bold ${activeRoute.accentText} uppercase tracking-wider`}>
                     Stage {activeStage.number} &bull; Continuous Cognitive Loop
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -306,8 +365,10 @@ export function HomeBrainLabLoop() {
                     {/* Audio Narration Waveform Strip */}
                     <div className="rounded-xl border border-white/10 bg-slate-950/80 p-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/20 text-cyan-300 text-xs font-bold">
-                          ▶
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/20 text-cyan-300 text-xs font-bold" aria-hidden="true">
+                          <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                          </svg>
                         </span>
                         <div>
                           <div className="text-[11px] font-bold text-white">Audio Theory Walkthrough</div>
@@ -557,7 +618,10 @@ export function HomeBrainLabLoop() {
 
                     <div className="pt-1 text-[11px] text-slate-400 flex items-center justify-between border-t border-white/10">
                       <span>Continuous Learning System</span>
-                      <span className="text-emerald-400 font-bold">● Active in all plan tiers</span>
+                      <span className="text-emerald-400 font-bold inline-flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Active in all plan tiers</span>
+                      </span>
                     </div>
                   </div>
                 )}

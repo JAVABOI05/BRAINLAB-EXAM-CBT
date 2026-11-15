@@ -30,7 +30,7 @@ export function HomeFaqCta() {
       <section
         id="faq"
         aria-label="Frequently Asked Questions"
-        className="scroll-mt-20 sm:scroll-mt-24 relative py-16 sm:py-20 lg:py-24 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#070D18] transition-colors overflow-hidden"
+        className="scroll-mt-20 sm:scroll-mt-24 relative py-16 sm:py-20 lg:py-24 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#060A14] transition-colors overflow-hidden"
       >
         {/* Brilliant Subtle Geometric Grid Matrix */}
         <div
@@ -75,7 +75,7 @@ export function HomeFaqCta() {
       <section
         id="final-cta"
         aria-label="Begin Your Learning Journey"
-        className="relative overflow-hidden py-20 sm:py-28 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 transition-colors"
+        className="relative overflow-hidden py-20 sm:py-28 bg-slate-50 dark:bg-gradient-to-b dark:from-[#090F20] dark:via-[#070C1A] dark:to-[#050811] border-b border-slate-200 dark:border-white/10 transition-colors"
       >
         {/* Subtle dot matrix background */}
         <div
@@ -104,7 +104,7 @@ export function HomeFaqCta() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
               href="/cbt"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 text-base font-black shadow-md border-2 border-blue-700 border-b-4 active:border-b-2 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 text-slate-950 px-8 py-4 text-base font-black shadow-lg shadow-cyan-500/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
             >
               <span>Start Learning for Free</span>
               <span aria-hidden="true">&rarr;</span>
@@ -112,7 +112,7 @@ export function HomeFaqCta() {
 
             <Link
               href="/pricing"
-              className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 px-7 py-4 text-base font-bold border-b-4 active:border-b-2 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 dark:border-white/10 bg-white dark:bg-[#0C152B] text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#121E3D] px-7 py-4 text-base font-bold active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
             >
               View Student Plans &amp; Pricing
             </Link>
