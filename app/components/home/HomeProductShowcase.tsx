@@ -172,12 +172,16 @@ export function HomeProductShowcase() {
 
           {/* Compact Card Right */}
           <div className="lg:col-span-6">
-            <div className="rounded-3xl border border-slate-200/90 dark:border-white/10 bg-slate-50/80 dark:bg-[#070D1A] p-5 sm:p-6 shadow-sm min-h-[420px] flex flex-col justify-between relative overflow-hidden">
+            <div className="rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#070D1A] p-5 sm:p-6 shadow-sm min-h-[420px] flex flex-col justify-between relative overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-xs font-black">
-                    🤖
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 shadow-xs">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+                      <circle cx="9" cy="13" r="1" />
+                      <circle cx="15" cy="13" r="1" />
+                    </svg>
                   </span>
                   <div>
                     <span className="text-xs font-black text-slate-900 dark:text-white block">BrainLab AI Tutor</span>
@@ -481,12 +485,14 @@ export function HomeProductShowcase() {
 
           {/* Compact Card Right */}
           <div className="lg:col-span-6">
-            <div className="rounded-3xl border border-slate-200/90 dark:border-white/10 bg-slate-50/80 dark:bg-[#070D1A] p-5 sm:p-6 shadow-sm min-h-[420px] flex flex-col justify-between relative overflow-hidden">
+            <div className="rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#070D1A] p-5 sm:p-6 shadow-sm min-h-[420px] flex flex-col justify-between relative overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-black">
-                    ⚡
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-300 shadow-xs">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
                   </span>
                   <div>
                     <span className="text-xs font-black text-slate-900 dark:text-white block">Digital Circuit Workbench</span>
@@ -589,12 +595,16 @@ export function HomeProductShowcase() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Compact Card Left */}
           <div className="lg:col-span-6 order-2 lg:order-1">
-            <div className="rounded-3xl border border-slate-200/90 dark:border-white/10 bg-slate-50/80 dark:bg-[#070D1A] p-5 sm:p-6 shadow-sm min-h-[420px] flex flex-col justify-between relative overflow-hidden">
+            <div className="rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#070D1A] p-5 sm:p-6 shadow-sm min-h-[420px] flex flex-col justify-between relative overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-500/20 text-blue-600 dark:text-cyan-300 text-xs font-black">
-                    📊
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-500/20 text-blue-600 dark:text-cyan-300 shadow-xs">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="12" width="4" height="8" rx="1" />
+                      <rect x="10" y="8" width="4" height="12" rx="1" />
+                      <rect x="17" y="4" width="4" height="16" rx="1" />
+                    </svg>
                   </span>
                   <div>
                     <span className="text-xs font-black text-slate-900 dark:text-white block">Learning DNA Radar</span>
