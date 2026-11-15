@@ -10,6 +10,8 @@ import { HomeJoinChannel } from "@/app/components/home/HomeJoinChannel";
 import { HomeAudiences } from "@/app/components/home/HomeAudiences";
 import HomeInstantMiniMock from "@/app/components/home/HomeInstantMiniMock";
 import { HomeBrainLabLoop } from "@/app/components/home/HomeBrainLabLoop";
+import { HomeProductShowcase } from "@/app/components/home/HomeProductShowcase";
+import { HomeStemStudio } from "@/app/components/home/HomeStemStudio";
 
 // Exact Verified Question Content
 const SAMPLE_QUESTION = {
@@ -459,6 +461,10 @@ export default function DesignPreviewPage() {
         <HomeInstantMiniMock />
       </div>
       <HomeBrainLabLoop />
+
+      {/* Group 3: Product Showcase Superpower Studios & STEM Laboratories */}
+      <HomeProductShowcase />
+      <HomeStemStudio />
 
       {/* Craftsmanship & Design Quality Documentation Footer */}
       <footer className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 border-t border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-400">

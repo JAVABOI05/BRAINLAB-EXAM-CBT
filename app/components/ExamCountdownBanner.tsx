@@ -189,9 +189,9 @@ export default function ExamCountdownBanner({
           </div>
 
           {/* Countdown Clock Digits - Compact Glass Pill Tiles */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div suppressHydrationWarning className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <div className="flex flex-col items-center justify-center rounded-xl bg-white/10 dark:bg-black/30 border border-white/20 backdrop-blur-md px-2.5 py-1 min-w-[42px] shadow-xs">
-              <span className="text-sm sm:text-base font-black text-white leading-none font-mono tabular-nums">
+              <span suppressHydrationWarning className="text-sm sm:text-base font-black text-white leading-none font-mono tabular-nums">
                 {timeLeft.days}
               </span>
               <span className="text-[8px] font-bold uppercase tracking-wider text-blue-200/80 mt-0.5">
@@ -200,7 +200,7 @@ export default function ExamCountdownBanner({
             </div>
             <span className="text-white/40 font-black text-xs" aria-hidden="true">:</span>
             <div className="flex flex-col items-center justify-center rounded-xl bg-white/10 dark:bg-black/30 border border-white/20 backdrop-blur-md px-2 py-1 min-w-[38px] shadow-xs">
-              <span className="text-sm sm:text-base font-black text-white leading-none font-mono tabular-nums">
+              <span suppressHydrationWarning className="text-sm sm:text-base font-black text-white leading-none font-mono tabular-nums">
                 {String(timeLeft.hours).padStart(2, "0")}
               </span>
               <span className="text-[8px] font-bold uppercase tracking-wider text-blue-200/80 mt-0.5">
@@ -209,7 +209,7 @@ export default function ExamCountdownBanner({
             </div>
             <span className="text-white/40 font-black text-xs" aria-hidden="true">:</span>
             <div className="flex flex-col items-center justify-center rounded-xl bg-white/10 dark:bg-black/30 border border-white/20 backdrop-blur-md px-2 py-1 min-w-[38px] shadow-xs">
-              <span className="text-sm sm:text-base font-black text-white leading-none font-mono tabular-nums">
+              <span suppressHydrationWarning className="text-sm sm:text-base font-black text-white leading-none font-mono tabular-nums">
                 {String(timeLeft.minutes).padStart(2, "0")}
               </span>
               <span className="text-[8px] font-bold uppercase tracking-wider text-blue-200/80 mt-0.5">
@@ -218,7 +218,7 @@ export default function ExamCountdownBanner({
             </div>
             <span className="text-white/40 font-black text-xs" aria-hidden="true">:</span>
             <div className="flex flex-col items-center justify-center rounded-xl bg-white/10 dark:bg-black/30 border border-cyan-400/30 backdrop-blur-md px-2 py-1 min-w-[38px] shadow-xs">
-              <span className="text-sm sm:text-base font-black text-cyan-300 leading-none font-mono tabular-nums">
+              <span suppressHydrationWarning className="text-sm sm:text-base font-black text-cyan-300 leading-none font-mono tabular-nums">
                 {String(timeLeft.seconds).padStart(2, "0")}
               </span>
               <span className="text-[8px] font-bold uppercase tracking-wider text-cyan-300/80 mt-0.5">
@@ -261,20 +261,20 @@ export default function ExamCountdownBanner({
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 font-mono tabular-nums text-[11px] sm:text-xs font-black">
-        <span className="rounded-md bg-blue-100 dark:bg-blue-950/80 px-1.5 py-0.5 text-blue-950 dark:text-cyan-200 min-w-[28px] text-center">
+      <div suppressHydrationWarning className="flex items-center gap-1.5 font-mono tabular-nums text-[11px] sm:text-xs font-black">
+        <span suppressHydrationWarning className="rounded-md bg-blue-100 dark:bg-blue-950/80 px-1.5 py-0.5 text-blue-950 dark:text-cyan-200 min-w-[28px] text-center">
           {timeLeft.days}d
         </span>
         <span className="text-slate-400" aria-hidden="true">:</span>
-        <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-slate-900 dark:text-slate-200 min-w-[28px] text-center">
+        <span suppressHydrationWarning className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-slate-900 dark:text-slate-200 min-w-[28px] text-center">
           {String(timeLeft.hours).padStart(2, "0")}h
         </span>
         <span className="text-slate-400" aria-hidden="true">:</span>
-        <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-slate-900 dark:text-slate-200 min-w-[28px] text-center">
+        <span suppressHydrationWarning className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-slate-900 dark:text-slate-200 min-w-[28px] text-center">
           {String(timeLeft.minutes).padStart(2, "0")}m
         </span>
         <span className="text-slate-400" aria-hidden="true">:</span>
-        <span className="rounded-md bg-rose-100 dark:bg-rose-950/80 px-1.5 py-0.5 text-rose-700 dark:text-rose-300 min-w-[28px] text-center">
+        <span suppressHydrationWarning className="rounded-md bg-rose-100 dark:bg-rose-950/80 px-1.5 py-0.5 text-rose-700 dark:text-rose-300 min-w-[28px] text-center">
           {String(timeLeft.seconds).padStart(2, "0")}s
         </span>
       </div>

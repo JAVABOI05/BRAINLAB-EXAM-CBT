@@ -134,7 +134,15 @@ export default function HomeInstantMiniMock() {
         {completed ? (
           /* Completion State */
           <div className="py-8 text-center animate-fade-in">
-            <span className="text-5xl">🏆</span>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-400 mb-2">
+              <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                <path d="M4 22h16" />
+                <path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1h10v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34" />
+                <path d="M18 4H6v7a6 6 0 0 0 12 0V4z" />
+              </svg>
+            </div>
             <h3 className="mt-4 text-2xl sm:text-3xl font-black text-white">
               Mini Mock Finished: You Scored {score} / 3!
             </h3>
@@ -149,7 +157,7 @@ export default function HomeInstantMiniMock() {
                 href="/cbt"
                 className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:translate-y-0.5 px-6 py-3.5 text-xs sm:text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition-all bl-focus-ring min-h-[48px]"
               >
-                <span>🚀 Launch Full Free CBT Mock Exam</span>
+                <span>Launch Full Free CBT Mock Exam</span>
                 <span aria-hidden="true">&rarr;</span>
               </Link>
               <button
@@ -218,8 +226,12 @@ export default function HomeInstantMiniMock() {
             {showExplanation && (
               <div className="rounded-2xl border border-blue-500/30 bg-blue-950/40 p-5 animate-fade-in space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wider text-cyan-300">
-                    💡 Master Worked Explanation
+                  <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-cyan-300">
+                    <svg className="h-3.5 w-3.5 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
+                    </svg>
+                    <span>Master Worked Explanation</span>
                   </span>
                   <span
                     className={`text-xs font-black px-2.5 py-0.5 rounded-full ${

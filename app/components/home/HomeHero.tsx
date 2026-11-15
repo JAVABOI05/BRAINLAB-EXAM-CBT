@@ -111,7 +111,7 @@ export function HomeHero() {
             {/* Category Pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-300 backdrop-blur-md shadow-xs">
               <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>⚡ OPEN TO EVERY LEARNER • FREE CBT &amp; LEARNING HUB</span>
+              <span>OPEN TO EVERY LEARNER • FREE CBT &amp; LEARNING HUB</span>
             </div>
 
             {/* H1 Primary Promise: Directive Section 7 */}
