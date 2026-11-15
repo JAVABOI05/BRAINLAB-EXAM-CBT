@@ -17,6 +17,20 @@ interface LearningDnaProfile {
   learningVelocityRank: string;
 }
 
+function DnaIcon({ name, className = "h-5 w-5" }: { name: string; className?: string }) {
+  switch (name) {
+    case "dna":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m8 8 8 8" /><path d="m9 16 6-6" /><path d="M2 12c1 0 2-1 2-2s1-2 2-2 2 1 2 2 1 2 2 2" /><path d="M14 12c1 0 2-1 2-2s1-2 2-2 2 1 2 2 1 2 2 2" />
+        </svg>
+      );
+    case "target":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+        </svg>
+      );
     case "mic":
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -29,10 +43,6 @@ interface LearningDnaProfile {
           <path d="M10 2v7.31L4.15 20.44A1 1 0 0 0 5 22h14a1 1 0 0 0 .85-1.56L14 9.31V2" />
           <path d="M8.5 2h7" />
           <path d="M7 16h10" />
-        </svg>
-      );
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" />
         </svg>
       );
     case "chart":

@@ -126,7 +126,11 @@ export default function CBTExamPortalPage() {
               "";
             setName(userFullName || parsedSaved?.name || "");
             setPhone(parsedSaved?.phone || user.user_metadata?.phone || user.phone || "");
-            if (Array.isArray(parsedSaved?.subjects) && parsedSaved.subjects.length === 4) {
+
+            // Read persistent subjects from user metadata first, then local candidate cache
+            if (Array.isArray(user.user_metadata?.selected_subjects) && user.user_metadata.selected_subjects.length === 4) {
+              setSelectedSubjects(user.user_metadata.selected_subjects);
+            } else if (Array.isArray(parsedSaved?.subjects) && parsedSaved.subjects.length === 4) {
               setSelectedSubjects(parsedSaved.subjects);
             } else if (parsedSaved?.subject) {
               if (parsedSaved.subject.toLowerCase() === "biology") {
@@ -273,6 +277,17 @@ export default function CBTExamPortalPage() {
         cohort_assessment_id: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('assessment') || null : null,
       })
     );
+
+    // Persist subjects globally so candidate combination stays in sync everywhere
+    localStorage.setItem("candidate_subjects", JSON.stringify(selectedSubjects));
+
+    if (currentUser) {
+      void supabase.auth.updateUser({
+        data: {
+          selected_subjects: selectedSubjects,
+        },
+      }).catch(() => {});
+    }
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("brainlab-candidate-change"));
