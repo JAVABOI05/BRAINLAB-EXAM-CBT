@@ -15,6 +15,7 @@ import PresenceHeartbeatManager from "./PresenceHeartbeatManager";
 const STUDENT_PORTAL_PREFIXES = [
   "/dashboard",
   "/student",
+  "/community",
   "/learn",
   "/learning",
   "/learning-hub",

@@ -56,7 +56,7 @@ export default function TierGateModal({
 
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-indigo-900">
-            🎓 Apex Cohort Programme
+            <svg className="h-3.5 w-3.5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg><span>Apex Cohort Programme</span>
           </span>
           <button
             type="button"
