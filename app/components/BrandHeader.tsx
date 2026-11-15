@@ -402,9 +402,9 @@ export default function BrandHeader() {
     <header
       className={`sticky top-0 z-40 border-b transition-all duration-200 ${
         isScrolled
-          ? "border-white/10 bg-[#071328]/95 py-2 shadow-lg backdrop-blur-md"
-          : "border-white/10 bg-[#071328]/85 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.3)] backdrop-blur-md"
-      } text-white`}
+          ? "border-slate-200/80 bg-white/95 py-2 shadow-xs backdrop-blur-md dark:border-white/10 dark:bg-[#071328]/95 dark:shadow-lg"
+          : "border-slate-200/60 bg-white/90 py-3 shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-[#071328]/85 dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
+      } text-slate-900 dark:text-white`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         
@@ -426,19 +426,19 @@ export default function BrandHeader() {
             />
           </div>
           <div className="flex flex-col justify-center leading-none">
-            <span className="text-xl font-black tracking-tight text-white">
+            <span className="text-xl font-black tracking-tight text-slate-950 dark:text-white">
               BrainLab
             </span>
-            <span className="text-[10px] font-black tracking-[0.2em] uppercase text-cyan-300 mt-0.5">
+            <span className="text-[10px] font-black tracking-[0.2em] uppercase text-blue-600 dark:text-cyan-300 mt-0.5">
               ACADEMY
             </span>
           </div>
         </Link>
 
-        {/* Center Desktop Navigation Pill */}
+        {/* Center Desktop Navigation Pill (Luminous in Light Mode) */}
         <nav
           aria-label="Primary navigation"
-          className="hidden lg:flex items-center gap-1 rounded-2xl border border-white/10 bg-slate-900/80 p-1 shadow-inner backdrop-blur-md"
+          className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-100/70 p-1 shadow-inner backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80"
         >
           {/* Primary Explore Dropdown */}
           <div className="relative" ref={exploreRef}>
@@ -449,13 +449,13 @@ export default function BrandHeader() {
               onClick={() => setExploreDropdownOpen(!exploreDropdownOpen)}
               className={`relative flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
                 exploreDropdownOpen || isExploreActive
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md font-extrabold"
-                  : "text-slate-300 hover:text-white hover:bg-white/5"
+                  ? "bg-slate-950 text-white shadow-xs font-extrabold dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600"
+                  : "text-slate-700 hover:text-slate-950 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
               }`}
             >
               <span>Explore</span>
               <svg
-                className={`h-3.5 w-3.5 transition-transform duration-200 ${exploreDropdownOpen ? "rotate-180 text-cyan-300" : "text-slate-400"}`}
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${exploreDropdownOpen ? "rotate-180 text-blue-600 dark:text-cyan-300" : "text-slate-400"}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -469,15 +469,15 @@ export default function BrandHeader() {
             {/* Desktop Explore Dropdown Mega-Panel */}
             {exploreDropdownOpen && (
               <div
-                className="absolute left-0 mt-2.5 w-[580px] rounded-2xl border border-white/15 bg-[#0b1528]/95 p-3 shadow-2xl shadow-blue-950/60 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 z-50"
+                className="absolute left-0 mt-2.5 w-[580px] rounded-2xl border border-slate-200/90 bg-white/98 p-3 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 z-50 text-slate-900 dark:border-white/15 dark:bg-[#0b1528]/95 dark:text-white"
                 role="menu"
                 aria-label="Explore learning experiences"
               >
-                <div className="flex items-center justify-between px-2.5 pb-2 border-b border-white/10 mb-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <div className="flex items-center justify-between px-2.5 pb-2 border-b border-slate-100 dark:border-white/10 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     BrainLab Learning Ecosystem
                   </span>
-                  <span className="text-[10px] font-bold text-cyan-400">
+                  <span className="text-[10px] font-bold text-blue-600 dark:text-cyan-400">
                     Interactive Modules
                   </span>
                 </div>
@@ -488,28 +488,28 @@ export default function BrandHeader() {
                       key={card.id}
                       href={pathname === "/" ? `#${card.targetId}` : `/#${card.targetId}`}
                       onClick={(e) => handleAnchorClick(e, card.targetId)}
-                      className="group flex flex-col justify-between rounded-xl border border-white/5 p-2.5 transition hover:border-cyan-500/30 hover:bg-slate-800/80"
+                      className="group flex flex-col justify-between rounded-xl border border-slate-100 dark:border-white/5 p-2.5 transition hover:border-blue-500/30 hover:bg-slate-50 dark:hover:bg-slate-800/80"
                       role="menuitem"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-1.5 mb-1.5">
                           <div className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-sm group-hover:scale-105 transition-transform shrink-0 border border-white/10">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-sm group-hover:scale-105 transition-transform shrink-0 border border-slate-200 dark:bg-slate-800 dark:border-white/10">
                               <NavProductIcon id={card.id} />
                             </span>
-                            <span className="text-xs font-black text-white group-hover:text-cyan-300 line-clamp-1">
+                            <span className="text-xs font-black text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-cyan-300 line-clamp-1">
                               {card.title}
                             </span>
                           </div>
                         </div>
 
-                        <p className="text-[11px] text-slate-400 leading-snug line-clamp-2 pl-9">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-2 pl-9">
                           {card.description}
                         </p>
                       </div>
 
-                      <div className="mt-2.5 flex items-center justify-between pt-1.5 border-t border-white/10 text-[10px]">
-                        <span className="font-semibold text-slate-400 truncate">
+                      <div className="mt-2.5 flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-white/10 text-[10px]">
+                        <span className="font-semibold text-slate-500 dark:text-slate-400 truncate">
                           {card.tierNote}
                         </span>
                         <span className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase ${card.badgeColor}`}>
@@ -521,9 +521,9 @@ export default function BrandHeader() {
                 </div>
 
                 {/* Dropdown Footer Information Banner */}
-                <div className="mt-2.5 rounded-xl bg-slate-900/90 p-2.5 border border-white/10 text-[11px] text-slate-300 flex items-center justify-between">
+                <div className="mt-2.5 rounded-xl bg-slate-50 p-2.5 border border-slate-200 text-[11px] text-slate-700 flex items-center justify-between dark:bg-slate-900/90 dark:border-white/10 dark:text-slate-300">
                   <span className="flex items-center gap-1.5 font-medium">
-                    <svg className="h-3.5 w-3.5 text-emerald-400 stroke-current stroke-2 fill-none shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 stroke-current stroke-2 fill-none shrink-0" viewBox="0 0 24 24" aria-hidden="true">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                     <span>Free daily practice drills available for every student.</span>
@@ -531,7 +531,7 @@ export default function BrandHeader() {
                   <Link
                     href="/pricing"
                     onClick={closeAllMenus}
-                    className="font-bold text-cyan-400 hover:underline"
+                    className="font-bold text-blue-600 dark:text-cyan-400 hover:underline"
                   >
                     View Plan Tiers &rarr;
                   </Link>
@@ -554,8 +554,8 @@ export default function BrandHeader() {
                 onClick={(e) => handleAnchorClick(e, link.targetId)}
                 className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
                   isActive
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md font-extrabold"
-                    : "text-slate-300 hover:text-white hover:bg-white/5"
+                    ? "bg-slate-950 text-white shadow-xs font-extrabold dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600"
+                    : "text-slate-700 hover:text-slate-950 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
                 }`}
               >
                 {link.label}
@@ -718,10 +718,16 @@ export default function BrandHeader() {
             </div>
           ) : (
             /* Logged-out state: Single prominent 'Start Free' CTA leading to auth portal */
-            <div className="flex items-center ml-1">
+            <div className="flex items-center gap-2 ml-1">
+              <Link
+                href="/login"
+                className="rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition"
+              >
+                Sign In
+              </Link>
               <Link
                 href="/login?mode=signup"
-                className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 px-4 py-2 text-xs font-extrabold text-white shadow-md shadow-blue-900/20 transition hover:shadow-lg hover:shadow-blue-900/30 active:scale-95 bl-focus-ring"
+                className="rounded-full bg-blue-600 hover:bg-blue-700 px-5 py-2 text-xs font-black text-white shadow-xs hover:shadow transition active:scale-95 bl-focus-ring"
               >
                 Start Free &rarr;
               </Link>
