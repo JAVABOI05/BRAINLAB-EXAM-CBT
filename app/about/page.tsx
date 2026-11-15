@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About BrainLab Academy | A Better Learning Journey, Beyond the Exam",
+  title: "About BrainLab Academy | Learn. Practise. Understand. Excel.",
   description:
-    "BrainLab Academy is an intelligent learning platform built to help Nigerian and African learners prepare confidently for examinations, understand difficult concepts, and build lifelong skills.",
+    "BrainLab Academy is a modern learning platform designed to help students learn effectively, prepare confidently for examinations, and achieve outstanding academic results.",
   alternates: { canonical: "/about" },
 };
 
@@ -188,22 +188,22 @@ export default function AboutPage() {
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-blue-50/80 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/70 dark:text-cyan-300 backdrop-blur-md">
             <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
-            <span>The BrainLab Manifesto</span>
+            <span>About BrainLab Academy</span>
           </div>
 
           <h1 className="text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-6xl lg:text-7xl leading-tight">
-            A Better Learning Journey, <br className="hidden sm:inline" />
+            Learn. Practise. <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-blue-700 via-indigo-600 to-cyan-500 dark:from-cyan-300 dark:via-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">
-              Beyond the Exam.
+              Understand. Excel.
             </span>
           </h1>
 
-          <p className="mx-auto max-w-3xl text-base text-slate-600 dark:text-slate-300 sm:text-xl leading-relaxed">
-            BrainLab Academy is an intelligent learning ecosystem engineered to help Nigerian and African learners prepare with absolute confidence for critical examinations, dismantle conceptual barriers, and develop lasting intellectual competence.
+          <p className="mx-auto max-w-3xl text-base text-slate-600 dark:text-slate-300 sm:text-xl leading-relaxed font-medium">
+            BrainLab Academy is a modern learning platform designed to help students learn effectively, prepare confidently for examinations, and achieve outstanding academic results.
           </p>
 
           <p className="mx-auto max-w-2xl text-sm sm:text-base text-slate-500 dark:text-slate-400 leading-relaxed">
-            From focused CBT practice and AI-assisted diagnostics to structured syllabus notes, live whiteboard classrooms, and collaborative student arenas, we unite the entire academic pathway under one accessible, offline-resilient architecture.
+            We bring together everything students need to make their learning journey more productive — from official CBT practice and realistic mock examinations to interactive STEM lessons, AI-powered tutoring, and academic competitions.
           </p>
 
           <div className="pt-4 flex flex-wrap items-center justify-center gap-3.5">
@@ -225,6 +225,68 @@ export default function AboutPage() {
             >
               Partner as a School →
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Dedicated Strategic Overview & Motto Showcase */}
+      <section className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-[#070e1b] py-16 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-12 shadow-sm space-y-8">
+            <div className="space-y-4 max-w-3xl">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-blue-600 dark:text-cyan-400">
+                Our Educational Vision &amp; Promise
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                Empowering Every Student to Move Forward with Confidence.
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                Whether you&apos;re preparing for UTME, strengthening your understanding of difficult subjects like Mathematics, Physics, Chemistry, and English, or simply looking to improve your overall academic performance, BrainLab provides the verified resources, tools, and personalized support to help you advance.
+              </p>
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+                Our goal is simple: to make quality learning more accessible, engaging, and effective—giving every student the opportunity to discover their true potential and achieve more.
+              </p>
+            </div>
+
+            {/* 4 Pillars Grid: Learn, Practise, Understand, Excel */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="rounded-2xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/30 p-5 space-y-2">
+                <span className="text-xs font-mono font-black text-blue-600 dark:text-cyan-400">01 / LEARN</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Curriculum Notes</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Clear, exam-aligned syllabus breakdowns and visual interactive science simulations.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/30 p-5 space-y-2">
+                <span className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">02 / PRACTISE</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">8-Key Mock Exams</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Authentic timed simulations with zero-data offline caching and 100% hall parity.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-purple-100 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/30 p-5 space-y-2">
+                <span className="text-xs font-mono font-black text-purple-600 dark:text-purple-400">03 / UNDERSTAND</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Socratic AI Insights</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Step-by-step worked solutions and pinpoint diagnosis of hidden weak topics.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-100 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/30 p-5 space-y-2">
+                <span className="text-xs font-mono font-black text-amber-600 dark:text-amber-400">04 / EXCEL</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Sprint Duels &amp; Rank</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  National merit leaderboards, 1v1 speed duels, and verifiable admission confidence.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+              <span className="text-blue-600 dark:text-cyan-400 font-black">BrainLab Academy — Learn. Practise. Understand. Excel.</span>
+              <span>Built for Nigerian &amp; African Students</span>
+            </div>
           </div>
         </div>
       </section>
