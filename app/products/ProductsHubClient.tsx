@@ -537,7 +537,7 @@ export function ProductsHubClient() {
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               When a question is missed, launch Learning Hub syllabus notes or STEM Studio laboratory experiments.
             </p>
-            <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Learning Hub &amp; STEM Studio &rarr;</div>
+            <div className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">Learning Hub &amp; STEM Studio &rarr;</div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">

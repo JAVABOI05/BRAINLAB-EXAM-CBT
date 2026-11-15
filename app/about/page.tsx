@@ -270,7 +270,7 @@ export default function AboutPage() {
                 </p>
 
                 <div className="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Highlights:
                   </span>
                   <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">

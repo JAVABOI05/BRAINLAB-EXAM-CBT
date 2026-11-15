@@ -231,7 +231,7 @@ export default function CandidateSyllabusPage() {
                         <p className={`text-xs font-black ${isSelected ? "text-white" : "text-slate-950 dark:text-white"}`}>
                           {subj.name}
                         </p>
-                        <p className={`text-[11px] mt-0.5 ${isSelected ? "text-cyan-200" : "text-slate-400"}`}>
+                        <p className={`text-[11px] mt-0.5 ${isSelected ? "text-cyan-200" : "text-slate-600 dark:text-slate-400"}`}>
                           {subj.topics.length} Syllabus Modules
                         </p>
                       </div>
