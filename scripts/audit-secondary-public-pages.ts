@@ -48,7 +48,7 @@ async function runSecondaryPagesAudit() {
 
       try {
         await page.goto(`http://localhost:3000${pageInfo.route}`, { waitUntil: "domcontentloaded", timeout: 30000 });
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(2500);
 
         // Check horizontal overflow
         const overflow = await page.evaluate(() => {

@@ -680,7 +680,12 @@ function PricingContent() {
                           : "border-slate-200 bg-white hover:bg-slate-50"
                       }`}
                     >
-                      <span className="text-xs font-black text-slate-900">⚡ Bachs</span>
+                      <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        <svg className="h-3 w-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                        <span>Bachs</span>
+                      </span>
                       <span className="mt-0.5 text-[10px] text-slate-500 font-medium">
                         Cards, Transfer, USSD
                       </span>
@@ -720,11 +725,18 @@ function PricingContent() {
 
                 {/* Policy disclaimers */}
                 <div className="mt-4 rounded-2xl bg-blue-50/70 p-3.5 text-[11px] leading-5 text-blue-900 border border-blue-200/60">
-                  <p>
-                    🛡️ <strong>24-Hour 100% Refund Guarantee:</strong> Full unconditional refund available if requested within 24 hours of payment.
+                  <p className="flex items-start gap-1.5">
+                    <svg className="h-3.5 w-3.5 text-blue-700 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    <span><strong>24-Hour 100% Refund Guarantee:</strong> Full unconditional refund available if requested within 24 hours of payment.</span>
                   </p>
-                  <p className="mt-1 text-slate-700">
-                    🔒 <strong>Secure Checkout:</strong> Live encryption via 256-bit SSL. Immediate activation on transaction success.
+                  <p className="mt-1.5 flex items-start gap-1.5 text-slate-700">
+                    <svg className="h-3.5 w-3.5 text-slate-700 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span><strong>Secure Checkout:</strong> Live encryption via 256-bit SSL. Immediate activation on transaction success.</span>
                   </p>
                 </div>
 
@@ -733,7 +745,7 @@ function PricingContent() {
                     type="button"
                     disabled={initiatingPayment}
                     onClick={handleProceedToPayment}
-                    className="w-full rounded-2xl bg-[#012153] hover:bg-[#071c43] py-3.5 text-xs font-extrabold text-white shadow-md transition-all duration-150 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:transform-none"
+                    className="w-full rounded-2xl bg-[#012153] hover:bg-[#071c43] py-3.5 text-xs font-extrabold text-white shadow-md transition-all duration-150 hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:transform-none cursor-pointer"
                   >
                     {initiatingPayment
                       ? `Connecting to Gateway...`
@@ -752,7 +764,7 @@ function PricingContent() {
                   <button
                     type="button"
                     onClick={() => setCheckoutPlan(null)}
-                    className="w-full rounded-xl py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition active:scale-95"
+                    className="w-full rounded-xl py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition active:scale-95 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -762,23 +774,23 @@ function PricingContent() {
           )}
 
           {/* Refund policy & FAQs reminder */}
-          <div className="mt-16 rounded-3xl border border-slate-200 bg-white p-8 sm:p-10">
-            <h3 className="text-lg font-black text-slate-950">Fair Billing &amp; Refund Policy <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded ml-2">[PENDING FORMAL APPROVAL]</span></h3>
-            <div className="mt-4 grid gap-6 sm:grid-cols-3 text-xs leading-6 text-slate-600">
+          <div className="mt-16 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-10 shadow-sm">
+            <h3 className="text-lg font-black text-slate-950 dark:text-white">Fair Billing &amp; Refund Policy <span className="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded ml-2">[PENDING FORMAL APPROVAL]</span></h3>
+            <div className="mt-4 grid gap-6 sm:grid-cols-3 text-xs leading-6 text-slate-600 dark:text-slate-300">
               <div>
-                <p className="font-bold text-slate-900">24-Hour Review Window</p>
+                <p className="font-bold text-slate-900 dark:text-white">24-Hour Review Window</p>
                 <p className="mt-1">
                   Students may request a refund within the configured 24-hour window from payment directly in their subscription settings.
                 </p>
               </div>
               <div>
-                <p className="font-bold text-slate-900">Cancel Anytime</p>
+                <p className="font-bold text-slate-900 dark:text-white">Cancel Anytime</p>
                 <p className="mt-1">
                   Subscriptions do not lock you in. Cancelling stops future renewal charges while maintaining access until the end of your billing cycle.
                 </p>
               </div>
               <div>
-                <p className="font-bold text-slate-900">Instant Access &amp; Security</p>
+                <p className="font-bold text-slate-900 dark:text-white">Instant Access &amp; Security</p>
                 <p className="mt-1">
                   All transactions are processed through certified PCI-DSS compliant gateways with 256-bit encryption. Subscriptions activate immediately upon confirmation.
                 </p>
@@ -787,9 +799,9 @@ function PricingContent() {
           </div>
 
           {/* Institutional & Schools quiet off-ramp */}
-          <div className="mt-8 text-center text-xs text-slate-500">
+          <div className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400">
             <span>Are you a school administrator or educator looking for cohort deployment? </span>
-            <Link href="/schools" className="font-semibold text-indigo-700 hover:underline">
+            <Link href="/schools" className="font-semibold text-blue-600 dark:text-cyan-400 hover:underline">
               Explore School &amp; Institutional Solutions →
             </Link>
           </div>
