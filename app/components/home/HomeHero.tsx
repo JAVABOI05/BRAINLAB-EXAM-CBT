@@ -170,65 +170,83 @@ export function HomeHero() {
           </div>
 
           {/* Right Column: Real CBT Product Simulator Mockup & Countdown (Slot S1-02, Motion: bl-fade-in bl-stagger-2) */}
-          <div className="lg:col-span-5 flex flex-col gap-6 animate-bl-fade-in bl-stagger-2 relative">
-            {/* Real Product Simulator Mockup (Slot S1-02) */}
+          <div className="lg:col-span-5 flex flex-col gap-5 animate-bl-fade-in bl-stagger-2 relative">
+            {/* Real Product Simulator Mockup Chassis */}
             <div
-              className="relative rounded-3xl border border-slate-700/80 bg-slate-950/90 p-4 sm:p-5 shadow-2xl backdrop-blur-md min-h-[380px]"
+              className="relative rounded-3xl border border-blue-500/30 bg-gradient-to-b from-[#111c38] via-[#0c1427] to-[#070c18] p-4 sm:p-5 shadow-[0_20px_60px_-15px_rgba(14,165,233,0.25)] backdrop-blur-xl min-h-[420px]"
               role="region"
               aria-label="Interactive CBT Practice Simulator Preview"
             >
-              {/* Simulator Chrome Bar */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-red-400/80 inline-block" />
-                  <span className="h-3 w-3 rounded-full bg-amber-400/80 inline-block" />
-                  <span className="h-3 w-3 rounded-full bg-emerald-400/80 inline-block" />
-                  <span className="ml-1 text-[11px] font-bold text-slate-400">
-                    CBT Engine · Q 14 of 40
+              {/* Cockpit Hardware Top Bar */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+                  </div>
+                  <span className="ml-1 text-[11px] font-mono font-black uppercase tracking-wider text-cyan-300">
+                    JAMB 8-KEY COCKPIT
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setShowCalculator(!showCalculator)}
-                    className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300 hover:bg-slate-700 bl-focus-ring"
+                    className="rounded-lg border border-cyan-500/30 bg-cyan-950/60 px-2 py-0.5 text-[10px] font-mono font-bold text-cyan-200 hover:bg-cyan-900/60 transition cursor-pointer"
                     aria-label="Toggle JAMB On-screen Calculator"
                   >
-                    {showCalculator ? "Hide Calc" : "Calc"}
+                    {showCalculator ? "Hide Calc" : "Calc [C]"}
                   </button>
-                  <span className="rounded bg-emerald-950 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                    Time: 01:42:15
+                  <span className="font-mono text-amber-400 font-black text-xs px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 tracking-wider shadow-inner">
+                    01:42:15
                   </span>
                 </div>
               </div>
 
               {/* Optional On-screen calculator drawer */}
               {showCalculator && (
-                <div className="mt-2.5 rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-center text-xs animate-bl-scale-in">
-                  <p className="font-mono text-xs font-bold text-slate-200">
-                    JAMB Official Scientific Calculator Ready
-                  </p>
-                  <div className="mt-1 grid grid-cols-4 gap-1 text-[11px]">
-                    <span className="rounded bg-slate-800 border border-slate-700 p-1 font-mono text-slate-200">7</span>
-                    <span className="rounded bg-slate-800 border border-slate-700 p-1 font-mono text-slate-200">8</span>
-                    <span className="rounded bg-slate-800 border border-slate-700 p-1 font-mono text-slate-200">9</span>
-                    <span className="rounded bg-blue-900/80 border border-blue-700 p-1 font-mono text-blue-200">÷</span>
+                <div className="mt-2.5 rounded-xl border border-cyan-500/30 bg-slate-900/95 p-3 text-center text-xs animate-bl-scale-in shadow-xl">
+                  <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-white/10 text-[11px] font-mono text-cyan-300">
+                    <span>JAMB STANDARD CALCULATOR</span>
+                    <span className="text-[10px] text-slate-400">Deg Mode</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 text-xs font-mono">
+                    {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", "C", "0", "=", "+"].map((k) => (
+                      <span
+                        key={k}
+                        className={`rounded-lg p-1.5 text-center font-bold ${
+                          ["÷", "×", "-", "+", "="].includes(k)
+                            ? "bg-blue-600 text-white shadow-xs"
+                            : k === "C"
+                            ? "bg-rose-950 text-rose-300 border border-rose-800"
+                            : "bg-slate-800 border border-white/10 text-slate-200"
+                        }`}
+                      >
+                        {k}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
 
               {/* Realistic CBT Question Preview Card */}
-              <div className="mt-3 space-y-3 rounded-2xl bg-slate-900/80 border border-slate-800/80 p-4 text-left">
-                <div className="flex items-center justify-between text-xs text-slate-400 font-semibold">
-                  <span>Subject: {SAMPLE_QUESTION.subject}</span>
-                  <span className="text-sky-400 font-bold">{SAMPLE_QUESTION.year}</span>
+              <div className="mt-3.5 space-y-3 rounded-2xl bg-slate-950/80 border border-white/10 p-4 text-left shadow-inner">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-300 font-bold flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                    <span>Subject: {SAMPLE_QUESTION.subject}</span>
+                  </span>
+                  <span className="text-cyan-400 font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">
+                    Question 14 of 40
+                  </span>
                 </div>
 
                 <p className="text-sm font-semibold text-white leading-relaxed">
                   {SAMPLE_QUESTION.question}
                 </p>
 
-                {/* Interactive Question Options */}
+                {/* Interactive Question Options with Tactile 3D Keycaps */}
                 <fieldset className="space-y-2 text-xs" aria-label="Exam Options">
                   <legend className="sr-only">Select your answer</legend>
                   {SAMPLE_QUESTION.options.map((opt) => {
@@ -238,28 +256,35 @@ export function HomeHero() {
                         key={opt.key}
                         type="button"
                         onClick={() => setSelectedOption(opt.key)}
-                        className={`w-full flex items-center gap-2.5 rounded-xl border p-2.5 min-h-[44px] text-left transition-colors duration-150 bl-focus-ring ${
+                        className={`w-full flex items-center gap-3 rounded-xl border p-2.5 min-h-[44px] text-left transition-all duration-150 cursor-pointer ${
                           isSelected
                             ? opt.isCorrect
-                              ? "border-emerald-500 bg-emerald-950/70 text-emerald-200 shadow-md shadow-emerald-950 font-bold"
-                              : "border-red-500 bg-red-950/70 text-red-200 font-bold"
-                            : "border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
+                              ? "border-emerald-500/80 bg-emerald-950/60 text-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.2)] font-bold"
+                              : "border-rose-500/80 bg-rose-950/60 text-rose-100 font-bold"
+                            : "border-white/10 bg-slate-900/60 text-slate-200 hover:border-white/20 hover:bg-slate-900/90"
                         }`}
                       >
+                        {/* Physical Tactile Keycap */}
                         <span
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-xs font-black transition-all ${
                             isSelected
                               ? opt.isCorrect
-                                ? "bg-emerald-600 text-white"
-                                : "bg-red-600 text-white"
-                              : "bg-slate-800 text-slate-300"
+                                ? "bg-emerald-500 text-slate-950 shadow-[0_2px_0_#065f46]"
+                                : "bg-rose-500 text-white shadow-[0_2px_0_#9f1239]"
+                              : "bg-slate-800 text-slate-300 border border-white/10 shadow-[0_2px_0_#0f172a]"
                           }`}
                         >
                           {opt.key}
                         </span>
-                        <span className="flex-1">{opt.text}</span>
+                        <span className="flex-1 text-xs">{opt.text}</span>
                         {isSelected && (
-                          <span className="text-[10px] uppercase font-black tracking-wide">
+                          <span
+                            className={`text-[10px] uppercase font-black tracking-wide px-2 py-0.5 rounded ${
+                              opt.isCorrect
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                            }`}
+                          >
                             {opt.isCorrect ? "✓ Correct" : "✗ Review"}
                           </span>
                         )}
@@ -268,21 +293,65 @@ export function HomeHero() {
                   })}
                 </fieldset>
 
+                {/* Authentic Physical JAMB 8-Key Navigation Strip */}
+                <div className="pt-2 border-t border-white/10">
+                  <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>Physical JAMB 8-Keypad:</span>
+                    <span className="text-cyan-400 font-semibold">Active Mode</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { key: "P", label: "Previous" },
+                      { key: "N", label: "Next" },
+                      { key: "R", label: "Reverse" },
+                      { key: "S", label: "Submit" },
+                    ].map((k) => (
+                      <button
+                        key={k.key}
+                        type="button"
+                        onClick={() => {
+                          if (k.key === "N") {
+                            const keys = ["A", "B", "C", "D"];
+                            const currIdx = keys.indexOf(selectedOption);
+                            setSelectedOption(keys[(currIdx + 1) % keys.length]);
+                          } else if (k.key === "P") {
+                            const keys = ["A", "B", "C", "D"];
+                            const currIdx = keys.indexOf(selectedOption);
+                            setSelectedOption(keys[(currIdx - 1 + keys.length) % keys.length]);
+                          }
+                        }}
+                        className="py-1.5 px-2 rounded-lg bg-slate-900 border border-white/15 text-center font-mono text-xs font-bold text-slate-300 hover:text-white hover:border-cyan-400/50 shadow-[0_2px_0_#0f172a] active:translate-y-0.5 active:shadow-none transition cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <span className="text-cyan-400 font-black">[{k.key}]</span>
+                        <span className="text-[10px] font-sans">{k.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Socratic Instant Explanation */}
                 {activeOption && (
-                  <div className="rounded-xl border border-sky-900/60 bg-sky-950/50 p-2.5 text-[11px] text-sky-200 animate-bl-fade-in">
-                    <span className="font-bold text-sky-300">Pedagogical Rule: </span>
-                    {activeOption.explanation}
+                  <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-2.5 text-[11px] text-cyan-200 animate-bl-fade-in space-y-1">
+                    <div className="font-bold text-cyan-300 flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      <span>Pedagogical Grammar Rule:</span>
+                    </div>
+                    <p className="leading-relaxed pl-5">{activeOption.explanation}</p>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px] text-slate-400">
                   <span>Interactive Split-Screen Simulator Preview</span>
                   <Link
                     href="/cbt"
-                    className="text-sky-400 font-bold hover:text-sky-300 transition-colors"
+                    className="text-cyan-400 font-bold hover:text-cyan-300 transition-colors inline-flex items-center gap-1"
                   >
-                    Launch Full Mock →
+                    <span>Launch Full Mock</span>
+                    <span aria-hidden="true">&rarr;</span>
                   </Link>
                 </div>
               </div>
