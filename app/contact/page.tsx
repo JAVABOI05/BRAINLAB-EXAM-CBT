@@ -338,7 +338,7 @@ export default function ContactPage() {
                     Dispatch an Academic Ticket
                   </span>
                   <span className="text-[11px] font-semibold text-slate-400">
-                    Ref: 🇳🇬 NG-DESK
+                    Ref: NG-DESK
                   </span>
                 </div>
                 <h2 className="mt-1 text-2xl font-black text-slate-950 dark:text-white tracking-tight">
@@ -350,7 +350,11 @@ export default function ContactPage() {
 
                 {submitted ? (
                   <div className="mt-8 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-6 text-center">
-                    <span className="text-3xl" aria-hidden="true">✓</span>
+                    <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white" aria-hidden="true">
+                      <svg className="h-5 w-5 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
                     <h3 className="mt-2 text-lg font-bold text-emerald-950 dark:text-emerald-200">
                       Inquiry Registered &amp; Dispatched!
                     </h3>

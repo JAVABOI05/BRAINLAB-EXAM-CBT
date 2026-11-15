@@ -234,13 +234,28 @@ export default function HomeInstantMiniMock() {
                     <span>Master Worked Explanation</span>
                   </span>
                   <span
-                    className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                    className={`text-xs font-black px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
                       userChoice === currentQ.correct
                         ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/40"
                         : "bg-rose-950/80 text-rose-300 border border-rose-500/40"
                     }`}
                   >
-                    {userChoice === currentQ.correct ? "✓ Correct!" : `✗ Missed (Key: ${currentQ.correct})`}
+                    {userChoice === currentQ.correct ? (
+                      <>
+                        <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>Correct!</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                        <span>Missed (Key: {currentQ.correct})</span>
+                      </>
+                    )}
                   </span>
                 </div>
 

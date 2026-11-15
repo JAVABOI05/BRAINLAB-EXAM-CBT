@@ -14,44 +14,101 @@ export const metadata: Metadata = {
   },
 };
 
-const FEATURES = [
+interface FeatureItem {
+  iconId: "timer" | "calc" | "sync" | "score" | "solution" | "mobile";
+  title: string;
+  description: string;
+}
+
+const FEATURES: FeatureItem[] = [
   {
-    icon: "⏱️",
+    iconId: "timer",
     title: "Authentic 2-Hour Countdown & Timing",
     description:
       "Practise with strict examination pacing. The timer replicates Joint Admissions and Matriculation Board standards, training you to allocate minutes efficiently across English and your three elective papers.",
   },
   {
-    icon: "🧮",
+    iconId: "calc",
     title: "Built-In On-Screen Scientific Calculator",
     description:
       "Never scramble for external tools. Our integrated digital calculator is accessible during Physics, Chemistry, and Mathematics calculations. You can drag, minimize, or close it anytime.",
   },
   {
-    icon: "💾",
+    iconId: "sync",
     title: "Low-Data Offline Answer Auto-Sync",
     description:
       "Fluctuating Nigerian 3G/4G or sudden cybercafé power cuts won't wipe your paper. Responses are cached locally in your browser storage and automatically sync to the server once reconnected.",
   },
   {
-    icon: "📊",
+    iconId: "score",
     title: "Standardized 400-Mark Diagnostic Scoring",
     description:
       "Get instant score breakdowns by subject immediately upon submission, with percentile benchmarks showing exactly where you stand among thousands of candidates nationwide.",
   },
   {
-    icon: "🔍",
+    iconId: "solution",
     title: "Step-by-Step Worked Solutions & Corrections",
     description:
       "Don't just see which answers were wrong — understand why. Review complete mathematical proofs, grammatical explanations, and conceptual breakdowns for every single question.",
   },
   {
-    icon: "📱",
+    iconId: "mobile",
     title: "Responsive Mobile & Cybercafé Terminal Support",
     description:
       "Engineered mobile-first to glide on budget Android touchscreens, laptops, and older cybercafé desktop terminals without freezing, memory leaks, or heavy bundle downloads.",
   },
 ];
+
+function CbtFeatureIcon({ id }: { id: FeatureItem["iconId"] }) {
+  switch (id) {
+    case "timer":
+      return (
+        <svg className="h-5 w-5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    case "calc":
+      return (
+        <svg className="h-5 w-5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="4" y="2" width="16" height="20" rx="2" />
+          <line x1="8" y1="6" x2="16" y2="6" />
+          <line x1="16" y1="14" x2="16" y2="18" />
+          <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01" />
+        </svg>
+      );
+    case "sync":
+      return (
+        <svg className="h-5 w-5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      );
+    case "score":
+      return (
+        <svg className="h-5 w-5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      );
+    case "solution":
+      return (
+        <svg className="h-5 w-5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      );
+    case "mobile":
+      return (
+        <svg className="h-5 w-5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+          <line x1="12" y1="18" x2="12.01" y2="18" />
+        </svg>
+      );
+  }
+}
 
 const WORKFLOW_STEPS = [
   {
@@ -215,10 +272,20 @@ export default function CbtProductPage() {
               </div>
 
               <div className="border-t border-slate-800 pt-4 flex items-center justify-between text-[11px] text-slate-400">
-                <span className="flex items-center gap-1">
-                  <span>🧮</span> Calculator Ready
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-3.5 w-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="4" y="2" width="16" height="20" rx="2" />
+                    <line x1="8" y1="6" x2="16" y2="6" />
+                    <line x1="16" y1="14" x2="16" y2="18" />
+                  </svg>
+                  <span>Calculator Ready</span>
                 </span>
-                <span className="text-emerald-400 font-bold">✓ Answer Saved Locally</span>
+                <span className="text-emerald-400 font-bold inline-flex items-center gap-1">
+                  <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Answer Saved Locally</span>
+                </span>
               </div>
             </div>
           </div>
@@ -243,8 +310,8 @@ export default function CbtProductPage() {
                 key={idx}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80 space-y-3"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-xl dark:bg-blue-950/60">
-                  {feat.icon}
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60">
+                  <CbtFeatureIcon id={feat.iconId} />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
                   {feat.title}

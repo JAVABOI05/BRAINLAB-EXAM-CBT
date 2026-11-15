@@ -363,27 +363,39 @@ function PricingContent() {
                   <p className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">What’s included:</p>
                   <ul className="mt-3 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                      <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span><strong>Full CBT Practice:</strong> Unlimited mock exams with JAMB 8-key interface &amp; timing</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                      <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span><strong>Question Bank:</strong> Complete past question library and worked solutions</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                      <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span><strong>AI Tutor:</strong> Generous fair-use interactive study assistance</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                      <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span><strong>Learning Hub:</strong> Open curriculum syllabus notes and video resources</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                      <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span><strong>Competition Arena:</strong> Live 1v1 duels, challenges, and national leaderboards</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                      <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span><strong>STEM Studio:</strong> Public 3D interactive molecular and science viewers</span>
                     </li>
                   </ul>
@@ -440,7 +452,7 @@ function PricingContent() {
                         <span className="text-3xl sm:text-4xl font-black tracking-tight text-slate-950 dark:text-white">
                           Admissions Open
                         </span>
-                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                        <span className="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">
                           Free Enquiry
                         </span>
                       </div>
@@ -542,9 +554,13 @@ function PricingContent() {
                   </div>
                   <button
                     onClick={() => setCheckoutPlan(null)}
-                    className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    aria-label="Close checkout modal"
+                    className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
                   >
-                    ✕
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
                   </button>
                 </div>
 
@@ -597,8 +613,11 @@ function PricingContent() {
                     <p className="mt-1 text-xs text-rose-600 font-medium">{couponError}</p>
                   )}
                   {appliedCoupon && (
-                    <p className="mt-1 text-xs text-emerald-600 font-bold">
-                      ✓ Promo code {appliedCoupon.code} applied!
+                    <p className="mt-1 text-xs text-emerald-600 font-bold flex items-center gap-1">
+                      <svg className="h-3.5 w-3.5 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span>Promo code {appliedCoupon.code} applied!</span>
                     </p>
                   )}
                 </div>

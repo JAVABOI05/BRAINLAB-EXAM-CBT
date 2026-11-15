@@ -523,7 +523,10 @@ export default function BrandHeader() {
                 {/* Dropdown Footer Information Banner */}
                 <div className="mt-2.5 rounded-xl bg-slate-900/90 p-2.5 border border-white/10 text-[11px] text-slate-300 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-medium">
-                    <span className="text-emerald-400">✓</span> Free daily practice drills available for every student.
+                    <svg className="h-3.5 w-3.5 text-emerald-400 stroke-current stroke-2 fill-none shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Free daily practice drills available for every student.</span>
                   </span>
                   <Link
                     href="/pricing"
@@ -729,12 +732,23 @@ export default function BrandHeader() {
         {/* Mobile Hamburger Toggle Button */}
         <button
           type="button"
-          className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 lg:hidden transition active:scale-95 bl-focus-ring"
+          className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 lg:hidden transition active:scale-95 bl-focus-ring cursor-pointer"
           aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          <span className="text-lg leading-none">{mobileMenuOpen ? "✕" : "☰"}</span>
+          {mobileMenuOpen ? (
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          ) : (
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          )}
         </button>
       </div>
 

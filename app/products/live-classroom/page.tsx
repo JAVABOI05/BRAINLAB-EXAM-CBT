@@ -14,44 +14,103 @@ export const metadata: Metadata = {
   },
 };
 
-const CLASSROOM_FEATURES = [
+interface ClassroomFeatureItem {
+  iconId: "whiteboard" | "katex" | "poll" | "audio" | "archive" | "community";
+  title: string;
+  description: string;
+}
+
+const CLASSROOM_FEATURES: ClassroomFeatureItem[] = [
   {
-    icon: "🎨",
+    iconId: "whiteboard",
     title: "Multi-Surface Academic Whiteboard",
     description:
       "Switch effortlessly between dark academic chalkboard, millimeter coordinate graphing planes for physics/calculus, and ruled notebook lines for literature and essays.",
   },
   {
-    icon: "📐",
+    iconId: "katex",
     title: "KaTeX Math & Vector Science Stamps",
     description:
       "Tutors insert crisp vector science diagrams (electrical resistors, batteries, chemical beakers, benzene rings) and complex KaTeX formulas with zero drawing lag.",
   },
   {
-    icon: "📊",
+    iconId: "poll",
     title: "Live Checkpoint Comprehension Polls",
     description:
       "Tutors fire instant 60-second multiple-choice checkpoint questions during lectures to immediately gauge student retention and re-explain confusing steps.",
   },
   {
-    icon: "🎧",
+    iconId: "audio",
     title: "Low-Bandwidth Audio Lecture Stream",
     description:
       "Optimized for varying Nigerian internet connections. Live voice explanations run smoothly on low-bandwidth 3G connections without chewing through heavy mobile data bundles.",
   },
   {
-    icon: "📼",
+    iconId: "archive",
     title: "Synchronized Lecture Replay Archive",
     description:
       "Missed a scheduled masterclass? Review recorded whiteboard strokes alongside tutor audio annotations anytime from your student portal dashboard.",
   },
   {
-    icon: "👥",
+    iconId: "community",
     title: "Dedicated Tutor-Student Interaction",
     description:
       "Ask questions in live chat, raise hands for voice participation, and participate in guided problem-solving alongside top candidates from across the country.",
   },
 ];
+
+function ClassroomFeatureIcon({ id }: { id: ClassroomFeatureItem["iconId"] }) {
+  switch (id) {
+    case "whiteboard":
+      return (
+        <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      );
+    case "katex":
+      return (
+        <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
+          <line x1="14.5" y1="5.5" x2="18.5" y2="9.5" />
+        </svg>
+      );
+    case "poll":
+      return (
+        <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      );
+    case "audio":
+      return (
+        <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+        </svg>
+      );
+    case "archive":
+      return (
+        <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+          <line x1="7" y1="2" x2="7" y2="22" />
+          <line x1="17" y1="2" x2="17" y2="22" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+        </svg>
+      );
+    case "community":
+      return (
+        <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      );
+  }
+}
 
 export default function LiveClassroomProductPage() {
   return (
@@ -168,8 +227,8 @@ export default function LiveClassroomProductPage() {
                 key={idx}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80 space-y-3"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-xl dark:bg-amber-950/60">
-                  {feat.icon}
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/60">
+                  <ClassroomFeatureIcon id={feat.iconId} />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
                   {feat.title}

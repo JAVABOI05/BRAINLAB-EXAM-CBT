@@ -14,10 +14,19 @@ export const metadata: Metadata = {
   },
 };
 
-const SUBJECT_AREAS = [
+interface SubjectAreaItem {
+  category: string;
+  iconId: "science" | "commercial" | "arts";
+  color: string;
+  badge: string;
+  subjects: string[];
+  description: string;
+}
+
+const SUBJECT_AREAS: SubjectAreaItem[] = [
   {
     category: "Science Disciplines",
-    icon: "🔬",
+    iconId: "science",
     color: "border-blue-500/20 bg-blue-500/5",
     badge: "High Competition",
     subjects: ["Mathematics", "Physics", "Chemistry", "Biology", "Agricultural Science"],
@@ -25,7 +34,7 @@ const SUBJECT_AREAS = [
   },
   {
     category: "Commercial & Social Sciences",
-    icon: "📈",
+    iconId: "commercial",
     color: "border-emerald-500/20 bg-emerald-500/5",
     badge: "Career Focused",
     subjects: ["Economics", "Principles of Accounts", "Commerce", "Government", "Geography"],
@@ -33,7 +42,7 @@ const SUBJECT_AREAS = [
   },
   {
     category: "Arts & Humanities",
-    icon: "📖",
+    iconId: "arts",
     color: "border-purple-500/20 bg-purple-500/5",
     badge: "Critical Analysis",
     subjects: ["Use of English", "Literature in English", "Christian Religious Studies", "Islamic Studies", "History"],
@@ -41,44 +50,129 @@ const SUBJECT_AREAS = [
   },
 ];
 
-const HUB_FEATURES = [
+interface HubFeatureItem {
+  iconId: "alignment" | "objectives" | "books" | "drills" | "timetable" | "notes";
+  title: string;
+  description: string;
+}
+
+const HUB_FEATURES: HubFeatureItem[] = [
   {
-    icon: "🎯",
+    iconId: "alignment",
     title: "Official Exam Board Alignment",
     description:
       "Every module and topic aligns strictly with the official Joint Admissions and Matriculation Board syllabus and Senior Secondary curriculum guidelines.",
   },
   {
-    icon: "📋",
+    iconId: "objectives",
     title: "Specific Learning Objectives",
     description:
       "Each topic outlines clear cognitive goals so you know exactly what concepts, calculations, or definitions you must master before examination day.",
   },
   {
-    icon: "📚",
+    iconId: "books",
     title: "Recommended Textbook Bibliographies",
     description:
       "Consult the exact reference texts recommended by examiners (e.g. New School Physics, Ababio Chemistry, Essential Biology) for deeper background study.",
   },
   {
-    icon: "🔗",
+    iconId: "drills",
     title: "Deep-Linked CBT Practice Drills",
     description:
       "Connect theory to practice immediately. Click any topic to test your knowledge against verified past questions directly addressing that subtopic.",
   },
   {
-    icon: "📅",
+    iconId: "timetable",
     title: "Integrated Revision Timetable",
     description:
       "Follow structured daily study schedules and synchronized masterclass timetables to cover the complete 4-subject curriculum without last-minute cramming.",
   },
   {
-    icon: "📝",
+    iconId: "notes",
     title: "Downloadable Topic Summaries & Notes",
     description:
       "Access high-yield formula sheets and concise summary notes engineered for rapid review on mobile devices during daily transit or offline revision.",
   },
 ];
+
+function AreaIcon({ id }: { id: SubjectAreaItem["iconId"] }) {
+  switch (id) {
+    case "science":
+      return (
+        <svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
+          <path d="M8.5 2h7M7 16h10" />
+        </svg>
+      );
+    case "commercial":
+      return (
+        <svg className="h-6 w-6 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      );
+    case "arts":
+      return (
+        <svg className="h-6 w-6 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+          <path d="M6 6h10M6 10h10" />
+        </svg>
+      );
+  }
+}
+
+function HubFeatureIcon({ id }: { id: HubFeatureItem["iconId"] }) {
+  switch (id) {
+    case "alignment":
+      return (
+        <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
+      );
+    case "objectives":
+      return (
+        <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        </svg>
+      );
+    case "books":
+      return (
+        <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+      );
+    case "drills":
+      return (
+        <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+      );
+    case "timetable":
+      return (
+        <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      );
+    case "notes":
+      return (
+        <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+      );
+  }
+}
 
 export default function LearningHubProductPage() {
   return (
@@ -159,7 +253,9 @@ export default function LearningHubProductPage() {
                 className={`rounded-3xl border ${area.color} bg-white p-7 shadow-xs dark:bg-slate-900/90 space-y-5`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl">{area.icon}</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                    <AreaIcon id={area.iconId} />
+                  </div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     {area.badge}
                   </span>
@@ -209,8 +305,8 @@ export default function LearningHubProductPage() {
                 key={idx}
                 className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 dark:border-slate-800 dark:bg-slate-900/60 space-y-3"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-xl dark:bg-emerald-950/60">
-                  {feat.icon}
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60">
+                  <HubFeatureIcon id={feat.iconId} />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
                   {feat.title}

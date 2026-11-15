@@ -15,12 +15,21 @@ export const metadata: Metadata = {
   },
 };
 
-const LAB_BENCHES = [
+interface LabBenchItem {
+  discipline: string;
+  title: string;
+  badge: string;
+  iconId: "projectile" | "circuit" | "titration" | "genetics" | "math" | "logic";
+  color: string;
+  description: string;
+}
+
+const LAB_BENCHES: LabBenchItem[] = [
   {
     discipline: "Physics & Mechanics",
     title: "Projectile Motion & Ballistics Lab",
     badge: "Kinematics",
-    icon: "🚀",
+    iconId: "projectile",
     color: "border-blue-500/30 bg-blue-500/5",
     description:
       "Adjust velocity, launch angle (0° to 90°), and gravitational acceleration (Earth 9.8 m/s² vs Moon 1.62 m/s²). Observe instantaneous trajectory curves, time of flight, and maximum range in real time.",
@@ -29,7 +38,7 @@ const LAB_BENCHES = [
     discipline: "Physics & Electricity",
     title: "DC Circuit & Ohm's Law Bench",
     badge: "Circuits",
-    icon: "⚡",
+    iconId: "circuit",
     color: "border-amber-500/30 bg-amber-500/5",
     description:
       "Wire resistors in series and parallel, vary battery voltage (0V to 48V), and inspect current flow, equivalent resistance, and thermal power dissipation with automatic overload warnings.",
@@ -38,7 +47,7 @@ const LAB_BENCHES = [
     discipline: "Chemistry & Volumetrics",
     title: "Acid-Base Titration & pH Curve",
     badge: "Titration",
-    icon: "🧪",
+    iconId: "titration",
     color: "border-pink-500/30 bg-pink-500/5",
     description:
       "Titrate strong and weak acids with standardized burette titrant volumes. Watch the interactive pH curve rise and observe the phenolphthalein indicator shift sharply from colorless to vibrant pink at equivalence.",
@@ -47,7 +56,7 @@ const LAB_BENCHES = [
     discipline: "Biology & Heredity",
     title: "Mendelian Genetics Punnett Lab",
     badge: "Genetics",
-    icon: "🧬",
+    iconId: "genetics",
     color: "border-emerald-500/30 bg-emerald-500/5",
     description:
       "Cross homozygous and heterozygous parental alleles (BB, Bb, bb). Calculate theoretical genotypic and phenotypic ratios (3:1 dominant vs recessive) and verify test cross outcomes.",
@@ -56,7 +65,7 @@ const LAB_BENCHES = [
     discipline: "Mathematics & Analysis",
     title: "Quadratic Parabola & Roots Explorer",
     badge: "Algebra",
-    icon: "📐",
+    iconId: "math",
     color: "border-indigo-500/30 bg-indigo-500/5",
     description:
       "Manipulate quadratic coefficients (a, b, c) using continuous sliders. Observe the parabola reflect and shift, calculate the discriminant Δ = b² - 4ac, and inspect real versus complex roots.",
@@ -65,12 +74,59 @@ const LAB_BENCHES = [
     discipline: "Engineering & Computer Science",
     title: "Boolean Logic Gates Bench",
     badge: "Digital Electronics",
-    icon: "🤖",
+    iconId: "logic",
     color: "border-cyan-500/30 bg-cyan-500/5",
     description:
       "Toggle digital binary inputs (0 and 1) across AND, OR, NOT, NAND, NOR, and XOR gates. Verify dynamic truth tables and understand the foundational building blocks of microprocessors.",
   },
 ];
+
+function BenchIcon({ id }: { id: LabBenchItem["iconId"] }) {
+  switch (id) {
+    case "projectile":
+      return (
+        <svg className="h-6 w-6 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+          <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+        </svg>
+      );
+    case "circuit":
+      return (
+        <svg className="h-6 w-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    case "titration":
+      return (
+        <svg className="h-6 w-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
+          <path d="M8.5 2h7M7 16h10" />
+        </svg>
+      );
+    case "genetics":
+      return (
+        <svg className="h-6 w-6 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a10 10 0 0 0-4 18M12 2a10 10 0 0 1 4 18" />
+        </svg>
+      );
+    case "math":
+      return (
+        <svg className="h-6 w-6 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
+          <line x1="14.5" y1="5.5" x2="18.5" y2="9.5" />
+        </svg>
+      );
+    case "logic":
+      return (
+        <svg className="h-6 w-6 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      );
+  }
+}
 
 const STEM_MODES = [
   {
@@ -229,7 +285,9 @@ export default function StemStudioProductPage() {
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-3xl">{lab.icon}</span>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                      <BenchIcon id={lab.iconId} />
+                    </div>
                     <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300">
                       {lab.badge}
                     </span>

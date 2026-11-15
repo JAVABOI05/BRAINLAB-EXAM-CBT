@@ -338,7 +338,9 @@ export default function AboutPage() {
                   <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
                     {cap.highlights.map((item, idx) => (
                       <li key={idx} className="flex items-center gap-2">
-                        <span className="text-blue-600 dark:text-cyan-400 font-bold">✓</span>
+                        <svg className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400 stroke-current stroke-2 fill-none shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
                         <span>{item}</span>
                       </li>
                     ))}

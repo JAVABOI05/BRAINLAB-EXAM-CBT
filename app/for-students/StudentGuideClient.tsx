@@ -126,9 +126,9 @@ export function StudentGuideClient() {
 
               {/* Realistic Cockpit Preview Mini Bar */}
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4 space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono text-slate-500 dark:text-slate-400">
+                <div className="flex items-center justify-between text-xs font-mono text-slate-600 dark:text-slate-400">
                   <span>Physical Keypad: [P] Prev · [N] Next · [S] Submit</span>
-                  <span className="text-cyan-600 dark:text-cyan-400 font-bold">120:00 Countdown</span>
+                  <span className="text-cyan-800 dark:text-cyan-300 font-bold">120:00 Countdown</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center text-xs font-mono">
                   <span className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-white">ENG (60 Qs)</span>
@@ -142,12 +142,12 @@ export function StudentGuideClient() {
             <div className="pt-2 flex items-center justify-between">
               <Link
                 href="/cbt"
-                className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-cyan-400 hover:underline"
+                className="inline-flex items-center gap-2 text-sm font-bold text-blue-700 dark:text-cyan-300 hover:underline"
               >
                 <span>Launch Free Practice Engine</span>
                 <span aria-hidden="true">&rarr;</span>
               </Link>
-              <span className="text-xs text-slate-400 font-mono">Resets Daily at 00:00 WAT</span>
+              <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">Resets Daily at 00:00 WAT</span>
             </div>
           </div>
 
@@ -181,7 +181,7 @@ export function StudentGuideClient() {
 
             <Link
               href="/products/cbt"
-              className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-bold text-emerald-800 dark:text-emerald-300 hover:underline"
             >
               <span>Explore Offline Architecture</span>
               <span aria-hidden="true">&rarr;</span>
@@ -209,7 +209,7 @@ export function StudentGuideClient() {
 
             <Link
               href="/products/ai-learning"
-              className="inline-flex items-center gap-2 text-sm font-bold text-purple-600 dark:text-purple-400 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-bold text-purple-800 dark:text-purple-300 hover:underline"
             >
               <span>Learn About Socratic AI</span>
               <span aria-hidden="true">&rarr;</span>
@@ -237,7 +237,7 @@ export function StudentGuideClient() {
 
             <Link
               href="/products/stem"
-              className="inline-flex items-center gap-2 text-sm font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-bold text-cyan-800 dark:text-cyan-300 hover:underline"
             >
               <span>Launch Virtual STEM Labs</span>
               <span aria-hidden="true">&rarr;</span>
@@ -369,7 +369,7 @@ export function StudentGuideClient() {
 
             <div className="font-mono font-black text-5xl sm:text-6xl text-slate-950 dark:text-white tracking-tight">
               {aggregateScore}
-              <span className="text-xl text-slate-400 font-normal"> / 400</span>
+              <span className="text-xl text-slate-500 dark:text-slate-400 font-normal"> / 400</span>
             </div>
 
             <div className={`inline-block px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border ${standingColor}`}>
@@ -449,13 +449,13 @@ export function StudentGuideClient() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed">
             <div className="space-y-1.5">
-              <h4 className="font-mono uppercase font-bold text-slate-400 text-[10px]">Deliverable Objective:</h4>
+              <h4 className="font-mono uppercase font-bold text-slate-600 dark:text-slate-400 text-[10px]">Deliverable Objective:</h4>
               <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
                 {ROADMAP_PHASES[activePhase].deliverable}
               </p>
             </div>
             <div className="space-y-1.5">
-              <h4 className="font-mono uppercase font-bold text-slate-400 text-[10px]">Pedagogical Rationale:</h4>
+              <h4 className="font-mono uppercase font-bold text-slate-600 dark:text-slate-400 text-[10px]">Pedagogical Rationale:</h4>
               <p className="text-slate-600 dark:text-slate-300 font-normal">
                 {ROADMAP_PHASES[activePhase].details}
               </p>

@@ -380,7 +380,9 @@ export default function SchoolsPage() {
                 <ul className="mt-4 space-y-2 border-t border-blue-100 pt-4 text-xs text-slate-700 dark:border-blue-900/40 dark:text-slate-300">
                   {activeTier.features.map((feat, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-emerald-500 font-bold">✓</span>
+                      <svg className="h-3.5 w-3.5 text-emerald-500 stroke-current stroke-2 fill-none mt-0.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                       <span>{feat}</span>
                     </li>
                   ))}

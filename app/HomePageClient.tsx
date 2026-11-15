@@ -13,7 +13,6 @@ import {
   HomePricingTeaser,
   HomeFounderNote,
   HomeFaqCta,
-  HomeBrilliantConceptExplorer,
 } from "./components/home";
 
 /**
@@ -80,11 +79,6 @@ export default function HomePageClient() {
 
         {/* 2. Audience Entry Points */}
         <HomeAudiences />
-
-        {/* Brilliant-Style Interactive STEM Concept Explorer */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-          <HomeBrilliantConceptExplorer />
-        </div>
 
         {/* 3. The BrainLab Loop */}
         <HomeBrainLabLoop />

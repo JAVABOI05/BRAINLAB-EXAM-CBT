@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
 
@@ -91,6 +91,19 @@ export function HomeProductShowcase() {
   const [selectedProductId, setSelectedProductId] = useState<string>("cbt-simulator");
 
   const activeProduct = products.find((p) => p.id === selectedProductId) || products[0];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(targetTag)) return;
+      const k = e.key.toUpperCase();
+      if (["A", "B", "C", "D", "P", "N", "S", "R"].includes(k)) {
+        handleKeyClick(k);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeQuestionIndex, currentQ]);
 
   const handleKeyClick = (key: string) => {
     setSelectedKeyStroke(key);
@@ -209,7 +222,7 @@ export function HomeProductShowcase() {
                   <div className="flex items-center justify-between text-[11px] font-mono border-b border-slate-200 dark:border-slate-800 pb-2 text-slate-600 dark:text-slate-400">
                     <span className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold">
                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Physics Question 14 of 40
+                      {currentQ.subject} &bull; Q{activeQuestionIndex + 1} of {SHOWCASE_QUESTIONS.length}
                     </span>
                     <span className="text-amber-700 dark:text-amber-400 font-bold font-mono flex items-center gap-1">
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -220,19 +233,19 @@ export function HomeProductShowcase() {
                     </span>
                   </div>
 
+                  <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Topic: {currentQ.topic}
+                  </div>
+
                   <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
-                    A body accelerates uniformly from rest at 2.0 m/s² for 5.0 seconds. Calculate the total distance covered.
+                    {currentQ.question}
                   </p>
 
                   {/* Interactive Options HUD */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    {[
-                      { key: "A", label: "10.0 meters" },
-                      { key: "B", label: "25.0 meters (s = ½at²)" },
-                      { key: "C", label: "50.0 meters" },
-                      { key: "D", label: "100.0 meters" },
-                    ].map((opt) => {
-                      const isSelected = selectedKeyStroke === opt.key || userChoice === opt.key;
+                    {currentQ.options.map((opt) => {
+                      const isSelected = userChoice === opt.key || selectedKeyStroke === opt.key;
+                      const isCorrect = opt.key === currentQ.correct;
                       return (
                         <button
                           key={opt.key}
@@ -240,13 +253,19 @@ export function HomeProductShowcase() {
                           onClick={() => handleKeyClick(opt.key)}
                           className={`flex items-center gap-2 p-2.5 rounded-xl text-left transition-all border-2 border-b-4 cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                             isSelected
-                              ? "bg-blue-50/80 border-blue-600 dark:bg-blue-950/60 dark:border-blue-500 text-blue-950 dark:text-blue-100 font-bold shadow-xs"
+                              ? isCorrect
+                                ? "bg-emerald-50 border-emerald-600 dark:bg-emerald-950/60 dark:border-emerald-500 text-emerald-950 dark:text-emerald-100 font-bold shadow-xs"
+                                : "bg-rose-50 border-rose-500 dark:bg-rose-950/60 dark:border-rose-500 text-rose-950 dark:text-rose-100 font-bold shadow-xs"
                               : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
                           }`}
                         >
                           <span
-                            className={`flex h-5 w-5 items-center justify-center rounded-md font-mono text-[10px] font-bold ${
-                              isSelected ? "bg-blue-600 text-white font-black" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold ${
+                              isSelected
+                                ? isCorrect
+                                  ? "bg-emerald-600 text-white font-black"
+                                  : "bg-rose-600 text-white font-black"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                             }`}
                           >
                             {opt.key}
@@ -256,6 +275,39 @@ export function HomeProductShowcase() {
                       );
                     })}
                   </div>
+
+                  {/* Step-by-Step Derivation & Socratic Feedback */}
+                  {showExplanation && (
+                    <div className="rounded-xl border border-blue-200 dark:border-blue-800/80 bg-blue-50/70 dark:bg-blue-950/40 p-3 text-xs space-y-1.5 animate-bl-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                          <svg className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M9 18h6" />
+                            <path d="M10 22h4" />
+                            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+                          </svg>
+                          <span>Step-by-Step Derivation:</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200">
+                            Key [{currentQ.correct}]
+                          </span>
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                          Press [S] to toggle
+                        </span>
+                      </div>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
+                        {currentQ.derivation}
+                      </p>
+                      <div className="text-[11px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5">
+                        <svg className="h-3 w-3 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        <span>{currentQ.examinerTrap}</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Physical 3D Beveled Mechanical Keycaps */}
                   <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
@@ -458,7 +510,13 @@ export function HomeProductShowcase() {
                           }`}
                         >
                           <span className={isDone ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-400 font-bold"}>
-                            {isDone ? "✓" : "○"}
+                            {isDone ? (
+                              <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            ) : (
+                              <span className="h-3 w-3 rounded-full border border-slate-400 block" />
+                            )}
                           </span>
                           <span className={isDone ? "line-through opacity-75" : ""}>{q.title}</span>
                         </button>
@@ -639,7 +697,12 @@ export function HomeProductShowcase() {
                 <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-6 text-slate-900 dark:text-white min-h-[280px] flex flex-col justify-between shadow-xs">
                   <div className="flex items-center justify-between text-xs border-b border-slate-200 dark:border-slate-800 pb-3">
                     <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{activeProduct.name} Live Engine</span>
-                    <span className="font-mono text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">✓ WCAG 2.1 AA Compliant</span>
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400 text-[10px] font-bold inline-flex items-center gap-1">
+                      <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span>WCAG 2.1 AA Compliant</span>
+                    </span>
                   </div>
                   <div className="py-6 text-center space-y-3">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400">

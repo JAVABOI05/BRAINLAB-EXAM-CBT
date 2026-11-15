@@ -14,49 +14,106 @@ export const metadata: Metadata = {
   },
 };
 
-const ARENA_MODES = [
+interface ArenaModeItem {
+  iconId: "sprint" | "duel" | "streak" | "leaderboard" | "passport" | "fairplay";
+  title: string;
+  badge?: string;
+  description: string;
+}
+
+const ARENA_MODES: ArenaModeItem[] = [
   {
-    icon: "⚡",
+    iconId: "sprint",
     title: "Daily 10-Question Speed Sprint",
     badge: "Solo Challenge",
     description:
       "A lightning-fast, high-intensity daily quiz across your chosen subject. 10 questions in 5 minutes designed to sharpen rapid decision-making and eliminate hesitation.",
   },
   {
-    icon: "⚔️",
+    iconId: "duel",
     title: "1v1 Live Academic Duels",
     badge: "Head-to-Head",
     description:
       "Match live with ambitious peers across Nigeria. Both candidates answer identical questions under simultaneous countdown clocks to see who achieves higher accuracy in less time.",
   },
   {
-    icon: "🔥",
+    iconId: "streak",
     title: "Daily Learning Streak Protection",
     badge: "Habit Builder",
     description:
       "Consistent daily revision beats last-minute cramming. Protect your practice streak, unlock reward XP multipliers, and receive automated rescue alerts before midnight.",
   },
   {
-    icon: "🏆",
+    iconId: "leaderboard",
     title: "National Merit Leaderboard",
     badge: "National Ranking",
     description:
       "Benchmark your academic standing against candidates from secondary schools and tutorial centres across all 36 Nigerian states and the FCT.",
   },
   {
-    icon: "🏅",
+    iconId: "passport",
     title: "Verifiable Skills Passport & Badges",
     badge: "Recognition",
     description:
       "Earn digital accomplishment badges for subject mastery, perfect score sprints, and 30-day consistency streaks, verified directly on your academic passport.",
   },
   {
-    icon: "🛡️",
+    iconId: "fairplay",
     title: "Academic Integrity & Fair Play",
+    badge: "Fair Play",
     description:
       "Protected by anti-cheat timing algorithms and tamper-proof scoring to guarantee that leaderboard positions reflect genuine knowledge, preparation, and speed.",
   },
 ];
+
+function ArenaModeIcon({ id }: { id: ArenaModeItem["iconId"] }) {
+  switch (id) {
+    case "sprint":
+      return (
+        <svg className="h-6 w-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    case "duel":
+      return (
+        <svg className="h-6 w-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+          <line x1="13" y1="19" x2="19" y2="13" />
+          <line x1="16" y1="16" x2="20" y2="20" />
+          <line x1="19" y1="21" x2="21" y2="19" />
+          <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" />
+          <line x1="5" y1="14" x2="9" y2="18" />
+          <line x1="7" y1="17" x2="4" y2="20" />
+          <line x1="3" y1="19" x2="5" y2="21" />
+        </svg>
+      );
+    case "streak":
+      return (
+        <svg className="h-6 w-6 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+        </svg>
+      );
+    case "leaderboard":
+      return (
+        <svg className="h-6 w-6 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      );
+    case "passport":
+      return (
+        <svg className="h-6 w-6 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="6" />
+          <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+        </svg>
+      );
+    case "fairplay":
+      return (
+        <svg className="h-6 w-6 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+  }
+}
 
 export default function ChallengeArenaProductPage() {
   return (
@@ -145,7 +202,12 @@ export default function ChallengeArenaProductPage() {
               </div>
 
               <div className="border-t border-slate-800 pt-3 flex items-center justify-between text-[11px] text-slate-400">
-                <span>🔥 CURRENT STREAK: 14 DAYS</span>
+                <span className="flex items-center gap-1.5 text-amber-400 font-bold">
+                  <svg className="h-3.5 w-3.5 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                  </svg>
+                  <span>CURRENT STREAK: 14 DAYS</span>
+                </span>
                 <span className="text-rose-400 font-bold">+50 XP ON WIN</span>
               </div>
             </div>
@@ -172,7 +234,9 @@ export default function ChallengeArenaProductPage() {
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80 space-y-3"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-3xl">{mode.icon}</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                    <ArenaModeIcon id={mode.iconId} />
+                  </div>
                   <span className="rounded-full bg-rose-50 dark:bg-rose-950/60 px-2.5 py-0.5 text-[10px] font-black uppercase text-rose-700 dark:text-rose-300">
                     {mode.badge}
                   </span>

@@ -15,44 +15,97 @@ export const metadata: Metadata = {
   },
 };
 
-const AI_CAPABILITIES = [
+interface AiCapabilityItem {
+  iconId: "diag" | "drill" | "memory" | "trap" | "guard" | "speed";
+  title: string;
+  description: string;
+}
+
+const AI_CAPABILITIES: AiCapabilityItem[] = [
   {
-    icon: "🔬",
+    iconId: "diag",
     title: "Automated Mock Exam Error Diagnosis",
     description:
       "Our diagnostic engine analyzes your incorrect responses after each mock exam to distinguish between simple calculation slips and fundamental conceptual misunderstandings.",
   },
   {
-    icon: "🎯",
+    iconId: "drill",
     title: "Targeted 5-Question Reinforcement Drills",
     description:
       "Rather than retaking an entire 40-question paper, receive compact, high-intensity 5-question drills targeted specifically at the subtopics where you dropped marks.",
   },
   {
-    icon: "🧠",
+    iconId: "memory",
     title: "SM-2 Spaced Repetition Memory Engine",
     description:
       "Daily 10-minute active recall decks. Review formulas, scientific definitions, and grammatical rules just as they are about to fade from memory, locking them into long-term recall.",
   },
   {
-    icon: "⚠️",
+    iconId: "trap",
     title: "Examiner Trap Analysis",
     description:
       "Understand why incorrect options are seductive. Our step-by-step explanations reveal the exact calculation mistakes or conceptual traps examiners set in multiple-choice distractors.",
   },
   {
-    icon: "🛡️",
+    iconId: "guard",
     title: "Ethical & Academic Safety Guardrails",
     description:
       "Engineered strictly to teach how to solve problems. The AI will never provide unverified shortcuts or leak answer keys, adhering strictly to Nigerian curriculum integrity guidelines.",
   },
   {
-    icon: "⚡",
+    iconId: "speed",
     title: "Low-Bandwidth Inference Delivery",
     description:
       "Explanations and drills are streamlined for lightning-fast loading on mobile data connections without requiring high-speed fiber or high-end smartphones.",
   },
 ];
+
+function AiCapabilityIcon({ id }: { id: AiCapabilityItem["iconId"] }) {
+  switch (id) {
+    case "diag":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      );
+    case "drill":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
+      );
+    case "memory":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04" />
+          <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04" />
+        </svg>
+      );
+    case "trap":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      );
+    case "guard":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    case "speed":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+  }
+}
 
 export default function AiLearningProductPage() {
   return (
@@ -132,7 +185,14 @@ export default function AiLearningProductPage() {
 
                 <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-3.5 text-xs space-y-2">
                   <div className="flex items-center justify-between text-purple-300 font-bold text-[11px]">
-                    <span>🎯 Generated 5-Question Drill</span>
+                    <span className="flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="6" />
+                        <circle cx="12" cy="12" r="2" />
+                      </svg>
+                      <span>Generated 5-Question Drill</span>
+                    </span>
                     <span>Ready in 1.2s</span>
                   </div>
                   <p className="text-slate-300 text-[11px]">
@@ -175,8 +235,8 @@ export default function AiLearningProductPage() {
                 key={idx}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80 space-y-3"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-xl dark:bg-purple-950/60">
-                  {cap.icon}
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/60">
+                  <AiCapabilityIcon id={cap.iconId} />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
                   {cap.title}

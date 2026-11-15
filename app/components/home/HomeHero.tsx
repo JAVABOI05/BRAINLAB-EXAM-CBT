@@ -148,13 +148,22 @@ export function HomeHero() {
             {/* High-Trust Value Badges */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs font-semibold text-slate-300 pt-1">
               <span className="inline-flex items-center gap-1.5">
-                <span className="text-emerald-400 font-bold">✓</span> Real JAMB 8-Key Engine
+                <svg className="h-3.5 w-3.5 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Real JAMB 8-Key Engine</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="text-emerald-400 font-bold">✓</span> Step-by-Step Corrections
+                <svg className="h-3.5 w-3.5 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Step-by-Step Corrections</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="text-emerald-400 font-bold">✓</span> 100% Free Daily Drills
+                <svg className="h-3.5 w-3.5 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>100% Free Daily Drills</span>
               </span>
             </div>
 
@@ -171,9 +180,9 @@ export function HomeHero() {
 
           {/* Right Column: Real CBT Product Simulator Mockup & Countdown (Slot S1-02, Motion: bl-fade-in bl-stagger-2) */}
           <div className="lg:col-span-5 flex flex-col gap-5 animate-bl-fade-in bl-stagger-2 relative">
-            {/* Real Product Simulator Mockup Chassis */}
+            {/* Real Product Simulator Mockup Chassis - Rock-solid static box (zero layout shift) */}
             <div
-              className="relative rounded-3xl border border-blue-500/30 bg-gradient-to-b from-[#111c38] via-[#0c1427] to-[#070c18] p-4 sm:p-5 shadow-[0_20px_60px_-15px_rgba(14,165,233,0.25)] backdrop-blur-xl min-h-[420px]"
+              className="relative rounded-3xl border border-blue-500/30 bg-gradient-to-b from-[#111c38] via-[#0c1427] to-[#070c18] p-4 sm:p-5 shadow-[0_20px_60px_-15px_rgba(14,165,233,0.25)] backdrop-blur-xl min-h-[520px] lg:h-[530px] flex flex-col justify-between"
               role="region"
               aria-label="Interactive CBT Practice Simulator Preview"
             >
@@ -204,18 +213,27 @@ export function HomeHero() {
                 </div>
               </div>
 
-              {/* Optional On-screen calculator drawer */}
+              {/* Optional On-screen calculator modal/drawer (zero layout shift) */}
               {showCalculator && (
-                <div className="mt-2.5 rounded-xl border border-cyan-500/30 bg-slate-900/95 p-3 text-center text-xs animate-bl-scale-in shadow-xl">
-                  <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-white/10 text-[11px] font-mono text-cyan-300">
-                    <span>JAMB STANDARD CALCULATOR</span>
-                    <span className="text-[10px] text-slate-400">Deg Mode</span>
+                <div className="absolute inset-x-4 top-14 z-30 rounded-2xl border-2 border-cyan-500/50 bg-slate-950/98 p-4 text-center text-xs animate-bl-scale-in shadow-2xl backdrop-blur-xl">
+                  <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-white/10 text-[11px] font-mono text-cyan-300">
+                    <span className="font-bold flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                      JAMB STANDARD CALCULATOR
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowCalculator(false)}
+                      className="px-2 py-0.5 rounded text-[10px] text-slate-400 hover:text-white bg-slate-800 border border-white/10 cursor-pointer"
+                    >
+                      Close [Esc]
+                    </button>
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 text-xs font-mono">
                     {["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "-", "C", "0", "=", "+"].map((k) => (
                       <span
                         key={k}
-                        className={`rounded-lg p-1.5 text-center font-bold ${
+                        className={`rounded-lg p-2 text-center font-bold ${
                           ["÷", "×", "-", "+", "="].includes(k)
                             ? "bg-blue-600 text-white shadow-xs"
                             : k === "C"
@@ -279,13 +297,28 @@ export function HomeHero() {
                         <span className="flex-1 text-xs">{opt.text}</span>
                         {isSelected && (
                           <span
-                            className={`text-[10px] uppercase font-black tracking-wide px-2 py-0.5 rounded ${
+                            className={`text-[10px] uppercase font-black tracking-wide px-2 py-0.5 rounded flex items-center gap-1 ${
                               opt.isCorrect
                                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                                 : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
                             }`}
                           >
-                            {opt.isCorrect ? "✓ Correct" : "✗ Review"}
+                            {opt.isCorrect ? (
+                              <>
+                                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                <span>Correct</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                                <span>Review</span>
+                              </>
+                            )}
                           </span>
                         )}
                       </button>
