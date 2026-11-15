@@ -547,8 +547,8 @@ export default function ChallengeArenaPage() {
 
       setRegistrationMessage({
         text: data.message || (competition?.access_mode === "request" || competition?.approval_mode === "manual"
-          ? "✓ Registration request submitted for organiser approval."
-          : "✓ Registered successfully for this competition!"),
+          ? "Registration request submitted for organiser approval."
+          : "Registered successfully for this competition!"),
         ok: true,
       });
       loadArenaData();
@@ -821,21 +821,6 @@ export default function ChallengeArenaPage() {
           ))}
         </div>
       </div>
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                  activeTab === tab.id ? "bg-white/20 text-white" : "bg-blue-500/20 text-blue-400"
-                }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* TAB CONTENT CONTAINER */}
       <main className="max-w-6xl mx-auto p-4 sm:p-6 flex flex-col gap-6">
@@ -868,7 +853,9 @@ export default function ChallengeArenaPage() {
               </div>
             ) : competitions.length === 0 ? (
               <div className={`p-12 rounded-3xl border text-center shadow-lg ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
-                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-3xl">🏆</div>
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                  <ArenaTabIcon id="tournaments" className="w-8 h-8" />
+                </div>
                 <h3 className="text-lg font-black">No Active Tournaments Scheduled</h3>
                 <p className="text-slate-400 text-xs mt-1">Official BrainLab championships will appear here once published by administrators.</p>
               </div>
@@ -930,7 +917,7 @@ export default function ChallengeArenaPage() {
 
                       {comp.participant_status === "submitted" ? (
                         <div className="w-full py-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-center font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5">
-                          <span>✓</span>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
                           <span>Exam Completed {comp.my_score !== null && `(Score: ${comp.my_score}%)`}</span>
                         </div>
                       ) : comp.is_registered || comp.participant_status === "registered" || comp.participant_status === "active" ? (
@@ -939,7 +926,7 @@ export default function ChallengeArenaPage() {
                           disabled={examLoading}
                           className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-600/25 active:scale-95 flex items-center justify-center gap-2"
                         >
-                          <span>⚡</span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
                           <span>{examLoading ? "Loading Exam..." : "Enter Arena / Take Exam"}</span>
                         </button>
                       ) : (
@@ -978,13 +965,15 @@ export default function ChallengeArenaPage() {
                   onClick={() => setShowCreateChallengeModal(true)}
                   className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2"
                 >
-                  <span>⚔️</span> Issue 1v1
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /><line x1="5" y1="14" x2="9" y2="18" /><line x1="7" y1="17" x2="4" y2="20" /><line x1="3" y1="19" x2="5" y2="21" /></svg>
+                  <span>Issue 1v1</span>
                 </button>
                 {myTeamId && (myTeamRole === "captain" || myTeamRole === "co_captain") && <button
                   onClick={() => setShowTeamChallengeModal(true)}
                   className="px-4 py-2.5 rounded-xl bg-[#FF5238] hover:bg-[#e9432d] text-white font-bold text-xs transition flex items-center gap-2"
                 >
-                  <span>🛡️</span> Challenge a Team
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                  <span>Challenge a Team</span>
                 </button>}
               </div>
             </div>
@@ -995,7 +984,8 @@ export default function ChallengeArenaPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-base font-bold flex items-center gap-2">
-                      <span className="text-amber-400">⚡</span> Official 1v1 Battle Competitions
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+                      <span>Official 1v1 Battle Competitions</span>
                     </h3>
                     <p className="text-xs text-slate-400 mt-0.5">Sanctioned synchronous 1v1 showdowns with verified scoring and instant ELO rating updates</p>
                   </div>
@@ -1020,8 +1010,9 @@ export default function ChallengeArenaPage() {
                         >
                           <div>
                             <div className="flex items-center justify-between gap-2 mb-2">
-                              <span className="text-xs font-black uppercase text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                                ⚔️ 1v1 BATTLE
+                              <span className="text-xs font-black uppercase text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1.5 w-fit">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /></svg>
+                                <span>1v1 Battle</span>
                               </span>
                               <span className="text-[11px] text-slate-400">
                                 {Math.round((comp.rules?.duration_seconds || 300) / 60)} Mins
@@ -1039,7 +1030,7 @@ export default function ChallengeArenaPage() {
 
                           {comp.participant_status === "submitted" ? (
                             <div className="w-full py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-center font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5">
-                              <span>✓</span>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
                               <span>Completed {comp.my_score !== null && `(${comp.my_score}%)`}</span>
                             </div>
                           ) : comp.is_registered || comp.participant_status === "registered" || comp.participant_status === "active" ? (
@@ -1048,7 +1039,7 @@ export default function ChallengeArenaPage() {
                               disabled={examLoading}
                               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-1.5"
                             >
-                              <span>⚡</span>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
                               <span>{examLoading ? "Loading..." : "Enter 1v1 Battle"}</span>
                             </button>
                           ) : (
@@ -1057,7 +1048,7 @@ export default function ChallengeArenaPage() {
                               disabled={registeringCompId === comp.id}
                               className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider transition shadow-md shadow-blue-600/20 active:scale-95"
                             >
-                              {registeringCompId === comp.id ? "Processing..." : isFree ? "Register Free ⚔️" : `Pay ₦${entryFee.toLocaleString()}`}
+                              {registeringCompId === comp.id ? "Processing..." : isFree ? "Register Free" : `Pay ₦${entryFee.toLocaleString()}`}
                             </button>
                           )}
                         </div>
@@ -1070,7 +1061,8 @@ export default function ChallengeArenaPage() {
             {/* OPEN CHALLENGES BOARD */}
             <div className={`p-6 rounded-3xl border shadow-xl ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
               <h3 className="text-base font-bold mb-4 flex items-center gap-2">
-                <span>🔥</span> Pending Challenges ({challenges.filter((c) => c.status === "pending").length})
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                <span>Pending Challenges ({challenges.filter((c) => c.status === "pending").length})</span>
               </h3>
 
               {challenges.filter((c) => c.status === "pending").length === 0 ? (
@@ -1119,9 +1111,10 @@ export default function ChallengeArenaPage() {
                         ) : (
                           <button
                             onClick={() => handleAcceptChallenge(chal.id)}
-                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-md shadow-blue-600/20 transform active:scale-95"
+                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs transition shadow-md shadow-blue-600/20 transform active:scale-95 flex items-center justify-center gap-1.5"
                           >
-                            Accept & Enter Room ⚔️
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /></svg>
+                            <span>Accept & Enter Room</span>
                           </button>
                         )}
                       </div>
@@ -1146,14 +1139,17 @@ export default function ChallengeArenaPage() {
                 onClick={() => setShowCreateSquadModal(true)}
                 className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-2 self-start sm:self-auto"
               >
-                <span>🛡️</span> Form New Squad
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                <span>Form New Squad</span>
               </button>
             </div>
 
             {myTeamId && (
               <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🛡️</span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                  </span>
                   <div>
                     <h4 className="font-bold text-sm">You are an active Squad member!</h4>
                     <p className="text-xs text-slate-400">View roster, match records, and vote in squad elections.</p>
@@ -1254,7 +1250,21 @@ export default function ChallengeArenaPage() {
                           }`}
                         >
                           <td className="py-3.5 px-4 font-mono font-bold">
-                            {item.rank === 1 ? "🥇 1" : item.rank === 2 ? "🥈 2" : item.rank === 3 ? "🥉 3" : `#${item.rank}`}
+                            {item.rank === 1 ? (
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/20 text-amber-500 border border-amber-500/40 text-xs font-black">
+                                #1
+                              </span>
+                            ) : item.rank === 2 ? (
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-300/20 text-slate-300 border border-slate-300/40 text-xs font-black">
+                                #2
+                              </span>
+                            ) : item.rank === 3 ? (
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-700/20 text-amber-600 dark:text-amber-400 border border-amber-700/40 text-xs font-black">
+                                #3
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">#{item.rank}</span>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 font-semibold">
                             {item.profile?.full_name || item.profile?.username || "Private player"}
@@ -1267,7 +1277,12 @@ export default function ChallengeArenaPage() {
                           </td>
                           <td className="py-3.5 px-4 font-mono font-black text-blue-500">{item.elo_rating}</td>
                           <td className="py-3.5 px-4 font-mono text-emerald-400">{item.win_rate}%</td>
-                          <td className="py-3.5 px-4 font-mono text-orange-400">🔥 {item.win_streak}</td>
+                          <td className="py-3.5 px-4 font-mono text-orange-400">
+                            <span className="inline-flex items-center gap-1">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                              <span>{item.win_streak}</span>
+                            </span>
+                          </td>
                         </tr>
                       );
                     })}
@@ -1290,7 +1305,9 @@ export default function ChallengeArenaPage() {
 
             {spectatorMatches.length === 0 ? (
               <div className={`p-12 rounded-3xl border text-center shadow-lg ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-white border-slate-200"}`}>
-                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-3xl">👁️</div>
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                  <ArenaTabIcon id="spectate" className="w-8 h-8" />
+                </div>
                 <h3 className="text-lg font-black">No Live Matches In Progress</h3>
                 <p className="text-slate-400 text-xs mt-1">Ongoing 1v1 showdowns and squad battles will appear here live.</p>
               </div>
@@ -1308,7 +1325,10 @@ export default function ChallengeArenaPage() {
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1.5 animate-pulse">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> LIVE
                         </span>
-                        <span className="text-xs text-slate-400">👁️ {m.spectators_count} Watching</span>
+                        <span className="text-xs text-slate-400 inline-flex items-center gap-1">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                          <span>{m.spectators_count} Watching</span>
+                        </span>
                       </div>
 
                       <h4 className="font-bold text-sm mb-3">{m.metadata?.subject || "General"} Duel</h4>
@@ -1415,9 +1435,10 @@ export default function ChallengeArenaPage() {
                 <button
                   type="submit"
                   disabled={submittingChallenge}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold transition shadow-lg shadow-blue-600/25"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold transition shadow-lg shadow-blue-600/25 flex items-center gap-2"
                 >
-                  {submittingChallenge ? "Posting..." : "Broadcast Challenge ⚔️"}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /></svg>
+                  <span>{submittingChallenge ? "Posting..." : "Broadcast Challenge"}</span>
                 </button>
               </div>
             </form>
@@ -1451,7 +1472,7 @@ export default function ChallengeArenaPage() {
                     ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
                     : "bg-blue-500/20 text-blue-400 border-blue-500/30"
                 }`}>
-                  <span>⏱️</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span>
                     {Math.floor(activeExamTimeRemaining / 60)}:
                     {String(activeExamTimeRemaining % 60).padStart(2, "0")}
@@ -1477,8 +1498,8 @@ export default function ChallengeArenaPage() {
             {/* EXAM BODY OR RESULT */}
             {activeExamResult ? (
               <div className="p-8 sm:p-12 flex flex-col items-center text-center justify-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-4xl shadow-xl">
-                  🏆
+                <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-xl">
+                  <ArenaTabIcon id="tournaments" className="w-10 h-10" />
                 </div>
                 <h3 className="text-2xl font-black">Examination Completed!</h3>
                 <p className="text-slate-400 text-xs sm:text-sm max-w-md">
@@ -1759,9 +1780,10 @@ export default function ChallengeArenaPage() {
                 <button
                   type="submit"
                   disabled={submittingSquad || !newSquadName.trim() || selectedFounders.length < 1}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition shadow-lg shadow-blue-600/25"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition shadow-lg shadow-blue-600/25 flex items-center gap-1.5"
                 >
-                  {submittingSquad ? "Submitting..." : "Submit team request 🛡️"}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                  <span>{submittingSquad ? "Submitting..." : "Submit Team Request"}</span>
                 </button>
               </div>
             </form>

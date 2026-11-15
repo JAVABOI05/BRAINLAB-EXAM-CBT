@@ -98,7 +98,7 @@ export function HomeFaqCta() {
           </h2>
 
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
-            Join secondary students and examination candidates across Nigeria utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and 3D virtual laboratories across UTME, O Level, and Post-UTME tracks.
+            Join ambitious students and examination candidates utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and interactive virtual laboratories across all examination tracks.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

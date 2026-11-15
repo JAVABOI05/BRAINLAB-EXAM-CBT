@@ -179,10 +179,10 @@ export function HomeUniversityTargetSocialProof() {
               <span>Target Merit Benchmarks</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 dark:text-white tracking-tight">
-              Select Your Target Nigerian Institution
+              Select Your Target Tertiary Institution
             </h2>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-              Explore cut-off expectations, faculty combinations, and tailored speed drills calibrated for Nigeria&apos;s leading tertiary institutions.
+              Explore cut-off expectations, faculty combinations, and tailored speed drills calibrated for premier tertiary institutions.
             </p>
           </div>
 
@@ -225,7 +225,7 @@ export function HomeUniversityTargetSocialProof() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Targeted preparation across all 36 Nigerian states
+                Calibrated preparation across accredited examination centers
               </p>
             </div>
           </div>

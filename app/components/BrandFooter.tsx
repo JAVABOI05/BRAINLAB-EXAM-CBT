@@ -212,8 +212,8 @@ export default function BrandFooter() {
       {/* Main Balanced Grid */}
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:py-16">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
-          {/* Column 1: Brand Identity, Direct Contact & Straight Horizontal Socials (lg:col-span-5) */}
-          <div className="lg:col-span-5 space-y-6">
+          {/* Column 1: Brand Identity, Direct Contact & Straight Horizontal Socials (lg:col-span-4) */}
+          <div className="lg:col-span-4 space-y-6">
             <Link
               href="/"
               className="group inline-flex items-center gap-3 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-400"
@@ -238,7 +238,7 @@ export default function BrandFooter() {
             </Link>
 
             <p className="text-xs leading-relaxed text-slate-400 max-w-md">
-              Nigeria&apos;s premier online CBT examination platform, syllabus-calibrated revision modules, and AI tutor for JAMB UTME, WAEC, NECO, and secondary examinations.
+              Nigeria&apos;s premier online CBT examination platform, syllabus-calibrated revision modules, and AI tutor for UTME, O Level (WAEC/NECO), and Post-UTME screening.
             </p>
 
             {/* Direct Contact Details: Clean, uniform color until hover */}
@@ -300,7 +300,7 @@ export default function BrandFooter() {
               )}
             </div>
 
-            {/* Official Social Channels: Straight horizontal alignment, uniform at rest, vibrant on hover */}
+            {/* Official Social Channels */}
             <div className="pt-2 space-y-2.5">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                 Official Channels
@@ -333,8 +333,52 @@ export default function BrandFooter() {
             </div>
           </div>
 
-          {/* Column 2: Products & Practice (lg:col-span-2) */}
-          <div className="lg:col-span-2 space-y-3 sm:pt-2">
+          {/* Column 2: Candidate Tracks & Programmes (lg:col-span-3) */}
+          <div className="lg:col-span-3 space-y-3 sm:pt-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+              Candidate Tracks
+            </h3>
+            <ul className="space-y-2.5 text-xs text-slate-400">
+              <li>
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/programmes/utme">
+                  UTME Candidates (JAMB Prep)
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/programmes/waec">
+                  O Level Candidates (WAEC/NECO)
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/programmes/post-utme">
+                  Post-UTME Screening Accelerator
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/resources/exam-calendar">
+                  National Exam Timetables &amp; Calendar
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/syllabus">
+                  Official Examination Syllabi
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/resources">
+                  Formula Sheets &amp; Revision Notes
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/programmes">
+                  All Academic Programmes &rarr;
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Products & Platform (lg:col-span-3) */}
+          <div className="lg:col-span-3 space-y-3 sm:pt-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Products
             </h3>
@@ -351,7 +395,7 @@ export default function BrandFooter() {
               </li>
               <li>
                 <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/ai-learning">
-                  AI Study Studio
+                  AI Study Studio &amp; Diagnostics
                 </Link>
               </li>
               <li>
@@ -371,58 +415,14 @@ export default function BrandFooter() {
               </li>
               <li>
                 <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products">
-                  All Products Overview →
+                  All Products Overview &rarr;
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Academics & Syllabus (lg:col-span-2) */}
+          {/* Column 4: Institutional, Community & Support (lg:col-span-2) */}
           <div className="lg:col-span-2 space-y-3 sm:pt-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-              Academics
-            </h3>
-            <ul className="space-y-2.5 text-xs text-slate-400">
-              <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/syllabus">
-                  Official JAMB Syllabus
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/resources">
-                  Formula Sheets &amp; Notes
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/leaderboard">
-                  National Leaderboard
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/programmes">
-                  Academic Programmes
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/instructions">
-                  Candidate Exam Rules
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/knowledge-base">
-                  Knowledge Base Directory
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/access">
-                  Redeem Access Code
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Audience & Support (lg:col-span-3) */}
-          <div className="lg:col-span-3 space-y-3 sm:pt-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Audience &amp; Support
             </h3>
@@ -433,23 +433,18 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/for-tutors">
-                  For Educators &amp; Tutors
-                </Link>
-              </li>
-              <li>
                 <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/schools">
                   For Schools &amp; Centres
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/pricing">
-                  Pricing &amp; Plans
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/for-tutors">
+                  For Educators &amp; Tutors
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/about/trust-centre">
-                  Trust &amp; Governance Centre
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/pricing">
+                  Pricing &amp; Plans
                 </Link>
               </li>
               <li>

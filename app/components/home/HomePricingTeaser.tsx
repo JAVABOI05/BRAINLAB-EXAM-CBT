@@ -44,7 +44,7 @@ export function HomePricingTeaser() {
             Complete Academic Superpowers for Every Candidate
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
-            Comprehensive curriculum coverage, timed CBT mock engines, and diagnostic telemetry engineered specifically for UTME, O Level, and Post-UTME candidates across Nigeria.
+            Comprehensive curriculum coverage, timed CBT mock engines, and diagnostic telemetry engineered specifically for candidates targeting top-percentile scores.
           </p>
         </div>
 

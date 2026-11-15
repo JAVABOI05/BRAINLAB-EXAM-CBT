@@ -228,21 +228,22 @@ export default function AILearningStudio() {
         {/* Quick Suggestion Pills */}
         <div className="mt-3 flex flex-wrap gap-2">
           {[
-            "📐 Quick Math CBT Strategy",
-            "⚡ Eliminate Trap Options",
-            "📖 Comprehension Recall Steps",
-            "⏱️ CBT Time Management",
-          ].map((promptText) => (
+            { id: "math", label: "Quick Math CBT Strategy" },
+            { id: "trap", label: "Eliminate Trap Options" },
+            { id: "reading", label: "Comprehension Recall Steps" },
+            { id: "timing", label: "CBT Time Management" },
+          ].map((item) => (
             <button
-              key={promptText}
+              key={item.id}
               type="button"
               onClick={() => {
-                setAiQuestion(promptText);
-                void handleAskAi(promptText);
+                setAiQuestion(item.label);
+                void handleAskAi(item.label);
               }}
-              className="rounded-full border border-blue-200 bg-blue-50/70 px-3 py-1 text-xs font-semibold text-blue-900 transition hover:bg-blue-100 hover-lift active-press"
+              className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/70 px-3 py-1 text-xs font-semibold text-blue-900 transition hover:bg-blue-100 hover-lift active-press"
             >
-              {promptText}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>{item.label}</span>
             </button>
           ))}
         </div>
@@ -269,9 +270,10 @@ export default function AILearningStudio() {
                   await navigator.clipboard.writeText(aiResponse);
                   toast.success("AI guidance copied to clipboard!");
                 }}
-                className="text-xs font-bold text-slate-600 hover:text-blue-900 transition active-press"
+                className="text-xs font-bold text-slate-600 hover:text-blue-900 transition active-press flex items-center gap-1.5"
               >
-                📋 Copy Guidance
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span>Copy Guidance</span>
               </button>
             </div>
             <div className="whitespace-pre-wrap text-sm leading-7 text-slate-800">

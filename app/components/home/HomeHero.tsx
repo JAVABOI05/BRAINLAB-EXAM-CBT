@@ -295,7 +295,7 @@ export function HomeHero() {
             {/* Category Pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-blue-800 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300 shadow-2xs">
               <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
-              <span>NIGERIA&apos;S PREMIER ACADEMIC CBT &bull; UTME, O LEVEL &amp; POST-UTME</span>
+              <span>INTELLIGENT CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
             </div>
 
             {/* Authoritative Primary Headline with Playful Underline Accent */}
@@ -319,7 +319,7 @@ export function HomeHero() {
 
             {/* High-Legibility Subheading with Generous Breathing Room */}
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl font-normal">
-              {subhead} Practice under real JAMB UTME test-hall conditions, master Senior Secondary WAEC/NECO concepts through step-by-step derivations, and conquer university Post-UTME screening sprints with instant diagnostic scoring.
+              {subhead} Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.
             </p>
 
             {/* Candidate Pathway Buttons */}
