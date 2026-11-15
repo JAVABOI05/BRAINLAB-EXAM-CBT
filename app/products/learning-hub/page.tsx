@@ -287,35 +287,263 @@ export default function LearningHubProductPage() {
         </div>
       </section>
 
-      {/* Feature Capabilities Grid */}
+      {/* Feature Capabilities - Compact Alternating Cards */}
       <section className="border-t border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-[#0a152b]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/60 px-4 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 shadow-xs">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>CURRICULUM PEDAGOGY</span>
+            </div>
+            <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight sm:text-4xl">
               Engineered for Deep Academic Retention
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-normal">
               How the Learning Hub turns raw syllabus outlines into active learning mastery.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {HUB_FEATURES.map((feat, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6 dark:border-slate-800 dark:bg-slate-900/60 space-y-3"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60">
-                  <HubFeatureIcon id={feat.iconId} />
+          <div className="space-y-12 sm:space-y-16">
+            {/* Row 1: Official Exam Board Alignment (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-emerald-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Official Syllabus Alignment</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Official Exam Board Alignment &amp; Objectives
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Every module and topic aligns strictly with the official Joint Admissions and Matriculation Board syllabus and Senior Secondary curriculum guidelines.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Clear cognitive learning goals for every single syllabus subtopic</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Prescribed textbook references (New School Physics, Ababio Chemistry)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>100% verified against current 2026 JAMB examination guidelines</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/syllabus"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Explore Official Syllabi</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
                 </div>
-                <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
-                  {feat.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  {feat.description}
-                </p>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-emerald-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                          SYLLABUS MODULE
+                        </span>
+                      </div>
+                      <span className="text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded text-[11px]">
+                        CHEMISTRY 2026
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2">
+                      <div className="text-white font-bold text-sm">Chemical Equilibrium</div>
+                      <p className="text-[11px] text-slate-300 font-sans leading-snug">
+                        Le Chatelier&apos;s principle: effects of temperature, pressure, and concentration on dynamic equilibrium systems.
+                      </p>
+                      <div className="p-2 rounded bg-slate-800 border border-slate-700 text-cyan-300 text-[11px]">
+                        Reference: Ababio Chemistry &bull; Chapter 12
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                      <span>4 / 4 Learning Objectives</span>
+                      <span className="text-emerald-400 font-bold">Mapped ✓</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Row 2: Deep-Linked CBT Practice Drills (Visual Preview Left, Text Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-cyan-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+                <div className="lg:col-span-5 order-2 lg:order-1">
+                  <div className="rounded-2xl border border-cyan-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                          CONNECTED CBT DRILL
+                        </span>
+                      </div>
+                      <span className="text-cyan-400 font-bold bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded text-[11px]">
+                        124 QUESTIONS
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">Subtopic</div>
+                        <div className="text-xs font-black text-cyan-300 mt-0.5">Equilibrium Kc</div>
+                        <div className="text-[10px] text-slate-500">Gas Phase</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">Past Questions</div>
+                        <div className="text-xs font-black text-emerald-400 mt-0.5">2002 – 2024</div>
+                        <div className="text-[10px] text-slate-500">Verified Series</div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-cyan-950/50 border border-cyan-800/60 text-[11px] text-cyan-200">
+                      ✓ Instant launch from lesson reading directly into 10-question practice mode
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+                <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300 dark:border-cyan-700/60 bg-cyan-50 dark:bg-cyan-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                    <span>Theory-to-Exam Bridge</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Deep-Linked CBT Practice Drills
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Connect theory to practice immediately. Click any topic to test your knowledge against verified past questions directly addressing that subtopic.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>1-click transition from curriculum notes into authentic past paper items</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Immediate verification of active recall versus passive reading illusion</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Track progress across all four JAMB subjects in a unified dashboard</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/learn"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Browse Curriculum Lessons</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Downloadable Summaries & High-Yield Sheets (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-purple-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-purple-300 dark:border-purple-700/60 bg-purple-50 dark:bg-purple-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+                    <span>High-Yield Revision Sheets</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Downloadable Summaries &amp; High-Yield Formula Sheets
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Access high-yield formula sheets and concise summary notes engineered for rapid review on mobile devices during daily transit or offline revision.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>High-yield formulas for Physics Mechanics, Physical Chemistry &amp; Calculus</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>Concise grammatical rules, idioms, and prescribed text analysis sheets</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>100% free open educational access for every registered candidate</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/resources"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Access Academic Resources</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-purple-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5 font-mono text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                          FORMULA QUICK-SHEET
+                        </span>
+                      </div>
+                      <span className="text-purple-400 font-bold bg-purple-950/80 border border-purple-800/80 px-2 py-0.5 rounded text-[11px]">
+                        PHYSICS
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-[11px]">
+                      <div className="p-2 rounded bg-slate-900 border border-slate-800 flex items-center justify-between">
+                        <span className="text-slate-400">Work Done:</span>
+                        <span className="text-cyan-300 font-bold">W = F &middot; d &middot; cos &theta;</span>
+                      </div>
+                      <div className="p-2 rounded bg-slate-900 border border-slate-800 flex items-center justify-between">
+                        <span className="text-slate-400">Kinetic Energy:</span>
+                        <span className="text-emerald-400 font-bold">Ek = &frac12; m v²</span>
+                      </div>
+                      <div className="p-2 rounded bg-slate-900 border border-slate-800 flex items-center justify-between">
+                        <span className="text-slate-400">Power:</span>
+                        <span className="text-amber-300 font-bold">P = W / t = F &middot; v</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                      <span>Format: Low-Data Mobile</span>
+                      <span className="text-emerald-400 font-bold">0 KB Remote Fonts</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
