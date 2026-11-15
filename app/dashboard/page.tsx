@@ -71,6 +71,11 @@ const spaces = [
     description: "Explore subjects and lessons, strengthen understanding, and practise topic by topic.",
     href: "/learn",
     action: "Explore the Hub",
+    accent: "cyan",
+    gradient: "from-cyan-500/10 via-blue-500/5 to-transparent dark:from-cyan-950/40",
+    border: "border-cyan-200/80 dark:border-cyan-800/60 hover:border-cyan-400 dark:hover:border-cyan-400",
+    badgeBg: "bg-cyan-50 dark:bg-cyan-950/70 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800",
+    hoverShadow: "hover:shadow-cyan-500/10",
   },
   {
     number: "02",
@@ -79,6 +84,11 @@ const spaces = [
     description: "Shape a study mission around a difficult idea, a mistake, or your next exam goal.",
     href: "/ai-learning",
     action: "Plan a learning mission",
+    accent: "purple",
+    gradient: "from-purple-500/10 via-fuchsia-500/5 to-transparent dark:from-purple-950/40",
+    border: "border-purple-200/80 dark:border-purple-800/60 hover:border-purple-400 dark:hover:border-purple-400",
+    badgeBg: "bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    hoverShadow: "hover:shadow-purple-500/10",
   },
   {
     number: "03",
@@ -87,6 +97,11 @@ const spaces = [
     description: "Enter the candidate examination portal, test your readiness, and review released corrections.",
     href: "/cbt",
     action: "Open CBT practice",
+    accent: "emerald",
+    gradient: "from-emerald-500/10 via-teal-500/5 to-transparent dark:from-emerald-950/40",
+    border: "border-emerald-200/80 dark:border-emerald-800/60 hover:border-emerald-400 dark:hover:border-emerald-400",
+    badgeBg: "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    hoverShadow: "hover:shadow-emerald-500/10",
   },
   {
     number: "04",
@@ -95,6 +110,11 @@ const spaces = [
     description: "Join scheduled tutor sessions, participate with audio/chat, and watch lecture recordings.",
     href: "/classroom",
     action: "Enter Classroom Hub →",
+    accent: "amber",
+    gradient: "from-amber-500/10 via-orange-500/5 to-transparent dark:from-amber-950/40",
+    border: "border-amber-200/80 dark:border-amber-800/60 hover:border-amber-400 dark:hover:border-amber-400",
+    badgeBg: "bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    hoverShadow: "hover:shadow-amber-500/10",
   },
   {
     number: "05",
@@ -103,6 +123,11 @@ const spaces = [
     description: "Direct discussions with course tutors, audio note review, and study group communication.",
     href: "/messages",
     action: "Open Messages",
+    accent: "indigo",
+    gradient: "from-indigo-500/10 via-blue-500/5 to-transparent dark:from-indigo-950/40",
+    border: "border-indigo-200/80 dark:border-indigo-800/60 hover:border-indigo-400 dark:hover:border-indigo-400",
+    badgeBg: "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+    hoverShadow: "hover:shadow-indigo-500/10",
   },
   {
     number: "06",
@@ -111,6 +136,11 @@ const spaces = [
     description: "Submit written tasks, record oral solutions, and receive tutor grades with audio critiques.",
     href: "/assignments",
     action: "View Assignments",
+    accent: "rose",
+    gradient: "from-rose-500/10 via-pink-500/5 to-transparent dark:from-rose-950/40",
+    border: "border-rose-200/80 dark:border-rose-800/60 hover:border-rose-400 dark:hover:border-rose-400",
+    badgeBg: "bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+    hoverShadow: "hover:shadow-rose-500/10",
   },
 ];
 
@@ -317,7 +347,11 @@ export default function LearnerDashboardPage() {
                 href="/tutor"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-black px-4 py-2.5 text-xs shadow-md transition active:scale-95 shrink-0"
               >
-                <span>👨‍🏫 Open Instructor Studio</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
+                <span>Open Instructor Studio</span>
               </Link>
             </div>
           </div>
@@ -326,10 +360,10 @@ export default function LearnerDashboardPage() {
         {/* Migrated Student Verified Upgrade Banner (Decision D6) */}
         <MigratedStudentBanner />
 
-        {/* Luxury Glassmorphic Learner Welcome Hero Card */}
+        {/* Luxury Brilliant-Style Learner Welcome Hero Card */}
         <section
           aria-label="Welcome Hero"
-          className="relative overflow-hidden rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-[#061129] via-[#0b1c45] to-[#04091a] p-6 sm:p-8 lg:p-10 text-white shadow-[0_25px_60px_-15px_rgba(2,12,38,0.5)] backdrop-blur-2xl transition-all"
+          className="relative min-h-[380px] lg:min-h-[340px] overflow-hidden rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-[#061129] via-[#0b1c45] to-[#04091a] p-6 sm:p-8 lg:p-10 text-white shadow-[0_25px_60px_-15px_rgba(2,12,38,0.5)] backdrop-blur-2xl transition-all"
         >
           {/* Ambient Glowing Orbs & Tech Mesh */}
           <div
@@ -372,7 +406,25 @@ export default function LearnerDashboardPage() {
 
                 <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-2 flex-wrap">
                   <span>{timeGreeting()}</span>
-                  {firstName ? <span>, {firstName}! ✨</span> : <span>, Scholar! ✨</span>}
+                  {firstName ? (
+                    <span className="inline-flex items-center gap-2">
+                      , {firstName}!
+                      <span className="inline-flex text-cyan-400" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+                        </svg>
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2">
+                      , Scholar!
+                      <span className="inline-flex text-cyan-400" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+                        </svg>
+                      </span>
+                    </span>
+                  )}
                   {user && <UserBadges userId={user.id} size="sm" maxVisible={3} />}
                 </h1>
 
@@ -389,7 +441,12 @@ export default function LearnerDashboardPage() {
                       className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/25 border border-blue-400/40 px-3 py-1 font-bold text-cyan-200 hover:bg-blue-500/40 backdrop-blur-md transition cursor-pointer"
                       title="Edit Course Goal"
                     >
-                      <span>🎯</span> {studentProfile.targetCourse}
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="6" />
+                        <circle cx="12" cy="12" r="2" />
+                      </svg>
+                      <span>{studentProfile.targetCourse}</span>
                     </button>
                   )}
                   {studentProfile.dreamSchool && (
@@ -399,7 +456,11 @@ export default function LearnerDashboardPage() {
                       className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500/25 border border-indigo-400/40 px-3 py-1 font-bold text-indigo-200 hover:bg-indigo-500/40 backdrop-blur-md transition cursor-pointer"
                       title="Edit Dream School"
                     >
-                      <span>🏛️</span> {studentProfile.dreamSchool}
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                      </svg>
+                      <span>{studentProfile.dreamSchool}</span>
                     </button>
                   )}
                   {studentProfile.targetScore && (
@@ -409,7 +470,10 @@ export default function LearnerDashboardPage() {
                       className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/25 border border-amber-400/40 px-3 py-1 font-bold text-amber-200 hover:bg-amber-500/40 backdrop-blur-md transition cursor-pointer"
                       title="Edit Score Goal"
                     >
-                      <span>⭐</span> Goal: {studentProfile.targetScore}
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                      <span>Goal: {studentProfile.targetScore}</span>
                     </button>
                   )}
                   {studentProfile.studyVibe && (
@@ -419,7 +483,10 @@ export default function LearnerDashboardPage() {
                       className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 px-3 py-1 font-bold text-purple-200 hover:bg-purple-500/40 backdrop-blur-md transition cursor-pointer"
                       title="Edit Study Persona"
                     >
-                      <span>✨</span> {studentProfile.studyVibe}
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+                      </svg>
+                      <span>{studentProfile.studyVibe}</span>
                     </button>
                   )}
                   <button
@@ -427,7 +494,10 @@ export default function LearnerDashboardPage() {
                     onClick={() => setShowGoalWizard(true)}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-cyan-400/50 bg-cyan-400/10 px-3 py-1 font-bold text-cyan-200 hover:bg-cyan-400/20 backdrop-blur-md transition cursor-pointer"
                   >
-                    <span>✨ {studentProfile.isCustomized ? "Update Study Goals" : "Set Your Target Exam, School & Course"}</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+                    </svg>
+                    <span>{studentProfile.isCustomized ? "Update Study Goals" : "Set Your Target Exam, School & Course"}</span>
                     <span>→</span>
                   </button>
                 </div>
@@ -440,7 +510,9 @@ export default function LearnerDashboardPage() {
               {gamification && (
                 <div className="flex flex-wrap items-center gap-2.5">
                   <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-md shadow-inner">
-                    <span className="text-base">⭐</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
                     <div>
                       <p className="text-[10px] font-bold uppercase text-cyan-200 leading-none">Level {gamification.current_level}</p>
                       <p className="text-xs font-black text-white mt-0.5">{gamification.lifetime_xp.toLocaleString()} XP</p>
@@ -462,55 +534,88 @@ export default function LearnerDashboardPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/cbt"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 px-4 py-2 text-xs font-black transition active:scale-95 shadow-md shadow-cyan-500/20"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 px-4 py-2 text-xs font-black transition active:scale-95 shadow-md shadow-cyan-500/20"
               >
-                <span>✍️</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
                 <span>Launch CBT Practice</span>
               </Link>
               <Link
                 href="/ai-learning"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>🤖</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+                  <circle cx="9" cy="13" r="1" />
+                  <circle cx="15" cy="13" r="1" />
+                  <path d="M10 17h4" />
+                </svg>
                 <span>AI Study Mission</span>
               </Link>
               <Link
                 href="/community"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>👥</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
                 <span>Communities</span>
               </Link>
               <Link
                 href="/challenge-arena"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>⚡</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400" aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
                 <span>Arena (2× XP)</span>
               </Link>
               <Link
                 href="/classroom/BL-LIVE-101"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/40 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-300 px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>🎥</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m22 8-6 4 6 4V8Z" />
+                  <rect width="14" height="12" x="2" y="6" rx="2" />
+                </svg>
                 <span>Live Stage</span>
               </Link>
               <Link
                 href="/resources"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
               >
-                <span>📐</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
                 <span>Formulas</span>
               </Link>
             </div>
 
             <div className="flex items-center gap-3 text-xs font-bold text-cyan-200">
-              <Link href="/leaderboard" className="hover:text-white transition inline-flex items-center gap-1">
-                <span>🏆</span> Leaderboard
+              <Link href="/leaderboard" className="hover:text-white transition inline-flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                  <path d="M4 22h16" />
+                  <path d="M10 14.66V17c0 .55-.45 1-1 1H7.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h9c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5H15c-.55 0-1-.45-1-1v-2.34" />
+                  <path d="M18 4H6v7a6 6 0 0 0 12 0V4Z" />
+                </svg>
+                <span>Leaderboard</span>
               </Link>
               <span className="text-white/30">·</span>
-              <Link href="/learning/achievements" className="hover:text-white transition inline-flex items-center gap-1">
-                <span>🎖️</span> Badges &amp; Streaks
+              <Link href="/learning/achievements" className="hover:text-white transition inline-flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="8" r="6" />
+                  <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+                </svg>
+                <span>Badges &amp; Streaks</span>
               </Link>
             </div>
           </div>
@@ -580,24 +685,24 @@ export default function LearnerDashboardPage() {
         <DailyLearningFeedWidget />
 
         {/* Real Learner Progress Metrics Bar */}
-        <section aria-labelledby="stats-heading" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <section aria-labelledby="stats-heading" className="rounded-[2rem] border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-[#081021] p-6 shadow-sm">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h2 id="stats-heading" className="text-sm font-extrabold uppercase tracking-wide text-blue-900">
+              <h2 id="stats-heading" className="text-sm font-extrabold uppercase tracking-wide text-blue-900 dark:text-cyan-400">
                 Your learning at a glance
               </h2>
-              <p className="text-xs text-slate-500">Live metrics verified from your account activity.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Live metrics verified from your account activity.</p>
             </div>
-            <Link href="/account/access" className="text-xs font-bold text-blue-700 hover:underline">
+            <Link href="/account/access" className="text-xs font-bold text-blue-700 dark:text-cyan-400 hover:underline">
               Manage Access →
             </Link>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-blue-300 hover:shadow-sm hover-lift">
+            <div className="group relative overflow-hidden flex min-h-[160px] flex-col justify-between rounded-2xl border border-indigo-200/80 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-500/10 via-white to-slate-50/70 dark:from-indigo-950/40 dark:via-[#0c1527] dark:to-[#081021] p-4 transition duration-200 hover:border-indigo-400 dark:hover:border-indigo-400 hover:shadow-md hover-lift">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Lessons Completed</span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lessons Completed</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
                     <path d="M6 6h10" />
@@ -605,70 +710,78 @@ export default function LearnerDashboardPage() {
                   </svg>
                 </span>
               </div>
-              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
-                {stats.lessonsCompleted > 0 ? stats.lessonsCompleted : "0"}
-              </p>
-              <p className="mt-1 text-[11px] font-medium text-slate-500">
-                {stats.lessonsCompleted > 0 ? "Saved across devices" : "Start in Learning Hub"}
-              </p>
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">
+                  {stats.lessonsCompleted > 0 ? stats.lessonsCompleted : "0"}
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {stats.lessonsCompleted > 0 ? "Saved across devices" : "Start in Learning Hub"}
+                </p>
+              </div>
             </div>
 
-            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-sky-300 hover:shadow-sm hover-lift">
+            <div className="group relative overflow-hidden flex min-h-[160px] flex-col justify-between rounded-2xl border border-sky-200/80 dark:border-sky-800/60 bg-gradient-to-br from-sky-500/10 via-white to-slate-50/70 dark:from-sky-950/40 dark:via-[#0c1527] dark:to-[#081021] p-4 transition duration-200 hover:border-sky-400 dark:hover:border-sky-400 hover:shadow-md hover-lift">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Questions</span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Practice Questions</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="m9 11 3 3L22 4" />
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                   </svg>
                 </span>
               </div>
-              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
-                {stats.questionsPracticed > 0 ? stats.questionsPracticed : "0"}
-              </p>
-              <p className="mt-1 text-[11px] font-medium text-slate-500">
-                {stats.questionsPracticed > 0 ? "Attempted & reviewed" : "CBT & Self Practice"}
-              </p>
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">
+                  {stats.questionsPracticed > 0 ? stats.questionsPracticed : "0"}
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {stats.questionsPracticed > 0 ? "Attempted & reviewed" : "CBT & Self Practice"}
+                </p>
+              </div>
             </div>
 
-            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-emerald-300 hover:shadow-sm hover-lift">
+            <div className="group relative overflow-hidden flex min-h-[160px] flex-col justify-between rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-500/10 via-white to-slate-50/70 dark:from-emerald-950/40 dark:via-[#0c1527] dark:to-[#081021] p-4 transition duration-200 hover:border-emerald-400 dark:hover:border-emerald-400 hover:shadow-md hover-lift">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Revision Checklist</span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Revision Checklist</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect width="18" height="18" x="3" y="3" rx="2" />
                     <path d="m9 12 2 2 4-4" />
                   </svg>
                 </span>
               </div>
-              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
-                {stats.revisionTasksTotal > 0
-                  ? `${stats.revisionTasksCompleted}/${stats.revisionTasksTotal}`
-                  : "—"}
-              </p>
-              <p className="mt-1 text-[11px] font-medium text-slate-500">
-                {stats.revisionTasksTotal > 0
-                  ? `${Math.round((stats.revisionTasksCompleted / stats.revisionTasksTotal) * 100)}% checklist complete`
-                  : "Plan not yet created"}
-              </p>
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">
+                  {stats.revisionTasksTotal > 0
+                    ? `${stats.revisionTasksCompleted}/${stats.revisionTasksTotal}`
+                    : "—"}
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {stats.revisionTasksTotal > 0
+                    ? `${Math.round((stats.revisionTasksCompleted / stats.revisionTasksTotal) * 100)}% checklist complete`
+                    : "Plan not yet created"}
+                </p>
+              </div>
             </div>
 
-            <div className="group rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white to-slate-50/70 p-4 transition duration-200 hover:border-purple-300 hover:shadow-sm hover-lift">
+            <div className="group relative overflow-hidden flex min-h-[160px] flex-col justify-between rounded-2xl border border-purple-200/80 dark:border-purple-800/60 bg-gradient-to-br from-purple-500/10 via-white to-slate-50/70 dark:from-purple-950/40 dark:via-[#0c1527] dark:to-[#081021] p-4 transition duration-200 hover:border-purple-400 dark:hover:border-purple-400 hover:shadow-md hover-lift">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Practice Limit</span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Practice Limit</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
                     <path d="m9 12 2 2 4-4" />
                   </svg>
                 </span>
               </div>
-              <p className="mt-3 text-3xl font-black text-slate-900 tabular-nums">
-                {stats.maxQuestions}
-              </p>
-              <p className="mt-1 text-[11px] font-medium text-slate-500">
-                Questions / practice paper
-              </p>
+              <div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">
+                  {stats.maxQuestions}
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  Questions / practice paper
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -676,96 +789,104 @@ export default function LearnerDashboardPage() {
         {/* Adaptive Exam Readiness & Spaced Repetition Strip */}
         <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
           {/* Exam Readiness Intelligence */}
-          <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/40 p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-indigo-100 pb-4">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-indigo-900">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg><span>Exam Readiness Intelligence</span>
-                </span>
-                <h2 className="mt-2 text-xl font-black text-slate-950">
-                  Estimated National Examination Standing
-                </h2>
-                <p className="mt-1 text-xs text-slate-600">
-                  Calculated from your verified CBT attempts and topic-by-topic question mastery.
-                </p>
-              </div>
-              <div className="flex items-baseline gap-2 rounded-2xl bg-white border border-indigo-100 px-4 py-2.5 shadow-sm">
+          <div className="min-h-[320px] flex flex-col justify-between rounded-[2rem] border border-indigo-200/80 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/40 dark:from-[#0b1428] dark:via-[#091021] dark:to-[#120f29] p-6 shadow-sm">
+            <div>
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-indigo-100 dark:border-indigo-900/40 pb-4">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">Predicted JAMB</span>
-                  <span className="text-2xl font-black text-indigo-950">
-                    {readiness ? readiness.predictedJambScore : "—"} {readiness && <span className="text-xs text-slate-400 font-bold">/ 400</span>}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 dark:bg-indigo-950/70 border border-indigo-200/60 dark:border-indigo-800 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
+                    <span>Exam Readiness Intelligence</span>
                   </span>
+                  <h2 className="mt-2 text-xl font-black text-slate-950 dark:text-white">
+                    Estimated National Examination Standing
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                    Calculated from your verified CBT attempts and topic-by-topic question mastery.
+                  </p>
                 </div>
-                <div className="border-l border-slate-200 pl-3">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">WAEC / NECO</span>
-                  <span className="text-2xl font-black text-emerald-700">
-                    {readiness ? `${readiness.predictedWaecPercent}%` : "—"}
-                  </span>
+                <div className="flex items-baseline gap-2 rounded-2xl bg-white dark:bg-[#070e1b] border border-indigo-100 dark:border-indigo-900/50 px-4 py-2.5 shadow-sm">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Predicted JAMB</span>
+                    <span className="text-2xl font-black text-indigo-950 dark:text-indigo-200">
+                      {readiness ? readiness.predictedJambScore : "—"} {readiness && <span className="text-xs text-slate-400 font-bold">/ 400</span>}
+                    </span>
+                  </div>
+                  <div className="border-l border-slate-200 dark:border-slate-800 pl-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">WAEC / NECO</span>
+                    <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                      {readiness ? `${readiness.predictedWaecPercent}%` : "—"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {readiness?.weakestTopics && readiness.weakestTopics.length > 0 ? (
-              <div className="mt-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-2">
-                  Top Priority Areas to Bridge:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {readiness.weakestTopics.map((topic, i) => (
+              {readiness?.weakestTopics && readiness.weakestTopics.length > 0 ? (
+                <div className="mt-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-2">
+                    Top Priority Areas to Bridge:
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {readiness.weakestTopics.map((topic, i) => (
+                      <Link
+                        key={i}
+                        href="/self-practice"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 dark:border-rose-900/60 bg-red-50/80 dark:bg-rose-950/40 px-3 py-1.5 text-xs font-bold text-red-950 dark:text-rose-200 hover:bg-red-100 dark:hover:bg-rose-900/50 transition"
+                      >
+                        <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-pulse" aria-hidden="true" />
+                        <span>{topic.subject}: {topic.category}</span>
+                        <span className="text-[10px] text-red-700 dark:text-rose-300 bg-white/80 dark:bg-rose-950/80 px-1.5 py-0.5 rounded">
+                          {Math.round(topic.mastery * 100)}% mastery
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-dashed border-indigo-200/80 dark:border-indigo-800/60 bg-white/70 dark:bg-[#070e1b]/60 p-5 text-center">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    No verified CBT diagnostic attempts recorded yet.
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
+                    Complete your first timed practice or subject drill to unlock your predicted examination standing and personalized syllabus weak spots.
+                  </p>
+                  <div className="mt-3">
                     <Link
-                      key={i}
-                      href="/self-practice"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3 py-1.5 text-xs font-bold text-red-950 hover:bg-red-100 transition"
+                      href="/cbt"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 px-4 py-2 text-xs font-bold text-white transition shadow-sm"
                     >
-                      <span className="flex h-2 w-2 rounded-full bg-rose-500 animate-pulse" aria-hidden="true" />
-                      <span>{topic.subject}: {topic.category}</span>
-                      <span className="text-[10px] text-red-700 bg-white/80 px-1.5 py-0.5 rounded">
-                        {Math.round(topic.mastery * 100)}% mastery
-                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      </svg>
+                      <span>Take Diagnostic CBT Drill</span>
                     </Link>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-xl border border-dashed border-indigo-200/80 bg-white/70 p-4 text-center">
-                <p className="text-xs font-semibold text-slate-600">
-                  No verified CBT diagnostic attempts recorded yet.
-                </p>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Complete your first timed practice or subject drill to unlock your predicted examination standing and personalized syllabus weak spots.
-                </p>
-                <div className="mt-3">
-                  <Link
-                    href="/cbt"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 px-4 py-2 text-xs font-bold text-white transition shadow-xs"
-                  >
-                    <span>✍️ Take Diagnostic CBT Drill</span>
-                  </Link>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Daily 10-Minute Spaced Review Action Box */}
-          <div className="rounded-3xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-indigo-50/60 p-6 shadow-sm flex flex-col justify-between">
+          <div className="min-h-[320px] rounded-[2rem] border border-purple-200/80 dark:border-purple-800/60 bg-gradient-to-br from-purple-50 via-white to-indigo-50/60 dark:from-[#110d24] dark:via-[#091021] dark:to-[#0d1428] p-6 shadow-sm flex flex-col justify-between">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-purple-900">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a4 4 0 0 0-4 4c0 .8.2 1.5.7 2.1L8 10a4 4 0 0 0 4 4 4 4 0 0 0 4-4l-.7-1.9c.5-.6.7-1.3.7-2.1a4 4 0 0 0-4-4Z" /><path d="M12 14v8" /><path d="M9 18h6" /></svg><span>Daily Retention</span>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 dark:bg-purple-950/70 border border-purple-200/60 dark:border-purple-800 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-purple-900 dark:text-purple-300">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a4 4 0 0 0-4 4c0 .8.2 1.5.7 2.1L8 10a4 4 0 0 0 4 4 4 4 0 0 0 4-4l-.7-1.9c.5-.6.7-1.3.7-2.1a4 4 0 0 0-4-4Z" /><path d="M12 14v8" /><path d="M9 18h6" /></svg>
+                <span>Daily Retention</span>
               </div>
-              <h3 className="mt-2 text-lg font-black text-slate-900">10-Minute Spaced Review</h3>
+              <h3 className="mt-2 text-lg font-black text-slate-900 dark:text-white">10-Minute Spaced Review</h3>
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Review questions you previously missed before they fade from memory.
               </p>
-              <div className="mt-4 rounded-2xl bg-white border border-purple-100 p-3.5 shadow-sm text-center">
-                <p className="text-3xl font-black text-purple-950">{dueSpacedCount}</p>
-                <p className="text-[11px] font-bold text-purple-800 uppercase tracking-wide mt-0.5">
+              <div className="mt-4 rounded-2xl bg-white dark:bg-[#070e1b] border border-purple-100 dark:border-purple-900/50 p-4 shadow-sm text-center">
+                <p className="text-3xl font-black text-purple-950 dark:text-purple-200 tabular-nums">{dueSpacedCount}</p>
+                <p className="text-[11px] font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wide mt-0.5">
                   {dueSpacedCount === 1 ? "Question Due Today" : "Questions Due Today"}
                 </p>
               </div>
             </div>
             <Link
               href="/learning/revision"
-              className="mt-4 block w-full rounded-xl bg-[#061a3a] py-3 text-center text-xs font-black text-white hover:bg-[#123566] transition shadow-sm"
+              className="mt-4 block w-full rounded-xl bg-[#061a3a] dark:bg-purple-600 py-3 text-center text-xs font-black text-white hover:bg-[#123566] dark:hover:bg-purple-500 transition shadow-sm"
             >
               Start 10-Min Review →
             </Link>
@@ -773,19 +894,21 @@ export default function LearnerDashboardPage() {
         </section>
 
         {/* Personal Study Report & Performance Radar Card */}
-        <section aria-label="Study Report Card" className="rounded-3xl border border-blue-200/80 bg-gradient-to-r from-blue-50/80 via-white to-cyan-50/60 p-6 sm:p-7 shadow-sm">
+        <section aria-label="Study Report Card" className="rounded-[2rem] border border-blue-200/80 dark:border-blue-900/60 bg-gradient-to-r from-blue-50/80 via-white to-cyan-50/60 dark:from-[#071329] dark:via-[#081021] dark:to-[#051c2e] p-6 sm:p-7 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#012153] text-cyan-300 shadow-sm"><svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></div>
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#012153] dark:bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 shadow-sm">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+              </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-900">
+                  <span className="rounded-full bg-blue-100 dark:bg-blue-950/70 border border-blue-200/60 dark:border-blue-800 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-900 dark:text-cyan-300">
                     Candidate Analytics
                   </span>
                   <span className="text-xs text-slate-400 font-bold">•</span>
-                  <span className="text-xs font-semibold text-slate-500">Cognitive Radar &amp; Mastery Matrix</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Cognitive Radar &amp; Mastery Matrix</span>
                 </div>
-                <h3 className="mt-1 text-lg font-black text-slate-900">
+                <h3 className="mt-1 text-lg font-black text-slate-900 dark:text-white">
                   Comprehensive Candidate Study Report
                 </h3>
                 <p className="mt-1 max-w-xl text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -797,7 +920,7 @@ export default function LearnerDashboardPage() {
             <div className="flex shrink-0 items-center gap-3">
               <Link
                 href="/skills-passport"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#012153] px-5 py-2.5 text-xs font-black text-white hover:bg-blue-950 transition shadow-sm hover:-translate-y-0.5 active:scale-95"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#012153] dark:bg-cyan-600 px-5 py-2.5 text-xs font-black text-white hover:bg-blue-950 dark:hover:bg-cyan-500 transition shadow-sm hover:-translate-y-0.5 active:scale-95"
               >
                 <span>Open Study Report</span>
                 <span aria-hidden="true">→</span>
@@ -808,11 +931,11 @@ export default function LearnerDashboardPage() {
 
         {/* "Pick up where you left off" Continuity Strip */}
         {(recentExam || activePlan || recentLesson) && (
-          <section aria-labelledby="resume-heading" className="rounded-3xl border border-blue-100 bg-blue-50/60 p-6">
+          <section aria-labelledby="resume-heading" className="rounded-[2rem] border border-blue-100 dark:border-blue-900/40 bg-blue-50/60 dark:bg-[#071124] p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-wide text-blue-900">Resume your study</p>
-                <h2 id="resume-heading" className="mt-0.5 text-xl font-black text-slate-950">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-blue-900 dark:text-cyan-400">Resume your study</p>
+                <h2 id="resume-heading" className="mt-0.5 text-xl font-black text-slate-950 dark:text-white">
                   Pick up where you left off
                 </h2>
               </div>
@@ -820,30 +943,34 @@ export default function LearnerDashboardPage() {
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {recentExam && (
-                <div className="flex flex-col justify-between rounded-2xl border border-white/80 bg-white p-5 shadow-sm">
+                <div className="flex min-h-[190px] flex-col justify-between rounded-2xl border border-white/80 dark:border-slate-800 bg-white dark:bg-[#0c1527] p-5 shadow-sm">
                   <div>
-                    <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-blue-900">
+                    <span className="rounded-full bg-blue-100 dark:bg-blue-950/70 border border-blue-200/60 dark:border-blue-800 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-blue-900 dark:text-cyan-300">
                       Recent CBT Exam
                     </span>
-                    <h3 className="mt-3 text-base font-extrabold text-slate-900">
+                    <h3 className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
                       Score: {recentExam.score} / {recentExam.total}
                     </h3>
-                    <p className="mt-1 text-xs text-slate-600">
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
                       Review explanations and targeted test strategies.
                     </p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold">
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-extrabold">
                     <Link
                       href="/corrections"
-                      className="text-blue-700 hover:text-blue-900"
+                      className="text-blue-700 dark:text-cyan-400 hover:text-blue-900 dark:hover:text-cyan-300"
                     >
                       Corrections →
                     </Link>
                     <Link
                       href="/student/exams"
-                      className="text-amber-700 hover:text-amber-900"
+                      className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300"
                     >
-                      📜 Certificates &amp; History →
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="8" r="6" />
+                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+                      </svg>
+                      <span>Certificates &amp; History →</span>
                     </Link>
                   </div>
                 </div>
@@ -903,43 +1030,45 @@ export default function LearnerDashboardPage() {
         {/* Learning Paths */}
         <section aria-labelledby="spaces-heading">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-800">
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-800 dark:text-cyan-400">
               Made for your next step
             </p>
-            <h2 id="spaces-heading" className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
+            <h2 id="spaces-heading" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">
               Choose your learning path
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Three ways to make today count. Start wherever you are, and return whenever you are ready.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+              Structured learning spaces tailored for high retention, live collaboration, and active practice.
             </p>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {spaces.map((space) => (
               <article
                 key={space.href}
-                className="group flex min-h-[240px] flex-col rounded-3xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-[#0c1527] p-6 shadow-xs transition duration-200 hover:-translate-y-1 hover:border-blue-300 dark:hover:border-cyan-500/40 hover:shadow-md hover-lift"
+                className={`group relative overflow-hidden flex min-h-[285px] flex-col justify-between rounded-[2rem] border ${space.border} bg-gradient-to-br ${space.gradient} bg-white dark:bg-[#091021] p-6 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${space.hoverShadow}`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-sm font-black text-blue-700 dark:text-cyan-400 border border-blue-200/60 dark:border-blue-800">
-                    {space.number}
-                  </span>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Study Space
-                  </span>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${space.badgeBg} text-sm font-black border shadow-xs`}>
+                      {space.number}
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Study Space
+                    </span>
+                  </div>
+                  <p className="mt-4 text-[10px] font-black tracking-[0.16em] uppercase text-blue-700 dark:text-cyan-400">
+                    {space.eyebrow}
+                  </p>
+                  <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white">{space.title}</h3>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                    {space.description}
+                  </p>
                 </div>
-                <p className="mt-4 text-[10px] font-black tracking-[0.16em] uppercase text-blue-700 dark:text-cyan-400">
-                  {space.eyebrow}
-                </p>
-                <h3 className="mt-1 text-lg font-black tracking-tight text-slate-950 dark:text-white">{space.title}</h3>
-                <p className="mt-2 flex-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  {space.description}
-                </p>
                 <Link
                   href={space.href}
-                  className="mt-4 inline-flex min-h-10 items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/80 pt-3 text-xs font-black text-blue-700 dark:text-cyan-400 group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition"
+                  className="mt-5 inline-flex min-h-10 items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/80 pt-3 text-xs font-black text-slate-900 dark:text-cyan-400 group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition"
                 >
                   <span>{space.action}</span>
-                  <span aria-hidden="true" className="transition group-hover:translate-x-1">
+                  <span aria-hidden="true" className="transition group-hover:translate-x-1 font-bold">
                     →
                   </span>
                 </Link>
@@ -951,35 +1080,38 @@ export default function LearnerDashboardPage() {
         {/* Practice & Assessment Tools Grid */}
         <section aria-labelledby="tools-heading">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-800">
-              Practice & Assessment Tools
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-800 dark:text-cyan-400">
+              Practice &amp; Assessment Tools
             </p>
-            <h2 id="tools-heading" className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
-              CBT Practice & Quizzes
+            <h2 id="tools-heading" className="mt-1 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+              CBT Practice &amp; Quizzes
             </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+              Targeted diagnostic drills, timed national examination simulations, and live competitive tournaments.
+            </p>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="group rounded-3xl border border-indigo-200/80 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/70 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group relative overflow-hidden flex min-h-[265px] flex-col justify-between rounded-[2rem] border border-indigo-200/80 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/70 via-white to-indigo-50/30 dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-md hover-lift">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </span>
-                <h3 className="mt-3 text-base font-black text-slate-950">Self Practice</h3>
-                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                <h3 className="mt-3 text-base font-black text-slate-950 dark:text-white">Self Practice</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-400">
                   Choose your subjects and question count, practise with unique random questions.
                 </p>
               </div>
               <Link
                 href="/self-practice"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 active-press hover-lift"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] dark:bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 dark:hover:bg-indigo-500 active-press hover-lift"
               >
                 Start Practice →
               </Link>
             </article>
 
-            <article className="group rounded-3xl border border-amber-200/80 dark:border-amber-900/40 bg-gradient-to-br from-amber-50/60 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-amber-300 dark:hover:border-amber-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group relative overflow-hidden flex min-h-[265px] flex-col justify-between rounded-[2rem] border border-amber-200/80 dark:border-amber-900/40 bg-gradient-to-br from-amber-50/60 via-white to-amber-50/30 dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-amber-300 dark:hover:border-amber-500/50 hover:shadow-md hover-lift">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm shadow-amber-500/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -988,28 +1120,31 @@ export default function LearnerDashboardPage() {
                     <circle cx="12" cy="12" r="2" />
                   </svg>
                 </span>
-                <h3 className="mt-3 text-base font-black text-slate-950">Quizzes &amp; Contests</h3>
-                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                <h3 className="mt-3 text-base font-black text-slate-950 dark:text-white">Quizzes &amp; Contests</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-400">
                   Participate in published organisation quizzes and competition assessments.
                 </p>
               </div>
               <div className="mt-4 flex flex-col gap-2">
                 <Link
                   href="/challenge-arena"
-                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-500 hover:to-indigo-500 transition active-press"
+                  className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-500 hover:to-indigo-500 transition active-press"
                 >
-                  ⚡ Competition Arena →
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  <span>Competition Arena →</span>
                 </Link>
                 <Link
                   href="/assessments"
-                  className="inline-flex min-h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                  className="inline-flex min-h-9 items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081021] px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                 >
                   Browse Quizzes →
                 </Link>
               </div>
             </article>
 
-            <article className="group rounded-3xl border border-blue-200/80 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/70 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group relative overflow-hidden flex min-h-[265px] flex-col justify-between rounded-[2rem] border border-blue-200/80 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/70 via-white to-blue-50/30 dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md hover-lift">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1019,20 +1154,20 @@ export default function LearnerDashboardPage() {
                     <line x1="3" x2="21" y1="10" y2="10" />
                   </svg>
                 </span>
-                <h3 className="mt-3 text-base font-black text-slate-950">Revision Planner</h3>
-                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                <h3 className="mt-3 text-base font-black text-slate-950 dark:text-white">Revision Planner</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-400">
                   Set a study goal, add topics and track your revision checklist. Saved to your account across devices.
                 </p>
               </div>
               <Link
                 href="/learning/revision"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 active-press hover-lift"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#012153] dark:bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 dark:hover:bg-blue-500 active-press hover-lift"
               >
                 Open Planner →
               </Link>
             </article>
 
-            <article className="group rounded-3xl border border-emerald-200/80 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50/60 to-white dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:shadow-md hover-lift flex flex-col justify-between">
+            <article className="group relative overflow-hidden flex min-h-[265px] flex-col justify-between rounded-[2rem] border border-emerald-200/80 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50/60 via-white to-emerald-50/30 dark:from-slate-900 dark:to-[#0c1527] p-5 transition duration-200 hover:border-emerald-300 dark:hover:border-emerald-500/50 hover:shadow-md hover-lift">
               <div>
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/30">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1041,14 +1176,14 @@ export default function LearnerDashboardPage() {
                     <path d="m15.5 7.5 3 3L22 7l-3-3" />
                   </svg>
                 </span>
-                <h3 className="mt-3 text-base font-black text-slate-950">My Access &amp; Code</h3>
-                <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                <h3 className="mt-3 text-base font-black text-slate-950 dark:text-white">My Access &amp; Code</h3>
+                <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-400">
                   View your active membership, allowed question limits, and redeem access codes.
                 </p>
               </div>
               <Link
                 href="/account/access"
-                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-50 transition active-press"
+                className="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081021] px-3.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition active-press"
               >
                 View Access →
               </Link>
