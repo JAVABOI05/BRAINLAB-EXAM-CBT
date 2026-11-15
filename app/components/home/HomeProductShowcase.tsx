@@ -4,12 +4,77 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
 
+interface ShowcaseCbtQuestion {
+  id: number;
+  subject: string;
+  topic: string;
+  question: string;
+  options: { key: "A" | "B" | "C" | "D"; label: string }[];
+  correct: "A" | "B" | "C" | "D";
+  derivation: string;
+  examinerTrap: string;
+}
+
+const SHOWCASE_QUESTIONS: ShowcaseCbtQuestion[] = [
+  {
+    id: 1,
+    subject: "Physics",
+    topic: "Uniform Acceleration & Motion",
+    question: "A body accelerates uniformly from rest at 2.0 m/s² for 5.0 seconds. Calculate the total distance covered.",
+    options: [
+      { key: "A", label: "10.0 meters" },
+      { key: "B", label: "25.0 meters (s = ½at²)" },
+      { key: "C", label: "50.0 meters" },
+      { key: "D", label: "100.0 meters" },
+    ],
+    correct: "B",
+    derivation: "Since starting from rest, initial velocity u = 0. Using s = ut + ½at²: s = 0 + ½(2.0)(5.0)² = 25.0 meters.",
+    examinerTrap: "Trap: Candidates frequently forget to square time (using t instead of t² = 25), leading to 10.0 m.",
+  },
+  {
+    id: 2,
+    subject: "English",
+    topic: "Lexis & Concord (Rule of Proximity)",
+    question: "Neither the principal nor the teachers _______ present at the annual school meeting.",
+    options: [
+      { key: "A", label: "was" },
+      { key: "B", label: "were" },
+      { key: "C", label: "is" },
+      { key: "D", label: "are being" },
+    ],
+    correct: "B",
+    derivation: "In correlative 'Neither... nor' constructions, the verb agrees with the nearer subject. 'teachers' (plural) is closest to the verb.",
+    examinerTrap: "Trap: Blindly agreeing with the singular head noun 'principal' instead of the nearest subject.",
+  },
+  {
+    id: 3,
+    subject: "Chemistry",
+    topic: "Oxidation Numbers & Redox",
+    question: "What is the oxidation state of Manganese (Mn) in potassium permanganate (KMnO₄)?",
+    options: [
+      { key: "A", label: "+5" },
+      { key: "B", label: "+6" },
+      { key: "C", label: "+7" },
+      { key: "D", label: "+4" },
+    ],
+    correct: "C",
+    derivation: "In neutral KMnO₄: (+1) + Mn + 4(-2) = 0  =>  1 + Mn - 8 = 0  =>  Mn = +7.",
+    examinerTrap: "Trap: Forgetting that each oxygen is -2 (giving -8 total), leading candidates to guess +5.",
+  },
+];
+
 export function HomeProductShowcase() {
   const products = HOMEPAGE_CONTENT_CONFIG.products;
 
-  // Interactive state for Card 1: 8-Key Simulator
-  const [selected8KeyOption, setSelected8KeyOption] = useState<string>("B");
+  // Interactive state for Card 1: Live Interactive 8-Key CBT Drill Engine
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
+  const [showExplanation, setShowExplanation] = useState<boolean>(false);
   const [selectedKeyStroke, setSelectedKeyStroke] = useState<string>("B");
+
+  const currentQ = SHOWCASE_QUESTIONS[activeQuestionIndex];
+  const userChoice = selectedAnswers[currentQ.id];
+  const isAnswered = Boolean(userChoice);
 
   // Interactive state for Card 3: Daily Quests
   const [completedQuests, setCompletedQuests] = useState<Record<string, boolean>>({
@@ -29,8 +94,30 @@ export function HomeProductShowcase() {
 
   const handleKeyClick = (key: string) => {
     setSelectedKeyStroke(key);
+
     if (["A", "B", "C", "D"].includes(key)) {
-      setSelected8KeyOption(key);
+      const choice = key as "A" | "B" | "C" | "D";
+      setSelectedAnswers((prev) => ({ ...prev, [currentQ.id]: choice }));
+      setShowExplanation(true);
+    } else if (key === "N") {
+      // Next Question
+      setShowExplanation(false);
+      setActiveQuestionIndex((prev) => (prev + 1) % SHOWCASE_QUESTIONS.length);
+    } else if (key === "P") {
+      // Previous Question
+      setShowExplanation(false);
+      setActiveQuestionIndex((prev) => (prev - 1 + SHOWCASE_QUESTIONS.length) % SHOWCASE_QUESTIONS.length);
+    } else if (key === "S") {
+      // Toggle Explanation
+      setShowExplanation((prev) => !prev);
+    } else if (key === "R") {
+      // Reset Drill for this question
+      setSelectedAnswers((prev) => {
+        const next = { ...prev };
+        delete next[currentQ.id];
+        return next;
+      });
+      setShowExplanation(false);
     }
   };
 
@@ -145,7 +232,7 @@ export function HomeProductShowcase() {
                       { key: "C", label: "50.0 meters" },
                       { key: "D", label: "100.0 meters" },
                     ].map((opt) => {
-                      const isSelected = selected8KeyOption === opt.key;
+                      const isSelected = selectedKeyStroke === opt.key || userChoice === opt.key;
                       return (
                         <button
                           key={opt.key}
