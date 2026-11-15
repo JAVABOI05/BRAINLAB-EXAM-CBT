@@ -75,9 +75,12 @@ export function HomeStemStudio() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
             {/* Left Column: Catchy Educational Overview */}
             <div className="lg:col-span-5 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/60 px-3.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300">
+              <div
+                data-slot="VIRTUAL SCIENCE & STEM LABORATORIES (SLOT S5-01)"
+                className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/60 px-3.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300"
+              >
                 <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
-                <span>VIRTUAL SCIENCE &amp; STEM LABORATORIES (SLOT S5-01)</span>
+                <span>VIRTUAL SCIENCE &amp; STEM LABORATORIES</span>
               </div>
 
               <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">

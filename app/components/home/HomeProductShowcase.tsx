@@ -106,9 +106,12 @@ export function HomeProductShowcase() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-20 sm:space-y-28">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-300">
+          <div
+            data-slot="SLOTS S4-01 TO S4-04 • THE BRAINLAB ECOSYSTEM"
+            className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-300"
+          >
             <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
-            <span>SLOTS S4-01 TO S4-04 • THE BRAINLAB ECOSYSTEM</span>
+            <span>CORE LEARNING TOOLS &bull; THE BRAINLAB ECOSYSTEM</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.12]">

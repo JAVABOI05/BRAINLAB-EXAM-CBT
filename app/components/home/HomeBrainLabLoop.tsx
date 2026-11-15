@@ -122,7 +122,8 @@ export function HomeBrainLabLoop() {
   return (
     <section
       id="the-loop"
-      aria-label="The BrainLab Pedagogical Loop"
+      data-slot="THE BRAINLAB LOOP (SLOTS S3-01 & S3-02)"
+      aria-label="How BrainLab Works - The 5-Step Learning Method"
       className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#070D18] transition-colors"
     >
       {/* Brilliant Subtle Geometric Grid Matrix */}
@@ -140,13 +141,13 @@ export function HomeBrainLabLoop() {
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
           <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 mb-3 shadow-xs">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
-            <span>THE BRAINLAB LOOP (SLOTS S3-01 &amp; S3-02)</span>
+            <span>HOW BRAINLAB WORKS &bull; THE 5-STEP STUDY METHOD</span>
           </span>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
             From Fundamental Concept to Complete Exam Mastery
           </h2>
           <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto font-normal">
-            A continuous 5-stage pedagogical pipeline engineered to replace blind past-question cramming with scientific diagnostic mastery.
+            A simple, powerful 5-step learning system designed to help you truly understand each topic, practise with confidence, fix mistakes, and excel in your exams.
           </p>
         </div>
 
@@ -231,7 +232,7 @@ export function HomeBrainLabLoop() {
                   </span>
                   <div>
                     <div className={`text-xs font-mono font-bold ${activeRoute.accentText} uppercase tracking-wider`}>
-                      Stage {activeStage.number} &bull; Continuous Cognitive Loop
+                      Step {activeStage.number} of 5 &bull; The BrainLab Method
                     </div>
                     <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                       {activeStage.title}: {activeStage.subtitle}
@@ -272,7 +273,7 @@ export function HomeBrainLabLoop() {
                       </span>
                       <div>
                         <span className="font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block mb-0.5 text-[11px]">
-                          STEM Studio Cross-Cutting Integration:
+                          Interactive Science &amp; STEM Lab:
                         </span>
                         <span className="leading-relaxed">{activeStage.stemRole}</span>
                       </div>
@@ -315,6 +316,7 @@ export function HomeBrainLabLoop() {
                 className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-5 sm:p-6 shadow-inner relative overflow-hidden h-[450px] flex flex-col justify-between"
                 role="region"
                 aria-label={`Preview of ${activeStage.title} Stage Output`}
+                data-slot="Diagnostic Cognitive Radar (Slot S3-02)"
               >
                 {/* Header Chrome Bar */}
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4 text-xs">
@@ -323,7 +325,7 @@ export function HomeBrainLabLoop() {
                       <LoopStageIcon id={activeStage.id} className="h-4 w-4" />
                     </span>
                     <span className="font-bold uppercase tracking-wider text-slate-900 dark:text-white text-[11px]">
-                      {activeStage.title} Mode &bull; Diagnostic Cognitive Radar (Slot S3-02)
+                      {activeStage.title} Preview &bull; Interactive Learning Simulation
                     </span>
                   </div>
                   <span className="rounded-md bg-blue-100 dark:bg-blue-900/60 border border-blue-200 dark:border-blue-700/60 px-2.5 py-0.5 text-[9px] font-black uppercase text-blue-800 dark:text-cyan-300">
@@ -478,10 +480,10 @@ export function HomeBrainLabLoop() {
 
                 {/* 3. STAGE 3: DIAGNOSE — Slot S3-02 Cognitive Radar SVG */}
                 {activeStage.id === "diagnose" && (
-                  <div className="space-y-4 animate-bl-fade-in">
+                  <div className="space-y-4 animate-bl-fade-in" data-slot="Diagnostic Cognitive Radar (Slot S3-02)">
                     <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between items-center">
-                      <span>Multi-Subject Mastery Analysis:</span>
-                      <span className="text-blue-600 dark:text-cyan-400 font-mono text-[11px] font-bold">Real-time Telemetry</span>
+                      <span>Your Subject Strengths &amp; Weaknesses:</span>
+                      <span className="text-blue-600 dark:text-cyan-400 font-mono text-[11px] font-bold">Live Score Insights</span>
                     </div>
 
                     {/* SVG 5-Axis Radar Diagram */}
