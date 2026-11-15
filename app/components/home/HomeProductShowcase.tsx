@@ -163,11 +163,10 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 1: 24/7 AI STUDY STUDIO
             Story: Concept Breakdown & Socratic Step-by-Step Factoring
-            Left: Deep Blue with Pure White Explanation Text
-            Fade: Smooth horizontal gradient transition into light space
-            Right: Luminous Light Space hosting the 3D Socratic Card
+            Style: Unified Midnight Obsidian Glassmorphic Card
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-700/60 bg-gradient-to-br from-[#060D24] via-[#09153A] to-[#050C1F] shadow-[0_20px_50px_-15px_rgba(2,11,26,0.6)] overflow-hidden transition-all duration-300 hover:border-blue-500/50">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
             {/* Left: Deep Royal Blue Space with Pure White Explanation Text */}
             <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10">
@@ -186,15 +185,21 @@ export function HomeProductShowcase() {
 
               <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Socratic question-and-answer hints that build genuine comprehension</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>High-resolution LaTeX and KaTeX mathematical equation breakdowns</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Calibrated specifically to official examination syllabuses &amp; past patterns</span>
                 </li>
               </ul>
@@ -210,26 +215,26 @@ export function HomeProductShowcase() {
               </div>
             </div>
 
-            {/* Right: Luminous Light Space hosting 3D Socratic Card */}
+            {/* Right: Dedicated Workbench Canvas Frame hosting Socratic Card */}
             <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container">
               {/* Subtle Ambient Radial Light Aura */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(19,86,232,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12),transparent_70%)] pointer-events-none" aria-hidden="true" />
 
               {/* 3D Floating Ground Shadow */}
-              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-black/40 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
 
-              {/* 3D Elevated Socratic Card */}
+              {/* 3D Elevated Socratic Card in High-Contrast Cockpit Theme */}
               <div
-                className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.22),0_10px_20px_-5px_rgba(0,17,43,0.10)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group"
+                className="w-full max-w-md rounded-3xl border border-slate-700/80 bg-gradient-to-b from-[#0F1B3B] via-[#09132C] to-[#060D1E] text-white p-5 sm:p-6 shadow-2xl min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group"
                 style={{ transformStyle: "preserve-3d" }}
               >
                 {/* 3D Specular Sheen Effect */}
-                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-blue-500/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
+                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-cyan-400/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
 
                 {/* Card Header (Parallax Z=18) */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-emerald-600 shadow-2xs">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 shadow-2xs">
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
                         <circle cx="9" cy="13" r="1" />
@@ -237,14 +242,14 @@ export function HomeProductShowcase() {
                       </svg>
                     </span>
                     <div>
-                      <span className="text-xs font-black text-slate-900 block">BrainLab AI Tutor</span>
-                      <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs font-black text-white block">BrainLab AI Tutor</span>
+                      <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         Active Socratic Mode
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 font-bold">
+                  <span className="text-[10px] font-mono text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10 font-bold">
                     Algebra Drill
                   </span>
                 </div>
@@ -260,15 +265,15 @@ export function HomeProductShowcase() {
 
                   {/* AI Tutor Prompt */}
                   <div className="flex justify-start">
-                    <div className="rounded-2xl rounded-tl-xs bg-slate-50 border border-slate-200/80 px-4 py-3 max-w-[92%] shadow-2xs space-y-2">
-                      <p className="text-slate-800 font-bold text-xs">
+                    <div className="rounded-2xl rounded-tl-xs bg-white/5 border border-white/10 px-4 py-3 max-w-[92%] shadow-2xs space-y-2 text-slate-200">
+                      <p className="text-cyan-300 font-bold text-xs">
                         Let&apos;s use factorisation by splitting the middle term!
                       </p>
-                      <p className="text-slate-600 text-[11px] leading-relaxed font-normal">
+                      <p className="text-slate-300 text-[11px] leading-relaxed font-normal">
                         Multiply the first and last coefficients: <strong>2 &times; 3 = 6</strong>. What two numbers multiply to <strong>6</strong> and add up to <strong>5</strong>?
                       </p>
 
-                      {/* 3D Tactile Factor Buttons with Physical Bevel */}
+                      {/* Tactile Factor Buttons */}
                       <div className="flex flex-wrap gap-2 pt-1">
                         {[
                           { key: "a", label: "2 and 3", correct: true },
@@ -282,12 +287,12 @@ export function HomeProductShowcase() {
                               setAiSelectedFactor(item.label);
                               setAiTutorStep(item.correct ? 2 : 1);
                             }}
-                            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold font-mono transition-all cursor-pointer border shadow-[0_3px_0_rgba(15,23,42,0.18)] active:shadow-none active:translate-y-1 ${
+                            className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold font-mono transition-all cursor-pointer border shadow-[0_3px_0_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 ${
                               aiSelectedFactor === item.label
                                 ? item.correct
-                                  ? "bg-emerald-600 text-white border-emerald-700 shadow-[0_3px_0_#065f46]"
-                                  : "bg-rose-600 text-white border-rose-700 shadow-[0_3px_0_#9f1239]"
-                                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                                  ? "bg-emerald-600 text-white border-emerald-500 shadow-[0_3px_0_#065f46]"
+                                  : "bg-rose-600 text-white border-rose-500 shadow-[0_3px_0_#9f1239]"
+                                : "bg-[#0B1536] text-slate-200 border-slate-700 hover:border-cyan-400 hover:bg-white/10"
                             }`}
                           >
                             {item.label}
@@ -300,20 +305,20 @@ export function HomeProductShowcase() {
                   {/* Socratic Success Reveal */}
                   {aiSelectedFactor === "2 and 3" && (
                     <div className="flex justify-start animate-bl-fade-in">
-                      <div className="rounded-2xl rounded-tl-xs bg-emerald-50 border border-emerald-300 px-4 py-2.5 max-w-[92%] shadow-2xs space-y-1 text-emerald-950 text-[11px]">
-                        <span className="font-black block text-emerald-900">Spot on! 2 &times; 3 = 6 and 2 + 3 = 5.</span>
-                        <p className="text-emerald-800">Rewrite: 2x² + 2x + 3x + 3 = 0 ⟹ 2x(x + 1) + 3(x + 1) = 0 ⟹ <strong>(2x + 3)(x + 1) = 0</strong>.</p>
-                        <p className="text-[10px] text-emerald-700 font-mono font-bold">Roots: x = -3/2 or x = -1</p>
+                      <div className="rounded-2xl rounded-tl-xs bg-emerald-950/70 border border-emerald-500/50 px-4 py-2.5 max-w-[92%] shadow-2xs space-y-1 text-emerald-200 text-[11px]">
+                        <span className="font-black block text-emerald-300">Spot on! 2 &times; 3 = 6 and 2 + 3 = 5.</span>
+                        <p className="text-emerald-100">Rewrite: 2x² + 2x + 3x + 3 = 0 ⟹ 2x(x + 1) + 3(x + 1) = 0 ⟹ <strong>(2x + 3)(x + 1) = 0</strong>.</p>
+                        <p className="text-[10px] text-emerald-400 font-mono font-bold">Roots: x = -3/2 or x = -1</p>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Bottom Status */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10" style={{ transform: "translateZ(18px)" }}>
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <span>Free fair-use tier included</span>
-                  <span className="text-emerald-600 font-bold flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     No sign-up required for trial
                   </span>
                 </div>
@@ -325,23 +330,22 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 2: CBT PRACTICE ENGINE
             Story: Authentic 8-Key Hardware Emulation & Test-Hall Readiness
-            Left: Luminous Light Space hosting 3D CBT Simulator Cockpit
-            Fade: Smooth horizontal gradient transition into deep blue
-            Right: Deep Blue with Pure White Explanation Text
+            Style: Unified Midnight Obsidian Glassmorphic Card
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-700/60 bg-gradient-to-br from-[#060D24] via-[#09153A] to-[#050C1F] shadow-[0_20px_50px_-15px_rgba(2,11,26,0.6)] overflow-hidden transition-all duration-300 hover:border-cyan-500/50">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
-            {/* Left: Luminous Light Space hosting 3D CBT Cockpit */}
+            {/* Left: Dedicated Workbench Canvas Frame hosting 3D CBT Cockpit */}
             <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">
               {/* Subtle Ambient Radial Light Aura */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.12),transparent_70%)] pointer-events-none" aria-hidden="true" />
 
               {/* 3D Floating Ground Shadow */}
-              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-black/40 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
 
               {/* 3D Elevated CBT Simulator Card */}
               <div
-                className="w-full max-w-md rounded-3xl border border-slate-700 bg-gradient-to-b from-slate-900 via-[#0a1329] to-[#060c18] text-white p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.30),0_10px_25px_-5px_rgba(0,17,43,0.15)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group"
+                className="w-full max-w-md rounded-3xl border border-slate-700/80 bg-gradient-to-b from-slate-900 via-[#0a1329] to-[#060c18] text-white p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.30),0_10px_25px_-5px_rgba(0,17,43,0.15)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group"
                 data-testid="cbt-simulator"
                 style={{ transformStyle: "preserve-3d" }}
               >
@@ -489,15 +493,21 @@ export function HomeProductShowcase() {
 
               <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Hardware key emulation (A, B, C, D, P, N, S, R) for rapid answering</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>PWA offline resilience: zero answer loss even if internet disconnects</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Topic-by-topic diagnostic breakdown immediately upon submission</span>
                 </li>
               </ul>
@@ -518,11 +528,10 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 3: STEM VIRTUAL LABS
             Story: Tactile Physical Experimentation & Interactive Logic Gates
-            Left: Deep Blue with Pure White Explanation Text
-            Fade: Smooth horizontal gradient transition into light space
-            Right: Luminous Light Space hosting 3D Circuit Workbench
+            Style: Unified Midnight Obsidian Glassmorphic Card
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-700/60 bg-gradient-to-br from-[#060D24] via-[#09153A] to-[#050C1F] shadow-[0_20px_50px_-15px_rgba(2,11,26,0.6)] overflow-hidden transition-all duration-300 hover:border-purple-500/50">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-purple-400/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
             {/* Left: Deep Royal Blue Space with Pure White Explanation Text */}
             <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10">
@@ -541,15 +550,21 @@ export function HomeProductShowcase() {
 
               <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Thin lens ray tracing with real-time focal point and image nature metrics</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Interactive digital logic gate circuit toggles (AND, OR, NOT, XOR)</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>60 FPS lightweight vector graphics with zero heavy 3D engine bloat</span>
                 </li>
               </ul>
@@ -565,47 +580,47 @@ export function HomeProductShowcase() {
               </div>
             </div>
 
-            {/* Right: Luminous Light Space hosting 3D Circuit Workbench */}
+            {/* Right: Dedicated Workbench Canvas Frame hosting 3D Circuit Workbench */}
             <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container">
               {/* Subtle Ambient Radial Light Aura */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.14),transparent_70%)] pointer-events-none" aria-hidden="true" />
 
               {/* 3D Floating Ground Shadow */}
-              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-black/40 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
 
-              {/* 3D Elevated Circuit Card */}
+              {/* 3D Elevated Circuit Card in High-Contrast Cockpit Theme */}
               <div
-                className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.22),0_10px_20px_-5px_rgba(0,17,43,0.10)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group"
+                className="w-full max-w-md rounded-3xl border border-slate-700/80 bg-gradient-to-b from-[#0F1B3B] via-[#09132C] to-[#060D1E] text-white p-5 sm:p-6 shadow-2xl min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-right group"
                 style={{ transformStyle: "preserve-3d" }}
               >
                 {/* 3D Specular Sheen Effect */}
-                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-purple-500/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
+                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-purple-400/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
 
                 {/* Header (Parallax Z=18) */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/15 border border-purple-500/20 text-purple-600 shadow-2xs">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-400 shadow-2xs">
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                       </svg>
                     </span>
                     <div>
-                      <span className="text-xs font-black text-slate-900 block">Digital Circuit Workbench</span>
-                      <span className="text-[10px] text-slate-500 font-medium">Physics &amp; Practical Sciences</span>
+                      <span className="text-xs font-black text-white block">Digital Circuit Workbench</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Physics &amp; Practical Sciences</span>
                     </div>
                   </div>
 
                   {/* 3D Tactile Gate Selector */}
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-700/80 shadow-2xs">
                     {(["AND", "OR", "XOR"] as const).map((g) => (
                       <button
                         key={g}
                         type="button"
                         onClick={() => setStemGate(g)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer shadow-[0_2px_0_rgba(15,23,42,0.1)] active:shadow-none active:translate-y-0.5 ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer shadow-[0_2px_0_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-0.5 ${
                           stemGate === g
                             ? "bg-purple-600 text-white shadow-xs"
-                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+                            : "text-slate-400 hover:text-white hover:bg-slate-800"
                         }`}
                       >
                         {g}
@@ -615,70 +630,70 @@ export function HomeProductShowcase() {
                 </div>
 
                 {/* 3D Interactive Circuit Board (Parallax Z=26) */}
-                <div className="my-4 rounded-2xl bg-slate-50 border border-slate-200 p-5 flex items-center justify-around gap-3 relative shadow-inner z-10" style={{ transform: "translateZ(26px)" }}>
+                <div className="my-4 rounded-2xl bg-[#081024]/80 border border-slate-800 p-5 flex items-center justify-around gap-3 relative shadow-inner z-10" style={{ transform: "translateZ(26px)" }}>
                   {/* Physical 3D Rocker Switches */}
                   <div className="space-y-3 z-10">
                     <button
                       type="button"
                       onClick={() => setSwitchA(!switchA)}
-                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_3px_0_rgba(15,23,42,0.18)] active:shadow-none active:translate-y-1 ${
+                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_3px_0_rgba(0,0,0,0.4)] active:shadow-none active:translate-y-1 ${
                         switchA
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-emerald-500/20"
-                          : "bg-white border-slate-300 text-slate-500"
+                          ? "bg-emerald-950/60 border-emerald-400 text-emerald-200 shadow-emerald-500/20"
+                          : "bg-slate-900/80 border-slate-700 text-slate-400 hover:border-slate-500"
                       }`}
                     >
-                      <span className={`h-2.5 w-2.5 rounded-full ${switchA ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-slate-400"}`} />
+                      <span className={`h-2.5 w-2.5 rounded-full ${switchA ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-slate-600"}`} />
                       <span>Input A: {switchA ? "1 (ON)" : "0 (OFF)"}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setSwitchB(!switchB)}
-                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_3px_0_rgba(15,23,42,0.18)] active:shadow-none active:translate-y-1 ${
+                      className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-[0_3px_0_rgba(0,0,0,0.4)] active:shadow-none active:translate-y-1 ${
                         switchB
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-emerald-500/20"
-                          : "bg-white border-slate-300 text-slate-500"
+                          ? "bg-emerald-950/60 border-emerald-400 text-emerald-200 shadow-emerald-500/20"
+                          : "bg-slate-900/80 border-slate-700 text-slate-400 hover:border-slate-500"
                       }`}
                     >
-                      <span className={`h-2.5 w-2.5 rounded-full ${switchB ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-slate-400"}`} />
+                      <span className={`h-2.5 w-2.5 rounded-full ${switchB ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-slate-600"}`} />
                       <span>Input B: {switchB ? "1 (ON)" : "0 (OFF)"}</span>
                     </button>
                   </div>
 
                   {/* 3D Gate Chip */}
-                  <div className={`z-10 px-4 py-3 rounded-2xl border-2 text-center transition-all shadow-[0_6px_16px_rgba(0,0,0,0.08)] ${
+                  <div className={`z-10 px-4 py-3 rounded-2xl border-2 text-center transition-all shadow-[0_6px_16px_rgba(0,0,0,0.2)] ${
                     isStemLit
-                      ? "border-purple-500 bg-purple-50 text-purple-950 shadow-purple-500/30 scale-105"
-                      : "border-slate-300 bg-white text-slate-400"
+                      ? "border-purple-400 bg-purple-950/70 text-purple-200 shadow-purple-500/30 scale-105"
+                      : "border-slate-700 bg-slate-900/90 text-slate-400"
                   }`}>
-                    <span className="text-[9px] font-mono uppercase tracking-wider block font-bold text-purple-600">CHIP</span>
-                    <span className="text-lg font-black text-slate-900">{stemGate}</span>
-                    <span className="text-[9px] font-mono block mt-0.5 text-slate-500">Q = A {stemGate} B</span>
+                    <span className="text-[9px] font-mono uppercase tracking-wider block font-bold text-purple-400">CHIP</span>
+                    <span className="text-lg font-black text-white">{stemGate}</span>
+                    <span className="text-[9px] font-mono block mt-0.5 text-slate-400">Q = A {stemGate} B</span>
                   </div>
 
                   {/* 3D Glowing Output Bulb */}
                   <div className="z-10 flex flex-col items-center">
                     <div className={`w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                       isStemLit
-                        ? "border-amber-400 bg-amber-100 text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.6)] scale-110"
-                        : "border-slate-300 bg-slate-100 text-slate-400"
+                        ? "border-amber-400 bg-amber-950/40 text-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.6)] scale-110"
+                        : "border-slate-700 bg-slate-900/80 text-slate-500"
                     }`}>
-                      <svg className={`h-7 w-7 transition-all duration-300 ${isStemLit ? "text-amber-500 drop-shadow-[0_0_12px_#f59e0b]" : "opacity-30 text-slate-400"}`} viewBox="0 0 24 24" fill={isStemLit ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                      <svg className={`h-7 w-7 transition-all duration-300 ${isStemLit ? "text-amber-400 drop-shadow-[0_0_12px_#f59e0b]" : "opacity-30 text-slate-500"}`} viewBox="0 0 24 24" fill={isStemLit ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                         <path d="M9 18h6" />
                         <path d="M10 22h4" />
                         <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
                       </svg>
                     </div>
-                    <span className={`text-[10px] font-mono font-bold mt-1.5 uppercase ${isStemLit ? "text-amber-600 font-black" : "text-slate-400"}`}>
+                    <span className={`text-[10px] font-mono font-bold mt-1.5 uppercase ${isStemLit ? "text-amber-400 font-black" : "text-slate-500"}`}>
                       {isStemLit ? "Output = 1" : "Output = 0"}
                     </span>
                   </div>
                 </div>
 
                 {/* Bottom Rule */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10" style={{ transform: "translateZ(18px)" }}>
-                  <span>Rule: <strong>{stemGate}</strong> outputs high (1) when its condition is met</span>
-                  <span className="text-purple-600 font-bold">Standard Benchmarks</span>
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 relative z-10" style={{ transform: "translateZ(18px)" }}>
+                  <span>Rule: <strong className="text-white">{stemGate}</strong> outputs high (1) when its condition is met</span>
+                  <span className="text-purple-400 font-bold">Standard Benchmarks</span>
                 </div>
               </div>
             </div>
@@ -688,32 +703,31 @@ export function HomeProductShowcase() {
         {/* -------------------------------------------------------------
             ROW 4: LEARNING DNA & DIAGNOSTICS
             Story: Topic-by-Topic Diagnostic Telemetry & Score Prediction
-            Left: Luminous Light Space hosting 3D Learning DNA Radar
-            Fade: Smooth horizontal gradient transition into deep blue
-            Right: Deep Blue with Pure White Explanation Text
+            Style: Unified Midnight Obsidian Glassmorphic Card
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-700/60 bg-gradient-to-br from-[#060D24] via-[#09153A] to-[#050C1F] shadow-[0_20px_50px_-15px_rgba(2,11,26,0.6)] overflow-hidden transition-all duration-300 hover:border-sky-500/50">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
-            {/* Left: Luminous Light Space hosting 3D Learning DNA Radar */}
+            {/* Left: Dedicated Workbench Canvas Frame hosting 3D Learning DNA Radar */}
             <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">
               {/* Subtle Ambient Radial Light Aura */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08),transparent_70%)] pointer-events-none" aria-hidden="true" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.14),transparent_70%)] pointer-events-none" aria-hidden="true" />
 
               {/* 3D Floating Ground Shadow */}
-              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-slate-900/15 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
+              <div className="absolute -bottom-4 inset-x-12 h-8 rounded-full bg-black/40 blur-xl pointer-events-none transition-all duration-500" aria-hidden="true" />
 
-              {/* 3D Elevated Learning DNA Card */}
+              {/* 3D Elevated Learning DNA Card in High-Contrast Cockpit Theme */}
               <div
-                className="w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 backdrop-blur-md p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,17,43,0.22),0_10px_20px_-5px_rgba(0,17,43,0.10)] min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group"
+                className="w-full max-w-md rounded-3xl border border-slate-700/80 bg-gradient-to-b from-[#0F1B3B] via-[#09132C] to-[#060D1E] text-white p-5 sm:p-6 shadow-2xl min-h-[420px] flex flex-col justify-between relative overflow-hidden bl-3d-card-stage bl-3d-card-left group"
                 style={{ transformStyle: "preserve-3d" }}
               >
                 {/* 3D Specular Sheen Effect */}
-                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-blue-500/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
+                <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-sky-400/10 to-transparent rotate-12 transition-transform duration-700 group-hover:translate-x-1/2" aria-hidden="true" />
 
                 {/* Header (Parallax Z=18) */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/15 border border-blue-500/20 text-blue-600 shadow-2xs">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/20 border border-sky-500/30 text-sky-400 shadow-2xs">
                       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <rect x="3" y="12" width="4" height="8" rx="1" />
                         <rect x="10" y="8" width="4" height="12" rx="1" />
@@ -721,12 +735,12 @@ export function HomeProductShowcase() {
                       </svg>
                     </span>
                     <div>
-                      <span className="text-xs font-black text-slate-900 block">Learning DNA Radar</span>
-                      <span className="text-[10px] text-slate-500 font-medium">4-Subject Readiness Map</span>
+                      <span className="text-xs font-black text-white block">Learning DNA Radar</span>
+                      <span className="text-[10px] text-slate-400 font-medium">4-Subject Readiness Map</span>
                     </div>
                   </div>
 
-                  <span className="text-xs font-black font-mono text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full shadow-2xs">
+                  <span className="text-xs font-black font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full shadow-2xs">
                     Overall: 84% Ready
                   </span>
                 </div>
@@ -734,20 +748,20 @@ export function HomeProductShowcase() {
                 {/* Multi-Subject Progress Bars (Parallax Z=24) */}
                 <div className="space-y-3.5 my-3 relative z-10" style={{ transform: "translateZ(24px)" }}>
                   {[
-                    { subject: "Use of English", score: 88, target: "290+ High Merit", color: "bg-blue-600" },
-                    { subject: "Mathematics", score: 82, target: "Premier Target", color: "bg-cyan-500" },
-                    { subject: "Physics", score: 76, target: "Revision Needed", color: "bg-amber-500" },
-                    { subject: "Chemistry", score: 90, target: "Distinction", color: "bg-emerald-500" },
+                    { subject: "Use of English", score: 88, target: "290+ High Merit", color: "bg-blue-500" },
+                    { subject: "Mathematics", score: 82, target: "Premier Target", color: "bg-cyan-400" },
+                    { subject: "Physics", score: 76, target: "Revision Needed", color: "bg-amber-400" },
+                    { subject: "Chemistry", score: 90, target: "Distinction", color: "bg-emerald-400" },
                   ].map((item) => (
                     <div key={item.subject} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-slate-900">{item.subject}</span>
+                        <span className="font-bold text-slate-200">{item.subject}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-slate-400 font-mono">{item.target}</span>
-                          <span className="font-mono font-black text-slate-900">{item.score}%</span>
+                          <span className="font-mono font-black text-white">{item.score}%</span>
                         </div>
                       </div>
-                      <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner">
+                      <div className="h-2.5 w-full rounded-full bg-slate-800/90 border border-white/5 overflow-hidden shadow-inner">
                         <div
                           className={`h-full ${item.color} rounded-full transition-all duration-700 shadow-xs`}
                           style={{ width: `${item.score}%` }}
@@ -758,24 +772,25 @@ export function HomeProductShowcase() {
                 </div>
 
                 {/* Diagnostic Recommendation Box (Parallax Z=20) */}
-                <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs space-y-1 shadow-2xs relative z-10" style={{ transform: "translateZ(20px)" }}>
-                  <span className="font-bold text-amber-900 flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs space-y-1 shadow-2xs relative z-10" style={{ transform: "translateZ(20px)" }}>
+                  <span className="font-bold text-amber-300 flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                     Adaptive Recommendation:
                   </span>
-                  <p className="text-[11px] text-amber-800 leading-snug">
-                    Strengthen <strong>Physics (Mechanics &amp; Electricity)</strong> to boost your cumulative projection from 276 to <strong>305+</strong>.
+                  <p className="text-[11px] text-amber-200/90 leading-snug">
+                    Strengthen <strong className="text-white">Physics (Mechanics &amp; Electricity)</strong> to boost your cumulative projection from 276 to <strong className="text-amber-300">305+</strong>.
                   </p>
                 </div>
 
                 {/* Bottom Info */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 relative z-10" style={{ transform: "translateZ(18px)" }}>
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 relative z-10" style={{ transform: "translateZ(18px)" }}>
                   <span>Updated after every CBT drill</span>
                   <Link
                     href="/products/learning-hub"
-                    className="text-blue-600 font-bold hover:underline"
+                    className="text-sky-400 font-bold hover:text-sky-300 flex items-center gap-1"
                   >
-                    View Full Syllabus Radar &rarr;
+                    <span>View Full Syllabus Radar</span>
+                    <span aria-hidden="true">&rarr;</span>
                   </Link>
                 </div>
               </div>
@@ -798,15 +813,21 @@ export function HomeProductShowcase() {
 
               <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-blue-100/90 max-w-md text-left">
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Cumulative readiness prediction against your dream university cut-off</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Sub-topic weakness flags identifying your most recurring mistakes</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-black">✓</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-black">
+                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                  </span>
                   <span>Automatic daily sprint recommendations tailored to your syllabus gaps</span>
                 </li>
               </ul>

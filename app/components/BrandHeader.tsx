@@ -55,6 +55,14 @@ export function NavProductIcon({ id }: { id: string }) {
           <path d="M12 7v5l3 3" />
         </svg>
       );
+    case "live-classroom":
+      return (
+        <svg className="h-4 w-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -104,6 +112,15 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     tierNote: "Guided Diagnostics",
   },
   {
+    id: "live-classroom",
+    title: "Live Classroom & Whiteboard",
+    description: "Interactive real-time masterclasses with Smart Whiteboard, 25fps vector sync, and tutor audio guidance.",
+    targetId: "products",
+    badge: "Smart Board",
+    badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60",
+    tierNote: "Live Masterclasses",
+  },
+  {
     id: "challenge-arena",
     title: "Challenge Arena",
     description: "Head-to-head live 1v1 academic sprint battles, daily quest streaks, and nationwide school rankings.",
@@ -117,7 +134,7 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
 export const DIRECT_NAV_LINKS: DirectNavLinkItem[] = [
   { id: "tracks", label: "Exam Tracks", targetId: "audiences" },
   { id: "about", label: "How It Works", targetId: "the-loop" },
-  { id: "pricing", label: "Pricing", targetId: "pricing" },
+  { id: "practice", label: "Free Practice", targetId: "pricing" },
   { id: "faq", label: "FAQ", targetId: "faq" },
 ];
 
@@ -391,6 +408,7 @@ export default function BrandHeader() {
   const isTracksActive = activeSection === "audiences";
   const isAboutActive = activeSection === "the-loop";
   const isPricingActive = activeSection === "pricing";
+  const isPracticeActive = activeSection === "pricing" || activeSection === "products";
   const isFaqActive = activeSection === "faq";
 
   return (
@@ -540,6 +558,7 @@ export default function BrandHeader() {
             const isActive =
               (link.id === "tracks" && isTracksActive) ||
               (link.id === "about" && isAboutActive) ||
+              (link.id === "practice" && isPracticeActive) ||
               (link.id === "pricing" && isPricingActive) ||
               (link.id === "faq" && isFaqActive);
 
