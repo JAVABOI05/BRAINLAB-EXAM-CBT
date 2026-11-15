@@ -57,8 +57,7 @@ const STAGE_ROUTE_MAP: Record<
     accentBg: string;
   }
 > = {
-  learn: {
-    href: "/learn",
+  learn: { href: "/learn",
     label: "Explore Curriculum Lessons",
     previewBadge: "Interactive Theory & Formulas",
     themeColor: "from-blue-600 via-sky-500 to-cyan-400",
@@ -67,8 +66,7 @@ const STAGE_ROUTE_MAP: Record<
     accentText: "text-cyan-300",
     accentBg: "bg-cyan-500/10",
   },
-  practise: {
-    href: "/cbt",
+  practise: { href: "/cbt",
     label: "Launch Timed CBT Simulator",
     previewBadge: "Authentic 8-Key Simulator",
     themeColor: "from-teal-500 via-emerald-500 to-cyan-400",
@@ -77,8 +75,7 @@ const STAGE_ROUTE_MAP: Record<
     accentText: "text-teal-300",
     accentBg: "bg-teal-500/10",
   },
-  diagnose: {
-    href: "/learning-dna",
+  diagnose: { href: "/learning-dna",
     label: "Inspect Weak Subtopics",
     previewBadge: "AI Cognitive Diagnostic Radar",
     themeColor: "from-fuchsia-600 via-purple-500 to-pink-400",
@@ -87,8 +84,7 @@ const STAGE_ROUTE_MAP: Record<
     accentText: "text-fuchsia-300",
     accentBg: "bg-fuchsia-500/10",
   },
-  improve: {
-    href: "/ai-learning",
+  improve: { href: "/ai-learning",
     label: "Launch Socratic AI Drills",
     previewBadge: "Step-by-Step AI Derivation",
     themeColor: "from-violet-600 via-purple-500 to-amber-400",
@@ -97,8 +93,7 @@ const STAGE_ROUTE_MAP: Record<
     accentText: "text-amber-300",
     accentBg: "bg-amber-500/10",
   },
-  master: {
-    href: "/challenge-arena",
+  master: { href: "/challenge-arena",
     label: "Join 1v1 National Arena",
     previewBadge: "Live Synchronous Duels",
     themeColor: "from-amber-500 via-orange-500 to-rose-400",

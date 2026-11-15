@@ -320,16 +320,16 @@ export function HomeAudiences() {
                 onClick={() => setActiveAudienceId(aud.id)}
                 className={`group relative flex items-center gap-2.5 rounded-2xl px-4 sm:px-6 py-3 text-xs sm:text-sm font-bold transition-all duration-300 bl-focus-ring cursor-pointer ${
                   isActive
-                    ? "bg-slate-900 text-white shadow-xl shadow-cyan-950/40 border-2 border-cyan-400/80 scale-102"
-                    : "bg-slate-900/60 text-slate-300 hover:text-white hover:bg-slate-800/80 border border-white/10"
+                    ? `bg-[#0E172A] text-white shadow-xl border-2 ${meta.accentBg.split(" ")[0]} scale-102`
+                    : "bg-[#0A101D]/80 text-slate-300 hover:text-white hover:bg-[#111A2E] border border-white/[0.08]"
                 }`}
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-800 text-cyan-300 border border-white/10 shrink-0 transition-transform group-hover:scale-105" aria-hidden="true">
+                <span className={`flex h-6 w-6 items-center justify-center rounded-lg ${isActive ? meta.accentBg : "bg-slate-800 text-slate-400"} border border-white/10 shrink-0 transition-transform group-hover:scale-105`} aria-hidden="true">
                   <AudienceIcon type={meta.icon} className="h-3.5 w-3.5" />
                 </span>
-                <span className="font-extrabold tracking-tight">{meta.tag}</span>
+                <span className={`font-extrabold tracking-tight ${isActive ? meta.themeColor : "text-slate-200"}`}>{meta.tag}</span>
                 {isActive && (
-                  <span className="flex h-2 w-2 rounded-full bg-cyan-400 shadow-xs shadow-cyan-400 animate-pulse ml-0.5" />
+                  <span className={`flex h-2 w-2 rounded-full ${meta.themeColor.replace("text-", "bg-")} shadow-xs animate-pulse ml-0.5`} />
                 )}
               </button>
             );
@@ -341,10 +341,10 @@ export function HomeAudiences() {
           role="tabpanel"
           id={`panel-${activeAudience.id}`}
           aria-labelledby={`tab-${activeAudience.id}`}
-          className="relative rounded-3xl border border-white/15 bg-gradient-to-br from-slate-900/95 via-[#081226]/90 to-[#040814]/95 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden"
+          className="relative rounded-3xl border border-white/15 bg-gradient-to-br from-[#0B1222]/95 via-[#081226]/90 to-[#040814]/95 p-6 sm:p-10 lg:p-12 shadow-2xl backdrop-blur-xl transition-all duration-500 overflow-hidden"
         >
           {/* Subtle Top Gradient Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-400" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-amber-400" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* LEFT COLUMN: Editorial Value & Feature Highlights */}

@@ -129,7 +129,7 @@ export function HomeProductShowcase() {
     <section
       id="products"
       aria-label="Integrated Learning Products"
-      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-[#070D18] overflow-hidden"
+      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/50 dark:border-white/10 dark:bg-[#060913] overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header with Refined Empirical Branding */}
