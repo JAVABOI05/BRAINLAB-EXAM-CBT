@@ -96,34 +96,68 @@ export function HomeProductShowcase() {
     <section
       id="products"
       aria-label="BrainLab Learning Ecosystem Products and Interactive Showcase"
-      className="scroll-mt-20 py-24 sm:py-32 bg-[#020B1A] text-white relative overflow-hidden border-y border-blue-950/60"
+      className="scroll-mt-20 py-24 sm:py-32 bg-white dark:bg-[#020B1A] text-slate-900 dark:text-white relative overflow-hidden border-y border-slate-200/80 dark:border-blue-950/60 transition-colors"
     >
-      {/* Universal Ambient Atmosphere (Harmonious Dual-Tone Blue & White Lighting Mesh) */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(19,86,232,0.25),transparent_70%)]" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.12),transparent_50%)]" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_50%)]" aria-hidden="true" />
+      {/* Harmonious Dual-Tone Ambient Lighting Mesh (Vibrant on White & Luminous in Dark) */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-5%,rgba(37,99,235,0.08),transparent_70%)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(19,86,232,0.25),transparent_70%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.06),transparent_50%)] dark:bg-[radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.12),transparent_50%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.05),transparent_50%)] dark:bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_50%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-25 dark:opacity-15" aria-hidden="true" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-20 sm:space-y-28">
-        {/* Universal Header with Generous Negative Space & High Contrast */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
+        {/* Universal Header with Generous Negative Space, High Contrast & Jewel-Toned Aesthetics */}
+        <div className="text-center max-w-3xl mx-auto space-y-5">
+          {/* Luminous Pill Badge */}
           <div
             data-slot="SLOTS S4-01 TO S4-04 • THE BRAINLAB ECOSYSTEM"
-            className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-cyan-300 shadow-sm"
+            className="inline-flex items-center gap-2.5 rounded-full border border-blue-200/90 dark:border-cyan-400/30 bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-cyan-50/90 dark:from-cyan-950/40 dark:via-blue-950/40 dark:to-emerald-950/40 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-blue-700 dark:text-cyan-300 shadow-[0_2px_12px_rgba(37,99,235,0.08),0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_12px_rgba(6,182,212,0.15)] transition-all"
           >
-            <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="relative flex h-2.5 w-2.5 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-blue-600 dark:bg-cyan-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400" />
+            </span>
             <span>CORE LEARNING TOOLS &bull; THE BRAINLAB ECOSYSTEM</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.12]">
+          {/* High-Impact Dual-Color Heading */}
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-950 dark:text-white leading-[1.15]">
             Everything You Need to Master <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400">
-              JAMB, WAEC &amp; STEM Subjects.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-teal-600 dark:from-blue-400 dark:via-cyan-300 dark:to-emerald-400 drop-shadow-xs">
+              Your Core Examination &amp; STEM Subjects.
             </span>
           </h2>
 
-          <p className="text-base sm:text-lg text-blue-100/80 leading-relaxed max-w-2xl mx-auto font-normal">
+          {/* Rich High-Contrast Subtitle */}
+          <p className="text-base sm:text-lg text-slate-600 dark:text-blue-100/90 leading-relaxed max-w-2xl mx-auto font-normal">
             Bite-sized, purposeful tools designed to replace passive textbook cramming with active recall, tactile problem-solving, and diagnostic clarity.
           </p>
+
+          {/* Core Capability Guarantee Tags */}
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-1">
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100/90 dark:bg-white/5 border border-slate-200/90 dark:border-white/10 px-3.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
+              <svg className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+                <circle cx="9" cy="13" r="1" />
+                <circle cx="15" cy="13" r="1" />
+              </svg>
+              <span>Socratic Step-by-Step AI</span>
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100/90 dark:bg-white/5 border border-slate-200/90 dark:border-white/10 px-3.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
+              <svg className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
+              </svg>
+              <span>Authentic 8-Keypad Engine</span>
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100/90 dark:bg-white/5 border border-slate-200/90 dark:border-white/10 px-3.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
+              <svg className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              <span>Tactile STEM Laboratories</span>
+            </div>
+          </div>
         </div>
 
         {/* -------------------------------------------------------------
@@ -133,7 +167,7 @@ export function HomeProductShowcase() {
             Fade: Smooth horizontal gradient transition into light space
             Right: Luminous Light Space hosting the 3D Socratic Card
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
             {/* Left: Deep Royal Blue Space with Pure White Explanation Text */}
             <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10">
@@ -295,7 +329,7 @@ export function HomeProductShowcase() {
             Fade: Smooth horizontal gradient transition into deep blue
             Right: Deep Blue with Pure White Explanation Text
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
             {/* Left: Luminous Light Space hosting 3D CBT Cockpit */}
             <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">
@@ -488,7 +522,7 @@ export function HomeProductShowcase() {
             Fade: Smooth horizontal gradient transition into light space
             Right: Luminous Light Space hosting 3D Circuit Workbench
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#00112B] lg:via-[#062254] lg:via-48% lg:to-[#F8FAFC] lg:to-58%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
             {/* Left: Deep Royal Blue Space with Pure White Explanation Text */}
             <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 text-white flex flex-col justify-center space-y-5 text-left relative z-10">
@@ -658,7 +692,7 @@ export function HomeProductShowcase() {
             Fade: Smooth horizontal gradient transition into deep blue
             Right: Deep Blue with Pure White Explanation Text
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-blue-500/30 shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border border-slate-200/90 dark:border-blue-500/30 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12),0_10px_20px_-5px_rgba(15,23,42,0.06)] dark:shadow-2xl overflow-hidden bg-gradient-to-b from-[#00112B] via-[#051C44] via-48% to-[#F8FAFC] lg:bg-gradient-to-r lg:from-[#F8FAFC] lg:from-42% lg:via-[#062254] lg:via-52% lg:to-[#00112B] lg:to-62%">
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[460px]">
             {/* Left: Luminous Light Space hosting 3D Learning DNA Radar */}
             <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex items-center justify-center relative bl-perspective-container order-2 lg:order-1">

@@ -28,6 +28,124 @@ interface ClassroomPollItem {
   closed_at?: string | null;
 }
 
+function SidebarIcon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
+  switch (name) {
+    case "close":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      );
+    case "mic":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+          <line x1="12" y1="19" x2="12" y2="23" />
+          <line x1="8" y1="23" x2="16" y2="23" />
+        </svg>
+      );
+    case "mute":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="1" y1="1" x2="23" y2="23" />
+          <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+          <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+          <line x1="12" y1="19" x2="12" y2="23" />
+          <line x1="8" y1="23" x2="16" y2="23" />
+        </svg>
+      );
+    case "camera":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+          <circle cx="12" cy="13" r="4" />
+        </svg>
+      );
+    case "poll":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      );
+    case "check":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      );
+    case "bulb":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 18h6" />
+          <path d="M10 22h4" />
+          <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+        </svg>
+      );
+    case "shield":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    case "crown":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+        </svg>
+      );
+    case "cap":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      );
+    case "hand":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+          <path d="M14 10V4a2 2 0 0 0-4 0v7" />
+          <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+          <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+        </svg>
+      );
+    case "download":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      );
+    case "paperclip":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+        </svg>
+      );
+    case "book":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </svg>
+      );
+    case "pen":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 function renderTextWithMentions(text: string, currentUserName?: string) {
   if (!text.includes("@")) return text;
   const parts = text.split(/(@[\w\.-]+)/g);
@@ -157,7 +275,7 @@ export default function ClassroomSidebar({
             onClick={onCloseMobileDrawer}
             className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300 hover:text-white active-press"
           >
-            ✕ Back to Stage
+            <SidebarIcon name="close" className="h-3.5 w-3.5 inline mr-1" />Back to Stage
           </button>
         </div>
       )}
@@ -285,7 +403,7 @@ export default function ClassroomSidebar({
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between text-[10px] font-bold text-cyan-300">
-                        <span>🎙️ Voice Note</span>
+                        <span className="inline-flex items-center gap-1.5"><SidebarIcon name="mic" className="h-3.5 w-3.5" />Voice Note</span>
                         <span>{m.duration ? `${m.duration}s` : "Audio"}</span>
                       </div>
                       <div className="mt-1 flex items-center gap-0.5 h-3">
@@ -319,7 +437,7 @@ export default function ClassroomSidebar({
           {chatMuted && !isTutorOrModerator ? (
             <div className="p-3 border-t border-slate-800 bg-slate-950/80 shrink-0">
               <div className="flex items-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-950/30 p-2.5 text-xs text-amber-200">
-                <span className="text-lg shrink-0">🔇</span>
+                <span className="text-rose-400 shrink-0"><SidebarIcon name="mute" className="h-4 w-4" /></span>
                 <div className="text-left">
                   <p className="font-bold text-amber-300">Chat paused by instructor</p>
                   <p className="text-[10px] text-amber-400/80">
@@ -399,7 +517,7 @@ export default function ClassroomSidebar({
                       : "border-slate-700 bg-slate-800 text-cyan-300 hover:bg-slate-700"
                   }`}
                 >
-                  <span>🎙️</span>
+                  <SidebarIcon name="mic" className="h-3.5 w-3.5" />
                   <span>Voice</span>
                 </button>
                 <button
@@ -417,7 +535,7 @@ export default function ClassroomSidebar({
                       : "border-slate-700 bg-slate-800 text-emerald-300 hover:bg-slate-700"
                   }`}
                 >
-                  <span>📷</span>
+                  <SidebarIcon name="camera" className="h-3.5 w-3.5" />
                   <span>Diagram</span>
                 </button>
                 <button
@@ -429,7 +547,7 @@ export default function ClassroomSidebar({
                   title={isTutorOrModerator ? "Launch checkpoint quiz" : "View active polls & quizzes"}
                   className="flex h-8 px-2 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 text-[11px] font-bold text-amber-300 hover:bg-slate-700"
                 >
-                  <span>🎯</span>
+                  <SidebarIcon name="poll" className="h-3.5 w-3.5" />
                   <span>{isTutorOrModerator ? "+ Quiz" : "Quizzes"}</span>
                 </button>
               </div>
@@ -477,7 +595,7 @@ export default function ClassroomSidebar({
                 onClick={onOpenCreatePoll}
                 className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-extrabold text-white hover:bg-blue-500 shadow transition flex items-center justify-center gap-2 active-press"
               >
-                <span>🎯 Launch Live Poll / Quiz</span>
+                <span className="inline-flex items-center gap-1.5"><SidebarIcon name="poll" className="h-4 w-4" />Launch Live Poll / Quiz</span>
               </button>
             </div>
           )}
@@ -554,7 +672,7 @@ export default function ClassroomSidebar({
                                 )}
                                 {!poll.is_open && opt.is_correct && (
                                   <span className="ml-1 text-[10px] font-bold text-emerald-400">
-                                    ✓
+                                    <SidebarIcon name="check" className="h-3 w-3 inline" />
                                   </span>
                                 )}
                               </span>
@@ -582,7 +700,7 @@ export default function ClassroomSidebar({
                 {/* Explanation */}
                 {!poll.is_open && poll.explanation && (
                   <p className="text-[11px] text-blue-200 bg-blue-950/60 p-2 rounded-xl border border-blue-900">
-                    💡 <strong>Explanation:</strong> {poll.explanation}
+                    <SidebarIcon name="bulb" className="h-3.5 w-3.5 text-amber-300 inline mr-1" /><strong>Explanation:</strong> {poll.explanation}
                   </p>
                 )}
 
@@ -614,7 +732,7 @@ export default function ClassroomSidebar({
               <div className="rounded-2xl border border-amber-500/40 bg-amber-950/30 p-3 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                    <span>🛡️</span>
+                    <SidebarIcon name="shield" className="h-4 w-4 text-amber-400" />
                     <span>Waiting Room ({pendingAdmissions.length})</span>
                   </h4>
                   {onAdmitAllStudents && (
@@ -643,14 +761,14 @@ export default function ClassroomSidebar({
                           onClick={() => void onAdmitStudent?.(req.studentId, true)}
                           className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1 text-[10px] font-bold text-white transition"
                         >
-                          ✓ Admit
+                          <SidebarIcon name="check" className="h-3 w-3 inline mr-1" />Admit
                         </button>
                         <button
                           type="button"
                           onClick={() => void onAdmitStudent?.(req.studentId, false)}
                           className="rounded-lg border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 px-2 py-1 text-[10px] font-bold text-rose-300 transition"
                         >
-                          ✕ Deny
+                          <SidebarIcon name="close" className="h-3 w-3 inline mr-1" />Deny
                         </button>
                       </div>
                     </div>
@@ -663,7 +781,7 @@ export default function ClassroomSidebar({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                  <span>👑</span>
+                  <SidebarIcon name="crown" className="h-3.5 w-3.5 text-amber-300" />
                   <span>Instructors &amp; Hosts</span>
                 </h4>
                 <span className="text-[10px] font-bold text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
@@ -681,7 +799,7 @@ export default function ClassroomSidebar({
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black">
-                          👑
+                          <SidebarIcon name="crown" className="h-3.5 w-3.5 text-amber-300 inline" />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -705,7 +823,7 @@ export default function ClassroomSidebar({
                         >
                           @ Ask
                         </button>
-                        <span className="text-[11px] text-slate-400">{p.isMuted ? "🔇" : "🎙️"}</span>
+                        <span className="text-[11px] text-slate-400">{p.isMuted ? <SidebarIcon name="mute" className="h-3.5 w-3.5 text-rose-400 inline" /> : <SidebarIcon name="mic" className="h-3.5 w-3.5 text-blue-400 inline" />}</span>
                       </div>
                     </div>
                   ))
@@ -717,7 +835,7 @@ export default function ClassroomSidebar({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <span>🎓</span>
+                  <SidebarIcon name="cap" className="h-3.5 w-3.5 text-blue-300" />
                   <span>Learners in Class</span>
                 </h4>
                 <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">
@@ -754,8 +872,8 @@ export default function ClassroomSidebar({
                         >
                           @ Tag
                         </button>
-                        {p.isHandRaised && <span title="Hand raised">✋</span>}
-                        <span className="text-[11px] text-slate-400">{p.isMuted ? "🔇" : "🎙️"}</span>
+                        {p.isHandRaised && <span title="Hand raised"><SidebarIcon name="hand" className="h-3.5 w-3.5 text-amber-400 inline" /></span>}
+                        <span className="text-[11px] text-slate-400">{p.isMuted ? <SidebarIcon name="mute" className="h-3.5 w-3.5 text-rose-400 inline" /> : <SidebarIcon name="mic" className="h-3.5 w-3.5 text-blue-400 inline" />}</span>
                       </div>
                     </div>
                   ))
@@ -772,7 +890,7 @@ export default function ClassroomSidebar({
                   className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/50 py-2.5 px-3 text-xs font-bold text-emerald-300 transition active-press"
                   title="Download verified attendance CSV log with timestamps and accreditation qualification"
                 >
-                  <span>📥</span>
+                  <SidebarIcon name="download" className="h-3.5 w-3.5" />
                   <span>Export Attendance CSV</span>
                 </a>
               </div>
@@ -788,7 +906,7 @@ export default function ClassroomSidebar({
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-black uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                <span>📎</span>
+                <SidebarIcon name="paperclip" className="h-3.5 w-3.5" />
                 <span>Class Handouts &amp; Materials</span>
               </h4>
               <span className="text-[10px] font-bold text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full">
@@ -810,12 +928,12 @@ export default function ClassroomSidebar({
               <div className="mt-3 space-y-2">
                 {attachments.map((file) => {
                   const ext = file.name.split(".").pop()?.toLowerCase();
-                  let icon = "📄";
+                  let icon = "file";
                   let badge = "DOC";
-                  if (ext === "pdf") { icon = "📕"; badge = "PDF"; }
-                  else if (ext === "pptx" || ext === "ppt") { icon = "📊"; badge = "PPTX"; }
-                  else if (ext === "docx" || ext === "doc") { icon = "📝"; badge = "DOCX"; }
-                  else if (ext === "csv") { icon = "📑"; badge = "CSV"; }
+                  if (ext === "pdf") { icon = "file"; badge = "PDF"; }
+                  else if (ext === "pptx" || ext === "ppt") { icon = "file"; badge = "PPTX"; }
+                  else if (ext === "docx" || ext === "doc") { icon = "file"; badge = "DOCX"; }
+                  else if (ext === "csv") { icon = "file"; badge = "CSV"; }
 
                   const sizeKb = file.size ? `${(file.size / 1024).toFixed(1)} KB` : "";
 
@@ -844,7 +962,7 @@ export default function ClassroomSidebar({
                         className="shrink-0 rounded-lg bg-purple-600 hover:bg-purple-500 px-3 py-1.5 text-xs font-bold text-white transition shadow-xs inline-flex items-center gap-1 active:scale-95"
                         title={`Download ${file.name}`}
                       >
-                        <span>📥</span>
+                        <SidebarIcon name="download" className="h-3.5 w-3.5" />
                         <span>Download</span>
                       </a>
                     </div>
@@ -865,7 +983,7 @@ export default function ClassroomSidebar({
                 target="_blank"
                 className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500 transition"
               >
-                <p className="text-xs font-bold text-blue-300">📖 Topic Reference Material</p>
+                <p className="text-xs font-bold text-blue-300 flex items-center gap-1.5"><SidebarIcon name="book" className="h-3.5 w-3.5" />Topic Reference Material</p>
                 <p className="text-[11px] text-slate-400 mt-1">Review lesson notes in Learning Hub</p>
               </Link>
 
@@ -874,7 +992,7 @@ export default function ClassroomSidebar({
                 target="_blank"
                 className="block rounded-xl border border-slate-800 bg-slate-800/80 p-3 hover:border-blue-500 transition"
               >
-                <p className="text-xs font-bold text-emerald-300">✍️ Self-Practice Assessment</p>
+                <p className="text-xs font-bold text-emerald-300 flex items-center gap-1.5"><SidebarIcon name="pen" className="h-3.5 w-3.5" />Self-Practice Assessment</p>
                 <p className="text-[11px] text-slate-400 mt-1">Test your recall of key exam concepts</p>
               </Link>
             </div>

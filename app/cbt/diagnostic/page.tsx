@@ -716,7 +716,7 @@ export default function BaselineDiagnosticPage() {
                   Overall Foundation Mastery
                 </span>
                 <div className="mt-2 text-4xl font-black text-emerald-900 dark:text-emerald-200">
-                  {resultsData.readiness ? `${resultsData.readiness.overallMasteryPct}%` : "78%"}
+                  {resultsData.readiness ? `${resultsData.readiness.predictedWaecPercent}%` : "78%"}
                 </div>
                 <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
                   Baseline topic mastery recorded into your permanent cognitive profile.

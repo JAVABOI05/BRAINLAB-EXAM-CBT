@@ -115,8 +115,9 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
 ];
 
 export const DIRECT_NAV_LINKS: DirectNavLinkItem[] = [
-  { id: "about", label: "About", targetId: "the-loop" },
-  { id: "founder", label: "Founder", targetId: "founder-note" },
+  { id: "tracks", label: "Exam Tracks", targetId: "audiences" },
+  { id: "about", label: "How It Works", targetId: "the-loop" },
+  { id: "pricing", label: "Pricing", targetId: "pricing" },
   { id: "faq", label: "FAQ", targetId: "faq" },
 ];
 
@@ -192,7 +193,7 @@ export default function BrandHeader() {
       return;
     }
 
-    const sectionIds = ["the-loop", "products", "stem-studio", "founder-note", "faq"];
+    const sectionIds = ["audiences", "the-loop", "products", "stem-studio", "pricing", "faq"];
     const elements = sectionIds
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
@@ -368,13 +369,6 @@ export default function BrandHeader() {
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
         window.history.pushState(null, "", `#${targetId}`);
-      } else if (targetId === "founder-note") {
-        // Graceful fallback if founder statement is awaiting publication
-        const loopEl = document.getElementById("the-loop");
-        if (loopEl) {
-          loopEl.scrollIntoView({ behavior: "smooth", block: "start" });
-          window.history.pushState(null, "", "#the-loop");
-        }
       }
     } else {
       closeAllMenus();
@@ -394,8 +388,9 @@ export default function BrandHeader() {
 
   // Determine active section states
   const isExploreActive = activeSection === "products" || activeSection === "stem-studio";
+  const isTracksActive = activeSection === "audiences";
   const isAboutActive = activeSection === "the-loop";
-  const isFounderActive = activeSection === "founder-note";
+  const isPricingActive = activeSection === "pricing";
   const isFaqActive = activeSection === "faq";
 
   return (
@@ -543,8 +538,9 @@ export default function BrandHeader() {
           {/* Direct Anchor Links */}
           {DIRECT_NAV_LINKS.map((link) => {
             const isActive =
+              (link.id === "tracks" && isTracksActive) ||
               (link.id === "about" && isAboutActive) ||
-              (link.id === "founder" && isFounderActive) ||
+              (link.id === "pricing" && isPricingActive) ||
               (link.id === "faq" && isFaqActive);
 
             return (
