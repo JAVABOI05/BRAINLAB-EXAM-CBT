@@ -259,8 +259,11 @@ export default function FAQPage() {
           {/* Live Search Bar */}
           <div className="mt-6 max-w-xl">
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 text-lg" aria-hidden="true">
-                🔍
+              <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400" aria-hidden="true">
+                <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
               </span>
               <input
                 type="text"
@@ -372,7 +375,12 @@ export default function FAQPage() {
             </div>
           ) : (
             <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center space-y-3">
-              <span className="text-3xl" aria-hidden="true">🔍</span>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
                 No matching questions found
               </h3>
