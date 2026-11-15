@@ -154,6 +154,246 @@ const MATH_SYMBOLS = [
   "π", "θ", "α", "β", "λ", "μ", "Δ", "Ω", "∞", "√", "∫", "∑", "±", "×", "÷", "≠", "≤", "≥", "≈", "°", "²", "³"
 ];
 
+function WhiteboardIcon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
+  switch (name) {
+    case "pages":
+    case "document":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      );
+    case "camera":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      );
+    case "file-text":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      );
+    case "minimize":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6l7 7M4 10h6m0 0V4m0 6L3 3m17 7h-6m0 0V4m0 6l7-7" />
+        </svg>
+      );
+    case "maximize":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8V4m0 0h4M3 4l6 6m12-2V4m0 0h-4m4 0l-6 6M3 16v4m0 0h4m-4 0l6-6m12 6v-4m0 4h-4m4 0l-6-6" />
+        </svg>
+      );
+    case "pen":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      );
+    case "highlighter":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l2 2 4-4" />
+        </svg>
+      );
+    case "laser":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="12" cy="12" r="3" fill="currentColor" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3M3 12h3m12 0h3" />
+        </svg>
+      );
+    case "line":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 20L20 4" />
+        </svg>
+      );
+    case "arrow":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      );
+    case "rect":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+        </svg>
+      );
+    case "circle":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      );
+    case "text":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M12 6v14m-4 0h8" />
+        </svg>
+      );
+    case "eraser":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      );
+    case "ruler":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M7 7l2-2m2 6l2-2m2 6l2-2" />
+        </svg>
+      );
+    case "protractor":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16a8 8 0 0116 0H4zM12 16v-4" />
+        </svg>
+      );
+    case "chart":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+        </svg>
+      );
+    case "flask":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 5.5a4 4 0 01-.8 2.2L12 14l-2.2-2.3A4 4 0 019 9.5L8 4z" />
+        </svg>
+      );
+    case "trash":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      );
+    case "save":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      );
+    case "lock":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      );
+    case "unlock":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+        </svg>
+      );
+    case "link":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+      );
+    case "unlink":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-3.536 3.536m-2.828 2.828l-3.536 3.536M3 3l18 18" />
+        </svg>
+      );
+    case "chevron-up":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+        </svg>
+      );
+    case "chevron-down":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      );
+    case "chevrons-up":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 11l7-7 7 7M5 19l7-7 7 7" />
+        </svg>
+      );
+    case "chevrons-down":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+        </svg>
+      );
+    case "close":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      );
+    case "image":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      );
+    case "select":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
+        </svg>
+      );
+    case "instructor":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+        </svg>
+      );
+    case "math":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      );
+    case "physics":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      );
+    case "biology":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="9" cy="9" r="4" />
+          <circle cx="15" cy="15" r="4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 11.5l1 1" />
+        </svg>
+      );
+    case "rocket":
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m0 0l-2.45-2.45" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      );
+  }
+}
+
 export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboardProps>(
   (
     {
@@ -370,7 +610,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
     );
 
     // ------------------------------------------------------------------------
-    // MANDATORY LASER POINTER ✍️ WITH ANIMATED FADING GLOWING TRAIL
+    // MANDATORY LASER POINTER WITH ANIMATED FADING GLOWING TRAIL
     // ------------------------------------------------------------------------
     interface LaserTrailPoint {
       x: number;
@@ -669,7 +909,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
       ctx.restore();
     }, []);
 
-    // Full Canvas Redraw Function (Includes vector strokes + ✍️ Laser Trail + Watermark)
+    // Full Canvas Redraw Function (Includes vector strokes + Laser Trail + Watermark)
     const redrawCanvas = useCallback(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -747,10 +987,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               ctx.stroke();
             }
           } else {
-            // Lock indicator
+            // Lock indicator (Vector lock badge drawn directly on canvas)
+            const lx = box.maxX - 14;
+            const ly = box.minY - 14;
             ctx.fillStyle = "#f59e0b";
-            ctx.font = "14px sans-serif";
-            ctx.fillText("🔒", box.maxX - 16, box.minY - 6);
+            ctx.strokeStyle = "#f59e0b";
+            ctx.lineWidth = 1.5;
+            ctx.fillRect(lx - 4, ly + 2, 8, 7);
+            ctx.beginPath();
+            ctx.arc(lx, ly + 2, 3, Math.PI, 0);
+            ctx.stroke();
           }
           ctx.restore();
         }
@@ -773,7 +1019,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.restore();
       }
 
-      // 4. DRAW ✍️ LASER TRAIL & POINTER (Rendered onto canvas so video recorder captures it!)
+      // 4. DRAW LASER TRAIL & POINTER (Rendered onto canvas so video recorder captures it!)
       const now = Date.now();
       const trail = laserTrailRef.current;
       if (trail.length > 1) {
@@ -802,7 +1048,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.restore();
       }
 
-      // 5. Draw ✍️ Cursor Representation at laser tip
+      // 5. Draw Cursor Representation at laser tip
       if (currentLaserPoint) {
         ctx.save();
         const pt = currentLaserPoint;
@@ -815,9 +1061,22 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
         ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
         ctx.fill();
 
-        // ✍️ Pointer Icon
-        ctx.font = "26px sans-serif";
-        ctx.fillText("✍️", pt.x - 4, pt.y - 8);
+        // Laser Pointer vector reticle & glowing center
+        ctx.strokeStyle = pt.color || "#ff5238";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(pt.x - 14, pt.y);
+        ctx.lineTo(pt.x - 7, pt.y);
+        ctx.moveTo(pt.x + 7, pt.y);
+        ctx.lineTo(pt.x + 14, pt.y);
+        ctx.moveTo(pt.x, pt.y - 14);
+        ctx.lineTo(pt.x, pt.y - 7);
+        ctx.moveTo(pt.x, pt.y + 7);
+        ctx.lineTo(pt.x, pt.y + 14);
+        ctx.stroke();
         ctx.restore();
       }
 
@@ -2088,7 +2347,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/30 bg-[#1356E8]/20 hover:bg-[#1356E8]/40 px-3 py-1.5 text-xs font-bold text-blue-200 transition active:scale-95 shadow-sm"
               title="Toggle Pages Drawer (Thumbnails, Reorder, Add)"
             >
-              <span>📑</span>
+              <WhiteboardIcon name="pages" className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Pages</span>
               <span className="rounded-full bg-[#1356E8] px-1.5 py-0.2 text-[10px] font-black text-white">
                 {activePageIndex + 1}/{pages.length}
@@ -2130,7 +2389,8 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs font-bold text-blue-200">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>👨‍🏫 Viewing Instructor's Live Whiteboard</span>
+                <WhiteboardIcon name="instructor" className="h-3.5 w-3.5 text-blue-300" />
+                <span>Viewing Instructor&apos;s Live Whiteboard</span>
               </div>
 
               {/* Student Action: Save Notes */}
@@ -2140,7 +2400,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 hover:bg-emerald-500/30 px-3 py-1.5 text-xs font-bold text-emerald-200 transition active:scale-95 shadow-sm"
                 title="Download high-resolution snapshot of this lecture page"
               >
-                <span>📸</span>
+                <WhiteboardIcon name="camera" className="h-3.5 w-3.5 text-emerald-300" />
                 <span className="hidden sm:inline">Save Page Notes</span>
               </button>
 
@@ -2151,7 +2411,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/20 hover:bg-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-200 transition active:scale-95 shadow-sm"
                 title="Download all lecture pages as a consolidated PDF document"
               >
-                <span>📄</span>
+                <WhiteboardIcon name="file-text" className="h-3.5 w-3.5 text-sky-300" />
                 <span className="hidden sm:inline">Export PDF ({pages.length})</span>
               </button>
 
@@ -2183,7 +2443,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                 className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-1.5 text-xs text-slate-300 transition"
                 title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Board"}
               >
-                {isFullscreen ? "🗗" : "⛶"}
+                <WhiteboardIcon name={isFullscreen ? "minimize" : "maximize"} className="h-3.5 w-3.5" />
               </button>
             </div>
           ) : (
@@ -2204,7 +2464,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Select, Move, Scale & Rotate Objects (V)"
                 >
-                  <span>↖️</span>
+                  <WhiteboardIcon name="select" className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Select</span>
                 </button>
 
@@ -2219,7 +2479,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Freehand Vector Pen (P)"
                 >
-                  <span>✏️</span>
+                  <WhiteboardIcon name="pen" className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Pen</span>
                 </button>
 
@@ -2234,11 +2494,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Translucent Highlighter"
                 >
-                  <span>🖍️</span>
+                  <WhiteboardIcon name="highlighter" className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Marker</span>
                 </button>
 
-                {/* MANDATORY LASER POINTER: ✍️ */}
+                {/* MANDATORY LASER POINTER */}
                 <button
                   type="button"
                   onClick={() => setTool("laser")}
@@ -2247,9 +2507,9 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       ? "bg-[#FF5238] text-white shadow-md ring-2 ring-red-400 animate-pulse font-black"
                       : "text-slate-300 hover:bg-white/10"
                   }`}
-                  title="✍️ Laser Pointer (Live glowing pointing without permanent marks)"
+                  title="Laser Pointer (Live glowing pointing without permanent marks)"
                 >
-                  <span>✍️</span>
+                  <WhiteboardIcon name="laser" className="h-3.5 w-3.5" />
                   <span className="font-extrabold">Laser</span>
                 </button>
 
@@ -2262,7 +2522,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Straight Line"
                 >
-                  <span>📏</span>
+                  <WhiteboardIcon name="line" className="h-3.5 w-3.5" />
                 </button>
 
                 {/* Arrow */}
@@ -2274,7 +2534,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Vector Arrow"
                 >
-                  <span>➡️</span>
+                  <WhiteboardIcon name="arrow" className="h-3.5 w-3.5" />
                 </button>
 
                 {/* Rectangle Box */}
@@ -2286,7 +2546,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Formula Box / Rectangle"
                 >
-                  <span>🔲</span>
+                  <WhiteboardIcon name="rect" className="h-3.5 w-3.5" />
                 </button>
 
                 {/* Circle */}
@@ -2298,7 +2558,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Circle / Ellipse"
                 >
-                  <span>⭕</span>
+                  <WhiteboardIcon name="circle" className="h-3.5 w-3.5" />
                 </button>
 
                 {/* Text & Math Formula */}
@@ -2310,7 +2570,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Insert Text & Formula Annotation"
                 >
-                  <span>🔤</span>
+                  <WhiteboardIcon name="text" className="h-3.5 w-3.5" />
                   <span className="hidden md:inline">Text</span>
                 </button>
 
@@ -2325,7 +2585,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   }`}
                   title="Eraser"
                 >
-                  <span>🧹</span>
+                  <WhiteboardIcon name="eraser" className="h-3.5 w-3.5" />
                   <span className="hidden md:inline">Eraser</span>
                 </button>
 
@@ -2345,7 +2605,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     }`}
                     title="Interactive Digital Ruler (Click to snap straight lines along edge)"
                   >
-                    <span>📐</span>
+                    <WhiteboardIcon name="ruler" className="h-3.5 w-3.5" />
                     <span className="hidden xl:inline">Ruler</span>
                   </button>
 
@@ -2363,7 +2623,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     }`}
                     title="Interactive Protractor (Angle measurement arm ±0.5° precision)"
                   >
-                    <span>🧭</span>
+                    <WhiteboardIcon name="protractor" className="h-3.5 w-3.5" />
                     <span className="hidden xl:inline">Protractor</span>
                   </button>
 
@@ -2374,7 +2634,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     className="rounded-xl px-2 py-1.5 text-xs font-bold transition text-slate-300 hover:bg-white/10 flex items-center gap-1 border border-white/10"
                     title="Insert Cartesian Coordinate Axes (X, Y Grid Vectors)"
                   >
-                    <span>📈</span>
+                    <WhiteboardIcon name="chart" className="h-3.5 w-3.5" />
                     <span className="hidden xl:inline">Graph Grid</span>
                   </button>
 
@@ -2385,7 +2645,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     className="rounded-xl px-2.5 py-1.5 text-xs font-bold transition bg-[#1356E8]/20 hover:bg-[#1356E8]/40 text-blue-200 border border-blue-500/30 flex items-center gap-1 shadow-sm"
                     title="Open STEM Studio (LaTeX Math Formulas, Circuit Components, Chemical Apparatus, Biology Cells)"
                   >
-                    <span>🧪</span>
+                    <WhiteboardIcon name="flask" className="h-3.5 w-3.5" />
                     <span className="hidden md:inline">STEM Studio</span>
                   </button>
                 </div>
@@ -2439,7 +2699,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   className="rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1.5 text-xs font-bold text-rose-300 disabled:opacity-30 transition"
                   title="Clear Canvas"
                 >
-                  🗑️
+                  <WhiteboardIcon name="trash" className="h-3.5 w-3.5" />
                 </button>
 
                 {/* Fullscreen */}
@@ -2449,7 +2709,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-1.5 text-xs text-slate-300 transition"
                   title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Board"}
                 >
-                  {isFullscreen ? "🗗" : "⛶"}
+                  <WhiteboardIcon name={isFullscreen ? "minimize" : "maximize"} className="h-3.5 w-3.5" />
                 </button>
               </div>
             </>
@@ -2472,7 +2732,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   onClick={() => setShowPagesDrawer(false)}
                   className="rounded-lg p-1 text-slate-400 hover:text-white"
                 >
-                  ✕
+                  <WhiteboardIcon name="close" className="h-3.5 w-3.5" />
                 </button>
               </div>
 
@@ -2500,7 +2760,10 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     {/* Miniature Aspect Ratio Preview */}
                     <div className="h-16 w-full rounded-lg bg-[#070d1e] border border-white/5 flex items-center justify-center text-[11px] text-slate-500 overflow-hidden">
                       {p.backgroundImage ? (
-                        <span className="text-[10px] text-blue-300">🖼️ Slide Asset</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-blue-300">
+                          <WhiteboardIcon name="image" className="h-3 w-3" />
+                          Slide Asset
+                        </span>
                       ) : (
                         <span>{p.backgroundMode || "Blackboard"}</span>
                       )}
@@ -2596,7 +2859,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     : tool === "select"
                     ? "default"
                     : tool === "laser"
-                    ? 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'><text y=\'24\' font-size=\'24\'>✍️</text></svg>") 4 28, crosshair'
+                    ? 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'><circle cx=\'16\' cy=\'16\' r=\'5\' fill=\'%23ef4444\' fill-opacity=\'0.85\'/><circle cx=\'16\' cy=\'16\' r=\'12\' fill=\'none\' stroke=\'%23ef4444\' stroke-width=\'2\'/><line x1=\'16\' y1=\'0\' x2=\'16\' y2=\'8\' stroke=\'%23ef4444\' stroke-width=\'2\'/><line x1=\'16\' y1=\'24\' x2=\'16\' y2=\'32\' stroke=\'%23ef4444\' stroke-width=\'2\'/><line x1=\'0\' y1=\'16\' x2=\'8\' y2=\'16\' stroke=\'%23ef4444\' stroke-width=\'2\'/><line x1=\'24\' y1=\'16\' x2=\'32\' y2=\'16\' stroke=\'%23ef4444\' stroke-width=\'2\'/></svg>") 16 16, crosshair'
                     : tool === "eraser"
                     ? "crosshair"
                     : tool === "text"
@@ -2644,7 +2907,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       className="rounded-lg p-1.5 text-xs text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition"
                       title="Delete selected (Del / Backspace)"
                     >
-                      🗑️
+                      <WhiteboardIcon name="trash" className="h-3.5 w-3.5" />
                     </button>
 
                     {/* Duplicate */}
@@ -2654,7 +2917,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       className="rounded-lg p-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition"
                       title="Duplicate selected (Ctrl+D)"
                     >
-                      📑
+                      <WhiteboardIcon name="pages" className="h-3.5 w-3.5" />
                     </button>
 
                     {/* Lock / Unlock */}
@@ -2666,7 +2929,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       }`}
                       title={isAllLocked ? "Unlock object(s)" : "Lock object(s)"}
                     >
-                      {isAllLocked ? "🔒" : "🔓"}
+                      <WhiteboardIcon name={isAllLocked ? "lock" : "unlock"} className="h-3.5 w-3.5" />
                     </button>
 
                     {/* Group / Ungroup */}
@@ -2677,7 +2940,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                         className="rounded-lg p-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white transition"
                         title={hasGroup ? "Ungroup elements" : "Group elements together"}
                       >
-                        {hasGroup ? "⛓️" : "🔗"}
+                        <WhiteboardIcon name={hasGroup ? "unlink" : "link"} className="h-3.5 w-3.5" />
                       </button>
                     )}
 
@@ -2690,7 +2953,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
                       title="Bring Forward"
                     >
-                      🔼
+                      <WhiteboardIcon name="chevron-up" className="h-3 w-3" />
                     </button>
                     <button
                       type="button"
@@ -2698,7 +2961,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
                       title="Send Backward"
                     >
-                      🔽
+                      <WhiteboardIcon name="chevron-down" className="h-3 w-3" />
                     </button>
                     <button
                       type="button"
@@ -2706,7 +2969,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
                       title="Bring to Front"
                     >
-                      ⏫
+                      <WhiteboardIcon name="chevrons-up" className="h-3 w-3" />
                     </button>
                     <button
                       type="button"
@@ -2714,7 +2977,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       className="rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-300 hover:bg-white/10"
                       title="Send to Back"
                     >
-                      ⏬
+                      <WhiteboardIcon name="chevrons-down" className="h-3 w-3" />
                     </button>
 
                     <div className="h-4 w-[1px] bg-white/15 mx-0.5" />
@@ -2785,10 +3048,10 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   <span className="text-slate-400">Board:</span>
                   {(
                     [
-                      { mode: "blackboard", label: "🌑 Dark" },
-                      { mode: "whiteboard", label: "⚪ Light" },
-                      { mode: "grid", label: "📐 Grid" },
-                      { mode: "lines", label: "📝 Lines" },
+                      { mode: "blackboard", label: "Dark" },
+                      { mode: "whiteboard", label: "Light" },
+                      { mode: "grid", label: "Grid" },
+                      { mode: "lines", label: "Lines" },
                     ] as const
                   ).map((b) => (
                     <button
@@ -2852,20 +3115,22 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                     link.href = canvas.toDataURL("image/png");
                     link.click();
                   }}
-                  className="rounded-xl border border-white/10 bg-[#0B1536]/90 hover:bg-[#1356E8] px-2 py-1 text-[11px] font-bold text-slate-200 transition backdrop-blur shadow-lg"
+                  className="rounded-xl border border-white/10 bg-[#0B1536]/90 hover:bg-[#1356E8] px-2.5 py-1 text-[11px] font-bold text-slate-200 transition backdrop-blur shadow-lg inline-flex items-center gap-1.5"
                   title="Download current page as image"
                 >
-                  💾 Save
+                  <WhiteboardIcon name="save" className="h-3.5 w-3.5" />
+                  <span>Save</span>
                 </button>
 
                 {/* Export Multi-Page PDF Notes */}
                 <button
                   type="button"
                   onClick={handleExportPdf}
-                  className="rounded-xl border border-white/10 bg-[#0B1536]/90 hover:bg-[#1356E8] px-2.5 py-1 text-[11px] font-bold text-slate-200 transition backdrop-blur shadow-lg flex items-center gap-1"
+                  className="rounded-xl border border-white/10 bg-[#0B1536]/90 hover:bg-[#1356E8] px-2.5 py-1 text-[11px] font-bold text-slate-200 transition backdrop-blur shadow-lg flex items-center gap-1.5"
                   title="Download all whiteboard pages as a multi-page PDF document"
                 >
-                  📄 PDF Notes
+                  <WhiteboardIcon name="file-text" className="h-3.5 w-3.5" />
+                  <span>PDF Notes</span>
                 </button>
 
                 {onShareToChat && (
@@ -2875,10 +3140,11 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       const canvas = canvasRef.current;
                       if (canvas) onShareToChat(canvas.toDataURL("image/png"));
                     }}
-                    className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-2.5 py-1 text-[11px] font-black text-white shadow-md transition"
+                    className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-2.5 py-1 text-[11px] font-black text-white shadow-md transition inline-flex items-center gap-1.5"
                     title="Share whiteboard snapshot directly into live classroom chat"
                   >
-                    💬 Share to Chat
+                    <WhiteboardIcon name="chat" className="h-3.5 w-3.5" />
+                    <span>Share to Chat</span>
                   </button>
                 )}
               </footer>
@@ -2893,16 +3159,16 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0B1536] p-5 shadow-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                <h3 className="text-sm font-black text-white flex items-center gap-1.5">
-                  <span>🔤</span>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <WhiteboardIcon name="text" className="h-4 w-4 text-blue-400" />
                   <span>Insert Text &amp; Formula Annotation</span>
                 </h3>
                 <button
                   type="button"
                   onClick={() => setTextPromptOpen(false)}
-                  className="text-slate-400 hover:text-white"
+                  className="rounded-lg p-1 text-slate-400 hover:text-white"
                 >
-                  ✕
+                  <WhiteboardIcon name="close" className="h-4 w-4" />
                 </button>
               </div>
 
@@ -2980,7 +3246,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
               {/* Header */}
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">🧪</span>
+                  <WhiteboardIcon name="flask" className="h-5 w-5 text-cyan-400" />
                   <h3 className="text-base font-black text-white">
                     STEM &amp; Science Teaching Studio
                   </h3>
@@ -2990,7 +3256,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                   onClick={() => setShowStemModal(false)}
                   className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-white/10"
                 >
-                  ✕
+                  <WhiteboardIcon name="close" className="h-4 w-4" />
                 </button>
               </div>
 
@@ -3005,7 +3271,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <span>➗</span>
+                  <WhiteboardIcon name="math" className="h-3.5 w-3.5" />
                   <span>Formulas (KaTeX)</span>
                 </button>
                 <button
@@ -3017,7 +3283,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <span>⚡</span>
+                  <WhiteboardIcon name="physics" className="h-3.5 w-3.5" />
                   <span>Physics &amp; Circuits</span>
                 </button>
                 <button
@@ -3029,7 +3295,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <span>🧪</span>
+                  <WhiteboardIcon name="flask" className="h-3.5 w-3.5" />
                   <span>Chemistry</span>
                 </button>
                 <button
@@ -3041,7 +3307,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <span>🧬</span>
+                  <WhiteboardIcon name="biology" className="h-3.5 w-3.5" />
                   <span>Biology &amp; Cells</span>
                 </button>
                 <button
@@ -3053,7 +3319,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <span>📈</span>
+                  <WhiteboardIcon name="chart" className="h-3.5 w-3.5" />
                   <span>Simulations (Liveboard)</span>
                 </button>
               </div>
@@ -3123,7 +3389,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                         onClick={() => insertFormula(customLatex)}
                         className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-5 py-2 text-xs font-black text-white shadow-lg flex items-center gap-2"
                       >
-                        <span>➗</span>
+                        <WhiteboardIcon name="math" className="h-3.5 w-3.5" />
                         <span>Insert Formula on Liveboard</span>
                       </button>
                     </div>
@@ -3136,7 +3402,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       [
                         {
                           id: "quadratic" as const,
-                          icon: "📈",
+                          icon: "chart",
                           title: "Quadratic Function & Graph Explorer",
                           subject: "Mathematics",
                           curriculum: "WAEC / JAMB / GCSE Mathematics",
@@ -3144,7 +3410,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                         },
                         {
                           id: "projectile" as const,
-                          icon: "🚀",
+                          icon: "rocket",
                           title: "Projectile Motion Simulator",
                           subject: "Physics",
                           curriculum: "WAEC / JAMB / GCSE Physics",
@@ -3152,7 +3418,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                         },
                         {
                           id: "circuit" as const,
-                          icon: "⚡",
+                          icon: "physics",
                           title: "Ohm's Law & DC Circuit Lab",
                           subject: "Physics",
                           curriculum: "WAEC / JAMB / GCSE Physics",
@@ -3160,7 +3426,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                         },
                         {
                           id: "titration" as const,
-                          icon: "🧪",
+                          icon: "flask",
                           title: "Acid-Base Titration Simulator",
                           subject: "Chemistry",
                           curriculum: "WAEC / JAMB / GCSE Chemistry",
@@ -3168,7 +3434,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                         },
                         {
                           id: "genetics" as const,
-                          icon: "🧬",
+                          icon: "biology",
                           title: "Mendelian Genetics & Punnett Square Lab",
                           subject: "Biology",
                           curriculum: "WAEC / JAMB / GCSE Biology",
@@ -3182,7 +3448,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                       >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-base">{sim.icon}</span>
+                            <WhiteboardIcon name={sim.icon} className="h-4 w-4 text-cyan-400" />
                             <span className="text-sm font-bold text-white">{sim.title}</span>
                             <span className="rounded bg-blue-500/20 text-cyan-300 text-[10px] font-bold px-1.5 py-0.5">
                               {sim.subject}
@@ -3204,7 +3470,7 @@ export const SmartWhiteboard = forwardRef<SmartWhiteboardHandle, SmartWhiteboard
                           }}
                           className="self-end sm:self-center shrink-0 rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-2 text-xs font-black text-white shadow-lg flex items-center gap-1.5 transition"
                         >
-                          <span>🚀</span>
+                          <WhiteboardIcon name="rocket" className="h-3.5 w-3.5" />
                           <span>Present on Liveboard</span>
                         </button>
                       </div>
