@@ -557,7 +557,11 @@ export default function SchoolsPage() {
               <div className="flex items-center justify-between border-b border-blue-900/60 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-black text-white">
-                    🏫
+                    <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                      <path d="M6 6h10" />
+                      <path d="M6 10h10" />
+                    </svg>
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-sky-400">
@@ -643,8 +647,11 @@ export default function SchoolsPage() {
               </div>
 
               {simLockdown && (
-                <p className="mt-4 text-center text-xs text-sky-300">
-                  🛡️ Active Security: Anti-tab switching and screen minimisation traps enabled.
+                <p className="mt-4 text-center text-xs text-sky-300 flex items-center justify-center gap-1.5">
+                  <svg className="h-3.5 w-3.5 text-sky-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span>Active Security: Anti-tab switching and screen minimisation traps enabled.</span>
                 </p>
               )}
             </div>

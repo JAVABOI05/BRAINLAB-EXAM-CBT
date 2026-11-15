@@ -564,8 +564,8 @@ export default function BrandHeader() {
         {/* Right Desktop Actions & User Session Controls */}
         <div className="hidden md:flex items-center gap-2">
           {checkingSession ? (
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-500 dark:border-slate-700">
-              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-blue-600" />
+            <div className="flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-1.5 text-xs text-slate-200">
+              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-cyan-400" />
               <span>Checking…</span>
             </div>
           ) : user ? (
@@ -799,7 +799,7 @@ export default function BrandHeader() {
           {/* User actions on mobile */}
           <div className="border-t border-slate-100 pt-3 dark:border-slate-800">
             {checkingSession ? (
-              <span className="text-xs text-slate-400">Verifying session…</span>
+              <span className="text-xs text-slate-300">Verifying session…</span>
             ) : user ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 p-1">
