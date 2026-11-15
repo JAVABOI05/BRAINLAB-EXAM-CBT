@@ -104,6 +104,7 @@ export default function ExamPage() {
   const [passageFontSize, setPassageFontSize] = useState<number>(15);
   const [passageSearchQuery, setPassageSearchQuery] = useState<string>("");
   const [mobilePassageOpen, setMobilePassageOpen] = useState<boolean>(false);
+  const [mobilePaletteOpen, setMobilePaletteOpen] = useState<boolean>(false);
   const [submittedLockNotice, setSubmittedLockNotice] = useState<{
     isSubmitted: boolean;
     message: string;
@@ -449,14 +450,16 @@ export default function ExamPage() {
 
       if (["A", "B", "C", "D", "E"].includes(key)) {
         handleSelectAnswer(key as "A" | "B" | "C" | "D" | "E");
-      } else if (key === "N") {
+      } else if (key === "N" || event.key === "ArrowRight") {
         handleNext();
-      } else if (key === "P") {
+      } else if (key === "P" || event.key === "ArrowLeft") {
         handlePrevious();
-      } else if (key === "F") {
+      } else if (key === "F" || key === "R") {
         toggleFlag();
       } else if (key === "S") {
         handleSubmit();
+      } else if (key === "Q") {
+        setMobilePaletteOpen((prev) => !prev);
       }
     };
 
@@ -1708,6 +1711,124 @@ export default function ExamPage() {
             <p className="mt-3 text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               Tip: Click outside or click Close to return to answering your question.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Floating Question Palette Trigger */}
+      {started && (
+        <div className="fixed bottom-4 right-4 z-40 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobilePaletteOpen(true)}
+            className="flex items-center gap-2 rounded-full border border-sky-400/50 bg-[#012153]/95 hover:bg-[#071c43] text-white px-4 py-3 shadow-2xl backdrop-blur-md text-xs font-bold active:scale-95 transition-all min-h-[44px] cursor-pointer"
+            aria-label="Open Question Palette Matrix Drawer"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span>Grid [{currentIndex + 1}/{totalQuestions}]</span>
+          </button>
+        </div>
+      )}
+
+      {/* Mobile Question Palette Drawer Modal */}
+      {mobilePaletteOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-xs p-2 sm:p-4 animate-in fade-in lg:hidden"
+          onClick={() => setMobilePaletteOpen(false)}
+        >
+          <div
+            className="w-full max-w-md max-h-[85vh] rounded-3xl border border-sky-300 dark:border-sky-800 bg-white dark:bg-slate-900 p-5 shadow-2xl flex flex-col overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Question Palette</h3>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  {currentSubject} • {answeredCount}/{totalQuestions} Answered
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobilePaletteOpen(false)}
+                className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Subject Switcher */}
+            {subjectOrder.length > 1 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {subjectOrder.map((subj) => (
+                  <button
+                    key={subj}
+                    type="button"
+                    onClick={() => {
+                      goToSubject(subj);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      currentSubject === subj
+                        ? "bg-[#012153] text-white shadow-xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {subj}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Question Grid */}
+            <div className="grid grid-cols-5 gap-2 my-2">
+              {currentSubjectQuestions.map((q) => {
+                const answered = Boolean(answers[String(q.id)]);
+                const active = q.originalIndex === currentIndex;
+                const isFlagged = Boolean(flagged[String(q.id)]);
+
+                return (
+                  <button
+                    key={`mobile-pal-${q.id}`}
+                    type="button"
+                    onClick={() => {
+                      goToQuestion(q.originalIndex);
+                      setMobilePaletteOpen(false);
+                    }}
+                    className={`exam-palette-btn active:scale-90 min-h-[44px] cursor-pointer ${
+                      active
+                        ? "current"
+                        : isFlagged
+                        ? "flagged"
+                        : answered
+                        ? "answered"
+                        : "unanswered"
+                    }`}
+                  >
+                    {q.originalIndex + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+              <p className="flex items-center gap-1.5">
+                <span className="exam-legend-dot bg-[#071c43] dark:bg-sky-400" /> Current
+              </p>
+              <p className="flex items-center gap-1.5">
+                <span className="exam-legend-dot bg-amber-400" /> Flagged
+              </p>
+              <p className="flex items-center gap-1.5">
+                <span className="exam-legend-dot bg-emerald-500" /> Answered
+              </p>
+              <p className="flex items-center gap-1.5">
+                <span className="exam-legend-dot bg-slate-300 dark:bg-slate-700" /> Unanswered
+              </p>
+            </div>
           </div>
         </div>
       )}

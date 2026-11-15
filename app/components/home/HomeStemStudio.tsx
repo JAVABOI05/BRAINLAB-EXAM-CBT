@@ -14,8 +14,36 @@ export function HomeStemStudio() {
   const [inputA, setInputA] = useState<boolean>(true);
   const [inputB, setInputB] = useState<boolean>(true);
 
-  // Physics Trajectory Interactive State
+  // Physics Interactive States
+  const [physicsSubMode, setPhysicsSubMode] = useState<"kinematics" | "optics">("kinematics");
   const [launchAngle, setLaunchAngle] = useState<number>(45);
+  const [objectDist, setObjectDist] = useState<number>(35); // cm
+  const focalLength = 20; // cm
+
+  // Lens formula calculations: 1/di = 1/f - 1/do  =>  di = (f * do) / (do - f)
+  const isVirtual = objectDist < focalLength;
+  const isAtFocus = objectDist === focalLength;
+  const imageDist = isAtFocus ? 999 : (focalLength * objectDist) / (objectDist - focalLength);
+  const magnification = isAtFocus ? 999 : Math.abs(imageDist / objectDist);
+
+  let opticsNature = "";
+  let opticsDevice = "";
+  if (objectDist > 2 * focalLength) {
+    opticsNature = "Real, Inverted & Diminished";
+    opticsDevice = "Human Eye & Camera Lens";
+  } else if (objectDist === 2 * focalLength) {
+    opticsNature = "Real, Inverted & Same Size (m = 1.0)";
+    opticsDevice = "Photocopier (1:1 Scaling)";
+  } else if (objectDist > focalLength) {
+    opticsNature = "Real, Inverted & Magnified";
+    opticsDevice = "Cinema Projector & Slide Viewer";
+  } else if (isAtFocus) {
+    opticsNature = "Image at Infinity (Parallel Rays)";
+    opticsDevice = "Searchlight & Car Headlight";
+  } else {
+    opticsNature = "Virtual, Erect & Magnified";
+    opticsDevice = "Simple Microscope / Magnifying Glass";
+  }
 
   // Chemistry Titration Interactive State
   const [phLevel, setPhLevel] = useState<number>(7.0);
@@ -334,80 +362,219 @@ export function HomeStemStudio() {
                           </svg>
                           <span>Physics Mechanics &amp; Kinematics</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">Simulate parabolic projectile motion and gravitational trajectory in real-time</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {physicsSubMode === "kinematics"
+                            ? "Simulate parabolic projectile motion and gravitational trajectory in real-time"
+                            : "Interactive thin lens ray-tracing, focal planes, and optical magnification"}
+                        </p>
                       </div>
 
-                      {/* Angle Selector */}
-                      <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 px-2 font-bold">Launch Angle:</span>
-                        {[30, 45, 60].map((angle) => (
+                      {/* Physics Sub-Experiment Switcher */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                           <button
-                            key={angle}
                             type="button"
-                            onClick={() => setLaunchAngle(angle)}
+                            onClick={() => setPhysicsSubMode("kinematics")}
                             className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                              launchAngle === angle
+                              physicsSubMode === "kinematics"
                                 ? "bg-blue-600 text-white shadow-xs"
                                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                             }`}
                           >
-                            {angle}°
+                            Trajectory
                           </button>
-                        ))}
+                          <button
+                            type="button"
+                            onClick={() => setPhysicsSubMode("optics")}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                              physicsSubMode === "optics"
+                                ? "bg-blue-600 text-white shadow-xs"
+                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                            }`}
+                          >
+                            Convex Lens Ray-Trace
+                          </button>
+                        </div>
+
+                        {physicsSubMode === "kinematics" ? (
+                          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 px-2 font-bold">Angle:</span>
+                            {[30, 45, 60].map((angle) => (
+                              <button
+                                key={angle}
+                                type="button"
+                                onClick={() => setLaunchAngle(angle)}
+                                className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                                  launchAngle === angle
+                                    ? "bg-cyan-600 text-white shadow-xs"
+                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                }`}
+                              >
+                                {angle}°
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Object d₀:</span>
+                            <input
+                              type="range"
+                              min="10"
+                              max="55"
+                              step="5"
+                              value={objectDist}
+                              onChange={(e) => setObjectDist(Number(e.target.value))}
+                              className="w-20 accent-blue-600 cursor-pointer"
+                            />
+                            <span className="text-xs font-mono font-bold text-cyan-600 dark:text-cyan-300">{objectDist}cm</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Animated Trajectory SVG Canvas */}
-                    <div className="relative rounded-2xl bg-white dark:bg-[#030712] border-2 border-slate-200 dark:border-slate-800 p-4 h-48 flex items-end justify-center overflow-hidden shadow-xs">
-                      <svg className="w-full h-full" viewBox="0 0 500 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        {/* Grid Lines */}
-                        <line x1="40" y1="150" x2="460" y2="150" stroke="#cbd5e1" strokeWidth="2" className="dark:stroke-slate-800" />
-                        <line x1="40" y1="30" x2="40" y2="150" stroke="#cbd5e1" strokeWidth="2" className="dark:stroke-slate-800" />
-                        
-                        {/* Trajectory Parabola (changes according to launch angle) */}
-                        <path
-                          d={
-                            launchAngle === 30
-                              ? "M 50 150 Q 240 70 430 150"
-                              : launchAngle === 45
-                              ? "M 50 150 Q 240 25 430 150"
-                              : "M 50 150 Q 200 10 350 150"
-                          }
-                          stroke="#0284c7"
-                          strokeWidth="3"
-                          strokeDasharray="6,4"
-                          className="transition-all duration-500"
-                        />
+                    {/* Simulation 1: Projectile Kinematics */}
+                    {physicsSubMode === "kinematics" ? (
+                      <>
+                        <div className="relative rounded-2xl bg-white dark:bg-[#030712] border-2 border-slate-200 dark:border-slate-800 p-4 h-48 flex items-end justify-center overflow-hidden shadow-xs">
+                          <svg className="w-full h-full" viewBox="0 0 500 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            {/* Grid Lines */}
+                            <line x1="40" y1="150" x2="460" y2="150" stroke="#cbd5e1" strokeWidth="2" className="dark:stroke-slate-800" />
+                            <line x1="40" y1="30" x2="40" y2="150" stroke="#cbd5e1" strokeWidth="2" className="dark:stroke-slate-800" />
+                            
+                            {/* Trajectory Parabola */}
+                            <path
+                              d={
+                                launchAngle === 30
+                                  ? "M 50 150 Q 240 70 430 150"
+                                  : launchAngle === 45
+                                  ? "M 50 150 Q 240 25 430 150"
+                                  : "M 50 150 Q 200 10 350 150"
+                              }
+                              stroke="#0284c7"
+                              strokeWidth="3"
+                              strokeDasharray="6,4"
+                              className="transition-all duration-500"
+                            />
 
-                        {/* Cannon / Launcher */}
-                        <circle cx="50" cy="150" r="10" fill="#2563eb" />
-                        
-                        {/* Moving Projectile Particle */}
-                        <circle cx={launchAngle === 60 ? "200" : "240"} cy={launchAngle === 45 ? "35" : launchAngle === 60 ? "20" : "75"} r="7" fill="#f59e0b">
-                          <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite" />
-                        </circle>
+                            {/* Cannon / Launcher */}
+                            <circle cx="50" cy="150" r="10" fill="#2563eb" />
+                            
+                            {/* Moving Projectile Particle */}
+                            <circle cx={launchAngle === 60 ? "200" : "240"} cy={launchAngle === 45 ? "35" : launchAngle === 60 ? "20" : "75"} r="7" fill="#f59e0b">
+                              <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite" />
+                            </circle>
 
-                        {/* Target Flag */}
-                        <circle cx={launchAngle === 60 ? "350" : "430"} cy="150" r="6" fill="#10b981" />
-                        <text x={launchAngle === 60 ? "335" : "415"} y="170" fill="#10b981" fontSize="11" fontWeight="bold">Target</text>
-                        <text x="50" y="170" fill="#64748b" fontSize="10">Origin (0m)</text>
-                      </svg>
-                    </div>
+                            {/* Target Flag */}
+                            <circle cx={launchAngle === 60 ? "350" : "430"} cy="150" r="6" fill="#10b981" />
+                            <text x={launchAngle === 60 ? "335" : "415"} y="170" fill="#10b981" fontSize="11" fontWeight="bold">Target</text>
+                            <text x="50" y="170" fill="#64748b" fontSize="10">Origin (0m)</text>
+                          </svg>
+                        </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Apex Height</div>
-                        <div className="text-sm font-black text-blue-600 dark:text-sky-400">{launchAngle === 45 ? "22.5 m" : launchAngle === 60 ? "31.2 m" : "14.8 m"}</div>
-                      </div>
-                      <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Flight Range</div>
-                        <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{launchAngle === 45 ? "92.0 m (Max)" : launchAngle === 60 ? "76.4 m" : "80.1 m"}</div>
-                      </div>
-                      <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Equation</div>
-                        <div className="text-xs font-mono font-bold text-amber-600 dark:text-amber-300">y = v₀t - ½gt²</div>
-                      </div>
-                    </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Apex Height</div>
+                            <div className="text-sm font-black text-blue-600 dark:text-sky-400">{launchAngle === 45 ? "22.5 m" : launchAngle === 60 ? "31.2 m" : "14.8 m"}</div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Flight Range</div>
+                            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{launchAngle === 45 ? "92.0 m (Max)" : launchAngle === 60 ? "76.4 m" : "80.1 m"}</div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Equation</div>
+                            <div className="text-xs font-mono font-bold text-amber-600 dark:text-amber-300">y = v₀t - ½gt²</div>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      /* Simulation 2: Brilliant Optics & Convex Lens Ray Tracing */
+                      <>
+                        <div className="relative rounded-2xl bg-white dark:bg-[#030712] border-2 border-slate-200 dark:border-slate-800 p-4 h-48 flex items-center justify-center overflow-hidden shadow-xs">
+                          <svg className="w-full h-full" viewBox="0 0 500 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            {/* Principal Axis */}
+                            <line x1="20" y1="90" x2="480" y2="90" stroke="#64748b" strokeWidth="1.5" strokeDasharray="4,4" />
+
+                            {/* Convex Lens at center x=250 */}
+                            <path d="M 250 15 Q 262 90 250 165 Q 238 90 250 15 Z" fill="#38bdf8" fillOpacity="0.25" stroke="#0284c7" strokeWidth="2" />
+                            <line x1="250" y1="10" x2="250" y2="170" stroke="#0284c7" strokeWidth="1" strokeDasharray="3,3" opacity="0.5" />
+
+                            {/* Focal points (f = 20cm -> 65px scale) */}
+                            {/* Left F1 & 2F1 */}
+                            <circle cx="185" cy="90" r="3" fill="#38bdf8" />
+                            <text x="180" y="108" fill="#38bdf8" fontSize="10" fontWeight="bold">F</text>
+                            <circle cx="120" cy="90" r="3" fill="#64748b" />
+                            <text x="113" y="108" fill="#64748b" fontSize="10">2F</text>
+
+                            {/* Right F2 & 2F2 */}
+                            <circle cx="315" cy="90" r="3" fill="#38bdf8" />
+                            <text x="312" y="108" fill="#38bdf8" fontSize="10" fontWeight="bold">F&apos;</text>
+                            <circle cx="380" cy="90" r="3" fill="#64748b" />
+                            <text x="373" y="108" fill="#64748b" fontSize="10">2F&apos;</text>
+
+                            {/* Object Arrow on Left */}
+                            {(() => {
+                              const objX = 250 - objectDist * 3.2;
+                              const objH = 40;
+                              return (
+                                <g>
+                                  <line x1={objX} y1="90" x2={objX} y2={90 - objH} stroke="#ef4444" strokeWidth="3" />
+                                  <polygon points={`${objX},${85 - objH} ${objX - 4},${95 - objH} ${objX + 4},${95 - objH}`} fill="#ef4444" />
+                                  <text x={objX - 10} y={80 - objH} fill="#ef4444" fontSize="10" fontWeight="bold">Object</text>
+
+                                  {/* Ray 1: Parallel to axis, then through F2 */}
+                                  <line x1={objX} y1={90 - objH} x2="250" y2={90 - objH} stroke="#0284c7" strokeWidth="1.5" />
+                                  <line x1="250" y1={90 - objH} x2="480" y2={90 - objH + (90 - (90 - objH)) * (230 / 65)} stroke="#0284c7" strokeWidth="1.5" />
+
+                                  {/* Ray 2: Through optical center O (250, 90) */}
+                                  <line x1={objX} y1={90 - objH} x2="480" y2={90 + (objH / (250 - objX)) * 230} stroke="#f59e0b" strokeWidth="1.5" />
+
+                                  {/* Image Arrow on Right if real */}
+                                  {!isVirtual && !isAtFocus && (
+                                    <g>
+                                      {(() => {
+                                        const imgX = 250 + imageDist * 3.2;
+                                        const imgH = Math.min(65, 40 * magnification);
+                                        if (imgX > 250 && imgX < 475) {
+                                          return (
+                                            <>
+                                              <line x1={imgX} y1="90" x2={imgX} y2={90 + imgH} stroke="#10b981" strokeWidth="3" />
+                                              <polygon points={`${imgX},${95 + imgH} ${imgX - 4},${85 + imgH} ${imgX + 4},${85 + imgH}`} fill="#10b981" />
+                                              <text x={imgX - 10} y={110 + imgH} fill="#10b981" fontSize="10" fontWeight="bold">Image</text>
+                                            </>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
+                                    </g>
+                                  )}
+                                </g>
+                              );
+                            })()}
+                          </svg>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
+                          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Image Distance (dᵢ)</div>
+                            <div className="text-sm font-black text-cyan-600 dark:text-cyan-300">
+                              {isAtFocus ? "Infinity (∞)" : `${imageDist.toFixed(1)} cm`}
+                            </div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Nature &amp; Sizing</div>
+                            <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 truncate">
+                              {opticsNature}
+                            </div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 shadow-xs">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">Real Application</div>
+                            <div className="text-xs font-mono font-bold text-amber-600 dark:text-amber-300 truncate">
+                              {opticsDevice}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
