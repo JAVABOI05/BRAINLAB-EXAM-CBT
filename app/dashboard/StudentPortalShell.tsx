@@ -189,8 +189,8 @@ export default function StudentPortalShell({ children }: { children: React.React
               </Link>
             </div>
 
-            {/* Desktop Nav Items */}
-            <nav className="hidden lg:flex items-center gap-1.5" aria-label="Student navigation">
+            {/* Desktop Nav Items: Sleek Icon Dock with Tooltip on Hover */}
+            <nav className="hidden lg:flex items-center gap-1.5 p-1 rounded-2xl border border-slate-200/70 dark:border-white/[0.08] bg-slate-100/60 dark:bg-white/[0.03] backdrop-blur-md" aria-label="Student navigation">
               {STUDENT_NAV_LINKS.map((link) => {
                 const isActive =
                   link.href === "/dashboard"
@@ -201,14 +201,23 @@ export default function StudentPortalShell({ children }: { children: React.React
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
+                    title={link.label}
+                    aria-label={link.label}
+                    className={`group relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 active:scale-95 ${
                       isActive
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm"
-                        : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/[0.06]"
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm ring-1 ring-cyan-500/30"
+                        : "text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-white dark:hover:bg-white/[0.08]"
                     }`}
                   >
-                    <NavIcon iconId={link.iconId} className="h-3.5 w-3.5 shrink-0 opacity-80" />
-                    <span>{link.label}</span>
+                    <NavIcon iconId={link.iconId} className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+
+                    {/* Floating Hover Tooltip Pill */}
+                    <span
+                      role="tooltip"
+                      className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 dark:bg-[#0E172A]/95 px-2.5 py-1 text-[11px] font-bold text-white dark:text-cyan-200 opacity-0 group-hover:opacity-100 transition-all duration-150 shadow-xl z-50 border border-slate-700/80 dark:border-white/10"
+                    >
+                      {link.label}
+                    </span>
                   </Link>
                 );
               })}
@@ -510,10 +519,10 @@ export default function StudentPortalShell({ children }: { children: React.React
             </div>
           </div>
 
-          {/* Mobile Navigation Drawer */}
+          {/* Mobile Navigation Drawer with Uniform Dimensions */}
           {mobileMenuOpen && (
-            <div className="border-t border-slate-200 bg-white px-4 py-3 dark:border-white/[0.08] dark:bg-[#070e1b] lg:hidden animate-in fade-in">
-              <div className="grid grid-cols-2 gap-1.5 pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+            <div className="border-t border-slate-200/80 bg-white/95 px-4 py-3.5 dark:border-white/[0.08] dark:bg-[#070D18]/95 backdrop-blur-xl lg:hidden animate-in fade-in">
+              <div className="grid grid-cols-2 gap-2 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
                 {STUDENT_NAV_LINKS.map((link) => {
                   const isActive =
                     link.href === "/dashboard"
@@ -525,25 +534,29 @@ export default function StudentPortalShell({ children }: { children: React.React
                       key={link.href}
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-2 rounded-xl p-2.5 text-xs font-bold transition ${
+                      className={`h-12 w-full flex items-center gap-2.5 rounded-xl px-3 border transition active:scale-98 ${
                         isActive
-                          ? "bg-cyan-500/15 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300"
-                          : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/[0.06]"
+                          ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-800 dark:bg-cyan-400/15 dark:text-cyan-300 dark:border-cyan-500/40 font-black shadow-xs"
+                          : "border-slate-200/80 bg-slate-50/70 text-slate-700 hover:bg-slate-100 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.06] font-bold"
                       }`}
                     >
-                      <NavIcon iconId={link.iconId} className="h-4 w-4 shrink-0 text-cyan-500" />
-                      <span>{link.label}</span>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/90 dark:bg-white/[0.06] shadow-2xs border border-slate-200/60 dark:border-white/[0.06]">
+                        <NavIcon iconId={link.iconId} className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                      </span>
+                      <span className="text-[11px] font-bold tracking-tight truncate leading-tight">
+                        {link.label}
+                      </span>
                     </Link>
                   );
                 })}
               </div>
-              <div className="pt-2 flex flex-col gap-1 text-xs">
+              <div className="pt-2.5 flex flex-col gap-1.5 text-xs">
                 <Link
                   href="/profile"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] font-semibold"
+                  className="h-10 w-full flex items-center gap-2.5 px-3 rounded-xl border border-slate-100 dark:border-white/[0.04] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] font-bold text-xs transition"
                 >
-                  <svg className="h-4 w-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg className="h-4 w-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
@@ -552,14 +565,17 @@ export default function StudentPortalShell({ children }: { children: React.React
                 <Link
                   href="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-white/[0.06] font-semibold"
+                  className="h-10 w-full flex items-center justify-between px-3 rounded-xl border border-cyan-100 dark:border-cyan-950/40 text-cyan-700 dark:text-cyan-400 bg-cyan-50/50 dark:bg-cyan-950/20 hover:bg-cyan-100/50 font-bold text-xs transition"
                 >
-                  <svg className="h-4 w-4 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="2" y1="12" x2="22" y2="12" />
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                  </svg>
-                  <span>Public Website ↗</span>
+                  <div className="flex items-center gap-2.5">
+                    <svg className="h-4 w-4 text-cyan-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="2" y1="12" x2="22" y2="12" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                    <span>Public Website ↗</span>
+                  </div>
+                  <span className="text-xs">&rarr;</span>
                 </Link>
               </div>
             </div>
