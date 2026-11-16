@@ -141,6 +141,21 @@ function SidebarIcon({ name, className = "h-4 w-4" }: { name: string; className?
           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
         </svg>
       );
+    case "trash":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          <line x1="10" y1="11" x2="10" y2="17" />
+          <line x1="14" y1="11" x2="14" y2="17" />
+        </svg>
+      );
+    case "link":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -206,6 +221,12 @@ export interface ClassroomSidebarProps {
   pendingAdmissions?: { studentId: string; studentName: string; studentEmail?: string }[];
   onAdmitStudent?: (studentId: string, allowed?: boolean) => Promise<void>;
   onAdmitAllStudents?: () => Promise<void>;
+  onClearChat?: () => void;
+  onDeleteMessage?: (msgId: string) => void;
+  onGrantStudentSpeech?: (studentId: string) => void;
+  onLowerStudentHand?: (studentId: string) => void;
+  onToggleStudentMute?: (studentId: string) => void;
+  onCopyClassLink?: () => void;
 }
 
 
@@ -255,6 +276,12 @@ export default function ClassroomSidebar({
   pendingAdmissions = [],
   onAdmitStudent,
   onAdmitAllStudents,
+  onClearChat,
+  onDeleteMessage,
+  onGrantStudentSpeech,
+  onLowerStudentHand,
+  onToggleStudentMute,
+  onCopyClassLink,
 }: ClassroomSidebarProps) {
   const currentUserName =
     currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || "Me";
@@ -355,6 +382,28 @@ export default function ClassroomSidebar({
       {/* TAB 1: LIVE CHAT */}
       {activeTab === "chat" && (
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Subheader Toolbar with Message Count & Instructor Clear Chat */}
+          <div className="px-4 py-2 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between text-xs shrink-0">
+            <span className="text-[11px] font-bold text-slate-400">
+              {messages.length} message{messages.length !== 1 ? "s" : ""}
+            </span>
+            {isTutorOrModerator && onClearChat && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to clear the entire classroom chat for all participants?")) {
+                    onClearChat();
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-950/40 px-2 py-0.5 text-[10px] font-extrabold text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 transition"
+                title="Clear all messages in the classroom chat"
+              >
+                <SidebarIcon name="trash" className="h-3 w-3" />
+                <span>Clear Chat</span>
+              </button>
+            )}
+          </div>
+
           <input
             ref={imageInputRef}
             type="file"
@@ -365,12 +414,24 @@ export default function ClassroomSidebar({
 
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m) => (
-              <div key={m.id} className="text-xs">
+              <div key={m.id} className="text-xs group relative rounded-xl hover:bg-slate-800/40 p-1.5 -mx-1.5 transition">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={`font-bold ${m.isHost ? "text-amber-400" : "text-blue-400"}`}>
                     {formatSafeName(m.senderName)} {m.isHost && "(Tutor)"}
                   </span>
-                  <span className="text-[10px] text-slate-500">{m.timestamp}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-slate-500">{m.timestamp}</span>
+                    {isTutorOrModerator && onDeleteMessage && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteMessage(m.id)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-500 hover:text-rose-400 transition rounded"
+                        title="Delete this message"
+                      >
+                        <SidebarIcon name="trash" className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Image Message */}
@@ -724,9 +785,109 @@ export default function ClassroomSidebar({
       {activeTab === "participants" && (() => {
         const tutorsAndHosts = participants.filter((p) => p.role === "host");
         const studentsAndLearners = participants.filter((p) => p.role !== "host");
+        const raisedHandsLearners = studentsAndLearners.filter((p) => p.isHandRaised);
 
         return (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Invite Students to Class Card (For Instructors & Moderators) */}
+            {isTutorOrModerator && (
+              <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-950/40 via-slate-900/80 to-slate-900/90 p-3 space-y-2 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-cyan-300 flex items-center gap-1.5">
+                    <SidebarIcon name="link" className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Invite Students</span>
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700">
+                    Code: {classId || "BL-LIVE-101"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-snug">
+                  Share the direct student join link so learners can enter this live session immediately.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={onCopyClassLink}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-2 px-3 text-xs font-black transition flex items-center justify-center gap-1.5 shadow-sm active-press"
+                  >
+                    <SidebarIcon name="link" className="h-3.5 w-3.5" />
+                    <span>Copy Student Link</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const origin = typeof window !== "undefined" ? window.location.origin : "https://www.brainlabacademy.com.ng";
+                      const studentUrl = `${origin}/classroom/${classId || "BL-LIVE-101"}`;
+                      window.open(
+                        `https://api.whatsapp.com/send?text=${encodeURIComponent(`Join our BrainLab Live Masterclass now: ${studentUrl}`)}`,
+                        "_blank"
+                      );
+                    }}
+                    className="rounded-xl border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60 py-2 px-3 text-xs font-bold transition flex items-center gap-1 active-press"
+                    title="Share via WhatsApp"
+                  >
+                    <span>WhatsApp</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* RAISED HANDS QUEUE (Instructor Management & Speech Granting) */}
+            {raisedHandsLearners.length > 0 && (
+              <div className="rounded-2xl border border-amber-500/50 bg-amber-950/30 p-3 space-y-2.5 shadow-lg shadow-amber-950/20">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                    <SidebarIcon name="hand" className="h-4 w-4 text-amber-400" />
+                    <span>Raised Hands Queue ({raisedHandsLearners.length})</span>
+                  </h4>
+                  <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                </div>
+                <div className="space-y-1.5">
+                  {raisedHandsLearners.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between rounded-xl bg-slate-900/90 p-2.5 text-xs border border-amber-500/30"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-300 font-black text-xs border border-amber-500/40">
+                          <SidebarIcon name="hand" className="h-3.5 w-3.5 text-amber-300" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-white truncate">{formatSafeName(p.name)}</p>
+                          <p className="text-[10px] text-amber-300 font-semibold">Waiting to ask</p>
+                        </div>
+                      </div>
+                      {isTutorOrModerator ? (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => onGrantStudentSpeech?.(p.id)}
+                            className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 px-2.5 py-1 text-[10px] font-black transition shadow-xs flex items-center gap-1 active-press"
+                            title={`Grant microphone access to ${p.name}`}
+                          >
+                            <SidebarIcon name="mic" className="h-3 w-3" />
+                            <span>Allow Mic</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onLowerStudentHand?.(p.id)}
+                            className="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 text-[10px] font-bold transition active-press"
+                            title="Lower student's hand"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-bold text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                          In Queue
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Pending Masterclass Admission Requests (Waiting Room) */}
             {isTutorOrModerator && pendingAdmissions && pendingAdmissions.length > 0 && (
               <div className="rounded-2xl border border-amber-500/40 bg-amber-950/30 p-3 space-y-2.5">
@@ -872,8 +1033,31 @@ export default function ClassroomSidebar({
                         >
                           @ Tag
                         </button>
-                        {p.isHandRaised && <span title="Hand raised"><SidebarIcon name="hand" className="h-3.5 w-3.5 text-amber-400 inline" /></span>}
-                        <span className="text-[11px] text-slate-400">{p.isMuted ? <SidebarIcon name="mute" className="h-3.5 w-3.5 text-rose-400 inline" /> : <SidebarIcon name="mic" className="h-3.5 w-3.5 text-blue-400 inline" />}</span>
+                        {p.isHandRaised && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/40 animate-pulse">
+                            <SidebarIcon name="hand" className="h-3 w-3 text-amber-400 inline" />
+                            <span>Hand</span>
+                          </span>
+                        )}
+                        {isTutorOrModerator ? (
+                          <button
+                            type="button"
+                            onClick={() => onToggleStudentMute?.(p.id)}
+                            className={`rounded-lg px-2 py-0.5 text-[10px] font-bold border transition flex items-center gap-1 active-press ${
+                              p.isMuted
+                                ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60"
+                                : "border-rose-500/40 bg-rose-950/40 text-rose-300 hover:bg-rose-900/60"
+                            }`}
+                            title={p.isMuted ? `Unmute ${p.name}` : `Mute ${p.name}`}
+                          >
+                            <SidebarIcon name={p.isMuted ? "mic" : "mute"} className="h-3 w-3 inline" />
+                            <span>{p.isMuted ? "Unmute" : "Mute"}</span>
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">
+                            {p.isMuted ? <SidebarIcon name="mute" className="h-3.5 w-3.5 text-rose-400 inline" /> : <SidebarIcon name="mic" className="h-3.5 w-3.5 text-blue-400 inline" />}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))
