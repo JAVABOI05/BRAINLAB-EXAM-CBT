@@ -62,45 +62,45 @@ const STAGE_ROUTE_MAP: Record<
     previewBadge: "Interactive Theory & Formulas",
     themeColor: "from-blue-600 via-sky-500 to-cyan-400",
     glow: "border-cyan-400/50 shadow-cyan-950/40",
-    accentBorder: "border-blue-600 dark:border-blue-500",
-    accentText: "text-blue-700 dark:text-cyan-300",
-    accentBg: "bg-blue-100 dark:bg-blue-950/60",
+    accentBorder: "border-blue-600 ",
+    accentText: "text-blue-700 ",
+    accentBg: "bg-blue-100 ",
   },
   practise: { href: "/cbt",
     label: "Launch Timed CBT Simulator",
     previewBadge: "Authentic 8-Key Simulator",
     themeColor: "from-teal-500 via-emerald-500 to-cyan-400",
     glow: "border-teal-400/50 shadow-teal-950/40",
-    accentBorder: "border-emerald-600 dark:border-emerald-500",
-    accentText: "text-emerald-700 dark:text-emerald-300",
-    accentBg: "bg-emerald-100 dark:bg-emerald-950/60",
+    accentBorder: "border-emerald-600 ",
+    accentText: "text-emerald-700 ",
+    accentBg: "bg-emerald-100 ",
   },
   diagnose: { href: "/learning-dna",
     label: "Inspect Weak Subtopics",
     previewBadge: "AI Cognitive Diagnostic Radar",
     themeColor: "from-fuchsia-600 via-purple-500 to-pink-400",
     glow: "border-fuchsia-400/50 shadow-fuchsia-950/40",
-    accentBorder: "border-purple-600 dark:border-purple-500",
-    accentText: "text-purple-700 dark:text-purple-300",
-    accentBg: "bg-purple-100 dark:bg-purple-950/60",
+    accentBorder: "border-purple-600 ",
+    accentText: "text-purple-700 ",
+    accentBg: "bg-purple-100 ",
   },
   improve: { href: "/ai-learning",
     label: "Launch Socratic AI Drills",
     previewBadge: "Step-by-Step AI Derivation",
     themeColor: "from-violet-600 via-purple-500 to-amber-400",
     glow: "border-amber-400/50 shadow-amber-950/40",
-    accentBorder: "border-amber-600 dark:border-amber-500",
-    accentText: "text-amber-700 dark:text-amber-300",
-    accentBg: "bg-amber-100 dark:bg-amber-950/60",
+    accentBorder: "border-amber-600 ",
+    accentText: "text-amber-700 ",
+    accentBg: "bg-amber-100 ",
   },
   master: { href: "/challenge-arena",
     label: "Join 1v1 National Arena",
     previewBadge: "Live Synchronous Duels",
     themeColor: "from-amber-500 via-orange-500 to-rose-400",
     glow: "border-orange-400/50 shadow-orange-950/40",
-    accentBorder: "border-orange-600 dark:border-orange-500",
-    accentText: "text-orange-700 dark:text-orange-300",
-    accentBg: "bg-orange-100 dark:bg-orange-950/60",
+    accentBorder: "border-orange-600 ",
+    accentText: "text-orange-700 ",
+    accentBg: "bg-orange-100 ",
   },
 };
 
@@ -124,7 +124,7 @@ export function HomeBrainLabLoop() {
       id="the-loop"
       data-slot="THE BRAINLAB LOOP (SLOTS S3-01 & S3-02)"
       aria-label="How BrainLab Works - The 5-Step Learning Method"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#070D18] transition-colors"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200 bg-white"
     >
       {/* Brilliant Subtle Geometric Grid Matrix */}
       <div
@@ -139,14 +139,14 @@ export function HomeBrainLabLoop() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header with Refined Empirical Branding */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 mb-3 shadow-xs">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800   border border-blue-300  mb-3 shadow-xs">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
             <span>HOW BRAINLAB WORKS &bull; THE 5-STEP STUDY METHOD</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
             From Fundamental Concept to Complete Exam Mastery
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto font-normal">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
             A simple, powerful 5-step learning system designed to help you truly understand each topic, practise with confidence, fix mistakes, and excel in your exams.
           </p>
         </div>
@@ -158,7 +158,7 @@ export function HomeBrainLabLoop() {
           className="relative mb-10 sm:mb-12"
         >
           {/* Subtle Horizontal Connector Rail on Desktop */}
-          <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-slate-200 dark:bg-slate-800 -translate-y-1/2 pointer-events-none" />
+          <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-slate-200  -translate-y-1/2 pointer-events-none" />
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 relative z-10">
             {loopStages.map((stage) => {
@@ -175,15 +175,15 @@ export function HomeBrainLabLoop() {
                   onClick={() => setActiveStageId(stage.id)}
                   className={`group relative flex flex-col items-start p-4 rounded-2xl text-left transition-all duration-200 bl-focus-ring cursor-pointer border-2 border-b-4 active:border-b-2 active:translate-y-0.5 shadow-sm ${
                     isSelected
-                      ? `bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${route.accentBorder}`
-                      : "border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"
+                      ? `bg-white  text-slate-900 ${route.accentBorder}`
+                      : "border-slate-200 bg-slate-50/70  hover:border-slate-300 dark:hover:border-slate-700 text-slate-700"
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-2">
                     <span
                       className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                        isSelected ? route.accentBg + " " + route.accentText : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                      } border border-slate-300 dark:border-slate-700 shrink-0 transition-transform group-hover:scale-110`}
+                        isSelected ? route.accentBg + " " + route.accentText : "bg-slate-200  text-slate-600"
+                      } border border-slate-300  shrink-0 transition-transform group-hover:scale-110`}
                       aria-hidden="true"
                     >
                       <LoopStageIcon id={stage.id} className="h-4 w-4" />
@@ -192,7 +192,7 @@ export function HomeBrainLabLoop() {
                       className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                         isSelected
                           ? "bg-blue-600 text-white font-black shadow-xs"
-                          : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                          : "bg-slate-200  text-slate-600"
                       }`}
                     >
                       STAGE {stage.number}
@@ -201,12 +201,12 @@ export function HomeBrainLabLoop() {
 
                   <span
                     className={`text-sm sm:text-base font-black tracking-tight ${
-                      isSelected ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-300"
+                      isSelected ? "text-slate-900" : "text-slate-700"
                     }`}
                   >
                     {stage.title}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 truncate w-full mt-0.5 font-medium">
+                  <span className="text-xs text-slate-500 truncate w-full mt-0.5 font-medium">
                     {stage.subtitle}
                   </span>
                 </button>
@@ -220,7 +220,7 @@ export function HomeBrainLabLoop() {
           id={`panel-${activeStage.id}`}
           role="tabpanel"
           aria-labelledby={`tab-${activeStage.id}`}
-          className="relative rounded-3xl border-2 border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-6 sm:p-8 lg:p-10 shadow-sm transition-all overflow-hidden min-h-[580px] lg:h-[600px] flex flex-col justify-center"
+          className="relative rounded-3xl border-2 border-slate-200 bg-white   p-6 sm:p-8 lg:p-10 shadow-sm transition-all overflow-hidden min-h-[580px] lg:h-[600px] flex flex-col justify-center"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch h-full">
             {/* LEFT COLUMN: Stage Identity, Narrative & Capabilities (Static height chassis) */}
@@ -234,26 +234,26 @@ export function HomeBrainLabLoop() {
                     <div className={`text-xs font-mono font-bold ${activeRoute.accentText} uppercase tracking-wider`}>
                       Step {activeStage.number} of 5 &bull; The BrainLab Method
                     </div>
-                    <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                       {activeStage.title}: {activeStage.subtitle}
                     </h3>
                   </div>
                 </div>
 
-                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal min-h-[48px]">
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal min-h-[48px]">
                   {activeStage.description}
                 </p>
 
                 {/* Synchronized Platform Capabilities */}
                 <div className="space-y-2 pt-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
                     Integrated Platform Tools:
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {activeStage.products.map((prod) => (
                       <span
                         key={prod}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100  text-slate-800 dark:text-slate-200 border border-slate-200  shadow-xs"
                       >
                         <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-cyan-400" />
                         <span>{prod}</span>
@@ -272,7 +272,7 @@ export function HomeBrainLabLoop() {
                         </svg>
                       </span>
                       <div>
-                        <span className="font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block mb-0.5 text-[11px]">
+                        <span className="font-extrabold text-emerald-800  uppercase tracking-wider block mb-0.5 text-[11px]">
                           Interactive Science &amp; STEM Lab:
                         </span>
                         <span className="leading-relaxed">{activeStage.stemRole}</span>
@@ -288,7 +288,7 @@ export function HomeBrainLabLoop() {
                         </svg>
                       </span>
                       <div>
-                        <span className="font-extrabold text-blue-800 dark:text-blue-300 uppercase tracking-wider block mb-0.5 text-[11px]">
+                        <span className="font-extrabold text-blue-800  uppercase tracking-wider block mb-0.5 text-[11px]">
                           Official NERDC Syllabus Benchmark:
                         </span>
                         <span className="leading-relaxed">100% verified question bank aligned with official UTME, WAEC and NECO standards.</span>
@@ -313,22 +313,22 @@ export function HomeBrainLabLoop() {
             {/* RIGHT COLUMN: Authentic High-Voltage Interactive Telemetry Stage (Static locked height) */}
             <div className="lg:col-span-6 flex flex-col justify-center">
               <div
-                className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-5 sm:p-6 shadow-inner relative overflow-hidden h-[450px] flex flex-col justify-between"
+                className="rounded-2xl border-2 border-slate-200 bg-slate-50  p-5 sm:p-6 shadow-inner relative overflow-hidden h-[450px] flex flex-col justify-between"
                 role="region"
                 aria-label={`Preview of ${activeStage.title} Stage Output`}
                 data-slot="Diagnostic Cognitive Radar (Slot S3-02)"
               >
                 {/* Header Chrome Bar */}
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4 text-xs">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center text-blue-600 dark:text-cyan-300" aria-hidden="true">
+                    <span className="flex h-5 w-5 items-center justify-center text-blue-600 " aria-hidden="true">
                       <LoopStageIcon id={activeStage.id} className="h-4 w-4" />
                     </span>
-                    <span className="font-bold uppercase tracking-wider text-slate-900 dark:text-white text-[11px]">
+                    <span className="font-bold uppercase tracking-wider text-slate-900 text-[11px]">
                       {activeStage.title} Preview &bull; Interactive Learning Simulation
                     </span>
                   </div>
-                  <span className="rounded-md bg-blue-100 dark:bg-blue-900/60 border border-blue-200 dark:border-blue-700/60 px-2.5 py-0.5 text-[9px] font-black uppercase text-blue-800 dark:text-cyan-300">
+                  <span className="rounded-md bg-blue-100 dark:bg-blue-900/60 border border-blue-200  px-2.5 py-0.5 text-[9px] font-black uppercase text-blue-800 ">
                     {activeRoute.previewBadge}
                   </span>
                 </div>
@@ -337,13 +337,13 @@ export function HomeBrainLabLoop() {
                 {activeStage.id === "learn" && (
                   <div className="space-y-4 animate-bl-fade-in">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Formula Breakdown Mode:</span>
-                      <div className="flex rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0.5 text-[11px] shadow-xs">
+                      <span className="text-xs font-bold text-slate-700">Formula Breakdown Mode:</span>
+                      <div className="flex rounded-lg bg-white  border border-slate-200 p-0.5 text-[11px] shadow-xs">
                         <button
                           type="button"
                           onClick={() => setLearnFormulaMode("formula")}
                           className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                            learnFormulaMode === "formula" ? "bg-blue-600 text-white font-black shadow-xs" : "text-slate-600 dark:text-slate-400"
+                            learnFormulaMode === "formula" ? "bg-blue-600 text-white font-black shadow-xs" : "text-slate-600"
                           }`}
                         >
                           Equation
@@ -352,7 +352,7 @@ export function HomeBrainLabLoop() {
                           type="button"
                           onClick={() => setLearnFormulaMode("derivation")}
                           className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                            learnFormulaMode === "derivation" ? "bg-blue-600 text-white font-black shadow-xs" : "text-slate-600 dark:text-slate-400"
+                            learnFormulaMode === "derivation" ? "bg-blue-600 text-white font-black shadow-xs" : "text-slate-600"
                           }`}
                         >
                           Derivation
@@ -360,15 +360,15 @@ export function HomeBrainLabLoop() {
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-2 shadow-xs">
-                      <div className="flex items-center justify-between text-[11px] text-blue-600 dark:text-cyan-400 font-mono font-bold">
+                    <div className="rounded-xl border border-slate-200 bg-white  p-4 space-y-2 shadow-xs">
+                      <div className="flex items-center justify-between text-[11px] text-blue-600  font-mono font-bold">
                         <span>JAMB Physics &bull; Motion &amp; Kinematics</span>
                         <span>Equation #02</span>
                       </div>
-                      <div className="text-xl sm:text-2xl font-mono font-black text-slate-900 dark:text-white text-center py-2 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                      <div className="text-xl sm:text-2xl font-mono font-black text-slate-900 text-center py-2 bg-slate-50  rounded-lg border border-slate-200">
                         {learnFormulaMode === "formula" ? "v² = u² + 2as" : "s = ut + ½at²"}
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-center font-normal min-h-[36px] flex items-center justify-center">
+                      <p className="text-xs text-slate-600 leading-relaxed text-center font-normal min-h-[36px] flex items-center justify-center">
                         {learnFormulaMode === "formula"
                           ? "Relates final velocity directly to initial velocity, acceleration, and displacement without requiring time variable (t)."
                           : "Calculates total displacement covered under uniform acceleration over elapsed duration (t)."}
@@ -376,16 +376,16 @@ export function HomeBrainLabLoop() {
                     </div>
 
                     {/* Audio Narration Waveform Strip */}
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex items-center justify-between gap-3 shadow-xs">
+                    <div className="rounded-xl border border-slate-200 bg-white  p-3 flex items-center justify-between gap-3 shadow-xs">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-cyan-300 text-xs font-bold" aria-hidden="true">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100  text-blue-600  text-xs font-bold" aria-hidden="true">
                           <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
                             <polygon points="5 3 19 12 5 21 5 3" />
                           </svg>
                         </span>
                         <div>
-                          <div className="text-[11px] font-bold text-slate-900 dark:text-white">Audio Theory Walkthrough</div>
-                          <div className="text-[9px] text-slate-500 dark:text-slate-400 font-mono">Teacher: Dr. A. Bello (03:14)</div>
+                          <div className="text-[11px] font-bold text-slate-900">Audio Theory Walkthrough</div>
+                          <div className="text-[9px] text-slate-500 font-mono">Teacher: Dr. A. Bello (03:14)</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-0.5 h-4">
@@ -404,8 +404,8 @@ export function HomeBrainLabLoop() {
                 {/* 2. STAGE 2: PRACTISE — Authentic JAMB 8-Key Exam Cockpit */}
                 {activeStage.id === "practise" && (
                   <div className="space-y-4 animate-bl-fade-in">
-                    <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-xs shadow-xs">
-                      <span className="text-slate-600 dark:text-slate-400 font-mono font-medium">JAMB UTME Simulation</span>
+                    <div className="flex items-center justify-between bg-white  border border-slate-200 px-3 py-1.5 rounded-xl text-xs shadow-xs">
+                      <span className="text-slate-600 font-mono font-medium">JAMB UTME Simulation</span>
                       <span className="font-mono text-amber-600 dark:text-amber-400 font-black flex items-center gap-1.5">
                         <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <circle cx="12" cy="12" r="10" />
@@ -415,8 +415,8 @@ export function HomeBrainLabLoop() {
                       </span>
                     </div>
 
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-2.5 shadow-xs">
-                      <div className="text-[11px] font-bold text-blue-600 dark:text-cyan-400">
+                    <div className="rounded-xl border border-slate-200 bg-white  p-3.5 space-y-2.5 shadow-xs">
+                      <div className="text-[11px] font-bold text-blue-600 ">
                         Question 14 of 40 &bull; Chemistry (Acids &amp; Bases)
                       </div>
                       <p className="text-xs text-slate-800 dark:text-white leading-relaxed font-medium">
@@ -436,12 +436,12 @@ export function HomeBrainLabLoop() {
                             onClick={() => setPractiseOption(opt.k)}
                             className={`p-2.5 rounded-xl text-left flex items-center gap-2 transition-all border-2 border-b-4 cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                               practiseOption === opt.k
-                                ? "bg-emerald-50 border-emerald-600 dark:bg-emerald-950/60 dark:border-emerald-500 text-emerald-900 dark:text-emerald-100 font-bold shadow-xs"
-                                : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
+                                ? "bg-emerald-50 border-emerald-600   text-emerald-900 dark:text-emerald-100 font-bold shadow-xs"
+                                : "bg-slate-50  border-slate-200 text-slate-700 hover:border-slate-300 dark:hover:border-slate-700"
                             }`}
                           >
                             <span className={`h-5 w-5 rounded-md flex items-center justify-center text-[10px] font-black ${
-                              practiseOption === opt.k ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                              practiseOption === opt.k ? "bg-emerald-600 text-white" : "bg-slate-200  text-slate-700"
                             }`}>
                               {opt.k}
                             </span>
@@ -453,7 +453,7 @@ export function HomeBrainLabLoop() {
 
                     {/* 8-Key Simulator Keypad */}
                     <div className="space-y-1">
-                      <span className="text-[9px] font-mono text-slate-500 dark:text-slate-400 uppercase font-bold block">
+                      <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">
                         Official 8-Key Exam Controls:
                       </span>
                       <div className="grid grid-cols-8 gap-1.5 text-center font-mono text-[10px] font-black">
@@ -467,7 +467,7 @@ export function HomeBrainLabLoop() {
                             className={`h-7 rounded-lg border-2 border-b-4 active:border-b-2 active:translate-y-0.5 transition-all cursor-pointer shadow-xs ${
                               practiseOption === key
                                 ? "bg-blue-600 text-white border-blue-800 dark:border-blue-950 font-black"
-                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300"
+                                : "bg-white  border-slate-200 text-slate-800 dark:text-slate-200 hover:border-slate-300"
                             }`}
                           >
                             {key}
@@ -481,13 +481,13 @@ export function HomeBrainLabLoop() {
                 {/* 3. STAGE 3: DIAGNOSE — Slot S3-02 Cognitive Radar SVG */}
                 {activeStage.id === "diagnose" && (
                   <div className="space-y-4 animate-bl-fade-in" data-slot="Diagnostic Cognitive Radar (Slot S3-02)">
-                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between items-center">
+                    <div className="text-xs font-bold text-slate-700 flex justify-between items-center">
                       <span>Your Subject Strengths &amp; Weaknesses:</span>
-                      <span className="text-blue-600 dark:text-cyan-400 font-mono text-[11px] font-bold">Live Score Insights</span>
+                      <span className="text-blue-600  font-mono text-[11px] font-bold">Live Score Insights</span>
                     </div>
 
                     {/* SVG 5-Axis Radar Diagram */}
-                    <div className="relative rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 flex items-center justify-center h-44 shadow-xs">
+                    <div className="relative rounded-xl border border-slate-200 bg-white  p-4 flex items-center justify-center h-44 shadow-xs">
                       <svg viewBox="0 0 200 200" className="w-44 h-44 overflow-visible">
                         {/* Radar Grid Rings */}
                         <polygon points="100,20 176,75 147,165 53,165 24,75" fill="none" stroke="#cbd5e1" strokeWidth="1" className="dark:stroke-slate-700" />
@@ -529,7 +529,7 @@ export function HomeBrainLabLoop() {
                     <div className="rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-2.5 text-xs flex items-center justify-between shadow-xs">
                       <div>
                         <span className="text-rose-700 dark:text-rose-400 font-bold block text-[11px]">Flagged Diagnostic Weakness:</span>
-                        <span className="text-slate-900 dark:text-white text-[11px] font-semibold">Organic Chemistry (Alkanols &amp; Esters)</span>
+                        <span className="text-slate-900 text-[11px] font-semibold">Organic Chemistry (Alkanols &amp; Esters)</span>
                       </div>
                       <span className="rounded-md bg-rose-600 text-white px-2 py-1 text-[10px] font-black shadow-xs">
                         5 Remedial Drills
@@ -541,19 +541,19 @@ export function HomeBrainLabLoop() {
                 {/* 4. STAGE 4: IMPROVE — Socratic AI Guidance */}
                 {activeStage.id === "improve" && (
                   <div className="space-y-4 animate-bl-fade-in">
-                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between items-center">
+                    <div className="text-xs font-bold text-slate-700 flex justify-between items-center">
                       <span>Socratic Guidance Engine:</span>
                       <span className="text-purple-600 dark:text-purple-400 font-mono text-[11px] font-bold">Zero Answer Spoilers</span>
                     </div>
 
                     {/* Interactive Socratic Dialogue Box (Static height - zero layout jump) */}
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-2.5 shadow-xs h-[255px] flex flex-col justify-between overflow-hidden">
+                    <div className="rounded-xl border border-slate-200 bg-white  p-4 space-y-2.5 shadow-xs h-[255px] flex flex-col justify-between overflow-hidden">
                       <div className="space-y-2">
                         <div className="flex items-start gap-2.5 text-xs">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-[10px] font-bold">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100  text-slate-700 font-mono text-[10px] font-bold">
                             YOU
                           </span>
-                          <p className="text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px]">
+                          <p className="text-slate-700 dark:text-slate-200 bg-slate-50  p-2 rounded-lg border border-slate-200 text-[11px]">
                             &ldquo;Why is option B incorrect in the esterification question?&rdquo;
                           </p>
                         </div>
@@ -573,12 +573,12 @@ export function HomeBrainLabLoop() {
                       {/* Reserved Hint Slot (Zero layout shift whether revealed or hidden) */}
                       <div className="min-h-[54px] flex items-center">
                         {showSocraticHint ? (
-                          <div className="w-full text-amber-800 dark:text-amber-300 text-[11px] font-medium border-t border-purple-200 dark:border-purple-800/60 pt-1.5 animate-bl-fade-in flex items-start gap-1.5 bg-amber-50/50 dark:bg-amber-950/30 p-2 rounded-lg">
-                            <span className="text-amber-700 dark:text-amber-400 font-bold uppercase text-[10px] tracking-wider bg-amber-100 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-500/30 shrink-0">Hint</span>
+                          <div className="w-full text-amber-800  text-[11px] font-medium border-t border-purple-200 dark:border-purple-800/60 pt-1.5 animate-bl-fade-in flex items-start gap-1.5 bg-amber-50/50 dark:bg-amber-950/30 p-2 rounded-lg">
+                            <span className="text-amber-700 dark:text-amber-400 font-bold uppercase text-[10px] tracking-wider bg-amber-100 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-300 /30 shrink-0">Hint</span>
                             <span>At 170°C, concentrated sulfuric acid removes water completely to yield an alkene (ethene), not an ester!</span>
                           </div>
                         ) : (
-                          <div className="w-full text-[11px] text-slate-400 dark:text-slate-500 italic text-center p-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
+                          <div className="w-full text-[11px] text-slate-400 dark:text-slate-500 italic text-center p-2 border border-dashed border-slate-200 rounded-lg">
                             Tap below to reveal Socratic Step 1 reasoning hint
                           </div>
                         )}
@@ -604,15 +604,15 @@ export function HomeBrainLabLoop() {
                 {activeStage.id === "master" && (
                   <div className="space-y-4 animate-bl-fade-in">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">National Elo Sprint Battle:</span>
+                      <span className="font-bold text-slate-700">National Elo Sprint Battle:</span>
                       <span className="text-amber-600 dark:text-amber-400 font-mono font-black">National Master Tier</span>
                     </div>
 
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3 shadow-xs">
+                    <div className="rounded-xl border border-slate-200 bg-white  p-4 space-y-3 shadow-xs">
                       <div className="flex items-center justify-between text-xs">
                         <div>
-                          <div className="font-extrabold text-slate-900 dark:text-white">Challenger Speed Sprint</div>
-                          <div className="text-[10px] text-amber-600 dark:text-amber-300 font-mono font-bold">Rank #14 Nationwide</div>
+                          <div className="font-extrabold text-slate-900">Challenger Speed Sprint</div>
+                          <div className="text-[10px] text-amber-600  font-mono font-bold">Rank #14 Nationwide</div>
                         </div>
                         <div className="text-right">
                           <div className="font-mono font-black text-amber-600 dark:text-amber-400 text-sm">Elo: 1420</div>
@@ -625,27 +625,27 @@ export function HomeBrainLabLoop() {
                         </div>
                       </div>
 
-                      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div className="h-2 rounded-full bg-slate-100  overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full w-[94%]" />
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-center text-[10px] font-mono">
-                        <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 dark:text-slate-400 block">Avg Response</span>
-                          <span className="font-bold text-slate-900 dark:text-white text-xs">11.4s / Question</span>
+                        <div className="rounded-lg bg-slate-50  p-2 border border-slate-200">
+                          <span className="text-slate-500 block">Avg Response</span>
+                          <span className="font-bold text-slate-900 text-xs">11.4s / Question</span>
                         </div>
-                        <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2 border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 dark:text-slate-400 block">Sprint Duels</span>
-                          <span className="font-bold text-amber-600 dark:text-amber-300 text-xs">Synchronous 1v1</span>
+                        <div className="rounded-lg bg-slate-50  p-2 border border-slate-200">
+                          <span className="text-slate-500 block">Sprint Duels</span>
+                          <span className="font-bold text-amber-600  text-xs">Synchronous 1v1</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-1 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-200 dark:border-slate-800">
+                    <div className="pt-1 text-[11px] text-slate-500 flex items-center justify-between border-t border-slate-200">
                       <span>Continuous Learning System</span>
                       <span className="text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1.5">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Active in all plan tiers</span>
+                        <span>Active for all candidate tracks</span>
                       </span>
                     </div>
                   </div>

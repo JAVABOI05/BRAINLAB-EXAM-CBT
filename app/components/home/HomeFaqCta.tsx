@@ -114,7 +114,7 @@ export function HomeFaqCta() {
               href="/pricing"
               className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 dark:border-white/10 bg-white dark:bg-[#0C152B] text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-[#121E3D] px-7 py-4 text-base font-bold active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
             >
-              View Student Plans &amp; Pricing
+              Explore All Learning Tracks
             </Link>
           </div>
 

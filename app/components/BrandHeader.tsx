@@ -546,7 +546,7 @@ export default function BrandHeader() {
                     onClick={closeAllMenus}
                     className="font-bold text-blue-600 dark:text-cyan-400 hover:underline"
                   >
-                    View Plan Tiers &rarr;
+                    Explore All Tracks &rarr;
                   </Link>
                 </div>
               </div>

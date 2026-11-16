@@ -63,8 +63,8 @@ export function HomePricingTeaser() {
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <span className="text-4xl font-black text-cyan-400">₦0</span>
-              <span className="text-xs text-slate-400 block font-medium">/ candidate standard tier</span>
+              <span className="text-3xl sm:text-4xl font-black text-cyan-400 uppercase tracking-tight">Free</span>
+              <span className="text-xs text-slate-400 block font-medium">Universal Open Access</span>
             </div>
           </div>
 
@@ -147,10 +147,13 @@ export function HomePricingTeaser() {
               <span aria-hidden="true">&rarr;</span>
             </Link>
 
-            <div className="text-xs text-slate-400 text-center sm:text-right">
-              Optional upgrades from ₦{plan.price_naira.toLocaleString()} &bull;{" "}
+            <div
+              className="text-xs text-slate-400 text-center sm:text-right"
+              data-plan-rate={plan.price_naira.toLocaleString()}
+            >
+              Universal access across all exam tracks &bull;{" "}
               <Link href="/pricing" className="text-cyan-400 hover:text-cyan-300 font-bold underline">
-                View full plans breakdown &rarr;
+                Explore full curriculum &amp; learning tracks &rarr;
               </Link>
             </div>
           </div>
