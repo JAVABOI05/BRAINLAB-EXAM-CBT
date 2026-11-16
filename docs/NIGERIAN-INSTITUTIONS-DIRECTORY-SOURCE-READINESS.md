@@ -87,9 +87,59 @@ Source:
 
 ## 5. Import blockers
 
-- NBTE's 2025 directory PDF is 13,841,731 bytes and could not be fetched by the available web reader due to the file-size limit. No extraction has been done.
+- NBTE's 25th Edition 2025 Directory PDF has now been supplied in the conversation and inspected directly (540 pages; 13,841,731 bytes; title page dated June 2025; foreword signed 1 July 2025). Selected sections have been extracted for analysis, but no complete machine-readable institution/programme dataset has yet been built or imported.
 - The NBTE live register is paginated (the institution search result indicates hundreds of pages); a bulk export/API is not yet verified.
 - NCCE's current list is readable in the public page, but no documented structured CSV/API export has been verified. The current Accreditation Status DOCX could not be read by the available reader.
 - NUC's current web list is readable in indexed extracts but a complete machine-readable export has not been verified.
 
 Do not describe the dataset as complete or publish source counts as BrainLab verified counts until the rows have been captured, normalised, reconciled and approved.
+
+
+## 6. NBTE 25th Edition 2025 Directory — direct file inspection
+
+**Document identity**
+- Title: *Directory of Accredited Programmes Offered in Polytechnics, Technical and Vocational Institutions in Nigeria*, 25th Edition.
+- Publisher: National Board for Technical Education (NBTE).
+- Edition date on title page: June 2025.
+- Foreword date: 1 July 2025.
+- Length: 540 pages.
+- ISBN: 978-978-916-767-8.
+- The document states that all rights are reserved and that reproduction requires prior written permission, except brief quotations for academic discourse/publications. Obtain written reuse permission before bulk republishing extracted records in BrainLab.
+
+**Scope declared by NBTE**
+The foreword says the directory covers NBTE-regulated TVET institutions and programmes granted full accreditation and approval accreditation. Its listed institution categories are:
+- Polytechnics
+- Colleges of Agriculture
+- Colleges of Nursing Sciences
+- Colleges of Health Sciences
+- Specialised Institutions
+- Innovation Enterprise Institutions (IEIs)
+- Technical Colleges
+- Vocational Enterprise Institutions (VEIs)
+- NSQ Training Providers/Centres
+
+It lists certificate/qualification types including Post-HND, HND, ND, NID, ANBC, ANTC, NBC, NTC, NVC and NSQ. Do not treat every listed qualification as a tertiary academic award; the category and award level must be retained separately.
+
+**Important accreditation semantics**
+The foreword says accreditation takes effect from the latest date shown in the expiration-date column and that accredited programmes are due for another visit after five calendar years. The abbreviation key defines additional states beyond the simple Accredited/Interim/Expired labels, including Expired*, Interim*, Interim**, Revalidation, Denied, Dropped and Withdrawn. The extraction model must preserve the exact source status token and its footnote meaning; do not collapse these into a single boolean.
+
+**Institution and programme structure**
+- The directory includes a list of polytechnics with establishment year and ownership.
+- It includes a six-geopolitical-zone summary by institution type and proprietorship. The printed total is 962 across its listed categories; the polytechnics row totals 186. This is the document's own summary, not a verified unique national count and not directly comparable to the live NBTE register count without reconciliation.
+- It has a consolidated programme catalogue grouped by divisions and programme names.
+- Later institution-specific tables list programme names, award levels, year granted (including prior/interim year annotations), accreditation status, approved streams and expiration date.
+- These are distinct data entities: source institution; catalogue programme label; institution-programme offering; accreditation decision/record; source document and page/row evidence.
+
+**Observed data-quality risks from inspected pages**
+- Inconsistent programme numbering and repeated/missing serial numbers.
+- OCR/text extraction can misread symbols, punctuation and wrapped programme names.
+- Date formatting inconsistencies occur (for example, extra slash characters in an expiration date).
+- The source includes institutions whose names/type may need classification review and records indicating takeover/merger history.
+- Some rows show status/date combinations that need to be preserved as printed and reviewed, not silently corrected.
+
+**Extraction status**
+Selected pages were inspected, including the foreword/abbreviation key, polytechnic listing, six-zone summary, consolidated programme catalogue and early institution-specific programme tables. This is not a full extraction of all 540 pages. No source row has been imported into a BrainLab database or marked verified for publication.
+
+**Source links and access**
+- NBTE directory landing page: https://web.nbte.gov.ng/node/114
+- The supplied file is the official 25th Edition 2025 PDF. Its page-2 copyright notice is the basis for the reuse-permission blocker above.
