@@ -130,26 +130,53 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 7. Award participation XP if authenticated
-    const participationXp = Number(comp?.rewards_config?.xp_participation) || 25;
+    // 7. Award participation & performance XP if authenticated
+    const baseParticipationXp = Number(comp?.rewards_config?.xp_participation) || 25;
+    const performanceBonus = percentage >= 80 ? 25 : percentage >= 50 ? 10 : 0;
+    const totalXpEarned = baseParticipationXp + performanceBonus;
+
     if (user?.id) {
       try {
-        await supabase.rpc("increment_user_xp", {
-          user_id_param: user.id,
-          xp_to_add: participationXp,
-        });
-      } catch {
-        const { data: prof } = await supabase
-          .from("user_profiles")
-          .select("xp")
-          .eq("id", user.id)
+        // Direct update to user_gamification_profiles for guaranteed dashboard synchronization
+        const { data: gProfile } = await supabase
+          .from("user_gamification_profiles")
+          .select("lifetime_xp, current_level, current_streak_days, longest_streak_days")
+          .eq("user_id", user.id)
           .maybeSingle();
-        if (prof) {
-          await supabase
-            .from("user_profiles")
-            .update({ xp: (Number(prof.xp) || 0) + participationXp })
-            .eq("id", user.id);
-        }
+
+        const currentXp = Number(gProfile?.lifetime_xp) || 0;
+        const newLifetimeXp = currentXp + totalXpEarned;
+        const newLevel = Math.max(1, Math.floor(newLifetimeXp / 250) + 1);
+        const todayStr = new Date().toISOString().split("T")[0];
+
+        await supabase.from("user_gamification_profiles").upsert(
+          {
+            user_id: user.id,
+            lifetime_xp: newLifetimeXp,
+            current_level: newLevel,
+            last_activity_date: todayStr,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+        // Record in ledger
+        await supabase.from("user_xp_ledger").insert({
+          user_id: user.id,
+          amount: totalXpEarned,
+          activity_type: "competition",
+          idempotency_key: `comp_${competitionId}_${user.id}_${Date.now()}`,
+          description: `Challenge Arena attempt for ${comp.title || "competition"}`,
+          metadata: { competitionId, score: percentage },
+        });
+
+        // Backward compatibility for user_profiles.xp
+        await supabase
+          .from("user_profiles")
+          .update({ xp: newLifetimeXp })
+          .eq("id", user.id);
+      } catch {
+        // Non-blocking fallback
       }
     }
 
@@ -177,7 +204,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       correctCount,
       totalQuestions: questions.length,
       durationSpentSeconds,
-      xpEarned: user ? participationXp : 0,
+      xpEarned: totalXpEarned,
       message: "Competition attempt submitted and graded successfully!",
     });
   } catch (err: unknown) {

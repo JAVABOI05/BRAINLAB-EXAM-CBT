@@ -117,12 +117,84 @@ export async function getUserBadges(userId: string): Promise<UserBadgeAward[]> {
   }
 }
 
+export interface AwardXpParams {
+  userId?: string | null;
+  activityType: "exam_complete" | "diagnostic_complete" | "practice_complete" | "competition" | "lesson_complete" | "spaced_repetition" | "quest_complete";
+  referenceId: string;
+  amount: number;
+  description?: string;
+  scorePercent?: number;
+}
+
+export interface AwardXpResult {
+  ok: boolean;
+  awarded_xp: number;
+  lifetime_xp: number;
+  current_level: number;
+  level_name: string;
+  streak_days: number;
+  leveled_up?: boolean;
+}
+
+export function calculateLevelFromXp(xp: number): { level: number; name: string; nextLevelXp: number } {
+  const levels = [
+    { level: 1, name: "Beginner", min_xp: 0 },
+    { level: 2, name: "Junior Scholar", min_xp: 200 },
+    { level: 3, name: "Rising Scholar", min_xp: 500 },
+    { level: 4, name: "Active Candidate", min_xp: 1000 },
+    { level: 5, name: "Senior Candidate", min_xp: 2000 },
+    { level: 6, name: "Distinguished Scholar", min_xp: 4000 },
+    { level: 7, name: "Master Scholar", min_xp: 7000 },
+    { level: 8, name: "Grandmaster Scholar", min_xp: 12000 },
+    { level: 9, name: "Legendary Scholar", min_xp: 20000 },
+    { level: 10, name: "Apex Scholar", min_xp: 35000 },
+  ];
+  let current = levels[0];
+  let nextXp = 200;
+  for (let i = 0; i < levels.length; i++) {
+    if (xp >= levels[i].min_xp) {
+      current = levels[i];
+      nextXp = levels[i + 1]?.min_xp || levels[i].min_xp * 2;
+    } else {
+      break;
+    }
+  }
+  return { level: current.level, name: current.name, nextLevelXp: nextXp };
+}
+
+function getStoredLocalGamification(): UserGamificationProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("bl_student_xp_cache");
+    if (!raw) return null;
+    return JSON.parse(raw) as UserGamificationProfile;
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredLocalGamification(profile: UserGamificationProfile): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("bl_student_xp_cache", JSON.stringify(profile));
+    localStorage.setItem("brainlab_streak_count", String(profile.current_streak_days));
+    if (profile.last_activity_date) {
+      localStorage.setItem("brainlab_last_active_date", profile.last_activity_date);
+    }
+    window.dispatchEvent(new Event("brainlab-local-storage"));
+    window.dispatchEvent(new CustomEvent("brainlab_xp_awarded", { detail: profile }));
+  } catch {}
+}
+
 /**
  * Fetch a user's full gamification stats (XP, level, streaks, counts).
+ * Resilient: Falls back to local storage cache or initializes a starter candidate profile.
  */
 export async function getUserGamificationProfile(
   userId: string
-): Promise<UserGamificationProfile | null> {
+): Promise<UserGamificationProfile> {
+  const localCached = getStoredLocalGamification();
+
   try {
     const { data, error } = await supabase
       .from("user_gamification_profiles")
@@ -130,11 +202,52 @@ export async function getUserGamificationProfile(
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (error || !data) return null;
-    return data as UserGamificationProfile;
-  } catch {
-    return null;
+    if (!error && data) {
+      const dbProfile = data as UserGamificationProfile;
+      saveStoredLocalGamification(dbProfile);
+      return dbProfile;
+    }
+  } catch {}
+
+  if (localCached && localCached.user_id === userId) {
+    return localCached;
   }
+
+  // Construct initial starter profile
+  const todayStr = new Date().toISOString().split("T")[0];
+  const initialProfile: UserGamificationProfile = {
+    user_id: userId,
+    lifetime_xp: localCached?.lifetime_xp || 100,
+    current_level: localCached?.current_level || 1,
+    level_name: localCached?.level_name || "Beginner",
+    current_streak_days: localCached?.current_streak_days || 1,
+    longest_streak_days: localCached?.longest_streak_days || 1,
+    last_activity_date: todayStr,
+    quizzes_completed_count: localCached?.quizzes_completed_count || 1,
+    perfect_scores_count: 0,
+    competitions_won_count: 0,
+    updated_at: new Date().toISOString(),
+  };
+
+  saveStoredLocalGamification(initialProfile);
+
+  // Asynchronously provision user_gamification_profiles in DB if possible
+  void Promise.resolve(
+    supabase
+      .from("user_gamification_profiles")
+      .upsert({
+        user_id: userId,
+        lifetime_xp: initialProfile.lifetime_xp,
+        current_level: initialProfile.current_level,
+        level_name: initialProfile.level_name,
+        current_streak_days: initialProfile.current_streak_days,
+        longest_streak_days: initialProfile.longest_streak_days,
+        last_activity_date: todayStr,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" })
+  ).catch(() => {});
+
+  return initialProfile;
 }
 
 /**
@@ -247,6 +360,128 @@ export async function getGamificationLeaderboard(
   } catch {
     return [];
   }
+}
+
+/**
+ * Universal XP & Streak Awarding Engine.
+ * Supports online, offline, authenticated, and guest modes.
+ * Immediately updates local state & caches, then persists to Supabase.
+ */
+export async function awardStudentXp(params: AwardXpParams): Promise<AwardXpResult> {
+  const { activityType, referenceId, amount, description, scorePercent } = params;
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // 1. Get or initialize local cache
+  const cached = getStoredLocalGamification() || {
+    user_id: params.userId || "candidate-guest",
+    lifetime_xp: 0,
+    current_level: 1,
+    level_name: "Beginner",
+    current_streak_days: 1,
+    longest_streak_days: 1,
+    last_activity_date: todayStr,
+    quizzes_completed_count: 0,
+    perfect_scores_count: 0,
+    competitions_won_count: 0,
+    updated_at: new Date().toISOString(),
+  };
+
+  const oldLevel = cached.current_level;
+  const newLifetimeXp = Math.max(0, cached.lifetime_xp + amount);
+  const { level: newLevel, name: newLevelName } = calculateLevelFromXp(newLifetimeXp);
+
+  // Calculate streak update
+  let newStreak = cached.current_streak_days || 1;
+  if (cached.last_activity_date && cached.last_activity_date !== todayStr) {
+    const lastDate = new Date(cached.last_activity_date);
+    const today = new Date(todayStr);
+    const diffDays = Math.round((today.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+    if (diffDays === 1) {
+      newStreak += 1;
+    } else if (diffDays > 1) {
+      newStreak = 1;
+    }
+  }
+  const newLongestStreak = Math.max(cached.longest_streak_days || 1, newStreak);
+
+  const updatedProfile: UserGamificationProfile = {
+    ...cached,
+    user_id: params.userId || cached.user_id,
+    lifetime_xp: newLifetimeXp,
+    current_level: newLevel,
+    level_name: newLevelName,
+    current_streak_days: newStreak,
+    longest_streak_days: newLongestStreak,
+    last_activity_date: todayStr,
+    quizzes_completed_count: (cached.quizzes_completed_count || 0) + 1,
+    perfect_scores_count:
+      (scorePercent ?? 0) >= 100
+        ? (cached.perfect_scores_count || 0) + 1
+        : cached.perfect_scores_count || 0,
+    updated_at: new Date().toISOString(),
+  };
+
+  saveStoredLocalGamification(updatedProfile);
+
+  // 2. Persist to server if authenticated
+  let resolvedUserId = params.userId;
+  if (!resolvedUserId) {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      resolvedUserId = auth.user?.id;
+    } catch {}
+  }
+
+  if (resolvedUserId && resolvedUserId !== "candidate-guest") {
+    // Try record_learning_activity RPC first
+    void Promise.resolve(
+      supabase.rpc("record_learning_activity", {
+        p_user_id: resolvedUserId,
+        p_activity_type: activityType === "competition" ? "competition" : "quiz_complete",
+        p_reference_id: referenceId,
+        p_score_percent: scorePercent ?? null,
+      })
+    ).catch(() => {});
+
+    // Always ensure user_gamification_profiles is directly up-to-date
+    void Promise.resolve(
+      supabase
+        .from("user_gamification_profiles")
+        .upsert(
+          {
+            user_id: resolvedUserId,
+            lifetime_xp: newLifetimeXp,
+            current_level: newLevel,
+            level_name: newLevelName,
+            current_streak_days: newStreak,
+            longest_streak_days: newLongestStreak,
+            last_activity_date: todayStr,
+            quizzes_completed_count: updatedProfile.quizzes_completed_count,
+            perfect_scores_count: updatedProfile.perfect_scores_count,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        )
+    ).catch(() => {});
+
+    // Backwards-compat update for user_profiles.xp
+    void Promise.resolve(
+      supabase
+        .from("user_profiles")
+        .update({ xp: newLifetimeXp })
+        .eq("id", resolvedUserId)
+    ).catch(() => {});
+  }
+
+  return {
+    ok: true,
+    awarded_xp: amount,
+    lifetime_xp: newLifetimeXp,
+    current_level: newLevel,
+    level_name: newLevelName,
+    streak_days: newStreak,
+    leveled_up: newLevel > oldLevel,
+  };
 }
 
 /**

@@ -181,7 +181,7 @@ const FAQ_DATABASE: FAQItem[] = [
     category: "account",
     categoryLabel: "Account & Help",
     question: "What are the verified BrainLab customer support channels?",
-    answer: "Official phone lines: +234 907 431 0204 and +234 902 111 8231. WhatsApp Desk: +234 907 431 0204. Official Email: support@brainlabacademy.com.ng. We also run active student communities on WhatsApp, Instagram, TikTok, and YouTube.",
+    answer: "Official Helpdesk: +234 808 926 7399. WhatsApp Desk: +234 808 926 7399. Official Email: support@brainlabacademy.com.ng. We also run active student communities on WhatsApp, Instagram, TikTok, and YouTube.",
     actionHref: "/contact",
     actionLabel: "Contact Directory",
   },

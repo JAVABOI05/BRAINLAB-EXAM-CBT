@@ -65,12 +65,38 @@ export async function GET(request: NextRequest) {
     });
 
     // Filter and map candidate records
-    const candidates = users
-      .filter((u) => {
-        // Exclude system administrators from candidate directory
-        const isStaff = adminMap.has(u.id);
-        if (isStaff) return false;
+    const nonStaffUsers = users.filter((u) => !adminMap.has(u.id));
 
+    // Global summary statistics across entire candidate directory
+    let atRiskCount = 0;
+    let unconfirmedCount = 0;
+    let activeSubscribersCount = 0;
+    let suspendedCount = 0;
+
+    nonStaffUsers.forEach((u) => {
+      const meta = (u.user_metadata || {}) as JsonRecord;
+      const isSuspended =
+        meta.is_suspended === true ||
+        (u.banned_until && new Date(u.banned_until) > new Date());
+      const g = gamificationMap.get(u.id);
+      const isAtRisk =
+        !isSuspended &&
+        ((g?.streak_days || 0) === 0 ||
+          !u.last_sign_in_at ||
+          new Date(u.last_sign_in_at).getTime() < Date.now() - 14 * 86400 * 1000);
+
+      if (isSuspended) suspendedCount++;
+      if (!u.email_confirmed_at) unconfirmedCount++;
+      if (isAtRisk) atRiskCount++;
+
+      const sub = subMap.get(u.id);
+      if (sub && sub.status === "active" && sub.plan_id !== "free") {
+        activeSubscribersCount++;
+      }
+    });
+
+    const candidates = nonStaffUsers
+      .filter((u) => {
         const meta = (u.user_metadata || {}) as JsonRecord;
         const fullName = String(meta.full_name || meta.name || "").toLowerCase();
         const email = String(u.email || "").toLowerCase();
@@ -126,6 +152,9 @@ export async function GET(request: NextRequest) {
           phone: (meta.phone as string) || u.phone || "N/A",
           targetExam: (meta.target_exam as string) || (meta.exam_type as string) || "JAMB UTME",
           targetScore: Number(meta.target_score) || 280,
+          targetCourse: (meta.target_course as string) || (meta.course as string) || null,
+          dreamSchool: (meta.dream_school as string) || (meta.institution as string) || (meta.university as string) || null,
+          selectedSubjects: meta.selected_subjects || null,
           stateOfOrigin: (meta.state as string) || (meta.state_of_origin as string) || "N/A",
           createdAt: u.created_at,
           lastSignInAt: u.last_sign_in_at || null,
@@ -161,17 +190,6 @@ export async function GET(request: NextRequest) {
     const paginatedCandidates = candidates.slice(startIndex, startIndex + limit);
     const totalPages = Math.ceil(total / limit);
 
-    // Summary statistics
-    const activeSubscribersCount = users.filter((u) => {
-      const sub = subMap.get(u.id);
-      return sub && sub.status === "active" && sub.plan_id !== "free";
-    }).length;
-
-    const suspendedCount = users.filter((u) => {
-      const meta = (u.user_metadata || {}) as JsonRecord;
-      return meta.is_suspended === true || (u.banned_until && new Date(u.banned_until) > new Date());
-    }).length;
-
     return NextResponse.json({
       ok: true,
       candidates: paginatedCandidates,
@@ -182,10 +200,12 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
       stats: {
-        totalCandidates: total,
+        totalCandidates: nonStaffUsers.length,
         activeSubscribers: activeSubscribersCount,
         suspendedAccounts: suspendedCount,
-        freeTierCandidates: total - activeSubscribersCount,
+        freeTierCandidates: nonStaffUsers.length - activeSubscribersCount,
+        atRiskCount,
+        unconfirmedCount,
       },
     });
   } catch (err) {

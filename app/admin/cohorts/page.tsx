@@ -108,11 +108,36 @@ export default function AccessAndCohortManagementPage() {
   const [codePrefixTag, setCodePrefixTag] = useState("BLT");
   const [createdPlainCode, setCreatedPlainCode] = useState<string | null>(null);
 
+  // Active Flagship Cohort Platform Config State (Renaming & Cohort Switching)
+  const [cohortName, setCohortName] = useState("Apex Cohort");
+  const [cohortTagline, setCohortTagline] = useState("Guided Educational Programme & Intensive Mentorship");
+  const [cohortSession, setCohortSession] = useState("2026/2027");
+  const [cohortTarget, setCohortTarget] = useState("JAMB UTME 2027");
+  const [cohortIsEnrolling, setCohortIsEnrolling] = useState(true);
+  const [cohortSaving, setCohortSaving] = useState(false);
+  const [showNewCohortModal, setShowNewCohortModal] = useState(false);
+  const [newCohortNameInput, setNewCohortNameInput] = useState("");
+
   const loadData = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/cohorts");
+      const [res, cohortCfgRes] = await Promise.all([
+        fetch("/api/admin/cohorts"),
+        fetch("/api/admin/cohort-config"),
+      ]);
+
+      if (cohortCfgRes.ok) {
+        const cfgJson = await cohortCfgRes.json();
+        if (cfgJson.ok && cfgJson.config) {
+          setCohortName(cfgJson.config.active_cohort_name || "Apex Cohort");
+          setCohortTagline(cfgJson.config.active_cohort_tagline || "Guided Educational Programme & Intensive Mentorship");
+          setCohortSession(cfgJson.config.active_cohort_session || "2026/2027");
+          setCohortTarget(cfgJson.config.active_cohort_target || "JAMB UTME 2027");
+          setCohortIsEnrolling(cfgJson.config.is_enrolling !== false);
+        }
+      }
+
       if (!res.ok) {
         throw new Error("Failed to load cohort management data.");
       }
@@ -308,6 +333,83 @@ export default function AccessAndCohortManagementPage() {
     }
   };
 
+  // Save/Rename Flagship Cohort Handler
+  const handleSaveCohortConfig = async () => {
+    if (!cohortName.trim()) {
+      setError("Cohort name cannot be empty.");
+      return;
+    }
+    setCohortSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/admin/cohort-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_config",
+          active_cohort_name: cohortName.trim(),
+          active_cohort_tagline: cohortTagline.trim(),
+          active_cohort_session: cohortSession.trim(),
+          active_cohort_target: cohortTarget.trim(),
+          is_enrolling: cohortIsEnrolling,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || "Failed to update cohort name");
+      setNotice(`Cohort name successfully updated to "${cohortName.trim()}"! Changes have propagated platform-wide.`);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("brainlab_cfg_cohort_platform_config", JSON.stringify(json.config));
+        } catch {}
+      }
+      await loadData();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setCohortSaving(false);
+    }
+  };
+
+  // Create New Cohort Handler
+  const handleCreateNewCohort = async () => {
+    if (!newCohortNameInput.trim()) {
+      setError("Please provide a name for the new cohort.");
+      return;
+    }
+    setCohortSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/admin/cohort-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_new_cohort",
+          new_cohort_name: newCohortNameInput.trim(),
+          session: cohortSession.trim(),
+          exam_target: cohortTarget.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || "Failed to create new cohort");
+      setCohortName(newCohortNameInput.trim());
+      setNewCohortNameInput("");
+      setShowNewCohortModal(false);
+      setNotice(`New cohort "${json.config.active_cohort_name}" created and set as active cohort platform-wide!`);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("brainlab_cfg_cohort_platform_config", JSON.stringify(json.config));
+        } catch {}
+      }
+      await loadData();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setCohortSaving(false);
+    }
+  };
+
   return (
     <main className="admin-page-container min-h-screen px-4 py-8 max-w-7xl mx-auto space-y-6">
       <AdminPinGuard>
@@ -420,6 +522,173 @@ export default function AccessAndCohortManagementPage() {
         {/* TAB 1: ACADEMIC PROGRAMMES & COHORTS */}
         {activeTab === "programmes" && (
           <div className="space-y-6">
+            {/* Flagship Cohort & Public Identity Control Panel */}
+            <section className="rounded-2xl border-2 border-indigo-500/40 bg-gradient-to-br from-indigo-50/60 via-white to-blue-50/40 p-5 shadow-sm dark:border-indigo-500/30 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950/20 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 dark:border-indigo-950 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                      FLAGSHIP COHORT (APEX) GOVERNANCE
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live Platform-Wide
+                    </span>
+                  </div>
+                  <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">
+                    Active Cohort Identity &amp; Branding
+                  </h2>
+                  <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    Change the cohort name below. Saving updates every single surface across BrainLab (Navigation Header, Pricing Plan, Enrolment Portal, WhatsApp Helpdesk Dispatch, and Classroom Gates) dynamically.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCohortModal(true)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-300 bg-white px-3.5 py-2 text-xs font-bold text-indigo-700 shadow-2xs hover:bg-indigo-50 dark:border-indigo-700 dark:bg-slate-900 dark:text-indigo-300 min-h-[40px] cursor-pointer"
+                  >
+                    <span>+ Launch New Cohort</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Active Cohort Form */}
+              <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-300">
+                    Cohort Display Name (Applies Everywhere) *
+                  </label>
+                  <input
+                    type="text"
+                    value={cohortName}
+                    onChange={(e) => setCohortName(e.target.value)}
+                    placeholder="e.g. Apex Cohort or Pinnacle Cohort 2027"
+                    className={`mt-1 font-bold ${inputClass}`}
+                  />
+                  <span className="text-[11px] text-slate-500 mt-1 block">
+                    Default: <strong>Apex Cohort</strong>. Renaming updates all public marketing and student portals.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    Academic Session
+                  </label>
+                  <input
+                    type="text"
+                    value={cohortSession}
+                    onChange={(e) => setCohortSession(e.target.value)}
+                    placeholder="e.g. 2026/2027"
+                    className={`mt-1 ${inputClass}`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    Examination Target
+                  </label>
+                  <input
+                    type="text"
+                    value={cohortTarget}
+                    onChange={(e) => setCohortTarget(e.target.value)}
+                    placeholder="e.g. JAMB UTME 2027"
+                    className={`mt-1 ${inputClass}`}
+                  />
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    Tagline / Programme Purpose
+                  </label>
+                  <input
+                    type="text"
+                    value={cohortTagline}
+                    onChange={(e) => setCohortTagline(e.target.value)}
+                    placeholder="e.g. Guided Educational Programme & Intensive Mentorship"
+                    className={`mt-1 ${inputClass}`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    Enrolment Admissions Status
+                  </label>
+                  <select
+                    value={cohortIsEnrolling ? "open" : "closed"}
+                    onChange={(e) => setCohortIsEnrolling(e.target.value === "open")}
+                    className={`mt-1 ${inputClass}`}
+                  >
+                    <option value="open">Admissions Open (Enrolling)</option>
+                    <option value="closed">Admissions Closed (Full)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between pt-4 border-t border-indigo-100 dark:border-indigo-950">
+                <div className="text-xs text-slate-500">
+                  Current Live Name: <strong className="text-indigo-600 dark:text-indigo-400 font-black">{cohortName}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveCohortConfig()}
+                  disabled={cohortSaving || !cohortName.trim()}
+                  className="inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 text-sm font-black text-white shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[44px] cursor-pointer"
+                >
+                  {cohortSaving ? "Saving..." : "Save & Propagate Cohort Name"}
+                </button>
+              </div>
+
+              {/* Modal for Launching a New Cohort */}
+              {showNewCohortModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+                  <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                      Launch &amp; Register New Academic Cohort
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                      Creates a new cohort entity in the database and automatically promotes it as the new active cohort name across the entire platform.
+                    </p>
+                    <div className="mt-4 space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
+                          New Cohort Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={newCohortNameInput}
+                          onChange={(e) => setNewCohortNameInput(e.target.value)}
+                          placeholder="e.g. Pinnacle Cohort 2027 or Titan UTME Batch"
+                          className={`mt-1 ${inputClass}`}
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-6 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewCohortModal(false);
+                          setNewCohortNameInput("");
+                        }}
+                        className={buttonSecondary}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateNewCohort()}
+                        disabled={cohortSaving || !newCohortNameInput.trim()}
+                        className={buttonPrimary}
+                      >
+                        {cohortSaving ? "Creating..." : "Create & Activate Cohort"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
             {/* Create Programme Card */}
             <section className={panelClass}>
               <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">

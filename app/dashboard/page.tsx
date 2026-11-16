@@ -173,95 +173,159 @@ export default function LearnerDashboardPage() {
 
   useEffect(() => {
     let active = true;
-    async function loadRecentAttempt() {
-      try {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (!currentUser || !active) return;
 
-        // Fetch authoritative recent attempt from learning_test_attempts
-        const { data: attempts } = await supabase
-          .from("learning_test_attempts")
-          .select("id, score, total_marks, status, submitted_at")
-          .eq("student_id", currentUser.id)
-          .order("submitted_at", { ascending: false })
-          .limit(1);
-
-        if (active && attempts && attempts[0]) {
-          setRecentExam({
-            result_id: attempts[0].id,
-            score: attempts[0].score || 0,
-            total: attempts[0].total_marks || 100,
-            status: attempts[0].status,
-          });
-        }
-      } catch {
-        // Honest defensive handling
+    // 1. Instant Cache Hydration: Render immediately from cache for 0ms perceived latency
+    try {
+      const cachedDashboard = localStorage.getItem("bl_dashboard_cache");
+      if (cachedDashboard) {
+        const parsed = JSON.parse(cachedDashboard);
+        if (parsed.stats) setStats(parsed.stats);
+        if (parsed.recentExam) setRecentExam(parsed.recentExam);
+        if (parsed.activePlan) setActivePlan(parsed.activePlan);
+        if (parsed.recentLesson) setRecentLesson(parsed.recentLesson);
+        if (parsed.readiness) setReadiness(parsed.readiness);
+        if (parsed.gamification) setGamification(parsed.gamification);
+        if (parsed.adminRole) setAdminRole(parsed.adminRole);
+        if (parsed.userCohorts) setUserCohorts(parsed.userCohorts);
+        setLoading(false);
       }
-    }
-    void loadRecentAttempt();
-    return () => {
-      active = false;
-    };
-  }, []);
+      const cachedXp = localStorage.getItem("bl_student_xp_cache");
+      if (cachedXp && !gamification) {
+        setGamification(JSON.parse(cachedXp));
+      }
+    } catch {}
 
-  useEffect(() => {
-    let active = true;
+    // 2. Real-time Gamification Event Listener (synchronizes XP across tabs & tests)
+    const handleXpAwarded = (e: Event) => {
+      const detail = (e as CustomEvent).detail as UserGamificationProfile | undefined;
+      if (detail && active) {
+        setGamification(detail);
+      }
+    };
+    window.addEventListener("brainlab_xp_awarded", handleXpAwarded);
 
     async function loadAccountAndProgress() {
-      const {
-        data: { user: currentUser },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (!active) return;
-      if (error || !currentUser) {
-        router.replace("/login?redirect=/dashboard");
-        return;
-      }
-
-      setUser(currentUser);
-
-      // Check if student needs initial study goal onboarding
       try {
-        const prof = extractStudentProfile(currentUser);
-        const goalsSet = localStorage.getItem("brainlab_student_goals_set") === "true";
-        const dismissed = localStorage.getItem("brainlab_goal_wizard_dismissed") === "true";
-        if (!prof.isCustomized && !goalsSet && !dismissed) {
-          setShowGoalWizard(true);
+        const {
+          data: { user: currentUser },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (!active) return;
+        if (error || !currentUser) {
+          router.replace("/login?redirect=/dashboard");
+          return;
         }
-      } catch {}
 
-      // Fetch authentic progress data via consolidated Data Access Layer
-      try {
-        void getTopicMasteryRecords().then((list) => {
-          if (list.length) setReadiness(calculateExamReadiness(list));
-        });
-        void getDueSpacedReviews().then((cards) => setDueSpacedCount(cards.length));
-        void getUserGamificationProfile(currentUser.id).then((gp) => {
-          if (active && gp) setGamification(gp);
-        });
+        setUser(currentUser);
 
-        void supabase
-          .from("community_group_memberships")
-          .select("group_role, status, group:community_groups(id, slug, name, icon_emoji, category)")
-          .eq("user_id", currentUser.id)
-          .eq("status", "active")
-          .limit(3)
-          .then(({ data }) => {
-            if (active && data) setUserCohorts(data);
-          });
+        // Check if student needs initial study goal onboarding
+        try {
+          const prof = extractStudentProfile(currentUser);
+          const goalsSet = localStorage.getItem("brainlab_student_goals_set") === "true";
+          const dismissed = localStorage.getItem("brainlab_goal_wizard_dismissed") === "true";
+          if (!prof.isCustomized && !goalsSet && !dismissed) {
+            setShowGoalWizard(true);
+          }
+        } catch {}
 
-        const summary = await getLearnerDashboardSummary(
-          currentUser.id,
-          recentExam ? recentExam.total : 0
-        );
+        // Parallel non-blocking execution of all dashboard telemetry (eliminates waterfall delays)
+        const [
+          attemptsRes,
+          masteryRes,
+          spacedRes,
+          gamificationRes,
+          cohortsRes,
+          summaryRes,
+        ] = await Promise.allSettled([
+          supabase
+            .from("learning_test_attempts")
+            .select("id, score, total_marks, status, submitted_at")
+            .eq("student_id", currentUser.id)
+            .order("submitted_at", { ascending: false })
+            .limit(1),
+          getTopicMasteryRecords(),
+          getDueSpacedReviews(),
+          getUserGamificationProfile(currentUser.id),
+          supabase
+            .from("community_group_memberships")
+            .select("group_role, status, group:community_groups(id, slug, name, icon_emoji, category)")
+            .eq("user_id", currentUser.id)
+            .eq("status", "active")
+            .limit(3),
+          getLearnerDashboardSummary(currentUser.id, 0),
+        ]);
 
         if (!active) return;
 
-        setStats(summary.stats);
-        if (summary.activePlan) setActivePlan(summary.activePlan);
-        if (summary.recentLesson) setRecentLesson(summary.recentLesson);
-        if (summary.adminRole) setAdminRole(summary.adminRole);
+        let latestExam: RecentExam | null = null;
+        if (attemptsRes.status === "fulfilled" && attemptsRes.value.data?.[0]) {
+          const first = attemptsRes.value.data[0];
+          latestExam = {
+            result_id: first.id,
+            score: first.score || 0,
+            total: first.total_marks || 100,
+            status: first.status,
+          };
+          setRecentExam(latestExam);
+        }
+
+        let latestReadiness: ExamReadiness | null = null;
+        if (masteryRes.status === "fulfilled" && masteryRes.value.length) {
+          latestReadiness = calculateExamReadiness(masteryRes.value);
+          setReadiness(latestReadiness);
+        }
+
+        if (spacedRes.status === "fulfilled") {
+          setDueSpacedCount(spacedRes.value.length);
+        }
+
+        let latestGamification: UserGamificationProfile | null = null;
+        if (gamificationRes.status === "fulfilled" && gamificationRes.value) {
+          latestGamification = gamificationRes.value;
+          setGamification(latestGamification);
+        }
+
+        let latestCohorts: any[] = [];
+        if (cohortsRes.status === "fulfilled" && cohortsRes.value.data) {
+          latestCohorts = cohortsRes.value.data;
+          setUserCohorts(latestCohorts);
+        }
+
+        let latestStats: LearnerStats | null = null;
+        let latestPlan: ActivePlan | null = null;
+        let latestLesson: RecentLesson | null = null;
+        let latestAdminRole: string | null = null;
+
+        if (summaryRes.status === "fulfilled") {
+          const s = summaryRes.value;
+          latestStats = s.stats;
+          latestPlan = s.activePlan;
+          latestLesson = s.recentLesson;
+          latestAdminRole = s.adminRole;
+
+          setStats(s.stats);
+          if (s.activePlan) setActivePlan(s.activePlan);
+          if (s.recentLesson) setRecentLesson(s.recentLesson);
+          if (s.adminRole) setAdminRole(s.adminRole);
+        }
+
+        // Cache fresh snapshot for next instant render
+        try {
+          localStorage.setItem(
+            "bl_dashboard_cache",
+            JSON.stringify({
+              stats: latestStats,
+              recentExam: latestExam,
+              gamification: latestGamification,
+              readiness: latestReadiness,
+              activePlan: latestPlan,
+              recentLesson: latestLesson,
+              adminRole: latestAdminRole,
+              userCohorts: latestCohorts,
+            })
+          );
+        } catch {}
       } catch {
         // Defensive: dashboard remains operational even if database tables are in migration
       } finally {
@@ -273,8 +337,9 @@ export default function LearnerDashboardPage() {
 
     return () => {
       active = false;
+      window.removeEventListener("brainlab_xp_awarded", handleXpAwarded);
     };
-  }, [router, recentExam]);
+  }, [router]);
 
   if (loading) {
     return (
@@ -507,25 +572,23 @@ export default function LearnerDashboardPage() {
             {/* Right Status Cluster: Level & Streak & Live Presence */}
             <div className="flex flex-wrap items-center gap-3 lg:flex-col lg:items-end">
               <ActivePresenceBar activityContext="Studying on Learner Dashboard" variant="pill" />
-              {gamification && (
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-md shadow-inner">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase text-cyan-200 leading-none">Level {gamification.current_level}</p>
-                      <p className="text-xs font-black text-white mt-0.5">{gamification.lifetime_xp.toLocaleString()} XP</p>
-                    </div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-md shadow-inner">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-cyan-200 leading-none">Level {gamification?.current_level || 1}</p>
+                    <p className="text-xs font-black text-white mt-0.5">{(gamification?.lifetime_xp || 100).toLocaleString()} XP</p>
                   </div>
-                  <LearningStreakCard
-                    currentStreak={gamification.current_streak_days}
-                    longestStreak={gamification.longest_streak_days}
-                    lastActiveDate={gamification.last_activity_date}
-                    compact={true}
-                  />
                 </div>
-              )}
+                <LearningStreakCard
+                  currentStreak={gamification?.current_streak_days || 1}
+                  longestStreak={gamification?.longest_streak_days || 1}
+                  lastActiveDate={gamification?.last_activity_date || null}
+                  compact={true}
+                />
+              </div>
             </div>
           </div>
 

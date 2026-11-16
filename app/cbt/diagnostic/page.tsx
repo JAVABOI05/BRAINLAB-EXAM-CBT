@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { recordTopicAttempt, calculateExamReadiness, getTopicMasteryRecords, type ExamReadiness } from "@/app/lib/adaptiveEngine";
 import { trackEvent } from "@/app/lib/analytics";
+import { awardStudentXp } from "@/app/lib/gamification";
 import {
   extractStudentProfile,
   DEFAULT_CANDIDATE_SUBJECTS,
@@ -608,6 +609,14 @@ export default function BaselineDiagnosticPage() {
       predictedJambScore: computedPrediction,
       readiness: rd,
       subjectBreakdown: subjectStats,
+    });
+
+    void awardStudentXp({
+      activityType: "diagnostic_complete",
+      referenceId: "diag_" + Date.now(),
+      amount: 60,
+      description: `Baseline Diagnostic Assessment (${correctCount}/${diagnosticQuestions.length} Correct)`,
+      scorePercent: Math.round((correctCount / (diagnosticQuestions.length || 10)) * 100),
     });
 
     trackEvent("diagnostic_assessment_completed", {

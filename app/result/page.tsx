@@ -8,6 +8,7 @@ import { getPublicSettings, isError, lookupResult as fetchLookup } from "../lib/
 import VerificationQRCode from "../components/VerificationQRCode";
 import { resolveCutoffScore, type UniversityCutoff } from "../lib/universityCutoffs";
 import { trackEvent } from "../lib/analytics";
+import { awardStudentXp } from "../lib/gamification";
 
 type Candidate = {
   name: string;
@@ -62,6 +63,7 @@ export default function ResultPage() {
   const [chiefProctorName, setChiefProctorName] = useState("Chief Examination Proctor");
   const [chiefProctorTitle, setChiefProctorTitle] = useState("BrainLab CBT Directorate");
   const [dreamCutoff, setDreamCutoff] = useState<UniversityCutoff | null>(null);
+  const [xpAwarded, setXpAwarded] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadPage() {
@@ -82,6 +84,32 @@ export default function ResultPage() {
       try {
         const parsedSummary = JSON.parse(savedSummary) as Summary;
         setSummary(parsedSummary);
+
+        // Award and synchronize XP for CBT mock completion
+        try {
+          const resultId = parsedSummary.result_id || "mock_" + Date.now();
+          const sessionKey = `bl_xp_awarded_${resultId}`;
+          const existingAward = sessionStorage.getItem(sessionKey);
+          if (existingAward) {
+            setXpAwarded(parseInt(existingAward, 10));
+          } else {
+            const rawScore = parsedSummary.score ?? 0;
+            const maxScore = parsedSummary.total || 400;
+            const percentageVal = Math.min(100, Math.max(0, Math.round((rawScore / maxScore) * 100)));
+            const earnedXp = Math.round(50 + (percentageVal * 0.75)); // 50 to 125 XP
+
+            void awardStudentXp({
+              activityType: "exam_complete",
+              referenceId: resultId,
+              amount: earnedXp,
+              description: `CBT Mock Exam - Score ${rawScore}/${maxScore} (${percentageVal}%)`,
+              scorePercent: percentageVal,
+            }).then((res) => {
+              sessionStorage.setItem(sessionKey, String(res.awarded_xp));
+              setXpAwarded(res.awarded_xp);
+            });
+          }
+        } catch {}
         let activeCandidate: Candidate = {
           name: "Verified Candidate",
           phone: "080-BrainLab",
@@ -608,6 +636,16 @@ export default function ResultPage() {
                   ? "Competitive Pass (Above National Cutoff)"
                   : "Revision Pass (Targeted Practice Needed)"}
               </div>
+
+              {xpAwarded !== null && (
+                <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-purple-500/20 to-cyan-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-900 dark:text-amber-300 shadow-xs">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500" aria-hidden="true">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <span>+{xpAwarded} XP Earned</span>
+                  <span className="text-[10px] opacity-75 font-medium">• Streak Protected</span>
+                </div>
+              )}
 
               {/* Dream School Cut-off Margin Badge */}
               {dreamCutoff && (

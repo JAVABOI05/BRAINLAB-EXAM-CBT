@@ -8,6 +8,7 @@ import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import ArenaThemeToggle from "../components/arena/ArenaThemeToggle";
 import { normalizeQuestionOptions, normalizeClientQuestion, type ClientCompetitionQuestion } from "../lib/competitionEngine";
 import { toast } from "../lib/toast";
+import { awardStudentXp } from "../lib/gamification";
 
 function ArenaTabIcon({ id, className = "w-4 h-4" }: { id: string; className?: string }) {
   switch (id) {
@@ -646,6 +647,13 @@ export default function ChallengeArenaPage() {
       if (!res.ok) throw new Error(data.error || "Failed to submit attempt");
 
       setActiveExamResult(data);
+      void awardStudentXp({
+        activityType: "competition",
+        referenceId: activeExamComp.id,
+        amount: data.xpEarned || 25,
+        description: `Challenge Arena attempt for ${activeExamComp.title}`,
+        scorePercent: data.score,
+      });
       loadArenaData();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Error submitting exam attempt");

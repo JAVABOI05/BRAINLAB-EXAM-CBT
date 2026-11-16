@@ -1451,14 +1451,10 @@ function ClassroomLobbyContent() {
 
       </main>
 
-      {/* Apex Cohort Programme Gate Modal */}
+      {/* Flagship Cohort Programme Gate Modal */}
       <TierGateModal
         isOpen={showTierModal}
         onClose={() => setShowTierModal(false)}
-        requiredTierName="Apex Cohort"
-        currentPlanName={subscriptionInfo?.accessCategory === "apex_cohort" ? "Apex Cohort" : "Public Learner"}
-        featureTitle="Apex Cohort Live Intensive Class"
-        featureDescription="Scheduled interactive tutorials with verified tutors are delivered as part of the Apex Cohort educational programme. Public open stages remain freely accessible to every learner."
         redirectUrl="/apex"
       />
     </div>

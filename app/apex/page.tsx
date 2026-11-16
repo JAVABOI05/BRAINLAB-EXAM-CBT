@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import { isCurrentUserAdmin } from "@/app/lib/subscriptionEntitlements";
 import { trackEvent } from "@/app/lib/analytics";
+import { useCohortConfig } from "@/app/lib/useCohortConfig";
 
 interface CohortProgramme {
   id: string;
@@ -52,6 +53,7 @@ const FALLBACK_PROGRAMMES: CohortProgramme[] = [
 
 export default function ApexCohortPage() {
   const router = useRouter();
+  const cohortConfig = useCohortConfig();
   const [programmes, setProgrammes] = useState<CohortProgramme[]>(FALLBACK_PROGRAMMES);
   const [selectedProg, setSelectedProg] = useState<CohortProgramme>(FALLBACK_PROGRAMMES[0]);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
@@ -177,8 +179,10 @@ export default function ApexCohortPage() {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-indigo-300 backdrop-blur-md mb-6 shadow-xs">
-            <span className="flex h-2 w-2 rounded-full bg-indigo-400 animate-pulse" />
-            <span>🏛️ APEX COHORT • GUIDED EDUCATIONAL PROGRAMME</span>
+            <svg className="h-4 w-4 text-indigo-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 21V10M20 21V10M12 21V10M2 10h20M12 3l10 7H2zM2 21h20"/>
+            </svg>
+            <span>{cohortConfig.active_cohort_name.toUpperCase()} &bull; GUIDED EDUCATIONAL PROGRAMME</span>
           </div>
 
           <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl max-w-4xl mx-auto leading-[1.1]">
@@ -189,13 +193,13 @@ export default function ApexCohortPage() {
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">
-            Join Apex Cohort for structured tutorials, dedicated tutors, guided learning and continuous academic support.
+            Join {cohortConfig.active_cohort_name} for structured tutorials, dedicated tutors, guided learning and continuous academic support.
           </p>
 
           {/* Value Prop Status Badge */}
           {isApexEnrolled ? (
             <div className="mt-8 inline-flex items-center gap-3 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 px-6 py-3 text-sm font-bold text-emerald-300">
-              <span>✓ You are actively enrolled in Apex Cohort.</span>
+              <span>✓ You are actively enrolled in {cohortConfig.active_cohort_name}.</span>
               <Link href="/classroom" className="text-white underline hover:text-emerald-200">
                 Enter Cohort Classroom &rarr;
               </Link>
@@ -227,20 +231,20 @@ export default function ApexCohortPage() {
             The BrainLab Educational Commitment
           </h2>
           <p className="text-xl sm:text-2xl font-bold text-slate-200 leading-snug">
-            &ldquo;BrainLab is an educational platform, not a subscription website. Apex Cohort is an intensive educational programme delivered through the platform, not a paywall around it.&rdquo;
+            &ldquo;BrainLab is an educational platform, not a subscription website. {cohortConfig.active_cohort_name} is an intensive educational programme delivered through the platform, not a paywall around it.&rdquo;
           </p>
           <p className="mt-3 text-sm text-slate-400 max-w-2xl mx-auto">
-            Every registered learner retains complete, free access to CBT practice, past question banks, Learning Hub syllabus materials, and Competition Arena battles. Apex students receive intensive teaching, structured timetables, and personal accountability.
+            Every registered learner retains complete, free access to CBT practice, past question banks, Learning Hub syllabus materials, and Competition Arena battles. {cohortConfig.active_cohort_name} students receive intensive teaching, structured timetables, and personal accountability.
           </p>
         </div>
       </section>
 
-      {/* The 5 Pillars of Apex Cohort */}
+      {/* The 5 Pillars of Flagship Cohort */}
       <section className="py-20 border-b border-slate-800/80">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-14">
             <span className="text-xs font-black uppercase tracking-wider text-indigo-400">
-              WHY APEX COHORT DELIVERS RESULTS
+              WHY {cohortConfig.active_cohort_name.toUpperCase()} DELIVERS RESULTS
             </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white">
               Sell the Experience, Not Restrictions
@@ -332,7 +336,7 @@ export default function ApexCohortPage() {
                 <tr>
                   <th className="py-4 px-6">Feature / Capability</th>
                   <th className="py-4 px-6 text-emerald-400">Public (Free, ₦0)</th>
-                  <th className="py-4 px-6 text-indigo-400">Apex Cohort</th>
+                  <th className="py-4 px-6 text-indigo-400">{cohortConfig.active_cohort_name}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">

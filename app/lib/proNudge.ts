@@ -52,6 +52,19 @@ const NUDGE_PRESETS: Record<ProFeatureId, { title: string; message: string; acti
   },
 };
 
+function getActiveCohortDisplayName(): string {
+  if (typeof window !== "undefined") {
+    try {
+      const local = localStorage.getItem("brainlab_cfg_cohort_platform_config");
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (parsed?.active_cohort_name) return parsed.active_cohort_name;
+      }
+    } catch {}
+  }
+  return "Apex Cohort";
+}
+
 /**
  * Triggers an educational pro feature nudge for free-tier users.
  * - Does NOTHING if the user is an admin or is already on an active paid plan.
@@ -62,14 +75,15 @@ const NUDGE_PRESETS: Record<ProFeatureId, { title: string; message: string; acti
 export async function triggerProFeatureNudge(options: ProNudgeOptions): Promise<boolean> {
   if (typeof window === "undefined") return false;
 
-  const {
-    feature,
-    title = NUDGE_PRESETS[feature]?.title ?? "BrainLab Academic Insight",
-    message = NUDGE_PRESETS[feature]?.message ?? "Discover Apex Cohort for intensive tutorials and dedicated tutor guidance.",
-    linkUrl,
-    actionLabel = NUDGE_PRESETS[feature]?.actionLabel ?? "Discover Apex Cohort →",
-    cooldownHours = 24,
-  } = options;
+  const cohortName = getActiveCohortDisplayName();
+  const rawTitle = options.title ?? NUDGE_PRESETS[options.feature]?.title ?? "BrainLab Academic Insight";
+  const rawMessage = options.message ?? NUDGE_PRESETS[options.feature]?.message ?? "Discover Apex Cohort for intensive tutorials and dedicated tutor guidance.";
+  const rawActionLabel = options.actionLabel ?? NUDGE_PRESETS[options.feature]?.actionLabel ?? "Discover Apex Cohort →";
+
+  const title = rawTitle.replace(/Apex Cohort/g, cohortName);
+  const message = rawMessage.replace(/Apex Cohort/g, cohortName);
+  const actionLabel = rawActionLabel.replace(/Apex Cohort/g, cohortName);
+  const { feature, linkUrl, cooldownHours = 24 } = options;
 
   const currentPath = window.location.pathname + window.location.search;
   const resolvedLinkUrl = linkUrl || "/apex";

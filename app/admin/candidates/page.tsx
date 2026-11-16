@@ -21,6 +21,9 @@ interface CandidateSummary {
   emailConfirmed: boolean;
   isSuspended: boolean;
   isAtRisk?: boolean;
+  targetCourse?: string | null;
+  dreamSchool?: string | null;
+  selectedSubjects?: string[] | null;
   bannedUntil: string | null;
   subscription: {
     planId: string;
@@ -71,6 +74,8 @@ export default function CandidatesAdminPage() {
     activeSubscribers: 0,
     suspendedAccounts: 0,
     freeTierCandidates: 0,
+    atRiskCount: 0,
+    unconfirmedCount: 0,
   });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -124,6 +129,154 @@ export default function CandidatesAdminPage() {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Network error upgrading candidate.");
     }
+  }
+
+  async function handleQuickVerifyEmail(candidateId: string, candidateName: string) {
+    if (!window.confirm(`Manually verify email address for ${candidateName}? This will activate their account immediately.`)) return;
+    try {
+      const res = await authFetch(`/api/admin/candidates/${candidateId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify_email" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        alert(`Successfully verified email for ${candidateName}!`);
+        await loadCandidates();
+      } else {
+        alert(data.error || "Failed to verify candidate email.");
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Network error verifying candidate email.");
+    }
+  }
+
+  function getWhatsAppUrl(phone: string, fullName: string, targetExam: string) {
+    const digits = (phone || "").replace(/\D/g, "");
+    let intl = digits;
+    if (digits.startsWith("0") && digits.length === 11) {
+      intl = "234" + digits.slice(1);
+    } else if (!digits.startsWith("234") && digits.length === 10) {
+      intl = "234" + digits;
+    }
+    const firstName = fullName.split(" ")[0] || "Candidate";
+    const message = `Hello ${firstName}! 👋 This is BrainLab Academy. We noticed you haven't started your ${targetExam} practice or activated your daily study streak yet. 📚 Log in today to take your 10-Question Baseline Diagnostic and begin your journey: https://www.brainlabacademy.com.ng/cbt/diagnostic`;
+    return `https://wa.me/${intl}?text=${encodeURIComponent(message)}`;
+  }
+
+  function exportCandidatesCsv() {
+    if (candidates.length === 0) {
+      alert("No candidates to export in current view.");
+      return;
+    }
+    const headers = [
+      "ID",
+      "Full Name",
+      "Email",
+      "Phone",
+      "Target Exam",
+      "Target Score",
+      "Target Course",
+      "Dream School",
+      "Plan Tier",
+      "Plan Status",
+      "XP",
+      "Level",
+      "Streak Days",
+      "Account Status",
+      "Email Confirmed",
+      "Registered Date",
+      "Last Sign In",
+    ];
+
+    const rows = candidates.map((c) => {
+      const statusLabel = c.isSuspended
+        ? "Suspended"
+        : !c.emailConfirmed
+        ? "Unconfirmed"
+        : c.isAtRisk
+        ? "At-Risk"
+        : "Active";
+
+      return [
+        `"${c.id}"`,
+        `"${(c.fullName || "").replace(/"/g, '""')}"`,
+        `"${c.email}"`,
+        `"${c.phone || "N/A"}"`,
+        `"${c.targetExam}"`,
+        c.targetScore,
+        `"${(c.targetCourse || "").replace(/"/g, '""')}"`,
+        `"${(c.dreamSchool || "").replace(/"/g, '""')}"`,
+        `"${c.subscription.planId}"`,
+        `"${c.subscription.status}"`,
+        c.gamification.xp,
+        c.gamification.level,
+        c.gamification.streakDays,
+        `"${statusLabel}"`,
+        c.emailConfirmed ? "Yes" : "No",
+        `"${new Date(c.createdAt).toISOString()}"`,
+        c.lastSignInAt ? `"${new Date(c.lastSignInAt).toISOString()}"` : '"Never"',
+      ].join(",");
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `brainlab-candidates-${statusFilter}-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function formatLastSeen(lastSignInAt: string | null) {
+    if (!lastSignInAt) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-slate-300"></span>Never
+        </span>
+      );
+    }
+    const date = new Date(lastSignInAt);
+    const diffMs = Date.now() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Today
+        </span>
+      );
+    }
+    if (diffDays === 1) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+          Yesterday
+        </span>
+      );
+    }
+    if (diffDays < 7) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600">
+          {diffDays}d ago
+        </span>
+      );
+    }
+    if (diffDays < 14) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+          {diffDays}d ago
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600">
+        ⚠️ {diffDays}d ago
+      </span>
+    );
   }
 
   const loadCandidates = useCallback(async () => {
@@ -276,13 +429,23 @@ export default function CandidatesAdminPage() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={exportCandidatesCsv}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95 cursor-pointer"
+              title="Export current candidate view to CSV"
+            >
+              <svg className="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export CSV
+            </button>
+            <button
               onClick={() => {
                 startTransition(() => {
                   loadCandidates();
                 });
               }}
               disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <svg className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -292,31 +455,95 @@ export default function CandidatesAdminPage() {
           </div>
         </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-500">Total Registered Students</p>
-            <p className="mt-2 text-2xl font-black text-slate-900">{stats.totalCandidates.toLocaleString()}</p>
-            <span className="mt-1 inline-block text-[11px] font-medium text-blue-600">Active Directory Cohort</span>
-          </div>
+        {/* Metric Cards with 1-Click Filter Activation */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("all");
+              setTierFilter("all");
+            }}
+            className={`rounded-2xl border p-4 text-left shadow-sm transition hover:scale-[1.02] cursor-pointer ${
+              statusFilter === "all" && tierFilter === "all"
+                ? "border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/20"
+                : "border-slate-200 bg-white hover:bg-slate-50"
+            }`}
+          >
+            <p className="text-[11px] font-semibold text-slate-500">Total Registered</p>
+            <p className="mt-1 text-2xl font-black text-slate-900">{stats.totalCandidates.toLocaleString()}</p>
+            <span className="mt-1 inline-block text-[10px] font-medium text-blue-600">All Candidate Cohort</span>
+          </button>
 
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
-            <p className="text-xs font-semibold text-emerald-800">Active Paid Subscribers</p>
-            <p className="mt-2 text-2xl font-black text-emerald-900">{stats.activeSubscribers.toLocaleString()}</p>
-            <span className="mt-1 inline-block text-[11px] font-medium text-emerald-700">Premium & Basic Tiers</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setTierFilter("premium");
+              setStatusFilter("all");
+            }}
+            className={`rounded-2xl border p-4 text-left shadow-sm transition hover:scale-[1.02] cursor-pointer ${
+              tierFilter === "premium"
+                ? "border-emerald-600 bg-emerald-100/70 ring-2 ring-emerald-500/20"
+                : "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/50"
+            }`}
+          >
+            <p className="text-[11px] font-semibold text-emerald-800">Paid Subscribers</p>
+            <p className="mt-1 text-2xl font-black text-emerald-950">{stats.activeSubscribers.toLocaleString()}</p>
+            <span className="mt-1 inline-block text-[10px] font-medium text-emerald-700">Pro, Plus & Premium</span>
+          </button>
 
-          <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-5 shadow-sm">
-            <p className="text-xs font-semibold text-blue-800">Free Practice Candidates</p>
-            <p className="mt-2 text-2xl font-black text-blue-900">{stats.freeTierCandidates.toLocaleString()}</p>
-            <span className="mt-1 inline-block text-[11px] font-medium text-blue-700">Freemium Tier</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("at-risk");
+              setTierFilter("all");
+            }}
+            className={`rounded-2xl border p-4 text-left shadow-sm transition hover:scale-[1.02] cursor-pointer ${
+              statusFilter === "at-risk"
+                ? "border-amber-600 bg-amber-100/80 ring-2 ring-amber-500/20"
+                : "border-amber-300 bg-amber-50/60 hover:bg-amber-100/60"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold text-amber-900">⚠️ At-Risk Students</p>
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            </div>
+            <p className="mt-1 text-2xl font-black text-amber-950">{(stats.atRiskCount || 0).toLocaleString()}</p>
+            <span className="mt-1 inline-block text-[10px] font-medium text-amber-800">0 XP / 0d Streak (Needs Nudge)</span>
+          </button>
 
-          <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-5 shadow-sm">
-            <p className="text-xs font-semibold text-rose-800">Suspended / Banned</p>
-            <p className="mt-2 text-2xl font-black text-rose-900">{stats.suspendedAccounts.toLocaleString()}</p>
-            <span className="mt-1 inline-block text-[11px] font-medium text-rose-700">Restricted Access</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("unverified");
+              setTierFilter("all");
+            }}
+            className={`rounded-2xl border p-4 text-left shadow-sm transition hover:scale-[1.02] cursor-pointer ${
+              statusFilter === "unverified"
+                ? "border-orange-600 bg-orange-100/80 ring-2 ring-orange-500/20"
+                : "border-orange-200 bg-orange-50/50 hover:bg-orange-100/60"
+            }`}
+          >
+            <p className="text-[11px] font-semibold text-orange-900">Unconfirmed Email</p>
+            <p className="mt-1 text-2xl font-black text-orange-950">{(stats.unconfirmedCount || 0).toLocaleString()}</p>
+            <span className="mt-1 inline-block text-[10px] font-medium text-orange-800">Pending Activation</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTierFilter("free");
+              setStatusFilter("all");
+            }}
+            className={`rounded-2xl border p-4 text-left shadow-sm transition hover:scale-[1.02] cursor-pointer ${
+              tierFilter === "free"
+                ? "border-slate-600 bg-slate-100 ring-2 ring-slate-400/20"
+                : "border-slate-200 bg-slate-50/60 hover:bg-slate-100/60"
+            }`}
+          >
+            <p className="text-[11px] font-semibold text-slate-600">Free Practice Tier</p>
+            <p className="mt-1 text-2xl font-black text-slate-900">{stats.freeTierCandidates.toLocaleString()}</p>
+            <span className="mt-1 inline-block text-[10px] font-medium text-slate-500">Freemium Learners</span>
+          </button>
         </div>
 
         {/* Filters Bar */}
@@ -371,6 +598,7 @@ export default function CandidatesAdminPage() {
                   <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Plan & Access</th>
                   <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">XP & Level</th>
                   <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Status</th>
+                  <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Last Seen</th>
                   <th className="py-3.5 px-4 font-semibold uppercase tracking-wider">Registered</th>
                   <th className="py-3.5 px-4 text-right font-semibold uppercase tracking-wider">Actions</th>
                 </tr>
@@ -378,7 +606,7 @@ export default function CandidatesAdminPage() {
               <tbody className="divide-y divide-slate-100">
                 {candidates.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
                       No candidates matched your search criteria.
                     </td>
                   </tr>
@@ -387,12 +615,21 @@ export default function CandidatesAdminPage() {
                     <tr key={cand.id} className="hover:bg-slate-50/70 transition">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-700 text-xs">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-700 text-xs shadow-xs">
                             {cand.fullName.slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{cand.fullName}</p>
-                            <p className="text-[11px] text-slate-500">{cand.email}</p>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-900 truncate">{cand.fullName}</p>
+                            <p className="text-[11px] text-slate-500 truncate">{cand.email}</p>
+                            {(cand.targetCourse || cand.dreamSchool) && (
+                              <p className="text-[10px] font-semibold text-blue-700 mt-0.5 truncate flex items-center gap-1">
+                                <span>🎯</span>
+                                <span>{cand.targetCourse || "Course"}</span>
+                                {cand.dreamSchool && (
+                                  <span className="text-slate-400 font-normal">@ {cand.dreamSchool}</span>
+                                )}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -446,22 +683,52 @@ export default function CandidatesAdminPage() {
                         )}
                       </td>
 
+                      <td className="py-3.5 px-4">
+                        {formatLastSeen(cand.lastSignInAt)}
+                      </td>
+
                       <td className="py-3.5 px-4 text-slate-500">
                         {new Date(cand.createdAt).toLocaleDateString()}
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          {!cand.emailConfirmed && (
+                            <button
+                              type="button"
+                              onClick={() => handleQuickVerifyEmail(cand.id, cand.fullName)}
+                              className="rounded-lg bg-amber-600 hover:bg-amber-700 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer inline-flex items-center gap-1"
+                              title="Bypass confirmation and mark email as verified immediately"
+                            >
+                              <span>✓</span>
+                              <span>Verify</span>
+                            </button>
+                          )}
+                          {cand.phone && cand.phone !== "N/A" && cand.phone.replace(/\D/g, "").length >= 10 && (
+                            <a
+                              href={getWhatsAppUrl(cand.phone, cand.fullName, cand.targetExam)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-lg bg-[#25D366] hover:bg-[#20ba59] px-2.5 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95 inline-flex items-center gap-1"
+                              title="Open WhatsApp with personalized study streak reminder"
+                            >
+                              <span>💬</span>
+                              <span>WhatsApp</span>
+                            </a>
+                          )}
                           {cand.subscription.planId === "free" && (
                             <button
+                              type="button"
                               onClick={() => handleQuickUpgrade(cand.id, cand.fullName)}
-                              className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+                              className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer inline-flex items-center gap-1"
                               title="Instantly upgrade candidate to Premium (30 days)"
                             >
-                              ⚡ Upgrade
+                              <span>⚡</span>
+                              <span>Upgrade</span>
                             </button>
                           )}
                           <button
+                            type="button"
                             onClick={() => openCandidateDrawer(cand.id)}
                             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-[#012153] shadow-sm hover:bg-slate-50 transition active:scale-95 cursor-pointer"
                           >
@@ -596,35 +863,74 @@ export default function CandidatesAdminPage() {
                     <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 p-4 bg-slate-50/50">
                       <div>
                         <p className="text-slate-400 font-medium">Phone</p>
-                        <p className="font-bold text-slate-800">{candidateDetail.phone}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="font-bold text-slate-800">{candidateDetail.phone}</p>
+                          {candidateDetail.phone && candidateDetail.phone !== "N/A" && (
+                            <a
+                              href={getWhatsAppUrl(candidateDetail.phone, candidateDetail.fullName, candidateDetail.targetExam)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md inline-flex items-center gap-1 border border-emerald-300"
+                            >
+                              💬 WhatsApp
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">State of Origin</p>
-                        <p className="font-bold text-slate-800">{candidateDetail.stateOfOrigin}</p>
+                        <p className="font-bold text-slate-800 mt-0.5">{candidateDetail.stateOfOrigin}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Target Exam</p>
-                        <p className="font-bold text-slate-800">{candidateDetail.targetExam}</p>
+                        <p className="font-bold text-slate-800 mt-0.5">{candidateDetail.targetExam}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Target Score</p>
-                        <p className="font-bold text-slate-800">{candidateDetail.targetScore} / 400</p>
+                        <p className="font-bold text-slate-800 mt-0.5">{candidateDetail.targetScore} / 400</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 font-medium">Target Course</p>
+                        <p className="font-bold text-blue-900 mt-0.5">{candidateDetail.targetCourse || "General / Undecided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 font-medium">Dream Institution</p>
+                        <p className="font-bold text-blue-900 mt-0.5">{candidateDetail.dreamSchool || "Not Selected"}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Registered Date</p>
-                        <p className="font-bold text-slate-800">
+                        <p className="font-bold text-slate-800 mt-0.5">
                           {new Date(candidateDetail.createdAt).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Last Login</p>
-                        <p className="font-bold text-slate-800">
+                        <p className="font-bold text-slate-800 mt-0.5">
                           {candidateDetail.lastSignInAt
                             ? new Date(candidateDetail.lastSignInAt).toLocaleString()
-                            : "Never"}
+                            : "Never Logged In"}
                         </p>
                       </div>
                     </div>
+
+                    {/* Active 4-Subject Combination if present */}
+                    {candidateDetail.selectedSubjects && candidateDetail.selectedSubjects.length > 0 && (
+                      <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
+                        <p className="text-[11px] font-bold text-blue-950 uppercase tracking-wider mb-2">
+                          🎯 Active 4-Subject Examination Combination
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {candidateDetail.selectedSubjects.map((sub, i) => (
+                            <span
+                              key={i}
+                              className="rounded-lg bg-white border border-blue-200 px-2.5 py-1 text-xs font-bold text-blue-900 shadow-2xs"
+                            >
+                              {i === 0 ? "1. " : `${i + 1}. `}{sub}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="rounded-2xl border border-slate-200 p-4">
                       <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px] mb-3">
@@ -738,6 +1044,27 @@ export default function CandidatesAdminPage() {
                 {/* TAB 4: ACTIONS */}
                 {activeTab === "actions" && (
                   <div className="space-y-6">
+                    {/* Instant Email Verification Bypass if unconfirmed */}
+                    {!candidateDetail.emailConfirmed && (
+                      <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4">
+                        <h4 className="font-bold text-amber-950 text-xs uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                          <span>✉️</span>
+                          <span>Instant Email Verification Bypass</span>
+                        </h4>
+                        <p className="text-[11px] text-amber-900 mb-3">
+                          This candidate has not clicked their email verification link. You can manually activate and confirm their account immediately.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => executeAction("verify_email")}
+                          disabled={actionBusy}
+                          className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 py-2.5 text-xs font-bold text-white shadow transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                        >
+                          {actionBusy ? "Verifying..." : "✓ Confirm Candidate Email Immediately"}
+                        </button>
+                      </div>
+                    )}
+
                     {/* Grant Subscription Card */}
                     <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4">
                       <h4 className="font-bold text-blue-950 text-xs uppercase tracking-wider mb-2">

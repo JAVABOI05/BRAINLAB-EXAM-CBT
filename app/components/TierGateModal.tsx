@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
+import { useCohortConfig } from "../lib/useCohortConfig";
 
 interface TierGateModalProps {
   isOpen: boolean;
@@ -17,13 +18,18 @@ interface TierGateModalProps {
 export default function TierGateModal({
   isOpen,
   onClose,
-  featureTitle = "Apex Cohort Intensive Tutorial",
-  featureDescription = "This live guided session is part of the Apex Cohort educational programme. Enrol to access structured timetables, dedicated tutor guidance, and weekly assignments.",
-  requiredTierName = "Apex Cohort",
+  featureTitle,
+  featureDescription,
+  requiredTierName,
   currentPlanName = "Public Learner",
   redirectUrl = "/apex",
 }: TierGateModalProps) {
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const cohortConfig = useCohortConfig();
+
+  const effectiveTierName = requiredTierName || cohortConfig.active_cohort_name;
+  const effectiveTitle = featureTitle || `${cohortConfig.active_cohort_name} Intensive Tutorial`;
+  const effectiveDescription = featureDescription || `This live guided session is part of the ${cohortConfig.active_cohort_name} educational programme. Enrol to access structured timetables, dedicated tutor guidance, and weekly assignments.`;
 
   useEffect(() => {
     let active = true;
@@ -56,7 +62,7 @@ export default function TierGateModal({
 
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-indigo-900">
-            <svg className="h-3.5 w-3.5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg><span>Apex Cohort Programme</span>
+            <svg className="h-3.5 w-3.5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg><span>{effectiveTierName} Programme</span>
           </span>
           <button
             type="button"
@@ -69,16 +75,18 @@ export default function TierGateModal({
         </div>
 
         <div className="mt-5 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-3xl text-white shadow-lg shadow-indigo-600/30">
-            🏛️
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30">
+            <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 21V10M20 21V10M12 21V10M2 10h20M12 3l10 7H2zM2 21h20"/>
+            </svg>
           </div>
 
           <h3 className="mt-4 text-2xl font-black text-slate-950">
-            {featureTitle}
+            {effectiveTitle}
           </h3>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            {featureDescription}
+            {effectiveDescription}
           </p>
 
           <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs">
@@ -88,7 +96,7 @@ export default function TierGateModal({
             </div>
             <div className="mt-1.5 flex items-center justify-between text-indigo-700 font-bold border-t border-slate-200/60 pt-1.5">
               <span>Programme Track:</span>
-              <span className="font-black text-indigo-900">{requiredTierName}</span>
+              <span className="font-black text-indigo-900">{effectiveTierName}</span>
             </div>
           </div>
         </div>
@@ -105,7 +113,7 @@ export default function TierGateModal({
             href={targetHref}
             className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-xs font-black text-white hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-600/25 transition"
           >
-            Discover Apex Cohort →
+            Discover {effectiveTierName} →
           </Link>
         </div>
       </div>

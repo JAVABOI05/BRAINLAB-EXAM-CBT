@@ -189,7 +189,7 @@ export default function BrandFooter() {
 
   const supportEmail = config.support_email || "support@brainlabacademy.com.ng";
   const academyEmail = config.academy_email || "hello@brainlabacademy.com.ng";
-  const supportPhone = config.support_phone || "+234 907 431 0204";
+  const supportPhone = config.support_phone || "+234 808 926 7399";
   const supportPhoneDial = supportPhone.replace(/[^\d+]/g, "");
   const whatsappNumber = (config.whatsapp_number || "").replace(/\D/g, "");
   const whatsappHelpdeskUrl =

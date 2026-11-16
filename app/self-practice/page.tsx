@@ -12,6 +12,7 @@ import { enqueueMissedQuestion } from "../lib/spacedRepetition";
 import { streamAiTutor } from "../lib/aiTutor";
 import DifficultySlider from "../components/DifficultySlider";
 import type { DifficultyAllocationResult } from "../lib/difficultyEngine";
+import { awardStudentXp } from "../lib/gamification";
 
 type CatalogSubject = { name: string; question_count: number; categories: string[] };
 type PracticeAttempt = { attempt_id: string; attempt_token: string; deadline_at: string | null; questions: PaperQuestion[]; answers: Record<string, Option> };
@@ -229,9 +230,17 @@ export default function SelfPracticePage() {
     if (submitError) setError(submitError.message);
     else if (!data?.ok) setError((data as ApiFailure).message || "Could not submit this attempt.");
     else {
-      setResult(data as PracticeResult);
+      const resData = data as PracticeResult;
+      setResult(resData);
       setMessage(data.auto_submitted ? "Time expired. Your saved answers were submitted." : "Practice submitted. Review each explanation below.");
       setAttempt(null);
+      void awardStudentXp({
+        activityType: "practice_complete",
+        referenceId: attempt.attempt_id,
+        amount: Math.max(20, Math.round((resData.score / (resData.total || 1)) * 40)),
+        description: `Self-Practice - Score ${resData.score}/${resData.total}`,
+        scorePercent: resData.percentage,
+      });
     }
     setWorking(false);
   }, [attempt, result, working, pendingSaves, answers, retryReference]);

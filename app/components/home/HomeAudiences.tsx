@@ -149,7 +149,7 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
     icon: "utme",
     themeColor: "text-cyan-400",
     glowGradient: "from-blue-600/20 via-cyan-500/10 to-transparent",
-    accentBg: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
+    accentBg: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 ",
     features: [
       {
         icon: "keyboard",
@@ -178,7 +178,7 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
     icon: "olevel",
     themeColor: "text-emerald-400",
     glowGradient: "from-emerald-600/20 via-teal-500/10 to-transparent",
-    accentBg: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    accentBg: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 ",
     features: [
       {
         icon: "curriculum",
@@ -207,7 +207,7 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
     icon: "post_utme",
     themeColor: "text-amber-400",
     glowGradient: "from-amber-600/20 via-orange-500/10 to-transparent",
-    accentBg: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    accentBg: "border-amber-500/30 bg-amber-500/10 text-amber-700 ",
     features: [
       {
         icon: "target",
@@ -254,25 +254,25 @@ export function HomeAudiences() {
     <section
       id="audiences"
       aria-label="Tailored Experiences for Every Learner"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200/80 bg-white text-slate-900 dark:border-white/10 dark:bg-[#050811] dark:text-white transition-colors"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200/80 bg-[#F8FAFC] text-slate-900 transition-colors"
     >
       {/* Dynamic Ambient Lighting */}
       <div
-        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r ${activeTrack.glowGradient} blur-[140px] opacity-40 dark:opacity-75 transition-all duration-700`}
+        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r ${activeTrack.glowGradient} blur-[140px] opacity-40  transition-all duration-700`}
         aria-hidden="true"
       />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-500/10 dark:text-cyan-300 dark:border-blue-400/30 mb-3 shadow-2xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
+          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-3 shadow-2xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
             <span>EXAMINATION CANDIDATE PATHWAYS</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
             Engineered Specifically for How You Learn
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto font-normal">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
             Select your candidate category below to explore tailored simulation engines, official marking schemes, and real-time diagnostic telemetry.
           </p>
         </div>
@@ -297,19 +297,19 @@ export function HomeAudiences() {
                 onClick={() => setActiveTrackId(track.id)}
                 className={`group relative flex items-center gap-3 rounded-2xl px-5 sm:px-7 py-3.5 text-xs sm:text-sm font-bold transition-all duration-300 bl-focus-ring cursor-pointer ${
                   isActive
-                    ? "bg-slate-950 text-white shadow-xl border-2 border-slate-900 scale-102 dark:bg-[#0E172A] dark:border-cyan-400"
-                    : "bg-slate-100/80 text-slate-700 hover:text-slate-950 hover:bg-slate-200/80 border border-slate-200/80 dark:bg-[#0A101D]/80 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#111A2E] dark:border-white/[0.08]"
+                    ? "bg-slate-950 text-white shadow-xl border-2 border-slate-900 scale-102 "
+                    : "bg-slate-100/80 text-slate-700 hover:text-slate-950 hover:bg-slate-200/80 border border-slate-200/80     "
                 }`}
               >
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-xl ${
-                    isActive ? track.accentBg : "bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                  } border border-slate-200 dark:border-white/10 shrink-0 transition-transform group-hover:scale-110`}
+                    isActive ? track.accentBg : "bg-white text-slate-600  "
+                  } border border-slate-200  shrink-0 transition-transform group-hover:scale-110`}
                   aria-hidden="true"
                 >
                   <AudienceIcon type={track.icon} className="h-4 w-4" />
                 </span>
-                <span className={`font-black text-sm tracking-tight ${isActive ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
+                <span className={`font-black text-sm tracking-tight ${isActive ? "text-white" : "text-slate-800 "}`}>
                   {track.tag}
                 </span>
                 {isActive && (
@@ -325,7 +325,7 @@ export function HomeAudiences() {
           role="tabpanel"
           id={`panel-${activeTrack.id}`}
           aria-labelledby={`tab-${activeTrack.id}`}
-          className="relative rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-lg backdrop-blur-xl transition-all duration-500 overflow-hidden dark:border-white/15 dark:bg-gradient-to-br dark:from-[#0B1222]/95 dark:via-[#081226]/90 dark:to-[#040814]/95 dark:shadow-2xl"
+          className="relative rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-lg backdrop-blur-xl transition-all duration-500 overflow-hidden"
         >
           {/* Subtle Top Gradient Accent Line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-400" />
@@ -338,16 +338,16 @@ export function HomeAudiences() {
                   <AudienceIcon type={activeTrack.icon} className="h-3.5 w-3.5" />
                   <span>{activeTrack.badge}</span>
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                <span className="text-xs text-slate-500 font-mono">
                   Primary Candidate Track
                 </span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 tracking-tight leading-tight">
                 {activeTrack.headline}
               </h3>
 
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
                 {activeTrack.body}
               </p>
 
@@ -356,16 +356,16 @@ export function HomeAudiences() {
                 {activeTrack.features.map((feat, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4 transition-all hover:border-slate-300 hover:bg-slate-100/80 shadow-2xs dark:border-white/10 dark:bg-slate-950/60 dark:hover:border-white/20 dark:hover:bg-slate-950/80"
+                    className="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4 transition-all hover:border-slate-300 hover:bg-slate-100/80 shadow-2xs"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-blue-700 shadow-2xs dark:bg-slate-900 dark:border-white/15 dark:text-cyan-300 dark:shadow-inner">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-blue-700 shadow-2xs">
                       <AudienceIcon type={feat.icon} className="h-4 w-4" />
                     </span>
                     <div className="space-y-0.5">
-                      <div className="text-xs sm:text-sm font-bold text-slate-950 dark:text-white tracking-tight">
+                      <div className="text-xs sm:text-sm font-bold text-slate-950 tracking-tight">
                         {feat.title}
                       </div>
-                      <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                      <div className="text-xs text-slate-600 leading-relaxed font-normal">
                         {feat.desc}
                       </div>
                     </div>
@@ -383,7 +383,7 @@ export function HomeAudiences() {
                   <span aria-hidden="true" className="text-base font-bold">&rarr;</span>
                 </Link>
 
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                <span className="text-xs text-slate-500 font-mono">
                   Instant Candidate Access &bull; Real Exam Environment
                 </span>
               </div>
@@ -391,16 +391,16 @@ export function HomeAudiences() {
 
             {/* RIGHT COLUMN: Bespoke Interactive Live Simulator Widget */}
             <div className="lg:col-span-5">
-              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6 shadow-sm dark:border-white/15 dark:bg-[#030712]/90 dark:shadow-2xl relative overflow-hidden">
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
                 {/* Glow pill header */}
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3 mb-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
                       Live Candidate Telemetry Simulator
                     </span>
                   </div>
-                  <span className="rounded-md bg-blue-50 dark:bg-white/10 px-2 py-0.5 text-[10px] font-mono text-blue-700 dark:text-cyan-300 border border-blue-200 dark:border-white/10 font-bold">
+                  <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-mono text-blue-700 border border-blue-200 font-bold">
                     Interactive
                   </span>
                 </div>
@@ -409,9 +409,9 @@ export function HomeAudiences() {
                 {activeTrack.id === "utme" && (
                   <div className="space-y-4 animate-fade-in">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-300 mb-1.5 flex justify-between">
+                      <div className="text-xs font-bold text-slate-800 mb-1.5 flex justify-between">
                         <span>Select Target UTME Score:</span>
-                        <span className="font-mono text-cyan-700 dark:text-cyan-400 font-black">{targetScore} / 400</span>
+                        <span className="font-mono text-cyan-700 font-black">{targetScore} / 400</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         {[260, 290, 320].map((score) => (
@@ -422,7 +422,7 @@ export function HomeAudiences() {
                             className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                               targetScore === score
                                 ? "bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30 scale-102"
-                                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
+                                : "bg-white border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100"
                             }`}
                           >
                             {score}+ Target
@@ -432,18 +432,18 @@ export function HomeAudiences() {
                     </div>
 
                     {/* Dynamic Radial Admission Gauge Preview */}
-                    <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-b from-cyan-50 to-white dark:from-cyan-950/40 dark:to-slate-950/60 p-4 text-center">
-                      <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-b from-cyan-50 to-white p-4 text-center">
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         Admission Merit Probability
                       </div>
-                      <div className="text-3xl font-black text-slate-950 dark:text-white mt-1">
+                      <div className="text-3xl font-black text-slate-950 mt-1">
                         {targetScore >= 310
                           ? "96% High Merit"
                           : targetScore >= 285
                           ? "88% Competitive"
                           : "74% Qualified"}
                       </div>
-                      <p className="text-[11px] text-cyan-800 dark:text-cyan-300 mt-1 font-medium">
+                      <p className="text-[11px] text-cyan-800 mt-1 font-medium">
                         {targetScore >= 290
                           ? "Direct merit qualification for UNILAG, UI, and OAU Tier-1 programs."
                           : "Strong standing for Federal institution admission with targeted CBT practice."}
@@ -452,25 +452,25 @@ export function HomeAudiences() {
 
                     {/* Target Institutions Status */}
                     <div className="space-y-2">
-                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                         Top Benchmark Alignments
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 p-2.5">
-                          <span className="text-slate-500 dark:text-slate-400 block text-[10px]">UNILAG Akoka</span>
-                          <span className="font-bold text-slate-900 dark:text-white">290+ Cut-Off Target</span>
+                        <div className="rounded-lg bg-white /80 border border-slate-200 p-2.5">
+                          <span className="text-slate-500 block text-[10px]">UNILAG Akoka</span>
+                          <span className="font-bold text-slate-900">290+ Cut-Off Target</span>
                         </div>
-                        <div className="rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 p-2.5">
-                          <span className="text-slate-500 dark:text-slate-400 block text-[10px]">UI Ibadan</span>
-                          <span className="font-bold text-slate-900 dark:text-white">285+ Cut-Off Target</span>
+                        <div className="rounded-lg bg-white /80 border border-slate-200 p-2.5">
+                          <span className="text-slate-500 block text-[10px]">UI Ibadan</span>
+                          <span className="font-bold text-slate-900">285+ Cut-Off Target</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="pt-1">
-                      <div className="text-[10px] text-slate-600 dark:text-slate-400 font-mono flex items-center justify-between">
+                      <div className="text-[10px] text-slate-600 font-mono flex items-center justify-between">
                         <span>Standard 4-Subject Blueprints</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">● 100% 8-Key Ready</span>
+                        <span className="text-emerald-600 font-bold">● 100% 8-Key Ready</span>
                       </div>
                     </div>
                   </div>
@@ -480,7 +480,7 @@ export function HomeAudiences() {
                 {activeTrack.id === "olevel" && (
                   <div className="space-y-4 animate-fade-in">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-300 mb-1.5">
+                      <div className="text-xs font-bold text-slate-800 mb-1.5">
                         Select Academic Stream:
                       </div>
                       <div className="grid grid-cols-3 gap-2">
@@ -492,7 +492,7 @@ export function HomeAudiences() {
                             className={`py-2 px-2 rounded-xl text-xs capitalize font-bold transition-all cursor-pointer ${
                               secondaryStream === stream
                                 ? "bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/30 scale-102"
-                                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
+                                : "bg-white border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100"
                             }`}
                           >
                             {stream}
@@ -502,49 +502,49 @@ export function HomeAudiences() {
                     </div>
 
                     {/* Syllabus Progress Rings / Bars */}
-                    <div className="space-y-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-slate-950/60 p-4">
-                      <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    <div className="space-y-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4">
+                      <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
                         NERDC Syllabus Topic Coverage
                       </div>
 
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-900 dark:text-white font-medium">General Mathematics</span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">100% Tracked</span>
+                          <span className="text-slate-900 font-medium">General Mathematics</span>
+                          <span className="text-emerald-600 font-mono font-bold">100% Tracked</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
                           <div className="h-full bg-emerald-500 rounded-full w-[94%]" />
                         </div>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-900 dark:text-white font-medium">English Lexis &amp; Structure</span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">100% Tracked</span>
+                          <span className="text-slate-900 font-medium">English Lexis &amp; Structure</span>
+                          <span className="text-emerald-600 font-mono font-bold">100% Tracked</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
                           <div className="h-full bg-teal-500 rounded-full w-[88%]" />
                         </div>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-900 dark:text-white font-medium">
+                          <span className="text-slate-900 font-medium">
                             {secondaryStream === "science"
                               ? "Physics & Chemistry Theory"
                               : secondaryStream === "commercial"
                               ? "Financial Accounting & Commerce"
                               : "Literature & Government"}
                           </span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">Full Derivations</span>
+                          <span className="text-emerald-600 font-mono font-bold">Full Derivations</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
                           <div className="h-full bg-cyan-500 rounded-full w-[92%]" />
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-emerald-100/70 border border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800/40 p-2.5 text-[11px] text-emerald-900 dark:text-emerald-200">
+                    <div className="rounded-lg bg-emerald-100/70 border border-emerald-300 p-2.5 text-[11px] text-emerald-900">
                       Includes verified 2015–2026 WAEC &amp; NECO past questions with detailed theory step-by-step marking schemes.
                     </div>
                   </div>
@@ -554,7 +554,7 @@ export function HomeAudiences() {
                 {activeTrack.id === "post_utme" && (
                   <div className="space-y-4 animate-fade-in">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-300 mb-1.5">
+                      <div className="text-xs font-bold text-slate-800 mb-1.5">
                         Target Screening University:
                       </div>
                       <div className="grid grid-cols-3 gap-2">
@@ -570,7 +570,7 @@ export function HomeAudiences() {
                             className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                               targetUni === u.id
                                 ? "bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/30 scale-102"
-                                : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:text-slate-950 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800"
+                                : "bg-white border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100"
                             }`}
                           >
                             {u.label}
@@ -581,9 +581,9 @@ export function HomeAudiences() {
 
                     {/* Post-UTME Projected Score Slider */}
                     <div>
-                      <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-300 mb-1">
+                      <div className="flex justify-between text-xs font-bold text-slate-800 mb-1">
                         <span>Projected Screening Score:</span>
-                        <span className="font-mono text-amber-600 dark:text-amber-400 font-black">
+                        <span className="font-mono text-amber-600 font-black">
                           {projectedPostUtme} / 30 Pts
                         </span>
                       </div>
@@ -594,48 +594,48 @@ export function HomeAudiences() {
                         step="1"
                         value={projectedPostUtme}
                         onChange={(e) => setProjectedPostUtme(Number(e.target.value))}
-                        className="w-full accent-amber-500 cursor-pointer h-2 bg-slate-200 dark:bg-slate-800 rounded-lg"
+                        className="w-full accent-amber-500 cursor-pointer h-2 bg-slate-200 rounded-lg"
                       />
                     </div>
 
                     {/* Composite Aggregate Breakdown Card */}
-                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-50/70 to-white dark:from-amber-950/30 dark:to-slate-950/80 p-4 space-y-2.5">
+                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-50/70 to-white p-4 space-y-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
                           Composite Admission Aggregate
                         </span>
-                        <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                        <span className="text-xs font-black text-amber-600">
                           {targetUni.toUpperCase()} Model
                         </span>
                       </div>
 
                       <div className="flex items-baseline justify-between">
-                        <span className="text-3xl font-black text-slate-950 dark:text-white">
+                        <span className="text-3xl font-black text-slate-950">
                           {compositeAggregate}%
                         </span>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
                           {compositeAggregate >= 80 ? "Direct Merit Threshold" : "Competitive Range"}
                         </span>
                       </div>
 
                       {/* Formula contributions */}
-                      <div className="grid grid-cols-3 gap-1.5 text-center pt-1 border-t border-slate-200 dark:border-white/10 text-[10px]">
-                        <div className="p-1 rounded bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-white/5">
-                          <span className="text-slate-500 dark:text-slate-400 block">UTME (50%)</span>
-                          <span className="font-bold text-slate-900 dark:text-white">{utmeContribution}</span>
+                      <div className="grid grid-cols-3 gap-1.5 text-center pt-1 border-t border-slate-200 text-[10px]">
+                        <div className="p-1 rounded bg-white/80 border border-slate-200">
+                          <span className="text-slate-500 block">UTME (50%)</span>
+                          <span className="font-bold text-slate-900">{utmeContribution}</span>
                         </div>
-                        <div className="p-1 rounded bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-white/5">
-                          <span className="text-slate-500 dark:text-slate-400 block">Screening (30%)</span>
-                          <span className="font-bold text-slate-900 dark:text-white">{postUtmeContribution}</span>
+                        <div className="p-1 rounded bg-white/80 border border-slate-200">
+                          <span className="text-slate-500 block">Screening (30%)</span>
+                          <span className="font-bold text-slate-900">{postUtmeContribution}</span>
                         </div>
-                        <div className="p-1 rounded bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-white/5">
-                          <span className="text-slate-500 dark:text-slate-400 block">O-Level (20%)</span>
-                          <span className="font-bold text-slate-900 dark:text-white">{olevelContribution}</span>
+                        <div className="p-1 rounded bg-white/80 border border-slate-200">
+                          <span className="text-slate-500 block">O-Level (20%)</span>
+                          <span className="font-bold text-slate-900">{olevelContribution}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-amber-100/70 border border-amber-300 dark:bg-amber-950/40 dark:border-amber-800/40 p-2.5 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between">
+                    <div className="rounded-lg bg-amber-100/70 border border-amber-300 p-2.5 text-[11px] text-amber-900 flex items-center justify-between">
                       <span>Timed Sprint Mode:</span>
                       <span className="font-mono font-bold">30 Mins &bull; 40 Questions</span>
                     </div>
@@ -652,25 +652,25 @@ export function HomeAudiences() {
             return (
               <div
                 key={aud.id}
-                className="rounded-2xl p-4 transition-all duration-200 border bg-slate-50/80 border-slate-200/80 hover:border-slate-300 hover:bg-white shadow-2xs dark:bg-slate-900/40 dark:border-white/5 dark:hover:border-white/15 dark:hover:bg-slate-900/70"
+                className="rounded-2xl p-4 transition-all duration-200 border bg-slate-50/80 border-slate-200/80 hover:border-slate-300 hover:bg-white shadow-2xs /40"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-700 border border-blue-200 dark:bg-slate-800 dark:text-cyan-400 dark:border-white/10"
+                    className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-700 border border-blue-200"
                     aria-hidden="true"
                   >
                     <AudienceIcon type={aud.id} className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-[9px] font-mono text-slate-500 dark:text-slate-400 uppercase font-bold">
+                  <span className="text-[9px] font-mono text-slate-500 uppercase font-bold">
                     Partner Access
                   </span>
                 </div>
-                <div className="text-xs font-bold text-slate-950 dark:text-white mb-2 line-clamp-1">
+                <div className="text-xs font-bold text-slate-950 mb-2 line-clamp-1">
                   {aud.label}
                 </div>
                 <Link
                   href={aud.cta.href}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-cyan-400 hover:text-blue-700 dark:hover:text-cyan-300 transition-colors bl-focus-ring"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors bl-focus-ring"
                 >
                   <span>Explore Pathway</span>
                   <span aria-hidden="true">&rarr;</span>
