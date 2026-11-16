@@ -211,3 +211,12 @@ The PDF's six-zone/proprietorship summary prints 962 total records across its li
 8. Only approved, rights-cleared records considered for publication.
 
 No complete extraction has been completed from the supplied PDF. Selected pages have been inspected only. No rows have been imported into Supabase.
+
+
+### 11.7 Raw NBTE source-row templates
+
+Two header-only templates have been added under `data/directory-import-templates/`:
+- `nbte-2025-institution-source-rows.csv` — captures source page, section, serial, exact institution name/category, ownership, establishment year, address/contact/website and review state.
+- `nbte-2025-programme-accreditation-source-rows.csv` — captures source page, institution linkage, division, exact programme/award label, year granted, raw status, approved streams, expiration date, footnote markers and continuation text.
+
+They intentionally contain headers only. They are raw extraction/staging aids, not publication-ready directory data and not a final database contract. Populate them only after rights review and controlled extraction; retain raw strings even when a parsed value is also recorded.
