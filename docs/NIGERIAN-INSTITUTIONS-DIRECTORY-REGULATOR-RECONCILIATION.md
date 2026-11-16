@@ -87,3 +87,28 @@ No row has been promoted to a canonical published institution. No programme cata
 6. Attach dated evidence to each approved record. Only then promote reviewed institution records and begin verified programme/offering imports.
 
 **No production database changes or deployments were made.**
+
+
+## 7. NUC current-register gap candidates staged separately
+
+A first exact/substring lookup against the 312 university seed rows found nine
+names displayed on the current NUC eNUC page with no obvious seed match:
+City University Abuja; Ummah University of Nigeria; Regnum Medical University;
+Maria Assumpta University; Owolabi University; Abdulsalami Abubakar University
+of Agriculture and Climate Action; Federal University of Education,
+Kantagora; Federal University of Health Sciences, Funtua; and Lagos University
+of Education (LASUED).
+
+These nine candidates have been staged separately under
+`nuc_current_register_gap_candidates` and all are
+`needs_clarification`. They are not confirmed omissions: the current NUC page
+search extract is not a complete structured 328-row export. The complete
+register, aliases, legal names and approvals must be checked before adding
+canonical records.
+
+Two spelling variants were also identified for review:
+- NUC page “Bamidele Olumulia...” vs seed “Bamidele Olumilua...”.
+- NUC page “Abdulkadir Kure University...” vs seed “AbdulKadir Kure University...”.
+
+These are potential aliases, not additional institutions. See
+`docs/NIGERIAN-INSTITUTIONS-DIRECTORY-NUC-GAP-CANDIDATES.md`.
