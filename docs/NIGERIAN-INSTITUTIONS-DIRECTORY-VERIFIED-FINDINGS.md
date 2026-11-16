@@ -74,7 +74,7 @@ Official source pages:
 
 The public programme register currently shows 738 programmes and 163 trades in its programme/trade selector. These are not necessarily equivalent to the 7,404 accredited programme offerings reported on the register homepage: distinguish unique programme labels from institution-specific programme accreditation records.
 
-The NBTE 2025 Directory PDF is linked from the official NBTE page, but the web retrieval layer rejected the 13,841,731-byte file due to its size limit. No PDF was captured, extracted or imported. A supported bulk export or API has not yet been confirmed.
+The NBTE 25th Edition 2025 Directory PDF has now been supplied in the conversation and inspected directly. It is 540 pages, titled *Directory of Accredited Programmes Offered in Polytechnics, Technical and Vocational Institutions in Nigeria*, dated June 2025 (foreword dated 1 July 2025), ISBN 978-978-916-767-8. Selected pages were extracted for analysis; the complete 540-page dataset has not been transcribed, normalised or imported. The document's copyright notice requires prior written permission for reproduction, apart from brief academic quotations; bulk reuse permission must be obtained before BrainLab republishes the extracted records.
 
 ## 4. NCCE classification evidence
 
@@ -159,3 +159,37 @@ Before implementing Directory management:
 5. Review SECURITY DEFINER helper dependencies, grants and search_path before any change.
 
 No permission function, role, policy or database object was modified.
+
+
+## 10. Direct inspection of NBTE 25th Edition 2025 PDF
+
+The supplied PDF was opened and inspected directly. The following are source-derived findings:
+
+- The foreword describes the edition as the 25th edition of NBTE's directory of accredited programmes offered in NBTE-regulated TVET institutions. It says it contains programmes granted full accreditation and approval accreditation.
+- The foreword names nine institution categories: Polytechnics; Colleges of Agriculture; Colleges of Nursing Sciences; Colleges of Health Sciences; Specialised Institutions; Innovation Enterprise Institutions; Technical Colleges; Vocational Enterprise Institutions; and NSQ Training Providers/Centres.
+- The foreword lists Post-HND, HND, ND, NID, ANBC, ANTC, NBC, NTC, NVC and NSQ as possible certificates/qualifications. The institution category and award/qualification type must remain separate.
+- The foreword says accreditation takes effect from the latest date in the expiration-date column and that programmes granted accreditation are due for another visit after five calendar years.
+- The abbreviation key defines source states beyond Accredited/Interim/Expired: Expired*, Interim*, Interim**, Revalidation, Denied, Dropped and Withdrawn. Store the exact raw status token and the source definition/version; do not reduce these states to a boolean.
+- The directory includes a polytechnic listing with establishment year and ownership; a six-geopolitical-zone/proprietorship summary; a consolidated programme catalogue grouped by division; and institution-specific programme tables.
+- The six-zone summary prints 962 as the total across its categories and 186 in the polytechnics row. These are the document's summary figures, not BrainLab-verified unique counts and not automatically comparable to the current live NBTE register.
+- Institution-specific tables include programme/award label, year granted (sometimes with parenthetical prior-year annotations), accreditation status, approved streams and expiration date.
+
+### Required extraction representation
+
+Keep at least these linked source concepts distinct:
+1. Source institution row (raw name, listed type/category, ownership, establishment year, address/contact where present, page and row evidence).
+2. Canonical BrainLab institution (created only after identity reconciliation).
+3. Programme catalogue label (raw programme name and award prefix as printed).
+4. Institution-programme offering (institution + programme + award level/qualification).
+5. Accreditation decision/record (raw status, year granted, approved streams, expiration date, any footnote marker/definition).
+6. Source document/version and page-level evidence (edition, ISBN, page, extraction/parser version, retrieval timestamp and checksum).
+
+Do not infer current 2026 accreditation from this June/July 2025 edition. The source's status/date should be represented as a historical snapshot and checked against the current NBTE register or a newer official notice before a current-status claim.
+
+### Extraction and quality observations
+
+Selected pages inspected include the foreword and key, the polytechnic listing, the summary table, programme catalogue pages and institution-specific programme tables. These pages show OCR/layout hazards: wrapped names, irregular numbering, malformed date strings, inconsistent punctuation and footnote markers. A takeover note also appears in the institution listing. Preserve raw text and page images where available; put ambiguous rows into human review rather than silently normalising them.
+
+The PDF page 2 copyright notice states that all rights are reserved and reproduction requires prior written permission, except brief quotations specifically used for academic discourse/publications. This is a blocker for bulk republishing the extracted directory in BrainLab until NBTE clarifies and grants the relevant reuse rights.
+
+**Extraction status:** selected-page inspection only. No complete extraction, database import, publication or verification of current programme status has occurred.
