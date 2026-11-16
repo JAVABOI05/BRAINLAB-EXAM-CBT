@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSubscriptionPlans, DEFAULT_PLANS, type SubscriptionPlan } from "@/app/lib/platformConfig";
+import { useCohortConfig } from "@/app/lib/useCohortConfig";
 
 export function HomePricingTeaser() {
+  const cohortConfig = useCohortConfig();
   const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
 
   useEffect(() => {
@@ -151,7 +153,7 @@ export function HomePricingTeaser() {
               className="text-xs text-slate-600 text-center sm:text-right"
               data-plan-rate={plan.price_naira.toLocaleString()}
             >
-              Optional cohort upgrades from ₦{plan.price_naira.toLocaleString()} &bull;{" "}
+              Optional {cohortConfig.active_cohort_name} upgrades from ₦{plan.price_naira.toLocaleString()} &bull;{" "}
               <Link href="/pricing" className="text-blue-600 hover:text-blue-800 font-bold underline">
                 View full plans breakdown &rarr;
               </Link>
