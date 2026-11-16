@@ -220,3 +220,24 @@ Two header-only templates have been added under `data/directory-import-templates
 - `nbte-2025-programme-accreditation-source-rows.csv` — captures source page, institution linkage, division, exact programme/award label, year granted, raw status, approved streams, expiration date, footnote markers and continuation text.
 
 They intentionally contain headers only. They are raw extraction/staging aids, not publication-ready directory data and not a final database contract. Populate them only after rights review and controlled extraction; retain raw strings even when a parsed value is also recorded.
+
+
+### 11.8 Supplied source artefact integrity record
+
+The supplied NBTE PDF has now been checked locally:
+- File: `25th Edition 2025 Directory.pdf`
+- Size: 13,841,731 bytes
+- Pages: 540
+- PDF version: 1.7
+- Creation/modification metadata: 21 October 2025 UTC
+- SHA-256: `11c7e9b7e6f63136ae114c1bc8cc6884280c5555aad64a4b17cb705bbbbafcda`
+
+This checksum identifies the exact supplied artefact for repeatable internal analysis. It does not grant reproduction rights. Keep the original file immutable and record this checksum in any future extraction job manifest.
+
+### 11.9 Current regulator snapshot refresh (16 November 2026)
+
+- NUC eNUC displays 328 universities (77 Federal, 69 State, 182 Private).
+- NBTE's live public register states 3,471 institutions and 7,404 accredited programme records. Its filters include 207 polytechnics, 242 colleges of nursing, 154 colleges of health technology, 155 allied institutions, 3 IEIs, 26 VEIs, 2,362 skills training centres and 322 master craft persons. It displays zero monotechnics in its current filter. The 3,471 count is mixed-category coverage, not a tertiary-only total.
+- NCCE's current Accredited Colleges page exposes 263 serialised rows in the reviewed page output, with multiple institution-type labels including colleges of education, polytechnics offering NCE and other NCE-awarding institutions.
+
+These are source-displayed snapshots. The import process must capture all rows, preserve source retrieval time, reconcile duplicates and validate current status before computing BrainLab's own counts.
