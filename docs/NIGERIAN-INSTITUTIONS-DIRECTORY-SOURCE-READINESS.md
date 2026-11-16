@@ -143,3 +143,30 @@ Selected pages were inspected, including the foreword/abbreviation key, polytech
 **Source links and access**
 - NBTE directory landing page: https://web.nbte.gov.ng/node/114
 - The supplied file is the official 25th Edition 2025 PDF. Its page-2 copyright notice is the basis for the reuse-permission blocker above.
+
+
+## 7. Recheck of official regulator sources — 16 November 2026
+
+The official pages were re-opened during continuation of this work. Treat the figures below as source-displayed snapshots, not BrainLab-verified unique totals.
+
+### NUC — eNUC Nigerian University System
+- Official page: https://enuc.nuc.edu.ng/nus
+- Current displayed totals: 77 Federal, 69 State and 182 Private universities; 328 in total.
+- The page exposes institution name, establishment year, ownership, state and an Explore action.
+- Capture the full current list with retrieval timestamp and page evidence; reconcile institution identities and programme details before publication.
+
+### NBTE — public register
+- Official overview: https://digitalnbte.nbte.gov.ng/Public
+- Institution register: https://digitalnbte.nbte.gov.ng/Public/Institutions
+- Page states it was updated 16 November 2026 and displays 3,471 institutions and 7,404 accredited programme records across 37 states and the FCT.
+- Current type counts displayed: Polytechnics 207; Monotechnics 0; Colleges of Nursing 242; Colleges of Health Technology 154; Allied Institutions 155; Innovative Enterprise Institutions 3; Vocational Enterprise Institutions 26; Skills Training Centres 2,362; Master Craft Persons 322.
+- The register includes vocational providers and individual craft persons. Do not equate 3,471 with tertiary institutions or use it as the tertiary dropdown count.
+- It distinguishes institution approval from programme accreditation and exposes programme-specific accreditation end dates. Current status must be checked against this register, not inferred from the 2025 PDF.
+
+### NCCE — Accredited Colleges
+- Official page: https://www.ncce.gov.ng/AccreditedColleges
+- The page exposes a serialised list with institution name, provost, ownership/type, state and website. The reviewed page output includes 263 serialised entries.
+- Its types include Federal/State/Private Colleges of Education, Polytechnics offering NCE, and NTI/other NCE-awarding institutions. Preserve the type label and underlying institution identity separately.
+- The list has visible data-quality anomalies (e.g. placeholder websites and incomplete or anomalous ownership/type values). Preserve raw values and route anomalies to review; do not auto-correct them.
+
+**Acquisition limitation:** these pages are human-facing web registers. A documented official bulk export/API covering all relevant records has not been verified. Do not bypass access controls or undocumented endpoints. Request regulator-provided structured exports and reuse conditions.
