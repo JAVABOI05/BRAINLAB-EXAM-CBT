@@ -63,3 +63,27 @@ Reconcile the 752 pending rows against the official NUC, NBTE and NCCE
 registers; classify institution types correctly; resolve name/status
 conflicts; attach evidence; then publish only approved records through the
 reviewed directory schema and RBAC workflow.
+
+
+## Regulator reconciliation checkpoint — 16 November 2026
+
+A first source-level comparison against the current official regulator pages has
+been completed. This is a checkpoint, not a full row-by-row reconciliation.
+
+- NUC eNUC displays 328 universities (77 Federal, 69 State, 182 Private),
+  compared with 312 university rows in the seed.
+- NBTE currently displays 207 polytechnics in its type filter, compared with
+  200 seed rows. The NBTE headline total of 3,471 includes mixed vocational
+  and skills-provider categories and is not a tertiary-only count.
+- NCCE's page mixes Colleges of Education, Polytechnics offering NCE and Other
+  NCE Awarding Institutions. Its serialised page count is not a direct
+  comparator for the seed's 240 COE rows.
+- 6 university rows and 1 COE row have been set to
+  `needs_clarification` due to explicit former-name/status conflicts with the
+  NCCE register. The other 745 remain pending.
+- QA notes are attached to rows with missing websites (universities), missing
+  establishment years, and thin/unitemized faculty/school evidence.
+- No row has been promoted, merged, rejected or published.
+
+See `docs/NIGERIAN-INSTITUTIONS-DIRECTORY-REGULATOR-RECONCILIATION.md`
+for the affected names, counts, evidence links and next review gates.
