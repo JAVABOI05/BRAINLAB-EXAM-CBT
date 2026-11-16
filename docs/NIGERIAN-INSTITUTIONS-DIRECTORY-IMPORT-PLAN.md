@@ -47,12 +47,13 @@
 6. Request a structured CSV/XLSX/JSON export and data-use guidance from NUC if available.
 
 ### B. Polytechnics / TVET — NBTE
-1. Download the 2025 Directory of Accredited Programmes from the official NBTE download page.
-2. Preserve the original file, checksum, edition and retrieval date.
-3. Extract institution names, programmes, award levels, departments and accreditation/approval notes.
-4. Reconcile each institution against the NBTE public register.
-5. Separate polytechnics, monotechnics, specialist institutions, TVET providers and other post-secondary providers.
-6. Request current structured data and update cadence from NBTE.
+1. Preserve the supplied NBTE 25th Edition 2025 PDF as an immutable source artefact; record its 540-page length, June 2025 edition date, 1 July 2025 foreword date and ISBN 978-978-916-767-8.
+2. Calculate and record a SHA-256 checksum in the controlled extraction manifest before any repeatable full extraction; do not invent a checksum from the document title or file metadata.
+3. Obtain written NBTE permission for bulk reuse/republishing before using extracted records in BrainLab's public catalogue; the PDF's page-2 notice reserves reproduction rights.
+4. Extract institution listing rows, consolidated programme catalogue labels and institution-specific programme/accreditation tables as separate datasets.
+5. Preserve exact raw status tokens, year-granted annotations, approved-stream counts, expiration-date strings, page numbers and row evidence. Do not collapse status to a boolean or infer 2026 validity from this 2025 edition.
+6. Reconcile every source institution against the current NBTE public register and other regulator sources; classify the nine institution categories named in the foreword and separate tertiary/specialist categories from vocational/skills providers.
+7. Request current structured data, current accreditation status, reuse terms and update cadence from NBTE.
 
 ### C. Colleges of education — NCCE
 1. Capture all NCCE Accredited Colleges rows, including ownership, state, listed institution type and website where present.
@@ -143,3 +144,70 @@ No public completeness claim until coverage is reconciled against each competent
 - Draft database model reviewed against the actual BrainLab account/profile and RBAC schema.
 - CSV templates validated on sample rows.
 - No production database changes and no public dropdown integration in this milestone.
+
+
+## 11. NBTE 25th Edition 2025 — controlled extraction specification
+
+### 11.1 Source facts to retain
+- Edition: 25th Edition, June 2025; foreword dated 1 July 2025.
+- Publisher: National Board for Technical Education.
+- Title: *Directory of Accredited Programmes Offered in Polytechnics, Technical and Vocational Institutions in Nigeria*.
+- ISBN: 978-978-916-767-8.
+- Extent: 540 pages.
+- Reuse: page 2 reserves all rights and requires prior written permission for reproduction except brief academic quotations. Bulk extraction for public BrainLab redistribution is blocked pending written permission.
+
+### 11.2 Separate extraction streams
+A. Institution register section:
+- source institution name exactly as printed
+- source institution category/section
+- ownership/proprietorship exactly as printed
+- establishment year exactly as printed
+- address, state, contact and website where present
+- source page and source row/serial
+- notes about takeover, conversion, merger or other history
+
+B. Consolidated programme catalogue:
+- division/discipline heading exactly as printed
+- programme label exactly as printed
+- award prefix/type (ND, HND, NID, etc.) exactly as printed
+- catalogue page and serial number
+- retain repeated labels and possible duplicates until reviewed
+
+C. Institution-specific programme/accreditation table:
+- institution source key
+- programme source label exactly as printed
+- year granted field as raw text (including parenthetical annotations)
+- accreditation status token exactly as printed
+- approved streams as raw value and parsed integer only when unambiguous
+- expiration date as raw text and parsed date only when valid
+- division/section heading
+- source page and row evidence
+- footnote marker/definition and any continuation/wrapped-line linkage
+
+### 11.3 Status semantics
+The document's abbreviation key includes Accredited, Interim, Expired, Expired*, Interim*, Interim**, Revalidation, Denied, Dropped and Withdrawn. Keep the raw source token and the edition-specific definition. Do not map all non-Accredited values to "not approved"; do not treat a missing or malformed date as a valid date; do not treat "Denied", "Dropped" and "Withdrawn" as synonyms. The source says accreditation takes effect from the latest date in the expiration-date column and that programmes granted accreditation are due for another visit after five calendar years. This is source guidance for interpreting the 2025 edition, not proof of present-day status.
+
+### 11.4 Quality-control rules
+- Preserve page-level source evidence and raw extracted strings.
+- OCR/parser output is a draft, never a publication-ready record.
+- Detect wrapped programme names and multi-line continuation rows.
+- Flag malformed dates, inconsistent numbering, missing serials, repeated programme names, footnote markers and conflicting status/date combinations.
+- Preserve the source value and store a separate proposed normalised value with a review state.
+- Do not auto-merge institutions by name alone.
+- A reviewer must approve every ambiguous institution identity and every ambiguous accreditation row.
+- Compare 2025 records with the current NBTE public register and request a current regulator export before presenting live accreditation status.
+
+### 11.5 Source summary figures — context only
+The PDF's six-zone/proprietorship summary prints 962 total records across its listed institution categories and 186 for the polytechnics row. These are NBTE's printed 2025 summary figures. They must not be reported as BrainLab-verified unique counts or reconciled to current NBTE portal figures without a documented row-level comparison.
+
+### 11.6 Extraction milestone gates
+1. Source artefact retained and checksum recorded.
+2. Reuse permission obtained or legal decision recorded to limit use to permitted internal analysis/brief quotation.
+3. Parser/extraction approach tested on representative pages from each table layout.
+4. Raw extraction completed with page/row provenance.
+5. Validation report produced for missing/invalid fields and OCR anomalies.
+6. Institution identities reconciled with current NBTE register.
+7. Accreditation records reviewed against current NBTE evidence.
+8. Only approved, rights-cleared records considered for publication.
+
+No complete extraction has been completed from the supplied PDF. Selected pages have been inspected only. No rows have been imported into Supabase.
