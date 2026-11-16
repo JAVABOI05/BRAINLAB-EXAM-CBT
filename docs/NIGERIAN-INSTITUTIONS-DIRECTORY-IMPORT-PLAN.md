@@ -241,3 +241,45 @@ This checksum identifies the exact supplied artefact for repeatable internal ana
 - NCCE's current Accredited Colleges page exposes 263 serialised rows in the reviewed page output, with multiple institution-type labels including colleges of education, polytechnics offering NCE and other NCE-awarding institutions.
 
 These are source-displayed snapshots. The import process must capture all rows, preserve source retrieval time, reconcile duplicates and validate current status before computing BrainLab's own counts.
+
+
+## 8. Executed seed import — 16 November 2026
+
+A controlled first seed import has now been completed in the **BrainLabCBT-Staging**
+Supabase project only. This does not change the no-production-write boundary.
+
+- Imported 752 raw institution rows into private staging:
+  - 312 universities
+  - 200 polytechnics
+  - 240 colleges of education
+- Each source is registered separately with upstream URL, source-file path,
+  Git blob SHA, declared CC0-1.0 licence, source snapshot date and notes.
+- Three import jobs were created with version
+  `2026-11-16-community-seed-v1`; all 752 rows have
+  `review_status = pending` and each job is `review_required`.
+- Exact normalised-name comparison found no duplicate groups in the three
+  source files. This is only a syntactic duplicate check, not regulator
+  verification.
+- Source data files and licence/provenance notes are preserved under
+  `data/directory-import-sources/`.
+- Private staging schema migration is
+  `supabase/migrations/20261116222000_brainlab_directory_private_import_staging.sql`.
+- The staging tables have RLS enabled and no grants to `anon` or
+  `authenticated`; they are not student-facing.
+
+The current community dataset README reports 753 rows because it now includes
+one contributed health-sciences college. BrainLab's requested 752-row import
+uses only the three core register-derived files (312 + 200 + 240) and excludes
+that contributed extra row.
+
+The community dataset's notes describe an August 2026 snapshot, while the
+polytechnic source is based on the NBTE June 2025 directory. Known gaps in the
+752 rows include 124 missing university websites, 58 missing polytechnic
+establishment years and 178 missing college-of-education establishment years.
+The seed totals also differ from the current regulator snapshots already
+recorded above (notably 312 vs 328 universities). Therefore no row has been
+promoted to a published canonical institution, and no generated/inferred
+programme names have been imported as actual institution offerings.
+
+See `docs/NIGERIAN-INSTITUTIONS-DIRECTORY-SEED-IMPORT-REPORT.md` for the
+verified row counts and detailed treatment.
