@@ -139,3 +139,23 @@ The database should model an institution's primary type separately from the qual
 7. Keep all work documentation/templates only until schema and source data have been reviewed.
 
 No production or staging data was changed by this work.
+
+
+## 9. Existing admin permission model inspection
+
+Read-only inspection of the production public schema and public.admin_has_permission(text) found:
+
+- The only public table whose name matches role/permission is competition_user_permissions; it is competition-specific and is not a general-purpose directory permission catalogue.
+- General admin role membership is represented by admin_profiles with a fixed role CHECK constraint.
+- admin_has_permission(text) implements a static role-to-permission allowlist in a SECURITY DEFINER function. It includes institution.manage and institution.reports.read for selected existing roles, but no dedicated directory.* permission keys were found in the inspected function.
+- The current helper does not demonstrate configurable custom roles or resource-scope evaluation. Do not assume the People & Access Management Centre's intended configurable role model is already implemented in this database.
+- Super Admin is granted all permission keys by the helper; platform_admin and other roles are restricted to hard-coded allowlists. The existing institution.manage permission is too broad to assume it safely covers directory publishing, accreditation review, bulk import and source management.
+
+Before implementing Directory management:
+1. Reconcile the live People & Access Management design and any pending role-management work with the current production schema.
+2. Define explicit permissions such as directory.institutions.read, directory.institutions.manage, directory.programmes.read, directory.programmes.manage, directory.import.execute, directory.review.approve, directory.sources.manage and directory.audit.read, with resource scope where required.
+3. Add these through the approved central RBAC model rather than adding a separate Directory role table or relying on broad legacy permissions.
+4. Test anon, authenticated learner, tutor, reviewer, directory manager, platform admin and super admin access against staging.
+5. Review SECURITY DEFINER helper dependencies, grants and search_path before any change.
+
+No permission function, role, policy or database object was modified.
