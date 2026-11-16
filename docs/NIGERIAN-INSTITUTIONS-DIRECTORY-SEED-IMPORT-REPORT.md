@@ -87,3 +87,23 @@ been completed. This is a checkpoint, not a full row-by-row reconciliation.
 
 See `docs/NIGERIAN-INSTITUTIONS-DIRECTORY-REGULATOR-RECONCILIATION.md`
 for the affected names, counts, evidence links and next review gates.
+
+
+## Additional NUC candidate staging — 16 November 2026
+
+After the initial 752-row seed, a first comparison against the current NUC eNUC
+page identified nine displayed names with no obvious exact/substring match in
+the seed. These have been staged separately under the NUC candidate source,
+not added to the original seed job. All nine are marked
+`needs_clarification`; they are potential omissions, not confirmed net-new
+institutions. See
+`docs/NIGERIAN-INSTITUTIONS-DIRECTORY-NUC-GAP-CANDIDATES.md`.
+
+Current staging inventory is therefore:
+- Original community seed: 752 rows (745 pending, 7 needs clarification).
+- Separate NUC current-register gap candidates: 9 rows (all needs clarification).
+- Total private staging rows: 761.
+- Approved/published rows: 0.
+
+The nine candidates are not a complete reconciliation of the NUC's displayed
+328 universities. A complete structured NUC export is still required.
