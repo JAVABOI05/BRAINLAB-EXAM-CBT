@@ -27,28 +27,70 @@ export default function CertificateVerificationResultPage() {
 
   const [loading, setLoading] = useState(true);
   const [cert, setCert] = useState<VerifiedCertificate | null>(null);
-  const [status, setStatus] = useState<"valid" | "revoked" | "expired" | "not_found">("not_found");
+  const [status, setStatus] = useState<"valid" | "revoked" | "expired" | "not_found" | "unavailable">("not_found");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     let active = true;
 
     async function verify() {
-      if (!query.trim()) {
+      const identifier = query.trim();
+      if (!identifier) {
         setStatus("not_found");
+        setMessage("No verification identifier was supplied.");
         setLoading(false);
         return;
       }
 
       setLoading(true);
+      setMessage("");
       try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+
+        // Result slips carry a result UUID. Resolve that against the public,
+        // release-gated result verifier before attempting certificate lookup.
+        if (isUuid) {
+          const resultLookup = await supabase.rpc("verify_exam_result", {
+            p_query: identifier,
+          });
+
+          if (!active) return;
+
+          if (!resultLookup.error && resultLookup.data?.ok && resultLookup.data.certificate) {
+            setStatus(resultLookup.data.status || "valid");
+            setCert(resultLookup.data.certificate as VerifiedCertificate);
+            return;
+          }
+
+          if (!resultLookup.error && resultLookup.data?.error === "results_not_released") {
+            setStatus("unavailable");
+            setMessage("BrainLab has not released this result for public verification yet.");
+            return;
+          }
+
+          // A genuine result miss should still allow a UUID certificate lookup.
+          // A missing RPC is tolerated during staged rollout; other database
+          // errors are surfaced as service errors rather than "not found".
+          if (
+            resultLookup.error &&
+            !["PGRST202", "42883"].includes(resultLookup.error.code || "")
+          ) {
+            setStatus("unavailable");
+            setMessage("The verification service is temporarily unavailable. Please try again later.");
+            return;
+          }
+        }
+
         const { data, error } = await supabase.rpc("verify_certificate", {
-          p_query: query.trim(),
+          p_query: identifier,
         });
 
         if (!active) return;
 
-        if (error || !data || !data.ok) {
+        if (error) {
+          setStatus("unavailable");
+          setMessage("The verification service is temporarily unavailable. Please try again later.");
+        } else if (!data || !data.ok) {
           setStatus("not_found");
           setMessage(data?.message || "No certificate matching this identifier was found.");
         } else {
@@ -57,8 +99,8 @@ export default function CertificateVerificationResultPage() {
         }
       } catch {
         if (active) {
-          setStatus("not_found");
-          setMessage("An unexpected error occurred during verification.");
+          setStatus("unavailable");
+          setMessage("The verification service is temporarily unavailable. Please try again later.");
         }
       } finally {
         if (active) setLoading(false);
@@ -123,7 +165,7 @@ export default function CertificateVerificationResultPage() {
                 ⚠️
               </div>
               <h1 className="mt-4 text-2xl font-black text-slate-900 sm:text-3xl">
-                Certificate Not Found
+                {status === "unavailable" ? "Verification Temporarily Unavailable" : "Certificate Not Found"}
               </h1>
               <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
                 {message ||
@@ -280,7 +322,9 @@ export default function CertificateVerificationResultPage() {
                         Verification URL
                       </p>
                       <p className="mt-1 font-mono text-[10px] text-indigo-700 truncate">
-                        brainlabexam-cbt.vercel.app/verify/{cert.certificate_number}
+                        {typeof window !== "undefined"
+                          ? `${window.location.origin}/verify/${encodeURIComponent(query)}`
+                          : `https://www.brainlabacademy.com.ng/verify/${encodeURIComponent(query)}`}
                       </p>
                     </div>
                   </div>
