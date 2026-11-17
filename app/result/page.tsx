@@ -64,8 +64,10 @@ export default function ResultPage() {
   const [chiefProctorTitle, setChiefProctorTitle] = useState("BrainLab CBT Directorate");
   const [dreamCutoff, setDreamCutoff] = useState<UniversityCutoff | null>(null);
   const [xpAwarded, setXpAwarded] = useState<number | null>(null);
+  const [verificationBaseUrl, setVerificationBaseUrl] = useState("https://www.brainlabacademy.com.ng");
 
   useEffect(() => {
+    setVerificationBaseUrl(window.location.origin);
     async function loadPage() {
       const settings = await getPublicSettings(true);
       const isResultsReleased = settings?.show_results === true;
@@ -796,18 +798,26 @@ export default function ResultPage() {
           {/* Official Verification Footer & Signature Strip */}
           <div className="mt-10 border-t-2 border-dashed border-slate-200 pt-6 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-500">
             <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-              <VerificationQRCode
-                url={`https://www.brainlabacademy.com.ng/verify/${summary?.result_id || "mock-result"}`}
-                size={80}
-                label="Scan to Verify"
-                className="shrink-0"
-              />
+              {summary?.result_id ? (
+                <VerificationQRCode
+                  url={`${verificationBaseUrl}/verify/${encodeURIComponent(summary.result_id)}`}
+                  size={80}
+                  label="Scan to Verify"
+                  className="shrink-0"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-2 text-center text-[10px] font-semibold text-amber-800">
+                  Verification link unavailable
+                </div>
+              )}
               <div>
                 <p className="font-bold text-slate-800 dark:text-slate-200">
                   Official BrainLab Digital Verification Code
                 </p>
-                <p className="mt-0.5 font-mono text-[11px] text-blue-700 dark:text-sky-400">
-                  https://www.brainlabacademy.com.ng/verify/{summary?.result_id || "mock-result"}
+                <p className="mt-0.5 break-all font-mono text-[11px] text-blue-700 dark:text-sky-400">
+                  {summary?.result_id
+                    ? `${verificationBaseUrl}/verify/${encodeURIComponent(summary.result_id)}`
+                    : "Verification link unavailable until a result reference is issued."}
                 </p>
                 <p className="mt-1 text-[10px] text-slate-400">
                   Issued by BrainLab Academy Examination Directorate under strict CBT proctoring standards. Tamper-evident verification slip.
