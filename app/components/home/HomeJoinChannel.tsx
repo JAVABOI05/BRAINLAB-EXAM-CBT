@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { trackEvent } from "@/app/lib/analytics";
 import { CONTACT_CONFIG } from "@/app/lib/contactConfig";
+import "./home-motion.css";
 
 export interface ChannelPlatformConfig {
   id: "whatsapp" | "telegram";
@@ -151,66 +152,55 @@ export function HomeJoinChannel({
       className={`relative w-full py-4 sm:py-6 ${className}`}
     >
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Compact, High-Impact Broadcast Ribbon */}
-        <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/50 bg-gradient-to-r from-[#071328] via-[#091b2c] to-[#071328] p-3.5 sm:p-4 shadow-xl">
-          {/* Subtle Ambient Radial Glow */}
-          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl" />
-          <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-blue-500/15 blur-3xl" />
-
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 sm:gap-4">
-            {/* Left: Icon & Channel Details */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 ring-1 ring-white/20">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        {/* Broadcast ribbon: crisp navy card with an orange edge. WhatsApp green is used only for the channel icon and button. */}
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 border-l-4 border-l-[var(--bl-color-brand-orange)] bg-[#0B1426] p-4 sm:p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.8)]">
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Left: icon and channel details */}
+            <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--bl-color-brand-channel,#25d366)] text-[#0B1536]">
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z" />
                 </svg>
-                <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping absolute" />
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                </span>
               </div>
 
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-black text-white tracking-tight truncate">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <span className="text-sm sm:text-base font-black text-white tracking-tight">
                     {channelName}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    LIVE ALERTS
+                  <span className="bl-home-tint-orange inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                    <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "var(--bl-color-brand-orange)" }} />
+                    Live alerts
                   </span>
                   {verifiedCount && (
-                    <span className="hidden sm:inline-flex items-center text-[11px] font-semibold text-slate-300">
-                      &bull; <strong className="text-white ml-1">{verifiedCount}</strong>&nbsp;Active Candidates
+                    <span className="hidden sm:inline-flex items-center text-xs font-semibold text-slate-300">
+                      <strong className="text-white mr-1">{verifiedCount}</strong> Active Candidates
                       {asOfDate && <span className="text-slate-400 font-normal ml-1">({asOfDate})</span>}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-300 leading-snug line-clamp-1 sm:line-clamp-none mt-0.5">
+                <p className="text-xs sm:text-sm text-slate-300 leading-snug mt-1">
                   {description}
                 </p>
               </div>
             </div>
 
-            {/* Right: Compact Action Button */}
-            <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
-              <span className="hidden lg:block text-[11px] text-slate-400 font-medium">
-                Official &bull; Instant Updates
-              </span>
+            {/* Right: action */}
+            <div className="flex items-center gap-4 shrink-0">
               <a
                 href={channelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => handleClick("whatsapp")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-xs sm:text-sm font-black text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95"
+                className="bl-focus-ring inline-flex w-full md:w-auto items-center justify-center gap-2 rounded-xl bg-[var(--bl-color-brand-channel,#25d366)] hover:brightness-105 px-5 py-3 text-sm font-black text-[#0B1536] transition-all active:scale-95 min-h-[48px]"
               >
                 <span>Join Channel</span>
                 <span aria-hidden="true">&rarr;</span>
               </a>
 
               {activePlatforms.length > 1 && (
-                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+                <div className="hidden sm:flex items-center gap-3 text-xs text-slate-300">
                   {activePlatforms
                     .filter((p) => p.id !== "whatsapp")
                     .map((p) => (
@@ -220,7 +210,7 @@ export function HomeJoinChannel({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => handleClick(p.id)}
-                        className="underline hover:text-emerald-400"
+                        className="underline underline-offset-4 hover:text-white"
                       >
                         {p.name} &nearr;
                       </a>

@@ -1,140 +1,63 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
+import { Reveal } from "./Reveal";
+import "./home-motion.css";
 
-function AudienceIcon({ type, className = "h-4 w-4" }: { type: string; className?: string }) {
-  switch (type) {
-    case "utme":
-    case "students":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" />
-          <circle cx="12" cy="12" r="4" />
-          <line x1="12" y1="2" x2="12" y2="4" />
-          <line x1="12" y1="20" x2="12" y2="22" />
-          <line x1="2" y1="12" x2="4" y2="12" />
-          <line x1="20" y1="12" x2="22" y2="12" />
-        </svg>
-      );
-    case "olevel":
-    case "secondary":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-          <path d="M6 6h10M6 10h10" />
-        </svg>
-      );
-    case "post_utme":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-          <line x1="9" y1="12" x2="15" y2="12" />
-        </svg>
-      );
-    case "keyboard":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="2" y="4" width="20" height="16" rx="2" />
-          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
-        </svg>
-      );
-    case "target":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 21V10M20 21V10M12 21V10M2 10h20M12 3l10 7H2zM2 21h20" />
-        </svg>
-      );
-    case "offline":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
-        </svg>
-      );
-    case "curriculum":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-        </svg>
-      );
-    case "theory":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-        </svg>
-      );
-    case "diagnostic":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-      );
-    case "arena":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" />
-          <polygon points="12 6 14.5 10.5 19 11.5 15.5 15 16.5 19.5 12 17 7.5 19.5 8.5 15 5 11.5 9.5 10.5 12 6" />
-        </svg>
-      );
-    case "calculator":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="4" y="2" width="16" height="20" rx="2" />
-          <line x1="8" y1="6" x2="16" y2="6" />
-          <line x1="16" y1="14" x2="16" y2="18" />
-          <path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01" />
-        </svg>
-      );
-    case "schools":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-      );
-    case "tutors":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-      );
-    case "parents":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      );
-    default:
-      return null;
-  }
+/** Compact single-path icon set (24x24, stroke). */
+const ICONS: Record<string, string> = {
+  target:
+    "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
+  book: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5ZM6 6h10M6 10h10",
+  school: "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM9 22V12h6v10",
+  keyboard:
+    "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10",
+  bank: "M4 21V10M20 21V10M12 21V10M2 10h20M12 3l10 7H2ZM2 21h20",
+  offline:
+    "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
+  doc: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8ZM14 2v6h6M16 13H8M16 17H8",
+  pulse: "M22 12h-4l-3 9L9 3l-3 9H2",
+  star: "M12 2l3 6.5 7 1-5 5 1.2 7L12 18l-6.2 3.5L7 14.5l-5-5 7-1Z",
+  users:
+    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  user: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
+  check: "M20 6 9 17l-5-5",
+};
+
+/** Audience ids from the content config mapped to icons. */
+const AUDIENCE_ICON: Record<string, string> = {
+  students: "target",
+  secondary: "book",
+  parents: "user",
+  schools: "school",
+  tutors: "users",
+  stem: "pulse",
+  independent: "star",
+};
+
+function Icon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
+  const d = ICONS[name];
+  if (!d) return null;
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
 }
 
-/**
- * The 3 canonical candidate pathways requested by the user:
- * 1. UTME CANDIDATES
- * 2. O LEVEL CANDIDATES
- * 3. POST UTME CANDIDATES
- */
+type TrackId = "utme" | "olevel" | "post_utme";
+
 interface CandidateTrack {
-  id: "utme" | "olevel" | "post_utme";
+  id: TrackId;
   tag: string;
+  short: string;
   badge: string;
   headline: string;
   body: string;
   cta: { label: string; href: string };
   icon: string;
-  themeColor: string;
-  glowGradient: string;
-  accentBg: string;
   features: { icon: string; title: string; desc: string }[];
 }
 
@@ -142,14 +65,12 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
   {
     id: "utme",
     tag: "UTME Candidates",
+    short: "UTME",
     badge: "JAMB 2027 Blueprint Standard",
     headline: "Target 300+ with Official 4-Subject Combinations & 8-Key Speed Parity",
     body: "Simulate the authentic JAMB CBT terminal experience. Master 180 questions across your chosen 4-subject combination with 120-minute countdowns, official A, B, C, D, P, N, S, R keyboard controls, negative marking analysis, and Tier-1 university cut-off benchmarking.",
     cta: { label: "Launch UTME Exam Simulator", href: "/cbt" },
-    icon: "utme",
-    themeColor: "text-cyan-400",
-    glowGradient: "from-blue-600/20 via-cyan-500/10 to-transparent",
-    accentBg: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 ",
+    icon: "target",
     features: [
       {
         icon: "keyboard",
@@ -157,7 +78,7 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
         desc: "Practice with the exact A, B, C, D, P, N, S, R keyboard controls used in the official CBT center without mouse dependency.",
       },
       {
-        icon: "target",
+        icon: "bank",
         title: "Tier-1 University Target Radar",
         desc: "Benchmark scores against official merit cut-offs for UNILAG, UI, OAU, UNN, and ABU.",
       },
@@ -171,27 +92,25 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
   {
     id: "olevel",
     tag: "O Level Candidates",
+    short: "O Level",
     badge: "WAEC SSCE & NECO Standard",
     headline: "Master Senior Secondary Theory Derivations & Objective Papers",
     body: "Comprehensive syllabus coverage for SS1–SS3 candidates across Science, Commercial, and Arts streams. Practice with verified 2015–2026 past questions, step-by-step mathematical working, and WAEC Chief Examiner standards to secure distinctions.",
     cta: { label: "Explore O Level Curriculum Hub", href: "/learn" },
-    icon: "olevel",
-    themeColor: "text-emerald-400",
-    glowGradient: "from-emerald-600/20 via-teal-500/10 to-transparent",
-    accentBg: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 ",
+    icon: "book",
     features: [
       {
-        icon: "curriculum",
+        icon: "book",
         title: "Science, Arts & Commercial Streams",
         desc: "Complete NERDC curriculum syllabi with structured lessons, definitions, formula sheets, and solved exercises.",
       },
       {
-        icon: "theory",
+        icon: "doc",
         title: "Master Step-by-Step Derivations",
         desc: "Detailed working for WAEC & NECO theory and objective papers across Mathematics, Sciences, and Humanities.",
       },
       {
-        icon: "diagnostic",
+        icon: "pulse",
         title: "Topic-by-Topic Mastery Diagnostic",
         desc: "Pinpoint exact syllabus gaps before senior secondary certificate exams with continuous diagnostic tracking.",
       },
@@ -200,27 +119,25 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
   {
     id: "post_utme",
     tag: "Post-UTME Candidates",
+    short: "Post-UTME",
     badge: "University Screening Accelerator",
     headline: "Crush University Screening CBTs with Institutional Time Formats",
     body: "University screening formats differ drastically from UTME. Train under institution-specific constraints for UNILAG (30-min 40-question sprints), UI, OAU, UNIBEN, UNN, and ABU with our composite aggregate admission calculator.",
     cta: { label: "Start Post-UTME Screening Drills", href: "/programmes/post-utme" },
-    icon: "post_utme",
-    themeColor: "text-amber-400",
-    glowGradient: "from-amber-600/20 via-orange-500/10 to-transparent",
-    accentBg: "border-amber-500/30 bg-amber-500/10 text-amber-700 ",
+    icon: "school",
     features: [
       {
-        icon: "target",
+        icon: "bank",
         title: "Institution-Specific Timed Formats",
         desc: "Tailored 30–45 minute speed papers reflecting UNILAG 30-min 40-question sprints, UI general paper, and OAU faculty screenings.",
       },
       {
-        icon: "diagnostic",
+        icon: "pulse",
         title: "Composite Admission Merit Calculator",
         desc: "Dynamically calculate weighted aggregate scores across 50% UTME, 30% Post-UTME, and 20% O-Level points.",
       },
       {
-        icon: "arena",
+        icon: "star",
         title: "High-Pressure Speed & Accuracy Drills",
         desc: "High-yield drills focused on rapid numerical reasoning, verbal logic, and faculty core subjects under time pressure.",
       },
@@ -228,456 +145,358 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
   },
 ];
 
-export function HomeAudiences() {
-  const [activeTrackId, setActiveTrackId] = useState<"utme" | "olevel" | "post_utme">("utme");
+const STREAM_ITEMS: Record<"science" | "arts" | "commercial", string[]> = {
+  science: ["General Mathematics", "English Lexis & Structure", "Physics & Chemistry Theory"],
+  commercial: ["General Mathematics", "English Lexis & Structure", "Financial Accounting & Commerce"],
+  arts: ["General Mathematics", "English Lexis & Structure", "Literature & Government"],
+};
 
-  // Interactive state for UTME candidate widget
-  const [targetScore, setTargetScore] = useState<number>(290);
-  // Interactive state for O Level stream selector
-  const [secondaryStream, setSecondaryStream] = useState<"science" | "arts" | "commercial">("science");
-  // Interactive state for Post-UTME widget
-  const [targetUni, setTargetUni] = useState<"unilag" | "ui" | "oau">("unilag");
-  const [projectedPostUtme, setProjectedPostUtme] = useState<number>(26); // out of 30
+/** Slider row used by the aggregate calculator. */
+function RangeRow({
+  label,
+  value,
+  min,
+  max,
+  step,
+  suffix,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  suffix: string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="flex items-baseline justify-between text-xs font-bold text-slate-200">
+        <span>{label}</span>
+        <span className="font-mono tabular-nums text-white">
+          {value}
+          <span className="text-slate-400"> {suffix}</span>
+        </span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="mt-2 h-2 w-full cursor-pointer rounded-lg bg-white/15 accent-[var(--bl-color-brand-orange)]"
+      />
+    </label>
+  );
+}
+
+export function HomeAudiences() {
+  const [activeTrackId, setActiveTrackId] = useState<TrackId>("utme");
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const [utmeScore, setUtmeScore] = useState<number>(290);
+  const [stream, setStream] = useState<"science" | "arts" | "commercial">("science");
+  const [screening, setScreening] = useState<number>(24);
+  const [olevelPts, setOlevelPts] = useState<number>(16);
 
   const activeTrack = CANDIDATE_TRACKS.find((t) => t.id === activeTrackId) || CANDIDATE_TRACKS[0];
 
-  // Dynamic Post-UTME aggregate calculation
-  // UTME (50%): (290 / 400) * 50 = 36.25 pts
-  // Post-UTME (30%): (26 / 30) * 30 = 26.00 pts
-  // O-Level (20%): Standard 5 A1s = 20.00 pts
-  const utmeContribution = Number(((targetScore / 400) * 50).toFixed(2));
-  const postUtmeContribution = Number(projectedPostUtme.toFixed(2));
-  const olevelContribution = 20.0;
-  const compositeAggregate = Number((utmeContribution + postUtmeContribution + olevelContribution).toFixed(2));
+  // Plain arithmetic only: each UTME subject is scored out of 100, so a 400 total is four subjects.
+  const perSubject = Number((utmeScore / 4).toFixed(1));
+  const utmePct = utmeScore / 400;
+
+  // Example 50 / 30 / 20 weighting. Universities set their own formula.
+  const utmePoints = Number(((utmeScore / 400) * 50).toFixed(2));
+  const aggregate = Number((utmePoints + screening + olevelPts).toFixed(2));
+
+  const handleTabKey = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const delta = e.key === "ArrowRight" ? 1 : -1;
+    const next = (index + delta + CANDIDATE_TRACKS.length) % CANDIDATE_TRACKS.length;
+    setActiveTrackId(CANDIDATE_TRACKS[next].id);
+    tabRefs.current[next]?.focus();
+  };
+
+  const presetBtn = (active: boolean) =>
+    `rounded-xl px-2 py-2.5 text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer min-h-[44px] bl-focus-ring ${
+      active
+        ? "bl-home-gradient-orange font-black"
+        : "border border-white/15 bg-white/5 text-slate-100 hover:bg-white/10"
+    }`;
 
   return (
     <section
       id="audiences"
       aria-label="Tailored Experiences for Every Learner"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200/80 bg-[#F8FAFC] text-slate-900 transition-colors"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-16 sm:py-24 border-b border-slate-200/80 bg-[#F8FAFC] text-slate-900"
     >
-      {/* Dynamic Ambient Lighting */}
-      <div
-        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r ${activeTrack.glowGradient} blur-[140px] opacity-40  transition-all duration-700`}
-        aria-hidden="true"
-      />
+      <div className="bl-home-grid-light pointer-events-none absolute inset-0" aria-hidden="true" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-3 shadow-2xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
-            <span>EXAMINATION CANDIDATE PATHWAYS</span>
-          </span>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
-            Engineered Specifically for How You Learn
+        {/* Section header */}
+        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-14">
+          <span className="bl-home-eyebrow">02 &middot; Candidate pathways</span>
+          <h2 className="bl-home-ink mt-4 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1]">
+            Engineered specifically for <span className="bl-home-mark">how you learn</span>
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
-            Select your candidate category below to explore tailored simulation engines, official marking schemes, and real-time diagnostic telemetry.
+          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+            Pick your candidate category to see the tools built for it.
           </p>
         </div>
 
-        {/* 1. THREE CANONICAL CANDIDATE PATHWAYS SELECTOR */}
-        <div
-          role="tablist"
-          aria-label="Academic Candidate Pathways"
-          className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-8 sm:mb-12"
-        >
-          {CANDIDATE_TRACKS.map((track) => {
+        {/* Pathway selector */}
+        <div role="tablist" aria-label="Academic Candidate Pathways" className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
+          {CANDIDATE_TRACKS.map((track, index) => {
             const isActive = track.id === activeTrackId;
-
             return (
               <button
                 key={track.id}
+                ref={(el) => {
+                  tabRefs.current[index] = el;
+                }}
                 role="tab"
                 id={`tab-${track.id}`}
                 aria-selected={isActive}
                 aria-controls={`panel-${track.id}`}
+                tabIndex={isActive ? 0 : -1}
                 type="button"
                 onClick={() => setActiveTrackId(track.id)}
-                className={`group relative flex items-center gap-3 rounded-2xl px-5 sm:px-7 py-3.5 text-xs sm:text-sm font-bold transition-all duration-300 bl-focus-ring cursor-pointer ${
+                onKeyDown={(e) => handleTabKey(e, index)}
+                className={`bl-home-lift bl-focus-ring group relative flex flex-col sm:flex-row items-center gap-2 sm:gap-4 overflow-hidden rounded-2xl border px-2 py-3 sm:px-5 sm:py-4 text-center sm:text-left cursor-pointer ${
                   isActive
-                    ? "bg-slate-950 text-white shadow-xl border-2 border-slate-900 scale-102 "
-                    : "bg-slate-100/80 text-slate-700 hover:text-slate-950 hover:bg-slate-200/80 border border-slate-200/80     "
+                    ? "border-[#0B1536] bg-[#0B1536] text-white shadow-[0_18px_32px_-18px_rgba(11,21,54,0.55)]"
+                    : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:shadow-md"
                 }`}
               >
                 <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-xl ${
-                    isActive ? track.accentBg : "bg-white text-slate-600  "
-                  } border border-slate-200  shrink-0 transition-transform group-hover:scale-110`}
+                  className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl ${
+                    isActive ? "bl-home-gradient-orange" : "bg-slate-100 text-[#0B1536]"
+                  }`}
                   aria-hidden="true"
                 >
-                  <AudienceIcon type={track.icon} className="h-4 w-4" />
+                  <Icon name={track.icon} className="h-4 w-4 sm:h-5 sm:w-5" />
                 </span>
-                <span className={`font-black text-sm tracking-tight ${isActive ? "text-white" : "text-slate-800 "}`}>
-                  {track.tag}
+                <span className="min-w-0">
+                  <span className="block text-xs sm:text-base font-black tracking-tight">
+                    <span className="sm:hidden">{track.short}</span>
+                    <span className="hidden sm:inline">{track.tag}</span>
+                  </span>
+                  <span className={`hidden sm:block text-xs font-medium mt-0.5 ${isActive ? "text-slate-300" : "text-slate-500"}`}>
+                    {track.badge}
+                  </span>
                 </span>
                 {isActive && (
-                  <span className={`flex h-2.5 w-2.5 rounded-full ${track.themeColor.replace("text-", "bg-")} shadow-xs animate-pulse ml-0.5`} />
+                  <span className="bl-home-gradient-orange absolute inset-x-0 bottom-0 h-1" aria-hidden="true" />
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* 2. THE WIDESCREEN CANDIDATE PATHWAY CANVAS */}
+        {/* Pathway canvas: editorial copy on the left, interactive navy panel on the right */}
         <div
+          key={activeTrack.id}
           role="tabpanel"
           id={`panel-${activeTrack.id}`}
           aria-labelledby={`tab-${activeTrack.id}`}
-          className="relative rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-lg backdrop-blur-xl transition-all duration-500 overflow-hidden"
+          className="bl-home-enter grid grid-cols-1 lg:grid-cols-12 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_1px_0_rgba(11,21,54,0.04),0_32px_56px_-32px_rgba(11,21,54,0.28)]"
         >
-          {/* Subtle Top Gradient Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-400" />
+          {/* Left: editorial */}
+          <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 space-y-6">
+            <span className="bl-home-chip-light inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black">
+              <Icon name={activeTrack.icon} className="h-3.5 w-3.5" />
+              {activeTrack.badge}
+            </span>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* LEFT COLUMN: Editorial Value & Feature Highlights */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black border ${activeTrack.accentBg}`}>
-                  <AudienceIcon type={activeTrack.icon} className="h-3.5 w-3.5" />
-                  <span>{activeTrack.badge}</span>
-                </span>
-                <span className="text-xs text-slate-500 font-mono">
-                  Primary Candidate Track
-                </span>
-              </div>
+            <h3 className="bl-home-ink text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-[1.15]">
+              {activeTrack.headline}
+            </h3>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 tracking-tight leading-tight">
-                {activeTrack.headline}
-              </h3>
+            <p className="text-base text-slate-600 leading-relaxed">{activeTrack.body}</p>
 
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
-                {activeTrack.body}
-              </p>
-
-              {/* High-Contrast Illustrated Feature Modules */}
-              <div className="space-y-3 pt-2">
-                {activeTrack.features.map((feat, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4 transition-all hover:border-slate-300 hover:bg-slate-100/80 shadow-2xs"
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-blue-700 shadow-2xs">
-                      <AudienceIcon type={feat.icon} className="h-4 w-4" />
-                    </span>
-                    <div className="space-y-0.5">
-                      <div className="text-xs sm:text-sm font-bold text-slate-950 tracking-tight">
-                        {feat.title}
-                      </div>
-                      <div className="text-xs text-slate-600 leading-relaxed font-normal">
-                        {feat.desc}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Direct Pathway Action */}
-              <div className="pt-3 flex flex-wrap items-center gap-4">
-                <Link
-                  href={activeTrack.cta.href}
-                  className="inline-flex items-center gap-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:translate-y-0.5 px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-black text-white shadow-md shadow-blue-600/25 transition-all bl-focus-ring min-h-[48px]"
-                >
-                  <span>{activeTrack.cta.label}</span>
-                  <span aria-hidden="true" className="text-base font-bold">&rarr;</span>
-                </Link>
-
-                <span className="text-xs text-slate-500 font-mono">
-                  Instant Candidate Access &bull; Real Exam Environment
-                </span>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: Bespoke Interactive Live Simulator Widget */}
-            <div className="lg:col-span-5">
-              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
-                {/* Glow pill header */}
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-                      Live Candidate Telemetry Simulator
-                    </span>
-                  </div>
-                  <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-mono text-blue-700 border border-blue-200 font-bold">
-                    Interactive
+            <ul className="divide-y divide-slate-200 border-y border-slate-200">
+              {activeTrack.features.map((feat, idx) => (
+                <li key={feat.title} className="flex items-start gap-4 py-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-[#0B1536]">
+                    <Icon name={feat.icon} className="h-5 w-5" />
                   </span>
-                </div>
-
-                {/* 1. UTME CANDIDATES: Target Score & University Dial */}
-                {activeTrack.id === "utme" && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div>
-                      <div className="text-xs font-bold text-slate-800 mb-1.5 flex justify-between">
-                        <span>Select Target UTME Score:</span>
-                        <span className="font-mono text-cyan-700 font-black">{targetScore} / 400</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[260, 290, 320].map((score) => (
-                          <button
-                            key={score}
-                            type="button"
-                            onClick={() => setTargetScore(score)}
-                            className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                              targetScore === score
-                                ? "bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30 scale-102"
-                                : "bg-white border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100"
-                            }`}
-                          >
-                            {score}+ Target
-                          </button>
-                        ))}
-                      </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm sm:text-base font-extrabold text-[#0B1536]">
+                      <span className="font-mono text-xs bl-home-eyebrow !tracking-normal !gap-0 before:hidden">0{idx + 1}</span>
+                      {feat.title}
                     </div>
+                    <p className="mt-1 text-sm text-slate-600 leading-relaxed">{feat.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
 
-                    {/* Dynamic Radial Admission Gauge Preview */}
-                    <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-b from-cyan-50 to-white p-4 text-center">
-                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        Admission Merit Probability
-                      </div>
-                      <div className="text-3xl font-black text-slate-950 mt-1">
-                        {targetScore >= 310
-                          ? "96% High Merit"
-                          : targetScore >= 285
-                          ? "88% Competitive"
-                          : "74% Qualified"}
-                      </div>
-                      <p className="text-[11px] text-cyan-800 mt-1 font-medium">
-                        {targetScore >= 290
-                          ? "Direct merit qualification for UNILAG, UI, and OAU Tier-1 programs."
-                          : "Strong standing for Federal institution admission with targeted CBT practice."}
-                      </p>
-                    </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <Link
+                href={activeTrack.cta.href}
+                className="bl-home-cta-orange bl-focus-ring inline-flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-base font-black shadow-lg shadow-black/10 active:scale-95 min-h-[52px] group"
+              >
+                <span>{activeTrack.cta.label}</span>
+                <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
+              </Link>
+              <span className="text-sm text-slate-500">Instant candidate access</span>
+            </div>
+          </div>
 
-                    {/* Target Institutions Status */}
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                        Top Benchmark Alignments
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-lg bg-white /80 border border-slate-200 p-2.5">
-                          <span className="text-slate-500 block text-[10px]">UNILAG Akoka</span>
-                          <span className="font-bold text-slate-900">290+ Cut-Off Target</span>
-                        </div>
-                        <div className="rounded-lg bg-white /80 border border-slate-200 p-2.5">
-                          <span className="text-slate-500 block text-[10px]">UI Ibadan</span>
-                          <span className="font-bold text-slate-900">285+ Cut-Off Target</span>
-                        </div>
-                      </div>
-                    </div>
+          {/* Right: interactive navy panel */}
+          <div className="lg:col-span-5 relative bg-[#0B1536] p-6 sm:p-10 text-white">
+            <div className="bl-home-grid-dark pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
 
-                    <div className="pt-1">
-                      <div className="text-[10px] text-slate-600 font-mono flex items-center justify-between">
-                        <span>Standard 4-Subject Blueprints</span>
-                        <span className="text-emerald-600 font-bold">● 100% 8-Key Ready</span>
-                      </div>
+            <div className="relative">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+                <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-200">
+                  <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "var(--bl-color-brand-orange)" }} />
+                  Interactive example
+                </span>
+                <span className="bl-home-tint-orange rounded-full px-2.5 py-0.5 text-xs font-bold">Illustrative</span>
+              </div>
+
+              {/* UTME: target score and the arithmetic behind it */}
+              {activeTrack.id === "utme" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-xs font-bold text-slate-200 mb-2">Choose a target UTME score</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[260, 290, 320].map((score) => (
+                        <button key={score} type="button" onClick={() => setUtmeScore(score)} aria-pressed={utmeScore === score} className={presetBtn(utmeScore === score)}>
+                          {score}+
+                        </button>
+                      ))}
                     </div>
                   </div>
-                )}
 
-                {/* 2. O LEVEL CANDIDATES: Stream Selector & Syllabus Telemetry */}
-                {activeTrack.id === "olevel" && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div>
-                      <div className="text-xs font-bold text-slate-800 mb-1.5">
-                        Select Academic Stream:
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(["science", "arts", "commercial"] as const).map((stream) => (
-                          <button
-                            key={stream}
-                            type="button"
-                            onClick={() => setSecondaryStream(stream)}
-                            className={`py-2 px-2 rounded-xl text-xs capitalize font-bold transition-all cursor-pointer ${
-                              secondaryStream === stream
-                                ? "bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/30 scale-102"
-                                : "bg-white border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100"
-                            }`}
-                          >
-                            {stream}
-                          </button>
-                        ))}
-                      </div>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-6xl font-black tracking-tight tabular-nums">{utmeScore}</span>
+                      <span className="text-lg font-bold text-slate-300">/ 400</span>
                     </div>
+                    <p className="mt-2 text-sm text-slate-200">
+                      That is an average of <strong className="text-white">{perSubject}</strong> per subject. Each of your four subjects is scored out of 100.
+                    </p>
 
-                    {/* Syllabus Progress Rings / Bars */}
-                    <div className="space-y-2.5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4">
-                      <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">
-                        NERDC Syllabus Topic Coverage
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-900 font-medium">General Mathematics</span>
-                          <span className="text-emerald-600 font-mono font-bold">100% Tracked</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full w-[94%]" />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-900 font-medium">English Lexis &amp; Structure</span>
-                          <span className="text-emerald-600 font-mono font-bold">100% Tracked</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                          <div className="h-full bg-teal-500 rounded-full w-[88%]" />
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-900 font-medium">
-                            {secondaryStream === "science"
-                              ? "Physics & Chemistry Theory"
-                              : secondaryStream === "commercial"
-                              ? "Financial Accounting & Commerce"
-                              : "Literature & Government"}
-                          </span>
-                          <span className="text-emerald-600 font-mono font-bold">Full Derivations</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                          <div className="h-full bg-cyan-500 rounded-full w-[92%]" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg bg-emerald-100/70 border border-emerald-300 p-2.5 text-[11px] text-emerald-900">
-                      Includes verified 2015–2026 WAEC &amp; NECO past questions with detailed theory step-by-step marking schemes.
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. POST-UTME CANDIDATES: Composite Aggregate Admission Calculator */}
-                {activeTrack.id === "post_utme" && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div>
-                      <div className="text-xs font-bold text-slate-800 mb-1.5">
-                        Target Screening University:
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { id: "unilag", label: "UNILAG" },
-                          { id: "ui", label: "UI Ibadan" },
-                          { id: "oau", label: "OAU Ife" },
-                        ].map((u) => (
-                          <button
-                            key={u.id}
-                            type="button"
-                            onClick={() => setTargetUni(u.id as "unilag" | "ui" | "oau")}
-                            className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                              targetUni === u.id
-                                ? "bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/30 scale-102"
-                                : "bg-white border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100"
-                            }`}
-                          >
-                            {u.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Post-UTME Projected Score Slider */}
-                    <div>
-                      <div className="flex justify-between text-xs font-bold text-slate-800 mb-1">
-                        <span>Projected Screening Score:</span>
-                        <span className="font-mono text-amber-600 font-black">
-                          {projectedPostUtme} / 30 Pts
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="15"
-                        max="30"
-                        step="1"
-                        value={projectedPostUtme}
-                        onChange={(e) => setProjectedPostUtme(Number(e.target.value))}
-                        className="w-full accent-amber-500 cursor-pointer h-2 bg-slate-200 rounded-lg"
+                    <div
+                      role="img"
+                      aria-label={`${utmeScore} out of 400`}
+                      className="mt-5 h-3 w-full overflow-hidden rounded-full bg-white/10"
+                    >
+                      <div
+                        className="bl-home-gradient-orange h-full w-full origin-left rounded-full transition-transform duration-500 ease-out"
+                        style={{ transform: `scaleX(${utmePct})` }}
                       />
                     </div>
-
-                    {/* Composite Aggregate Breakdown Card */}
-                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-50/70 to-white p-4 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                          Composite Admission Aggregate
-                        </span>
-                        <span className="text-xs font-black text-amber-600">
-                          {targetUni.toUpperCase()} Model
-                        </span>
-                      </div>
-
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-3xl font-black text-slate-950">
-                          {compositeAggregate}%
-                        </span>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          {compositeAggregate >= 80 ? "Direct Merit Threshold" : "Competitive Range"}
-                        </span>
-                      </div>
-
-                      {/* Formula contributions */}
-                      <div className="grid grid-cols-3 gap-1.5 text-center pt-1 border-t border-slate-200 text-[10px]">
-                        <div className="p-1 rounded bg-white/80 border border-slate-200">
-                          <span className="text-slate-500 block">UTME (50%)</span>
-                          <span className="font-bold text-slate-900">{utmeContribution}</span>
-                        </div>
-                        <div className="p-1 rounded bg-white/80 border border-slate-200">
-                          <span className="text-slate-500 block">Screening (30%)</span>
-                          <span className="font-bold text-slate-900">{postUtmeContribution}</span>
-                        </div>
-                        <div className="p-1 rounded bg-white/80 border border-slate-200">
-                          <span className="text-slate-500 block">O-Level (20%)</span>
-                          <span className="font-bold text-slate-900">{olevelContribution}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg bg-amber-100/70 border border-amber-300 p-2.5 text-[11px] text-amber-900 flex items-center justify-between">
-                      <span>Timed Sprint Mode:</span>
-                      <span className="font-mono font-bold">30 Mins &bull; 40 Questions</span>
+                    <div className="mt-2 flex justify-between text-xs font-mono text-slate-300" aria-hidden="true">
+                      <span>0</span>
+                      <span>100</span>
+                      <span>200</span>
+                      <span>300</span>
+                      <span>400</span>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* O Level: stream selector */}
+              {activeTrack.id === "olevel" && (
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-xs font-bold text-slate-200 mb-2">Choose your academic stream</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["science", "arts", "commercial"] as const).map((s) => (
+                        <button key={s} type="button" onClick={() => setStream(s)} aria-pressed={stream === s} className={`${presetBtn(stream === s)} capitalize`}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <ul key={stream} className="space-y-2.5">
+                    {STREAM_ITEMS[stream].map((item, i) => (
+                      <li
+                        key={item}
+                        className="bl-home-enter flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold"
+                        style={{ animationDelay: `${i * 70}ms` }}
+                      >
+                        <span className="bl-home-gradient-orange flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                          <Icon name="check" className="h-3.5 w-3.5" />
+                        </span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Post-UTME: aggregate calculator */}
+              {activeTrack.id === "post_utme" && (
+                <div className="space-y-5">
+                  <RangeRow label="UTME score" value={utmeScore} min={200} max={400} step={5} suffix="/ 400" onChange={setUtmeScore} />
+                  <RangeRow label="Screening score" value={screening} min={0} max={30} step={1} suffix="/ 30" onChange={setScreening} />
+                  <RangeRow label="O Level points" value={olevelPts} min={0} max={20} step={1} suffix="/ 20" onChange={setOlevelPts} />
+
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-300">Example aggregate</div>
+                    <div className="mt-1 flex items-baseline gap-2">
+                      <span className="text-5xl font-black tracking-tight tabular-nums">{aggregate}</span>
+                      <span className="text-lg font-bold text-slate-300">/ 100</span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="rounded-lg border border-white/10 bg-white/5 py-2">
+                        <span className="block text-slate-300">UTME 50%</span>
+                        <span className="font-bold tabular-nums">{utmePoints}</span>
+                      </div>
+                      <div className="rounded-lg border border-white/10 bg-white/5 py-2">
+                        <span className="block text-slate-300">Screening 30%</span>
+                        <span className="font-bold tabular-nums">{screening}</span>
+                      </div>
+                      <div className="rounded-lg border border-white/10 bg-white/5 py-2">
+                        <span className="block text-slate-300">O Level 20%</span>
+                        <span className="font-bold tabular-nums">{olevelPts}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <p className="mt-6 text-xs leading-relaxed text-slate-300">
+                {activeTrack.id === "post_utme"
+                  ? "Example 50/30/20 weighting only. Each university sets its own formula."
+                  : "Illustrative example. It does not predict exam or admission outcomes."}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* 3. MULTI-PATHWAY QUICK ACCESS DOCK (Preserving aud.cta.href for architecture tests) */}
-        <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {HOMEPAGE_CONTENT_CONFIG.audiences.map((aud) => {
-            return (
-              <div
-                key={aud.id}
-                className="rounded-2xl p-4 transition-all duration-200 border bg-slate-50/80 border-slate-200/80 hover:border-slate-300 hover:bg-white shadow-2xs /40"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-700 border border-blue-200"
-                    aria-hidden="true"
-                  >
-                    <AudienceIcon type={aud.id} className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="text-[9px] font-mono text-slate-500 uppercase font-bold">
-                    Partner Access
-                  </span>
-                </div>
-                <div className="text-xs font-bold text-slate-950 mb-2 line-clamp-1">
-                  {aud.label}
-                </div>
+        {/* Quick access dock (keeps the audience links from the content config) */}
+        <div className="mt-12 sm:mt-16">
+          <span className="bl-home-eyebrow">Also built for</span>
+          <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {HOMEPAGE_CONTENT_CONFIG.audiences.map((aud, i) => (
+              <Reveal key={aud.id} delay={i * 80}>
                 <Link
                   href={aud.cta.href}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors bl-focus-ring"
+                  className="bl-home-lift bl-focus-ring group flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 hover:border-slate-300 hover:shadow-md min-h-[132px]"
                 >
-                  <span>Explore Pathway</span>
-                  <span aria-hidden="true">&rarr;</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-[#0B1536] transition-colors group-hover:bg-[var(--bl-color-brand-orange)] group-hover:text-white">
+                    <Icon name={AUDIENCE_ICON[aud.id] ?? "user"} className="h-5 w-5" />
+                  </span>
+                  <span className="mt-4 block">
+                    <span className="block text-sm sm:text-base font-extrabold text-[#0B1536]">{aud.label}</span>
+                    <span className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-[var(--bl-color-brand-orange-ink)]">
+                      Explore pathway
+                      <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
+                    </span>
+                  </span>
                 </Link>
-              </div>
-            );
-          })}
+              </Reveal>
+            ))}
+          </div>
         </div>
       </div>
     </section>
