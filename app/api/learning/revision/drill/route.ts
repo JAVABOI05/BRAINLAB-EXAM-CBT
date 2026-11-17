@@ -3,6 +3,12 @@ import { getSupabaseServerClient, getUserFromRequest } from "../../../../lib/sup
 import { getAIPlatformConfig } from "../../../../lib/platformConfig";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+// Diagnostics generate five complete questions plus worked solutions. Keep this
+// allowance independent of the much smaller general chat response setting.
+const DIAGNOSTIC_MAX_OUTPUT_TOKENS = 7000;
+const DIAGNOSTIC_TIMEOUT_MS = 55_000;
 
 export interface RevisionDrillQuestion {
   id: string;
@@ -508,13 +514,17 @@ The JSON must follow this exact schema:
                 { role: "user", content: userMessage },
               ],
               temperature: 0.2,
-              max_tokens: 3000,
+              max_tokens: DIAGNOSTIC_MAX_OUTPUT_TOKENS,
             }),
-            signal: AbortSignal.timeout(20_000),
+            signal: AbortSignal.timeout(DIAGNOSTIC_TIMEOUT_MS),
           });
           if (res.ok) {
             const data = await res.json();
-            rawOutput = data.choices?.[0]?.message?.content?.trim() || "";
+            const choice = data.choices?.[0];
+            if (choice?.finish_reason === "length") {
+              throw new Error("Groq reached its output limit before completing the diagnostic.");
+            }
+            rawOutput = choice?.message?.content?.trim() || "";
           }
         } else if (geminiKey) {
           const model = aiConfig?.gemini_model || process.env.GEMINI_MODEL || "gemini-3-flash-preview";
@@ -530,7 +540,7 @@ The JSON must follow this exact schema:
               contents: [{ role: "user", parts: [{ text: userMessage }] }],
               generationConfig: {
                 temperature: 0.2,
-                maxOutputTokens: 3000,
+                maxOutputTokens: DIAGNOSTIC_MAX_OUTPUT_TOKENS,
                 responseMimeType: "application/json",
               },
             }),
@@ -538,7 +548,11 @@ The JSON must follow this exact schema:
           });
           if (res.ok) {
             const data = await res.json();
-            rawOutput = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+            const candidate = data.candidates?.[0];
+            if (candidate?.finishReason === "MAX_TOKENS") {
+              throw new Error("Gemini reached its output limit before completing the diagnostic.");
+            }
+            rawOutput = candidate?.content?.parts?.map((part: { text?: string }) => part.text || "").join("").trim() || "";
           }
         }
 
@@ -546,10 +560,35 @@ The JSON must follow this exact schema:
           // Clean possible markdown code fences
           const cleaned = rawOutput.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
           const parsed = JSON.parse(cleaned) as RevisionDrillPayload;
-          if (parsed && Array.isArray(parsed.questions) && parsed.questions.length >= 3) {
+          const isComplete =
+            parsed &&
+            typeof parsed.subject === "string" &&
+            typeof parsed.topic === "string" &&
+            typeof parsed.examType === "string" &&
+            typeof parsed.diagnosticSummary === "string" &&
+            parsed.diagnosticSummary.trim().length >= 40 &&
+            Array.isArray(parsed.keyFormulasOrRules) &&
+            parsed.keyFormulasOrRules.length >= 2 &&
+            Array.isArray(parsed.commonTraps) &&
+            parsed.commonTraps.length >= 2 &&
+            Array.isArray(parsed.questions) &&
+            parsed.questions.length === 5 &&
+            parsed.questions.every((question) =>
+              question &&
+              typeof question.question === "string" &&
+              question.question.trim().length > 10 &&
+              question.options &&
+              ["A", "B", "C", "D"].every((option) => typeof question.options[option] === "string" && question.options[option].trim().length > 0) &&
+              ["A", "B", "C", "D"].includes(question.correctAnswer) &&
+              typeof question.explanation === "string" &&
+              question.explanation.trim().length >= 40
+            );
+
+          if (isComplete) {
             parsed.id = `drill-${Date.now()}`;
             return NextResponse.json({ ok: true, drill: parsed, generatedBy: "ai" });
           }
+          throw new Error("The AI returned an incomplete diagnostic. A complete five-question report was not received.");
         }
       } catch (aiErr) {
         console.warn("[RevisionDrillAPI] AI generation failed, falling back to built-in curriculum drills:", aiErr);
