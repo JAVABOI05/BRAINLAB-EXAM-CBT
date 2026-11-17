@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, getValidatedHomepageConfig, resolveClaimValue } from "@/app/lib/contentConfig";
 import { Accordion } from "@/app/components/ui/Accordion";
+import "./home-motion.css";
 
 export function HomeFaqCta() {
   const validatedConfig = getValidatedHomepageConfig(HOMEPAGE_CONTENT_CONFIG);
@@ -30,7 +31,7 @@ export function HomeFaqCta() {
       <section
         id="faq"
         aria-label="Frequently Asked Questions"
-        className="scroll-mt-20 sm:scroll-mt-24 relative py-16 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] text-slate-900 overflow-hidden"
+        className="scroll-mt-20 sm:scroll-mt-24 relative py-14 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] text-slate-900 overflow-hidden"
       >
         {/* Subtle Geometric Grid Matrix */}
         <div
@@ -43,7 +44,7 @@ export function HomeFaqCta() {
         />
 
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
+          <div className="text-center mb-10 sm:mb-16">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-3 shadow-2xs">
               FREQUENTLY ASKED QUESTIONS
             </span>
@@ -60,15 +61,15 @@ export function HomeFaqCta() {
             items={accordionItems}
             allowMultiple={false}
             itemClassName="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-colors"
-            headerClassName="flex w-full items-center justify-between px-6 py-5 text-left text-base font-bold text-slate-900 bl-focus-ring rounded-2xl"
-            panelClassName="px-6 pb-6 pt-1 text-slate-600 leading-relaxed text-sm sm:text-base border-t border-slate-100"
+            headerClassName="flex w-full items-center justify-between px-5 sm:px-6 py-5 text-left text-base font-bold text-slate-900 bl-focus-ring rounded-2xl"
+            panelClassName="px-5 sm:px-6 pb-6 pt-1 text-slate-600 leading-relaxed text-sm sm:text-base border-t border-slate-100"
           />
 
           {/* Full Directory Link */}
           <div className="mt-10 text-center">
             <Link
               href="/faq"
-              className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1.5"
+              className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1.5 min-h-[44px]"
             >
               <span>Visit the complete Help &amp; FAQ knowledge base</span>
               <span aria-hidden="true">&rarr;</span>
@@ -81,7 +82,7 @@ export function HomeFaqCta() {
       <section
         id="final-cta"
         aria-label="Begin Your Learning Journey"
-        className="relative overflow-hidden py-20 sm:py-28 bg-gradient-to-b from-[#080E1E] via-[#050A16] to-[#02050B] text-white border-b border-white/10"
+        className="relative overflow-hidden py-16 sm:py-28 bg-gradient-to-b from-[#080E1E] via-[#050A16] to-[#02050B] text-white border-b border-white/10"
       >
         {/* Subtle dot matrix background */}
         <div
@@ -94,8 +95,8 @@ export function HomeFaqCta() {
         />
 
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-950/60 px-3.5 py-1 text-xs font-bold text-cyan-300 shadow-xs">
-            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="bl-home-tint-orange inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-xs">
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "var(--bl-color-brand-orange)" }} />
             <span>START PREPARING TODAY</span>
           </div>
 
@@ -110,7 +111,7 @@ export function HomeFaqCta() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
               href="/cbt"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 text-slate-950 px-8 py-4 text-base font-black shadow-lg shadow-cyan-500/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
+              className="bl-home-cta-orange w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-black shadow-lg shadow-orange-500/20 active:translate-y-0.5 bl-focus-ring min-h-[52px]"
             >
               <span>Start Candidate Preparation</span>
               <span aria-hidden="true">&rarr;</span>
@@ -118,13 +119,13 @@ export function HomeFaqCta() {
 
             <Link
               href="/pricing"
-              className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-white/20 bg-white/10 text-white hover:bg-white/15 px-7 py-4 text-base font-bold active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-white/20 bg-white/10 text-white hover:bg-white/15 px-7 py-4 text-base font-bold active:translate-y-0.5 transition-all bl-focus-ring min-h-[52px]"
             >
               View Student Plans &amp; Pricing
             </Link>
           </div>
 
-          <p className="text-xs text-slate-400 pt-2 font-medium">
+          <p className="text-xs text-slate-300 pt-2 font-medium">
             Instant candidate access &bull; Low-bandwidth optimized &bull; Offline auto-sync protection
           </p>
         </div>

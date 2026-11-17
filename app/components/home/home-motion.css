@@ -1,34 +1,94 @@
 /*
  * Landing page motion and accent utilities (UI_SYSTEM.md sections 5 and 6).
- * - Tokens only (with token-equivalent fallbacks).
- * - transform and opacity only, zero layout shift.
+ * - Tokens only. The orange is taken from the BrainLab logo arrow (estimated by eye,
+ *   confirm the exact brand hex and update the three --bl-color-brand-orange* values below).
+ * - Animate transform, opacity and SVG stroke-draw only. No layout-affecting properties.
  * - Everything collapses under prefers-reduced-motion.
  * - Class names are prefixed bl-home-/bl-reveal so they cannot collide with existing globals.
  */
 
-/* ---------- Coral accent (single attention accent) ---------- */
-.bl-home-accent-coral {
-  color: var(--bl-color-brand-coral, #ff6b55);
+:root {
+  --bl-color-brand-orange-light: #f7923f;
+  --bl-color-brand-orange: #f2703c;
+  --bl-color-brand-orange-deep: #e8512f;
 }
 
-.bl-home-cta-coral {
-  background: var(--bl-color-brand-coral, #ff6b55);
+/* ---------- Logo orange (single attention accent, replaces the old red-leaning coral) ---------- */
+.bl-home-accent-orange {
+  color: var(--bl-color-brand-orange);
+}
+
+.bl-home-gradient-orange {
+  background: linear-gradient(
+    135deg,
+    var(--bl-color-brand-orange-light) 0%,
+    var(--bl-color-brand-orange) 50%,
+    var(--bl-color-brand-orange-deep) 100%
+  );
   color: var(--bl-color-brand-navy, #0b1536);
 }
 
-.bl-home-cta-coral:hover {
-  background: var(--bl-color-brand-coral-hover, #ff8572);
-}
-
-.bl-home-chip-coral {
-  background: var(--bl-color-brand-coral, #ff6b55);
+.bl-home-chip-orange {
+  background: linear-gradient(
+    135deg,
+    var(--bl-color-brand-orange-light) 0%,
+    var(--bl-color-brand-orange) 100%
+  );
   color: var(--bl-color-brand-navy, #0b1536);
 }
 
-/* ---------- Crisp layered panels behind the hero card (replaces blurred blobs) ---------- */
-.bl-home-panel-coral {
-  border: 1px solid color-mix(in srgb, var(--bl-color-brand-coral, #ff6b55) 40%, transparent);
-  background: color-mix(in srgb, var(--bl-color-brand-coral, #ff6b55) 12%, transparent);
+.bl-home-tint-orange {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-orange) 40%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-orange) 12%, transparent);
+  color: var(--bl-color-brand-orange-light);
+}
+
+/* Primary call to action: logo-orange gradient with a soft pulse ring */
+.bl-home-cta-orange {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(
+    135deg,
+    var(--bl-color-brand-orange-light) 0%,
+    var(--bl-color-brand-orange) 55%,
+    var(--bl-color-brand-orange-deep) 100%
+  );
+  color: var(--bl-color-brand-navy, #0b1536);
+  transition: filter 200ms cubic-bezier(0.16, 1, 0.3, 1), transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bl-home-cta-orange:hover {
+  filter: brightness(1.08);
+}
+
+.bl-home-cta-orange::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  border: 2px solid var(--bl-color-brand-orange);
+  opacity: 0;
+  pointer-events: none;
+  animation: bl-home-ring 3.2s ease-out 1.5s infinite;
+}
+
+@keyframes bl-home-ring {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.14, 1.3);
+  }
+}
+
+/* ---------- Crisp layered panels behind the hero card (replace the old blurred blobs) ---------- */
+.bl-home-panel-orange {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-orange) 40%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-orange) 12%, transparent);
 }
 
 .bl-home-panel-blue {
@@ -74,6 +134,19 @@
   animation-delay: 140ms;
 }
 
+@keyframes bl-home-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.bl-home-fade-in {
+  animation: bl-home-fade-in 900ms ease-out 200ms both;
+}
+
 /* ---------- Ambient drift (slow, 2 elements max) ---------- */
 @keyframes bl-home-drift {
   0%,
@@ -93,21 +166,106 @@
   animation-delay: -4.5s;
 }
 
+/* ---------- Learning-loop orbit and rising arrow (hero graphic) ---------- */
+@keyframes bl-home-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bl-home-orbit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bl-home-spin 70s linear infinite;
+}
+
+.bl-home-orbit-rev {
+  animation-duration: 110s;
+  animation-direction: reverse;
+}
+
+@keyframes bl-home-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.bl-home-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: bl-home-draw 1300ms cubic-bezier(0.16, 1, 0.3, 1) 500ms forwards;
+}
+
+@keyframes bl-home-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bl-home-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bl-home-pop 400ms cubic-bezier(0.16, 1, 0.3, 1) 1500ms both;
+}
+
+@keyframes bl-home-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.bl-home-twinkle {
+  animation: bl-home-twinkle 3.6s ease-in-out infinite;
+}
+
+.bl-home-twinkle-2 {
+  animation-delay: -1.2s;
+}
+
+.bl-home-twinkle-3 {
+  animation-delay: -2.4s;
+}
+
 /* ---------- Soft fade for values that resolve after mount ---------- */
 .bl-home-fade {
   transition: opacity 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ---------- Reduced motion and print: always show final state ---------- */
+/* ---------- Reduced motion and print: always show the final state ---------- */
 @media (prefers-reduced-motion: reduce) {
   .bl-reveal[data-armed="true"],
   .bl-home-enter,
+  .bl-home-fade-in,
   .bl-home-float,
-  .bl-home-fade {
+  .bl-home-fade,
+  .bl-home-orbit,
+  .bl-home-pop,
+  .bl-home-twinkle {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .bl-home-draw {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .bl-home-cta-orange::after {
+    display: none;
   }
 }
 
