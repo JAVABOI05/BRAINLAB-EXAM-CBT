@@ -81,24 +81,42 @@ const BRILLIANT_HERO_CONCEPTS: ConceptCard[] = [
   },
 ];
 
+/**
+ * Splits the configured headline so the final words can carry the accent
+ * underline. Works for any admin-set headline, so no copy is hardcoded here.
+ */
+function splitHeadline(text: string): { lead: string; accent: string } {
+  const words = text.trim().split(/\s+/);
+  if (words.length < 3) return { lead: "", accent: text };
+  const accentCount = 2;
+  return {
+    lead: words.slice(0, -accentCount).join(" "),
+    accent: words.slice(-accentCount).join(" "),
+  };
+}
+
 export function HomeHero() {
   const heroConfig = HOMEPAGE_CONTENT_CONFIG.hero;
   const [activeConceptId, setActiveConceptId] = useState<string>("math");
 
-  const headline = resolveClaimValue(
-    heroConfig.headline,
-    "A Better Way to Learn, Practise and Achieve More."
-  );
+  const headline =
+    resolveClaimValue(
+      heroConfig.headline,
+      "A Better Way to Learn, Practise and Achieve More."
+    ) ?? "A Better Way to Learn, Practise and Achieve More.";
 
-  const subhead = resolveClaimValue(
-    heroConfig.subhead,
-    "Unified examination preparation for UTME, O Level, and Post-UTME candidates."
-  );
+  const subhead =
+    resolveClaimValue(
+      heroConfig.subhead,
+      "Unified examination preparation for UTME, O Level, and Post-UTME candidates."
+    ) ?? "";
 
   const disclosure = resolveClaimValue(
     heroConfig.disclosure,
     "Public learners receive full access to CBT practice, question banks, AI Tutor fair-use, and Learning Hub completely free."
   );
+
+  const { lead, accent } = splitHeadline(headline);
 
   return (
     <section
@@ -137,23 +155,23 @@ export function HomeHero() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Khan Academy-Inspired Asymmetric Hero Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          
-          {/* LEFT / VISUAL STORYTELLING COLLAGE (Organic Shapes & Real Student Achievements) */}
+
+          {/* LEFT / VISUAL STORYTELLING COLLAGE */}
           <div className="lg:col-span-6 order-2 lg:order-1 relative">
             <div className="relative mx-auto max-w-lg lg:max-w-none">
-              
+
               {/* Organic Background Shape Layer */}
               <div className="relative flex items-center justify-center">
                 {/* Layer 1: Soft Cosmos Blob */}
                 <div className="absolute -top-6 -left-6 h-64 w-64 sm:h-80 sm:w-80 rounded-[40%_60%_70%_30%/40%_50%_60%_55%] bg-gradient-to-tr from-blue-600/25 via-indigo-500/15 to-sky-400/25 blur-xl pointer-events-none" />
-                
+
                 {/* Layer 2: Warm Coral Petal Blob */}
                 <div className="absolute -bottom-6 -right-4 h-60 w-60 sm:h-72 sm:w-72 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] bg-gradient-to-br from-rose-500/20 via-orange-400/15 to-amber-300/15 blur-xl pointer-events-none" />
 
-                {/* Primary Student Hero Showcase Card with Organic Framing */}
+                {/* Primary Hero Showcase Card */}
                 <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/10 bg-[#0B1426] p-3 shadow-2xl">
                   <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900 via-[#091124] to-slate-950 p-6 sm:p-8">
-                    
+
                     {/* Dotted Backdrop Accent */}
                     <div
                       className="pointer-events-none absolute inset-0 opacity-20"
@@ -164,66 +182,62 @@ export function HomeHero() {
                       aria-hidden="true"
                     />
 
-                    {/* Collaborative Student Visual Composition */}
                     <div className="relative z-10 space-y-5">
-                      {/* Top Student Header Card */}
-                      <div className="flex items-center justify-between">
+                      {/* Header: labelled as a sample, no invented people or status */}
+                      <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex -space-x-2 overflow-hidden">
-                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white ring-2 ring-slate-900 shadow-xs">
-                              AO
-                            </span>
-                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-xs font-black text-white ring-2 ring-slate-900 shadow-xs">
-                              CE
-                            </span>
-                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-purple-600 text-xs font-black text-white ring-2 ring-slate-900 shadow-xs">
-                              IK
-                            </span>
-                          </div>
+                          <span
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/20 text-cyan-300 border border-blue-500/40"
+                            aria-hidden="true"
+                          >
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="4" width="18" height="14" rx="2" />
+                              <path d="M8 20h8M12 18v2" />
+                            </svg>
+                          </span>
                           <div>
-                            <span className="text-xs font-black text-white block">
-                              Active Candidates
+                            <span className="text-sm font-black text-white block">
+                              Practice Simulator
                             </span>
-                            <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Simulating JAMB Exam Hall
+                            <span className="text-xs font-semibold text-slate-300">
+                              Sample question preview
                             </span>
                           </div>
                         </div>
 
-                        <span className="rounded-full bg-blue-900/50 px-3 py-1 text-[11px] font-black text-cyan-300 border border-blue-700/60">
-                          National CBT Standard
+                        <span className="rounded-full bg-blue-900/50 px-3 py-1 text-xs font-black text-cyan-300 border border-blue-700/60">
+                          JAMB-style CBT
                         </span>
                       </div>
 
-                      {/* Interactive Cockpit Mini-Simulation Snapshot */}
+                      {/* Sample question (illustrative only, clearly labelled) */}
                       <div className="rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-sm space-y-3">
                         <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-cyan-400 flex items-center gap-1.5">
-                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <span className="text-cyan-300 flex items-center gap-1.5">
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                               <path d="M12 20h9" />
                               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                             </svg>
-                            UTME 8-Key Simulator
+                            Physics &bull; Sample
                           </span>
-                          <span className="font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60 text-[11px]">
-                            Timer: 01:42:15
+                          <span className="rounded border border-white/15 bg-white/[0.06] px-2 py-0.5 text-xs font-semibold text-slate-200">
+                            Timed practice
                           </span>
                         </div>
 
-                        <p className="text-xs sm:text-sm font-semibold text-white leading-relaxed">
-                          &ldquo;Find the terminal potential difference across a cell of e.m.f. 2.0 V and internal resistance 1.0 Ω connected to a 4.0 Ω load.&rdquo;
+                        <p className="text-sm font-semibold text-white leading-relaxed">
+                          &ldquo;Find the terminal potential difference across a cell of e.m.f. 2.0 V and internal resistance 1.0 &Omega; connected to a 4.0 &Omega; load.&rdquo;
                         </p>
 
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="flex items-center gap-2 p-2 rounded-xl bg-emerald-950/60 border-2 border-emerald-400 text-emerald-200 font-bold">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-600 text-white font-mono text-[10px] font-black">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-600 text-white font-mono text-xs font-black">
                               A
                             </span>
                             <span>1.60 V (Correct)</span>
                           </div>
                           <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-700 text-slate-300 font-mono text-[10px] font-black">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-700 text-slate-300 font-mono text-xs font-black">
                               B
                             </span>
                             <span>2.00 V</span>
@@ -231,19 +245,19 @@ export function HomeHero() {
                         </div>
                       </div>
 
-                      {/* Verified Milestone Strip */}
+                      {/* Product facts (taken from the verified claims register, no invented figures) */}
                       <div className="grid grid-cols-3 gap-2 pt-1 text-center">
                         <div className="rounded-xl bg-white/[0.05] p-2.5 border border-white/10">
-                          <div className="text-base sm:text-lg font-black text-white font-mono">338</div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Avg Target</div>
+                          <div className="text-base sm:text-lg font-black text-white font-mono">4 Subjects</div>
+                          <div className="text-xs font-semibold text-slate-300 tracking-tight">JAMB-style combination</div>
                         </div>
                         <div className="rounded-xl bg-white/[0.05] p-2.5 border border-white/10">
                           <div className="text-base sm:text-lg font-black text-emerald-400 font-mono">3 Tracks</div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">UTME &bull; O Level &bull; Post-UTME</div>
+                          <div className="text-xs font-semibold text-slate-300 tracking-tight">UTME &bull; O Level &bull; Post-UTME</div>
                         </div>
                         <div className="rounded-xl bg-white/[0.05] p-2.5 border border-white/10">
-                          <div className="text-base sm:text-lg font-black text-cyan-400 font-mono">2026/27</div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">NERDC Syllabus</div>
+                          <div className="text-base sm:text-lg font-black text-cyan-400 font-mono">Offline-safe</div>
+                          <div className="text-xs font-semibold text-slate-300 tracking-tight">Answers sync on reconnect</div>
                         </div>
                       </div>
                     </div>
@@ -251,37 +265,37 @@ export function HomeHero() {
                 </div>
               </div>
 
-              {/* Floating Reassurance Badge 1 (Top Right) */}
+              {/* Floating Feature Badge 1 (Top Right) */}
               <div className="absolute -top-4 -right-2 sm:-right-4 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/95 px-3.5 py-2 shadow-xl backdrop-blur-md animate-bl-float">
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </span>
                 <div className="text-left">
-                  <span className="text-[11px] font-black text-white block">
-                    JAMB Mock Top 1%
+                  <span className="text-xs font-black text-white block">
+                    Instant Diagnostics
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    Verified Diagnostics
+                  <span className="text-xs text-slate-300 font-medium">
+                    Topic-by-topic breakdown
                   </span>
                 </div>
               </div>
 
-              {/* Floating Reassurance Badge 2 (Bottom Left) */}
+              {/* Floating Feature Badge 2 (Bottom Left) */}
               <div className="absolute -bottom-4 -left-2 sm:-left-4 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/95 px-3.5 py-2 shadow-xl backdrop-blur-md">
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-950 text-cyan-300 border border-blue-800/60">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
                     <circle cx="9" cy="13" r="1" />
                     <circle cx="15" cy="13" r="1" />
                   </svg>
                 </span>
                 <div className="text-left">
-                  <span className="text-[11px] font-black text-white block">
+                  <span className="text-xs font-black text-white block">
                     Socratic Hints
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="text-xs text-slate-300 font-medium">
                     Step-by-step guidance
                   </span>
                 </div>
@@ -289,22 +303,21 @@ export function HomeHero() {
             </div>
           </div>
 
-          {/* RIGHT / EDITORIAL COPY & AUDIENCE ENTRY PILLS (Clean, Human, Spacious) */}
+          {/* RIGHT / EDITORIAL COPY & PATHWAYS */}
           <div className="lg:col-span-6 order-1 lg:order-2 space-y-6 sm:space-y-7 text-left">
-            
+
             {/* Category Pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
-              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" aria-hidden="true" />
               <span>INTELLIGENT CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
             </div>
 
-            {/* Authoritative Primary Headline with Playful Underline Accent */}
+            {/* Primary headline: always the configured, verified claim */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.08]">
-              For every student,<br />
-              every classroom.<br />
+              {lead && <>{lead} </>}
               <span className="relative inline-block text-cyan-400">
-                Real exam results.
-                {/* Hand-drawn organic underline stroke (Khan Academy aesthetic) */}
+                {accent}
+                {/* Hand-drawn organic underline stroke */}
                 <svg
                   className="absolute -bottom-2 left-0 w-full h-3 text-emerald-400"
                   viewBox="0 0 250 12"
@@ -317,14 +330,14 @@ export function HomeHero() {
               </span>
             </h1>
 
-            {/* High-Legibility Subheading with Generous Breathing Room */}
+            {/* Subheading */}
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-xl font-normal">
               {subhead} Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.
             </p>
 
-            {/* Candidate Pathway Buttons */}
+            {/* Candidate Pathways: UTME is the single primary action */}
             <div className="space-y-3 pt-1">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                 Select your candidate pathway:
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -337,46 +350,47 @@ export function HomeHero() {
                 </Link>
 
                 <Link
-                  href="/learn"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/20 bg-white/10 hover:bg-white/20 text-white font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px]"
+                  href="/programmes/post-utme"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/25 bg-white/10 hover:bg-white/20 text-white font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px]"
                 >
-                  <span>O Level (WAEC/NECO)</span>
+                  <span>Post-UTME Screening</span>
                 </Link>
 
                 <Link
-                  href="/programmes/post-utme"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/20 bg-white/10 hover:bg-white/20 text-white font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px]"
+                  href="/learn"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-3.5 text-sm sm:text-base font-bold text-slate-200 underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white min-h-[48px] transition-colors"
                 >
-                  <span>Post-UTME Screening</span>
+                  <span>O Level (WAEC/NECO)</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </Link>
               </div>
             </div>
 
-            {/* Reassurance Badges */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-300 pt-2">
+            {/* Capability list (no unverified "official" or "verified" badges) */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-200 pt-2">
               <span className="inline-flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <span>Official 8-Key CBT Simulator</span>
+                <span>JAMB-style CBT simulator</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <span>Step-by-Step Socratic Insights</span>
+                <span>Step-by-step Socratic insights</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <span>Verified NERDC Syllabus Aligned</span>
+                <span>Practice that survives weak connections</span>
               </span>
             </div>
 
             {/* Truthful Free Tier Disclosure */}
             {disclosure && (
-              <p className="text-xs text-slate-400 pt-1">
+              <p className="text-xs text-slate-300 pt-1">
                 &bull; {disclosure}
               </p>
             )}
@@ -388,10 +402,10 @@ export function HomeHero() {
           </div>
         </div>
 
-        {/* Floating STEM Concept Cards Carousel (Crisp White Card Surfaces with Subject Accents) */}
+        {/* Concept cards (keyboard accessible) */}
         <div className="mt-16 sm:mt-24 pt-8 border-t border-white/[0.08] animate-bl-fade-in bl-stagger-2">
           <div className="text-center mb-6">
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
+            <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-300">
               Interactive First-Principles Learning &bull; Visual Concept Explorers
             </span>
           </div>
@@ -400,19 +414,21 @@ export function HomeHero() {
             {BRILLIANT_HERO_CONCEPTS.map((concept) => {
               const isSelected = activeConceptId === concept.id;
               return (
-                <div
+                <button
+                  type="button"
                   key={concept.id}
                   onClick={() => setActiveConceptId(concept.id)}
-                  className={`group relative rounded-2xl border-2 bg-gradient-to-b ${concept.accentBg} p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[220px] shadow-sm hover:-translate-y-1 ${concept.borderColor} ${concept.glowColor} ${
+                  aria-pressed={isSelected}
+                  className={`group relative w-full text-left rounded-2xl border-2 bg-gradient-to-b ${concept.accentBg} p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[220px] shadow-sm hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 ${concept.borderColor} ${concept.glowColor} ${
                     isSelected ? "ring-2 ring-cyan-400 scale-[1.02]" : "opacity-95 hover:opacity-100"
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2.5">
-                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${concept.badgeColor}`}>
+                      <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full border ${concept.badgeColor}`}>
                         {concept.subject}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
+                      <span className="text-xs text-slate-300 font-mono">
                         {concept.tag}
                       </span>
                     </div>
@@ -429,13 +445,9 @@ export function HomeHero() {
                   <p className="mt-3 text-xs text-slate-300 leading-relaxed font-normal">
                     {concept.detail}
                   </p>
-                </div>
+                </button>
               );
             })}
-          </div>
-
-          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
-            <span>Official CBT engine and live countdown moved below to the interactive showcase &darr;</span>
           </div>
         </div>
       </div>
