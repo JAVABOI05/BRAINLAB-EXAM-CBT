@@ -60,5 +60,7 @@ jobs:
         run: npx tsc --noEmit
       - name: Cloze passage rotation regression tests
         run: npx tsx scripts/test-cloze-selection.ts
+      - name: QR and public result verification regression tests
+        run: npm run test:verification-qr
       - name: Production build
         run: npm run build
