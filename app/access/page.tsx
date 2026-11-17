@@ -36,6 +36,20 @@ export default function AccessPage() {
 
   useEffect(() => {
     async function loadSettings() {
+      // Reuse candidate details already entered on the CBT launchpad.
+      // This avoids making candidates retype their phone number after choosing "Enter Code".
+      try {
+        const savedCandidate = localStorage.getItem("candidate");
+        if (savedCandidate) {
+          const candidate = JSON.parse(savedCandidate) as { phone?: string };
+          if (candidate.phone) setPhone(candidate.phone);
+        }
+        const previouslyEnteredCode = localStorage.getItem("access_code");
+        if (previouslyEnteredCode) setCode(previouslyEnteredCode);
+      } catch {
+        // Ignore stale or malformed browser data; the candidate can enter details manually.
+      }
+
       const settings = await getPublicSettings();
 
       if (!settings) {

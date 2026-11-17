@@ -374,6 +374,27 @@ export default function CBTExamPortalPage() {
         </div>
       </div>
 
+      {/* Prominent examination-code entry for candidates */}
+      {accessCodeRequired && (
+        <section className="mx-auto mb-8 max-w-6xl rounded-3xl border-2 border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-900 p-5 shadow-lg shadow-blue-100/40 dark:shadow-none sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700 dark:text-cyan-400">Already have an examination code?</p>
+              <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Enter your CBT access code</h2>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                Use the code issued to you to unlock your examination. You will be asked to confirm your candidate phone number before validation.
+              </p>
+            </div>
+            <Link
+              href="/access"
+              className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3 text-sm font-black text-white shadow-md transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
+            >
+              Enter Access / Exam Code <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* Main Container */}
       <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
         {/* Candidate Registration & 4-Subject Setup */}
@@ -584,25 +605,12 @@ export default function CBTExamPortalPage() {
               </div>
 
               <div className="rounded-2xl border border-blue-100 dark:border-blue-950/60 bg-blue-50/50 dark:bg-blue-950/20 p-4">
-                <span className="text-xs font-bold text-blue-900 dark:text-cyan-300">
-                  <span className="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" /></svg><span>Need a CBT Access Code?</span></span>
-                </span>
+                <span className="text-xs font-bold text-blue-900 dark:text-cyan-300">Need an examination code?</span>
                 <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Examination tokens allow you to unlock timed mock trials, comprehensive grading, and step-by-step corrections.
+                  Use the prominent Enter Access / Exam Code option above, or contact the WhatsApp Helpdesk for assistance.
                 </p>
-                <div className="mt-3 flex gap-2">
-                  <Link
-                    href="/access"
-                    className="inline-block rounded-xl bg-blue-700 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-800 transition"
-                  >
-                    Enter Code
-                  </Link>
-                  <a
-                    href={accessLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block rounded-xl border border-blue-300 dark:border-blue-700 px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-cyan-300 hover:bg-blue-100/60 transition"
-                  >
+                <div className="mt-3">
+                  <a href={accessLink} target="_blank" rel="noopener noreferrer" className="inline-block rounded-xl border border-blue-300 dark:border-blue-700 px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-cyan-300 hover:bg-blue-100/60 transition">
                     WhatsApp Helpdesk
                   </a>
                 </div>
