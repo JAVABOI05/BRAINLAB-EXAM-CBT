@@ -61,31 +61,35 @@ interface CandidateTrack {
   features: { icon: string; title: string; desc: string }[];
 }
 
+/**
+ * Copy rule: describe what the product does. No unverified outcome, benchmark or standard claims
+ * (cut-offs, "official", "verified", rankings). Anything university-specific tells the candidate to confirm it.
+ */
 const CANDIDATE_TRACKS: CandidateTrack[] = [
   {
     id: "utme",
     tag: "UTME Candidates",
     short: "UTME",
-    badge: "JAMB 2027 Blueprint Standard",
-    headline: "Target 300+ with Official 4-Subject Combinations & 8-Key Speed Parity",
-    body: "Simulate the authentic JAMB CBT terminal experience. Master 180 questions across your chosen 4-subject combination with 120-minute countdowns, official A, B, C, D, P, N, S, R keyboard controls, negative marking analysis, and Tier-1 university cut-off benchmarking.",
+    badge: "JAMB-style UTME practice",
+    headline: "Practise the full 4-subject UTME under real CBT conditions",
+    body: "Practise the JAMB UTME format: 180 questions across your chosen four subjects in a timed 120-minute session, with A, B, C, D, P, N, S, R keyboard controls and a clear breakdown of your results.",
     cta: { label: "Launch UTME Exam Simulator", href: "/cbt" },
     icon: "target",
     features: [
       {
         icon: "keyboard",
-        title: "Authentic 8-Key Exam Parity",
-        desc: "Practice with the exact A, B, C, D, P, N, S, R keyboard controls used in the official CBT center without mouse dependency.",
+        title: "8-Key Keyboard Practice",
+        desc: "Get used to the A, B, C, D, P, N, S, R keyboard controls used in CBT centres, without relying on a mouse.",
       },
       {
         icon: "bank",
-        title: "Tier-1 University Target Radar",
-        desc: "Benchmark scores against official merit cut-offs for UNILAG, UI, OAU, UNN, and ABU.",
+        title: "Target Score Planning",
+        desc: "Pick a target score and see what average per subject it takes. Confirm your course's cut-off on your university's admission page.",
       },
       {
         icon: "offline",
-        title: "Zero-Data Offline Exam Mode",
-        desc: "Download full 4-subject exam packages to your device; practise anywhere without network lag.",
+        title: "Offline-Safe Practice",
+        desc: "Practise through weak connections. Your answers are saved and sync when you reconnect.",
       },
     ],
   },
@@ -93,26 +97,26 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
     id: "olevel",
     tag: "O Level Candidates",
     short: "O Level",
-    badge: "WAEC SSCE & NECO Standard",
-    headline: "Master Senior Secondary Theory Derivations & Objective Papers",
-    body: "Comprehensive syllabus coverage for SS1–SS3 candidates across Science, Commercial, and Arts streams. Practice with verified 2015–2026 past questions, step-by-step mathematical working, and WAEC Chief Examiner standards to secure distinctions.",
+    badge: "WAEC SSCE & NECO practice",
+    headline: "Master senior secondary theory and objective papers",
+    body: "Syllabus-based practice for SS1\u2013SS3 candidates across Science, Commercial and Arts streams, with past-question practice and step-by-step working for theory and objective papers.",
     cta: { label: "Explore O Level Curriculum Hub", href: "/learn" },
     icon: "book",
     features: [
       {
         icon: "book",
         title: "Science, Arts & Commercial Streams",
-        desc: "Complete NERDC curriculum syllabi with structured lessons, definitions, formula sheets, and solved exercises.",
+        desc: "Structured lessons, definitions, formula sheets and worked exercises across the three streams.",
       },
       {
         icon: "doc",
-        title: "Master Step-by-Step Derivations",
-        desc: "Detailed working for WAEC & NECO theory and objective papers across Mathematics, Sciences, and Humanities.",
+        title: "Step-by-Step Working",
+        desc: "Worked solutions for theory and objective questions across Mathematics, the Sciences and the Humanities.",
       },
       {
         icon: "pulse",
-        title: "Topic-by-Topic Mastery Diagnostic",
-        desc: "Pinpoint exact syllabus gaps before senior secondary certificate exams with continuous diagnostic tracking.",
+        title: "Topic-by-Topic Diagnostics",
+        desc: "Spot weak topics early, so you know exactly where to spend your revision time.",
       },
     ],
   },
@@ -120,26 +124,26 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
     id: "post_utme",
     tag: "Post-UTME Candidates",
     short: "Post-UTME",
-    badge: "University Screening Accelerator",
-    headline: "Crush University Screening CBTs with Institutional Time Formats",
-    body: "University screening formats differ drastically from UTME. Train under institution-specific constraints for UNILAG (30-min 40-question sprints), UI, OAU, UNIBEN, UNN, and ABU with our composite aggregate admission calculator.",
+    badge: "University screening practice",
+    headline: "Practise for university screening CBTs",
+    body: "Screening formats differ from UTME and vary by university. Practise timed screening-style papers and use the example calculator to see how scores can combine. Always confirm the format and formula with your university.",
     cta: { label: "Start Post-UTME Screening Drills", href: "/programmes/post-utme" },
     icon: "school",
     features: [
       {
         icon: "bank",
-        title: "Institution-Specific Timed Formats",
-        desc: "Tailored 30–45 minute speed papers reflecting UNILAG 30-min 40-question sprints, UI general paper, and OAU faculty screenings.",
+        title: "Timed Screening-Style Practice",
+        desc: "Short, timed papers modelled on typical screening sessions. Check your university's exact format on its admission page.",
       },
       {
         icon: "pulse",
-        title: "Composite Admission Merit Calculator",
-        desc: "Dynamically calculate weighted aggregate scores across 50% UTME, 30% Post-UTME, and 20% O-Level points.",
+        title: "Example Aggregate Calculator",
+        desc: "See how UTME, screening and O Level scores can combine using an example 50/30/20 weighting. Universities set their own formulas.",
       },
       {
         icon: "star",
-        title: "High-Pressure Speed & Accuracy Drills",
-        desc: "High-yield drills focused on rapid numerical reasoning, verbal logic, and faculty core subjects under time pressure.",
+        title: "Speed and Accuracy Drills",
+        desc: "Practise numerical reasoning, verbal logic and core subjects under time pressure.",
       },
     ],
   },
@@ -324,7 +328,7 @@ export function HomeAudiences() {
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm sm:text-base font-extrabold text-[#0B1536]">
-                      <span className="font-mono text-xs bl-home-eyebrow !tracking-normal !gap-0 before:hidden">0{idx + 1}</span>
+                      <span className="font-mono text-xs font-black text-[var(--bl-color-brand-orange-ink)]">0{idx + 1}</span>
                       {feat.title}
                     </div>
                     <p className="mt-1 text-sm text-slate-600 leading-relaxed">{feat.desc}</p>

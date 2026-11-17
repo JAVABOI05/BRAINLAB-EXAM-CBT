@@ -1,5 +1,249 @@
-"use client"; import React, { useState } from "react";
-import Link from "next/link"; interface UniversityTarget { id: string; shortName: string; fullName: string; location: string; targetScore: string; cutoffBadge: string; accentColor: string; tagline: string; popularCourses: string[]; recommendedDrills: string; recommendedCombo: string;
-} const UNIVERSITIES: UniversityTarget[] = [ { id: "unilag", shortName: "UNILAG", fullName: "University of Lagos", location: "Akoka, Lagos", targetScore: "290+ Target", cutoffBadge: "High Merit", accentColor: "border-amber-500/50 text-amber-500 bg-amber-500/10", tagline: "In Deed and in Truth", popularCourses: ["Medicine & Surgery", "Law", "Computer Science", "Finance"], recommendedDrills: "3 Timed Mocks / Week + English Lexis Mastery", recommendedCombo: "Use of English, Mathematics, Physics, Chemistry", }, { id: "ui", shortName: "UI", fullName: "University of Ibadan", location: "Ibadan, Oyo", targetScore: "285+ Target", cutoffBadge: "Premier Tier", accentColor: "border-sky-500/50 text-sky-400 bg-sky-500/10", tagline: "Recte Sapere Fons (To Think Straight Is The Well-Spring of Wisdom)", popularCourses: ["MBBS", "Pharmacy", "Nursing Science", "Veterinary Medicine"], recommendedDrills: "Post-UTME High Accuracy Sprint + Biology Topic Radar", recommendedCombo: "Use of English, Biology, Chemistry, Physics", }, { id: "oau", shortName: "OAU", fullName: "Obafemi Awolowo University", location: "Ile-Ife, Osun", targetScore: "280+ Target", cutoffBadge: "Great Ife", accentColor: "border-blue-500/50 text-blue-400 bg-blue-500/10", tagline: "For Learning and Culture", popularCourses: ["Health Sciences", "Electrical Engineering", "Law", "Economics"], recommendedDrills: "Speed Drills on Chemistry Calculations & Physics Mechanics", recommendedCombo: "Use of English, Mathematics, Physics, Chemistry", }, { id: "unn", shortName: "UNN", fullName: "University of Nigeria, Nsukka", location: "Nsukka, Enugu", targetScore: "285+ Target", cutoffBadge: "Lions Den", accentColor: "border-emerald-500/50 text-emerald-400 bg-emerald-500/10", tagline: "To Restore the Dignity of Man", popularCourses: ["Pharmacy", "Medical Laboratory", "Law", "Civil Engineering"], recommendedDrills: "Full Blueprint 4-Subject Drills + Diagnostic Corrections", recommendedCombo: "Use of English, Chemistry, Physics, Biology", }, { id: "abu", shortName: "ABU", fullName: "Ahmadu Bello University", location: "Zaria, Kaduna", targetScore: "270+ Target", cutoffBadge: "Northern Premier", accentColor: "border-teal-500/50 text-teal-400 bg-teal-500/10", tagline: "Congregation of Scholars", popularCourses: ["Mechanical Engineering", "Architecture", "Medicine", "Agriculture"], recommendedDrills: "Past Paper Question Re-tests & Quantitative Speed Drills", recommendedCombo: "Use of English, Mathematics, Physics, Chemistry", }, { id: "uniben", shortName: "UNIBEN", fullName: "University of Benin", location: "Benin City, Edo", targetScore: "275+ Target", cutoffBadge: "Unibest", accentColor: "border-purple-500/50 text-purple-400 bg-purple-500/10", tagline: "Knowledge for Service", popularCourses: ["Dentistry", "Pharmacy", "Chemical Engineering", "Biochemistry"], recommendedDrills: "Science Formula Practice in STEM Studio + Timed Drills", recommendedCombo: "Use of English, Biology, Chemistry, Physics", }, { id: "unilorin", shortName: "UNILORIN", fullName: "University of Ilorin", location: "Ilorin, Kwara", targetScore: "280+ Target", cutoffBadge: "Better by Far", accentColor: "border-indigo-500/50 text-indigo-400 bg-indigo-500/10", tagline: "Probitas Doctrina (Character and Learning)", popularCourses: ["Law", "Nursing", "Accounting", "Computer Science"], recommendedDrills: "Standard CBT Speed Optimization & Comprehension Drills", recommendedCombo: "Use of English, Economics, Government, Literature", }, { id: "futa", shortName: "FUTA", fullName: "Fed. University of Technology Akure", location: "Akure, Ondo", targetScore: "270+ Target", cutoffBadge: "Tech Leaders", accentColor: "border-cyan-500/50 text-cyan-400 bg-cyan-500/10", tagline: "Technology for Self-Reliance", popularCourses: ["Software Engineering", "Cybersecurity", "Electrical Eng", "Physics"], recommendedDrills: "Calculus & Logic Gates Practice in STEM Studio", recommendedCombo: "Use of English, Mathematics, Physics, Chemistry", }, { id: "covenant", shortName: "COVENANT", fullName: "Covenant University", location: "Ota, Ogun", targetScore: "280+ Target", cutoffBadge: "Top Private", accentColor: "border-rose-500/50 text-rose-400 bg-rose-500/10", tagline: "Raising a New Generation of Leaders", popularCourses: ["Computer Science", "Accounting", "Petroleum Engineering", "MIS"], recommendedDrills: "High-Fluency CBT Simulations & General Knowledge Review", recommendedCombo: "Use of English, Mathematics, Economics, Commerce", },
-]; export function HomeUniversityTargetSocialProof() { const [selectedUniId, setSelectedUniId] = useState<string>("unilag"); const selectedUni = UNIVERSITIES.find((u) => u.id === selectedUniId) || UNIVERSITIES[0]; return ( <section id="university-targets" aria-label="Target Nigerian Institution Benchmarks and Preparation Protocol" className="relative scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] text-slate-900 overflow-hidden" > {/* Background Ambient Glows */} <div className="pointer-events-none absolute -top-24 right-1/4 h-80 w-80 rounded-full bg-blue-500/5 blur-3xl" aria-hidden="true" /> <div className="pointer-events-none absolute -bottom-24 left-1/4 h-80 w-80 rounded-full bg-emerald-500/5 blur-3xl" aria-hidden="true" /> <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"> {/* 1. SECTION HEADER & VERIFIED COMMUNITY HIGHLIGHT */} <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10 sm:mb-12"> <div className="max-w-2xl space-y-3"> <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80"> <svg className="h-3.5 w-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" > <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> </svg> <span>Target Merit Benchmarks</span> </div> <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 tracking-tight"> Select Your Target Tertiary Institution </h2> <p className="text-sm sm:text-base text-slate-600 leading-relaxed"> Explore cut-off expectations, faculty combinations, and tailored speed drills calibrated for premier tertiary institutions. </p> </div> {/* Candidate Community Badge */} <div className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-white/80 border border-slate-200 shadow-xs shrink-0"> <div className="flex -space-x-2 overflow-hidden"> <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-sky-400 text-xs font-black text-white ring-2 ring-white shadow-xs"> AO </span> <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-xs font-black text-white ring-2 ring-white shadow-xs"> CE </span> <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-purple-600 to-indigo-400 text-xs font-black text-white ring-2 ring-white shadow-xs"> IK </span> <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-amber-600 to-rose-400 text-xs font-black text-white ring-2 ring-white shadow-xs"> FT </span> <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-700 ring-2 ring-white shadow-xs"> CBT </span> </div> <div> <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500"> <span className="flex items-center gap-0.5" aria-label="Student community ratings"> {[1, 2, 3, 4, 5].map((s) => ( <svg key={s} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" viewBox="0 0 24 24" aria-hidden="true" > <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /> </svg> ))} </span> <span className="text-slate-950 font-extrabold"> Verified Student Community </span> </div> <p className="text-xs text-slate-500 font-medium"> Calibrated preparation across accredited examination centers </p> </div> </div> </div> {/* 2. CORE STANDARDS & PROOF HIGHLIGHTS (Airy, Decongested Grid) */} <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-10 sm:mb-12"> <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-colors"> <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1"> <svg className="h-3.5 w-3.5 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" > <circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /> </svg> <span>Syllabus Alignment</span> </div> <div className="text-sm sm:text-base font-black text-slate-950"> JAMB &amp; WAEC </div> <p className="text-[11px] text-slate-500 mt-0.5"> Strict curriculum sync </p> </div> <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-colors"> <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1"> <svg className="h-3.5 w-3.5 text-emerald-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" > <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /> </svg> <span>Target Goal</span> </div> <div className="text-sm sm:text-base font-black text-emerald-600"> Competitive Cut-offs </div> <p className="text-[11px] text-slate-500 mt-0.5"> First-choice merit margins </p> </div> <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-colors"> <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1"> <svg className="h-3.5 w-3.5 text-indigo-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" > <rect x="2" y="4" width="20" height="16" rx="2" /> <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" /> </svg> <span>Engine Standard</span> </div> <div className="text-sm sm:text-base font-black text-slate-950"> 8-Key Interface </div> <p className="text-[11px] text-slate-500 mt-0.5"> Authentic terminal hardware </p> </div> <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-white shadow-xs transition-colors"> <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1"> <svg className="h-3.5 w-3.5 text-sky-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" > <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> </svg> <span>Question Bank</span> </div> <div className="text-sm sm:text-base font-black text-blue-600"> Past &amp; Model Banks </div> <p className="text-[11px] text-slate-500 mt-0.5"> Step-by-step derivations </p> </div> </div> {/* 3. UNIVERSITY SELECTION TABS (Spacious, Clear Visual Hierarchy) */} <div className="space-y-3 mb-8"> <div className="flex items-center justify-between text-xs font-semibold text-slate-500"> <span>Select Institution to view drill strategy:</span> <span className="hidden sm:inline font-mono text-[11px]"> Click institution to view drill strategy &rarr; </span> </div> <div role="tablist" aria-label="Target University Selection" className="flex items-center gap-3 overflow-x-auto pb-4 pt-1 scrollbar-none" > {UNIVERSITIES.map((uni) => { const isSelected = uni.id === selectedUniId; return ( <button key={uni.id} role="tab" aria-selected={isSelected} onClick={() => setSelectedUniId(uni.id)} className={`group relative flex items-center gap-3.5 rounded-2xl border px-4 py-3 sm:px-5 sm:py-3.5 text-left transition-all duration-200 shrink-0 bl-focus-ring cursor-pointer ${ isSelected ? "border-blue-600 bg-white text-slate-900 shadow-md ring-2 ring-blue-500/25 scale-[1.02]" : "border-slate-200/80 bg-white/70 text-slate-700 hover:border-slate-300 hover:bg-white shadow-2xs :bg-slate-900" }`} > <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black tracking-wider shrink-0 transition-transform group-hover:scale-105 border ${ isSelected ? "bg-blue-600 text-white border-blue-600 " : "bg-blue-50 text-blue-700 border-blue-200 " }`} aria-hidden="true" > {uni.shortName.slice(0, 3)} </span> <div className="flex flex-col"> <div className="flex items-center gap-2"> <span className="font-black text-sm text-slate-900 tracking-wide"> {uni.shortName} </span> <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${ isSelected ? "bg-blue-600 text-white font-black shadow-xs " : "bg-slate-100 text-slate-700 group-hover:text-slate-900 :text-white" }`} > {uni.targetScore} </span> </div> <span className="text-[11px] text-slate-500 line-clamp-1 mt-0.5 font-medium"> {uni.fullName} </span> </div> </button> ); })} </div> </div> {/* 4. TARGET BENCHMARK DYNAMIC ACTION PANEL (Spacious, Decongested Split Layout) */} <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 lg:p-10 shadow-xl relative overflow-hidden"> {/* Top subtle accent gradient */} <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-sky-400 to-emerald-500" /> <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start"> {/* Left Column: Institution Identity, Target Cut-off & High-Demand Faculties */} <div className="lg:col-span-5 space-y-6"> {/* Institution Header */} <div className="flex items-start gap-4"> <span className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-sky-100 text-blue-700 border border-blue-200/80 text-base sm:text-lg font-black shrink-0 shadow-xs" aria-hidden="true" > {selectedUni.shortName} </span> <div className="space-y-1"> <div className="flex flex-wrap items-center gap-2"> <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight"> {selectedUni.fullName} ({selectedUni.shortName}) </h3> <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300"> {selectedUni.cutoffBadge} </span> </div> <p className="text-xs sm:text-sm text-slate-600 italic"> &ldquo;{selectedUni.tagline}&rdquo; &bull; {selectedUni.location} </p> </div> </div> {/* Dedicated Target Cutoff Metric Card with ample negative space */} <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 sm:p-5 space-y-1"> <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 block"> Merit Cut-off Benchmark </span> <div className="text-2xl sm:text-3xl font-black text-blue-950"> {selectedUni.targetScore} </div> <p className="text-xs text-slate-600 leading-relaxed pt-0.5"> Estimated aggregate threshold for merit consideration in competitive first-choice departments. </p> </div> {/* High-Demand Competitive Faculties */} <div className="space-y-2.5"> <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block"> High-Demand Competitive Faculties: </span> <div className="flex flex-wrap gap-2"> {selectedUni.popularCourses.map((c) => ( <span key={c} className="rounded-xl border border-slate-200 bg-slate-50/90 px-3.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs" > {c} </span> ))} </div> </div> </div> {/* Right Column: Recommended Target Strategy & Action Launch */} <div className="lg:col-span-7 space-y-6 flex flex-col justify-between"> <div className="space-y-4"> {/* Subject Combo Box with generous padding */} <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 sm:p-6 space-y-2 shadow-xs"> <div className="flex items-center gap-2"> <svg className="h-4 w-4 text-blue-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" > <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" /> <path d="M6 6h10M6 10h10" /> </svg> <span className="text-[11px] font-black uppercase tracking-wider text-blue-700"> Recommended Target Combo </span> </div> <p className="text-sm sm:text-base font-bold text-slate-900"> {selectedUni.recommendedCombo} </p> <p className="text-xs text-slate-500"> Official 4-subject UTME combination required for leading faculties and departments. </p> </div> {/* BrainLab Prep Protocol Box with generous padding */} <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 sm:p-6 space-y-2 shadow-xs"> <div className="flex items-center gap-2"> <svg className="h-4 w-4 text-emerald-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" > <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /> </svg> <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700"> BrainLab Prep Protocol </span> </div> <p className="text-sm text-slate-700 font-medium leading-relaxed"> {selectedUni.recommendedDrills} </p> <p className="text-xs text-slate-500"> Targeted practice regimen designed to build speed, eliminate negative margins, and master exam traps. </p> </div> </div> {/* Action Call to Action Button with generous breathing space */} <div className="pt-2 sm:pt-4 space-y-3"> <Link href={`/cbt?target=${selectedUni.id}`} className="inline-flex w-full sm:w-auto items-center justify-center gap-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] px-8 py-4 text-sm sm:text-base font-black text-white shadow-lg shadow-blue-600/25 transition-all bl-focus-ring min-h-[52px]" > <span>Practice for {selectedUni.shortName}</span> <span aria-hidden="true" className="text-lg font-bold"> &rarr; </span> </Link> <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-mono"> <span>100% Free Starter CBT Simulation Included</span> <span className="hidden sm:inline text-slate-300"> &bull; </span> <span>Authentic 8-Key Engine</span> </div> </div> </div> </div> </div> </div> </section> );
+"use client";
+
+import React, { useRef, useState } from "react";
+import Link from "next/link";
+import { Reveal } from "./Reveal";
+import "./home-motion.css";
+
+/**
+ * Target institutions. Only identity facts live here (name and location).
+ * Cut-off marks, subject combinations and faculty requirements are set each year by JAMB and each
+ * institution, so this section sends candidates to the official sources instead of quoting them.
+ */
+interface UniversityTarget {
+  id: string;
+  shortName: string;
+  fullName: string;
+  location: string;
+}
+
+const UNIVERSITIES: UniversityTarget[] = [
+  { id: "unilag", shortName: "UNILAG", fullName: "University of Lagos", location: "Akoka, Lagos" },
+  { id: "ui", shortName: "UI", fullName: "University of Ibadan", location: "Ibadan, Oyo" },
+  { id: "oau", shortName: "OAU", fullName: "Obafemi Awolowo University", location: "Ile-Ife, Osun" },
+  { id: "unn", shortName: "UNN", fullName: "University of Nigeria, Nsukka", location: "Nsukka, Enugu" },
+  { id: "abu", shortName: "ABU", fullName: "Ahmadu Bello University", location: "Zaria, Kaduna" },
+  { id: "uniben", shortName: "UNIBEN", fullName: "University of Benin", location: "Benin City, Edo" },
+  { id: "unilorin", shortName: "UNILORIN", fullName: "University of Ilorin", location: "Ilorin, Kwara" },
+  { id: "futa", shortName: "FUTA", fullName: "Federal University of Technology, Akure", location: "Akure, Ondo" },
+  { id: "covenant", shortName: "COVENANT", fullName: "Covenant University", location: "Ota, Ogun" },
+];
+
+const ICONS: Record<string, string> = {
+  keyboard:
+    "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10",
+  offline:
+    "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
+  pulse: "M22 12h-4l-3 9L9 3l-3 9H2",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  book: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5ZM6 6h10M6 10h10",
+  pin: "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0ZM12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
+};
+
+function Icon({ name, className = "h-5 w-5" }: { name: string; className?: string }) {
+  const d = ICONS[name];
+  if (!d) return null;
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
+const FACTS = [
+  { icon: "shield", title: "JAMB-style CBT", desc: "Timed, exam-hall style practice" },
+  { icon: "keyboard", title: "8-key controls", desc: "A, B, C, D, P, N, S, R" },
+  { icon: "offline", title: "Offline-safe", desc: "Answers sync on reconnect" },
+  { icon: "pulse", title: "Instant diagnostics", desc: "Topic-by-topic breakdown" },
+];
+
+export function HomeUniversityTargetSocialProof() {
+  const [selectedUniId, setSelectedUniId] = useState<string>("unilag");
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const selectedUni = UNIVERSITIES.find((u) => u.id === selectedUniId) || UNIVERSITIES[0];
+
+  const steps = [
+    {
+      icon: "book",
+      title: "Check the official requirements",
+      desc: `Look up the cut-off mark and subject combination for your course in the JAMB brochure and on the ${selectedUni.shortName} admissions page. They are set each year and differ by course.`,
+    },
+    {
+      icon: "keyboard",
+      title: "Practise under exam conditions",
+      desc: "Take timed, JAMB-style CBT sessions with 8-key controls, so exam day feels familiar.",
+    },
+    {
+      icon: "pulse",
+      title: "Fix what is weak",
+      desc: "Use topic-by-topic diagnostics and step-by-step explanations to close gaps before the exam.",
+    },
+  ];
+
+  const handleTabKey = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const delta = e.key === "ArrowRight" ? 1 : -1;
+    const next = (index + delta + UNIVERSITIES.length) % UNIVERSITIES.length;
+    setSelectedUniId(UNIVERSITIES[next].id);
+    tabRefs.current[next]?.focus();
+  };
+
+  return (
+    <section
+      id="university-targets"
+      aria-label="Practise for your target Nigerian institution"
+      className="relative scroll-mt-20 sm:scroll-mt-24 overflow-hidden border-b border-slate-200 bg-[#F8FAFC] py-16 sm:py-24 text-slate-900"
+    >
+      <div className="bl-home-grid-light pointer-events-none absolute inset-0" aria-hidden="true" />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mx-auto mb-10 max-w-3xl text-center sm:mb-14">
+          <span className="bl-home-eyebrow">06 &middot; Your target institution</span>
+          <h2 className="bl-home-ink mt-4 text-3xl font-black leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
+            Practise for the <span className="bl-home-mark">university you want</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            Pick your target institution and get a simple plan. Cut-off marks and subject combinations are set each year by JAMB and by each institution, so always confirm them for your course.
+          </p>
+        </div>
+
+        {/* Fact tiles */}
+        <div className="mb-10 grid grid-cols-2 gap-3 sm:mb-14 sm:grid-cols-4 sm:gap-4">
+          {FACTS.map((f, i) => (
+            <Reveal key={f.title} delay={i * 70}>
+              <div className="bl-home-lift flex h-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <span className="bl-home-gradient-orange flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                  <Icon name={f.icon} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-extrabold text-[#0B1536] sm:text-base">{f.title}</div>
+                  <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">{f.desc}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        {/* Institution selector */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center justify-between text-xs font-bold text-slate-600">
+            <span>Select your institution</span>
+            <span className="lg:hidden" aria-hidden="true">Swipe &rarr;</span>
+          </div>
+          <div
+            role="tablist"
+            aria-label="Target institution"
+            className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {UNIVERSITIES.map((uni, index) => {
+              const isSelected = uni.id === selectedUniId;
+              return (
+                <button
+                  key={uni.id}
+                  ref={(el) => {
+                    tabRefs.current[index] = el;
+                  }}
+                  role="tab"
+                  id={`uni-tab-${uni.id}`}
+                  aria-selected={isSelected}
+                  aria-controls="uni-panel"
+                  tabIndex={isSelected ? 0 : -1}
+                  type="button"
+                  onClick={() => setSelectedUniId(uni.id)}
+                  onKeyDown={(e) => handleTabKey(e, index)}
+                  className={`bl-home-lift bl-focus-ring flex shrink-0 snap-start cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left ${
+                    isSelected
+                      ? "border-[#0B1536] bg-[#0B1536] text-white shadow-[0_18px_32px_-18px_rgba(11,21,54,0.55)]"
+                      : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:shadow-md"
+                  }`}
+                >
+                  <span
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black tracking-wide ${
+                      isSelected ? "bl-home-gradient-orange" : "bg-slate-100 text-[#0B1536]"
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {uni.shortName.slice(0, 3)}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black tracking-wide">{uni.shortName}</span>
+                    <span className={`block max-w-[11rem] truncate text-xs font-medium ${isSelected ? "text-slate-300" : "text-slate-500"}`}>
+                      {uni.fullName}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Panel: identity on navy, plan on white */}
+        <div
+          key={selectedUni.id}
+          id="uni-panel"
+          role="tabpanel"
+          aria-labelledby={`uni-tab-${selectedUni.id}`}
+          className="bl-home-enter grid grid-cols-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_1px_0_rgba(11,21,54,0.04),0_32px_56px_-32px_rgba(11,21,54,0.28)] lg:grid-cols-12"
+        >
+          <div className="relative flex flex-col justify-between gap-8 overflow-hidden bg-[#0B1536] p-6 text-white sm:p-10 lg:col-span-5">
+            <div className="bl-home-grid-dark pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
+            <span
+              className="pointer-events-none absolute -bottom-6 -right-2 select-none text-[5.5rem] font-black leading-none text-white/[0.06] sm:text-[8rem]"
+              aria-hidden="true"
+            >
+              {selectedUni.shortName}
+            </span>
+
+            <div className="relative space-y-4">
+              <span className="bl-home-eyebrow bl-home-eyebrow-dark">Target institution</span>
+              <h3 className="text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+                {selectedUni.fullName}
+              </h3>
+              <p className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                <span className="bl-home-accent-orange">
+                  <Icon name="pin" className="h-4 w-4" />
+                </span>
+                {selectedUni.location}
+              </p>
+            </div>
+
+            <p className="relative rounded-xl border border-white/10 border-l-4 border-l-[var(--bl-color-brand-orange)] bg-white/5 p-4 text-sm leading-relaxed text-slate-200">
+              Cut-off marks and subject combinations change every year and differ by course. Always confirm them with JAMB and {selectedUni.shortName} before you plan.
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-10 lg:col-span-7 lg:p-12">
+            <ol className="relative space-y-8">
+              <span className="absolute bottom-6 left-5 top-6 w-px bg-slate-200" aria-hidden="true" />
+              {steps.map((step, index) => (
+                <li key={step.title} className="relative flex items-start gap-5">
+                  <span className="bl-home-gradient-orange relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-black">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 pt-1">
+                    <h4 className="text-base font-extrabold text-[#0B1536] sm:text-lg">{step.title}</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600 sm:text-base">{step.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href={`/cbt?target=${selectedUni.id}`}
+                className="bl-home-cta-orange bl-focus-ring group inline-flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full px-8 py-3.5 text-base font-black shadow-lg shadow-black/10 active:scale-95 sm:w-auto"
+              >
+                <span>Practise for {selectedUni.shortName}</span>
+                <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
+              </Link>
+              <span className="text-sm text-slate-500">JAMB-style timed CBT with 8-key controls</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
