@@ -578,7 +578,7 @@ The JSON must follow this exact schema:
               typeof question.question === "string" &&
               question.question.trim().length > 10 &&
               question.options &&
-              ["A", "B", "C", "D"].every((option) => typeof question.options[option] === "string" && question.options[option].trim().length > 0) &&
+              (["A", "B", "C", "D"] as const).every((option) => typeof question.options[option] === "string" && question.options[option].trim().length > 0) &&
               ["A", "B", "C", "D"].includes(question.correctAnswer) &&
               typeof question.explanation === "string" &&
               question.explanation.trim().length >= 40
