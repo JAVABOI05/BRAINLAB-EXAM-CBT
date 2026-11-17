@@ -1,5 +1,8 @@
 # BrainLab QR / Result Verification Repair
 
+## Scope note
+The repository search found this QR component used on the CBT result-slip page (`app/result/page.tsx`). It did not find a separate student identity-card QR implementation. This repair therefore fixes the result-slip QR flow; if a different student ID card contains another QR generator, that is a separate code path and needs its own identifier/source audit.
+
 ## Root cause confirmed
 The QR printed on the CBT result slip in `app/result/page.tsx` hard-coded the production domain while using `summary.result_id`. The supplied UUID exists in the staging `public.results` table and does not exist in production. It is a result UUID, not a certificate UUID. The existing public page only called `verify_certificate(text)`, which in the base migration searched the certificate ledger and did not resolve result UUIDs.
 
