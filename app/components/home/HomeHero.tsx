@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
+import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue, isContentRenderable } from "@/app/lib/contentConfig";
 import { DynamicLiveStatisticsSlot } from "./DynamicLiveStatisticsSlot";
+import { Reveal } from "./Reveal";
+import "./home-motion.css";
 
 interface ConceptCard {
   id: string;
@@ -95,9 +97,27 @@ function splitHeadline(text: string): { lead: string; accent: string } {
   };
 }
 
+const MS_PER_DAY = 86_400_000;
+
 export function HomeHero() {
   const heroConfig = HOMEPAGE_CONTENT_CONFIG.hero;
   const [activeConceptId, setActiveConceptId] = useState<string>("math");
+
+  // Countdown comes from the admin-set config (Claims Register). It is computed after mount
+  // so the server and client HTML always match, and its space is reserved to avoid layout shift.
+  const showCountdown = isContentRenderable({
+    status: heroConfig.countdown.status,
+    value: heroConfig.countdown.targetDate,
+  });
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!showCountdown) return;
+    const target = new Date(heroConfig.countdown.targetDate).getTime();
+    if (Number.isNaN(target)) return;
+    const days = Math.ceil((target - Date.now()) / MS_PER_DAY);
+    if (days > 0) setDaysLeft(days);
+  }, [showCountdown, heroConfig.countdown.targetDate]);
 
   const headline =
     resolveClaimValue(
@@ -128,10 +148,6 @@ export function HomeHero() {
         className="pointer-events-none absolute -top-32 left-1/3 h-[500px] w-[500px] rounded-full bg-blue-600/15 blur-[130px]"
         aria-hidden="true"
       />
-      <div
-        className="pointer-events-none absolute top-1/4 -right-24 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[120px]"
-        aria-hidden="true"
-      />
 
       {/* Delicate Dotted Matrix Canvas Texture */}
       <div
@@ -156,20 +172,23 @@ export function HomeHero() {
         {/* Khan Academy-Inspired Asymmetric Hero Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
 
-          {/* LEFT / VISUAL STORYTELLING COLLAGE */}
+          {/* LEFT / VISUAL STORYTELLING COMPOSITION */}
           <div className="lg:col-span-6 order-2 lg:order-1 relative">
             <div className="relative mx-auto max-w-lg lg:max-w-none">
 
-              {/* Organic Background Shape Layer */}
               <div className="relative flex items-center justify-center">
-                {/* Layer 1: Soft Cosmos Blob */}
-                <div className="absolute -top-6 -left-6 h-64 w-64 sm:h-80 sm:w-80 rounded-[40%_60%_70%_30%/40%_50%_60%_55%] bg-gradient-to-tr from-blue-600/25 via-indigo-500/15 to-sky-400/25 blur-xl pointer-events-none" />
-
-                {/* Layer 2: Warm Coral Petal Blob */}
-                <div className="absolute -bottom-6 -right-4 h-60 w-60 sm:h-72 sm:w-72 rounded-[60%_40%_30%_70%/60%_30%_70%_40%] bg-gradient-to-br from-rose-500/20 via-orange-400/15 to-amber-300/15 blur-xl pointer-events-none" />
+                {/* Crisp layered panels behind the card (replace the old blurred blobs) */}
+                <div
+                  className="bl-home-panel-coral pointer-events-none absolute inset-0 -rotate-3 translate-x-2 translate-y-3 rounded-3xl"
+                  aria-hidden="true"
+                />
+                <div
+                  className="bl-home-panel-blue pointer-events-none absolute inset-0 rotate-2 -translate-x-2 translate-y-2 rounded-3xl"
+                  aria-hidden="true"
+                />
 
                 {/* Primary Hero Showcase Card */}
-                <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/10 bg-[#0B1426] p-3 shadow-2xl">
+                <div className="bl-home-enter relative z-10 w-full overflow-hidden rounded-3xl border border-white/10 bg-[#0B1426] p-3 shadow-2xl">
                   <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900 via-[#091124] to-slate-950 p-6 sm:p-8">
 
                     {/* Dotted Backdrop Accent */}
@@ -183,6 +202,27 @@ export function HomeHero() {
                     />
 
                     <div className="relative z-10 space-y-5">
+                      {/* Countdown strip: admin-set date from the content config, coral is the single attention accent */}
+                      {showCountdown && (
+                        <div
+                          className={`bl-home-chip-coral bl-home-fade flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-sm font-black ${
+                            daysLeft === null ? "opacity-0" : "opacity-100"
+                          }`}
+                          aria-hidden={daysLeft === null}
+                        >
+                          <span className="flex items-center gap-2">
+                            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <circle cx="12" cy="12" r="9" />
+                              <path d="M12 7v5l3 2" />
+                            </svg>
+                            <span>{heroConfig.countdown.targetExam}</span>
+                          </span>
+                          <span className="font-mono tabular-nums">
+                            {daysLeft === null ? "000" : daysLeft} {daysLeft === 1 ? "day" : "days"} to go
+                          </span>
+                        </div>
+                      )}
+
                       {/* Header: labelled as a sample, no invented people or status */}
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
@@ -266,7 +306,7 @@ export function HomeHero() {
               </div>
 
               {/* Floating Feature Badge 1 (Top Right) */}
-              <div className="absolute -top-4 -right-2 sm:-right-4 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/95 px-3.5 py-2 shadow-xl backdrop-blur-md animate-bl-float">
+              <div className="bl-home-float absolute -top-4 -right-2 sm:-right-4 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/95 px-3.5 py-2 shadow-xl backdrop-blur-md">
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-800/60">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polyline points="20 6 9 17 4 12" />
@@ -283,7 +323,7 @@ export function HomeHero() {
               </div>
 
               {/* Floating Feature Badge 2 (Bottom Left) */}
-              <div className="absolute -bottom-4 -left-2 sm:-left-4 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/95 px-3.5 py-2 shadow-xl backdrop-blur-md">
+              <div className="bl-home-float bl-home-float-alt absolute -bottom-4 -left-2 sm:-left-4 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/95 px-3.5 py-2 shadow-xl backdrop-blur-md">
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-950 text-cyan-300 border border-blue-800/60">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
@@ -312,14 +352,14 @@ export function HomeHero() {
               <span>INTELLIGENT CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
             </div>
 
-            {/* Primary headline: always the configured, verified claim */}
+            {/* Primary headline: always the configured, verified claim. Not animated, so LCP is immediate. */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.08]">
               {lead && <>{lead} </>}
-              <span className="relative inline-block text-cyan-400">
+              <span className="bl-home-accent-coral relative inline-block">
                 {accent}
                 {/* Hand-drawn organic underline stroke */}
                 <svg
-                  className="absolute -bottom-2 left-0 w-full h-3 text-emerald-400"
+                  className="absolute -bottom-2 left-0 w-full h-3"
                   viewBox="0 0 250 12"
                   fill="none"
                   preserveAspectRatio="none"
@@ -335,7 +375,7 @@ export function HomeHero() {
               {subhead} Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.
             </p>
 
-            {/* Candidate Pathways: UTME is the single primary action */}
+            {/* Candidate Pathways: UTME is the single filled coral action */}
             <div className="space-y-3 pt-1">
               <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                 Select your candidate pathway:
@@ -343,7 +383,7 @@ export function HomeHero() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/cbt"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-black px-7 py-3.5 text-sm sm:text-base shadow-lg shadow-blue-500/25 transition-all duration-200 active:scale-95 group min-h-[48px]"
+                  className="bl-home-cta-coral bl-focus-ring inline-flex items-center justify-center gap-2 rounded-full font-black px-7 py-3.5 text-sm sm:text-base shadow-lg transition-all duration-200 active:scale-95 group min-h-[48px]"
                 >
                   <span>UTME Candidates</span>
                   <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
@@ -351,14 +391,14 @@ export function HomeHero() {
 
                 <Link
                   href="/programmes/post-utme"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/25 bg-white/10 hover:bg-white/20 text-white font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px]"
+                  className="bl-focus-ring inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/25 bg-white/10 hover:bg-white/20 text-white font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px]"
                 >
                   <span>Post-UTME Screening</span>
                 </Link>
 
                 <Link
                   href="/learn"
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-3.5 text-sm sm:text-base font-bold text-slate-200 underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white min-h-[48px] transition-colors"
+                  className="bl-focus-ring inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-3.5 text-sm sm:text-base font-bold text-slate-200 underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white min-h-[48px] transition-colors"
                 >
                   <span>O Level (WAEC/NECO)</span>
                   <span aria-hidden="true">&rarr;</span>
@@ -402,8 +442,8 @@ export function HomeHero() {
           </div>
         </div>
 
-        {/* Concept cards (keyboard accessible) */}
-        <div className="mt-16 sm:mt-24 pt-8 border-t border-white/[0.08] animate-bl-fade-in bl-stagger-2">
+        {/* Concept cards (keyboard accessible, revealed once on scroll) */}
+        <Reveal className="mt-16 sm:mt-24 pt-8 border-t border-white/[0.08]">
           <div className="text-center mb-6">
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-300">
               Interactive First-Principles Learning &bull; Visual Concept Explorers
@@ -449,7 +489,7 @@ export function HomeHero() {
               );
             })}
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

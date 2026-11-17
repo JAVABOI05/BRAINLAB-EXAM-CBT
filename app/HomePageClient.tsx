@@ -14,6 +14,7 @@ import {
   HomeFounderNote,
   HomeFaqCta,
 } from "./components/home";
+import { Reveal } from "./components/home/Reveal";
 
 /**
  * Ecosystem pathways mapping to preserve architecture assertions
@@ -45,6 +46,9 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
  * 7. Pricing teaser (dynamic real checkout plan data, no hardcoded figures)
  * 8. Founder note (conditional, hidden if none approved)
  * 9. FAQ and final call to action
+ *
+ * Below-the-fold sections fade and rise once on first view (Reveal). The hero and the
+ * channel ribbon are never wrapped, so the first screen paints immediately.
  */
 export default function HomePageClient() {
   return (
@@ -75,31 +79,49 @@ export default function HomePageClient() {
         <HomeJoinChannel />
 
         {/* 2. Audience Entry Points */}
-        <HomeAudiences />
+        <Reveal>
+          <HomeAudiences />
+        </Reveal>
 
         {/* 3. The BrainLab Loop */}
-        <HomeBrainLabLoop />
+        <Reveal>
+          <HomeBrainLabLoop />
+        </Reveal>
 
         {/* 4. Product Showcase */}
-        <HomeProductShowcase />
+        <Reveal>
+          <HomeProductShowcase />
+        </Reveal>
 
         {/* 5. STEM Studio Spotlight */}
-        <HomeStemStudio />
+        <Reveal>
+          <HomeStemStudio />
+        </Reveal>
 
         {/* 6. Trust and Outcomes (Conditional) */}
-        <HomeTrustOutcomes />
+        <Reveal>
+          <HomeTrustOutcomes />
+        </Reveal>
 
         {/* University Target Benchmarks & Social Proof (Lower Page Positioning) */}
-        <HomeUniversityTargetSocialProof />
+        <Reveal>
+          <HomeUniversityTargetSocialProof />
+        </Reveal>
 
         {/* 7. Pricing Teaser (Real Data) */}
-        <HomePricingTeaser />
+        <Reveal>
+          <HomePricingTeaser />
+        </Reveal>
 
         {/* 8. Founder Note (Conditional) */}
-        <HomeFounderNote />
+        <Reveal>
+          <HomeFounderNote />
+        </Reveal>
 
         {/* 9. FAQ and Final Call to Action */}
-        <HomeFaqCta />
+        <Reveal>
+          <HomeFaqCta />
+        </Reveal>
       </div>
     </div>
   );
