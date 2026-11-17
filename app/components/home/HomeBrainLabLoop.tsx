@@ -1,399 +1,292 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
+import "./home-motion.css";
+import "./home-loop.css";
 
-function LoopStageIcon({ id, className = "h-4 w-4" }: { id: string; className?: string }) {
-  switch (id) {
-    case "learn":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-          <path d="M6 6h10M6 10h10" />
-        </svg>
-      );
-    case "practise":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="2" y="4" width="20" height="16" rx="2" />
-          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
-        </svg>
-      );
-    case "diagnose":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-        </svg>
-      );
-    case "improve":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
-        </svg>
-      );
-    case "master":
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-      );
-    default:
-      return null;
-  }
+/** Compact single-path icon set (24x24, stroke). */
+const STAGE_ICONS: Record<string, string> = {
+  learn: "M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5ZM6 6h10M6 10h10",
+  practise:
+    "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10",
+  diagnose: "M22 12h-4l-3 9L9 3l-3 9H2",
+  improve: "M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83",
+  master: "M12 2l3 6.5 7 1-5 5 1.2 7L12 18l-6.2 3.5L7 14.5l-5-5 7-1Z",
+  check: "M20 6 9 17l-5-5",
+  bolt: "M13 2 3 14h9l-1 8 10-12h-9z",
+  swords: "M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2",
+  gauge: "M12 14l4-4M3.34 19a10 10 0 1 1 17.32 0",
+  ladder: "M8 3v18M16 3v18M8 7h8M8 12h8M8 17h8",
+};
+
+function Icon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
+  const d = STAGE_ICONS[name];
+  if (!d) return null;
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
 }
 
-const STAGE_ROUTE_MAP: Record<
-  string,
-  {
-    href: string;
-    label: string;
-    previewBadge: string;
-    themeColor: string;
-    glow: string;
-    accentBorder: string;
-    accentText: string;
-    accentBg: string;
-  }
-> = {
-  learn: { href: "/learn",
-    label: "Explore Curriculum Lessons",
-    previewBadge: "Interactive Theory & Formulas",
-    themeColor: "from-blue-600 via-sky-500 to-cyan-400",
-    glow: "border-cyan-400/50 shadow-cyan-950/40",
-    accentBorder: "border-blue-600 ",
-    accentText: "text-blue-700 ",
-    accentBg: "bg-blue-100 ",
-  },
-  practise: { href: "/cbt",
-    label: "Launch Timed CBT Simulator",
-    previewBadge: "Authentic 8-Key Simulator",
-    themeColor: "from-teal-500 via-emerald-500 to-cyan-400",
-    glow: "border-teal-400/50 shadow-teal-950/40",
-    accentBorder: "border-emerald-600 ",
-    accentText: "text-emerald-700 ",
-    accentBg: "bg-emerald-100 ",
-  },
-  diagnose: { href: "/learning-dna",
-    label: "Inspect Weak Subtopics",
-    previewBadge: "AI Cognitive Diagnostic Radar",
-    themeColor: "from-fuchsia-600 via-purple-500 to-pink-400",
-    glow: "border-fuchsia-400/50 shadow-fuchsia-950/40",
-    accentBorder: "border-purple-600 ",
-    accentText: "text-purple-700 ",
-    accentBg: "bg-purple-100 ",
-  },
-  improve: { href: "/ai-learning",
-    label: "Launch Socratic AI Drills",
-    previewBadge: "Step-by-Step AI Derivation",
-    themeColor: "from-violet-600 via-purple-500 to-amber-400",
-    glow: "border-amber-400/50 shadow-amber-950/40",
-    accentBorder: "border-amber-600 ",
-    accentText: "text-amber-700 ",
-    accentBg: "bg-amber-100 ",
-  },
-  master: { href: "/challenge-arena",
-    label: "Join 1v1 National Arena",
-    previewBadge: "Live Synchronous Duels",
-    themeColor: "from-amber-500 via-orange-500 to-rose-400",
-    glow: "border-orange-400/50 shadow-orange-950/40",
-    accentBorder: "border-orange-600 ",
-    accentText: "text-orange-700 ",
-    accentBg: "bg-orange-100 ",
-  },
+const STAGE_ROUTE_MAP: Record<string, { href: string; label: string; previewBadge: string }> = {
+  learn: { href: "/learn", label: "Explore Curriculum Lessons", previewBadge: "Interactive Theory & Formulas" },
+  practise: { href: "/cbt", label: "Launch Timed CBT Simulator", previewBadge: "Timed Exam Practice" },
+  diagnose: { href: "/learning-dna", label: "Inspect Weak Subtopics", previewBadge: "Diagnostic Radar" },
+  improve: { href: "/ai-learning", label: "Launch Socratic AI Drills", previewBadge: "Step-by-Step Guidance" },
+  master: { href: "/challenge-arena", label: "Join 1v1 National Arena", previewBadge: "Live Synchronous Duels" },
 };
+
+const PRACTISE_OPTIONS = [
+  { k: "A", val: "pH = 1.0" },
+  { k: "B", val: "pH = 3.0" },
+  { k: "C", val: "pH = 7.0" },
+  { k: "D", val: "pH = 11.0" },
+];
+
+const WAVE = [40, 75, 55, 90, 60, 30, 80, 100, 45, 70, 85, 40];
 
 export function HomeBrainLabLoop(): React.JSX.Element {
   const loopStages = HOMEPAGE_CONTENT_CONFIG.loopStages;
   const [activeStageId, setActiveStageId] = useState<string>("learn");
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // Interactive state for Learn stage
-  const [learnFormulaMode, setLearnFormulaMode] = useState<"formula" | "derivation">("formula");
-  // Interactive state for Practise stage
-  const [practiseOption, setPractiseOption] = useState<string>("B");
-  // Interactive state for Socratic stage
-  const [showSocraticHint, setShowSocraticHint] = useState<boolean>(false);
+  const [learnMode, setLearnMode] = useState<"formula" | "derivation">("formula");
+  const [practiseOption, setPractiseOption] = useState<string | null>(null);
+  const [showHint, setShowHint] = useState<boolean>(false);
 
-  const activeStage =
-    loopStages.find((s) => s.id === activeStageId) || loopStages[0];
+  const activeIndex = Math.max(
+    0,
+    loopStages.findIndex((s) => s.id === activeStageId)
+  );
+  const activeStage = loopStages[activeIndex] || loopStages[0];
   const activeRoute = STAGE_ROUTE_MAP[activeStage.id] || STAGE_ROUTE_MAP.learn;
+  const progress = loopStages.length > 1 ? activeIndex / (loopStages.length - 1) : 0;
+
+  const handleTabKey = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const delta = e.key === "ArrowRight" ? 1 : -1;
+    const next = (index + delta + loopStages.length) % loopStages.length;
+    setActiveStageId(loopStages[next].id);
+    tabRefs.current[next]?.focus();
+  };
+
+  const toggleBtn = (active: boolean) =>
+    `rounded-md px-3 py-1.5 text-xs font-bold transition-all cursor-pointer min-h-[32px] ${
+      active ? "bl-home-gradient-orange font-black" : "text-slate-200 hover:text-white"
+    }`;
 
   return (
     <section
       id="the-loop"
       data-slot="THE BRAINLAB LOOP (SLOTS S3-01 & S3-02)"
       aria-label="How BrainLab Works - The 5-Step Learning Method"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200 bg-white text-slate-900"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-16 sm:py-24 border-b border-white/10 bg-[#060D20] text-white"
     >
-      {/* Brilliant Subtle Geometric Grid Matrix */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.035] .05]"
-        style={{
-          backgroundImage: `radial-gradient(#1e293b 1.2px, transparent 1.2px)`,
-          backgroundSize: "24px 24px",
-        }}
-        aria-hidden="true"
-      />
+      <div className="bl-home-grid-dark pointer-events-none absolute inset-0" aria-hidden="true" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header with Refined Empirical Branding */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800   border border-blue-300  mb-3 shadow-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600  animate-pulse" />
-            <span>HOW BRAINLAB WORKS &bull; THE 5-STEP STUDY METHOD</span>
-          </span>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-            From Fundamental Concept to Complete Exam Mastery
+        {/* Header */}
+        <div className="max-w-3xl mx-auto text-center mb-12 sm:mb-16">
+          <span className="bl-home-eyebrow bl-home-eyebrow-dark">03 &middot; The BrainLab Loop</span>
+          <h2 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-white">
+            From fundamental concept to <span className="bl-home-mark">complete exam mastery</span>
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
-            A simple, powerful 5-step learning system designed to help you truly understand each topic, practise with confidence, fix mistakes, and excel in your exams.
+          <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto">
+            A simple 5-step learning system: understand each topic, practise with confidence, find what is weak, fix it, and repeat.
           </p>
         </div>
 
-        {/* 1. SCULPTED 5-STAGE CONNECTED PEDAGOGICAL RAIL */}
-        <div
-          role="tablist"
-          aria-label="Loop Stages"
-          className="relative mb-10 sm:mb-12"
-        >
-          {/* Subtle Horizontal Connector Rail on Desktop */}
-          <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-slate-200  -translate-y-1/2 pointer-events-none" />
+        {/* Connected stepper with an orange progress line */}
+        <div role="tablist" aria-label="Loop Stages" className="relative mb-10 sm:mb-14">
+          <div className="absolute left-[10%] right-[10%] top-6 sm:top-7 h-0.5 bg-white/15" aria-hidden="true" />
+          <div className="absolute left-[10%] right-[10%] top-6 sm:top-7 h-0.5 overflow-hidden" aria-hidden="true">
+            <div
+              className="bl-home-gradient-orange h-full w-full origin-left transition-transform duration-500 ease-out"
+              style={{ transform: `scaleX(${progress})` }}
+            />
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 relative z-10">
-            {loopStages.map((stage) => {
-              const isSelected = stage.id === activeStageId;
-              const route = STAGE_ROUTE_MAP[stage.id] || STAGE_ROUTE_MAP.learn;
-
+          <div className="relative grid grid-cols-5 gap-1 sm:gap-3">
+            {loopStages.map((stage, index) => {
+              const isActive = stage.id === activeStageId;
+              const isDone = index < activeIndex;
               return (
                 <button
                   key={stage.id}
+                  ref={(el) => {
+                    tabRefs.current[index] = el;
+                  }}
                   role="tab"
                   id={`tab-${stage.id}`}
                   aria-controls={`panel-${stage.id}`}
-                  aria-selected={isSelected}
+                  aria-selected={isActive}
+                  tabIndex={isActive ? 0 : -1}
+                  type="button"
                   onClick={() => setActiveStageId(stage.id)}
-                  className={`group relative flex flex-col items-start p-4 rounded-2xl text-left transition-all duration-200 bl-focus-ring cursor-pointer border-2 border-b-4 active:border-b-2 active:translate-y-0.5 shadow-sm ${
-                    isSelected
-                      ? `bg-white  text-slate-900 ${route.accentBorder}`
-                      : "border-slate-200 bg-slate-50/70  hover:border-slate-300 :border-slate-700 text-slate-700"
-                  }`}
+                  onKeyDown={(e) => handleTabKey(e, index)}
+                  className="group flex flex-col items-center gap-2.5 rounded-2xl px-1 py-1 text-center cursor-pointer bl-focus-ring"
                 >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <span
-                      className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                        isSelected ? route.accentBg + " " + route.accentText : "bg-slate-200  text-slate-600"
-                      } border border-slate-300  shrink-0 transition-transform group-hover:scale-110`}
-                      aria-hidden="true"
-                    >
-                      <LoopStageIcon id={stage.id} className="h-4 w-4" />
-                    </span>
-                    <span
-                      className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                        isSelected
-                          ? "bg-blue-600 text-white font-black shadow-xs"
-                          : "bg-slate-200  text-slate-600"
-                      }`}
-                    >
-                      STAGE {stage.number}
-                    </span>
-                  </div>
-
                   <span
-                    className={`text-sm sm:text-base font-black tracking-tight ${
-                      isSelected ? "text-slate-900" : "text-slate-700"
+                    className={`flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                      isActive
+                        ? "bl-home-gradient-orange border-transparent bl-loop-node-active"
+                        : isDone
+                        ? "bl-home-gradient-orange border-transparent"
+                        : "border-white/20 bg-[#0B1426] text-slate-200 group-hover:border-white/40"
                     }`}
+                    aria-hidden="true"
                   >
-                    {stage.title}
+                    <Icon name={stage.id} className="h-5 w-5 sm:h-6 sm:w-6" />
                   </span>
-                  <span className="text-xs text-slate-500 truncate w-full mt-0.5 font-medium">
-                    {stage.subtitle}
+                  <span className="min-w-0">
+                    <span className={`block text-xs sm:text-base font-extrabold tracking-tight ${isActive ? "text-white" : "text-slate-300"}`}>
+                      {stage.title}
+                    </span>
+                    <span className="hidden sm:block text-xs font-medium text-slate-400 mt-0.5">{stage.subtitle}</span>
                   </span>
                 </button>
               );
             })}
           </div>
+
+          <div className="mt-5 flex justify-center">
+            <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-300">
+              <svg className="h-4 w-4 bl-home-accent-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" />
+              </svg>
+              Then the loop repeats with every topic
+            </span>
+          </div>
         </div>
 
-        {/* 2. THE EXPANSIVE EMPIRICAL LAB STAGE (CINEMATIC 2-COLUMN VIEW - ROCK-SOLID STATIC BOX) */}
+        {/* Stage canvas */}
         <div
+          key={activeStage.id}
           id={`panel-${activeStage.id}`}
           role="tabpanel"
           aria-labelledby={`tab-${activeStage.id}`}
-          className="relative rounded-3xl border-2 border-slate-200 bg-white   p-6 sm:p-8 lg:p-10 shadow-sm transition-all overflow-hidden min-h-[580px] lg:h-[600px] flex flex-col justify-center"
+          className="bl-home-enter relative overflow-hidden rounded-3xl border border-white/10 bg-[#0B1426] p-5 sm:p-8 lg:p-10 shadow-[0_32px_64px_-32px_rgba(0,0,0,0.9)]"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch h-full">
-            {/* LEFT COLUMN: Stage Identity, Narrative & Capabilities (Static height chassis) */}
-            <div className="lg:col-span-6 flex flex-col justify-between h-full space-y-5">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3.5">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white text-lg font-black shadow-md border-2 border-blue-700 border-b-4">
-                    {activeStage.number}
-                  </span>
-                  <div>
-                    <div className={`text-xs font-mono font-bold ${activeRoute.accentText} uppercase tracking-wider`}>
-                      Step {activeStage.number} of 5 &bull; The BrainLab Method
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                      {activeStage.title}: {activeStage.subtitle}
-                    </h3>
-                  </div>
-                </div>
+          <span
+            className="pointer-events-none absolute -top-6 right-5 select-none text-[9rem] sm:text-[12rem] font-black leading-none text-white/[0.035]"
+            aria-hidden="true"
+          >
+            {activeStage.number}
+          </span>
 
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal min-h-[48px]">
-                  {activeStage.description}
-                </p>
+          <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+            {/* Left: narrative */}
+            <div className="lg:col-span-6 space-y-5">
+              <div className="flex items-center gap-3">
+                <span className="bl-home-gradient-orange flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-black">
+                  {activeStage.number}
+                </span>
+                <span className="bl-home-eyebrow bl-home-eyebrow-dark">Step {activeStage.number} of 5</span>
+              </div>
 
-                {/* Synchronized Platform Capabilities */}
-                <div className="space-y-2 pt-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
-                    Integrated Platform Tools:
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {activeStage.products.map((prod) => (
-                      <span
-                        key={prod}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100  text-slate-800  border border-slate-200  shadow-xs"
-                      >
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-600 " />
-                        <span>{prod}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-[1.15] text-white">
+                {activeStage.title}: {activeStage.subtitle}
+              </h3>
 
-                {/* STEM Studio Integration Callout / Curriculum Benchmark (Consistent static slot) */}
-                <div className="min-h-[72px]">
-                  {activeStage.stemRole ? (
-                    <div className="rounded-2xl border-2 border-emerald-200  bg-emerald-50/70  p-3.5 text-xs text-emerald-900  flex items-start gap-3 shadow-xs">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100  text-emerald-700  border border-emerald-300  shrink-0 font-bold" aria-hidden="true">
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                        </svg>
-                      </span>
-                      <div>
-                        <span className="font-extrabold text-emerald-800  uppercase tracking-wider block mb-0.5 text-[11px]">
-                          Interactive Science &amp; STEM Lab:
-                        </span>
-                        <span className="leading-relaxed">{activeStage.stemRole}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border-2 border-blue-200  bg-blue-50/70  p-3.5 text-xs text-blue-900  flex items-start gap-3 shadow-xs">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100  text-blue-700  border border-blue-300  shrink-0 font-bold" aria-hidden="true">
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10" />
-                          <circle cx="12" cy="12" r="6" />
-                          <circle cx="12" cy="12" r="2" />
-                        </svg>
-                      </span>
-                      <div>
-                        <span className="font-extrabold text-blue-800  uppercase tracking-wider block mb-0.5 text-[11px]">
-                          Official NERDC Syllabus Benchmark:
-                        </span>
-                        <span className="leading-relaxed">100% verified question bank aligned with official UTME, WAEC and NECO standards.</span>
-                      </div>
-                    </div>
-                  )}
+              <p className="text-base text-slate-300 leading-relaxed">{activeStage.description}</p>
+
+              <div className="space-y-2.5">
+                <span className="block text-xs font-black uppercase tracking-wider text-slate-300">Platform tools at this step</span>
+                <div className="flex flex-wrap gap-2">
+                  {activeStage.products.map((prod) => (
+                    <span
+                      key={prod}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-100"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--bl-color-brand-orange)" }} />
+                      {prod}
+                    </span>
+                  ))}
                 </div>
               </div>
 
-              {/* Stage Direct Action Link */}
-              <div className="pt-2">
-                <Link
-                  href={activeRoute.href}
-                  className="inline-flex items-center gap-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white px-7 py-3.5 text-xs sm:text-sm font-black border-2 border-blue-700 border-b-4 active:border-b-2 active:translate-y-0.5 shadow-md transition-all bl-focus-ring min-h-[48px]"
-                >
-                  <span>{activeRoute.label}</span>
-                  <span aria-hidden="true" className="text-base font-bold">&rarr;</span>
-                </Link>
-              </div>
+              {activeStage.stemRole && (
+                <div className="rounded-xl border border-white/10 border-l-4 border-l-[var(--bl-color-brand-orange)] bg-white/5 p-4">
+                  <span className="bl-home-eyebrow bl-home-eyebrow-dark !text-[0.7rem]">Interactive science &amp; STEM lab</span>
+                  <p className="mt-2 text-sm text-slate-200 leading-relaxed">{activeStage.stemRole}</p>
+                </div>
+              )}
+
+              <Link
+                href={activeRoute.href}
+                className="bl-home-cta-orange bl-focus-ring group inline-flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-base font-black shadow-lg shadow-black/30 active:scale-95 min-h-[52px]"
+              >
+                <span>{activeRoute.label}</span>
+                <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
+              </Link>
             </div>
 
-            {/* RIGHT COLUMN: Authentic High-Voltage Interactive Telemetry Stage (Static locked height) */}
-            <div className="lg:col-span-6 flex flex-col justify-center">
+            {/* Right: sample preview */}
+            <div className="lg:col-span-6">
               <div
-                className="rounded-2xl border-2 border-slate-200 bg-slate-50  p-5 sm:p-6 shadow-inner relative overflow-hidden h-[450px] flex flex-col justify-between"
+                className="flex min-h-[430px] flex-col rounded-2xl border border-white/10 bg-[#060D20] p-5 sm:p-6"
                 role="region"
                 aria-label={`Preview of ${activeStage.title} Stage Output`}
                 data-slot="Diagnostic Cognitive Radar (Slot S3-02)"
               >
-                {/* Header Chrome Bar */}
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center text-blue-600 " aria-hidden="true">
-                      <LoopStageIcon id={activeStage.id} className="h-4 w-4" />
+                <div className="mb-5 flex items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="bl-home-accent-orange">
+                      <Icon name={activeStage.id} className="h-5 w-5" />
                     </span>
-                    <span className="font-bold uppercase tracking-wider text-slate-900 text-[11px]">
-                      {activeStage.title} Preview &bull; Interactive Learning Simulation
-                    </span>
+                    <span className="truncate text-sm font-extrabold text-white">{activeRoute.previewBadge}</span>
                   </div>
-                  <span className="rounded-md bg-blue-100  border border-blue-200  px-2.5 py-0.5 text-[9px] font-black uppercase text-blue-800 ">
-                    {activeRoute.previewBadge}
-                  </span>
+                  <span className="bl-home-tint-orange shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold">Sample preview</span>
                 </div>
 
-                {/* 1. STAGE 1: LEARN — Theory & Interactive Formula Laboratory */}
+                {/* LEARN */}
                 {activeStage.id === "learn" && (
-                  <div className="space-y-4 animate-bl-fade-in">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">Formula Breakdown Mode:</span>
-                      <div className="flex rounded-lg bg-white  border border-slate-200 p-0.5 text-[11px] shadow-xs">
-                        <button
-                          type="button"
-                          onClick={() => setLearnFormulaMode("formula")}
-                          className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                            learnFormulaMode === "formula" ? "bg-blue-600 text-white font-black shadow-xs" : "text-slate-600"
-                          }`}
-                        >
+                  <div className="flex flex-1 flex-col gap-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-slate-200">Formula view</span>
+                      <div className="flex rounded-lg border border-white/15 bg-white/5 p-0.5" role="group" aria-label="Formula view">
+                        <button type="button" aria-pressed={learnMode === "formula"} onClick={() => setLearnMode("formula")} className={toggleBtn(learnMode === "formula")}>
                           Equation
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setLearnFormulaMode("derivation")}
-                          className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                            learnFormulaMode === "derivation" ? "bg-blue-600 text-white font-black shadow-xs" : "text-slate-600"
-                          }`}
-                        >
+                        <button type="button" aria-pressed={learnMode === "derivation"} onClick={() => setLearnMode("derivation")} className={toggleBtn(learnMode === "derivation")}>
                           Derivation
                         </button>
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-slate-200 bg-white  p-4 space-y-2 shadow-xs">
-                      <div className="flex items-center justify-between text-[11px] text-blue-600  font-mono font-bold">
-                        <span>JAMB Physics &bull; Motion &amp; Kinematics</span>
-                        <span>Equation #02</span>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                      <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-300">
+                        <span>Physics &bull; Motion &amp; Kinematics</span>
                       </div>
-                      <div className="text-xl sm:text-2xl font-mono font-black text-slate-900 text-center py-2 bg-slate-50  rounded-lg border border-slate-200">
-                        {learnFormulaMode === "formula" ? "v² = u² + 2as" : "s = ut + ½at²"}
+                      <div key={learnMode} className="bl-home-enter mt-3 rounded-lg border border-white/10 bg-[#0B1426] py-5 text-center font-mono text-2xl sm:text-3xl font-black text-white">
+                        {learnMode === "formula" ? "v² = u² + 2as" : "s = ut + ½at²"}
                       </div>
-                      <p className="text-xs text-slate-600 leading-relaxed text-center font-normal min-h-[36px] flex items-center justify-center">
-                        {learnFormulaMode === "formula"
-                          ? "Relates final velocity directly to initial velocity, acceleration, and displacement without requiring time variable (t)."
-                          : "Calculates total displacement covered under uniform acceleration over elapsed duration (t)."}
+                      <p className="mt-3 min-h-[60px] text-sm text-slate-300 leading-relaxed text-center">
+                        {learnMode === "formula"
+                          ? "Relates final velocity to initial velocity, acceleration and displacement, without needing the time variable (t)."
+                          : "Gives the displacement covered under uniform acceleration over a period of time (t)."}
                       </p>
                     </div>
 
-                    {/* Audio Narration Waveform Strip */}
-                    <div className="rounded-xl border border-slate-200 bg-white  p-3 flex items-center justify-between gap-3 shadow-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100  text-blue-600  text-xs font-bold" aria-hidden="true">
+                    <div className="mt-auto flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3.5">
+                      <div className="flex items-center gap-3">
+                        <span className="bl-home-gradient-orange flex h-8 w-8 items-center justify-center rounded-lg" aria-hidden="true">
                           <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
-                            <polygon points="5 3 19 12 5 21 5 3" />
+                            <polygon points="6 3 20 12 6 21 6 3" />
                           </svg>
                         </span>
-                        <div>
-                          <div className="text-[11px] font-bold text-slate-900">Audio Theory Walkthrough</div>
-                          <div className="text-[9px] text-slate-500 font-mono">Teacher: Dr. A. Bello (03:14)</div>
-                        </div>
+                        <span className="text-sm font-bold text-white">Audio walkthrough</span>
                       </div>
-                      <div className="flex items-center gap-0.5 h-4">
-                        {[40, 75, 55, 90, 60, 30, 80, 100, 45, 70, 85, 40].map((h, i) => (
+                      <div className="flex h-6 items-end gap-0.5" aria-hidden="true">
+                        {WAVE.map((h, i) => (
                           <span
                             key={i}
-                            className="w-1 bg-blue-600  rounded-full animate-pulse"
-                            style={{ height: `${h}%`, animationDelay: `${i * 100}ms` }}
+                            className="bl-loop-bar w-1 rounded-full"
+                            style={{ height: `${h}%`, animationDelay: `${i * 90}ms`, background: "var(--bl-color-brand-orange)" }}
                           />
                         ))}
                       </div>
@@ -401,185 +294,159 @@ export function HomeBrainLabLoop(): React.JSX.Element {
                   </div>
                 )}
 
-                {/* 2. STAGE 2: PRACTISE — Authentic JAMB 8-Key Exam Cockpit */}
+                {/* PRACTISE */}
                 {activeStage.id === "practise" && (
-                  <div className="space-y-4 animate-bl-fade-in">
-                    <div className="flex items-center justify-between bg-white  border border-slate-200 px-3 py-1.5 rounded-xl text-xs shadow-xs">
-                      <span className="text-slate-600 font-mono font-medium">JAMB UTME Simulation</span>
-                      <span className="font-mono text-amber-600  font-black flex items-center gap-1.5">
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        <span>01:58:42</span>
-                      </span>
+                  <div className="flex flex-1 flex-col gap-4">
+                    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs">
+                      <span className="font-mono font-semibold text-slate-200">Timed practice</span>
+                      <span className="font-bold text-slate-200">Sample question</span>
                     </div>
 
-                    <div className="rounded-xl border border-slate-200 bg-white  p-3.5 space-y-2.5 shadow-xs">
-                      <div className="text-[11px] font-bold text-blue-600 ">
-                        Question 14 of 40 &bull; Chemistry (Acids &amp; Bases)
-                      </div>
-                      <p className="text-xs text-slate-800  leading-relaxed font-medium">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                      <div className="text-xs font-bold text-slate-300">Chemistry &bull; Acids &amp; Bases</div>
+                      <p className="text-sm font-semibold text-white leading-relaxed">
                         What is the pH of a 0.001 M solution of hydrochloric acid (HCl)?
                       </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {PRACTISE_OPTIONS.map((opt) => {
+                          const chosen = practiseOption === opt.k;
+                          const correct = opt.k === "B";
+                          return (
+                            <button
+                              key={opt.k}
+                              type="button"
+                              onClick={() => setPractiseOption(opt.k)}
+                              aria-pressed={chosen}
+                              className={`flex min-h-[44px] items-center gap-2.5 rounded-xl border-2 px-3 py-2 text-left text-sm transition-all cursor-pointer ${
+                                chosen
+                                  ? correct
+                                    ? "border-emerald-400 bg-emerald-500/15 font-bold text-emerald-100"
+                                    : "border-red-400 bg-red-500/15 font-bold text-red-100"
+                                  : "border-white/15 bg-white/5 text-slate-100 hover:border-white/35"
+                              }`}
+                            >
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 font-mono text-xs font-black">
+                                {opt.k}
+                              </span>
+                              {opt.val}
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {[
-                          { k: "A", val: "pH = 1.0" },
-                          { k: "B", val: "pH = 3.0" },
-                          { k: "C", val: "pH = 7.0" },
-                          { k: "D", val: "pH = 11.0" },
-                        ].map((opt) => (
-                          <button
-                            key={opt.k}
-                            type="button"
-                            onClick={() => setPractiseOption(opt.k)}
-                            className={`p-2.5 rounded-xl text-left flex items-center gap-2 transition-all border-2 border-b-4 cursor-pointer active:border-b-2 active:translate-y-0.5 ${
-                              practiseOption === opt.k
-                                ? "bg-emerald-50 border-emerald-600   text-emerald-900  font-bold shadow-xs"
-                                : "bg-slate-50  border-slate-200 text-slate-700 hover:border-slate-300 :border-slate-700"
-                            }`}
-                          >
-                            <span className={`h-5 w-5 rounded-md flex items-center justify-center text-[10px] font-black ${
-                              practiseOption === opt.k ? "bg-emerald-600 text-white" : "bg-slate-200  text-slate-700"
-                            }`}>
-                              {opt.k}
-                            </span>
-                            <span>{opt.val}</span>
-                          </button>
-                        ))}
+                      <div className="min-h-[44px] text-sm leading-relaxed" aria-live="polite">
+                        {practiseOption === null && <span className="text-slate-300">Pick an option to see how feedback works.</span>}
+                        {practiseOption === "B" && (
+                          <span className="text-emerald-200">Correct. pH = &minus;log&#8321;&#8320;(0.001) = 3.</span>
+                        )}
+                        {practiseOption !== null && practiseOption !== "B" && (
+                          <span className="text-red-200">Not quite. Remember pH = &minus;log&#8321;&#8320;[H&#8314;]. Try again.</span>
+                        )}
                       </div>
                     </div>
 
-                    {/* 8-Key Simulator Keypad */}
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">
-                        Official 8-Key Exam Controls:
-                      </span>
-                      <div className="grid grid-cols-8 gap-1.5 text-center font-mono text-[10px] font-black">
+                    <div className="mt-auto" aria-hidden="true">
+                      <span className="mb-1.5 block text-xs font-mono font-bold uppercase text-slate-300">8-key practice controls</span>
+                      <div className="grid grid-cols-8 gap-1.5 text-center font-mono text-xs font-black">
                         {["A", "B", "C", "D", "P", "N", "S", "R"].map((key) => (
-                          <button
+                          <span
                             key={key}
-                            type="button"
-                            onClick={() => {
-                              if (["A", "B", "C", "D"].includes(key)) setPractiseOption(key);
-                            }}
-                            className={`h-7 rounded-lg border-2 border-b-4 active:border-b-2 active:translate-y-0.5 transition-all cursor-pointer shadow-xs ${
-                              practiseOption === key
-                                ? "bg-blue-600 text-white border-blue-800  font-black"
-                                : "bg-white  border-slate-200 text-slate-800  hover:border-slate-300"
+                            className={`flex h-8 items-center justify-center rounded-lg border-2 ${
+                              practiseOption === key ? "bl-home-gradient-orange border-transparent" : "border-white/15 bg-white/5 text-slate-200"
                             }`}
                           >
                             {key}
-                          </button>
+                          </span>
                         ))}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* 3. STAGE 3: DIAGNOSE — Slot S3-02 Cognitive Radar SVG */}
+                {/* DIAGNOSE */}
                 {activeStage.id === "diagnose" && (
-                  <div className="space-y-4 animate-bl-fade-in" data-slot="Diagnostic Cognitive Radar (Slot S3-02)">
-                    <div className="text-xs font-bold text-slate-700 flex justify-between items-center">
-                      <span>Your Subject Strengths &amp; Weaknesses:</span>
-                      <span className="text-blue-600  font-mono text-[11px] font-bold">Live Score Insights</span>
+                  <div className="flex flex-1 flex-col gap-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-bold text-slate-200">Strengths and weak areas by subject</span>
                     </div>
 
-                    {/* SVG 5-Axis Radar Diagram */}
-                    <div className="relative rounded-xl border border-slate-200 bg-white  p-4 flex items-center justify-center h-44 shadow-xs">
-                      <svg viewBox="0 0 200 200" className="w-44 h-44 overflow-visible">
-                        {/* Radar Grid Rings */}
-                        <polygon points="100,20 176,75 147,165 53,165 24,75" fill="none" stroke="#cbd5e1" strokeWidth="1" className="" />
-                        <polygon points="100,50 148,85 130,145 70,145 52,85" fill="none" stroke="#e2e8f0" strokeWidth="1" className="" />
-                        <polygon points="100,75 124,92 115,122 85,122 76,92" fill="none" stroke="#e2e8f0" strokeWidth="1" className="" />
+                    <div className="flex flex-1 items-center justify-center rounded-xl border border-white/10 bg-white/5 p-3">
+                      <svg viewBox="0 0 280 210" className="h-auto w-full max-w-[340px]" role="img" aria-label="Sample five-subject radar chart with one weak area highlighted">
+                        <g fill="none" stroke="rgba(148,163,184,0.35)" strokeWidth="1">
+                          <polygon points="140,27 214.2,80.9 185.8,168.1 94.2,168.1 65.8,80.9" />
+                          <polygon points="140,51 191.4,88.3 171.7,148.7 108.3,148.7 88.6,88.3" />
+                          <polygon points="140,75 168.5,95.7 157.6,129.3 122.4,129.3 111.5,95.7" />
+                          <path d="M140 105 140 27M140 105 214.2 80.9M140 105 185.8 168.1M140 105 94.2 168.1M140 105 65.8 80.9" />
+                        </g>
 
-                        {/* Axis Lines */}
-                        <line x1="100" y1="100" x2="100" y2="20" stroke="#cbd5e1" strokeWidth="1" className="" />
-                        <line x1="100" y1="100" x2="176" y2="75" stroke="#cbd5e1" strokeWidth="1" className="" />
-                        <line x1="100" y1="100" x2="147" y2="165" stroke="#cbd5e1" strokeWidth="1" className="" />
-                        <line x1="100" y1="100" x2="53" y2="165" stroke="#cbd5e1" strokeWidth="1" className="" />
-                        <line x1="100" y1="100" x2="24" y2="75" stroke="#cbd5e1" strokeWidth="1" className="" />
+                        <g className="bl-loop-grow">
+                          <polygon
+                            points="140,36.4 200.9,85.2 181.3,161.8 120.7,131.5 82.2,86.2"
+                            style={{ fill: "color-mix(in srgb, #60a5fa 24%, transparent)", stroke: "#60a5fa" }}
+                            strokeWidth="2"
+                            strokeLinejoin="round"
+                          />
+                          <circle cx="140" cy="36.4" r="3.5" fill="#60a5fa" />
+                          <circle cx="200.9" cy="85.2" r="3.5" fill="#60a5fa" />
+                          <circle cx="181.3" cy="161.8" r="3.5" fill="#60a5fa" />
+                          <circle cx="82.2" cy="86.2" r="3.5" fill="#60a5fa" />
+                          <circle cx="120.7" cy="131.5" r="9" style={{ fill: "color-mix(in srgb, var(--bl-color-brand-orange) 30%, transparent)" }} />
+                          <circle cx="120.7" cy="131.5" r="4.5" style={{ fill: "var(--bl-color-brand-orange)" }} />
+                        </g>
 
-                        {/* Candidate Performance Polygon */}
-                        <polygon
-                          points="100,32 165,80 135,155 60,140 38,82"
-                          fill="rgba(37, 99, 235, 0.2)"
-                          stroke="#2563eb"
-                          strokeWidth="2"
-                        />
-
-                        {/* Data Points */}
-                        <circle cx="100" cy="32" r="3" fill="#2563eb" />
-                        <circle cx="165" cy="80" r="3" fill="#2563eb" />
-                        <circle cx="135" cy="155" r="3" fill="#2563eb" />
-                        <circle cx="60" cy="140" r="3" fill="#e11d48" />
-                        <circle cx="38" cy="82" r="3" fill="#2563eb" />
-
-                        {/* Axis Labels */}
-                        <text x="100" y="14" fill="#64748b" fontSize="8" textAnchor="middle">Math (88%)</text>
-                        <text x="180" y="75" fill="#64748b" fontSize="8">Physics (82%)</text>
-                        <text x="150" y="178" fill="#64748b" fontSize="8">English (91%)</text>
-                        <text x="50" y="178" fill="#e11d48" fontSize="8" fontWeight="bold">Chemistry (42%)</text>
-                        <text x="10" y="75" fill="#64748b" fontSize="8">Biology (78%)</text>
+                        <g fill="#e2e8f0" fontSize="12" fontWeight="700">
+                          <text x="140" y="17" textAnchor="middle">Math</text>
+                          <text x="224" y="84">Physics</text>
+                          <text x="190" y="190" textAnchor="middle">English</text>
+                          <text x="90" y="190" textAnchor="middle" style={{ fill: "var(--bl-color-brand-orange-light)" }}>Chemistry</text>
+                          <text x="56" y="84" textAnchor="end">Biology</text>
+                        </g>
                       </svg>
                     </div>
 
-                    {/* Prescribed Targeted Action */}
-                    <div className="rounded-xl border border-rose-200  bg-rose-50  p-2.5 text-xs flex items-center justify-between shadow-xs">
-                      <div>
-                        <span className="text-rose-700  font-bold block text-[11px]">Flagged Diagnostic Weakness:</span>
-                        <span className="text-slate-900 text-[11px] font-semibold">Organic Chemistry (Alkanols &amp; Esters)</span>
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 border-l-4 border-l-[var(--bl-color-brand-orange)] bg-white/5 p-3.5">
+                      <div className="min-w-0">
+                        <span className="block text-xs font-bold uppercase tracking-wider bl-home-accent-orange">Weak area flagged</span>
+                        <span className="block text-sm font-semibold text-white">Organic Chemistry (Alkanols &amp; Esters)</span>
                       </div>
-                      <span className="rounded-md bg-rose-600 text-white px-2 py-1 text-[10px] font-black shadow-xs">
-                        5 Remedial Drills
-                      </span>
+                      <span className="bl-home-gradient-orange shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-black">Targeted drills</span>
                     </div>
                   </div>
                 )}
 
-                {/* 4. STAGE 4: IMPROVE — Socratic AI Guidance */}
+                {/* IMPROVE */}
                 {activeStage.id === "improve" && (
-                  <div className="space-y-4 animate-bl-fade-in">
-                    <div className="text-xs font-bold text-slate-700 flex justify-between items-center">
-                      <span>Socratic Guidance Engine:</span>
-                      <span className="text-purple-600  font-mono text-[11px] font-bold">Zero Answer Spoilers</span>
+                  <div className="flex flex-1 flex-col gap-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-bold text-slate-200">Socratic guidance</span>
+                      <span className="text-xs font-bold text-slate-300">Guides, does not give the answer away</span>
                     </div>
 
-                    {/* Interactive Socratic Dialogue Box (Static height - zero layout jump) */}
-                    <div className="rounded-xl border border-slate-200 bg-white  p-4 space-y-2.5 shadow-xs h-[255px] flex flex-col justify-between overflow-hidden">
-                      <div className="space-y-2">
-                        <div className="flex items-start gap-2.5 text-xs">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100  text-slate-700 font-mono text-[10px] font-bold">
-                            YOU
-                          </span>
-                          <p className="text-slate-700  bg-slate-50  p-2 rounded-lg border border-slate-200 text-[11px]">
+                    <div className="flex flex-1 flex-col justify-between gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2.5">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-xs font-bold text-slate-100">You</span>
+                          <p className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-sm text-slate-100">
                             &ldquo;Why is option B incorrect in the esterification question?&rdquo;
                           </p>
                         </div>
-
-                        <div className="flex items-start gap-2.5 text-xs">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-mono text-[10px] font-bold">
-                            AI
-                          </span>
-                          <div className="text-slate-700  bg-purple-50  p-2.5 rounded-lg border border-purple-200  space-y-1 leading-relaxed text-[11px]">
-                            <p>
-                              Examine the sulfuric acid reagent carefully. Is concentrated H₂SO₄ acting as an oxidising agent or a dehydrating catalyst in this temperature range?
-                            </p>
-                          </div>
+                        <div className="flex items-start gap-2.5">
+                          <span className="bl-home-gradient-orange flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-xs font-black">AI</span>
+                          <p className="rounded-lg border border-white/10 bg-white/10 p-2.5 text-sm leading-relaxed text-white">
+                            Look at the sulfuric acid carefully. Is concentrated H&#8322;SO&#8324; acting as an oxidising agent or as a dehydrating catalyst at this temperature?
+                          </p>
                         </div>
                       </div>
 
-                      {/* Reserved Hint Slot (Zero layout shift whether revealed or hidden) */}
-                      <div className="min-h-[54px] flex items-center">
-                        {showSocraticHint ? (
-                          <div className="w-full text-amber-800  text-[11px] font-medium border-t border-purple-200  pt-1.5 animate-bl-fade-in flex items-start gap-1.5 bg-amber-50/50  p-2 rounded-lg">
-                            <span className="text-amber-700  font-bold uppercase text-[10px] tracking-wider bg-amber-100  px-1.5 py-0.5 rounded border border-amber-300 /30 shrink-0">Hint</span>
-                            <span>At 170°C, concentrated sulfuric acid removes water completely to yield an alkene (ethene), not an ester!</span>
+                      <div className="min-h-[64px]" aria-live="polite">
+                        {showHint ? (
+                          <div className="bl-home-enter flex items-start gap-2 rounded-lg border border-white/10 border-l-4 border-l-[var(--bl-color-brand-orange)] bg-[#0B1426] p-3 text-sm text-slate-100">
+                            <span className="bl-home-tint-orange shrink-0 rounded px-1.5 py-0.5 text-xs font-black uppercase">Hint</span>
+                            <span>At 170&deg;C, concentrated sulfuric acid removes water completely to give an alkene (ethene), not an ester.</span>
                           </div>
                         ) : (
-                          <div className="w-full text-[11px] text-slate-400  italic text-center p-2 border border-dashed border-slate-200 rounded-lg">
-                            Tap below to reveal Socratic Step 1 reasoning hint
+                          <div className="rounded-lg border border-dashed border-white/20 p-3 text-center text-sm italic text-slate-300">
+                            Tap below to reveal the first Socratic hint.
                           </div>
                         )}
                       </div>
@@ -587,66 +454,45 @@ export function HomeBrainLabLoop(): React.JSX.Element {
 
                     <button
                       type="button"
-                      onClick={() => setShowSocraticHint(!showSocraticHint)}
-                      className="w-full py-2.5 rounded-xl border-2 border-b-4 border-purple-600 bg-purple-50  hover:bg-purple-100 :bg-purple-900/50 text-purple-900  font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 active:border-b-2 active:translate-y-0.5 shadow-xs"
+                      onClick={() => setShowHint(!showHint)}
+                      aria-pressed={showHint}
+                      className="bl-home-cta-orange bl-focus-ring flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl text-sm font-black cursor-pointer active:scale-95"
                     >
-                      <svg className="h-4 w-4 text-purple-600 " viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                      </svg>
-                      <span>{showSocraticHint ? "Hide Socratic Step" : "Reveal Socratic Step 1 Hint"}</span>
+                      {showHint ? "Hide hint" : "Reveal Socratic hint"}
                     </button>
                   </div>
                 )}
 
-                {/* 5. STAGE 5: MASTER — National 1v1 Arena HUD */}
+                {/* MASTER */}
                 {activeStage.id === "master" && (
-                  <div className="space-y-4 animate-bl-fade-in">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-700">National Elo Sprint Battle:</span>
-                      <span className="text-amber-600  font-mono font-black">National Master Tier</span>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-white  p-4 space-y-3 shadow-xs">
-                      <div className="flex items-center justify-between text-xs">
-                        <div>
-                          <div className="font-extrabold text-slate-900">Challenger Speed Sprint</div>
-                          <div className="text-[10px] text-amber-600  font-mono font-bold">Rank #14 Nationwide</div>
+                  <div className="flex flex-1 flex-col gap-4">
+                    <div className="flex flex-1 flex-col items-center justify-center gap-5 rounded-xl border border-white/10 bg-white/5 p-5">
+                      <div className="flex w-full items-center justify-between gap-3">
+                        <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+                          <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/25 bg-[#0B1426] font-black text-white">You</span>
+                          <span className="text-xs font-bold text-slate-200">Your side</span>
                         </div>
-                        <div className="text-right">
-                          <div className="font-mono font-black text-amber-600  text-sm">Elo: 1420</div>
-                          <div className="text-[10px] text-emerald-600  font-bold flex items-center justify-end gap-1">
-                            <svg className="h-3 w-3 text-emerald-600 " viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                            </svg>
-                            <span>8-Win Streak</span>
-                          </div>
+                        <span className="bl-loop-vs bl-home-gradient-orange flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black">VS</span>
+                        <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+                          <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/25 bg-[#0B1426] font-black text-white">?</span>
+                          <span className="text-xs font-bold text-slate-200">Live opponent</span>
                         </div>
                       </div>
 
-                      <div className="h-2 rounded-full bg-slate-100  overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full w-[94%]" />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-center text-[10px] font-mono">
-                        <div className="rounded-lg bg-slate-50  p-2 border border-slate-200">
-                          <span className="text-slate-500 block">Avg Response</span>
-                          <span className="font-bold text-slate-900 text-xs">11.4s / Question</span>
-                        </div>
-                        <div className="rounded-lg bg-slate-50  p-2 border border-slate-200">
-                          <span className="text-slate-500 block">Sprint Duels</span>
-                          <span className="font-bold text-amber-600  text-xs">Synchronous 1v1</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-1 text-[11px] text-slate-500 flex items-center justify-between border-t border-slate-200">
-                      <span>Continuous Learning System</span>
-                      <span className="text-emerald-600  font-bold inline-flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Active for all candidate tracks</span>
-                      </span>
+                      <ul className="w-full space-y-2.5">
+                        {[
+                          { icon: "swords", text: "Live synchronous 1v1 duels" },
+                          { icon: "gauge", text: "Speed and accuracy both count" },
+                          { icon: "ladder", text: "Climb the ranked ladder" },
+                        ].map((row) => (
+                          <li key={row.text} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0B1426] px-4 py-3 text-sm font-semibold text-white">
+                            <span className="bl-home-accent-orange">
+                              <Icon name={row.icon} className="h-5 w-5" />
+                            </span>
+                            {row.text}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 )}
