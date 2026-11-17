@@ -1,0 +1,119 @@
+/*
+ * Landing page motion and accent utilities (UI_SYSTEM.md sections 5 and 6).
+ * - Tokens only (with token-equivalent fallbacks).
+ * - transform and opacity only, zero layout shift.
+ * - Everything collapses under prefers-reduced-motion.
+ * - Class names are prefixed bl-home-/bl-reveal so they cannot collide with existing globals.
+ */
+
+/* ---------- Coral accent (single attention accent) ---------- */
+.bl-home-accent-coral {
+  color: var(--bl-color-brand-coral, #ff6b55);
+}
+
+.bl-home-cta-coral {
+  background: var(--bl-color-brand-coral, #ff6b55);
+  color: var(--bl-color-brand-navy, #0b1536);
+}
+
+.bl-home-cta-coral:hover {
+  background: var(--bl-color-brand-coral-hover, #ff8572);
+}
+
+.bl-home-chip-coral {
+  background: var(--bl-color-brand-coral, #ff6b55);
+  color: var(--bl-color-brand-navy, #0b1536);
+}
+
+/* ---------- Crisp layered panels behind the hero card (replaces blurred blobs) ---------- */
+.bl-home-panel-coral {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-coral, #ff6b55) 40%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-coral, #ff6b55) 12%, transparent);
+}
+
+.bl-home-panel-blue {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-primary, #3b82f6) 35%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-primary, #3b82f6) 10%, transparent);
+}
+
+/* ---------- Scroll reveal ----------
+ * Content is visible by default. JavaScript arms an element (data-armed) only when it is
+ * below the fold and motion is allowed, so nothing is ever hidden without JS or when
+ * reduced motion is requested.
+ */
+.bl-reveal[data-armed="true"] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 600ms cubic-bezier(0.16, 1, 0.3, 1) var(--bl-reveal-delay, 0ms),
+    transform 600ms cubic-bezier(0.16, 1, 0.3, 1) var(--bl-reveal-delay, 0ms);
+}
+
+.bl-reveal[data-armed="true"].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Entrance (hero graphic only, never the headline, so LCP is unaffected) ---------- */
+@keyframes bl-home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bl-home-enter {
+  animation: bl-home-rise 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.bl-home-enter-d1 {
+  animation-delay: 140ms;
+}
+
+/* ---------- Ambient drift (slow, 2 elements max) ---------- */
+@keyframes bl-home-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.bl-home-float {
+  animation: bl-home-drift 9s ease-in-out infinite;
+}
+
+.bl-home-float-alt {
+  animation-delay: -4.5s;
+}
+
+/* ---------- Soft fade for values that resolve after mount ---------- */
+.bl-home-fade {
+  transition: opacity 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------- Reduced motion and print: always show final state ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .bl-reveal[data-armed="true"],
+  .bl-home-enter,
+  .bl-home-float,
+  .bl-home-fade {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media print {
+  .bl-reveal[data-armed="true"] {
+    opacity: 1;
+    transform: none;
+  }
+}
