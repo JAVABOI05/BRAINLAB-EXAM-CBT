@@ -288,7 +288,8 @@ export async function POST(request: NextRequest) {
         const tokenPayload = reauthAccessToken.split(".")[1];
         const claims = tokenPayload ? JSON.parse(Buffer.from(tokenPayload, "base64url").toString("utf8")) as { auth_time?: number } : {};
         const authTime = Number(claims.auth_time || 0);
-        const isFreshAuthentication = authTime > 0 && Math.floor(Date.now() / 1000) - authTime <= 5 * 60;
+        const authAgeSeconds = Math.floor(Date.now() / 1000) - authTime;
+        const isFreshAuthentication = authTime > 0 && authAgeSeconds >= 0 && authAgeSeconds <= 5 * 60;
 
         if (authError || !authenticatedUser || authenticatedUser.id !== admin.id || !hasGoogleIdentity || !isFreshAuthentication) {
           return NextResponse.json({ ok: false, error: "Google verification is missing, expired, or does not match this administrator. Please sign in with Google again." }, { status: 401 });
