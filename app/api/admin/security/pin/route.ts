@@ -265,52 +265,41 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // 2c. ACTION: RESET (Emergency reset with administrator account password)
+    // 2c. ACTION: RESET (Google identity re-authentication)
     if (action === "reset") {
       if (admin.role !== "super_admin" && admin.role !== "platform_admin") {
         return NextResponse.json({ ok: false, error: "Only Super Admin or Platform Admin can reset the Security PIN." }, { status: 403 });
       }
 
-      const adminPassword = String(body.adminPassword || "").trim();
+      const reauthAccessToken = String(body.reauthAccessToken || "").trim();
       const newPin = String(body.newPin || "").trim();
-
-      if (!adminPassword) {
-        return NextResponse.json(
-          { ok: false, error: "Administrator account password is required to authorize a PIN reset." },
-          { status: 400 }
-        );
+      if (!reauthAccessToken) {
+        return NextResponse.json({ ok: false, error: "Please complete Google sign-in before resetting the PIN." }, { status: 400 });
       }
-
       if (!newPin || newPin.length < 4 || newPin.length > 12) {
-        return NextResponse.json(
-          { ok: false, error: "New Security PIN must be between 4 and 12 characters." },
-          { status: 400 }
-        );
+        return NextResponse.json({ ok: false, error: "New Security PIN must be between 4 and 12 characters." }, { status: 400 });
       }
 
-      // Verify the administrator's password against Supabase Auth
       try {
         const publicClient = getSupabasePublicServerClient();
-        const { data: authData, error: authError } = await publicClient.auth.signInWithPassword({
-          email: admin.email,
-          password: adminPassword,
-        });
+        const { data: authData, error: authError } = await publicClient.auth.getUser(reauthAccessToken);
+        const authenticatedUser = authData?.user;
+        const hasGoogleIdentity = authenticatedUser?.app_metadata?.provider === "google" || authenticatedUser?.identities?.some((identity) => identity.provider === "google");
+        const tokenPayload = reauthAccessToken.split(".")[1];
+        const claims = tokenPayload ? JSON.parse(Buffer.from(tokenPayload, "base64url").toString("utf8")) as { auth_time?: number } : {};
+        const authTime = Number(claims.auth_time || 0);
+        const authAgeSeconds = Math.floor(Date.now() / 1000) - authTime;
+        const isFreshAuthentication = authTime > 0 && authAgeSeconds >= 0 && authAgeSeconds <= 5 * 60;
 
-        if (authError || !authData.user || authData.user.id !== admin.id) {
-          return NextResponse.json(
-            { ok: false, error: "Administrator password incorrect. PIN reset declined." },
-            { status: 401 }
-          );
+        if (authError || !authenticatedUser || authenticatedUser.id !== admin.id || !hasGoogleIdentity || !isFreshAuthentication) {
+          return NextResponse.json({ ok: false, error: "Google verification is missing, expired, or does not match this administrator. Please sign in with Google again." }, { status: 401 });
         }
       } catch (authErr) {
-        console.error("[adminPin] Password verification error:", authErr);
-        return NextResponse.json(
-          { ok: false, error: "Unable to verify administrator password. Please try again." },
-          { status: 500 }
-        );
+        console.error("[adminPin] Google identity verification error:", authErr);
+        return NextResponse.json({ ok: false, error: "Unable to verify Google sign-in. Please try again." }, { status: 401 });
       }
 
-      // Generate new salt and hash
+    // Generate new salt and hash
       const newSalt = crypto.randomBytes(16).toString("hex");
       const newHash = hashPin(newPin, newSalt);
       const supabase = getSupabaseServerClient();
