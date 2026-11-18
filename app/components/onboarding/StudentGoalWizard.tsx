@@ -9,6 +9,8 @@ import {
   STUDY_VIBES,
   type StudentProfileData,
 } from "@/app/lib/studentProfile";
+import { NigerianInstitutionSelect } from "@/app/components/ui/NigerianInstitutionSelect";
+import { NigerianCourseSelect } from "@/app/components/ui/NigerianCourseSelect";
 import { trackEvent } from "@/app/lib/analytics";
 
 interface StudentGoalWizardProps {
@@ -262,59 +264,34 @@ export default function StudentGoalWizard({
               {/* STEP 2: University & Course */}
               {step === 2 && (
                 <div className="space-y-5">
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                      <svg className="h-3.5 w-3.5 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                        <polyline points="9 22 9 12 15 12 15 22" />
-                      </svg>
-                      <span>Target University / Polytechnic</span>
-                    </label>
-                    <select
-                      value={dreamSchool}
-                      onChange={(e) => setDreamSchool(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#0E172A] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:border-blue-600 focus:outline-none"
-                    >
-                      {POPULAR_UNIVERSITIES.map((uni) => (
-                        <option key={uni} value={uni}>
-                          {uni}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <NigerianInstitutionSelect
+                    id="wizard-institution"
+                    label="Target University / Polytechnic (312+ Accredited Schools)"
+                    value={dreamSchool}
+                    onChange={(val) => setDreamSchool(val)}
+                  />
 
-                  <div>
-                    <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                      <svg className="h-3.5 w-3.5 text-cyan-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" />
-                        <circle cx="12" cy="12" r="6" />
-                        <circle cx="12" cy="12" r="2" />
-                      </svg>
-                      <span>Target Discipline / Course of Study</span>
-                    </label>
-                    <select
-                      value={targetCourse}
-                      onChange={(e) => setTargetCourse(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#0E172A] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:border-blue-600 focus:outline-none"
-                    >
-                      {POPULAR_COURSES.map((course) => (
-                        <option key={course} value={course}>
-                          {course}
-                        </option>
-                      ))}
-                      <option value="Other">Other / Custom Course</option>
-                    </select>
+                  <NigerianCourseSelect
+                    id="wizard-course"
+                    label="Target Discipline / Course of Study (100+ Accredited Degree Programmes)"
+                    value={targetCourse}
+                    onChange={(val) => setTargetCourse(val)}
+                  />
 
-                    {targetCourse === "Other" && (
+                  {targetCourse === "Other" && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                        Enter Custom Degree Programme Name:
+                      </label>
                       <input
                         type="text"
                         value={customCourse}
                         onChange={(e) => setCustomCourse(e.target.value)}
-                        placeholder="Enter course name (e.g. Mechatronics, Cyber Security)"
-                        className="mt-2 w-full rounded-xl border border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#0E172A] px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:border-blue-600 focus:outline-none"
+                        placeholder="e.g. Mechatronics, Cyber Security, Marine Biology"
+                        className="w-full rounded-xl border border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#0E172A] px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:border-blue-600 focus:outline-none"
                       />
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
 

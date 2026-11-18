@@ -26,6 +26,8 @@ import {
   type StudentProfileData,
 } from "../lib/studentProfile";
 import { StudentAvatar } from "../components/ui/StudentAvatar";
+import { NigerianInstitutionSelect } from "../components/ui/NigerianInstitutionSelect";
+import { NigerianCourseSelect } from "../components/ui/NigerianCourseSelect";
 
 function ProfileIcon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
   switch (name) {
@@ -607,16 +609,17 @@ export default function LearnerProfilePage() {
                 <ProfileIcon name="school" className="h-4 w-4 text-blue-600 dark:text-cyan-400 inline mr-1.5" />Aspiring Course of Study / Career Focus
               </label>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                What programme are you preparing for?
+                Choose from over 100+ accredited degree programmes or type a custom field of study.
               </p>
-              <input
-                id="target-course-input"
-                type="text"
-                value={targetCourse}
-                onChange={(e) => setTargetCourse(e.target.value)}
-                placeholder="e.g. Medicine & Surgery, Computer Science, Law..."
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
+
+              <div className="mt-3">
+                <NigerianCourseSelect
+                  id="profile-course-select"
+                  value={targetCourse}
+                  onChange={(val) => setTargetCourse(val)}
+                  placeholder="Select or search accredited programme..."
+                />
+              </div>
 
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {POPULAR_COURSES.map((course) => (
@@ -642,16 +645,17 @@ export default function LearnerProfilePage() {
                 <ProfileIcon name="school" className="h-4 w-4 text-indigo-600 dark:text-indigo-400 inline mr-1.5" />Dream Institution / Target University
               </label>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                Which higher institution do you aim to gain admission to?
+                Choose from 312+ universities and 200+ polytechnics across Nigeria.
               </p>
-              <input
-                id="dream-school-input"
-                type="text"
-                value={dreamSchool}
-                onChange={(e) => setDreamSchool(e.target.value)}
-                placeholder="e.g. University of Lagos (UNILAG), UI, Covenant University..."
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
+
+              <div className="mt-3">
+                <NigerianInstitutionSelect
+                  id="profile-institution-select"
+                  value={dreamSchool}
+                  onChange={(val) => setDreamSchool(val)}
+                  placeholder="Select or search institution..."
+                />
+              </div>
 
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {POPULAR_UNIVERSITIES.map((uni) => (

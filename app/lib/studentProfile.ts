@@ -122,44 +122,13 @@ export const CURATED_AVATARS: CuratedAvatar[] = [
   },
 ];
 
-export const POPULAR_UNIVERSITIES = [
-  "University of Lagos (UNILAG)",
-  "University of Ibadan (UI)",
-  "Obafemi Awolowo University (OAU)",
-  "Ahmadu Bello University (ABU Zaria)",
-  "University of Nigeria, Nsukka (UNN)",
-  "Covenant University",
-  "Federal University of Technology, Akure (FUTA)",
-  "University of Ilorin (UNILORIN)",
-  "University of Benin (UNIBEN)",
-  "Federal University of Technology, Minna (FUTMINNA)",
-  "Babcock University",
-  "Landmark University",
-  "Lagos State University (LASU)",
-  "Bowen University",
-  "Afe Babalola University (ABUAD)",
-  "International / Ivy League / UK",
-];
+import {
+  POPULAR_UNIVERSITIES_LIST,
+  POPULAR_COURSES_LIST,
+} from "./nigerianInstitutions";
 
-export const POPULAR_COURSES = [
-  "Medicine & Surgery (MBBS)",
-  "Computer Science & AI",
-  "Software Engineering",
-  "Nursing Science",
-  "Law (LL.B)",
-  "Mechanical Engineering",
-  "Electrical / Electronics Engineering",
-  "Pharmacy (Pharm.D)",
-  "Accounting & Finance",
-  "Economics",
-  "Medical Laboratory Science",
-  "Dentistry & Dental Surgery",
-  "Civil Engineering",
-  "Cybersecurity & Data Science",
-  "Architecture",
-  "Biochemistry",
-  "Mass Communication",
-];
+export const POPULAR_UNIVERSITIES = POPULAR_UNIVERSITIES_LIST;
+export const POPULAR_COURSES = POPULAR_COURSES_LIST;
 
 export const ACADEMIC_INTERESTS_LIST = [
   { id: "ai", label: "AI & Robotics", emoji: "🤖" },
