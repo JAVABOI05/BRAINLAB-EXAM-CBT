@@ -50,8 +50,10 @@ export default function AdminPinGuard({
     let active = true;
 
     async function init() {
-      // Fast check local storage
-      if (isAdminPinLocallyVerified()) {
+      const resetReturn = new URLSearchParams(window.location.search).get("adminPinReset");
+
+      // Keep the fast path for ordinary visits, but never bypass the reset return after OAuth.
+      if (isAdminPinLocallyVerified() && resetReturn !== "1") {
         if (active) {
           setIsVerified(true);
           setChecking(false);
@@ -68,7 +70,6 @@ export default function AdminPinGuard({
       setCanManage(!!status.canManage);
       setAdminEmail(status.adminEmail || "");
 
-      const resetReturn = new URLSearchParams(window.location.search).get("adminPinReset");
       if (resetReturn === "1") {
         setMode("reset");
         setGoogleReauthenticated(true);
