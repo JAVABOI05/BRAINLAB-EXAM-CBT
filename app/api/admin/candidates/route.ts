@@ -6,7 +6,15 @@ export const dynamic = "force-dynamic";
 
 type JsonRecord = Record<string, unknown>;
 type SubscriptionRow = { user_id: string | null; plan_id: string | null; status: string | null; current_period_end: string | null; current_period_start: string | null; payment_provider: string | null; price_paid_kobo: number | null };
-type GamificationRow = { user_id: string | null; xp: number | null; streak_days: number | null; current_level: number | null };
+type GamificationRow = {
+  user_id: string | null;
+  lifetime_xp?: number | null;
+  xp?: number | null;
+  current_streak_days?: number | null;
+  streak_days?: number | null;
+  current_level?: number | null;
+  last_activity_date?: string | null;
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,10 +63,10 @@ export async function GET(request: NextRequest) {
       if (s.user_id) subMap.set(s.user_id, s);
     });
 
-    // Fetch gamification points
+    // Fetch gamification profiles (authoritative lifetime XP, streaks, and activity dates)
     const { data: gamificationRows } = await supabase
       .from("user_gamification_profiles")
-      .select("user_id, xp, streak_days, current_level");
+      .select("user_id, lifetime_xp, current_streak_days, current_level, last_activity_date");
     const gamificationMap = new Map<string, GamificationRow>();
     (gamificationRows || []).forEach((g) => {
       if (g.user_id) gamificationMap.set(g.user_id, g);
@@ -79,11 +87,14 @@ export async function GET(request: NextRequest) {
         meta.is_suspended === true ||
         (u.banned_until && new Date(u.banned_until) > new Date());
       const g = gamificationMap.get(u.id);
+      
+      const lastSignInMs = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
+      const lastActivityMs = g?.last_activity_date ? new Date(g.last_activity_date).getTime() : 0;
+      const latestActivityMs = Math.max(lastSignInMs, lastActivityMs);
+
       const isAtRisk =
         !isSuspended &&
-        ((g?.streak_days || 0) === 0 ||
-          !u.last_sign_in_at ||
-          new Date(u.last_sign_in_at).getTime() < Date.now() - 14 * 86400 * 1000);
+        (latestActivityMs === 0 || latestActivityMs < Date.now() - 14 * 86400 * 1000);
 
       if (isSuspended) suspendedCount++;
       if (!u.email_confirmed_at) unconfirmedCount++;
@@ -118,11 +129,13 @@ export async function GET(request: NextRequest) {
           (u.banned_until && new Date(u.banned_until) > new Date());
 
         const g = gamificationMap.get(u.id);
+        const lastSignInMs = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
+        const lastActivityMs = g?.last_activity_date ? new Date(g.last_activity_date).getTime() : 0;
+        const latestActivityMs = Math.max(lastSignInMs, lastActivityMs);
+
         const isAtRisk =
           !isSuspended &&
-          ((g?.streak_days || 0) === 0 ||
-            !u.last_sign_in_at ||
-            new Date(u.last_sign_in_at).getTime() < Date.now() - 14 * 86400 * 1000);
+          (latestActivityMs === 0 || latestActivityMs < Date.now() - 14 * 86400 * 1000);
 
         // Status matching
         if (statusFilter === "active" && isSuspended) return false;
@@ -145,6 +158,14 @@ export async function GET(request: NextRequest) {
           meta.is_suspended === true ||
           (u.banned_until && new Date(u.banned_until) > new Date());
 
+        const lastSignInMs = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
+        const lastActivityMs = gamification?.last_activity_date ? new Date(gamification.last_activity_date).getTime() : 0;
+        const latestActivityMs = Math.max(lastSignInMs, lastActivityMs);
+        const lastSeenAt = latestActivityMs > 0 ? new Date(latestActivityMs).toISOString() : null;
+
+        const effectiveXp = gamification?.lifetime_xp ?? gamification?.xp ?? 0;
+        const effectiveStreak = gamification?.current_streak_days ?? gamification?.streak_days ?? 0;
+
         return {
           id: u.id,
           email: u.email,
@@ -158,13 +179,13 @@ export async function GET(request: NextRequest) {
           stateOfOrigin: (meta.state as string) || (meta.state_of_origin as string) || "N/A",
           createdAt: u.created_at,
           lastSignInAt: u.last_sign_in_at || null,
+          lastActivityDate: gamification?.last_activity_date || null,
+          lastSeenAt,
           emailConfirmed: Boolean(u.email_confirmed_at),
           isSuspended: Boolean(isSuspended),
           isAtRisk: Boolean(
             !isSuspended &&
-            ((gamification?.streak_days || 0) === 0 ||
-              !u.last_sign_in_at ||
-              new Date(u.last_sign_in_at).getTime() < Date.now() - 14 * 86400 * 1000)
+            (latestActivityMs === 0 || latestActivityMs < Date.now() - 14 * 86400 * 1000)
           ),
           bannedUntil: u.banned_until || null,
           subscription: {
@@ -174,8 +195,8 @@ export async function GET(request: NextRequest) {
             provider: sub?.payment_provider || "N/A",
           },
           gamification: {
-            xp: gamification?.xp || 0,
-            streakDays: gamification?.streak_days || 0,
+            xp: effectiveXp,
+            streakDays: effectiveStreak,
             level: gamification?.current_level || 1,
           },
         };

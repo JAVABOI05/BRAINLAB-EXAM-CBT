@@ -415,6 +415,17 @@ export default function LearnerSettingsClient() {
   async function signOut() {
     setSigningOut(true);
     try {
+      localStorage.removeItem("candidate");
+      localStorage.removeItem("candidate_subjects");
+      localStorage.removeItem("bl_student_xp_cache");
+      localStorage.removeItem("brainlab_streak_count");
+      localStorage.removeItem("brainlab_last_active_date");
+      localStorage.removeItem("brainlab_student_goals_set");
+      localStorage.removeItem("brainlab_goal_wizard_dismissed");
+      window.dispatchEvent(new Event("brainlab-local-storage"));
+      window.dispatchEvent(new CustomEvent("brainlab_xp_awarded", { detail: null }));
+    } catch {}
+    try {
       await fetch("/api/auth/operator-gate", { method: "DELETE", cache: "no-store" });
     } catch {
       // Continue with account sign-out if the optional operator cookie cannot be cleared.

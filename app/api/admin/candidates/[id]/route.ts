@@ -62,9 +62,21 @@ export async function GET(
       .order("created_at", { ascending: false })
       .limit(15);
 
+    // 6. Fetch gamification profile
+    const { data: gamification } = await supabase
+      .from("user_gamification_profiles")
+      .select("lifetime_xp, current_level, level_name, current_streak_days, longest_streak_days, last_activity_date")
+      .eq("user_id", candidateId)
+      .maybeSingle();
+
     const isSuspended =
       meta.is_suspended === true ||
       (u.banned_until && new Date(u.banned_until) > new Date());
+
+    const lastSignInMs = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
+    const lastActivityMs = gamification?.last_activity_date ? new Date(gamification.last_activity_date).getTime() : 0;
+    const latestActivityMs = Math.max(lastSignInMs, lastActivityMs);
+    const lastSeenAt = latestActivityMs > 0 ? new Date(latestActivityMs).toISOString() : null;
 
     return NextResponse.json({
       ok: true,
@@ -81,10 +93,19 @@ export async function GET(
         stateOfOrigin: meta.state || meta.state_of_origin || "N/A",
         createdAt: u.created_at,
         lastSignInAt: u.last_sign_in_at || null,
+        lastActivityDate: gamification?.last_activity_date || null,
+        lastSeenAt,
         emailConfirmed: Boolean(u.email_confirmed_at),
         isSuspended: Boolean(isSuspended),
         bannedUntil: u.banned_until || null,
         subscription: sub || null,
+        gamification: {
+          xp: gamification?.lifetime_xp || 0,
+          level: gamification?.current_level || 1,
+          levelName: gamification?.level_name || "Beginner",
+          streakDays: gamification?.current_streak_days || 0,
+          longestStreakDays: gamification?.longest_streak_days || 0,
+        },
         transactions: transactions || [],
         entitlements: entitlements || [],
         sessions: sessions || [],

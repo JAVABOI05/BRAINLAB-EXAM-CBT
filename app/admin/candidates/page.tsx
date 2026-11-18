@@ -18,6 +18,8 @@ interface CandidateSummary {
   stateOfOrigin: string;
   createdAt: string;
   lastSignInAt: string | null;
+  lastActivityDate?: string | null;
+  lastSeenAt?: string | null;
   emailConfirmed: boolean;
   isSuspended: boolean;
   isAtRisk?: boolean;
@@ -35,6 +37,8 @@ interface CandidateSummary {
     xp: number;
     streakDays: number;
     level: number;
+    levelName?: string;
+    longestStreakDays?: number;
   };
 }
 
@@ -232,48 +236,48 @@ export default function CandidatesAdminPage() {
     document.body.removeChild(link);
   }
 
-  function formatLastSeen(lastSignInAt: string | null) {
-    if (!lastSignInAt) {
+  function formatLastSeen(lastSeenAt: string | null | undefined) {
+    if (!lastSeenAt) {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-slate-300"></span>Never
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>Never
         </span>
       );
     }
-    const date = new Date(lastSignInAt);
+    const date = new Date(lastSeenAt);
     const diffMs = Date.now() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays <= 0) {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Today
         </span>
       );
     }
     if (diffDays === 1) {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
           Yesterday
         </span>
       );
     }
     if (diffDays < 7) {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
           {diffDays}d ago
         </span>
       );
     }
     if (diffDays < 14) {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">
           {diffDays}d ago
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-0.5 text-[10px] font-bold text-rose-800">
         ⚠️ {diffDays}d ago
       </span>
     );
@@ -684,7 +688,7 @@ export default function CandidatesAdminPage() {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        {formatLastSeen(cand.lastSignInAt)}
+                        {formatLastSeen(cand.lastSeenAt || cand.lastSignInAt)}
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-500">
@@ -911,7 +915,40 @@ export default function CandidatesAdminPage() {
                             : "Never Logged In"}
                         </p>
                       </div>
+                      <div>
+                        <p className="text-slate-400 font-medium">Learning Activity</p>
+                        <p className="font-bold text-slate-800 mt-0.5">
+                          {candidateDetail.lastActivityDate
+                            ? new Date(candidateDetail.lastActivityDate).toLocaleDateString()
+                            : "No Drills Logged"}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Gamification & Academic Momentum */}
+                    {candidateDetail.gamification && (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 grid grid-cols-3 gap-3 text-center">
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider">Lifetime XP</p>
+                          <p className="text-base font-extrabold text-amber-950 mt-0.5">
+                            {candidateDetail.gamification.xp.toLocaleString()} XP
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider">Academic Rank</p>
+                          <p className="text-xs font-extrabold text-amber-950 mt-1">
+                            Lvl {candidateDetail.gamification.level} &bull; {candidateDetail.gamification.levelName || "Beginner"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wider">Active Streak</p>
+                          <p className="text-base font-extrabold text-amber-950 mt-0.5 flex items-center justify-center gap-1">
+                            <span>🔥</span>
+                            <span>{candidateDetail.gamification.streakDays}d</span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Active 4-Subject Combination if present */}
                     {candidateDetail.selectedSubjects && candidateDetail.selectedSubjects.length > 0 && (

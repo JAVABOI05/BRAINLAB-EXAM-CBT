@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { calculateLevelFromXp } from "../gamification";
 import type {
   LearningQuest,
   StudentDailyFeed,
@@ -57,69 +58,247 @@ export async function listDailyQuests(
   }
 }
 
+export interface ClaimQuestRewardResult {
+  ok: boolean;
+  xp_earned?: number;
+  lifetime_xp?: number;
+  current_level?: number;
+  level_name?: string;
+  leveled_up?: boolean;
+  error?: string;
+  message?: string;
+}
+
 /**
  * Claim completed quest reward XP and advance student streak.
+ * Enforces genuine completion, concurrency safety, and database-level idempotency.
  */
 export async function claimQuestReward(
   questId: string,
   userId: string,
   client: SupabaseClient = supabase
-): Promise<{ ok: boolean; xp_earned?: number; error?: string }> {
+): Promise<ClaimQuestRewardResult> {
+  if (!questId || !userId) {
+    return { ok: false, error: "invalid_parameters", message: "Quest ID and User ID are required." };
+  }
+
   try {
+    // 1. Try atomic PostgreSQL RPC first
+    const { data: rpcData, error: rpcErr } = await client.rpc(
+      "claim_quest_reward",
+      { p_quest_id: questId, p_user_id: userId }
+    );
+
+    if (!rpcErr && rpcData && typeof rpcData === "object") {
+      const typed = rpcData as ClaimQuestRewardResult;
+      if (typed.ok) {
+        return {
+          ok: true,
+          xp_earned: typed.xp_earned,
+          lifetime_xp: typed.lifetime_xp,
+          current_level: typed.current_level,
+          level_name: typed.level_name,
+          leveled_up: typed.leveled_up,
+        };
+      }
+      return {
+        ok: false,
+        error: typed.error || "claim_rejected",
+        message: typed.message || "Quest reward could not be claimed.",
+      };
+    }
+
+    // 2. Strict Service Fallback (enforces the exact same invariants)
+    const now = new Date().toISOString();
+    const todayStr = now.split("T")[0];
+
+    // Fetch quest
     const { data: quest, error: qErr } = await client
       .from("learning_quests")
-      .select("xp_reward, target_count")
+      .select("id, title, xp_reward, target_count, is_active, expires_at")
       .eq("id", questId)
-      .single();
+      .maybeSingle();
 
     if (qErr || !quest) {
-      return { ok: false, error: "quest_not_found" };
+      return { ok: false, error: "quest_not_found", message: "Quest not found." };
     }
 
-    const now = new Date().toISOString();
-    const { error: upsertErr } = await client
+    if (!quest.is_active) {
+      return { ok: false, error: "quest_inactive", message: "This quest is no longer active." };
+    }
+
+    if (quest.expires_at && new Date(quest.expires_at).getTime() <= Date.now()) {
+      return { ok: false, error: "quest_expired", message: "This quest has expired." };
+    }
+
+    // Fetch current progress
+    const { data: prog, error: pErr } = await client
       .from("user_quest_progress")
-      .upsert(
-        {
-          user_id: userId,
-          quest_id: questId,
-          current_count: quest.target_count,
-          is_completed: true,
-          completed_at: now,
-          is_claimed: true,
-          claimed_at: now,
-        },
-        { onConflict: "user_id,quest_id" }
-      );
+      .select("id, current_count, is_completed, is_claimed, completed_at")
+      .eq("user_id", userId)
+      .eq("quest_id", questId)
+      .maybeSingle();
 
-    if (upsertErr) {
-      return { ok: false, error: upsertErr.message };
+    if (pErr) {
+      return { ok: false, error: "progress_fetch_failed", message: pErr.message };
     }
 
-    // Increment lifetime_xp in user_gamification_profiles if profile exists
+    if (!prog) {
+      return {
+        ok: false,
+        error: "quest_incomplete",
+        message: "No progress found for this quest. Target has not been reached.",
+      };
+    }
+
+    if (prog.is_claimed) {
+      return {
+        ok: false,
+        error: "already_claimed",
+        message: "This quest reward has already been claimed.",
+      };
+    }
+
+    const currentCount = prog.current_count || 0;
+    const targetCount = quest.target_count || 1;
+    const isCompleted = Boolean(prog.is_completed) || currentCount >= targetCount;
+
+    if (!isCompleted) {
+      return {
+        ok: false,
+        error: "quest_incomplete",
+        message: `Quest target not reached (${currentCount}/${targetCount}).`,
+      };
+    }
+
+    // Check ledger idempotency
+    const idempotencyKey = `quest_claim:${userId}:${questId}`;
+    try {
+      const { data: ledgerEntry } = await client
+        .from("user_xp_ledger")
+        .select("id")
+        .eq("idempotency_key", idempotencyKey)
+        .maybeSingle();
+
+      if (ledgerEntry) {
+        // Mark progress claimed locally
+        await client
+          .from("user_quest_progress")
+          .update({ is_claimed: true, claimed_at: now, updated_at: now })
+          .eq("id", prog.id);
+
+        return {
+          ok: false,
+          error: "already_claimed",
+          message: "XP reward has already been credited for this quest.",
+        };
+      }
+    } catch {
+      // ledger table optional in fallback environments
+    }
+
+    // Mark quest claimed
+    const { error: markErr } = await client
+      .from("user_quest_progress")
+      .update({
+        is_completed: true,
+        completed_at: prog.completed_at || now,
+        is_claimed: true,
+        claimed_at: now,
+        updated_at: now,
+      })
+      .eq("id", prog.id);
+
+    if (markErr) {
+      return { ok: false, error: "claim_update_failed", message: markErr.message };
+    }
+
+    // Update or insert XP ledger record
+    try {
+      await client.from("user_xp_ledger").insert({
+        user_id: userId,
+        amount: quest.xp_reward,
+        activity_type: "quest_complete",
+        idempotency_key: idempotencyKey,
+        description: `Daily Quest Completed: ${quest.title}`,
+        metadata: { quest_id: questId, claimed_at: now },
+      });
+    } catch {
+      // Non-fatal if table not installed
+    }
+
+    // Update or initialize user_gamification_profiles
+    let updatedLifetimeXp = quest.xp_reward;
+    let newLevel = 1;
+    let newLevelName = "Beginner";
+    let leveledUp = false;
+
     try {
       const { data: profile } = await client
         .from("user_gamification_profiles")
-        .select("lifetime_xp")
+        .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
       if (profile) {
+        const oldXp = profile.lifetime_xp || 0;
+        updatedLifetimeXp = oldXp + (quest.xp_reward || 0);
+        const calc = calculateLevelFromXp(updatedLifetimeXp);
+        newLevel = calc.level;
+        newLevelName = calc.name;
+        leveledUp = newLevel > (profile.current_level || 1);
+
         await client
           .from("user_gamification_profiles")
           .update({
-            lifetime_xp: (profile.lifetime_xp || 0) + (quest.xp_reward || 0),
+            lifetime_xp: updatedLifetimeXp,
+            current_level: newLevel,
+            level_name: newLevelName,
+            last_activity_date: todayStr,
             updated_at: now,
           })
           .eq("user_id", userId);
+      } else {
+        const calc = calculateLevelFromXp(updatedLifetimeXp);
+        newLevel = calc.level;
+        newLevelName = calc.name;
+
+        await client
+          .from("user_gamification_profiles")
+          .insert({
+            user_id: userId,
+            lifetime_xp: updatedLifetimeXp,
+            current_level: newLevel,
+            level_name: newLevelName,
+            current_streak_days: 1,
+            longest_streak_days: 1,
+            last_activity_date: todayStr,
+            updated_at: now,
+          });
       }
-    } catch {
-      // Non-blocking for quest claim status
+    } catch (profileErr: unknown) {
+      // If profile update fails, do not report false success
+      return {
+        ok: false,
+        error: "profile_update_failed",
+        message: profileErr instanceof Error ? profileErr.message : "Failed to update XP profile.",
+      };
     }
 
-    return { ok: true, xp_earned: quest.xp_reward };
+    return {
+      ok: true,
+      xp_earned: quest.xp_reward,
+      lifetime_xp: updatedLifetimeXp,
+      current_level: newLevel,
+      level_name: newLevelName,
+      leveled_up: leveledUp,
+    };
   } catch (err: unknown) {
-    return { ok: false, error: err instanceof Error ? err.message : "unknown_error" };
+    return {
+      ok: false,
+      error: "server_error",
+      message: err instanceof Error ? err.message : "Unknown error processing claim.",
+    };
   }
 }
 

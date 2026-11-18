@@ -156,6 +156,13 @@ function SidebarIcon({ name, className = "h-4 w-4" }: { name: string; className?
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
         </svg>
       );
+    case "pin":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="12" y1="17" x2="12" y2="22" />
+          <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24Z" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -227,6 +234,8 @@ export interface ClassroomSidebarProps {
   onLowerStudentHand?: (studentId: string) => void;
   onToggleStudentMute?: (studentId: string) => void;
   onCopyClassLink?: () => void;
+  onMuteAllStudents?: () => void;
+  onPinMessage?: (msg: ClassroomMessage) => void;
 }
 
 
@@ -282,6 +291,8 @@ export default function ClassroomSidebar({
   onLowerStudentHand,
   onToggleStudentMute,
   onCopyClassLink,
+  onMuteAllStudents,
+  onPinMessage,
 }: ClassroomSidebarProps) {
   const currentUserName =
     currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || "Me";
@@ -421,6 +432,16 @@ export default function ClassroomSidebar({
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-slate-500">{m.timestamp}</span>
+                    {isTutorOrModerator && onPinMessage && (
+                      <button
+                        type="button"
+                        onClick={() => onPinMessage(m)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-500 hover:text-amber-400 transition rounded"
+                        title="Pin this question or note to the big screen stage"
+                      >
+                        <SidebarIcon name="pin" className="h-3 w-3" />
+                      </button>
+                    )}
                     {isTutorOrModerator && onDeleteMessage && (
                       <button
                         type="button"
@@ -999,9 +1020,26 @@ export default function ClassroomSidebar({
                   <SidebarIcon name="cap" className="h-3.5 w-3.5 text-blue-300" />
                   <span>Learners in Class</span>
                 </h4>
-                <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">
-                  {studentsAndLearners.length}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {isTutorOrModerator && studentsAndLearners.length > 0 && onMuteAllStudents && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("Mute microphones for all learners?")) {
+                          onMuteAllStudents();
+                        }
+                      }}
+                      className="rounded-lg border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 px-2 py-0.5 text-[10px] font-bold text-rose-300 transition flex items-center gap-1 active-press"
+                      title="Mute microphones for all students in class"
+                    >
+                      <SidebarIcon name="mute" className="h-3 w-3" />
+                      <span>Mute All</span>
+                    </button>
+                  )}
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">
+                    {studentsAndLearners.length}
+                  </span>
+                </div>
               </div>
               <div className="space-y-2">
                 {studentsAndLearners.length === 0 ? (

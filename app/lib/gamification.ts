@@ -187,6 +187,24 @@ function saveStoredLocalGamification(profile: UserGamificationProfile): void {
 }
 
 /**
+ * Purge candidate-specific local caches on user sign-out to prevent data bleed on shared devices.
+ */
+export function clearStoredLocalGamification(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("bl_student_xp_cache");
+    localStorage.removeItem("brainlab_streak_count");
+    localStorage.removeItem("brainlab_last_active_date");
+    localStorage.removeItem("candidate");
+    localStorage.removeItem("candidate_subjects");
+    localStorage.removeItem("brainlab_student_goals_set");
+    localStorage.removeItem("brainlab_goal_wizard_dismissed");
+    window.dispatchEvent(new Event("brainlab-local-storage"));
+    window.dispatchEvent(new CustomEvent("brainlab_xp_awarded", { detail: null }));
+  } catch {}
+}
+
+/**
  * Fetch a user's full gamification stats (XP, level, streaks, counts).
  * Resilient: Falls back to local storage cache or initializes a starter candidate profile.
  */

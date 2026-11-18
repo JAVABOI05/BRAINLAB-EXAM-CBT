@@ -15,8 +15,11 @@ import path from "path";
 import {
   generateCertificatePdf,
   getAcademicStanding,
+  formatCertificateVerificationUrl,
+  CANONICAL_VERIFY_DOMAIN,
   type CertificatePdfData,
 } from "../app/lib/certificatePdfService";
+import { generateQrMatrix, generateQrSvgString } from "../app/lib/qrCode";
 
 let passed = 0;
 let failed = 0;
@@ -120,15 +123,37 @@ const headerMagic = String.fromCharCode(...uint8.slice(0, 5));
 assert(headerMagic.startsWith("%PDF-"), `PDF contains valid header magic identifier: ${headerMagic}`);
 
 // ---------------------------------------------------------------------------
+// 3.B. GENUINE SCANNABLE QR CODE ENGINE & CANONICAL DOMAIN
+// ---------------------------------------------------------------------------
+console.log("\n3.B. GENUINE SCANNABLE QR CODE ENGINE & CANONICAL DOMAIN");
+assert(CANONICAL_VERIFY_DOMAIN === "https://www.brainlabacademy.com.ng", "Canonical verify domain is https://www.brainlabacademy.com.ng");
+
+const testCertNum = "BL-MOCK-2026-A8K92F";
+const testVerifyUrl = formatCertificateVerificationUrl(testCertNum);
+assert(testVerifyUrl === `https://www.brainlabacademy.com.ng/verify/${testCertNum}`, "formatCertificateVerificationUrl formats canonical link");
+
+const qrMatrix = generateQrMatrix(testVerifyUrl, "M");
+assert(qrMatrix.size >= 21, `QR Matrix has standard dimensions (${qrMatrix.size}x${qrMatrix.size})`);
+assert(qrMatrix.isDark(0, 0) === true, "Top-left Finder pattern dark module verified");
+assert(qrMatrix.isDark(0, qrMatrix.size - 1) === true, "Top-right Finder pattern dark module verified");
+assert(qrMatrix.isDark(qrMatrix.size - 1, 0) === true, "Bottom-left Finder pattern dark module verified");
+
+const qrSvg = generateQrSvgString(testVerifyUrl, { size: 96 });
+assert(qrSvg.includes("<svg") && qrSvg.includes("</svg>"), "generateQrSvgString produces valid SVG container");
+assert(qrSvg.includes("#012153"), "QR SVG uses official BrainLab deep navy");
+
+// ---------------------------------------------------------------------------
 // 4. API ENDPOINTS INTEGRITY
 // ---------------------------------------------------------------------------
 console.log("\n4. API ENDPOINTS INTEGRITY");
 const generateRoutePath = path.join(process.cwd(), "app/api/certificates/generate/route.ts");
 const downloadRoutePath = path.join(process.cwd(), "app/api/certificates/download/[id]/route.ts");
+const verifyRoutePath = path.join(process.cwd(), "app/api/certificates/verify/[id]/route.ts");
 const historyRoutePath = path.join(process.cwd(), "app/api/student/exam-history/route.ts");
 
 assert(fs.existsSync(generateRoutePath), "app/api/certificates/generate/route.ts exists");
 assert(fs.existsSync(downloadRoutePath), "app/api/certificates/download/[id]/route.ts exists");
+assert(fs.existsSync(verifyRoutePath), "app/api/certificates/verify/[id]/route.ts exists");
 assert(fs.existsSync(historyRoutePath), "app/api/student/exam-history/route.ts exists");
 
 if (fs.existsSync(generateRoutePath)) {
@@ -185,6 +210,9 @@ if (fs.existsSync(verifyDetailPage)) {
   const code = fs.readFileSync(verifyDetailPage, "utf8");
   assert(code.includes("Download Certificate PDF"), "Public verification page provides direct PDF download button");
   assert(code.includes("downloadCertificatePdf"), "Public verification page utilizes downloadCertificatePdf");
+  assert(!code.includes("vercel.app"), "Public verification page does not expose outdated vercel.app hostname");
+  assert(code.includes("https://www.brainlabacademy.com.ng/verify"), "Public verification page references canonical domain");
+  assert(code.includes("VerificationQRCode"), "Public verification page renders scannable QR code");
 }
 
 if (fs.existsSync(navShell)) {

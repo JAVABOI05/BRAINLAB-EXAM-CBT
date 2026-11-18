@@ -36,6 +36,11 @@ export default function DailyLearningFeedWidget() {
   const [feed, setFeed] = useState<StudentDailyFeed | null>(null);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+    questId?: string;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -45,54 +50,43 @@ export default function DailyLearningFeedWidget() {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        if (!session?.user || !active) return;
 
-        const res = await fetch("/api/dashboard/daily-feed");
-        if (!res.ok) throw new Error("Feed route failed");
-        const json = await res.json();
-        if (active) setFeed(json);
-      } catch {
-        // Honest defensive default: mock local state if endpoint not yet deployed
-        if (active) {
-          setFeed({
-            user_id: "me",
-            streak_days: 3,
-            total_xp: 350,
-            today_assessments: [
-              {
-                id: "cbt-quick-drill",
-                title: "Daily UTME Speed Drill",
-                subject: "Mathematics & Physics",
-                duration_minutes: 15,
-                question_count: 10,
-              },
-            ],
-            active_quests: [
-              {
-                id: "quest-1",
-                title: "Solve 5 Practice Questions",
-                description: "Complete any topic test in Learning Hub or CBT Practice.",
-                xp_reward: 50,
-                quest_type: "practice_count",
-                target_count: 5,
-                current_count: 5,
-                is_completed: true,
-                is_claimed: false,
-              },
-              {
-                id: "quest-2",
-                title: "Review 1 Socratic Correction",
-                description: "Inspect examiner traps on a previously missed question.",
-                xp_reward: 30,
-                quest_type: "review_correction",
-                target_count: 1,
-                current_count: 0,
-                is_completed: false,
-                is_claimed: false,
-              },
-            ],
-          });
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
         }
+
+        const res = await fetch("/api/dashboard/daily-feed", { headers });
+        if (res.ok) {
+          const json = await res.json();
+          if (active && json) {
+            setFeed({
+              user_id: json.user_id || session?.user?.id || "guest",
+              streak_days: json.streak_days ?? 0,
+              total_xp: json.total_xp ?? 0,
+              today_assessments: json.today_assessments || [],
+              active_quests: json.active_quests || [],
+            });
+            return;
+          }
+        }
+
+        // Fallback to community quests endpoint if feed endpoint returned non-200
+        const questsRes = await fetch("/api/community/quests", { headers });
+        if (questsRes.ok) {
+          const qJson = await questsRes.json();
+          if (active && qJson.ok && Array.isArray(qJson.data)) {
+            setFeed({
+              user_id: session?.user?.id || "guest",
+              streak_days: 0,
+              total_xp: 0,
+              today_assessments: [],
+              active_quests: qJson.data,
+            });
+          }
+        }
+      } catch {
+        // Leave feed empty/null or handle gracefully
       } finally {
         if (active) setLoading(false);
       }
@@ -100,40 +94,115 @@ export default function DailyLearningFeedWidget() {
 
     void loadFeed();
 
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  async function handleClaimReward(questId: string) {
-    setClaimingId(questId);
-    try {
-      const res = await fetch("/api/gamification/quests/claim", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quest_id: questId }),
-      });
-      if (res.ok) {
+    // Listen to external XP updates to keep widget count in sync
+    const handleXpUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ lifetime_xp?: number; current_streak_days?: number }>;
+      if (customEvent.detail) {
         setFeed((prev) => {
           if (!prev) return null;
           return {
             ...prev,
-            active_quests: prev.active_quests.map((q) =>
-              q.id === questId ? { ...q, is_claimed: true } : q
-            ),
+            total_xp: customEvent.detail.lifetime_xp ?? prev.total_xp,
+            streak_days: customEvent.detail.current_streak_days ?? prev.streak_days,
           };
         });
       }
+    };
+
+    window.addEventListener("brainlab_xp_awarded", handleXpUpdate);
+
+    return () => {
+      active = false;
+      window.removeEventListener("brainlab_xp_awarded", handleXpUpdate);
+    };
+  }, []);
+
+  async function handleClaimReward(questId: string) {
+    if (claimingId) return; // Prevent concurrent claims
+    setClaimingId(questId);
+    setFeedback(null);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch("/api/gamification/quests/claim", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ quest_id: questId }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.ok) {
+        const earnedXp = Number(data.xp_earned) || 0;
+        const newLifetimeXp = data.lifetime_xp != null ? Number(data.lifetime_xp) : undefined;
+
+        // Update local feed state
+        setFeed((prev) => {
+          if (!prev) return null;
+          const updatedXp = newLifetimeXp !== undefined ? newLifetimeXp : prev.total_xp + earnedXp;
+          return {
+            ...prev,
+            total_xp: updatedXp,
+            active_quests: prev.active_quests.map((q) =>
+              q.id === questId ? { ...q, is_claimed: true, is_completed: true } : q
+            ),
+          };
+        });
+
+        // Synchronize global application gamification state
+        if (typeof window !== "undefined") {
+          try {
+            const raw = localStorage.getItem("bl_student_xp_cache");
+            const cached = raw ? JSON.parse(raw) : {};
+            const finalXp = newLifetimeXp !== undefined ? newLifetimeXp : ((cached.lifetime_xp || 0) + earnedXp);
+            const updatedProfile = {
+              ...cached,
+              lifetime_xp: finalXp,
+              current_level: data.current_level ?? cached.current_level ?? 1,
+              level_name: data.level_name ?? cached.level_name ?? "Beginner",
+              updated_at: new Date().toISOString(),
+            };
+            localStorage.setItem("bl_student_xp_cache", JSON.stringify(updatedProfile));
+            window.dispatchEvent(new Event("brainlab-local-storage"));
+            window.dispatchEvent(new CustomEvent("brainlab_xp_awarded", { detail: updatedProfile }));
+          } catch {}
+        }
+
+        setFeedback({
+          type: "success",
+          message: `Reward claimed! +${earnedXp} XP added to your balance.`,
+          questId,
+        });
+      } else {
+        const errMessage =
+          data?.message ||
+          (data?.error === "already_claimed"
+            ? "This quest reward has already been claimed."
+            : data?.error === "quest_incomplete"
+            ? "Quest incomplete: Complete all required questions before claiming."
+            : "Could not claim reward. Please verify quest completion.");
+
+        setFeedback({
+          type: "error",
+          message: errMessage,
+          questId,
+        });
+      }
     } catch {
-      // Local defensive claim
-      setFeed((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          active_quests: prev.active_quests.map((q) =>
-            q.id === questId ? { ...q, is_claimed: true } : q
-          ),
-        };
+      setFeedback({
+        type: "error",
+        message: "Network error. Please check your connection and try again.",
+        questId,
       });
     } finally {
       setClaimingId(null);
@@ -181,6 +250,26 @@ export default function DailyLearningFeedWidget() {
           </div>
         </div>
       </div>
+
+      {feedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`mt-4 rounded-xl p-3 text-xs font-bold transition flex items-center justify-between ${
+            feedback.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800"
+          }`}
+        >
+          <span>{feedback.message}</span>
+          <button
+            onClick={() => setFeedback(null)}
+            className="text-[10px] uppercase font-mono tracking-wider opacity-70 hover:opacity-100 ml-3"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="mt-5 grid gap-6 md:grid-cols-2">
         {/* Left Col: Today's Cohort Tests & Announcements */}
@@ -242,6 +331,7 @@ export default function DailyLearningFeedWidget() {
               const target = quest.target_count || 1;
               const percent = Math.min(Math.round((current / target) * 100), 100);
               const isDone = quest.is_completed || current >= target;
+              const isCurrentlyClaiming = claimingId === quest.id;
 
               return (
                 <div
@@ -287,10 +377,11 @@ export default function DailyLearningFeedWidget() {
                       ) : (
                         <button
                           onClick={() => handleClaimReward(quest.id)}
-                          disabled={claimingId === quest.id}
-                          className="rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-1.5 text-[11px] font-black text-slate-950 transition shrink-0 disabled:opacity-50 active:scale-95 cursor-pointer shadow-xs"
+                          disabled={Boolean(claimingId)}
+                          aria-busy={isCurrentlyClaiming}
+                          className="rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-1.5 text-[11px] font-black text-slate-950 transition shrink-0 disabled:opacity-50 active:scale-95 cursor-pointer shadow-xs disabled:cursor-not-allowed"
                         >
-                          {claimingId === quest.id ? "Claiming..." : "Claim XP"}
+                          {isCurrentlyClaiming ? "Claiming..." : "Claim XP"}
                         </button>
                       )
                     ) : (

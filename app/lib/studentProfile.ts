@@ -171,6 +171,16 @@ export const AVAILABLE_UTME_ELECTIVE_SUBJECTS = [
   "Economics",
   "Commerce",
   "Christian Religious Studies",
+  "Agricultural Science",
+  "Geography",
+  "Financial Accounting",
+  "History",
+  "Islamic Studies",
+  "Hausa",
+  "Yoruba",
+  "Igbo",
+  "Music",
+  "Visual Art",
 ];
 
 export interface SubjectPreset {
@@ -204,6 +214,18 @@ export const FACULTY_SUBJECT_PRESETS: SubjectPreset[] = [
     label: "Commercial & Management",
     description: "Accounting, Economics, Business Admin, Banking & Finance",
     subjects: ["English", "Economics", "Mathematics", "Commerce"],
+  },
+  {
+    id: "agriculture",
+    label: "Agricultural & Environmental Sciences",
+    description: "Agronomy, Animal Science, Forestry, Soil Science",
+    subjects: ["English", "Agricultural Science", "Biology", "Chemistry"],
+  },
+  {
+    id: "islamic_arts",
+    label: "Islamic Studies & Humanities",
+    description: "Arabic Studies, Islamic Law, Islamic Jurisprudence, History",
+    subjects: ["English", "Islamic Studies", "Government", "Literature in English"],
   },
 ];
 

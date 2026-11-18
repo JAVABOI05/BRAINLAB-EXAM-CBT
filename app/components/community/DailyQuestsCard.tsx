@@ -18,6 +18,10 @@ export default function DailyQuestsCard({
   const [quests, setQuests] = useState<LearningQuest[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -52,12 +56,21 @@ export default function DailyQuestsCard({
   }, []);
 
   const handleClaim = async (questId: string) => {
+    if (claimingId) return; // Prevent concurrent requests
+    setClaimingId(questId);
+    setFeedback(null);
+
     try {
-      setClaimingId(questId);
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setFeedback({
+          type: "error",
+          message: "Please sign in to claim quest rewards.",
+        });
+        return;
+      }
 
       const res = await fetch(`/api/community/quests/${questId}/claim`, {
         method: "POST",
@@ -67,17 +80,59 @@ export default function DailyQuestsCard({
         },
       });
 
-      const json = await res.json();
-      if (json.ok) {
+      const json = await res.json().catch(() => null);
+
+      if (res.ok && json?.ok) {
+        const earnedXp = Number(json.xp_earned) || 50;
         setQuests((prev) =>
-          prev.map((q) => (q.id === questId ? { ...q, is_claimed: true } : q))
+          prev.map((q) => (q.id === questId ? { ...q, is_claimed: true, is_completed: true } : q))
         );
+
         if (onRewardClaimed) {
-          onRewardClaimed(questId, json.xp_earned || 50);
+          onRewardClaimed(questId, earnedXp);
         }
+
+        // Synchronize global application gamification state
+        if (typeof window !== "undefined") {
+          try {
+            const raw = localStorage.getItem("bl_student_xp_cache");
+            const cached = raw ? JSON.parse(raw) : {};
+            const finalXp = json.lifetime_xp != null ? Number(json.lifetime_xp) : ((cached.lifetime_xp || 0) + earnedXp);
+            const updatedProfile = {
+              ...cached,
+              lifetime_xp: finalXp,
+              current_level: json.current_level ?? cached.current_level ?? 1,
+              level_name: json.level_name ?? cached.level_name ?? "Beginner",
+              updated_at: new Date().toISOString(),
+            };
+            localStorage.setItem("bl_student_xp_cache", JSON.stringify(updatedProfile));
+            window.dispatchEvent(new Event("brainlab-local-storage"));
+            window.dispatchEvent(new CustomEvent("brainlab_xp_awarded", { detail: updatedProfile }));
+          } catch {}
+        }
+
+        setFeedback({
+          type: "success",
+          message: `Claimed +${earnedXp} XP successfully!`,
+        });
+      } else {
+        const errMsg =
+          json?.message ||
+          (json?.error === "already_claimed"
+            ? "This quest reward has already been claimed."
+            : json?.error === "quest_incomplete"
+            ? "Quest incomplete: Requirements must be finished before claiming."
+            : "Could not claim quest reward.");
+        setFeedback({
+          type: "error",
+          message: errMsg,
+        });
       }
     } catch {
-      // Handled
+      setFeedback({
+        type: "error",
+        message: "Network error occurred while claiming reward.",
+      });
     } finally {
       setClaimingId(null);
     }
@@ -111,8 +166,28 @@ export default function DailyQuestsCard({
             <span>🎯</span> Active Quests ({quests.length})
           </h3>
         </div>
-        <span className="text-[10px] text-slate-400">Resets 00:00 UTC</span>
+        <span className="text-[10px] text-slate-400 font-mono">Resets 00:00 UTC</span>
       </div>
+
+      {feedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`mt-3 rounded-lg p-2.5 text-xs font-bold transition flex items-center justify-between ${
+            feedback.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800"
+          }`}
+        >
+          <span>{feedback.message}</span>
+          <button
+            onClick={() => setFeedback(null)}
+            className="text-[10px] uppercase font-mono tracking-wider opacity-70 hover:opacity-100 ml-2"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       <div className="mt-4 space-y-3">
         {quests.map((quest) => {
@@ -120,6 +195,7 @@ export default function DailyQuestsCard({
           const target = quest.target_count || 1;
           const percent = Math.min(Math.round((current / target) * 100), 100);
           const isDone = quest.is_completed || current >= target;
+          const isCurrentlyClaiming = claimingId === quest.id;
 
           return (
             <div
@@ -166,14 +242,15 @@ export default function DailyQuestsCard({
                   ) : (
                     <button
                       onClick={() => handleClaim(quest.id)}
-                      disabled={claimingId === quest.id}
-                      className="rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black text-white hover:bg-amber-600 transition shrink-0 disabled:opacity-50"
+                      disabled={Boolean(claimingId)}
+                      aria-busy={isCurrentlyClaiming}
+                      className="rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black text-white hover:bg-amber-600 transition shrink-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {claimingId === quest.id ? "..." : "Claim XP"}
+                      {isCurrentlyClaiming ? "..." : "Claim XP"}
                     </button>
                   )
                 ) : (
-                  <span className="text-[10px] text-slate-400 shrink-0">
+                  <span className="text-[10px] text-slate-400 shrink-0 font-mono">
                     {percent}%
                   </span>
                 )}

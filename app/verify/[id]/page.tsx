@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import { toast } from "@/app/lib/toast";
 import { downloadCertificatePdf } from "@/app/lib/certificatePdfService";
+import VerificationQRCode from "@/app/components/VerificationQRCode";
 
 interface VerifiedCertificate {
   id: string;
@@ -21,9 +22,18 @@ interface VerifiedCertificate {
   revocation_reason?: string | null;
 }
 
+const CANONICAL_BASE = "https://www.brainlabacademy.com.ng/verify";
+
 export default function CertificateVerificationResultPage() {
   const params = useParams();
-  const query = decodeURIComponent((params?.id as string) || "");
+  const rawParam = (params?.id as string) || "";
+  let query = decodeURIComponent(rawParam).trim();
+
+  // If query contains full URL, extract certificate ID
+  if (query.includes("/verify/")) {
+    const parts = query.split("/verify/");
+    query = parts[parts.length - 1].replace(/\/+$/, "").trim();
+  }
 
   const [loading, setLoading] = useState(true);
   const [cert, setCert] = useState<VerifiedCertificate | null>(null);
@@ -42,18 +52,38 @@ export default function CertificateVerificationResultPage() {
 
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc("verify_certificate", {
-          p_query: query.trim(),
-        });
+        // 1. First attempt: Direct client RPC
+        let found = false;
+        try {
+          const { data, error } = await supabase.rpc("verify_certificate", {
+            p_query: query.trim(),
+          });
 
-        if (!active) return;
+          if (active && !error && data && data.ok && data.certificate) {
+            setStatus(data.status || "valid");
+            setCert(data.certificate as VerifiedCertificate);
+            found = true;
+          }
+        } catch {
+          // Fall through to server API
+        }
 
-        if (error || !data || !data.ok) {
+        if (found) return;
+
+        // 2. Second attempt: Resilient server API route
+        const apiRes = await fetch(`/api/certificates/verify/${encodeURIComponent(query.trim())}`).catch(() => null);
+        if (active && apiRes && apiRes.ok) {
+          const apiJson = await apiRes.json();
+          if (apiJson && apiJson.ok && apiJson.certificate) {
+            setStatus(apiJson.status || "valid");
+            setCert(apiJson.certificate as VerifiedCertificate);
+            return;
+          }
+        }
+
+        if (active) {
           setStatus("not_found");
-          setMessage(data?.message || "No certificate matching this identifier was found.");
-        } else {
-          setStatus(data.status || "valid");
-          setCert(data.certificate as VerifiedCertificate);
+          setMessage("No certificate matching this identifier was found in the official registry.");
         }
       } catch {
         if (active) {
@@ -71,6 +101,10 @@ export default function CertificateVerificationResultPage() {
     };
   }, [query]);
 
+  const canonicalUrl = cert?.certificate_number
+    ? `${CANONICAL_BASE}/${encodeURIComponent(cert.certificate_number)}`
+    : `${CANONICAL_BASE}/${encodeURIComponent(query)}`;
+
   function handleDownloadPdf() {
     if (!cert) return;
     downloadCertificatePdf({
@@ -86,32 +120,35 @@ export default function CertificateVerificationResultPage() {
       score: cert.score ?? 0,
       percentage: cert.score ?? undefined,
       grade: cert.grade || undefined,
-      verificationUrl: window.location.href,
+      verificationUrl: canonicalUrl,
     });
-    toast.success("Certificate PDF downloaded! 📜");
+    toast.success("Official certificate PDF downloaded!");
   }
 
   return (
     <div className="verification-detail-page flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      
-      <main className="flex-1 py-12 sm:py-16">
+      <main className="flex-1 py-10 sm:py-16">
         <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          {/* Breadcrumb */}
+          {/* Breadcrumb Navigation */}
           <div className="mb-6 flex items-center justify-between">
             <Link
               href="/verify"
-              className="text-xs font-bold text-indigo-700 hover:text-indigo-900"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-900 transition"
             >
-              ← Search Another Credential
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+              <span>Verify Another Credential</span>
             </Link>
             <span className="text-xs text-slate-400 font-mono">
-              Query: {query}
+              Identifier: {query}
             </span>
           </div>
 
           {loading ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
               <p className="mt-4 text-sm font-bold text-slate-700">
                 Verifying cryptographic registry signature...
               </p>
@@ -119,8 +156,12 @@ export default function CertificateVerificationResultPage() {
             </div>
           ) : status === "not_found" || !cert ? (
             <div className="rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-sm sm:p-12">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-3xl">
-                ⚠️
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
               </div>
               <h1 className="mt-4 text-2xl font-black text-slate-900 sm:text-3xl">
                 Certificate Not Found
@@ -129,7 +170,7 @@ export default function CertificateVerificationResultPage() {
                 {message ||
                   "No valid BrainLab certificate could be found matching this identifier. Please verify the code on your certificate or QR code badge."}
               </p>
-              <div className="mt-6 flex justify-center gap-3">
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Link
                   href="/verify"
                   className="rounded-xl bg-[#012153] px-6 py-2.5 text-xs font-bold text-white transition hover:bg-[#082e6e]"
@@ -137,8 +178,8 @@ export default function CertificateVerificationResultPage() {
                   Try Another Identifier
                 </Link>
                 <Link
-                  href="/support"
-                  className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  href="/contact"
+                  className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
                 >
                   Contact Verification Support
                 </Link>
@@ -146,7 +187,7 @@ export default function CertificateVerificationResultPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Authenticity Banner */}
+              {/* Authenticity Status Banner */}
               <div
                 className={`rounded-2xl p-4 sm:p-5 flex items-center justify-between border ${
                   status === "valid"
@@ -157,9 +198,31 @@ export default function CertificateVerificationResultPage() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">
-                    {status === "valid" ? "✅" : status === "revoked" ? "⛔" : "⏳"}
-                  </span>
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                      status === "valid"
+                        ? "bg-emerald-200/80 text-emerald-800"
+                        : status === "revoked"
+                        ? "bg-rose-200/80 text-rose-800"
+                        : "bg-amber-200/80 text-amber-800"
+                    }`}
+                  >
+                    {status === "valid" ? (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : status === "revoked" ? (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    )}
+                  </div>
                   <div>
                     <h2 className="text-sm font-black uppercase tracking-wide">
                       {status === "valid"
@@ -170,7 +233,7 @@ export default function CertificateVerificationResultPage() {
                     </h2>
                     <p className="text-xs opacity-85">
                       {status === "valid"
-                        ? "This credential has been verified against the official BrainLab registry."
+                        ? "This credential has been verified against the official BrainLab public registry."
                         : status === "revoked"
                         ? `Revocation note: ${cert.revocation_reason || "Revoked by issuer."}`
                         : "This certificate has exceeded its validity period."}
@@ -181,25 +244,34 @@ export default function CertificateVerificationResultPage() {
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="hidden sm:inline-flex rounded-xl bg-white/80 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-800 shadow-sm transition hover:bg-white"
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-white/80 border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-white"
                 >
-                  🖨️ Print Record
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 6 2 18 2 18 9" />
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <rect x="6" y="14" width="12" height="8" />
+                  </svg>
+                  <span>Print Record</span>
                 </button>
               </div>
 
               {/* Certificate Diploma Visual Card */}
-              <div className="overflow-hidden rounded-3xl border-4 border-double border-amber-300 bg-gradient-to-b from-white via-amber-50/20 to-white p-8 sm:p-12 shadow-xl relative">
+              <div className="overflow-hidden rounded-3xl border-4 border-double border-amber-300 bg-gradient-to-b from-white via-amber-50/20 to-white p-6 sm:p-12 shadow-xl relative">
                 {/* Guilloché / Watermark effect */}
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 opacity-[0.03] pointer-events-none flex items-center justify-center text-9xl font-black"
+                  className="absolute inset-0 opacity-[0.03] pointer-events-none flex items-center justify-center text-7xl sm:text-9xl font-black select-none"
                 >
                   BRAINLAB
                 </div>
 
                 <div className="relative text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#071c43] text-2xl shadow-md text-amber-400">
-                    🏛️
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#071c43] shadow-md text-amber-400">
+                    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 21h18" />
+                      <path d="M5 21V7l7-4 7 4v14" />
+                      <path d="M9 21v-6h6v6" />
+                    </svg>
                   </div>
 
                   <p className="mt-3 text-xs font-black uppercase tracking-[0.25em] text-amber-700">
@@ -223,7 +295,7 @@ export default function CertificateVerificationResultPage() {
                   <p className="mt-2 text-xs text-slate-600">
                     has successfully demonstrated verified competency and excellence in
                   </p>
-                  <p className="mt-2 text-lg sm:text-xl font-black text-indigo-950">
+                  <p className="mt-2 text-lg sm:text-xl font-black text-blue-950">
                     {cert.title}
                   </p>
 
@@ -240,19 +312,19 @@ export default function CertificateVerificationResultPage() {
                       </div>
                     )}
                     {cert.grade && (
-                      <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-center">
-                        <span className="block text-[10px] font-bold uppercase text-indigo-800">
+                      <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-center">
+                        <span className="block text-[10px] font-bold uppercase text-blue-800">
                           Distinction / Grade
                         </span>
-                        <span className="font-mono text-base font-black text-indigo-950">
+                        <span className="font-mono text-base font-black text-blue-950">
                           {cert.grade}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Issuer Signatures & Verification Details */}
-                  <div className="mt-10 pt-6 border-t border-slate-200/80 grid grid-cols-2 gap-4 text-left sm:grid-cols-3">
+                  {/* Issuer Signatures, QR Code & Verification Details */}
+                  <div className="mt-10 pt-6 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-4 gap-6 text-left items-center">
                     <div>
                       <p className="text-[10px] font-bold uppercase text-slate-400">
                         Certificate Number
@@ -267,7 +339,7 @@ export default function CertificateVerificationResultPage() {
                         Date of Issue
                       </p>
                       <p className="mt-1 text-xs font-bold text-slate-900">
-                        {new Date(cert.issued_at).toLocaleDateString(undefined, {
+                        {new Date(cert.issued_at).toLocaleDateString("en-GB", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
@@ -275,13 +347,27 @@ export default function CertificateVerificationResultPage() {
                       </p>
                     </div>
 
-                    <div className="col-span-2 sm:col-span-1">
+                    <div>
                       <p className="text-[10px] font-bold uppercase text-slate-400">
-                        Verification URL
+                        Official Verification Link
                       </p>
-                      <p className="mt-1 font-mono text-[10px] text-indigo-700 truncate">
-                        brainlabexam-cbt.vercel.app/verify/{cert.certificate_number}
-                      </p>
+                      <a
+                        href={canonicalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 block font-mono text-[10px] font-bold text-blue-700 hover:text-blue-900 underline truncate"
+                        title={canonicalUrl}
+                      >
+                        {canonicalUrl}
+                      </a>
+                    </div>
+
+                    <div className="flex justify-start sm:justify-end">
+                      <VerificationQRCode
+                        url={canonicalUrl}
+                        size={64}
+                        label="Scan to verify"
+                      />
                     </div>
                   </div>
                 </div>
@@ -291,41 +377,57 @@ export default function CertificateVerificationResultPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
                 <Link
                   href="/verify"
-                  className="font-bold text-indigo-700 hover:text-indigo-900"
+                  className="font-bold text-blue-700 hover:text-blue-900 transition"
                 >
                   ← Verify Another Certificate
                 </Link>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       if (navigator.share) {
                         void navigator.share({
                           title: `${cert.recipient_name} — ${cert.title}`,
-                          url: window.location.href,
+                          text: `Verified Academic Certificate: ${cert.recipient_name} (${cert.certificate_number})`,
+                          url: canonicalUrl,
                         });
                       } else {
-                        void navigator.clipboard.writeText(window.location.href);
-                        toast.success("Verification link copied to clipboard! 📋");
+                        void navigator.clipboard.writeText(canonicalUrl);
+                        toast.success("Verification link copied to clipboard!");
                       }
                     }}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold text-slate-700 transition hover:bg-slate-100"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold text-slate-700 transition hover:bg-slate-100 min-h-11"
                   >
-                    🔗 Share Verification Link
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                    <span>Share Verification Link</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleDownloadPdf}
-                    className="rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 font-bold text-white shadow-xs transition active:scale-95 flex items-center gap-1.5"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 font-bold text-white shadow-xs transition active:scale-95 min-h-11"
                   >
-                    <span>📜 Download Certificate PDF</span>
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    <span>Download Certificate PDF</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="rounded-xl bg-[#012153] px-4 py-2 font-bold text-white transition hover:bg-[#082e6e]"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#012153] px-4 py-2 font-bold text-white transition hover:bg-[#082e6e] min-h-11"
                   >
-                    🖨️ Print Record
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="6 9 6 2 18 2 18 9" />
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                      <rect x="6" y="14" width="12" height="8" />
+                    </svg>
+                    <span>Print Record</span>
                   </button>
                 </div>
               </div>
@@ -333,7 +435,6 @@ export default function CertificateVerificationResultPage() {
           )}
         </div>
       </main>
-
-          </div>
+    </div>
   );
 }

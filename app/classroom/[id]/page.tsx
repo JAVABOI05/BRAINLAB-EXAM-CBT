@@ -68,6 +68,51 @@ function renderTextWithMentions(text: string, currentUserName?: string) {
   });
 }
 
+function playHandRaiseChime() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.36);
+  } catch {
+    // Silent fallback
+  }
+}
+
+function playTimerCompleteChime() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.2);
+    osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.71);
+  } catch {
+    // Silent fallback
+  }
+}
+
 export default function LiveClassroomPage({
   params,
 }: {
@@ -198,6 +243,36 @@ export default function LiveClassroomPage({
 
   // Big Screen & Pinned Lecture State
   const [pinnedMessage, setPinnedMessage] = useState<ClassroomMessage | null>(null);
+
+  // Synchronized Classroom Drill Timer
+  const [drillTimerActive, setDrillTimerActive] = useState(false);
+  const [drillTimerSeconds, setDrillTimerSeconds] = useState(0);
+  const [drillTimerTotal, setDrillTimerTotal] = useState(0);
+  const [drillTimerLabel, setDrillTimerLabel] = useState("");
+  const [showTimerPicker, setShowTimerPicker] = useState(false);
+  const drillTimerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (drillTimerActive && drillTimerSeconds > 0) {
+      drillTimerIntervalRef.current = setInterval(() => {
+        setDrillTimerSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(drillTimerIntervalRef.current!);
+            setDrillTimerActive(false);
+            playTimerCompleteChime();
+            toast.success("Drill time is up!");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (drillTimerIntervalRef.current) clearInterval(drillTimerIntervalRef.current);
+    }
+    return () => {
+      if (drillTimerIntervalRef.current) clearInterval(drillTimerIntervalRef.current);
+    };
+  }, [drillTimerActive, drillTimerSeconds]);
 
   // Roster
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -521,6 +596,7 @@ export default function LiveClassroomPage({
               prev.map((p) => (p.id === payload.userId ? { ...p, isHandRaised: payload.isHandRaised } : p))
             );
             if (payload.isHandRaised && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
+              playHandRaiseChime();
               toast.info(`${payload.userName || "A student"} raised their hand.`);
             }
           }
@@ -583,8 +659,9 @@ export default function LiveClassroomPage({
         });
 
         channel.on("broadcast", { event: "toggle_student_mic" }, ({ payload }) => {
-          if (payload?.studentId && payload.studentId === user.id) {
-            const nextAudio = Boolean(payload.enabled);
+          const isTargeted = payload?.studentId === "all" ? !isHostRole : (payload?.studentId && payload.studentId === user.id);
+          if (isTargeted) {
+            const nextAudio = Boolean(payload?.enabled);
             if (localStreamRef.current) {
               localStreamRef.current.getAudioTracks().forEach((t) => (t.enabled = nextAudio));
             }
@@ -592,9 +669,26 @@ export default function LiveClassroomPage({
             if (nextAudio) {
               toast.success("The instructor unmuted your microphone.");
             } else {
-              toast.info("The instructor muted your microphone.");
+              toast.info(payload?.studentId === "all" ? "The instructor muted all student microphones." : "The instructor muted your microphone.");
             }
           }
+        });
+
+        // Synchronized Drill Timer Broadcasts
+        channel.on("broadcast", { event: "start_drill_timer" }, ({ payload }) => {
+          if (payload?.seconds) {
+            setDrillTimerTotal(payload.seconds);
+            setDrillTimerSeconds(payload.seconds);
+            setDrillTimerLabel(payload.label || "Class Practice Drill");
+            setDrillTimerActive(true);
+            toast.info(`Drill timer started: ${Math.floor(payload.seconds / 60)}m duration.`);
+          }
+        });
+
+        channel.on("broadcast", { event: "stop_drill_timer" }, () => {
+          setDrillTimerActive(false);
+          setDrillTimerSeconds(0);
+          toast.info("Drill timer stopped by instructor.");
         });
 
         // Class Ended by Tutor Broadcast
@@ -1891,6 +1985,53 @@ export default function LiveClassroomPage({
       });
     }
     toast.info(shouldMute ? `Muted ${target?.name || "Student"}` : `Unmuted ${target?.name || "Student"}`);
+  };
+
+  const handleMuteAllStudents = () => {
+    if (!isTutorOrModerator) return;
+    setParticipants((prev) =>
+      prev.map((p) => (p.role !== "host" ? { ...p, isMuted: true } : p))
+    );
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "toggle_student_mic",
+        payload: { studentId: "all", enabled: false },
+      });
+    }
+    toast.info("Muted all student microphones.");
+  };
+
+  const handleStartDrillTimer = (seconds: number, label = "Class Practice Drill") => {
+    if (!isTutorOrModerator) return;
+    setDrillTimerTotal(seconds);
+    setDrillTimerSeconds(seconds);
+    setDrillTimerLabel(label);
+    setDrillTimerActive(true);
+    setShowTimerPicker(false);
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "start_drill_timer",
+        payload: { seconds, label },
+      });
+    }
+    toast.success(`Started ${Math.floor(seconds / 60)}m drill timer for class.`);
+  };
+
+  const handleStopDrillTimer = () => {
+    if (!isTutorOrModerator) return;
+    setDrillTimerActive(false);
+    setDrillTimerSeconds(0);
+    setShowTimerPicker(false);
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "stop_drill_timer",
+        payload: {},
+      });
+    }
+    toast.info("Drill timer stopped.");
   };
 
   const updateClassroomPermissions = (updates: {
@@ -3276,6 +3417,31 @@ export default function LiveClassroomPage({
               )}
             </div>
 
+            {/* Synchronized Classroom Drill Timer HUD */}
+            {drillTimerActive && (
+              <div className="absolute top-4 right-4 z-20 flex items-center gap-2.5 rounded-2xl border border-cyan-500/50 bg-slate-950/95 px-3.5 py-1.5 shadow-2xl backdrop-blur-md animate-fade-in">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                    {drillTimerLabel || "Practice Drill"}
+                  </span>
+                  <span className="font-mono text-sm font-black text-white">
+                    {Math.floor(drillTimerSeconds / 60)}:{(drillTimerSeconds % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+                {isTutorOrModerator && (
+                  <button
+                    type="button"
+                    onClick={handleStopDrillTimer}
+                    className="ml-1 rounded-lg border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 px-2 py-0.5 text-[10px] font-bold text-rose-300 transition active-press"
+                    title="Stop timer"
+                  >
+                    Stop
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* IN-STAGE FLOATING LIVE QUIZ / POLL HUD */}
             {activePoll && (
               <div
@@ -3469,6 +3635,8 @@ export default function LiveClassroomPage({
             onLowerStudentHand={handleLowerStudentHand}
             onToggleStudentMute={handleToggleStudentMute}
             onCopyClassLink={handleCopyClassLink}
+            onMuteAllStudents={handleMuteAllStudents}
+            onPinMessage={handlePinToBigScreen}
           />
         </aside>
       </div>
@@ -3529,6 +3697,8 @@ export default function LiveClassroomPage({
               onLowerStudentHand={handleLowerStudentHand}
               onToggleStudentMute={handleToggleStudentMute}
               onCopyClassLink={handleCopyClassLink}
+              onMuteAllStudents={handleMuteAllStudents}
+              onPinMessage={handlePinToBigScreen}
             />
           </div>
         </div>
@@ -4104,6 +4274,58 @@ export default function LiveClassroomPage({
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg><span>Poll</span>
               </button>
+
+              {/* Synchronized Drill Timer Menu */}
+              <div className="relative hidden sm:block">
+                <button
+                  type="button"
+                  onClick={() => setShowTimerPicker(!showTimerPicker)}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition active-press ${
+                    drillTimerActive
+                      ? "border-cyan-500 bg-cyan-500/20 text-cyan-300 animate-pulse"
+                      : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                  title="Launch timed student drill"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>{drillTimerActive ? `${Math.floor(drillTimerSeconds / 60)}:${(drillTimerSeconds % 60).toString().padStart(2, "0")}` : "Timer"}</span>
+                </button>
+                {showTimerPicker && (
+                  <div className="absolute bottom-full mb-2 left-0 w-44 rounded-2xl border border-slate-700 bg-slate-900/95 p-2 shadow-2xl backdrop-blur z-50 space-y-1">
+                    <p className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">Class Drill Timer</p>
+                    <button
+                      type="button"
+                      onClick={() => handleStartDrillTimer(60, "1-Minute Rapid Drill")}
+                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 transition"
+                    >
+                      1 Minute Drill
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStartDrillTimer(180, "3-Minute Question Check")}
+                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 transition"
+                    >
+                      3 Minutes Drill
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStartDrillTimer(300, "5-Minute Practice Sprint")}
+                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 transition"
+                    >
+                      5 Minutes Drill
+                    </button>
+                    {drillTimerActive && (
+                      <button
+                        type="button"
+                        onClick={handleStopDrillTimer}
+                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-950/50 transition border-t border-slate-800"
+                      >
+                        Stop Timer
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
 

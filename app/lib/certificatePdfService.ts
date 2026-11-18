@@ -4,6 +4,14 @@
  */
 
 import { jsPDF } from "jspdf";
+import { generateQrMatrix } from "@/app/lib/qrCode";
+
+export const CANONICAL_VERIFY_DOMAIN = "https://www.brainlabacademy.com.ng";
+
+export function formatCertificateVerificationUrl(certNumber: string): string {
+  const clean = String(certNumber || "").trim();
+  return `${CANONICAL_VERIFY_DOMAIN}/verify/${encodeURIComponent(clean)}`;
+}
 
 export interface CertificatePdfData {
   certificateNumber: string;
@@ -57,7 +65,14 @@ export function generateCertificatePdf(data: CertificatePdfData): jsPDF {
   const standing = data.standing || derived.standing;
   const issuer = data.issuerName || "BrainLab Academy";
   const certNumber = data.certificateNumber;
-  const verifyUrl = data.verificationUrl || `https://www.brainlabacademy.com.ng/verify/${certNumber}`;
+  const rawVerifyUrl = data.verificationUrl?.trim();
+  const verifyUrl =
+    rawVerifyUrl &&
+    !rawVerifyUrl.includes("vercel.app") &&
+    !rawVerifyUrl.includes("localhost") &&
+    rawVerifyUrl.startsWith("http")
+      ? rawVerifyUrl
+      : formatCertificateVerificationUrl(certNumber);
   const formattedDate = data.issuedDate || new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const proctorName = data.chiefProctorName || "Chief Examination Proctor";
   const proctorTitle = data.chiefProctorTitle || "BrainLab Assessment Directorate";
@@ -404,26 +419,44 @@ export function generateCertificatePdf(data: CertificatePdfData): jsPDF {
   doc.setLineWidth(0.3);
   doc.roundedRect(footerBoxX, footerBoxY, footerBoxW, footerBoxH, 2, 2, "FD");
 
-  // Left side: Security QR / Matrix representation
+  // Left side: Genuine, Scannable Vector QR Code (ISO/IEC 18004 Standard)
   const qrBoxX = footerBoxX + 4;
-  const qrBoxY = footerBoxY + 3;
-  const qrBoxSize = 16;
-  doc.setFillColor(1, 33, 83);
-  doc.rect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, "F");
+  const qrBoxY = footerBoxY + 2.5;
+  const qrBoxSize = 17; // 17mm x 17mm optimal scanning geometry
 
-  // Inner matrix pattern
-  doc.setFillColor(255, 255, 255);
-  doc.rect(qrBoxX + 2, qrBoxY + 2, 4, 4, "F");
-  doc.rect(qrBoxX + qrBoxSize - 6, qrBoxY + 2, 4, 4, "F");
-  doc.rect(qrBoxX + 2, qrBoxY + qrBoxSize - 6, 4, 4, "F");
-  doc.setFillColor(1, 33, 83);
-  doc.rect(qrBoxX + 3, qrBoxY + 3, 2, 2, "F");
-  doc.rect(qrBoxX + qrBoxSize - 5, qrBoxY + 3, 2, 2, "F");
-  doc.rect(qrBoxX + 3, qrBoxY + qrBoxSize - 5, 2, 2, "F");
-  doc.setFillColor(255, 255, 255);
-  doc.rect(qrBoxX + 7, qrBoxY + 7, 2, 2, "F");
-  doc.rect(qrBoxX + 11, qrBoxY + 11, 2, 2, "F");
-  doc.rect(qrBoxX + 7, qrBoxY + 12, 2, 2, "F");
+  try {
+    const qr = generateQrMatrix(verifyUrl, "M");
+    const moduleCount = qr.size;
+    const quietZone = 2; // 2-module quiet zone margin
+    const totalGrid = moduleCount + quietZone * 2;
+    const cellSize = qrBoxSize / totalGrid;
+
+    // Draw high-contrast white background container
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 0.8, 0.8, "FD");
+
+    // Draw dark modules as razor-sharp vector squares in official navy
+    doc.setFillColor(1, 33, 83);
+    for (let r = 0; r < moduleCount; r++) {
+      for (let c = 0; c < moduleCount; c++) {
+        if (qr.isDark(r, c)) {
+          doc.rect(
+            qrBoxX + (c + quietZone) * cellSize,
+            qrBoxY + (r + quietZone) * cellSize,
+            cellSize,
+            cellSize,
+            "F"
+          );
+        }
+      }
+    }
+  } catch {
+    // Fallback if QR generation fails
+    doc.setFillColor(1, 33, 83);
+    doc.rect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, "F");
+  }
 
   // Middle text: Certificate Number & Date
   const metaTextX = qrBoxX + qrBoxSize + 6;

@@ -423,6 +423,416 @@ const SUBJECT_QUESTION_BANK: Record<string, Omit<DiagnosticQuestion, "id">[]> = 
       explanation: "Acts 2:3 records: 'There appeared unto them cloven tongues like as of fire, and it sat upon each of them.'",
     },
   ],
+  "Agricultural Science": [
+    {
+      subject: "Agricultural Science",
+      category: "Soil Science & Fertility",
+      question: "Which soil organism is primarily known as 'nature's plough' because it aerates the soil and enhances humus formation?",
+      options: [
+        { key: "A", text: "Earthworm" },
+        { key: "B", text: "Termite" },
+        { key: "C", text: "Nematode" },
+        { key: "D", text: "Millipede" },
+      ],
+      correct: "A",
+      explanation: "Earthworms burrow through soil, increasing aeration, water infiltration, and mineral cycling while depositing nutrient-rich vermicast.",
+    },
+    {
+      subject: "Agricultural Science",
+      category: "Agronomy & Crop Production",
+      question: "The process of removing excess, overcrowded seedlings from a nursery bed to ensure proper spacing and vigorous growth is called:",
+      options: [
+        { key: "A", text: "Thinning" },
+        { key: "B", text: "Pricking out" },
+        { key: "C", text: "Rogueing" },
+        { key: "D", text: "Mulching" },
+      ],
+      correct: "A",
+      explanation: "Thinning is the systematic removal of surplus seedlings from a stand or bed to prevent overcrowding and nutrient competition.",
+    },
+    {
+      subject: "Agricultural Science",
+      category: "Animal Science & Husbandry",
+      question: "Which chamber of the ruminant stomach is considered the 'true stomach' where enzymatic gastric digestion takes place?",
+      options: [
+        { key: "A", text: "Abomasum" },
+        { key: "B", text: "Rumen" },
+        { key: "C", text: "Reticulum" },
+        { key: "D", text: "Omasum" },
+      ],
+      correct: "A",
+      explanation: "The abomasum is the fourth and glandular compartment of the ruminant stomach where digestive enzymes like pepsin and HCl act.",
+    },
+  ],
+  Geography: [
+    {
+      subject: "Geography",
+      category: "Physical Geography & Landforms",
+      question: "The steep-sided, flat-topped tableland residual feature resulting from the weathering and erosion of a plateau is known as a:",
+      options: [
+        { key: "A", text: "Mesa" },
+        { key: "B", text: "Yardang" },
+        { key: "C", text: "Zeugen" },
+        { key: "D", text: "Barchan" },
+      ],
+      correct: "A",
+      explanation: "A mesa is an isolated flat-topped elevation bounded on all sides by steep escarpments, typical of arid and semi-arid plateau landscapes.",
+    },
+    {
+      subject: "Geography",
+      category: "Climatology & Meteorology",
+      question: "In West Africa, the dry, dusty continental wind blowing across the Sahara Desert during the harmattan season originates from the:",
+      options: [
+        { key: "A", text: "Tropical Continental (cT) air mass" },
+        { key: "B", text: "Tropical Maritime (mT) air mass" },
+        { key: "C", text: "Equatorial Maritime (mE) air mass" },
+        { key: "D", text: "Polar Maritime (mP) air mass" },
+      ],
+      correct: "A",
+      explanation: "The Northeast Trade winds blowing from the Sahara Desert belong to the Tropical Continental (cT) air mass, bringing dry and dusty conditions.",
+    },
+    {
+      subject: "Geography",
+      category: "Map Work & Cartography",
+      question: "If a map distance of 5 cm represents an actual ground distance of 10 km, what is the Representative Fraction (R.F.) scale of the map?",
+      options: [
+        { key: "A", text: "1:200,000" },
+        { key: "B", text: "1:50,000" },
+        { key: "C", text: "1:100,000" },
+        { key: "D", text: "1:20,000" },
+      ],
+      correct: "A",
+      explanation: "10 km = 10 × 100,000 cm = 1,000,000 cm. Scale = 5 cm / 1,000,000 cm = 1 / 200,000, which is 1:200,000.",
+    },
+  ],
+  "Financial Accounting": [
+    {
+      subject: "Financial Accounting",
+      category: "Double Entry & Principles",
+      question: "According to the fundamental golden rules of double-entry bookkeeping, what is the accounting treatment for an increase in liabilities?",
+      options: [
+        { key: "A", text: "Credit the liability account" },
+        { key: "B", text: "Debit the liability account" },
+        { key: "C", text: "Deduct from drawings" },
+        { key: "D", text: "Credit the cash account directly" },
+      ],
+      correct: "A",
+      explanation: "Under double-entry conventions, increases in liabilities and equity are credited, whereas increases in assets and expenses are debited.",
+    },
+    {
+      subject: "Financial Accounting",
+      category: "Trial Balance & Error Correction",
+      question: "Which of the following accounting errors will NOT affect the agreement of totals in a Trial Balance?",
+      options: [
+        { key: "A", text: "Error of complete omission" },
+        { key: "B", text: "Single-sided posting error" },
+        { key: "C", text: "Casting error in the sales ledger" },
+        { key: "D", text: "Transposition error in cash book total" },
+      ],
+      correct: "A",
+      explanation: "An error of omission occurs when a transaction is completely omitted from both debit and credit entries, leaving the trial balance in balance.",
+    },
+    {
+      subject: "Financial Accounting",
+      category: "Financial Statements & Working Capital",
+      question: "How is the Working Capital (Net Current Assets) of an enterprise computed?",
+      options: [
+        { key: "A", text: "Current Assets minus Current Liabilities" },
+        { key: "B", text: "Total Assets minus Fixed Assets" },
+        { key: "C", text: "Gross Profit minus Operating Expenses" },
+        { key: "D", text: "Capital Employed plus Long-term Debt" },
+      ],
+      correct: "A",
+      explanation: "Working Capital = Current Assets - Current Liabilities, measuring short-term operational liquidity.",
+    },
+  ],
+  History: [
+    {
+      subject: "History",
+      category: "Pre-Colonial Nigerian History",
+      question: "Which pre-colonial empire in the Lake Chad basin was renowned for its Mais dynasty, the Sefawa dynasty, and extensive trans-Saharan trade?",
+      options: [
+        { key: "A", text: "Kanem-Borno Empire" },
+        { key: "B", text: "Oyo Empire" },
+        { key: "C", text: "Benin Kingdom" },
+        { key: "D", text: "Jukun Kingdom" },
+      ],
+      correct: "A",
+      explanation: "The Kanem-Borno Empire was ruled by the Mais of the Sefawa dynasty for nearly a millennium, controlling key trans-Saharan trade routes.",
+    },
+    {
+      subject: "History",
+      category: "Colonial Rule & Administration",
+      question: "The historic amalgamation of the Northern and Southern Protectorates of Nigeria to form a single political entity occurred in what year?",
+      options: [
+        { key: "A", text: "1914" },
+        { key: "B", text: "1900" },
+        { key: "C", text: "1960" },
+        { key: "D", text: "1922" },
+      ],
+      correct: "A",
+      explanation: "Lord Frederick Lugard oversaw the amalgamation of the Northern and Southern Nigerian Protectorates on January 1, 1914.",
+    },
+    {
+      subject: "History",
+      category: "Nationalist Movement & Independence",
+      question: "Who is widely regarded as the 'Father of Nigerian Nationalism' and founder of the Nigerian National Democratic Party (NNDP) in 1923?",
+      options: [
+        { key: "A", text: "Herbert Macaulay" },
+        { key: "B", text: "Nnamdi Azikiwe" },
+        { key: "C", text: "Obafemi Awolowo" },
+        { key: "D", text: "Ahmadu Bello" },
+      ],
+      correct: "A",
+      explanation: "Herbert Macaulay founded the NNDP in 1923 following the Clifford Constitution and is commemorated as the pioneer father of Nigerian nationalism.",
+    },
+  ],
+  "Islamic Studies": [
+    {
+      subject: "Islamic Studies",
+      category: "Tawhid & Pillars of Islam",
+      question: "Which branch of Tawhid deals with the absolute oneness of Allah in His Lordship, Creation, and Sustenance of the universe?",
+      options: [
+        { key: "A", text: "Tawhid ar-Rububiyyah" },
+        { key: "B", text: "Tawhid al-Uluhiyyah" },
+        { key: "C", text: "Tawhid al-Asma was-Sifat" },
+        { key: "D", text: "Shirk al-Akbar" },
+      ],
+      correct: "A",
+      explanation: "Tawhid ar-Rububiyyah is the belief in the absolute oneness of Allah as the sole Creator, Provider, and Sovereign Ruler of all existence.",
+    },
+    {
+      subject: "Islamic Studies",
+      category: "Hadith Sciences & Sunnah",
+      question: "A prophetic tradition whose chain of narrators (Isnad) is complete, reliable, and continuous from the Prophet (SAW) without discrepancy is classified as:",
+      options: [
+        { key: "A", text: "Hadith Sahih (Authentic)" },
+        { key: "B", text: "Hadith Da'eef (Weak)" },
+        { key: "C", text: "Hadith Mawdu' (Fabricated)" },
+        { key: "D", text: "Hadith Hasan (Fair only)" },
+      ],
+      correct: "A",
+      explanation: "A Sahih Hadith fulfills all conditions of authenticity: continuous sanad, trustworthy and accurate narrators, free from shadh and 'illah.",
+    },
+    {
+      subject: "Islamic Studies",
+      category: "Sirah & Early Islamic Caliphate",
+      question: "The historic pact in 628 CE between Prophet Muhammad (SAW) and the Quraysh of Makkah establishing a ten-year truce was the:",
+      options: [
+        { key: "A", text: "Treaty of Hudaybiyyah" },
+        { key: "B", text: "Treaty of Yathrib" },
+        { key: "C", text: "Pledge of Aqabah" },
+        { key: "D", text: "Charter of Madinah" },
+      ],
+      correct: "A",
+      explanation: "The Treaty of Hudaybiyyah was signed in 6 AH (628 CE) between Muslims and the Quraysh, paving the way for peaceful spread of Islam.",
+    },
+  ],
+  Hausa: [
+    {
+      subject: "Hausa",
+      category: "Tsarin Sauti da Nahawu",
+      question: "A tsarin sautin harshen Hausa, wasula nawa ne ke akwai a jimilla (gajeru da dogaye)?",
+      options: [
+        { key: "A", text: "Goma (10: gajeru biyar, dogaye biyar)" },
+        { key: "B", text: "Biyar (5)" },
+        { key: "C", text: "Bakwai (7)" },
+        { key: "D", text: "Goma sha biyu (12)" },
+      ],
+      correct: "A",
+      explanation: "Harshen Hausa yana da wasula guda 10: gajeru biyar (a, e, i, o, u) da dogaye biyar (aa, ee, ii, oo, uu).",
+    },
+    {
+      subject: "Hausa",
+      category: "Karin Magana da Adabi",
+      question: "Kammala wannan karin magana: 'Kowa ya ci zomo, ...'",
+      options: [
+        { key: "A", text: "ya ci gudu" },
+        { key: "B", text: "ya sha ruwa" },
+        { key: "C", text: "ya kwana lafiya" },
+        { key: "D", text: "ya zama gwanin harbi" },
+      ],
+      correct: "A",
+      explanation: "Karin maganar Hausa ce da ke cewa: 'Kowa ya ci zomo, ya ci gudu', tana nuni da cewa duk wanda ya sami babban rabo ya yi aiki tukuru.",
+    },
+    {
+      subject: "Hausa",
+      category: "Al'adu da Gargajiya",
+      question: "A kasar Hausa, wace sarauta ce ke kula da tsaron gari da dakarun yaki a karkashin sarki?",
+      options: [
+        { key: "A", text: "Madawaki" },
+        { key: "B", text: "Waziri" },
+        { key: "C", text: "Galadima" },
+        { key: "D", text: "Sarkin Fada" },
+      ],
+      correct: "A",
+      explanation: "Madawaki (Sarkin Dawaki) shi ne babban kwamandan mayaka kuma na biyu ga sarki a fadar masarautar Hausa.",
+    },
+  ],
+  Yoruba: [
+    {
+      subject: "Yoruba",
+      category: "Fonoloji ati Girama",
+      question: "Faweli meloo lo wa ninu ede Yoruba lapapo (aronmufe ati aranmupe)?",
+      options: [
+        { key: "A", text: "Mejila (12: aranmufe meje ati aranmupe marun-un)" },
+        { key: "B", text: "Meje (7)" },
+        { key: "C", text: "Marun-un (5)" },
+        { key: "D", text: "Mewa (10)" },
+      ],
+      correct: "A",
+      explanation: "Faweli Yoruba je mejila: aranmufe meje (a, e, ẹ, i, o, ọ, u) ati aranmupe marun-un (an, ẹn, in, ọn, un).",
+    },
+    {
+      subject: "Yoruba",
+      category: "Litireso Alohun ati Ewi",
+      question: "Iru ewi alohun wo ni awon ode ati awon ti n se aponle Ogun ma n fi orin ati ijinle gbe jade?",
+      options: [
+        { key: "A", text: "Ijala" },
+        { key: "B", text: "Esa Egungun" },
+        { key: "C", text: "Rara" },
+        { key: "D", text: "Ekún Iyawo" },
+      ],
+      correct: "A",
+      explanation: "Ijala ode je ewi alohun Yoruba ti awon ode n sun lati ki Ogun ati lati se aponle awon eranko igbo.",
+    },
+    {
+      subject: "Yoruba",
+      category: "Asa ati Ise Yoruba",
+      question: "Kin ni oruko ti a n pe omo ti a bi ti o gbe ibi (apo omo) bora wa si aye?",
+      options: [
+        { key: "A", text: "Oke" },
+        { key: "B", text: "Taiwo" },
+        { key: "C", text: "Idowu" },
+        { key: "D", text: "Ige" },
+      ],
+      correct: "A",
+      explanation: "Ni asa Yoruba, omo amutorunwa ti a bi ti o fi apo ibi bora ni a n pe ni Oke.",
+    },
+  ],
+  Igbo: [
+    {
+      subject: "Igbo",
+      category: "Utoasusu na Nsupe",
+      question: "Kedu udaume ole di n'Utoasusu Igbo dika nchikota Mkpuruokwu Igbo siri kwado?",
+      options: [
+        { key: "A", text: "Asato (8: Udaume Ufe anọ na Udaume Arọ anọ)" },
+        { key: "B", text: "Ise (5)" },
+        { key: "C", text: "Iri abuo na asato (28)" },
+        { key: "D", text: "Iri (10)" },
+      ],
+      correct: "A",
+      explanation: "Udaume Igbo di asato (8): udaume ufe (e, i, o, u) na udaume arọ (a, ị, ọ, ụ).",
+    },
+    {
+      subject: "Igbo",
+      category: "Ilu na Agumagu Odinala",
+      question: "Gbakwunye ilu a: 'Onye wetara oji, wetara ...'",
+      options: [
+        { key: "A", text: "Ndu" },
+        { key: "B", text: "Aku" },
+        { key: "C", text: "Udo" },
+        { key: "D", text: "Amamihe" },
+      ],
+      correct: "A",
+      explanation: "Ilu Igbo a ma ama na-ekwu: 'Onye wetara ọjị, wetara ndụ' n'ihi na oji bu akara nnabata na ngọzi.",
+    },
+    {
+      subject: "Igbo",
+      category: "Omenala na Echichi",
+      question: "N'ala Igbo, kedu emume kachasi mkpa e ji amata mmalite owuwe ihe ubi kwa afo?",
+      options: [
+        { key: "A", text: "Iri Ji Ohuru" },
+        { key: "B", text: "Igu Afo" },
+        { key: "C", text: "Iwa Akwa" },
+        { key: "D", text: "Ichu Aja" },
+      ],
+      correct: "A",
+      explanation: "Emume Iri Ji Ohuru (Iwa ji) bu emume di oke mkpa e ji enye Chukwu ekele maka owuwe ihe ubi ji ohuru.",
+    },
+  ],
+  Music: [
+    {
+      subject: "Music",
+      category: "Rudiments & Theory of Music",
+      question: "In Western musical notation, which clef is also formally known as the 'G-Clef'?",
+      options: [
+        { key: "A", text: "Treble Clef" },
+        { key: "B", text: "Bass Clef" },
+        { key: "C", text: "Alto Clef" },
+        { key: "D", text: "Tenor Clef" },
+      ],
+      correct: "A",
+      explanation: "The Treble Clef curls around the second line of the staff (G above middle C), hence it is called the G-Clef.",
+    },
+    {
+      subject: "Music",
+      category: "African Musical Instruments",
+      question: "To which family of musical instruments does the Nigerian 'Gangan' (talking drum) belong?",
+      options: [
+        { key: "A", text: "Membranophone" },
+        { key: "B", text: "Idiophone" },
+        { key: "C", text: "Chordophone" },
+        { key: "D", text: "Aerophone" },
+      ],
+      correct: "A",
+      explanation: "A membranophone produces sound by vibrating a stretched membrane or skin, such as the tension hourglass talking drum.",
+    },
+    {
+      subject: "Music",
+      category: "Musical Forms & Composition",
+      question: "The distance in pitch between two musical notes is referred to as a(n):",
+      options: [
+        { key: "A", text: "Interval" },
+        { key: "B", text: "Cadence" },
+        { key: "C", text: "Tempo" },
+        { key: "D", text: "Timbre" },
+      ],
+      correct: "A",
+      explanation: "An interval is the musical distance between two pitches, measured by number of semitones or letter steps.",
+    },
+  ],
+  "Visual Art": [
+    {
+      subject: "Visual Art",
+      category: "Principles & Elements of Art",
+      question: "Which element of visual art describes the relative lightness or darkness of a color or surface?",
+      options: [
+        { key: "A", text: "Value" },
+        { key: "B", text: "Hue" },
+        { key: "C", text: "Texture" },
+        { key: "D", text: "Shape" },
+      ],
+      correct: "A",
+      explanation: "Value refers to the gradual range of lightness and darkness across tones, essential for creating illusion of volume and depth.",
+    },
+    {
+      subject: "Visual Art",
+      category: "Nigerian Art Heritage",
+      question: "The ancient Nigerian terracotta and bronze sculptures characterized by elaborate hairstyles and pierced pupils belong to the:",
+      options: [
+        { key: "A", text: "Nok Culture" },
+        { key: "B", text: "Benin Kingdom" },
+        { key: "C", text: "Igbo-Ukwu" },
+        { key: "D", text: "Esie Stone Carvings" },
+      ],
+      correct: "A",
+      explanation: "The Nok Culture (c. 500 BC - 200 AD) is famous for terracotta heads featuring pierced eyes, pupils, and nostrils.",
+    },
+    {
+      subject: "Visual Art",
+      category: "Color Theory & Techniques",
+      question: "In traditional subtractive color theory, mixing two primary colors (such as Red and Yellow) produces what type of color?",
+      options: [
+        { key: "A", text: "Secondary Color (Orange)" },
+        { key: "B", text: "Tertiary Color" },
+        { key: "C", text: "Monochromatic Tint" },
+        { key: "D", text: "Complementary Shade" },
+      ],
+      correct: "A",
+      explanation: "Combining equal proportions of two primary pigments produces a secondary color (e.g., Red + Yellow = Orange).",
+    },
+  ],
 };
 
 function normalizeSubjectKey(subj: string): string {
@@ -437,6 +847,16 @@ function normalizeSubjectKey(subj: string): string {
   if (s.includes("econ")) return "Economics";
   if (s.includes("comm")) return "Commerce";
   if (s.includes("relig") || s.includes("crs") || s.includes("crk")) return "Christian Religious Studies";
+  if (s.includes("agric") || s.includes("agr")) return "Agricultural Science";
+  if (s.includes("geog") || s.includes("geo")) return "Geography";
+  if (s.includes("account") || s.includes("acc") || s.includes("fin")) return "Financial Accounting";
+  if (s.includes("hist")) return "History";
+  if (s.includes("islam") || s.includes("irs") || s.includes("irk") || s.includes("arab")) return "Islamic Studies";
+  if (s.includes("hausa")) return "Hausa";
+  if (s.includes("yoruba")) return "Yoruba";
+  if (s.includes("igbo")) return "Igbo";
+  if (s.includes("music")) return "Music";
+  if (s.includes("art") || s.includes("fine art") || s.includes("visual art")) return "Visual Art";
   return subj;
 }
 
