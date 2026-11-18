@@ -134,13 +134,28 @@ export default function DailyLearningFeedWidget() {
         headers["Authorization"] = `Bearer ${session.access_token}`;
       }
 
-      const res = await fetch("/api/gamification/quests/claim", {
+      let res = await fetch("/api/gamification/quests/claim", {
         method: "POST",
         headers,
         body: JSON.stringify({ quest_id: questId }),
       });
 
-      const data = await res.json().catch(() => null);
+      let data = await res.json().catch(() => null);
+
+      if (!res.ok && (res.status === 404 || !data?.ok)) {
+        // Fallback to community quests endpoint
+        try {
+          const fallbackRes = await fetch(`/api/community/quests/${questId}/claim`, {
+            method: "POST",
+            headers,
+          });
+          const fallbackData = await fallbackRes.json().catch(() => null);
+          if (fallbackRes.ok && fallbackData?.ok) {
+            res = fallbackRes;
+            data = fallbackData;
+          }
+        } catch {}
+      }
 
       if (res.ok && data?.ok) {
         const earnedXp = Number(data.xp_earned) || 0;

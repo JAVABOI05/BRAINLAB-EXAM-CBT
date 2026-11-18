@@ -25,6 +25,8 @@ const PUBLIC_PREFIXES = [
   "/account",
   "/verify",
   "/unsubscribe",
+  "/access",
+  "/result",
   // Staff areas enforce their own role checks
   "/admin",
   "/tutor",
@@ -46,6 +48,8 @@ const PUBLIC_PREFIXES = [
   "/tutors",
   "/courses",
   "/resources",
+  "/syllabus",
+  "/programmes",
 ];
 
 export function isPublicPath(pathname: string): boolean {
