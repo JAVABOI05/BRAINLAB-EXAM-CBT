@@ -10,6 +10,8 @@ import LeaderboardCard from "../components/LeaderboardCard";
 import { toast } from "../lib/toast";
 import { getFooterConfig } from "../lib/platformConfig";
 import { getStudentSubscriptionAndEntitlements } from "../lib/subscriptionEntitlements";
+import { NigerianInstitutionSelect } from "../components/ui/NigerianInstitutionSelect";
+import { NigerianCourseSelect } from "../components/ui/NigerianCourseSelect";
 
 const CONFIG = {
   accessCodeMessage:
@@ -26,6 +28,8 @@ export default function CBTExamPortalPage() {
   const [hasServerCbtAccess, setHasServerCbtAccess] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [dreamSchool, setDreamSchool] = useState("");
+  const [targetCourse, setTargetCourse] = useState("");
 
   // Dynamic Subjects Configuration (loaded from admin platform config / database)
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([
@@ -119,12 +123,12 @@ export default function CBTExamPortalPage() {
 
         // 2. Read any previously saved candidate info from localStorage
         const savedCandidate = localStorage.getItem("candidate");
-        let parsedSaved: { name?: string; phone?: string; subjects?: string[]; subject?: string } | null = null;
+        let parsedSaved: { name?: string; phone?: string; subjects?: string[]; subject?: string; dreamSchool?: string; targetCourse?: string } | null = null;
         if (savedCandidate) {
           try {
             const parsed: unknown = JSON.parse(savedCandidate);
             if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-              parsedSaved = parsed as { name?: string; phone?: string; subjects?: string[]; subject?: string };
+              parsedSaved = parsed as { name?: string; phone?: string; subjects?: string[]; subject?: string; dreamSchool?: string; targetCourse?: string };
             }
           } catch {
             // ignore
@@ -149,6 +153,21 @@ export default function CBTExamPortalPage() {
             setName(userFullName || parsedSaved?.name || "");
             setPhone(parsedSaved?.phone || user.user_metadata?.phone || user.phone || "");
 
+            const initialSchool = (user.user_metadata?.dream_school as string) || (user.user_metadata?.institution as string) || parsedSaved?.dreamSchool || "";
+            const initialCourse = (user.user_metadata?.target_course as string) || (user.user_metadata?.course as string) || parsedSaved?.targetCourse || "";
+            if (initialSchool) setDreamSchool(initialSchool);
+            if (initialCourse) setTargetCourse(initialCourse);
+
+            // Check profile fallback
+            try {
+              const profRaw = localStorage.getItem("brainlab_student_profile");
+              if (profRaw) {
+                const prof = JSON.parse(profRaw);
+                if (prof.dreamSchool && !initialSchool) setDreamSchool(prof.dreamSchool);
+                if (prof.targetCourse && !initialCourse) setTargetCourse(prof.targetCourse);
+              }
+            } catch {}
+
             // Read persistent subjects from user metadata first, then local candidate cache
             if (Array.isArray(user.user_metadata?.selected_subjects) && user.user_metadata.selected_subjects.length === 4) {
               setSelectedSubjects(user.user_metadata.selected_subjects);
@@ -164,6 +183,18 @@ export default function CBTExamPortalPage() {
           } else if (parsedSaved) {
             setName(parsedSaved.name || "");
             setPhone(parsedSaved.phone || "");
+            if (parsedSaved.dreamSchool) setDreamSchool(parsedSaved.dreamSchool);
+            if (parsedSaved.targetCourse) setTargetCourse(parsedSaved.targetCourse);
+
+            try {
+              const profRaw = localStorage.getItem("brainlab_student_profile");
+              if (profRaw) {
+                const prof = JSON.parse(profRaw);
+                if (prof.dreamSchool && !parsedSaved.dreamSchool) setDreamSchool(prof.dreamSchool);
+                if (prof.targetCourse && !parsedSaved.targetCourse) setTargetCourse(prof.targetCourse);
+              }
+            } catch {}
+
             if (Array.isArray(parsedSaved?.subjects) && parsedSaved.subjects.length === 4) {
               setSelectedSubjects(parsedSaved.subjects);
             } else if (parsedSaved?.subject) {
@@ -381,6 +412,8 @@ export default function CBTExamPortalPage() {
         subject: selectedSubjects[1] || selectedSubjects[0], // primary elective for legacy compatibility
         subjects: selectedSubjects,
         code: codeToUse,
+        dreamSchool: dreamSchool.trim() || null,
+        targetCourse: targetCourse.trim() || null,
         user_id: currentUser?.id || null,
         cohort_slug: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('cohort') || null : null,
         cohort_assessment_id: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('assessment') || null : null,
@@ -394,6 +427,8 @@ export default function CBTExamPortalPage() {
       void supabase.auth.updateUser({
         data: {
           selected_subjects: selectedSubjects,
+          dream_school: dreamSchool.trim() || undefined,
+          target_course: targetCourse.trim() || undefined,
         },
       }).catch(() => {});
     }
@@ -756,6 +791,35 @@ export default function CBTExamPortalPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
               />
+            </div>
+
+            {/* Target Institution & Course */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Target Higher Institution &amp; Course
+                </span>
+                <span className="text-[10px] font-bold text-blue-600 dark:text-cyan-400">
+                  Merit Benchmarking
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <NigerianInstitutionSelect
+                  value={dreamSchool}
+                  onChange={(val) => setDreamSchool(val)}
+                  label="Target Higher Institution"
+                  placeholder="Select Dream Institution..."
+                />
+                <NigerianCourseSelect
+                  value={targetCourse}
+                  onChange={(val) => setTargetCourse(val)}
+                  label="Target Course of Study"
+                  placeholder="Select Academic Course..."
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                Optional: Calibrates your mock score and scorecard against official university merit cut-offs.
+              </p>
             </div>
 
             {/* Dynamic 4 Subjects Selector */}

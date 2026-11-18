@@ -426,13 +426,9 @@ export default function BrandHeader() {
   return (
     <header
       className={`sticky top-0 z-40 border-b transition-all duration-200 ${
-        isHomePage
-          ? isScrolled
-            ? "border-white/10 bg-[#060D20]/95 py-2 shadow-lg backdrop-blur-md text-white"
-            : "border-transparent bg-[#060D20]/90 py-3 backdrop-blur-md text-white"
-          : isScrolled
-            ? "border-slate-200/80 bg-white/95 py-2 shadow-xs backdrop-blur-md dark:border-white/10 dark:bg-[#071328]/95 dark:shadow-lg text-slate-900 dark:text-white"
-            : "border-slate-200/60 bg-white/90 py-3 shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-[#071328]/85 dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] text-slate-900 dark:text-white"
+        isScrolled
+          ? "border-slate-200/80 bg-white/95 py-2 shadow-xs backdrop-blur-md dark:border-white/10 dark:bg-[#071328]/95 dark:shadow-lg text-slate-900 dark:text-white"
+          : "border-slate-200/60 bg-white/90 py-3 shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-[#071328]/85 dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] text-slate-900 dark:text-white"
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -464,14 +460,10 @@ export default function BrandHeader() {
           </div>
         </Link>
 
-        {/* Center Desktop Navigation Pill (Luminous in Light Mode, Sleek Dark on Home) */}
+        {/* Center Desktop Navigation Pill */}
         <nav
           aria-label="Primary navigation"
-          className={`hidden lg:flex items-center gap-1 rounded-2xl border p-1 shadow-inner backdrop-blur-md ${
-            isHomePage
-              ? "border-white/10 bg-slate-900/80 text-white"
-              : "border-slate-200/80 bg-slate-100/70 dark:border-white/10 dark:bg-slate-900/80 text-slate-900 dark:text-white"
-          }`}
+          className="hidden lg:flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-100/70 p-1 shadow-inner backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 text-slate-900 dark:text-white"
         >
           {/* Primary Explore Dropdown */}
           <div className="relative" ref={exploreRef}>
@@ -483,9 +475,7 @@ export default function BrandHeader() {
               className={`relative flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
                 exploreDropdownOpen || isExploreActive
                   ? "bg-slate-950 text-white shadow-xs font-extrabold dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600"
-                  : isHomePage
-                    ? "text-slate-300 hover:text-white hover:bg-white/10"
-                    : "text-slate-700 hover:text-slate-950 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
+                  : "text-slate-700 hover:text-slate-950 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
               }`}
             >
               <span>Explore</span>
@@ -592,9 +582,7 @@ export default function BrandHeader() {
                 className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
                   isActive
                     ? "bg-slate-950 text-white shadow-xs font-extrabold dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600"
-                    : isHomePage
-                      ? "text-slate-300 hover:text-white hover:bg-white/10"
-                      : "text-slate-700 hover:text-slate-950 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
+                    : "text-slate-700 hover:text-slate-950 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
                 }`}
               >
                 {link.label}
@@ -760,11 +748,7 @@ export default function BrandHeader() {
             <div className="flex items-center gap-2 ml-1">
               <Link
                 href="/login"
-                className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
-                  isHomePage
-                    ? "text-slate-300 hover:text-white"
-                    : "text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
-                }`}
+                className="rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition"
               >
                 Sign In
               </Link>
@@ -781,11 +765,7 @@ export default function BrandHeader() {
         {/* Mobile Hamburger Toggle Button */}
         <button
           type="button"
-          className={`flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border lg:hidden transition active:scale-95 bl-focus-ring cursor-pointer ${
-            isHomePage
-              ? "border-white/10 bg-slate-900 text-white hover:bg-slate-800"
-              : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-          }`}
+          className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 lg:hidden transition active:scale-95 bl-focus-ring cursor-pointer"
           aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

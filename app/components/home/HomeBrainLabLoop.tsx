@@ -220,7 +220,7 @@ export function HomeBrainLabLoop(): React.JSX.Element {
           id={`panel-${activeStage.id}`}
           role="tabpanel"
           aria-labelledby={`tab-${activeStage.id}`}
-          className="relative rounded-3xl border-2 border-slate-200 bg-white   p-6 sm:p-8 lg:p-10 shadow-sm transition-all overflow-hidden min-h-[580px] lg:h-[600px] flex flex-col justify-center"
+          className="relative rounded-3xl border-2 border-slate-200 bg-white p-5 sm:p-8 lg:p-10 shadow-sm transition-all overflow-hidden min-h-0 lg:min-h-[580px] flex flex-col justify-center dark:border-slate-800 dark:bg-slate-900/90"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch h-full">
             {/* LEFT COLUMN: Stage Identity, Narrative & Capabilities (Static height chassis) */}

@@ -9,6 +9,8 @@ import VerificationQRCode from "../components/VerificationQRCode";
 import { resolveCutoffScore, type UniversityCutoff } from "../lib/universityCutoffs";
 import { trackEvent } from "../lib/analytics";
 import { awardStudentXp } from "../lib/gamification";
+import { NigerianInstitutionSelect } from "../components/ui/NigerianInstitutionSelect";
+import { NigerianCourseSelect } from "../components/ui/NigerianCourseSelect";
 
 type Candidate = {
   name: string;
@@ -17,6 +19,7 @@ type Candidate = {
   subjects?: string[];
   code?: string;
   dreamSchool?: string;
+  targetCourse?: string;
 };
 
 type SavedResultRow = {
@@ -63,6 +66,9 @@ export default function ResultPage() {
   const [chiefProctorName, setChiefProctorName] = useState("Chief Examination Proctor");
   const [chiefProctorTitle, setChiefProctorTitle] = useState("BrainLab CBT Directorate");
   const [dreamCutoff, setDreamCutoff] = useState<UniversityCutoff | null>(null);
+  const [benchmarkSchool, setBenchmarkSchool] = useState<string>("University of Lagos (UNILAG)");
+  const [benchmarkCourse, setBenchmarkCourse] = useState<string>("Computer Science & AI");
+  const [isCustomizingBenchmark, setIsCustomizingBenchmark] = useState(false);
   const [xpAwarded, setXpAwarded] = useState<number | null>(null);
 
   useEffect(() => {
@@ -130,26 +136,32 @@ export default function ResultPage() {
           const profileRaw = localStorage.getItem("brainlab_student_profile");
           const metaRaw = localStorage.getItem("brainlab_user_metadata");
           let dreamSchool: string | null = activeCandidate.dreamSchool ?? null;
+          let targetCourse: string | null = activeCandidate.targetCourse ?? null;
           if (!dreamSchool && profileRaw) {
-            const profile = JSON.parse(profileRaw) as { dreamSchool?: string };
+            const profile = JSON.parse(profileRaw) as { dreamSchool?: string; targetCourse?: string };
             dreamSchool = profile.dreamSchool ?? null;
+            if (!targetCourse && profile.targetCourse) targetCourse = profile.targetCourse;
           }
           if (!dreamSchool && metaRaw) {
-            const meta = JSON.parse(metaRaw) as { dream_school?: string };
+            const meta = JSON.parse(metaRaw) as { dream_school?: string; target_course?: string };
             dreamSchool = meta.dream_school ?? null;
+            if (!targetCourse && meta.target_course) targetCourse = meta.target_course;
           }
-          if (dreamSchool) {
-            const cutoff = resolveCutoffScore(dreamSchool);
-            if (cutoff) {
-              setDreamCutoff(cutoff);
-              const computedScore = Math.min(400, Math.max(0, parsedSummary.score ?? 0));
-              trackEvent("result_margin_computed", {
-                institution: cutoff.shortName,
-                targetScore: cutoff.cutoffScore,
-                candidateScore: computedScore,
-                margin: computedScore - cutoff.cutoffScore,
-              });
-            }
+          const schoolToUse = dreamSchool || "University of Lagos (UNILAG)";
+          const courseToUse = targetCourse || "Computer Science & AI";
+          setBenchmarkSchool(schoolToUse);
+          setBenchmarkCourse(courseToUse);
+
+          const cutoff = resolveCutoffScore(schoolToUse, courseToUse);
+          if (cutoff) {
+            setDreamCutoff(cutoff);
+            const computedScore = Math.min(400, Math.max(0, parsedSummary.score ?? 0));
+            trackEvent("result_margin_computed", {
+              institution: cutoff.shortName,
+              targetScore: cutoff.cutoffScore,
+              candidateScore: computedScore,
+              margin: computedScore - cutoff.cutoffScore,
+            });
           }
         } catch {
           // Profile read failure is non-fatal; margin badge simply hidden
@@ -170,6 +182,21 @@ export default function ResultPage() {
   const totalScore = Math.min(400, Math.max(0, summary?.score ?? 0));
   const totalPossible = 400;
   const percentage = Math.min(100, Math.max(0, Math.round((totalScore / 400) * 100)));
+
+  function updateBenchmark(school: string, course: string) {
+    setBenchmarkSchool(school);
+    setBenchmarkCourse(course);
+    const resolved = resolveCutoffScore(school, course);
+    setDreamCutoff(resolved);
+    if (resolved) {
+      trackEvent("result_margin_computed", {
+        institution: resolved.shortName,
+        targetScore: resolved.cutoffScore,
+        candidateScore: totalScore,
+        margin: totalScore - resolved.cutoffScore,
+      });
+    }
+  }
 
   // Diagnostic calculations
   const subjectEntries = Object.entries(subjectScores);
@@ -659,30 +686,39 @@ export default function ResultPage() {
                   }`}
                   data-testid="cutoff-margin-badge"
                 >
-                  <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       <span className="inline-flex items-center gap-1"><svg className="h-3 w-3 text-cyan-600 dark:text-cyan-400 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>{dreamCutoff.shortName} Target</span>
                     </span>
-                    <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                        totalScore >= dreamCutoff.cutoffScore
-                          ? "bg-emerald-600 text-white"
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomizingBenchmark(!isCustomizingBenchmark)}
+                        className="text-[10px] font-bold text-blue-700 dark:text-cyan-400 hover:underline cursor-pointer"
+                      >
+                        {isCustomizingBenchmark ? "Close" : "Change Institution / Course"}
+                      </button>
+                      <span
+                        className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          totalScore >= dreamCutoff.cutoffScore
+                            ? "bg-emerald-600 text-white"
+                            : totalScore >= dreamCutoff.cutoffScore - 15
+                            ? "bg-amber-600 text-white"
+                            : "bg-rose-600 text-white"
+                        }`}
+                      >
+                        {totalScore >= dreamCutoff.cutoffScore
+                          ? "Above Target"
                           : totalScore >= dreamCutoff.cutoffScore - 15
-                          ? "bg-amber-600 text-white"
-                          : "bg-rose-600 text-white"
-                      }`}
-                    >
-                      {totalScore >= dreamCutoff.cutoffScore
-                        ? "Above Target"
-                        : totalScore >= dreamCutoff.cutoffScore - 15
-                        ? "On Target"
-                        : "Below Target"}
-                    </span>
+                          ? "On Target"
+                          : "Below Target"}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mt-1.5 flex items-baseline justify-between gap-2">
                     <span className="text-xs font-bold text-slate-900 dark:text-white">
-                      Merit: {dreamCutoff.cutoffScore} / 400
+                      {dreamCutoff.courseName ? `${dreamCutoff.courseName}: ` : ""}Merit: {dreamCutoff.cutoffScore} / 400
                     </span>
                     <span className="text-xs font-extrabold">
                       {totalScore - dreamCutoff.cutoffScore >= 0
@@ -693,11 +729,28 @@ export default function ResultPage() {
 
                   <p className="mt-1 text-[11px] leading-tight text-slate-600 dark:text-slate-300">
                     {totalScore >= dreamCutoff.cutoffScore
-                      ? `Clears ${dreamCutoff.shortName}'s competitive merit benchmark for high-demand faculties.`
+                      ? `Clears ${dreamCutoff.shortName}'s competitive merit benchmark for ${dreamCutoff.courseName || "high-demand faculties"}.`
                       : totalScore >= dreamCutoff.cutoffScore - 15
                       ? `Within 15 marks of ${dreamCutoff.shortName}'s merit threshold (${dreamCutoff.cutoffScore}). Target weak topics to bridge the gap.`
                       : `Requires ${dreamCutoff.cutoffScore - totalScore} more marks to meet ${dreamCutoff.shortName}'s merit standard (${dreamCutoff.cutoffScore}).`}
                   </p>
+
+                  {isCustomizingBenchmark && (
+                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                      <NigerianInstitutionSelect
+                        value={benchmarkSchool}
+                        onChange={(val) => updateBenchmark(val, benchmarkCourse)}
+                        label="Compare Against Any Institution (500+ Universities & Polytechnics)"
+                        placeholder="Search any university or polytechnic..."
+                      />
+                      <NigerianCourseSelect
+                        value={benchmarkCourse}
+                        onChange={(val) => updateBenchmark(benchmarkSchool, val)}
+                        label="Compare Academic Course (100+ Accredited Degree Programmes)"
+                        placeholder="Select degree course..."
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

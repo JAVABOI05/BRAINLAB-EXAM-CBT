@@ -153,6 +153,17 @@ export function getAllCourses(): NigerianCourse[] {
 }
 
 /**
+ * Find course by programme title or fuzzy keyword
+ */
+export function getCourseByName(query: string): NigerianCourse | undefined {
+  if (!query) return undefined;
+  const q = query.toLowerCase().trim();
+  return ALL_COURSES.find(
+    (c) => c.name.toLowerCase() === q || c.name.toLowerCase().includes(q)
+  );
+}
+
+/**
  * Unique faculties / academic disciplines
  */
 export const FACULTIES = Array.from(new Set(ALL_COURSES.map((c) => c.faculty))).sort();

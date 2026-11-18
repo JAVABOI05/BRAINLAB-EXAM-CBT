@@ -68,63 +68,63 @@ export function HomeStemStudio() {
     <section
       id="stem-studio"
       aria-label="STEM Studio Virtual Science Laboratories"
-      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-white/10 overflow-hidden bg-[#020617] text-white"
+      className="scroll-mt-20 sm:scroll-mt-24 py-12 sm:py-16 lg:py-20 border-b border-slate-200/80 dark:border-white/10 overflow-hidden bg-white text-slate-900 dark:bg-[#020617] dark:text-white"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border-2 border-white/10 bg-[#0A1128] p-6 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
+        <div className="rounded-3xl border-2 border-slate-200 bg-slate-50/80 p-5 sm:p-8 lg:p-10 text-slate-900 shadow-md relative overflow-hidden dark:border-white/10 dark:bg-[#0A1128] dark:text-white">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10">
             {/* Left Column: Catchy Educational Overview */}
-            <div className="lg:col-span-5 space-y-6 text-center lg:text-left">
+            <div className="lg:col-span-5 space-y-5 sm:space-y-6 text-center lg:text-left">
               <div
                 data-slot="VIRTUAL SCIENCE & STEM LABORATORIES (SLOT S5-01)"
-                className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3.5 py-1 text-xs font-bold text-cyan-300"
+                className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1 text-xs font-bold text-blue-700 dark:border-cyan-500/30 dark:bg-cyan-950/40 dark:text-cyan-300"
               >
-                <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span className="flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400 animate-pulse" />
                 <span>VIRTUAL SCIENCE &amp; STEM LABORATORIES</span>
               </div>
 
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-950 dark:text-white leading-tight">
                 Interactive Science in Motion. <br className="hidden sm:inline" />
-                <span className="text-cyan-400">
+                <span className="text-blue-600 dark:text-cyan-400">
                   Not Just Dry Textbooks.
                 </span>
               </h2>
 
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
                 Rather than memorizing abstract formulas, candidates manipulate live variables and watch real physical outcomes happen instantly—bridging classroom theory directly with WAEC &amp; JAMB practical CBT exams.
               </p>
 
               {/* Catchy Value Badges */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#070D1B] border border-white/10 px-3 py-2 text-left">
-                  <svg className="h-4 w-4 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <div className="flex items-center gap-2.5 rounded-xl bg-white border border-slate-200 px-3 py-2 text-left shadow-2xs dark:bg-[#070D1B] dark:border-white/10">
+                  <svg className="h-4 w-4 text-blue-600 dark:text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                   </svg>
                   <div>
-                    <div className="text-[11px] font-bold text-white">60 FPS Motion</div>
-                    <div className="text-[10px] text-slate-400">Zero lag physics</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">60 FPS Motion</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Zero lag physics</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#070D1B] border border-white/10 px-3 py-2 text-left">
-                  <svg className="h-4 w-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <div className="flex items-center gap-2.5 rounded-xl bg-white border border-slate-200 px-3 py-2 text-left shadow-2xs dark:bg-[#070D1B] dark:border-white/10">
+                  <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M10 2v7.31L4.2 18.24A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.66-2.76L14 9.31V2" />
                     <path d="M8.5 2h7M7 16h10" />
                   </svg>
                   <div>
-                    <div className="text-[11px] font-bold text-white">WAEC &amp; JAMB</div>
-                    <div className="text-[10px] text-slate-400">Practical syllabus</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">WAEC &amp; JAMB</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Practical syllabus</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 rounded-xl bg-[#070D1B] border border-white/10 px-3 py-2 text-left">
-                  <svg className="h-4 w-4 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <div className="flex items-center gap-2.5 rounded-xl bg-white border border-slate-200 px-3 py-2 text-left shadow-2xs dark:bg-[#070D1B] dark:border-white/10">
+                  <svg className="h-4 w-4 text-purple-600 dark:text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
                     <line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
                   <div>
-                    <div className="text-[11px] font-bold text-white">Instant Load</div>
-                    <div className="text-[10px] text-slate-400">Low data overhead</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Instant Load</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Low data overhead</div>
                   </div>
                 </div>
               </div>
@@ -133,7 +133,7 @@ export function HomeStemStudio() {
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                 <Link
                   href="/classroom/stem"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 text-slate-950 font-black px-6 py-3.5 text-sm shadow-lg shadow-cyan-500/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[48px] group"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3.5 text-sm shadow-md shadow-blue-600/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[48px] group"
                 >
                   <span>Launch STEM Studio</span>
                   <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
@@ -141,7 +141,7 @@ export function HomeStemStudio() {
 
                 <Link
                   href="/products/stem-studio"
-                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-white/10 bg-[#070D1B] hover:bg-[#0F1A36] px-5 py-3.5 text-sm font-bold text-slate-200 transition-all bl-focus-ring min-h-[48px]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 bg-white hover:bg-slate-100 px-5 py-3.5 text-sm font-bold text-slate-800 transition-all bl-focus-ring min-h-[48px] shadow-xs dark:border-white/10 dark:bg-[#070D1B] dark:hover:bg-[#0F1A36] dark:text-slate-200"
                 >
                   Explore Virtual Labs
                 </Link>

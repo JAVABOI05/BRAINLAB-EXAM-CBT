@@ -7,6 +7,8 @@
  * Keep in sync with HomeUniversityTargetSocialProof.tsx whenever universities are added/changed.
  */
 
+import { getInstitutionByName, getCourseByName } from "@/app/lib/nigerianInstitutions";
+
 export interface UniversityCutoff {
   /** Short abbreviation used in UI (e.g. "UNILAG") */
   shortName: string;
@@ -16,6 +18,8 @@ export interface UniversityCutoff {
   cutoffScore: number;
   /** Display label shown to candidates (e.g. "290+ Target") */
   displayLabel: string;
+  /** Specific course target if provided */
+  courseName?: string;
 }
 
 /**
@@ -89,37 +93,89 @@ export const UNIVERSITY_CUTOFFS: Record<string, UniversityCutoff> = {
  *
  * Returns `null` if the school is not found in the registry.
  */
-export function resolveCutoffScore(dreamSchool: string): UniversityCutoff | null {
+export function resolveCutoffScore(dreamSchool: string, targetCourse?: string): UniversityCutoff | null {
   if (!dreamSchool) return null;
   const normalised = dreamSchool.trim().toLowerCase();
 
+  let resolvedBase: UniversityCutoff | null = null;
+
   // 1. Direct slug match
   if (UNIVERSITY_CUTOFFS[normalised]) {
-    return UNIVERSITY_CUTOFFS[normalised];
-  }
+    resolvedBase = { ...UNIVERSITY_CUTOFFS[normalised] };
+  } else {
+    // 2. Short name or full name match (case-insensitive)
+    for (const entry of Object.values(UNIVERSITY_CUTOFFS)) {
+      if (
+        entry.shortName.toLowerCase() === normalised ||
+        entry.fullName.toLowerCase() === normalised
+      ) {
+        resolvedBase = { ...entry };
+        break;
+      }
+    }
 
-  // 2. Short name or full name match (case-insensitive)
-  for (const entry of Object.values(UNIVERSITY_CUTOFFS)) {
-    if (
-      entry.shortName.toLowerCase() === normalised ||
-      entry.fullName.toLowerCase() === normalised
-    ) {
-      return entry;
+    // 3. Partial / contains match in top 9
+    if (!resolvedBase) {
+      for (const entry of Object.values(UNIVERSITY_CUTOFFS)) {
+        if (
+          normalised.includes(entry.shortName.toLowerCase()) ||
+          normalised.includes(entry.fullName.toLowerCase()) ||
+          entry.fullName.toLowerCase().includes(normalised) ||
+          entry.shortName.toLowerCase().includes(normalised)
+        ) {
+          resolvedBase = { ...entry };
+          break;
+        }
+      }
+    }
+
+    // 4. Dynamic match against full 500+ Nigerian tertiary institutions database
+    if (!resolvedBase) {
+      const foundInst = getInstitutionByName(dreamSchool);
+      if (foundInst) {
+        let baseCutoff = 200;
+        if (foundInst.category === "Federal") {
+          baseCutoff = foundInst.type === "university" ? 220 : 150;
+        } else if (foundInst.category === "State") {
+          baseCutoff = foundInst.type === "university" ? 190 : 140;
+        } else {
+          baseCutoff = foundInst.type === "university" ? 170 : 130;
+        }
+
+        resolvedBase = {
+          shortName: foundInst.acronym || foundInst.name.split(" ")[0],
+          fullName: foundInst.name,
+          cutoffScore: baseCutoff,
+          displayLabel: `${baseCutoff}+ Target`,
+        };
+      }
     }
   }
 
-  // 3. Partial / contains match (best-effort for wizard-stored strings like
-  //    "University of Lagos (UNILAG)")
-  for (const entry of Object.values(UNIVERSITY_CUTOFFS)) {
-    if (
-      normalised.includes(entry.shortName.toLowerCase()) ||
-      normalised.includes(entry.fullName.toLowerCase()) ||
-      entry.fullName.toLowerCase().includes(normalised) ||
-      entry.shortName.toLowerCase().includes(normalised)
-    ) {
-      return entry;
+  if (!resolvedBase) return null;
+
+  // If a specific course is provided, calibrate the merit cutoff for high-demand programmes
+  if (targetCourse && targetCourse.trim()) {
+    const courseObj = getCourseByName(targetCourse);
+    let courseCutoff = resolvedBase.cutoffScore;
+
+    if (courseObj) {
+      courseCutoff = Math.max(courseCutoff, courseObj.typicalCutoff);
+    } else {
+      const cLower = targetCourse.toLowerCase();
+      if (cLower.includes("medicine") || cLower.includes("surgery")) {
+        courseCutoff = Math.max(courseCutoff, 285);
+      } else if (cLower.includes("law") || cLower.includes("pharmacy") || cLower.includes("nursing")) {
+        courseCutoff = Math.max(courseCutoff, 260);
+      } else if (cLower.includes("computer") || cLower.includes("engineering") || cLower.includes("software")) {
+        courseCutoff = Math.max(courseCutoff, 240);
+      }
     }
+
+    resolvedBase.cutoffScore = courseCutoff;
+    resolvedBase.displayLabel = `${courseCutoff}+ Target`;
+    resolvedBase.courseName = courseObj?.name || targetCourse.trim();
   }
 
-  return null;
+  return resolvedBase;
 }
