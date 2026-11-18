@@ -217,6 +217,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: insertError.message }, { status: 500 });
     }
 
+    // Optional: automatically provision examination access code if requested
+    let createdCode: string | null = null;
+    if (accessCodeRequired) {
+      const rawCustom = body.custom_code ? String(body.custom_code).trim().toUpperCase() : null;
+      const finalCode = rawCustom && rawCustom.length >= 4 && rawCustom.length <= 64
+        ? rawCustom
+        : `BLT-${require("crypto").randomBytes(4).toString("hex").toUpperCase()}`;
+
+      const codeHash = require("crypto").createHash("sha256").update(finalCode).digest("hex");
+      const maxRedemptions = Math.min(100000, Math.max(1, parseInt(body.max_redemptions || "500", 10)));
+      const expiryDate = endsAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+
+      try {
+        const { error: codeInsertErr } = await supabase.from("learning_access_codes").insert({
+          code_hash: codeHash,
+          code_hint: finalCode.slice(-4),
+          scope_type: "assessment",
+          assessment_id: created.id,
+          organisation_id: created.organisation_id || null,
+          max_questions: payload.question_count,
+          permanent: false,
+          expires_at: expiryDate,
+          max_redemptions: maxRedemptions,
+          redemption_count: 0,
+          created_by: admin.id || null,
+        });
+
+        if (!codeInsertErr) {
+          createdCode = finalCode;
+        }
+      } catch (e) {
+        console.warn("[api/admin/assessments] Failed to auto-generate access code:", e);
+      }
+    }
+
     // Log configuration audit
     try {
       await supabase.from("configuration_audit_logs").insert({
@@ -230,6 +265,8 @@ export async function POST(request: NextRequest) {
           subjects,
           questionCount: payload.question_count,
           status,
+          accessCodeRequired,
+          hasCode: Boolean(createdCode),
         },
         change_reason: `Admin created assessment "${title}" (${questionSource}, ${payload.question_count} questions)`,
       });
@@ -238,7 +275,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       assessment: created,
-      message: `Assessment "${title}" created successfully as ${status.toUpperCase()}!`,
+      access_code: createdCode,
+      message: createdCode
+        ? `Assessment "${title}" created successfully as ${status.toUpperCase()} with examination code: ${createdCode}`
+        : `Assessment "${title}" created successfully as ${status.toUpperCase()}!`,
     });
   } catch (err) {
     console.error("[api/admin/assessments] POST exception:", err);

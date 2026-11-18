@@ -83,6 +83,16 @@ export default function AssessmentRunnerPage() {
 
     if (assessmentId) void loadMeta();
 
+    if (typeof window !== "undefined") {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const qCode = sp.get("code")?.trim();
+        if (qCode) {
+          setAccessCode(qCode.toUpperCase());
+        }
+      } catch {}
+    }
+
     return () => {
       active = false;
     };

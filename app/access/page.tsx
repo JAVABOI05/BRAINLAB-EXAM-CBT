@@ -110,66 +110,129 @@ export default function AccessPage() {
     const normalizedCode = code.trim().toUpperCase();
     const trimmedPhone = phone.trim();
 
-    const result = await checkAccessCode(normalizedCode, trimmedPhone);
+    try {
+      const res = await fetch("/api/exam/resolve-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: normalizedCode, phone: trimmedPhone }),
+      });
+      const result = await res.json();
 
-    if (isError(result)) {
-      const nextFail = failedCount + 1;
-      setFailedCount(nextFail);
-      if (nextFail >= 3) {
-        setLockoutRemaining(30);
-        setErrorText("Too many invalid attempts. Please wait 30 seconds before trying again.");
-      } else {
-        setErrorText(result.message || "Invalid access code.");
+      if (!res.ok || !result.ok) {
+        const nextFail = failedCount + 1;
+        setFailedCount(nextFail);
+        if (nextFail >= 4) {
+          setLockoutRemaining(30);
+          setErrorText("Too many invalid attempts. Please wait 30 seconds before trying again.");
+        } else {
+          setErrorText(result.message || "Invalid examination code.");
+        }
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-      return;
-    }
 
-    if (result.type === "none") {
-      const nextFail = failedCount + 1;
-      setFailedCount(nextFail);
-      if (nextFail >= 3) {
-        setLockoutRemaining(30);
-        setErrorText("Too many invalid attempts. Please wait 30 seconds before trying again.");
-      } else {
-        setErrorText("Invalid access code or phone number. Please check your details and try again.");
+      setFailedCount(0);
+      setLockoutRemaining(0);
+      localStorage.setItem("access_code", normalizedCode);
+
+      // 1. Instructor Assessment Flow: Route directly to assessment briefing
+      if (result.type === "instructor_assessment" && result.destination) {
+        setLoading(false);
+        router.push(result.destination);
+        return;
       }
+
+      // 2. UTME Mock Flow: Update candidate record and route to instructions
+      const savedCandidate = localStorage.getItem("candidate");
+      let candidateData: Record<string, unknown> = {};
+      if (savedCandidate) {
+        try {
+          candidateData = JSON.parse(savedCandidate) || {};
+        } catch {}
+      }
+
+      const existingSubjects = Array.isArray(candidateData.subjects) && candidateData.subjects.length === 4
+        ? candidateData.subjects
+        : ["English", "Mathematics", "Physics", "Chemistry"];
+
+      localStorage.setItem(
+        "candidate",
+        JSON.stringify({
+          ...candidateData,
+          name: candidateData.name || "",
+          phone: trimmedPhone,
+          subject: result.preconfigured_subject || candidateData.subject || existingSubjects[1] || "Mathematics",
+          subjects: existingSubjects,
+          code: normalizedCode,
+          access_type: result.access_mode === "master" ? "master" : "normal",
+        })
+      );
+
       setLoading(false);
-      return;
+      router.push("/instructions");
+    } catch {
+      // Fallback to legacy checkAccessCode RPC
+      const result = await checkAccessCode(normalizedCode, trimmedPhone);
+
+      if (isError(result)) {
+        const nextFail = failedCount + 1;
+        setFailedCount(nextFail);
+        if (nextFail >= 3) {
+          setLockoutRemaining(30);
+          setErrorText("Too many invalid attempts. Please wait 30 seconds before trying again.");
+        } else {
+          setErrorText(result.message || "Invalid access code.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (result.type === "none") {
+        const nextFail = failedCount + 1;
+        setFailedCount(nextFail);
+        if (nextFail >= 3) {
+          setLockoutRemaining(30);
+          setErrorText("Too many invalid attempts. Please wait 30 seconds before trying again.");
+        } else {
+          setErrorText("Invalid access code or phone number. Please check your details and try again.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      setFailedCount(0);
+      setLockoutRemaining(0);
+      localStorage.setItem("access_code", normalizedCode);
+
+      const savedCandidate = localStorage.getItem("candidate");
+
+      let candidateData: Record<string, unknown> = {};
+      if (savedCandidate) {
+        try {
+          candidateData = JSON.parse(savedCandidate) || {};
+        } catch {}
+      }
+
+      const existingSubjects = Array.isArray(candidateData.subjects) && candidateData.subjects.length === 4
+        ? candidateData.subjects
+        : ["English", "Mathematics", "Physics", "Chemistry"];
+
+      localStorage.setItem(
+        "candidate",
+        JSON.stringify({
+          ...candidateData,
+          name: candidateData.name || "",
+          phone: trimmedPhone,
+          subject: candidateData.subject || existingSubjects[1] || "Mathematics",
+          subjects: existingSubjects,
+          code: normalizedCode,
+          access_type: result.type === "master" ? "master" : "normal",
+        })
+      );
+
+      setLoading(false);
+      router.push("/instructions");
     }
-
-    setFailedCount(0);
-    setLockoutRemaining(0);
-    localStorage.setItem("access_code", normalizedCode);
-
-    const savedCandidate = localStorage.getItem("candidate");
-
-    let candidateData: Record<string, unknown> = {};
-    if (savedCandidate) {
-      try {
-        candidateData = JSON.parse(savedCandidate) || {};
-      } catch {}
-    }
-
-    const existingSubjects = Array.isArray(candidateData.subjects) && candidateData.subjects.length === 4
-      ? candidateData.subjects
-      : ["English", "Mathematics", "Physics", "Chemistry"];
-
-    localStorage.setItem(
-      "candidate",
-      JSON.stringify({
-        ...candidateData,
-        name: candidateData.name || "",
-        phone: trimmedPhone,
-        subject: candidateData.subject || existingSubjects[1] || "Mathematics",
-        subjects: existingSubjects,
-        code: normalizedCode,
-        access_type: result.type === "master" ? "master" : "normal",
-      })
-    );
-
-    setLoading(false);
-    router.push("/instructions");
   };
 
   if (pageLoading) {

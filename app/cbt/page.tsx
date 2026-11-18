@@ -67,6 +67,28 @@ export default function CBTExamPortalPage() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [whatsappConfigLoaded, setWhatsappConfigLoaded] = useState(false);
 
+  // Examination Code Entry & Resolution State
+  const [examTab, setExamTab] = useState<"utme" | "instructor">("utme");
+  const [examCodeInput, setExamCodeInput] = useState("");
+  const [codeValidating, setCodeValidating] = useState(false);
+  const [resolvedExam, setResolvedExam] = useState<{
+    ok: boolean;
+    type: "utme_mock" | "instructor_assessment";
+    title: string;
+    description?: string;
+    organisation_name?: string;
+    duration_seconds?: number;
+    question_count?: number;
+    destination?: string;
+    message?: string;
+    code: string;
+    max_attempts?: number;
+    attempts_used?: number;
+    starts_at?: string;
+    ends_at?: string;
+  } | null>(null);
+  const [codeValidationMsg, setCodeValidationMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+
   const accessLink = whatsappConfigLoaded && whatsappNumber
     ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(CONFIG.accessCodeMessage)}`
     : "#";
@@ -231,6 +253,60 @@ export default function CBTExamPortalPage() {
     });
   };
 
+  const handleValidateExamCode = async (overrideCode?: string) => {
+    const targetCode = (overrideCode || examCodeInput).trim().toUpperCase();
+    if (!targetCode) {
+      setCodeValidationMsg({ type: "error", text: "Please enter an examination code or access PIN." });
+      return;
+    }
+
+    setCodeValidating(true);
+    setCodeValidationMsg(null);
+    setResolvedExam(null);
+
+    try {
+      const res = await fetch("/api/exam/resolve-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: targetCode, phone: phone.trim() || undefined }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        setCodeValidationMsg({
+          type: "error",
+          text: data.message || "Invalid examination code. Please check with your instructor or administrator.",
+        });
+        setCodeValidating(false);
+        return;
+      }
+
+      setResolvedExam(data);
+      localStorage.setItem("access_code", targetCode);
+
+      if (data.type === "instructor_assessment") {
+        setExamTab("instructor");
+        setCodeValidationMsg({
+          type: "success",
+          text: `Verified: ${data.title} (${data.organisation_name || "Instructor Assessment"})`,
+        });
+      } else {
+        setExamTab("utme");
+        setCodeValidationMsg({
+          type: "success",
+          text: "Verified: UTME Mock Simulator Access Voucher.",
+        });
+      }
+    } catch {
+      setCodeValidationMsg({
+        type: "error",
+        text: "Could not connect to verification server. Please check your network connection.",
+      });
+    } finally {
+      setCodeValidating(false);
+    }
+  };
+
   const handleStartExam = async () => {
     const effectiveName =
       name.trim() ||
@@ -262,7 +338,40 @@ export default function CBTExamPortalPage() {
 
     setStarting(true);
 
-    const savedCode = localStorage.getItem("access_code") || (hasServerCbtAccess ? "SUBSCRIPTION-ACTIVE" : "");
+    // 1. If an instructor assessment is already resolved, route directly to its briefing
+    if (resolvedExam && resolvedExam.type === "instructor_assessment" && resolvedExam.destination) {
+      setStarting(false);
+      router.push(resolvedExam.destination);
+      return;
+    }
+
+    let codeToUse = examCodeInput.trim().toUpperCase() || localStorage.getItem("access_code") || (hasServerCbtAccess ? "SUBSCRIPTION-ACTIVE" : "");
+
+    // 2. If student typed a code that hasn't been verified yet, resolve it on-the-fly
+    if (examCodeInput.trim() && (!resolvedExam || resolvedExam.code !== examCodeInput.trim().toUpperCase())) {
+      try {
+        const res = await fetch("/api/exam/resolve-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: examCodeInput.trim().toUpperCase(), phone: effectivePhone }),
+        });
+        const resolved = await res.json();
+
+        if (res.ok && resolved.ok) {
+          if (resolved.type === "instructor_assessment" && resolved.destination) {
+            setStarting(false);
+            router.push(resolved.destination);
+            return;
+          }
+          codeToUse = resolved.code;
+          localStorage.setItem("access_code", resolved.code);
+        } else if (accessCodeRequired && !hasServerCbtAccess) {
+          toast.error(resolved.message || "Invalid examination code.");
+          setStarting(false);
+          return;
+        }
+      } catch {}
+    }
 
     localStorage.setItem(
       "candidate",
@@ -271,7 +380,7 @@ export default function CBTExamPortalPage() {
         phone: effectivePhone,
         subject: selectedSubjects[1] || selectedSubjects[0], // primary elective for legacy compatibility
         subjects: selectedSubjects,
-        code: savedCode,
+        code: codeToUse,
         user_id: currentUser?.id || null,
         cohort_slug: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('cohort') || null : null,
         cohort_assessment_id: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('assessment') || null : null,
@@ -300,7 +409,7 @@ export default function CBTExamPortalPage() {
       subjects_count: selectedSubjects.length,
     });
 
-    if (accessCodeRequired && !savedCode && !hasServerCbtAccess) {
+    if (accessCodeRequired && !codeToUse && !hasServerCbtAccess) {
       router.push("/access");
     } else {
       router.push("/instructions");
@@ -374,31 +483,245 @@ export default function CBTExamPortalPage() {
         </div>
       </div>
 
-      {/* Prominent examination-code entry for candidates */}
-      {accessCodeRequired && (
-        <section className="mx-auto mb-8 max-w-6xl rounded-3xl border-2 border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-900 p-5 shadow-lg shadow-blue-100/40 dark:shadow-none sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700 dark:text-cyan-400">Already have an examination code?</p>
-              <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Enter your CBT access code</h2>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                Use the code issued to you to unlock your examination. You will be asked to confirm your candidate phone number before validation.
-              </p>
+      {/* Prominent Unified Examination Code Entry Section */}
+      <section aria-label="Examination code entry" className="mx-auto mb-8 max-w-6xl rounded-3xl border-2 border-blue-200 dark:border-blue-900/80 bg-white dark:bg-slate-900/90 p-5 sm:p-7 shadow-xl shadow-blue-950/5 dark:shadow-none backdrop-blur-md">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-blue-100 dark:bg-blue-900/50 px-3 py-0.5 text-xs font-black uppercase tracking-wider text-blue-800 dark:text-cyan-300">
+                Examination Entry Gate
+              </span>
+              <span className="text-xs text-slate-400">•</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                Universal Code Validation
+              </span>
             </div>
-            <Link
-              href="/access"
-              className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3 text-sm font-black text-white shadow-md transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
-            >
-              Enter Access / Exam Code <span aria-hidden="true">→</span>
-            </Link>
+            <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              Enter Examination Code or Access PIN
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+              Have an examination voucher or an instructor-assigned test code? Enter it below. Our engine automatically recognizes the code type and routes you to the correct examination.
+            </p>
           </div>
-        </section>
-      )}
+
+          {/* Quick Tab Selector */}
+          <div className="flex items-center rounded-2xl bg-slate-100 dark:bg-slate-800/80 p-1 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => { setExamTab("utme"); setCodeValidationMsg(null); }}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                examTab === "utme"
+                  ? "bg-white dark:bg-slate-900 text-blue-700 dark:text-cyan-400 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <span>🎓</span>
+              <span>UTME / JAMB Mock</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setExamTab("instructor"); setCodeValidationMsg(null); }}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                examTab === "instructor"
+                  ? "bg-white dark:bg-slate-900 text-blue-700 dark:text-cyan-400 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <span>🏫</span>
+              <span>Instructor / School Exam</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab 1: UTME / JAMB Mock Examination Entry */}
+        {examTab === "utme" && (
+          <div className="mt-5 space-y-4 animate-fade-in">
+            {hasServerCbtAccess ? (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-lg shadow-sm">
+                    ⚡
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-black">Pro / Plus Subscription Active — Unlimited CBT Practice</h4>
+                    <p className="text-xs text-emerald-800 dark:text-emerald-300">
+                      Your account has verified CBT entitlements. You can practice without entering a single-use voucher code.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById("candidate-setup-form");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition shadow-xs cursor-pointer whitespace-nowrap self-stretch sm:self-auto text-center"
+                >
+                  Configure 4 Subjects &amp; Start &darr;
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row items-stretch gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={examCodeInput}
+                    onChange={(e) => {
+                      setExamCodeInput(e.target.value.toUpperCase());
+                      setCodeValidationMsg(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void handleValidateExamCode();
+                    }}
+                    placeholder="Enter CBT Access Voucher (e.g. BLT-XXXX-XXXX)"
+                    className="w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950 px-4 py-3.5 text-sm font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900"
+                  />
+                  {examCodeInput && (
+                    <button
+                      type="button"
+                      onClick={() => { setExamCodeInput(""); setResolvedExam(null); setCodeValidationMsg(null); }}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={codeValidating || !examCodeInput.trim()}
+                  onClick={() => void handleValidateExamCode()}
+                  className="px-6 py-3.5 rounded-2xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-black shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  {codeValidating ? "Validating…" : "Verify Access Code"}
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
+              <span>Standard 180-Question 4-Subject Computerized Paper • 2 Hours</span>
+              <a
+                href={accessLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-blue-700 dark:text-cyan-400 hover:underline"
+              >
+                Need an access voucher? Contact Helpdesk &rarr;
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Instructor / School Examination Entry */}
+        {examTab === "instructor" && (
+          <div className="mt-5 space-y-4 animate-fade-in">
+            <div className="flex flex-col md:flex-row items-stretch gap-3">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={examCodeInput}
+                  onChange={(e) => {
+                    setExamCodeInput(e.target.value.toUpperCase());
+                    setCodeValidationMsg(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void handleValidateExamCode();
+                  }}
+                  placeholder="Enter Instructor Examination Code / PIN (e.g. BLT-7X2W9M or MTH101-MIDTERM)"
+                  className="w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950 px-4 py-3.5 text-sm font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                />
+                {examCodeInput && (
+                  <button
+                    type="button"
+                    onClick={() => { setExamCodeInput(""); setResolvedExam(null); setCodeValidationMsg(null); }}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={codeValidating || !examCodeInput.trim()}
+                onClick={() => void handleValidateExamCode()}
+                className="px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap"
+              >
+                {codeValidating ? "Verifying…" : "Access Assessment"}
+                <span>&rarr;</span>
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
+              <span>Institutional Quizzes, Class Assessments &amp; School Competitions</span>
+              <span className="font-semibold text-slate-500">Provided by your teacher, tutor, or school administrator</span>
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Alert Messages */}
+        {codeValidationMsg && (
+          <div className={`mt-4 p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+            codeValidationMsg.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+          }`}>
+            <span>{codeValidationMsg.type === "success" ? "✓" : "⚠️"}</span>
+            <span>{codeValidationMsg.text}</span>
+          </div>
+        )}
+
+        {/* Resolved Verified Examination Banner */}
+        {resolvedExam && (
+          <div className="mt-5 p-5 rounded-2xl border-2 border-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/40 dark:border-emerald-700 animate-fade-in shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-200/80 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200 text-[10px] font-black uppercase tracking-wider">
+                    {resolvedExam.type === "instructor_assessment" ? "Authorized Instructor Examination" : "Authorized UTME Mock Voucher"}
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono font-bold">Code: {resolvedExam.code}</span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">
+                  {resolvedExam.title}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                  {resolvedExam.organisation_name || "BrainLab Academy"} &bull; {resolvedExam.question_count} Questions &bull; {Math.round((resolvedExam.duration_seconds || 1800) / 60)} Minutes
+                  {resolvedExam.max_attempts ? ` • Attempt Limit: ${resolvedExam.max_attempts}` : ""}
+                </p>
+              </div>
+
+              <div className="w-full sm:w-auto">
+                {resolvedExam.type === "instructor_assessment" && resolvedExam.destination ? (
+                  <Link
+                    href={resolvedExam.destination}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md transition active:scale-95 text-center"
+                  >
+                    <span>Proceed to Assessment Briefing</span>
+                    <span>&rarr;</span>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById("candidate-setup-form");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
+                      toast.success("Access voucher verified and attached to your examination session!");
+                    }}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-black shadow-md transition active:scale-95 text-center"
+                  >
+                    <span>Voucher Attached &bull; Select Subjects &darr;</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Main Container */}
       <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-2">
         {/* Candidate Registration & 4-Subject Setup */}
-        <div className="rounded-3xl border border-white/60 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-6 shadow-xl shadow-blue-100/30 dark:shadow-none backdrop-blur-md md:p-8">
+        <div id="candidate-setup-form" className="rounded-3xl border border-white/60 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-6 shadow-xl shadow-blue-100/30 dark:shadow-none backdrop-blur-md md:p-8">
           <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
             <h2 className="text-xl font-black text-slate-900 dark:text-white">
               Candidate Examination Setup
@@ -547,6 +870,18 @@ export default function CBTExamPortalPage() {
                 </div>
               </div>
             )}
+
+            {/* Examination Access Pass Indicator */}
+            <div className="mt-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-bold">Access Pass:</span>
+              {hasServerCbtAccess ? (
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">⚡ Pro/Plus Active — Instant Access</span>
+              ) : examCodeInput ? (
+                <span className="font-mono font-bold text-blue-700 dark:text-cyan-400">Code: {examCodeInput} Attached</span>
+              ) : (
+                <span className="text-amber-600 dark:text-amber-400 font-semibold">Voucher code required</span>
+              )}
+            </div>
 
             {/* Launch Action Button */}
             <button
