@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import PasswordStrengthMeter from "@/app/components/ui/PasswordStrengthMeter";
+import { supabase } from "@/app/lib/supabase";
+import { getAuthRedirectUrl } from "@/app/lib/authRedirect";
 import {
   checkAdminPinStatus,
   verifyAdminPin,
@@ -37,7 +39,7 @@ export default function AdminPinGuard({
   const [pin, setPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
+  const [googleReauthenticated, setGoogleReauthenticated] = useState(false);
   const [showPin, setShowPin] = useState(false);
 
   const [busy, setBusy] = useState(false);
@@ -65,6 +67,15 @@ export default function AdminPinGuard({
       setIsSet(status.isSet);
       setCanManage(!!status.canManage);
       setAdminEmail(status.adminEmail || "");
+
+      const resetReturn = new URLSearchParams(window.location.search).get("adminPinReset");
+      if (resetReturn === "1") {
+        setMode("reset");
+        setGoogleReauthenticated(true);
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("adminPinReset");
+        window.history.replaceState({}, "", cleanUrl.toString());
+      }
 
       // If PIN is not initialized yet and current admin has setup privileges, default to setup mode
       if (!status.isSet && status.canManage) {
@@ -147,13 +158,31 @@ export default function AdminPinGuard({
     }
   }
 
+  async function handleGoogleReauthentication() {
+    setBusy(true);
+    setError("");
+    const returnTo = `${window.location.pathname}?adminPinReset=1`;
+    const redirectTo = getAuthRedirectUrl(`/auth/callback?redirect=${encodeURIComponent(returnTo)}`);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    if (oauthError) {
+      setError(oauthError.message || "Could not start Google sign-in. Please try again.");
+      setBusy(false);
+    }
+  }
+
   async function handleReset(e: FormEvent) {
     e.preventDefault();
     setError("");
     setMessage("");
 
-    if (!adminPassword) {
-      setError("Administrator account password is required.");
+    if (!googleReauthenticated) {
+      setError("Please continue with Google before resetting your PIN.");
       return;
     }
 
@@ -162,7 +191,6 @@ export default function AdminPinGuard({
       setError("New Security PIN must be between 4 and 12 characters.");
       return;
     }
-
     if (cleanNewPin !== confirmPin.trim()) {
       setError("New Security PIN and confirmation do not match.");
       return;
@@ -170,19 +198,14 @@ export default function AdminPinGuard({
 
     setBusy(true);
     try {
-      const res = await resetAdminPin({
-        adminPassword,
-        newPin: cleanNewPin,
-      });
-
+      const res = await resetAdminPin({ newPin: cleanNewPin });
       if (!res.ok) {
         setError(res.error || "Failed to reset Security PIN.");
         return;
       }
-
       setIsSet(true);
       setIsVerified(true);
-      setAdminPassword("");
+      setGoogleReauthenticated(false);
       setNewPin("");
       setConfirmPin("");
       setMessage("Security PIN successfully reset and workspace unlocked.");
@@ -282,7 +305,7 @@ export default function AdminPinGuard({
           {mode === "setup"
             ? "A master Security PIN has not yet been established. Set a secure 4 to 12-character PIN to safeguard platform governance, user permissions, and sensitive controls."
             : mode === "reset"
-            ? `Authorize a Security PIN reset using your administrator account password${adminEmail ? ` (${adminEmail})` : ""}.`
+            ? `Verify your administrator Google account${adminEmail ? ` (${adminEmail})` : ""}, then create a new Security PIN.`
             : description}
         </p>
 
@@ -464,34 +487,19 @@ export default function AdminPinGuard({
           </form>
         )}
 
-        {/* 2. RESET FORM (Emergency Password-Based Reset) */}
+        {/* 2. RESET FORM (Google identity verification) */}
         {mode === "reset" && (
           <form onSubmit={handleReset} style={{ textAlign: "left" }}>
-            <label
-              htmlFor="admin-account-password"
-              style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
-            >
-              Administrator Account Password
-            </label>
-            <input
-              id="admin-account-password"
-              type="password"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              placeholder="Enter your account login password"
-              autoFocus
-              required
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                fontSize: "0.9375rem",
-                borderRadius: 10,
-                border: "1.5px solid #cbd5e1",
-                outline: "none",
-                fontWeight: 500,
-                marginBottom: 14,
-              }}
-            />
+            <div style={{ padding: "14px 16px", borderRadius: 10, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1e40af", marginBottom: 16, fontSize: "0.875rem", lineHeight: 1.5 }}>
+              {googleReauthenticated
+                ? "Google account verified for this reset. You can now choose a new Security PIN."
+                : "Because you use Google to sign in, you do not need to enter a Gmail password here. Continue with Google to verify your administrator account."}
+            </div>
+            {!googleReauthenticated && (
+              <button type="button" onClick={handleGoogleReauthentication} disabled={busy} className="admin-btn-primary" style={{ width: "100%", padding: "12px 18px", marginBottom: 18, borderRadius: 10, background: "#1d4ed8", color: "#fff", border: "none", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer" }}>
+                {busy ? "Opening Google…" : "Continue with Google"}
+              </button>
+            )}
 
             <label
               htmlFor="admin-reset-new-pin"
@@ -573,7 +581,7 @@ export default function AdminPinGuard({
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <button
                 type="submit"
-                disabled={busy || !adminPassword || !newPin.trim() || !confirmPin.trim()}
+                disabled={busy || !googleReauthenticated || !newPin.trim() || !confirmPin.trim()}
                 className="admin-btn-primary"
                 style={{
                   flex: 1,
@@ -587,7 +595,7 @@ export default function AdminPinGuard({
                   cursor: busy ? "not-allowed" : "pointer",
                 }}
               >
-                {busy ? "Resetting PIN…" : "Verify Password & Reset PIN"}
+                {busy ? "Resetting PIN…" : "Reset Security PIN"}
               </button>
               <button
                 type="button"
