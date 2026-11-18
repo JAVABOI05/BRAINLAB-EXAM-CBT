@@ -156,7 +156,9 @@ export default function AuthCallbackPage() {
         } catch {
           // proceed
         }
-        router.replace("/admin/dashboard");
+        const operatorDestination = sanitizeRedirectUrl(nextParam, "/admin/dashboard");
+        const isPinResetReturn = new URL(operatorDestination, window.location.origin).searchParams.get("adminPinReset") === "1";
+        router.replace(isPinResetReturn ? operatorDestination : "/admin/dashboard");
         return;
       }
 
