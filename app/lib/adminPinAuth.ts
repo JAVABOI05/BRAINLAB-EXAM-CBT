@@ -177,9 +177,14 @@ export async function setupAdminPin(newPin: string): Promise<PinVerifyResult> {
   }
 }
 
-export async function resetAdminPin(params: { adminPassword: string; newPin: string }): Promise<PinVerifyResult> {
+export async function resetAdminPin(params: { newPin: string }): Promise<PinVerifyResult> {
   try {
     const authHeader = await getAuthHeader();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const reauthAccessToken = sessionData.session?.access_token;
+    if (sessionError || !reauthAccessToken) {
+      return { ok: false, error: "Please sign in with Google again before resetting the PIN." };
+    }
     const res = await fetch("/api/admin/security/pin", {
       method: "POST",
       headers: {
@@ -188,7 +193,7 @@ export async function resetAdminPin(params: { adminPassword: string; newPin: str
       },
       body: JSON.stringify({
         action: "reset",
-        adminPassword: params.adminPassword,
+        reauthAccessToken,
         newPin: params.newPin,
       }),
     });
