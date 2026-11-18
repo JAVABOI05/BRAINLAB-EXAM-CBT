@@ -52,46 +52,26 @@ export default function DailyLearningFeedWidget() {
         const json = await res.json();
         if (active) setFeed(json);
       } catch {
-        // Honest defensive default: mock local state if endpoint not yet deployed
-        if (active) {
-          setFeed({
-            user_id: "me",
-            streak_days: 3,
-            total_xp: 350,
-            today_assessments: [
-              {
-                id: "cbt-quick-drill",
-                title: "Daily UTME Speed Drill",
-                subject: "Mathematics & Physics",
-                duration_minutes: 15,
-                question_count: 10,
-              },
-            ],
-            active_quests: [
-              {
-                id: "quest-1",
-                title: "Solve 5 Practice Questions",
-                description: "Complete any topic test in Learning Hub or CBT Practice.",
-                xp_reward: 50,
-                quest_type: "practice_count",
-                target_count: 5,
-                current_count: 5,
-                is_completed: true,
-                is_claimed: false,
-              },
-              {
-                id: "quest-2",
-                title: "Review 1 Socratic Correction",
-                description: "Inspect examiner traps on a previously missed question.",
-                xp_reward: 30,
-                quest_type: "review_correction",
-                target_count: 1,
-                current_count: 0,
-                is_completed: false,
-                is_claimed: false,
-              },
-            ],
+        // Feed route is not deployed yet: load real quests instead of sample data.
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const qRes = await fetch("/api/community/quests", {
+            headers: session?.access_token
+              ? { Authorization: `Bearer ${session.access_token}` }
+              : {},
           });
+          const qJson = await qRes.json();
+          if (active && qJson.ok && Array.isArray(qJson.data)) {
+            setFeed({
+              user_id: session?.user?.id ?? "me",
+              streak_days: 0,
+              total_xp: 0,
+              today_assessments: [],
+              active_quests: qJson.data,
+            });
+          }
+        } catch {
+          // leave the widget empty rather than showing fake quests
         }
       } finally {
         if (active) setLoading(false);
@@ -108,33 +88,36 @@ export default function DailyLearningFeedWidget() {
   async function handleClaimReward(questId: string) {
     setClaimingId(questId);
     try {
-      const res = await fetch("/api/gamification/quests/claim", {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        window.alert("Please sign in again to claim your XP.");
+        return;
+      }
+      const res = await fetch(`/api/community/quests/${questId}/claim`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quest_id: questId }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
-      if (res.ok) {
-        setFeed((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            active_quests: prev.active_quests.map((q) =>
-              q.id === questId ? { ...q, is_claimed: true } : q
-            ),
-          };
-        });
+      const json = await res.json().catch(() => ({} as { ok?: boolean; error?: string; xp_earned?: number }));
+      if (res.ok && json.ok) {
+        setFeed((prev) =>
+          prev
+            ? {
+                ...prev,
+                total_xp: prev.total_xp + (json.xp_earned ?? 0),
+                active_quests: prev.active_quests.map((q) =>
+                  q.id === questId ? { ...q, is_claimed: true } : q
+                ),
+              }
+            : prev
+        );
+      } else {
+        window.alert(`Could not claim XP: ${json.error ?? res.status}`);
       }
     } catch {
-      // Local defensive claim
-      setFeed((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          active_quests: prev.active_quests.map((q) =>
-            q.id === questId ? { ...q, is_claimed: true } : q
-          ),
-        };
-      });
+      window.alert("Network problem. Please try again.");
     } finally {
       setClaimingId(null);
     }
