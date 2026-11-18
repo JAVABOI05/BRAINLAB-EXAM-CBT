@@ -142,7 +142,6 @@ export default function CandidateExamHistoryPage() {
       if (e.standing && e.standing.toLowerCase().includes(q)) return true;
       if (e.subjects && e.subjects.some((s) => s.toLowerCase().includes(q))) return true;
       if (e.certificate?.certificateNumber && e.certificate.certificateNumber.toLowerCase().includes(q)) return true;
-      if (e.certificate?.courseName && e.certificate.courseName.toLowerCase().includes(q)) return true;
       return false;
     });
   }, [exams, filter, searchQuery]);

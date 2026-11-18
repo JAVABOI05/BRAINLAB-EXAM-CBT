@@ -63,14 +63,14 @@ async function runFoundationSuite() {
   it("Display phone digits strictly match tel: destination URI", () => {
     const displayDigits = normalizePhoneDigits(CONTACT_CONFIG.phone.display);
     const dialDigits = normalizePhoneDigits(CONTACT_CONFIG.phone.dialUri);
-    assert.strictEqual(displayDigits, "2349074310204");
-    assert.strictEqual(dialDigits, "2349074310204");
-    assert.strictEqual(CONTACT_CONFIG.phone.dialUri, "tel:+2349074310204");
+    assert.strictEqual(displayDigits, CONTACT_CONFIG.phone.rawDigits);
+    assert.strictEqual(dialDigits, CONTACT_CONFIG.phone.rawDigits);
+    assert.strictEqual(CONTACT_CONFIG.phone.dialUri, `tel:+${CONTACT_CONFIG.phone.rawDigits}`);
   });
 
   it("WhatsApp click-to-chat URL targets the exact normalized phone digits", () => {
     const chatUrl = buildWhatsAppChatUrl("Test inquiry");
-    assert(chatUrl.startsWith("https://wa.me/2349074310204?text="));
+    assert(chatUrl.startsWith(`https://wa.me/${CONTACT_CONFIG.phone.rawDigits}?text=`));
   });
 
   it("Official WhatsApp channel URL is verified and intact", () => {
