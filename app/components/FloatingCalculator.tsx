@@ -85,16 +85,25 @@ export default function FloatingCalculator({
   const [position, setPosition] = useState({ x: 24, y: 120 });
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
 
   const calcRef = useRef<HTMLDivElement | null>(null);
 
-  // Position nicely in top-right or center-right on initial mount
+  // Position nicely in top-right or center-right on initial mount and track mobile viewport
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 640);
+      };
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+
       const calcWidth = Math.min(320, window.innerWidth - 32);
       const defaultX = Math.max(16, window.innerWidth - calcWidth - 24);
       const defaultY = Math.min(140, Math.max(70, Math.floor(window.innerHeight * 0.12)));
       setPosition({ x: defaultX, y: defaultY });
+
+      return () => window.removeEventListener("resize", checkMobile);
     }
   }, []);
 
