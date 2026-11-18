@@ -10,6 +10,7 @@ import { useLearnerTheme, type AppearancePreference } from "../components/Learne
 import { isGovernanceAdminRole, isInstructorRole } from "../lib/adminRoles";
 import { StudentAvatar } from "../components/ui/StudentAvatar";
 import { extractStudentProfile } from "../lib/studentProfile";
+import { StudentCommandPalette } from "../components/StudentCommandPalette";
 
 export interface StudentNavItem {
   href: string;
@@ -119,7 +120,19 @@ export default function StudentPortalShell({ children }: { children: React.React
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchPaletteOpen, setSearchPaletteOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchPaletteOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -282,6 +295,24 @@ export default function StudentPortalShell({ children }: { children: React.React
                   <span>Studio</span>
                 </Link>
               )}
+
+              {/* Quick Search Button (⌘K) */}
+              <button
+                type="button"
+                onClick={() => setSearchPaletteOpen(true)}
+                title="Search subjects, topics, tools, or cut-offs (Ctrl+K)"
+                className="flex h-10 sm:h-9 min-h-[44px] sm:min-h-0 items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/90 hover:bg-slate-100 hover:border-slate-300 px-2.5 sm:px-3 text-xs text-slate-600 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-slate-300 dark:hover:bg-white/[0.08] transition shadow-xs cursor-pointer bl-focus-ring"
+                aria-label="Open global study search"
+              >
+                <svg className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <span className="hidden md:inline font-semibold">Search...</span>
+                <kbd className="hidden lg:inline-block rounded border border-slate-300 dark:border-white/10 px-1 py-0.5 text-[9px] font-mono bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                  ⌘K
+                </kbd>
+              </button>
 
               {/* Theme Toggle Button */}
               <button
@@ -629,6 +660,12 @@ export default function StudentPortalShell({ children }: { children: React.React
             </div>
           </div>
         </footer>
+
+        {/* Global Student Study Navigator Command Palette */}
+        <StudentCommandPalette
+          isOpen={searchPaletteOpen}
+          onClose={() => setSearchPaletteOpen(false)}
+        />
       </div>
     </StudentPortalContext.Provider>
   );

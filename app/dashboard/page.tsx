@@ -27,6 +27,7 @@ import MigratedStudentBanner from "../components/dashboard/MigratedStudentBanner
 import { StudentAvatar } from "../components/ui/StudentAvatar";
 import { extractStudentProfile } from "../lib/studentProfile";
 import StudentGoalWizard from "../components/onboarding/StudentGoalWizard";
+import { StudentCommandPalette } from "../components/StudentCommandPalette";
 
 type RecentExam = {
   result_id: string;
@@ -170,6 +171,7 @@ export default function LearnerDashboardPage() {
   const [gamification, setGamification] = useState<UserGamificationProfile | null>(null);
   const [userCohorts, setUserCohorts] = useState<any[]>([]);
   const [showGoalWizard, setShowGoalWizard] = useState(false);
+  const [showSearchPalette, setShowSearchPalette] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -564,6 +566,26 @@ export default function LearnerDashboardPage() {
                     </svg>
                     <span>{studentProfile.isCustomized ? "Update Study Goals" : "Set Your Target Exam, School & Course"}</span>
                     <span>→</span>
+                  </button>
+                </div>
+
+                {/* Student Quick Search & Navigator Bar */}
+                <div className="mt-4 pt-2 max-w-xl">
+                  <button
+                    type="button"
+                    onClick={() => setShowSearchPalette(true)}
+                    className="w-full flex items-center justify-between gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 px-4 py-2.5 text-left text-xs sm:text-sm text-blue-100/90 shadow-md backdrop-blur-md transition group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <svg className="h-4 w-4 text-cyan-300 group-hover:scale-110 transition-transform shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                      <span className="truncate">Search subjects, syllabus topics, CBT mock, or formulas...</span>
+                    </div>
+                    <kbd className="hidden sm:inline-block rounded-lg border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-mono text-cyan-200">
+                      Ctrl + K
+                    </kbd>
                   </button>
                 </div>
               </div>
@@ -1303,6 +1325,10 @@ export default function LearnerDashboardPage() {
         }}
         currentProfile={studentProfile}
         onSaved={() => window.location.reload()}
+      />
+      <StudentCommandPalette
+        isOpen={showSearchPalette}
+        onClose={() => setShowSearchPalette(false)}
       />
     </main>
   );

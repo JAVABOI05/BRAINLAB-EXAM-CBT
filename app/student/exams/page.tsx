@@ -22,6 +22,7 @@ export default function CandidateExamHistoryPage() {
   const [candidateName, setCandidateName] = useState<string>("Student");
   const [candidatePhone, setCandidatePhone] = useState<string>("");
   const [filter, setFilter] = useState<"all" | "mock" | "certified">("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [generatingCertId, setGeneratingCertId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -128,10 +129,23 @@ export default function CandidateExamHistoryPage() {
 
   // Filtered exams list
   const filteredExams = useMemo(() => {
-    if (filter === "mock") return exams.filter((e) => e.type === "mock_cbt");
-    if (filter === "certified") return exams.filter((e) => e.certificate !== null);
-    return exams;
-  }, [exams, filter]);
+    let list = exams;
+    if (filter === "mock") list = list.filter((e) => e.type === "mock_cbt");
+    if (filter === "certified") list = list.filter((e) => e.certificate !== null);
+
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return list;
+
+    return list.filter((e) => {
+      if (e.title.toLowerCase().includes(q)) return true;
+      if (e.grade && e.grade.toLowerCase().includes(q)) return true;
+      if (e.standing && e.standing.toLowerCase().includes(q)) return true;
+      if (e.subjects && e.subjects.some((s) => s.toLowerCase().includes(q))) return true;
+      if (e.certificate?.certificateNumber && e.certificate.certificateNumber.toLowerCase().includes(q)) return true;
+      if (e.certificate?.courseName && e.certificate.courseName.toLowerCase().includes(q)) return true;
+      return false;
+    });
+  }, [exams, filter, searchQuery]);
 
   // Handle certificate issuance/generation
   async function handleClaimCertificate(exam: CandidateExamItem) {
