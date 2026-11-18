@@ -48,18 +48,18 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
  */
 export default function HomePageClient() {
   return (
-    <div className="relative w-full bg-[#060D20] overflow-hidden selection:bg-blue-600 selection:text-white">
+    <div className="relative w-full bg-white text-slate-900 dark:bg-[#060D20] dark:text-white overflow-hidden selection:bg-blue-600 selection:text-white transition-colors duration-200">
       {/* Brilliant Subtle Dot Matrix Texture */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.05]"
         style={{
-          backgroundImage: `radial-gradient(#1e293b 1.2px, transparent 1.2px)`,
+          backgroundImage: `radial-gradient(currentColor 1.2px, transparent 1.2px)`,
           backgroundSize: "24px 24px",
         }}
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-blue-600/15 blur-[140px]"
+        className="pointer-events-none absolute -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-blue-500/10 dark:bg-blue-600/15 blur-[140px]"
         aria-hidden="true"
       />
       <div

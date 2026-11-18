@@ -305,40 +305,67 @@ export default function CandidateExamHistoryPage() {
 
       {/* Controls & Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
-        <div className="flex items-center gap-1.5 rounded-2xl bg-slate-100 p-1 dark:bg-slate-800/80 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            className={`rounded-xl px-3.5 py-1.5 transition ${
-              filter === "all"
-                ? "bg-white text-slate-900 dark:bg-slate-900 dark:text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-            }`}
-          >
-            All Sittings ({exams.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("mock")}
-            className={`rounded-xl px-3.5 py-1.5 transition ${
-              filter === "mock"
-                ? "bg-white text-slate-900 dark:bg-slate-900 dark:text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-            }`}
-          >
-            Milestone Mocks ({exams.filter((e) => e.type === "mock_cbt").length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("certified")}
-            className={`rounded-xl px-3.5 py-1.5 transition ${
-              filter === "certified"
-                ? "bg-white text-slate-900 dark:bg-slate-900 dark:text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-            }`}
-          >
-            Certified Credentials ({exams.filter((e) => e.certificate !== null).length})
-          </button>
+        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+          <div className="flex items-center gap-1.5 rounded-2xl bg-slate-100 p-1 dark:bg-slate-800/80 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setFilter("all")}
+              className={`rounded-xl px-3.5 py-1.5 transition ${
+                filter === "all"
+                  ? "bg-white text-slate-900 dark:bg-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              }`}
+            >
+              All Sittings ({exams.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("mock")}
+              className={`rounded-xl px-3.5 py-1.5 transition ${
+                filter === "mock"
+                  ? "bg-white text-slate-900 dark:bg-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              }`}
+            >
+              Milestone Mocks ({exams.filter((e) => e.type === "mock_cbt").length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("certified")}
+              className={`rounded-xl px-3.5 py-1.5 transition ${
+                filter === "certified"
+                  ? "bg-white text-slate-900 dark:bg-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              }`}
+            >
+              Certified Credentials ({exams.filter((e) => e.certificate !== null).length})
+            </button>
+          </div>
+
+          <div className="relative min-w-[220px] flex-1 max-w-sm">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search exam, subject, grade, or certificate ID..."
+              className="w-full rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-2 pl-9 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-blue-600 dark:focus:border-cyan-400 transition"
+              aria-label="Search exam records"
+            />
+            <svg className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         <Link

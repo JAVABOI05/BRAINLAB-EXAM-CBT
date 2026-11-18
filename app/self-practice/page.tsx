@@ -32,6 +32,7 @@ function formatTime(seconds: number) {
 export default function SelfPracticePage() {
   const router = useRouter();
   const [catalog, setCatalog] = useState<CatalogSubject[]>([]);
+  const [subjectFilter, setSubjectFilter] = useState("");
   const [maxQuestions, setMaxQuestions] = useState(50);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -51,6 +52,12 @@ export default function SelfPracticePage() {
   const [topicMasteryList, setTopicMasteryList] = useState<TopicMastery[]>([]);
   const [activeHints, setActiveHints] = useState<Record<string, string>>({});
   const [hintLoading, setHintLoading] = useState<Record<string, boolean>>({});
+
+  const filteredCatalog = useMemo(() => {
+    const q = subjectFilter.toLowerCase().trim();
+    if (!q) return catalog;
+    return catalog.filter((s) => s.name.toLowerCase().includes(q));
+  }, [catalog, subjectFilter]);
 
   useEffect(() => {
     void getTopicMasteryRecords().then((list) => setTopicMasteryList(list));
@@ -309,7 +316,59 @@ export default function SelfPracticePage() {
 
       {!attempt && !result && <form onSubmit={startPractice} className="rounded-2xl bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-xl font-semibold text-slate-900">Configure your practice</h2>
-        <fieldset className="mt-5"><legend className="font-medium text-slate-800">Subjects</legend><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{catalog.map((subject) => <label key={subject.name} className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 hover:border-indigo-300"><input className="mt-1" type="checkbox" checked={selectedSubjects.includes(subject.name)} onChange={(e) => setSelectedSubjects((old) => e.target.checked ? [...old, subject.name] : old.filter((x) => x !== subject.name))} /><span><strong className="block">{subject.name}</strong><span className="text-sm text-slate-500">{subject.question_count} active questions</span></span></label>)}</div></fieldset>
+        <fieldset className="mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <legend className="font-medium text-slate-800">
+              Subjects ({selectedSubjects.length} of {catalog.length} selected)
+            </legend>
+            <div className="relative min-w-[220px] max-w-xs flex-1">
+              <input
+                type="text"
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                placeholder="Filter subjects (e.g. Physics, Maths)..."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 pl-8 text-xs font-medium text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-600 focus:bg-white transition"
+                aria-label="Filter practice subjects"
+              />
+              <svg className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              {subjectFilter && (
+                <button
+                  type="button"
+                  onClick={() => setSubjectFilter("")}
+                  className="absolute right-2.5 top-1.5 text-xs text-slate-400 hover:text-slate-600"
+                  aria-label="Clear filter"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+          {filteredCatalog.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-500">
+              No subjects match &ldquo;{subjectFilter}&rdquo;. Try another subject keyword.
+            </p>
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredCatalog.map((subject) => (
+                <label key={subject.name} className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 hover:border-indigo-300">
+                  <input
+                    className="mt-1"
+                    type="checkbox"
+                    checked={selectedSubjects.includes(subject.name)}
+                    onChange={(e) => setSelectedSubjects((old) => e.target.checked ? [...old, subject.name] : old.filter((x) => x !== subject.name))}
+                  />
+                  <span>
+                    <strong className="block">{subject.name}</strong>
+                    <span className="text-sm text-slate-500">{subject.question_count} active questions</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
         <div className="mt-6 grid gap-5 sm:grid-cols-2"><div><label className="mb-2 block font-medium" htmlFor="question-count">Number of questions</label><input id="question-count" className="w-full rounded-lg border border-slate-300 p-3" type="number" min={1} max={maxQuestions} value={questionCount} onChange={(e) => setQuestionCount(Math.max(1,Math.min(maxQuestions,Number(e.target.value)||1)))} required /><p className="mt-1 text-sm text-slate-500">The server enforces your limit even if a browser value is changed.</p></div><div><label className="mb-2 block font-medium" htmlFor="duration">Time limit</label><select id="duration" className="w-full rounded-lg border border-slate-300 p-3" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))}><option value={0}>Untimed</option><option value={15}>15 minutes</option><option value={30}>30 minutes</option><option value={60}>1 hour</option><option value={120}>2 hours</option><option value={240}>4 hours</option></select></div></div>
         <div className="mt-6 border-t border-slate-200 pt-6">
           <DifficultySlider
