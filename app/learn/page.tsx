@@ -279,7 +279,7 @@ export default function LearnPage() {
       </div>
 
       {/* Unified Navigation Tabs */}
-      <div className="mb-8 flex items-center gap-2 border-b border-slate-200 dark:border-white/10 pb-3 overflow-x-auto">
+      <div className="mb-8 flex items-center gap-2 border-b border-slate-200 dark:border-white/10 pb-3 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [-webkit-overflow-scrolling:touch]">
         <button
           onClick={() => setActiveTab("subjects")}
           className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition ${

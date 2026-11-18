@@ -64,7 +64,13 @@ function AudioNote({ content }: { content: Record<string, unknown> }) {
           if (!audio) return;
           if (audio.paused) void audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
           else { audio.pause(); setPlaying(false); }
-        }} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#012153] text-lg font-bold text-white">{playing ? "Ⅱ" : "▶"}</button>
+        }} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#012153] text-white shadow-xs transition active:scale-95">
+          {playing ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          )}
+        </button>
         <div className="min-w-0 flex-1"><p className="font-extrabold text-slate-950">{title}</p><p className="text-xs text-slate-500">Audio learning note</p></div>
         <label className="text-xs font-bold text-slate-600">Speed
           <select aria-label="Audio playback speed" value={speed} onChange={(event) => { const next = Number(event.target.value); setSpeed(next); if (audioRef.current) audioRef.current.playbackRate = next; }} className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-900">
@@ -108,7 +114,11 @@ function BlockRenderer({ block }: { block: Block }) {
   const content = block.content ?? {};
   if (block.block_type === "text") {
     const text = contentText(content);
-    return <section className="prose max-w-none rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 sm:p-7"><div className="whitespace-pre-wrap leading-8">{text || "This text block is empty."}</div></section>;
+    return (
+      <section className="prose max-w-none rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 sm:p-7 overflow-x-auto break-words [overflow-wrap:anywhere]">
+        <div className="whitespace-pre-wrap leading-8 font-sans">{text || "This text block is empty."}</div>
+      </section>
+    );
   }
   if (block.block_type === "image") {
     const url = safeHttpUrl(content.url);
@@ -333,7 +343,10 @@ export default function LessonViewerPage() {
           }`}
           aria-label={isBookmarked ? "Remove bookmark" : "Bookmark this lesson"}
         >
-          {isBookmarked ? "★ Bookmarked" : "☆ Bookmark"}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+          </svg>
+          <span>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
         </button>
       </div>
 
