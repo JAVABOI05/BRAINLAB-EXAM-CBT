@@ -75,10 +75,7 @@ export default function AdminPinGuard({
         const cleanUrl = new URL(window.location.href);
         cleanUrl.searchParams.delete("adminPinReset");
         window.history.replaceState({}, "", cleanUrl.toString());
-      }
-
-      // If PIN is not initialized yet and current admin has setup privileges, default to setup mode
-      if (!status.isSet && status.canManage) {
+      } else if (!status.isSet && status.canManage) {
         setMode("setup");
       } else {
         setMode("verify");
