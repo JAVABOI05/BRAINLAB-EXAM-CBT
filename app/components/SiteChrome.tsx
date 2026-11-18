@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import AuthGate from "./AuthGate";
 import BrandFooter from "./BrandFooter";
 import BrandHeader from "./BrandHeader";
 import ToastContainer from "./Toast";
@@ -46,7 +47,7 @@ const STUDENT_PORTAL_PREFIXES = [
   "/recordings",
 ];
 
-export default function SiteChrome({ children }: { children: React.ReactNode }) {
+function SiteChromeLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
 
   // 1. Admin / Operator Portal (Admin layout provides its own shell)
@@ -169,5 +170,14 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <BrandFooter />
       <CookieConsentBanner />
     </>
+  );
+}
+
+// Every page passes through the sign-in gate before any portal chrome renders.
+export default function SiteChrome({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGate>
+      <SiteChromeLayout>{children}</SiteChromeLayout>
+    </AuthGate>
   );
 }
