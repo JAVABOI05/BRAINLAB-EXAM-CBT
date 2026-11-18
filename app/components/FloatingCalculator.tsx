@@ -256,8 +256,135 @@ export default function FloatingCalculator({
     });
   };
 
+  const keypadContent = (
+    <>
+      {/* Display */}
+      <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
+        <div className="calc-display bg-white dark:bg-slate-900 rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-800 flex items-center justify-end">
+          <span className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-slate-100">
+            {display}
+          </span>
+        </div>
+      </div>
+
+      {/* Four-Function Keypad Grid (+, -, ×, ÷, Decimals, Clear, Delete) */}
+      <div className="grid grid-cols-4 gap-2 p-3 sm:p-4 bg-white dark:bg-slate-900">
+        <button type="button" onClick={clearDisplay} className="calc-top-btn font-bold col-span-2">
+          Clear (C)
+        </button>
+        <button type="button" onClick={deleteLast} className="calc-top-btn font-bold">
+          Del
+        </button>
+        <button type="button" onClick={() => appendValue("÷")} className="calc-op-btn font-bold text-lg">
+          ÷
+        </button>
+
+        <button type="button" onClick={() => appendValue("7")} className="calc-btn font-semibold">
+          7
+        </button>
+        <button type="button" onClick={() => appendValue("8")} className="calc-btn font-semibold">
+          8
+        </button>
+        <button type="button" onClick={() => appendValue("9")} className="calc-btn font-semibold">
+          9
+        </button>
+        <button type="button" onClick={() => appendValue("×")} className="calc-op-btn font-bold text-lg">
+          ×
+        </button>
+
+        <button type="button" onClick={() => appendValue("4")} className="calc-btn font-semibold">
+          4
+        </button>
+        <button type="button" onClick={() => appendValue("5")} className="calc-btn font-semibold">
+          5
+        </button>
+        <button type="button" onClick={() => appendValue("6")} className="calc-btn font-semibold">
+          6
+        </button>
+        <button type="button" onClick={() => appendValue("-")} className="calc-op-btn font-bold text-lg">
+          -
+        </button>
+
+        <button type="button" onClick={() => appendValue("1")} className="calc-btn font-semibold">
+          1
+        </button>
+        <button type="button" onClick={() => appendValue("2")} className="calc-btn font-semibold">
+          2
+        </button>
+        <button type="button" onClick={() => appendValue("3")} className="calc-btn font-semibold">
+          3
+        </button>
+        <button type="button" onClick={() => appendValue("+")} className="calc-op-btn font-bold text-lg">
+          +
+        </button>
+
+        <button type="button" onClick={() => appendValue("0")} className="calc-btn font-semibold col-span-2">
+          0
+        </button>
+        <button type="button" onClick={() => appendValue(".")} className="calc-btn font-semibold">
+          .
+        </button>
+        <button
+          type="button"
+          onClick={calculateResult}
+          className="calc-equal-btn font-bold text-lg bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+        >
+          =
+        </button>
+      </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 z-[1000] flex flex-col justify-end bg-slate-950/60 backdrop-blur-xs select-none sm:hidden">
+        {/* Backdrop tap dismisses calculator */}
+        <div className="flex-1" onClick={onClose} aria-label="Close Calculator Backdrop" />
+        <div
+          ref={calcRef}
+          className="w-full max-w-lg mx-auto rounded-t-3xl border-t border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden pb-safe"
+        >
+          {/* Mobile Sheet Handle & Header */}
+          <div className="flex flex-col bg-gradient-to-r from-slate-800 to-slate-900 text-white border-b border-slate-700">
+            <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-slate-600/80" aria-hidden="true" />
+            <div className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-blue-400">
+                  <rect width="16" height="20" x="4" y="2" rx="2" />
+                  <line x1="8" x2="16" y1="6" y2="6" />
+                  <line x1="16" x2="16" y1="14" y2="18" />
+                  <path d="M16 10h.01" />
+                  <path d="M12 10h.01" />
+                  <path d="M8 10h.01" />
+                  <path d="M12 14h.01" />
+                  <path d="M8 14h.01" />
+                  <path d="M12 18h.01" />
+                  <path d="M8 18h.01" />
+                </svg>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                  Exam Calculator
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition"
+                title="Close Calculator"
+                aria-label="Close Calculator"
+              >
+                <span>Done</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+          {keypadContent}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-[1000] pointer-events-none select-none">
+    <div className="hidden sm:block fixed inset-0 z-[1000] pointer-events-none select-none">
       <div
         ref={calcRef}
         className="calc-window pointer-events-auto absolute w-[300px] sm:w-[320px] max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl rounded-2xl overflow-hidden transition-shadow"
@@ -302,80 +429,7 @@ export default function FloatingCalculator({
           </button>
         </div>
 
-        {/* Display */}
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
-          <div className="calc-display bg-white dark:bg-slate-900 rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-800 flex items-center justify-end">
-            <span className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-slate-100">
-              {display}
-            </span>
-          </div>
-        </div>
-
-        {/* Four-Function Keypad Grid (+, -, ×, ÷, Decimals, Clear, Delete) */}
-        <div className="grid grid-cols-4 gap-2 p-3 sm:p-4 bg-white dark:bg-slate-900">
-          <button type="button" onClick={clearDisplay} className="calc-top-btn font-bold col-span-2">
-            Clear (C)
-          </button>
-          <button type="button" onClick={deleteLast} className="calc-top-btn font-bold">
-            Del
-          </button>
-          <button type="button" onClick={() => appendValue("÷")} className="calc-op-btn font-bold text-lg">
-            ÷
-          </button>
-
-          <button type="button" onClick={() => appendValue("7")} className="calc-btn font-semibold">
-            7
-          </button>
-          <button type="button" onClick={() => appendValue("8")} className="calc-btn font-semibold">
-            8
-          </button>
-          <button type="button" onClick={() => appendValue("9")} className="calc-btn font-semibold">
-            9
-          </button>
-          <button type="button" onClick={() => appendValue("×")} className="calc-op-btn font-bold text-lg">
-            ×
-          </button>
-
-          <button type="button" onClick={() => appendValue("4")} className="calc-btn font-semibold">
-            4
-          </button>
-          <button type="button" onClick={() => appendValue("5")} className="calc-btn font-semibold">
-            5
-          </button>
-          <button type="button" onClick={() => appendValue("6")} className="calc-btn font-semibold">
-            6
-          </button>
-          <button type="button" onClick={() => appendValue("-")} className="calc-op-btn font-bold text-lg">
-            -
-          </button>
-
-          <button type="button" onClick={() => appendValue("1")} className="calc-btn font-semibold">
-            1
-          </button>
-          <button type="button" onClick={() => appendValue("2")} className="calc-btn font-semibold">
-            2
-          </button>
-          <button type="button" onClick={() => appendValue("3")} className="calc-btn font-semibold">
-            3
-          </button>
-          <button type="button" onClick={() => appendValue("+")} className="calc-op-btn font-bold text-lg">
-            +
-          </button>
-
-          <button type="button" onClick={() => appendValue("0")} className="calc-btn font-semibold col-span-2">
-            0
-          </button>
-          <button type="button" onClick={() => appendValue(".")} className="calc-btn font-semibold">
-            .
-          </button>
-          <button
-            type="button"
-            onClick={calculateResult}
-            className="calc-equal-btn font-bold text-lg bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
-          >
-            =
-          </button>
-        </div>
+        {keypadContent}
       </div>
     </div>
   );
