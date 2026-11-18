@@ -265,22 +265,28 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // 2c. ACTION: RESET (Emergency reset with administrator account password)
+    // 2c. ACTION: RESET (Emergency reset with verified Google OAuth re-authentication)
     if (action === "reset") {
       if (admin.role !== "super_admin" && admin.role !== "platform_admin") {
-        return NextResponse.json({ ok: false, error: "Only Super Admin or Platform Admin can reset the Security PIN." }, { status: 403 });
-      }
-
-      const adminPassword = String(body.adminPassword || "").trim();
-      const newPin = String(body.newPin || "").trim();
-
-      if (!adminPassword) {
         return NextResponse.json(
-          { ok: false, error: "Administrator account password is required to authorize a PIN reset." },
-          { status: 400 }
+          { ok: false, error: "Only Super Admin or Platform Admin can reset the Security PIN." },
+          { status: 403 }
         );
       }
 
+      // Extract access token from Authorization header or request body
+      const authHeader = request.headers.get("authorization");
+      const bearerToken = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+      const accessToken = bearerToken || (typeof body.accessToken === "string" ? body.accessToken.trim() : "");
+
+      if (!accessToken) {
+        return NextResponse.json(
+          { ok: false, error: "Authentication access token is required to verify administrator identity." },
+          { status: 401 }
+        );
+      }
+
+      const newPin = String(body.newPin || "").trim();
       if (!newPin || newPin.length < 4 || newPin.length > 12) {
         return NextResponse.json(
           { ok: false, error: "New Security PIN must be between 4 and 12 characters." },
@@ -288,29 +294,94 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify the administrator's password against Supabase Auth
+      // Validate the token server-side against Supabase Auth's verified user lookup
+      let verifiedUser: { id: string; email?: string; app_metadata?: Record<string, any>; identities?: Array<{ provider?: string }>; last_sign_in_at?: string } | null = null;
       try {
         const publicClient = getSupabasePublicServerClient();
-        const { data: authData, error: authError } = await publicClient.auth.signInWithPassword({
-          email: admin.email,
-          password: adminPassword,
-        });
+        const { data: authData, error: authError } = await publicClient.auth.getUser(accessToken);
 
-        if (authError || !authData.user || authData.user.id !== admin.id) {
+        if (authError || !authData?.user) {
           return NextResponse.json(
-            { ok: false, error: "Administrator password incorrect. PIN reset declined." },
+            { ok: false, error: "Invalid, expired, or rejected authentication session. Please re-authenticate." },
             { status: 401 }
           );
         }
+        verifiedUser = authData.user;
       } catch (authErr) {
-        console.error("[adminPin] Password verification error:", authErr);
         return NextResponse.json(
-          { ok: false, error: "Unable to verify administrator password. Please try again." },
-          { status: 500 }
+          { ok: false, error: "Failed to verify administrator authentication session with Supabase Auth." },
+          { status: 401 }
         );
       }
 
-      // Generate new salt and hash
+      // Confirm that the verified user ID matches the currently authenticated administrator
+      if (!verifiedUser || verifiedUser.id !== admin.id) {
+        return NextResponse.json(
+          { ok: false, error: "Authenticated identity does not match the active administrator account." },
+          { status: 403 }
+        );
+      }
+
+      // Confirm that the verified account has a Google OAuth identity
+      const hasGoogleIdentity =
+        verifiedUser.app_metadata?.provider === "google" ||
+        (Array.isArray(verifiedUser.app_metadata?.providers) &&
+          verifiedUser.app_metadata.providers.includes("google")) ||
+        (Array.isArray(verifiedUser.identities) &&
+          verifiedUser.identities.some((id) => id?.provider === "google"));
+
+      if (!hasGoogleIdentity) {
+        return NextResponse.json(
+          { ok: false, error: "Administrator account must be verified with Google OAuth to perform a PIN reset." },
+          { status: 403 }
+        );
+      }
+
+      // Step-up authentication recency check: verify authentication was within the last 30 minutes
+      // Rejects missing timestamps, expired claims, and future-dated claims (clock skew / spoofing)
+      let isFreshAuth = false;
+
+      // 1. Check verified Supabase user record timestamp
+      if (verifiedUser.last_sign_in_at) {
+        const lastSignInTime = new Date(verifiedUser.last_sign_in_at).getTime();
+        const MAX_REAUTH_AGE_MS = 30 * 60 * 1000; // 30 minutes
+        const authAgeMs = Date.now() - lastSignInTime;
+        if (!isNaN(lastSignInTime) && authAgeMs >= 0 && authAgeMs <= MAX_REAUTH_AGE_MS) {
+          isFreshAuth = true;
+        }
+      }
+
+      // 2. Also inspect JWT payload claims if available for auth_time
+      try {
+        const tokenPayload = accessToken.split(".")[1];
+        if (tokenPayload) {
+          const claims = JSON.parse(Buffer.from(tokenPayload, "base64url").toString("utf8")) as { auth_time?: number; iat?: number };
+          const authTimeSeconds = Number(claims.auth_time || claims.iat || 0);
+          if (authTimeSeconds > 0) {
+            const authAgeSeconds = Math.floor(Date.now() / 1000) - authTimeSeconds;
+            if (authAgeSeconds >= 0 && authAgeSeconds <= 30 * 60) {
+              isFreshAuth = true;
+            } else if (authAgeSeconds < 0 || authAgeSeconds > 30 * 60) {
+              isFreshAuth = false;
+            }
+          }
+        }
+      } catch {
+        // Fallback to verifiedUser.last_sign_in_at
+      }
+
+      if (!isFreshAuth) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Google verification is missing, expired, or future-dated. Please sign in with Google again.",
+            requiresReauth: true,
+          },
+          { status: 401 }
+        );
+      }
+
+      // Generate new salt and PBKDF2 hash
       const newSalt = crypto.randomBytes(16).toString("hex");
       const newHash = hashPin(newPin, newSalt);
       const supabase = getSupabaseServerClient();

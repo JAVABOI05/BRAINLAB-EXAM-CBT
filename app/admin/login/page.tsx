@@ -199,11 +199,6 @@ function AdminSignInForm() {
     setError("");
     setMessage("");
 
-    if (!adminPasswordInput) {
-      setError("Please enter your administrator account password.");
-      return;
-    }
-
     const cleanNewPin = newPin.trim();
     if (!cleanNewPin || cleanNewPin.length < 4 || cleanNewPin.length > 12) {
       setError("New Security PIN must be between 4 and 12 characters.");
@@ -218,7 +213,6 @@ function AdminSignInForm() {
     setBusy(true);
     try {
       const res = await resetAdminPin({
-        adminPassword: adminPasswordInput,
         newPin: cleanNewPin,
       });
 
@@ -441,16 +435,12 @@ function AdminSignInForm() {
             {/* RESET FORM */}
             {pinMode === "reset" && (
               <form className="admin-auth-form" onSubmit={handleResetSubmit}>
-                <label htmlFor="admin-reset-pwd">Account Password</label>
-                <input
-                  id="admin-reset-pwd"
-                  type="password"
-                  autoFocus
-                  required
-                  value={adminPasswordInput}
-                  onChange={(e) => setAdminPasswordInput(e.target.value)}
-                  placeholder="Enter administrator account password"
-                />
+                <div className="p-3 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-xs text-amber-900 dark:text-amber-200 mb-2">
+                  <strong className="block font-bold">Administrator PIN Recovery</strong>
+                  <span className="text-[11px] text-amber-800 dark:text-amber-300">
+                    Setting a new Security PIN for administrator account {adminEmail || "session"}.
+                  </span>
+                </div>
 
                 <label htmlFor="admin-reset-pin">New Security PIN (4–12 characters)</label>
                 <div className="admin-auth-password">
@@ -500,10 +490,10 @@ function AdminSignInForm() {
                 <button
                   className="admin-auth-submit"
                   type="submit"
-                  disabled={busy || !adminPasswordInput || !newPin.trim() || !confirmPin.trim()}
+                  disabled={busy || !newPin.trim() || !confirmPin.trim()}
                   style={{ backgroundColor: "#d97706" }}
                 >
-                  {busy ? "Resetting PIN…" : "Verify Password & Reset PIN"}
+                  {busy ? "Resetting PIN…" : "Reset Security PIN"}
                 </button>
                 <button
                   className="admin-auth-recovery"
@@ -581,7 +571,7 @@ function AdminSignInForm() {
                         textDecoration: "underline",
                       }}
                     >
-                      Forgot PIN? Reset with account password
+                      Forgot PIN? Reset via Identity Verification
                     </button>
                   </div>
                 )}

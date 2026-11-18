@@ -156,16 +156,25 @@ export default function AuthCallbackPage() {
         } catch {
           // proceed
         }
-        router.replace("/admin/dashboard");
+        // Support returning an authenticated administrator to an intended admin screen (e.g. PIN recovery)
+        const safeAdminTarget =
+          nextParam && nextParam.startsWith("/admin")
+            ? sanitizeRedirectUrl(nextParam, "/admin/dashboard")
+            : "/admin/dashboard";
+        router.replace(safeAdminTarget);
         return;
       }
 
       // Standard learner: fast-route to dashboard
       clearOperatorGateNonBlocking();
       setStatusText("Welcome to BrainLab Academy! Launching…");
-      const targetDestination = sanitizeRedirectUrl(nextParam, "/dashboard");
+      // Prevent standard students from being redirected into admin pages
+      let safeLearnerTarget = sanitizeRedirectUrl(nextParam, "/dashboard");
+      if (safeLearnerTarget.startsWith("/admin")) {
+        safeLearnerTarget = "/dashboard";
+      }
 
-      router.replace(targetDestination);
+      router.replace(safeLearnerTarget);
     }
 
     void completeSignIn().catch((err) => {
@@ -200,8 +209,12 @@ export default function AuthCallbackPage() {
         {errorDetails ? (
           /* Error State */
           <div className="relative z-10 space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-2xl text-rose-600 dark:text-rose-400">
-              ⚠️
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400">
+              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
             </div>
             <h1 className="text-xl font-black text-slate-950 dark:text-white">Sign-in Notice</h1>
             <p role="alert" className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
