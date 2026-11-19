@@ -34,43 +34,43 @@ export function HomePricingTeaser() {
     <section
       id="pricing"
       aria-label="BrainLab Open Academic Platform and Plans"
-      className="scroll-mt-20 sm:scroll-mt-24 py-16 sm:py-20 lg:py-24 border-b border-slate-200 bg-white text-slate-900 overflow-hidden"
+      className="scroll-mt-20 sm:scroll-mt-24 py-10 sm:py-16 lg:py-24 border-b border-slate-200 bg-white text-slate-900 overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-3 shadow-2xs">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-14">
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-2 sm:mb-3 shadow-2xs">
             TRANSPARENT CANDIDATE ACCESS &bull; HONEST COMMITMENT
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
+          <h2 className="text-xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
             Complete Academic Superpowers for Every Candidate
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
+          <p className="mt-2 text-xs sm:text-base text-slate-600 leading-relaxed font-normal">
             Comprehensive curriculum coverage, timed CBT mock engines, and diagnostic telemetry engineered specifically for candidates targeting top-percentile scores.
           </p>
         </div>
 
         {/* Pricing Layout: Light Standard Platform + One Deep Navy Highlight Card */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch max-w-6xl mx-auto">
           
           {/* 1. CANDIDATE STANDARD SUITE (Light Surface Bento Card) */}
-          <div className="lg:col-span-7 rounded-3xl p-6 sm:p-8 lg:p-9 border-2 border-slate-200 bg-[#F8FAFC] shadow-lg flex flex-col justify-between">
+          <div className="lg:col-span-7 rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-9 border-2 border-slate-200 bg-[#F8FAFC] shadow-md sm:shadow-lg flex flex-col justify-between">
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-200 pb-4 sm:pb-5 mb-4 sm:mb-6">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200 mb-2">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200 mb-1.5">
                     OPEN CANDIDATE PLATFORM
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+                  <h3 className="text-xl sm:text-3xl font-black text-slate-950 tracking-tight">
                     Candidate Standard Suite
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                  <p className="text-xs sm:text-sm text-slate-600 mt-0.5 sm:mt-1">
                     Standard access across UTME, O Level, and Post-UTME core study and simulation engines
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <span className="text-xl sm:text-2xl font-black text-emerald-700 uppercase tracking-tight block">Free Access</span>
-                  <span className="text-xs text-slate-500 font-semibold">Included for All Candidates</span>
+                  <span className="text-lg sm:text-2xl font-black text-emerald-700 uppercase tracking-tight block">Free Access</span>
+                  <span className="text-[11px] sm:text-xs text-slate-500 font-semibold">Included for All Candidates</span>
                 </div>
               </div>
 

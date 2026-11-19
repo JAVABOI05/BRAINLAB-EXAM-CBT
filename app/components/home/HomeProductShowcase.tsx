@@ -106,23 +106,23 @@ export function HomeProductShowcase() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.05),transparent_50%)] dark:bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_50%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:24px_24px] opacity-5 dark:opacity-20" aria-hidden="true" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-16 lg:space-y-20">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-12 lg:space-y-16">
         {/* Universal Header with Generous Negative Space, High Contrast & Jewel-Toned Aesthetics */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 sm:space-y-5">
+        <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-4">
           {/* Luminous Pill Badge */}
           <div
             data-slot="SLOTS S4-01 TO S4-04 • THE BRAINLAB ECOSYSTEM"
-            className="inline-flex items-center gap-2.5 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-blue-700 shadow-2xs dark:border-cyan-400/30 dark:bg-gradient-to-r dark:from-cyan-950/60 dark:via-blue-950/60 dark:to-emerald-950/60 dark:text-cyan-300 transition-all"
+            className="inline-flex items-center gap-2 sm:gap-2.5 rounded-full border border-blue-400/30 bg-blue-900/40 px-3.5 py-1 text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs transition-all"
           >
-            <span className="relative flex h-2.5 w-2.5 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-blue-600 dark:bg-cyan-400 opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600 dark:bg-cyan-400" />
+            <span className="relative flex h-2 w-2 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
             </span>
             <span>CORE LEARNING TOOLS &bull; THE BRAINLAB ECOSYSTEM</span>
           </div>
 
           {/* High-Impact Dual-Color Heading */}
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.15]">
+          <h2 className="text-xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
             Everything You Need to Master <br className="hidden sm:inline" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400">
               Your Core Examination &amp; STEM Subjects.
@@ -130,34 +130,34 @@ export function HomeProductShowcase() {
           </h2>
 
           {/* Rich High-Contrast Subtitle */}
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto font-normal">
+          <p className="text-xs sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto font-normal">
             Bite-sized, purposeful tools designed to replace passive textbook cramming with active recall, tactile problem-solving, and diagnostic clarity.
           </p>
 
           {/* Core Capability Guarantee Tags */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-1">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-slate-200 shadow-2xs">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-0.5 sm:px-3.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-slate-200 shadow-2xs">
               <svg className="h-3.5 w-3.5 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
                 <circle cx="9" cy="13" r="1" />
                 <circle cx="15" cy="13" r="1" />
               </svg>
-              <span>Socratic Step-by-Step AI</span>
+              <span>Socratic AI</span>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-slate-200 shadow-2xs">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-0.5 sm:px-3.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-slate-200 shadow-2xs">
               <svg className="h-3.5 w-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
               </svg>
-              <span>Authentic 8-Keypad Engine</span>
+              <span>8-Key Simulator</span>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-slate-200 shadow-2xs">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-0.5 sm:px-3.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-slate-200 shadow-2xs">
               <svg className="h-3.5 w-3.5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
-              <span>Tactile STEM Laboratories</span>
+              <span>STEM Virtual Labs</span>
             </div>
           </div>
         </div>
@@ -167,11 +167,11 @@ export function HomeProductShowcase() {
             Story: Concept Breakdown & Socratic Step-by-Step Factoring
             Style: Crisp Elevated White Card on Desktop & Mobile
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:border-blue-500/50">
+        <div className="relative rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:border-blue-500/50">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 dark:via-cyan-400/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-0 lg:min-h-[440px]">
             {/* Left: Text Column */}
-            <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 text-slate-900 dark:text-white flex flex-col justify-center space-y-4 sm:space-y-5 text-left relative z-10">
+            <div className="lg:col-span-6 p-4 sm:p-8 lg:p-10 text-slate-900 dark:text-white flex flex-col justify-center space-y-3 sm:space-y-4 text-left relative z-10">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-300 self-start">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
                 <span>01 &bull; 24/7 AI STUDY STUDIO</span>

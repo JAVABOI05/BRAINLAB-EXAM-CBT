@@ -377,49 +377,54 @@ export default function LearnerDashboardPage() {
     <main
       id="main"
       data-theme={resolvedTheme}
-      className="learner-theme mx-auto min-h-[75vh] max-w-5xl px-5 py-10 text-slate-900 sm:px-8 sm:py-14"
+      className="learner-theme mx-auto min-h-[75vh] max-w-5xl px-3.5 py-4 text-slate-900 sm:px-8 sm:py-10"
     >
-      <div className="space-y-8">
-        {/* Admin VIP Mode Navigation Banner */}
+      <div className="space-y-4 sm:space-y-6">
+        {/* Admin VIP Mode Navigation Banner (Sleek, Decongested Mobile Bar) */}
         {adminRole && (
-          <div className="rounded-2xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10 p-4 sm:p-5 shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-start sm:items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <div className="rounded-xl sm:rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10 p-2.5 sm:p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <span className="flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                      Administrator Preview Mode Active
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-300 truncate">
+                      Admin Preview Mode
                     </span>
-                    <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-400 dark:border-emerald-600 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:text-emerald-300">
-                      Root VIP Access
+                    <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-400 dark:border-emerald-600 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-black text-emerald-800 dark:text-emerald-300">
+                      VIP Access
                     </span>
                   </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed">
-                    You are exploring the student portal with <strong>Universal Platform Access</strong>. All CBT mock exams, AI study tools, question corrections, and live classrooms are 100% unlocked with zero subscription fees.
+                  <p className="hidden sm:block text-xs text-slate-700 dark:text-slate-300 mt-0.5 leading-relaxed">
+                    Exploring student portal with <strong>Universal Access</strong> (all mocks, AI tools &amp; classrooms unlocked).
                   </p>
                 </div>
               </div>
-              <Link
-                href="/admin/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black px-4 py-2.5 text-xs shadow-md transition active:scale-95 shrink-0"
-              >
-                <span>← Return to Admin Portal</span>
-              </Link>
-              <Link
-                href="/tutor"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-black px-4 py-2.5 text-xs shadow-md transition active:scale-95 shrink-0"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                </svg>
-                <span>Open Instructor Studio</span>
-              </Link>
+
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <Link
+                  href="/admin/dashboard"
+                  className="inline-flex items-center justify-center gap-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black px-2.5 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs shadow-xs transition active:scale-95"
+                >
+                  <span>← Admin</span>
+                </Link>
+                <Link
+                  href="/tutor"
+                  className="inline-flex items-center justify-center gap-1 rounded-lg sm:rounded-xl bg-indigo-600/90 hover:bg-indigo-600 text-white font-bold px-2.5 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-xs shadow-xs transition active:scale-95"
+                  title="Open Instructor Studio"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                  </svg>
+                  <span className="hidden sm:inline">Instructor Studio</span>
+                  <span className="sm:hidden">Studio</span>
+                </Link>
+              </div>
             </div>
           </div>
         )}
@@ -427,10 +432,10 @@ export default function LearnerDashboardPage() {
         {/* Migrated Student Verified Upgrade Banner (Decision D6) */}
         <MigratedStudentBanner />
 
-        {/* Luxury Brilliant-Style Learner Welcome Hero Card */}
+        {/* Luxury Brilliant-Style Learner Welcome Hero Card (Compact, Decongested on Mobile) */}
         <section
           aria-label="Welcome Hero"
-          className="relative min-h-[380px] lg:min-h-[340px] overflow-hidden rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-[#061129] via-[#0b1c45] to-[#04091a] p-6 sm:p-8 lg:p-10 text-white shadow-[0_25px_60px_-15px_rgba(2,12,38,0.5)] backdrop-blur-2xl transition-all"
+          className="relative min-h-0 sm:min-h-[320px] overflow-hidden rounded-2xl sm:rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-[#061129] via-[#0b1c45] to-[#04091a] p-4 sm:p-8 lg:p-10 text-white shadow-[0_20px_50px_-15px_rgba(2,12,38,0.5)] backdrop-blur-2xl transition-all"
         >
           {/* Ambient Glowing Orbs & Tech Mesh */}
           <div
@@ -446,72 +451,59 @@ export default function LearnerDashboardPage() {
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] opacity-10"
           />
 
-          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex items-start sm:items-center gap-5">
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+            <div className="flex items-start sm:items-center gap-3.5 sm:gap-5">
               {/* Profile Avatar with Glowing Ring & Presence */}
               <Link href="/profile" className="relative group shrink-0" title="View & Edit Profile">
                 <StudentAvatar
                   profile={studentProfile}
-                  size="lg"
+                  size="md"
                   showOnlineDot={true}
-                  className="ring-2 ring-cyan-400/50 shadow-xl group-hover:scale-105 group-hover:ring-cyan-300 transition duration-300"
+                  className="ring-2 ring-cyan-400/50 shadow-md group-hover:scale-105 group-hover:ring-cyan-300 transition duration-300 sm:w-16 sm:h-16"
                 />
               </Link>
 
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-400/15 border border-cyan-400/30 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider text-cyan-300 backdrop-blur-md">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-cyan-400/15 border border-cyan-400/30 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-cyan-300 backdrop-blur-md">
                     <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                    BrainLab Academy · Learner Space
+                    Learner Space
                   </span>
                   {stats.accessTier && (
-                    <span className="rounded-full bg-white/10 border border-white/20 px-3 py-0.5 text-[10px] font-black text-white backdrop-blur-md shadow-xs">
+                    <span className="rounded-full bg-white/10 border border-white/20 px-2 py-0.5 text-[9px] sm:text-[10px] font-black text-white backdrop-blur-md shadow-xs">
                       {stats.accessTier}
                     </span>
                   )}
                 </div>
 
-                <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-2 flex-wrap">
-                  <span>{timeGreeting()}</span>
-                  {firstName ? (
-                    <span className="inline-flex items-center gap-2">
-                      , {firstName}!
-                      <span className="inline-flex text-cyan-400" aria-hidden="true">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
-                        </svg>
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2">
-                      , Scholar!
-                      <span className="inline-flex text-cyan-400" aria-hidden="true">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
-                        </svg>
-                      </span>
-                    </span>
-                  )}
-                  {user && <UserBadges userId={user.id} size="sm" maxVisible={3} />}
+                {/* Clean Headline (Fixed Space Before Comma) */}
+                <h1 className="mt-1 sm:mt-2 text-xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-1.5 flex-wrap">
+                  <span>{timeGreeting()}{firstName ? `, ${firstName}` : ", Scholar"}!</span>
+                  <span className="inline-flex text-cyan-400" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+                    </svg>
+                  </span>
+                  {user && <UserBadges userId={user.id} size="sm" maxVisible={2} />}
                 </h1>
 
-                <p className="mt-1.5 max-w-xl text-xs sm:text-sm text-blue-100/80 leading-relaxed font-medium">
+                {/* Brief Subheading (Hidden on Mobile to remove bulk) */}
+                <p className="hidden sm:block mt-1 max-w-xl text-xs sm:text-sm text-blue-100/80 leading-relaxed font-medium">
                   Welcome to your academic sanctuary. Track topic mastery, complete daily quests, and prepare to ace your exams.
                 </p>
 
-                {/* Student Ambition & Vibe Badges */}
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                {/* Student Ambition & Vibe Badges (Single Horizontal Scrollable Row on Mobile) */}
+                <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-xs overflow-x-auto scrollbar-none pb-0.5 max-w-full">
                   {studentProfile.targetCourse && (
                     <button
                       type="button"
                       onClick={() => setShowGoalWizard(true)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500/25 border border-blue-400/40 px-3 py-1 font-bold text-cyan-200 hover:bg-blue-500/40 backdrop-blur-md transition cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg bg-blue-500/25 border border-blue-400/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] font-bold text-cyan-200 hover:bg-blue-500/40 backdrop-blur-md transition cursor-pointer whitespace-nowrap shrink-0"
                       title="Edit Course Goal"
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <circle cx="12" cy="12" r="6" />
-                        <circle cx="12" cy="12" r="2" />
                       </svg>
                       <span>{studentProfile.targetCourse}</span>
                     </button>
@@ -520,10 +512,10 @@ export default function LearnerDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setShowGoalWizard(true)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-500/25 border border-indigo-400/40 px-3 py-1 font-bold text-indigo-200 hover:bg-indigo-500/40 backdrop-blur-md transition cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg bg-indigo-500/25 border border-indigo-400/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] font-bold text-indigo-200 hover:bg-indigo-500/40 backdrop-blur-md transition cursor-pointer whitespace-nowrap shrink-0"
                       title="Edit Dream School"
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                         <polyline points="9 22 9 12 15 12 15 22" />
                       </svg>
@@ -534,54 +526,38 @@ export default function LearnerDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setShowGoalWizard(true)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/25 border border-amber-400/40 px-3 py-1 font-bold text-amber-200 hover:bg-amber-500/40 backdrop-blur-md transition cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg bg-amber-500/25 border border-amber-400/40 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] font-bold text-amber-200 hover:bg-amber-500/40 backdrop-blur-md transition cursor-pointer whitespace-nowrap shrink-0"
                       title="Edit Score Goal"
                     >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                       </svg>
                       <span>Goal: {studentProfile.targetScore}</span>
                     </button>
                   )}
-                  {studentProfile.studyVibe && (
-                    <button
-                      type="button"
-                      onClick={() => setShowGoalWizard(true)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/25 border border-purple-400/40 px-3 py-1 font-bold text-purple-200 hover:bg-purple-500/40 backdrop-blur-md transition cursor-pointer"
-                      title="Edit Study Persona"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
-                      </svg>
-                      <span>{studentProfile.studyVibe}</span>
-                    </button>
-                  )}
                   <button
                     type="button"
                     onClick={() => setShowGoalWizard(true)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-cyan-400/50 bg-cyan-400/10 px-3 py-1 font-bold text-cyan-200 hover:bg-cyan-400/20 backdrop-blur-md transition cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-dashed border-cyan-400/50 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-bold text-cyan-200 hover:bg-cyan-400/20 backdrop-blur-md transition cursor-pointer whitespace-nowrap shrink-0"
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
-                    </svg>
-                    <span>{studentProfile.isCustomized ? "Update Study Goals" : "Set Your Target Exam, School & Course"}</span>
+                    <span>Edit Goals</span>
                     <span>→</span>
                   </button>
                 </div>
 
-                {/* Student Quick Search & Navigator Bar */}
-                <div className="mt-4 pt-2 max-w-xl">
+                {/* Compact Student Quick Search & Navigator Bar */}
+                <div className="mt-2.5 sm:mt-4 pt-1 max-w-xl">
                   <button
                     type="button"
                     onClick={() => setShowSearchPalette(true)}
-                    className="w-full flex items-center justify-between gap-3 rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 px-4 py-2.5 text-left text-xs sm:text-sm text-blue-100/90 shadow-md backdrop-blur-md transition group cursor-pointer"
+                    className="w-full flex items-center justify-between gap-2.5 rounded-xl sm:rounded-2xl border border-white/20 bg-white/10 hover:bg-white/15 px-3 py-1.5 sm:px-4 sm:py-2.5 text-left text-xs text-blue-100/90 shadow-xs backdrop-blur-md transition group cursor-pointer"
                   >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <svg className="h-4 w-4 text-cyan-300 group-hover:scale-110 transition-transform shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <div className="flex items-center gap-2 truncate">
+                      <svg className="h-3.5 w-3.5 text-cyan-300 group-hover:scale-110 transition-transform shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                       </svg>
-                      <span className="truncate">Search subjects, syllabus topics, CBT mock, or formulas...</span>
+                      <span className="truncate">Search subjects, syllabus topics, CBT mock...</span>
                     </div>
                     <kbd className="hidden sm:inline-block rounded-lg border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-mono text-cyan-200">
                       Ctrl + K
@@ -592,16 +568,16 @@ export default function LearnerDashboardPage() {
             </div>
 
             {/* Right Status Cluster: Level & Streak & Live Presence */}
-            <div className="flex flex-wrap items-center gap-3 lg:flex-col lg:items-end">
+            <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 lg:flex-col lg:items-end pt-1 sm:pt-0 border-t border-white/10 sm:border-t-0">
               <ActivePresenceBar activityContext="Studying on Learner Dashboard" variant="pill" />
-              <div className="flex flex-wrap items-center gap-2.5">
-                <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-md shadow-inner">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-2.5 py-1 sm:px-3 sm:py-1.5 backdrop-blur-md">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300" aria-hidden="true">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
                   <div>
-                    <p className="text-[10px] font-bold uppercase text-cyan-200 leading-none">Level {gamification?.current_level || 1}</p>
-                    <p className="text-xs font-black text-white mt-0.5">{(gamification?.lifetime_xp || 100).toLocaleString()} XP</p>
+                    <p className="text-[9px] font-bold uppercase text-cyan-200 leading-none">Lv {gamification?.current_level || 1}</p>
+                    <p className="text-[11px] font-black text-white leading-none mt-0.5">{(gamification?.lifetime_xp || 100).toLocaleString()} XP</p>
                   </div>
                 </div>
                 <LearningStreakCard
@@ -614,93 +590,68 @@ export default function LearnerDashboardPage() {
             </div>
           </div>
 
-          {/* Quick-Launch Interactive Action Strip */}
-          <div className="relative mt-7 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+          {/* Quick-Launch Interactive Action Strip (Compact on Mobile) */}
+          <div className="relative mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none pb-1 w-full sm:w-auto">
               <Link
                 href="/cbt"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 px-4 py-2 text-xs font-black transition active:scale-95 shadow-md shadow-cyan-500/20"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 px-3.5 py-2 text-xs font-black transition active:scale-95 shadow-md shadow-cyan-500/20 whitespace-nowrap shrink-0"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9" />
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                 </svg>
-                <span>Launch CBT Practice</span>
+                <span>Launch CBT</span>
               </Link>
               <Link
                 href="/ai-learning"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md whitespace-nowrap shrink-0"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
                   <circle cx="9" cy="13" r="1" />
                   <circle cx="15" cy="13" r="1" />
-                  <path d="M10 17h4" />
                 </svg>
-                <span>AI Study Mission</span>
+                <span>AI Tutor</span>
               </Link>
               <Link
                 href="/community"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md whitespace-nowrap shrink-0"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
-                <span>Communities</span>
+                <span>Community</span>
               </Link>
               <Link
                 href="/challenge-arena"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 px-3 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md whitespace-nowrap shrink-0"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400" aria-hidden="true">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
-                <span>Arena (2× XP)</span>
-              </Link>
-              <Link
-                href="/classroom/BL-LIVE-101"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/40 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-300 px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m22 8-6 4 6 4V8Z" />
-                  <rect width="14" height="12" x="2" y="6" rx="2" />
-                </svg>
-                <span>Live Stage</span>
-              </Link>
-              <Link
-                href="/resources"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 backdrop-blur-md"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <span>Formulas</span>
+                <span>Arena</span>
               </Link>
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-bold text-cyan-200">
+            <div className="hidden sm:flex items-center gap-3 text-xs font-bold text-cyan-200">
               <Link href="/leaderboard" className="hover:text-white transition inline-flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
                   <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
                   <path d="M4 22h16" />
-                  <path d="M10 14.66V17c0 .55-.45 1-1 1H7.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h9c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5H15c-.55 0-1-.45-1-1v-2.34" />
                   <path d="M18 4H6v7a6 6 0 0 0 12 0V4Z" />
                 </svg>
                 <span>Leaderboard</span>
               </Link>
               <span className="text-white/30">·</span>
               <Link href="/learning/achievements" className="hover:text-white transition inline-flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="12" cy="8" r="6" />
                   <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
                 </svg>
-                <span>Badges &amp; Streaks</span>
+                <span>Badges</span>
               </Link>
             </div>
           </div>
@@ -717,35 +668,35 @@ export default function LearnerDashboardPage() {
           </section>
         )}
 
-        {/* Live Classroom Quick Launch Bar */}
-        <div className="rounded-3xl border border-blue-600/30 bg-gradient-to-r from-[#012153] via-blue-900 to-indigo-950 p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Live Classroom Quick Launch Bar (Compact on Mobile) */}
+        <div className="rounded-2xl sm:rounded-3xl border border-blue-600/30 bg-gradient-to-r from-[#012153] via-blue-900 to-indigo-950 p-3.5 sm:p-5 text-white shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shadow-inner">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <span className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shadow-inner">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m22 8-6 4 6 4V8Z" />
                 <rect width="14" height="12" x="2" y="6" rx="2" />
               </svg>
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-300">Live Stage &amp; Timetable</span>
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-emerald-300">Live Stage &amp; Timetable</span>
               </div>
-              <p className="mt-0.5 text-sm font-bold text-white">
-                Live interactive classes, tutor sessions &amp; timetable schedule
+              <p className="mt-0.5 text-xs sm:text-sm font-bold text-white">
+                Live interactive classes, tutor sessions &amp; schedule
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/classroom/BL-LIVE-101"
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-400 hover:bg-emerald-300 px-4 py-2 text-xs font-black text-slate-950 dark:text-white transition active:scale-95 shadow-sm"
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-400 hover:bg-emerald-300 px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-black text-slate-950 dark:text-white transition active:scale-95 shadow-sm"
             >
               Enter Live Room ↗
             </Link>
             <Link
               href="/learn?tab=timetable"
-              className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-2 text-xs font-bold text-white transition active:scale-95"
+              className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold text-white transition active:scale-95"
             >
               Timetable
             </Link>

@@ -30,7 +30,7 @@ export function HomeFaqCta() {
       <section
         id="faq"
         aria-label="Frequently Asked Questions"
-        className="scroll-mt-20 sm:scroll-mt-24 relative py-16 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] text-slate-900 overflow-hidden"
+        className="scroll-mt-20 sm:scroll-mt-24 relative py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] text-slate-900 overflow-hidden"
       >
         {/* Subtle Geometric Grid Matrix */}
         <div
@@ -81,10 +81,10 @@ export function HomeFaqCta() {
       <section
         id="final-cta"
         aria-label="Begin Your Learning Journey"
-        className="relative overflow-hidden py-14 sm:py-20 lg:py-24 bg-white text-slate-900"
+        className="relative overflow-hidden py-10 sm:py-20 lg:py-24 bg-white text-slate-900"
       >
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#0B1536] text-white p-8 sm:p-14 lg:p-20 shadow-2xl border border-white/10 text-center space-y-6">
+          <div className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#0B1536] text-white p-6 sm:p-14 lg:p-20 shadow-2xl border border-white/10 text-center space-y-6">
             {/* Ambient Coral & Blue Glows inside the panel */}
             <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-600/25 blur-3xl" aria-hidden="true" />
             <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-[#FF5238]/20 blur-3xl" aria-hidden="true" />
