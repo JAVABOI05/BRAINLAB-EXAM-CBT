@@ -25,6 +25,7 @@ export function CBTHeroDemo() {
   const rootRef = useRef<HTMLDivElement>(null);
   const hasPlayedRef = useRef(false);
   const [phase, setPhase] = useState<DemoPhase>("idle");
+  const [hasStarted, setHasStarted] = useState(false);
   const [seconds, setSeconds] = useState(15);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function CBTHeroDemo() {
         if (!entry?.isIntersecting || hasPlayedRef.current) return;
         hasPlayedRef.current = true;
         setPhase("question");
+        setHasStarted(true);
         observer.disconnect();
       },
       { threshold: 0.35 }
@@ -67,7 +69,7 @@ export function CBTHeroDemo() {
   }, []);
 
   useEffect(() => {
-    if (phase !== "question") return;
+    if (!hasStarted) return;
 
     const timer = window.setInterval(() => {
       setSeconds((current) => Math.max(11, current - 1));
@@ -82,7 +84,7 @@ export function CBTHeroDemo() {
       window.clearTimeout(highlightLaunch);
       window.clearTimeout(finish);
     };
-  }, [phase]);
+  }, [hasStarted]);
 
   const answerSelected = phase === "selected" || phase === "cta" || phase === "complete";
   const launchHighlighted = phase === "cta";
