@@ -134,7 +134,7 @@ export function HomeHero() {
           <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
             
             {/* One-Time Value Statement Reveal */}
-            <div className={styles.valueStatement}>
+            <div className={styles.valueStatementReveal}>
               {/* Category Pill */}
               <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-blue-400/30 bg-blue-900/40 px-3 py-1 sm:px-3.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
                 <span className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-cyan-400 animate-pulse" />
