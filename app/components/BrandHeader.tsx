@@ -387,6 +387,21 @@ export default function BrandHeader() {
     setExploreDropdownOpen(false);
   };
 
+  // Auto-close open menus on navigation
+  useEffect(() => {
+    closeAllMenus();
+  }, [pathname]);
+
+  // Lock background body scroll when mobile navigation drawer is open
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileMenuOpen]);
+
   // Cross-page navigation and smooth anchor scrolling handler
   const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     if (pathname === "/") {
@@ -765,6 +780,8 @@ export default function BrandHeader() {
         {/* Mobile Hamburger Toggle Button */}
         <button
           type="button"
+          id="mobile-menu-trigger"
+          aria-controls="mobile-navigation-drawer"
           className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 lg:hidden transition active:scale-95 bl-focus-ring cursor-pointer"
           aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={mobileMenuOpen}
@@ -787,7 +804,12 @@ export default function BrandHeader() {
 
       {/* Accessible Mobile Thumb-Friendly Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="border-b border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-[#071328] lg:hidden animate-in fade-in duration-150 max-h-[85vh] overflow-y-auto">
+        <div
+          id="mobile-navigation-drawer"
+          role="region"
+          aria-label="Mobile Navigation Menu"
+          className="border-b border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-[#071328] lg:hidden animate-in fade-in duration-150 max-h-[85vh] overflow-y-auto"
+        >
           {/* Explore Experiences Category */}
           <div className="mb-4">
             <div className="flex items-center justify-between px-2 py-1 text-[11px] font-black uppercase tracking-wider text-blue-700 dark:text-cyan-400">
@@ -887,11 +909,18 @@ export default function BrandHeader() {
                 </button>
               </div>
             ) : (
-              <div className="pt-1">
+              <div className="pt-1 grid grid-cols-2 gap-2">
+                <Link
+                  href="/login"
+                  onClick={closeAllMenus}
+                  className="flex min-h-[48px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 py-3 text-xs font-bold text-slate-800 dark:text-slate-200 transition active:scale-98 bl-focus-ring"
+                >
+                  Sign In
+                </Link>
                 <Link
                   href="/login?mode=signup"
                   onClick={closeAllMenus}
-                  className="flex min-h-[48px] w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-blue-900/20 active:scale-98 bl-focus-ring"
+                  className="flex min-h-[48px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-blue-900/20 active:scale-98 bl-focus-ring"
                 >
                   Start Free &rarr;
                 </Link>
