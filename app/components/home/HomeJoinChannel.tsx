@@ -148,14 +148,14 @@ export function HomeJoinChannel({
   return (
     <section
       aria-label="Join Official BrainLab WhatsApp Channel"
-      className={`relative w-full py-4 sm:py-6 ${className}`}
+      className={`relative w-full -mt-6 sm:-mt-10 lg:-mt-12 z-20 pb-4 sm:pb-6 overflow-hidden ${className}`}
     >
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Compact, High-Impact Broadcast Ribbon */}
-        <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-emerald-50 dark:from-[#071328] dark:via-[#091b2c] dark:to-[#071328] p-3.5 sm:p-4 shadow-sm dark:shadow-xl">
+        {/* Compact, High-Impact Broadcast Ribbon Straddling Hero Edge */}
+        <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/50 bg-white dark:bg-[#071328] p-3.5 sm:p-4 shadow-xl">
           {/* Subtle Ambient Radial Glow */}
-          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 blur-3xl" />
-          <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-blue-500/10 dark:bg-blue-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
 
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 sm:gap-4">
             {/* Left: Icon & Channel Details */}
