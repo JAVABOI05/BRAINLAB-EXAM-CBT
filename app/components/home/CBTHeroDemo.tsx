@@ -76,7 +76,10 @@ export function CBTHeroDemo() {
     }, 1000);
     const selectAnswer = window.setTimeout(() => setPhase("selected"), 1900);
     const highlightLaunch = window.setTimeout(() => setPhase("cta"), 3000);
-    const finish = window.setTimeout(() => setPhase("complete"), 4200);
+    const finish = window.setTimeout(() => {
+      window.clearInterval(timer);
+      setPhase("complete");
+    }, 4200);
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const stopForReducedMotion = (event: MediaQueryListEvent) => {
       if (!event.matches) return;
