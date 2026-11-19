@@ -124,7 +124,7 @@ export function HomeBrainLabLoop(): React.JSX.Element {
       id="the-loop"
       data-slot="THE BRAINLAB LOOP (SLOTS S3-01 & S3-02)"
       aria-label="How BrainLab Works - The 5-Step Learning Method"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200 bg-white text-slate-900"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden pt-14 pb-0 sm:pt-20 sm:pb-0 border-b-0 bg-blue-50/50 text-slate-900"
     >
       {/* Brilliant Subtle Geometric Grid Matrix */}
       <div
@@ -654,6 +654,20 @@ export function HomeBrainLabLoop(): React.JSX.Element {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Asymmetric Angled SVG Transition into Deep Navy Product Showcase */}
+      <div className="relative w-full overflow-hidden leading-none z-10 -mb-[1px] pointer-events-none mt-12 sm:mt-16" aria-hidden="true">
+        <svg
+          className="relative block w-full h-8 sm:h-12 lg:h-16 text-[#0B1536]"
+          viewBox="0 0 1440 60"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0,60 L1440,0 L1440,60 Z"
+            fill="currentColor"
+          />
+        </svg>
       </div>
     </section>
   );
