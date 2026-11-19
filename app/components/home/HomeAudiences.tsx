@@ -254,25 +254,25 @@ export function HomeAudiences() {
     <section
       id="audiences"
       aria-label="Tailored Experiences for Every Learner"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-14 sm:py-20 border-b border-slate-200/80 bg-[#F8FAFC] text-slate-900 transition-colors"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden py-10 sm:py-20 border-b border-slate-200/80 bg-white text-slate-900 transition-colors"
     >
       {/* Dynamic Ambient Lighting */}
       <div
-        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r ${activeTrack.glowGradient} blur-[140px] opacity-40  transition-all duration-700`}
+        className={`pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r ${activeTrack.glowGradient} blur-[140px] opacity-40 transition-all duration-700`}
         aria-hidden="true"
       />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-3 shadow-2xs">
+        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-12">
+          <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-2 sm:mb-3 shadow-2xs">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
             <span>EXAMINATION CANDIDATE PATHWAYS</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
+          <h2 className="text-xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
             Engineered Specifically for How You Learn
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
+          <p className="mt-2 text-xs sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
             Select your candidate category below to explore tailored simulation engines, official marking schemes, and real-time diagnostic telemetry.
           </p>
         </div>
@@ -281,7 +281,7 @@ export function HomeAudiences() {
         <div
           role="tablist"
           aria-label="Academic Candidate Pathways"
-          className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-8 sm:mb-12"
+          className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4 mb-6 sm:mb-10"
         >
           {CANDIDATE_TRACKS.map((track) => {
             const isActive = track.id === activeTrackId;
@@ -295,25 +295,25 @@ export function HomeAudiences() {
                 aria-controls={`panel-${track.id}`}
                 type="button"
                 onClick={() => setActiveTrackId(track.id)}
-                className={`group relative flex items-center gap-3 rounded-2xl px-5 sm:px-7 py-3.5 text-xs sm:text-sm font-bold transition-all duration-300 bl-focus-ring cursor-pointer ${
+                className={`group relative flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl px-3.5 py-2 sm:px-7 sm:py-3.5 text-xs sm:text-sm font-bold transition-all duration-200 bl-focus-ring cursor-pointer ${
                   isActive
-                    ? "bg-slate-950 text-white shadow-xl border-2 border-slate-900 scale-102 "
-                    : "bg-slate-100/80 text-slate-700 hover:text-slate-950 hover:bg-slate-200/80 border border-slate-200/80     "
+                    ? "bg-slate-950 text-white shadow-lg border border-slate-900 scale-101 sm:scale-102"
+                    : "bg-slate-100/80 text-slate-700 hover:text-slate-950 hover:bg-slate-200/80 border border-slate-200/80"
                 }`}
               >
                 <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-xl ${
-                    isActive ? track.accentBg : "bg-white text-slate-600  "
-                  } border border-slate-200  shrink-0 transition-transform group-hover:scale-110`}
+                  className={`flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-lg sm:rounded-xl ${
+                    isActive ? track.accentBg : "bg-white text-slate-600"
+                  } border border-slate-200 shrink-0 transition-transform group-hover:scale-105`}
                   aria-hidden="true"
                 >
-                  <AudienceIcon type={track.icon} className="h-4 w-4" />
+                  <AudienceIcon type={track.icon} className="h-3.5 w-3.5" />
                 </span>
-                <span className={`font-black text-sm tracking-tight ${isActive ? "text-white" : "text-slate-800 "}`}>
+                <span className={`font-black text-xs sm:text-sm tracking-tight ${isActive ? "text-white" : "text-slate-800"}`}>
                   {track.tag}
                 </span>
                 {isActive && (
-                  <span className={`flex h-2.5 w-2.5 rounded-full ${track.themeColor.replace("text-", "bg-")} shadow-xs animate-pulse ml-0.5`} />
+                  <span className={`flex h-2 w-2 rounded-full ${track.themeColor.replace("text-", "bg-")} shadow-xs animate-pulse ml-0.5`} />
                 )}
               </button>
             );
@@ -325,7 +325,7 @@ export function HomeAudiences() {
           role="tabpanel"
           id={`panel-${activeTrack.id}`}
           aria-labelledby={`tab-${activeTrack.id}`}
-          className="relative rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 lg:p-12 shadow-lg backdrop-blur-xl transition-all duration-500 overflow-hidden"
+          className="relative rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-10 lg:p-12 shadow-md sm:shadow-lg backdrop-blur-xl transition-all duration-300 overflow-hidden"
         >
           {/* Subtle Top Gradient Accent Line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-400" />
@@ -343,29 +343,29 @@ export function HomeAudiences() {
                 </span>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 tracking-tight leading-tight">
+              <h3 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-950 tracking-tight leading-tight">
                 {activeTrack.headline}
               </h3>
 
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+              <p className="text-xs sm:text-base text-slate-600 leading-relaxed font-normal">
                 {activeTrack.body}
               </p>
 
               {/* High-Contrast Illustrated Feature Modules */}
-              <div className="space-y-3 pt-2">
+              <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
                 {activeTrack.features.map((feat, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4 transition-all hover:border-slate-300 hover:bg-slate-100/80 shadow-2xs"
+                    className="flex items-start gap-2.5 sm:gap-3.5 rounded-xl sm:rounded-2xl border border-slate-200/80 bg-slate-50/80 p-2.5 sm:p-4 transition-all hover:border-slate-300 hover:bg-slate-100/80 shadow-2xs"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-blue-700 shadow-2xs">
-                      <AudienceIcon type={feat.icon} className="h-4 w-4" />
+                    <span className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-white border border-slate-200 text-blue-700 shadow-2xs">
+                      <AudienceIcon type={feat.icon} className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </span>
                     <div className="space-y-0.5">
                       <div className="text-xs sm:text-sm font-bold text-slate-950 tracking-tight">
                         {feat.title}
                       </div>
-                      <div className="text-xs text-slate-600 leading-relaxed font-normal">
+                      <div className="text-[11px] sm:text-xs text-slate-600 leading-relaxed font-normal">
                         {feat.desc}
                       </div>
                     </div>
@@ -374,16 +374,16 @@ export function HomeAudiences() {
               </div>
 
               {/* Direct Pathway Action */}
-              <div className="pt-3 flex flex-wrap items-center gap-4">
+              <div className="pt-2 sm:pt-3 flex flex-wrap items-center gap-3 sm:gap-4">
                 <Link
                   href={activeTrack.cta.href}
-                  className="inline-flex items-center gap-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:translate-y-0.5 px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-black text-white shadow-md shadow-blue-600/25 transition-all bl-focus-ring min-h-[48px]"
+                  className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl bg-blue-600 hover:bg-blue-700 active:translate-y-0.5 px-5 sm:px-8 py-3 sm:py-3.5 text-xs sm:text-sm font-black text-white shadow-md shadow-blue-600/25 transition-all bl-focus-ring min-h-[44px] sm:min-h-[48px]"
                 >
                   <span>{activeTrack.cta.label}</span>
                   <span aria-hidden="true" className="text-base font-bold">&rarr;</span>
                 </Link>
 
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-[11px] sm:text-xs text-slate-500 font-mono">
                   Instant Candidate Access &bull; Real Exam Environment
                 </span>
               </div>
@@ -391,7 +391,7 @@ export function HomeAudiences() {
 
             {/* RIGHT COLUMN: Bespoke Interactive Live Simulator Widget */}
             <div className="lg:col-span-5">
-              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
+              <div className="rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-50/90 p-3.5 sm:p-6 shadow-sm relative overflow-hidden">
                 {/* Glow pill header */}
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
                   <div className="flex items-center gap-2">

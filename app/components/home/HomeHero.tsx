@@ -107,7 +107,7 @@ export function HomeHero() {
   return (
     <section
       aria-label="BrainLab Learning Ecosystem Introduction"
-      className="relative overflow-hidden bg-[#0B1536] text-white pt-8 pb-0 border-b-0"
+      className="relative overflow-hidden bg-[#0B1536] text-white pt-6 pb-0 sm:pt-12 sm:pb-0 border-b-0"
     >
       {/* Soft Academic Ambient Glows (Electric Blue & Coral) */}
       <div
@@ -138,21 +138,21 @@ export function HomeHero() {
         Interactive CBT Practice Simulator Preview
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 lg:pb-20">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-10 sm:pb-16 lg:pb-20">
         {/* Main Hero Split Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
           
           {/* LEFT / EDITORIAL COPY & CANDIDATE PATHWAYS */}
-          <div className="lg:col-span-6 space-y-6 sm:space-y-7 text-left">
+          <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
             
             {/* Category Pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-900/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
-              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span>INTELLIGENT CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-blue-400/30 bg-blue-900/40 px-3 py-1 sm:px-3.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
+              <span className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span>CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
             </div>
 
             {/* Authoritative Primary Headline with Coral Underline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.08]">
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12] sm:leading-[1.08]">
               For every student,<br />
               every classroom.<br />
               <span className="relative inline-block text-cyan-400">
@@ -170,20 +170,21 @@ export function HomeHero() {
               </span>
             </h1>
 
-            {/* High-Legibility Subheading */}
-            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-xl font-normal">
-              {subhead} Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.
+            {/* High-Legibility Subheading (Concise on Mobile) */}
+            <p className="text-xs sm:text-base lg:text-lg text-slate-300 leading-relaxed max-w-xl font-normal">
+              <span>{subhead}</span>
+              <span className="hidden sm:inline"> Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.</span>
             </p>
 
             {/* Candidate Pathway Buttons (UTME & Post-UTME Primary) */}
-            <div className="space-y-3 pt-1">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="space-y-2 sm:space-y-3 pt-1">
+              <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Select your candidate pathway:
               </div>
-              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3">
                 <Link
                   href="/cbt"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-black px-7 py-3.5 text-sm sm:text-base shadow-lg shadow-blue-600/30 transition-all duration-200 active:scale-95 group min-h-[48px] w-full sm:w-auto bl-focus-ring"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-3 sm:px-7 sm:py-3.5 text-xs sm:text-base shadow-lg shadow-blue-600/30 transition-all duration-200 active:scale-95 group min-h-[44px] sm:min-h-[48px] w-full sm:w-auto bl-focus-ring"
                 >
                   <span>UTME Candidates</span>
                   <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
@@ -191,22 +192,22 @@ export function HomeHero() {
 
                 <Link
                   href="/programmes/post-utme"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/20 bg-white/10 hover:bg-white/20 text-white font-extrabold px-6 py-3.5 text-sm sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[48px] w-full sm:w-auto bl-focus-ring"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/20 bg-white/10 hover:bg-white/20 text-white font-extrabold px-5 py-3 sm:px-6 sm:py-3.5 text-xs sm:text-base shadow-xs transition-all duration-200 active:scale-95 min-h-[44px] sm:min-h-[48px] w-full sm:w-auto bl-focus-ring"
                 >
                   <span>Post-UTME Screening</span>
                 </Link>
 
                 <Link
                   href="/learn"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-slate-200 font-bold px-5 py-3.5 text-sm sm:text-base transition-all duration-200 active:scale-95 min-h-[48px] w-full sm:w-auto bl-focus-ring"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-slate-200 font-bold px-4 py-2.5 sm:px-5 sm:py-3.5 text-xs sm:text-base transition-all duration-200 active:scale-95 min-h-[44px] sm:min-h-[48px] w-full sm:w-auto bl-focus-ring"
                 >
                   <span>O Level (WAEC/NECO)</span>
                 </Link>
               </div>
             </div>
 
-            {/* Reassurance Badges */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-300 pt-2">
+            {/* Reassurance Badges (Visible on sm+ to prevent mobile clutter) */}
+            <div className="hidden sm:flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-300 pt-2">
               <span className="inline-flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
@@ -229,20 +230,20 @@ export function HomeHero() {
 
             {/* Truthful Free Tier Disclosure */}
             {disclosure && (
-              <p className="text-xs text-slate-400 pt-1">
+              <p className="text-[11px] sm:text-xs text-slate-400 pt-0.5">
                 &bull; {disclosure}
               </p>
             )}
 
             {/* Dynamic Live Statistics Slot (Rule S7 compliant, verified live aggregate data only) */}
-            <div className="pt-2">
+            <div className="pt-1">
               <DynamicLiveStatisticsSlot />
             </div>
           </div>
 
           {/* RIGHT / 3-DEVICE CSS & TAILWIND MOCKUP SHOWCASE */}
           <div className="lg:col-span-6 relative">
-            <div className="relative mx-auto max-w-[420px] sm:max-w-[560px] lg:max-w-none min-h-[360px] sm:min-h-[440px] flex items-center justify-center">
+            <div className="relative mx-auto max-w-[340px] sm:max-w-[560px] lg:max-w-none min-h-0 sm:min-h-[440px] flex items-center justify-center">
               
               {/* Device Ambient Halo Glows */}
               <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-[#1356E8]/25 blur-3xl pointer-events-none" aria-hidden="true" />
@@ -467,22 +468,22 @@ export function HomeHero() {
           </div>
         </div>
 
-        {/* Floating STEM Concept Cards Carousel (Dark Navy Translucent Surfaces) */}
-        <div className="mt-14 sm:mt-20 pt-8 border-t border-white/10 animate-bl-fade-in bl-stagger-2">
-          <div className="text-center mb-6">
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
+        {/* Floating STEM Concept Cards Carousel (Horizontal Swipable on Mobile) */}
+        <div className="mt-8 sm:mt-16 pt-6 sm:pt-8 border-t border-white/10 animate-bl-fade-in bl-stagger-2">
+          <div className="text-center mb-4 sm:mb-6">
+            <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
               Interactive First-Principles Learning &bull; Visual Concept Explorers
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-5 text-left">
+          <div className="flex sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 text-left overflow-x-auto sm:overflow-visible scrollbar-none pb-2 sm:pb-0">
             {BRILLIANT_HERO_CONCEPTS.map((concept) => {
               const isSelected = activeConceptId === concept.id;
               return (
                 <div
                   key={concept.id}
                   onClick={() => setActiveConceptId(concept.id)}
-                  className={`group relative rounded-2xl border ${concept.accentBg} p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[200px] sm:min-h-[220px] shadow-sm hover:-translate-y-1 ${concept.borderColor} ${concept.glowColor} ${
+                  className={`group relative rounded-2xl border ${concept.accentBg} p-3.5 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-w-[240px] sm:min-w-0 min-h-[190px] sm:min-h-[220px] shadow-sm hover:-translate-y-1 shrink-0 sm:shrink ${concept.borderColor} ${concept.glowColor} ${
                     isSelected ? "ring-2 ring-cyan-400 scale-[1.02]" : "opacity-95 hover:opacity-100"
                   }`}
                 >
