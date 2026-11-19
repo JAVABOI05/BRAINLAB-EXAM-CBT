@@ -129,6 +129,15 @@
   line-height: 1.5;
 }
 
+.questionWaiting {
+  opacity: 0;
+  transform: translateY(5px);
+}
+
+.questionReveal {
+  animation: question-appear 420ms ease-out both;
+}
+
 .options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -312,6 +321,11 @@
   font-size: 11px;
 }
 
+@keyframes question-appear {
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes key-press {
   0% { opacity: 0.65; transform: scale(0.94); }
   65% { opacity: 1; transform: scale(1.04); }
@@ -339,7 +353,7 @@
   }
 
   .key small {
-    font-size: 5px;
+    font-size: 6px;
   }
 
   .launchRow {
@@ -352,6 +366,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .questionReveal,
   .keySelected,
   .launchHighlight::after {
     animation: none !important;
