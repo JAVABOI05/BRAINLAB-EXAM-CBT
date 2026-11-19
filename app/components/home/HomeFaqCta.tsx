@@ -77,56 +77,64 @@ export function HomeFaqCta() {
         </div>
       </section>
 
-      {/* Final Call to Action Section: Grand Midnight Finale Dark */}
+      {/* Final Call to Action Section: Navy Rounded Panel before Footer */}
       <section
         id="final-cta"
         aria-label="Begin Your Learning Journey"
-        className="relative overflow-hidden py-20 sm:py-28 bg-gradient-to-b from-[#080E1E] via-[#050A16] to-[#02050B] text-white border-b border-white/10"
+        className="relative overflow-hidden py-14 sm:py-20 lg:py-24 bg-white text-slate-900"
       >
-        {/* Subtle dot matrix background */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage: `radial-gradient(#38bdf8 1.2px, transparent 1.2px)`,
-            backgroundSize: "24px 24px",
-          }}
-          aria-hidden="true"
-        />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#0B1536] text-white p-8 sm:p-14 lg:p-20 shadow-2xl border border-white/10 text-center space-y-6">
+            {/* Ambient Coral & Blue Glows inside the panel */}
+            <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-600/25 blur-3xl" aria-hidden="true" />
+            <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-[#FF5238]/20 blur-3xl" aria-hidden="true" />
 
-        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-950/60 px-3.5 py-1 text-xs font-bold text-cyan-300 shadow-xs">
-            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span>START PREPARING TODAY</span>
+            {/* Subtle dot matrix background */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.06]"
+              style={{
+                backgroundImage: `radial-gradient(#38bdf8 1.2px, transparent 1.2px)`,
+                backgroundSize: "24px 24px",
+              }}
+              aria-hidden="true"
+            />
+
+            <div className="relative z-10 max-w-3xl mx-auto space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-950/60 px-3.5 py-1 text-xs font-bold text-cyan-300 shadow-xs">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span>START PREPARING TODAY</span>
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                Master Your Syllabus. Pass Your Examination with Confidence.
+              </h2>
+
+              <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
+                Join ambitious students and examination candidates utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and interactive virtual laboratories across all examination tracks.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <Link
+                  href="/cbt"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 text-slate-950 px-8 py-4 text-base font-black shadow-lg shadow-cyan-500/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
+                >
+                  <span>Start Candidate Preparation</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </Link>
+
+                <Link
+                  href="/pricing"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-white/20 bg-white/10 text-white hover:bg-white/15 px-7 py-4 text-base font-bold active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
+                >
+                  View Student Plans &amp; Pricing
+                </Link>
+              </div>
+
+              <p className="text-xs text-slate-400 pt-2 font-medium">
+                Instant candidate access &bull; Low-bandwidth optimized &bull; Offline auto-sync protection
+              </p>
+            </div>
           </div>
-
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight max-w-3xl mx-auto">
-            Master Your Syllabus. Pass Your Examination with Confidence.
-          </h2>
-
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
-            Join ambitious students and examination candidates utilizing syllabus-calibrated CBT mocks, instant error diagnostics, and interactive virtual laboratories across all examination tracks.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link
-              href="/cbt"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 text-slate-950 px-8 py-4 text-base font-black shadow-lg shadow-cyan-500/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
-            >
-              <span>Start Candidate Preparation</span>
-              <span aria-hidden="true">&rarr;</span>
-            </Link>
-
-            <Link
-              href="/pricing"
-              className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border-2 border-white/20 bg-white/10 text-white hover:bg-white/15 px-7 py-4 text-base font-bold active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
-            >
-              View Student Plans &amp; Pricing
-            </Link>
-          </div>
-
-          <p className="text-xs text-slate-400 pt-2 font-medium">
-            Instant candidate access &bull; Low-bandwidth optimized &bull; Offline auto-sync protection
-          </p>
         </div>
       </section>
     </>
