@@ -125,11 +125,11 @@ export function HomeBrainLabLoop(): React.JSX.Element {
       id="the-loop"
       data-slot="THE BRAINLAB LOOP (SLOTS S3-01 & S3-02)"
       aria-label="How BrainLab Works - The 5-Step Learning Method"
-      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden pt-14 pb-0 sm:pt-20 sm:pb-0 border-b-0 bg-blue-50/50 text-slate-900"
+      className="scroll-mt-20 sm:scroll-mt-24 relative w-full overflow-hidden pt-10 pb-0 sm:pt-16 sm:pb-0 border-b-0 bg-blue-50/50 text-slate-900"
     >
       {/* Brilliant Subtle Geometric Grid Matrix */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.035] .05]"
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
         style={{
           backgroundImage: `radial-gradient(#1e293b 1.2px, transparent 1.2px)`,
           backgroundSize: "24px 24px",
@@ -139,16 +139,16 @@ export function HomeBrainLabLoop(): React.JSX.Element {
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header with Refined Empirical Branding */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800   border border-blue-300  mb-3 shadow-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600  animate-pulse" />
+        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-12">
+          <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-black bg-blue-100 text-blue-800 border border-blue-300 mb-2 sm:mb-3 shadow-xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
             <span>HOW BRAINLAB WORKS &bull; THE 5-STEP STUDY METHOD</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+          <h2 className="text-xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
             From Fundamental Concept to Complete Exam Mastery
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
-            A simple, powerful 5-step learning system designed to help you truly understand each topic, practise with confidence, fix mistakes, and excel in your exams.
+          <p className="mt-2 text-xs sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
+            A simple, powerful 5-step learning system designed to help you understand topics deeply, fix errors, and excel in your exams.
           </p>
         </div>
 
@@ -156,12 +156,12 @@ export function HomeBrainLabLoop(): React.JSX.Element {
         <div
           role="tablist"
           aria-label="Loop Stages"
-          className="relative mb-10 sm:mb-12"
+          className="relative mb-6 sm:mb-10"
         >
           {/* Subtle Horizontal Connector Rail on Desktop */}
-          <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-slate-200  -translate-y-1/2 pointer-events-none" />
+          <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-slate-200 -translate-y-1/2 pointer-events-none" />
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 relative z-10">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 relative z-10">
             {loopStages.map((stage) => {
               const isSelected = stage.id === activeStageId;
               const route = STAGE_ROUTE_MAP[stage.id] || STAGE_ROUTE_MAP.learn;
@@ -174,10 +174,10 @@ export function HomeBrainLabLoop(): React.JSX.Element {
                   aria-controls={`panel-${stage.id}`}
                   aria-selected={isSelected}
                   onClick={() => setActiveStageId(stage.id)}
-                  className={`group relative flex flex-col items-start p-4 rounded-2xl text-left transition-all duration-200 bl-focus-ring cursor-pointer border-2 border-b-4 active:border-b-2 active:translate-y-0.5 shadow-sm ${
+                  className={`group relative flex flex-col items-start p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-all duration-200 bl-focus-ring cursor-pointer border-2 border-b-4 active:border-b-2 active:translate-y-0.5 shadow-sm ${
                     isSelected
-                      ? `bg-white  text-slate-900 ${route.accentBorder}`
-                      : "border-slate-200 bg-slate-50/70  hover:border-slate-300 :border-slate-700 text-slate-700"
+                      ? `bg-white text-slate-900 ${route.accentBorder}`
+                      : "border-slate-200 bg-slate-50/70 hover:border-slate-300 text-slate-700"
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-2">
