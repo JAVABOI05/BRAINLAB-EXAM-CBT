@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
 import { DynamicLiveStatisticsSlot } from "./DynamicLiveStatisticsSlot";
+import { CBTHeroDemo } from "./CBTHeroDemo";
 
 interface ConceptCard {
   id: string;
@@ -85,9 +85,6 @@ const BRILLIANT_HERO_CONCEPTS: ConceptCard[] = [
 export function HomeHero() {
   const heroConfig = HOMEPAGE_CONTENT_CONFIG.hero;
   const [activeConceptId, setActiveConceptId] = useState<string>("math");
-  const [imgErrorLaptop, setImgErrorLaptop] = useState<boolean>(false);
-  const [imgErrorTablet, setImgErrorTablet] = useState<boolean>(false);
-  const [imgErrorPhone, setImgErrorPhone] = useState<boolean>(false);
 
   const headline = resolveClaimValue(
     heroConfig.headline,
@@ -109,16 +106,6 @@ export function HomeHero() {
       aria-label="BrainLab Learning Ecosystem Introduction"
       className="relative overflow-hidden bg-[#0B1536] text-white pt-8 pb-0 border-b-0"
     >
-      {/* Soft Academic Ambient Glows (Electric Blue & Coral) */}
-      <div
-        className="pointer-events-none absolute -top-32 left-1/4 h-[520px] w-[520px] rounded-full bg-[#1356E8]/20 blur-[140px]"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute top-1/3 -right-20 h-[450px] w-[450px] rounded-full bg-[#FF5238]/12 blur-[130px]"
-        aria-hidden="true"
-      />
-
       {/* Subtle Dotted Matrix Canvas Texture */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
@@ -147,7 +134,7 @@ export function HomeHero() {
             
             {/* Category Pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-900/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
-              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="flex h-2 w-2 rounded-full bg-cyan-400" />
               <span>INTELLIGENT CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
             </div>
 
@@ -240,235 +227,14 @@ export function HomeHero() {
             </div>
           </div>
 
-          {/* RIGHT / 3-DEVICE CSS & TAILWIND MOCKUP SHOWCASE */}
-          <div className="lg:col-span-6 relative">
-            <div className="relative mx-auto max-w-[420px] sm:max-w-[560px] lg:max-w-none min-h-[360px] sm:min-h-[440px] flex items-center justify-center">
-              
-              {/* Device Ambient Halo Glows */}
-              <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-[#1356E8]/25 blur-3xl pointer-events-none" aria-hidden="true" />
-              <div className="absolute bottom-6 right-6 h-60 w-60 rounded-full bg-[#FF5238]/18 blur-3xl pointer-events-none" aria-hidden="true" />
-
-              {/* ----------------------------------------------------------------- */}
-              {/* DEVICE 1: TABLET (Left / Rear Overlap, Learning Hub Preview)     */}
-              {/* ----------------------------------------------------------------- */}
-              <div
-                className="hidden sm:block absolute -left-4 md:-left-8 top-8 sm:top-10 w-44 sm:w-56 lg:w-64 z-10 -rotate-3 transition-transform duration-300 hover:rotate-0 hover:z-30 pointer-events-auto"
-                aria-label="Tablet device preview: Curriculum Learning Hub"
-              >
-                <div className="rounded-2xl border-2 border-slate-700/80 bg-slate-900 p-2 shadow-2xl shadow-black/70">
-                  {/* Camera hole */}
-                  <div className="flex justify-center mb-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                  </div>
-                  {/* Tablet Screen */}
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-[#071124] border border-white/5">
-                    {!imgErrorTablet ? (
-                      <Image
-                        src="/images/mockups/learning-hub-tablet.png"
-                        alt="BrainLab Curriculum Learning Hub tablet preview"
-                        fill
-                        sizes="(max-width: 768px) 240px, 280px"
-                        onError={() => setImgErrorTablet(true)}
-                        className="object-cover"
-                      />
-                    ) : null}
-
-                    {/* High-Fidelity CSS Wireframe Fallback / Content */}
-                    <div className="p-3 text-left space-y-2 h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between text-[10px] text-cyan-400 font-mono font-bold">
-                          <span>LEARNING HUB</span>
-                          <span>SS1–SS3</span>
-                        </div>
-                        <div className="text-xs font-black text-white mt-1 leading-tight">
-                          Physics: Kinematics &amp; Motion
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
-                          v² = u² + 2as derivations
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-[9px] font-bold text-slate-300">
-                          <span>Syllabus Mastery</span>
-                          <span className="text-emerald-400">78%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full w-[78%]" />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1 text-[9px]">
-                        <span className="bg-slate-800/80 rounded px-1.5 py-0.5 text-slate-300 text-center font-mono">
-                          24 Subtopics
-                        </span>
-                        <span className="bg-emerald-950/60 text-emerald-300 rounded px-1.5 py-0.5 text-center font-mono">
-                          NERDC Sync
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ----------------------------------------------------------------- */}
-              {/* DEVICE 2: LAPTOP (Center Anchor, CBT Exam Hall Simulator)         */}
-              {/* ----------------------------------------------------------------- */}
-              <div
-                className="relative z-20 w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[500px] transition-transform duration-300 hover:scale-[1.01]"
-                aria-label="Laptop device preview: Official CBT Examination Simulator"
-              >
-                {/* Laptop Lid & Screen */}
-                <div className="rounded-t-2xl border-2 border-slate-700 bg-slate-900 p-2 sm:p-2.5 shadow-2xl shadow-blue-950/50">
-                  {/* Laptop Camera Notch Dot */}
-                  <div className="flex justify-center pb-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                  </div>
-
-                  {/* Screen Content Frame with Explicit CLS Prevention */}
-                  <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg bg-[#060D20] border border-white/10 min-h-[200px] sm:min-h-[260px]">
-                    {!imgErrorLaptop ? (
-                      <Image
-                        src="/images/mockups/cbt-laptop.png"
-                        alt="BrainLab CBT Practice Simulator interface showing authentic JAMB 8-key examination environment"
-                        fill
-                        sizes="(max-width: 768px) 340px, 500px"
-                        priority
-                        onError={() => setImgErrorLaptop(true)}
-                        className="object-cover"
-                      />
-                    ) : null}
-
-                    {/* High-Fidelity CBT Simulator CSS UI Mockup */}
-                    <div className="p-3 sm:p-4 text-left h-full flex flex-col justify-between">
-                      {/* Top Exam Header */}
-                      <div className="flex items-center justify-between pb-2 border-b border-white/10 text-[10px] sm:text-xs">
-                        <div className="flex items-center gap-1.5 font-bold text-cyan-400">
-                          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-                          <span>JAMB UTME 8-Key Engine</span>
-                        </div>
-                        <div className="font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-bold">
-                          Time Left: 01:42:15
-                        </div>
-                      </div>
-
-                      {/* Question Body */}
-                      <div className="space-y-1.5 my-auto">
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-                          <span className="text-white font-bold">Question 14 of 40</span>
-                          <span>&bull;</span>
-                          <span className="text-blue-300">Physics &bull; Electricity</span>
-                        </div>
-                        <p className="text-[11px] sm:text-xs font-semibold text-slate-100 leading-snug">
-                          A cell of e.m.f. 2.0 V and internal resistance 1.0 Ω is connected to a 4.0 Ω load. Find the terminal potential difference.
-                        </p>
-                      </div>
-
-                      {/* Option Pills */}
-                      <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
-                        <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-emerald-500/20 border border-emerald-400/60 text-emerald-200 font-bold">
-                          <span className="flex h-4 w-4 items-center justify-center rounded bg-emerald-500 text-slate-950 font-black text-[9px]">
-                            A
-                          </span>
-                          <span className="truncate">1.60 V (Correct)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-800/80 border border-white/10 text-slate-300">
-                          <span className="flex h-4 w-4 items-center justify-center rounded bg-slate-700 text-slate-200 font-bold text-[9px]">
-                            B
-                          </span>
-                          <span className="truncate">2.00 V</span>
-                        </div>
-                      </div>
-
-                      {/* 8-Key Controls Row */}
-                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[9px] font-mono text-slate-400">
-                        <span className="hidden sm:inline">Keys: [A] [B] [C] [D]</span>
-                        <div className="flex items-center gap-1">
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">[P] Prev</span>
-                          <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold">[N] Next</span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">[S] Submit</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Laptop Keyboard Base & Hinge */}
-                <div className="relative mx-auto w-[105%] -ml-[2.5%] h-3 sm:h-3.5 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 rounded-b-xl shadow-2xl border-t border-slate-600 flex justify-center items-center">
-                  <div className="h-1 w-14 rounded-full bg-slate-600/80" />
-                </div>
-              </div>
-
-              {/* ----------------------------------------------------------------- */}
-              {/* DEVICE 3: SMARTPHONE (Right / Foreground Overlap, Daily Feed)     */}
-              {/* ----------------------------------------------------------------- */}
-              <div
-                className="absolute -right-2 sm:-right-6 -bottom-3 sm:-bottom-5 w-32 sm:w-40 lg:w-44 z-30 rotate-3 transition-transform duration-300 hover:rotate-0 hover:scale-105 pointer-events-auto"
-                aria-label="Smartphone device preview: Student dashboard and daily learning streak"
-              >
-                <div className="rounded-3xl border-2 border-slate-600 bg-slate-900 p-1.5 shadow-2xl shadow-black/80">
-                  {/* Dynamic Island / Speaker Pill */}
-                  <div className="flex justify-center mb-1">
-                    <span className="h-1.5 w-8 rounded-full bg-slate-800" />
-                  </div>
-
-                  {/* Phone Screen Frame */}
-                  <div className="relative aspect-[9/18] w-full overflow-hidden rounded-2xl bg-[#0A1224] border border-white/10">
-                    {!imgErrorPhone ? (
-                      <Image
-                        src="/images/mockups/dashboard-phone.png"
-                        alt="BrainLab student dashboard mobile preview"
-                        fill
-                        sizes="(max-width: 768px) 140px, 180px"
-                        onError={() => setImgErrorPhone(true)}
-                        className="object-cover"
-                      />
-                    ) : null}
-
-                    {/* High-Fidelity Mobile Dashboard CSS Wireframe */}
-                    <div className="p-2 sm:p-2.5 text-left h-full flex flex-col justify-between text-[9px]">
-                      <div>
-                        <div className="flex items-center justify-between text-slate-400">
-                          <span className="font-mono text-cyan-300 font-bold">PORTAL</span>
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        </div>
-                        <div className="font-black text-white text-[10px] mt-1">
-                          Hi, Candidate 👋
-                        </div>
-                      </div>
-
-                      {/* Daily Streak Card with Coral Glow */}
-                      <div className="rounded-xl border border-[#FF5238]/30 bg-[#FF5238]/10 p-1.5 text-center">
-                        <div className="text-[10px] font-black text-[#FF5238]">
-                          🔥 12-Day Streak
-                        </div>
-                        <div className="text-[8px] text-slate-300">
-                          +150 XP Today
-                        </div>
-                      </div>
-
-                      {/* Target Score Metric */}
-                      <div className="rounded-lg bg-slate-800/80 p-1.5 text-center">
-                        <span className="text-[8px] text-slate-400 block uppercase">UTME Target</span>
-                        <span className="font-mono font-black text-white text-xs">340+</span>
-                      </div>
-
-                      {/* Sprint Button */}
-                      <div className="w-full text-center py-1 rounded-lg bg-blue-600 text-white font-bold text-[8px]">
-                        Quick CBT Sprint &rarr;
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
+          {/* RIGHT / SIGNATURE CBT EXAM DEMONSTRATION */}
+          <div className="lg:col-span-6 relative flex items-center justify-center">
+            <CBTHeroDemo />
           </div>
         </div>
 
         {/* Floating STEM Concept Cards Carousel (Dark Navy Translucent Surfaces) */}
-        <div className="mt-14 sm:mt-20 pt-8 border-t border-white/10 animate-bl-fade-in bl-stagger-2">
+        <div className="mt-14 sm:mt-20 pt-8 border-t border-white/10">
           <div className="text-center mb-6">
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
               Interactive First-Principles Learning &bull; Visual Concept Explorers
@@ -482,8 +248,8 @@ export function HomeHero() {
                 <div
                   key={concept.id}
                   onClick={() => setActiveConceptId(concept.id)}
-                  className={`group relative rounded-2xl border ${concept.accentBg} p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[200px] sm:min-h-[220px] shadow-sm hover:-translate-y-1 ${concept.borderColor} ${concept.glowColor} ${
-                    isSelected ? "ring-2 ring-cyan-400 scale-[1.02]" : "opacity-95 hover:opacity-100"
+                  className={`group relative rounded-2xl border ${concept.accentBg} p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[200px] sm:min-h-[220px] shadow-sm ${concept.borderColor} ${
+                    isSelected ? "ring-2 ring-cyan-400" : "opacity-95"
                   }`}
                 >
                   <div>
