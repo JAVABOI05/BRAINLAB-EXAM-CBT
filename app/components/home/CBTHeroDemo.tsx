@@ -109,6 +109,7 @@ export function CBTHeroDemo() {
       ref={rootRef}
       className={styles.demo}
       data-testid="brainlab-hero-cbt-demo"
+      role="group"
       aria-label="Illustrative BrainLab CBT demonstration"
     >
       <div className={styles.device}>
@@ -123,7 +124,7 @@ export function CBTHeroDemo() {
               </span>
             </div>
             <div className={styles.timer}>
-              <span className={styles.timerLabel}>TIME LEFT</span>
+              <span className={styles.timerLabel}>DEMO TIMER</span>
               <strong>01:42:{String(seconds).padStart(2, "0")}</strong>
             </div>
           </header>
@@ -134,7 +135,7 @@ export function CBTHeroDemo() {
             <span className={styles.demoTag}>DEMO</span>
           </div>
 
-          <div className={styles.question}>
+          <div className={`${styles.question} ${phase === "idle" ? styles.questionWaiting : styles.questionReveal}`}>
             A cell of e.m.f. 2.0 V and internal resistance 1.0 Ω is connected to a 4.0 Ω load. What is the terminal potential difference?
           </div>
 
