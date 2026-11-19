@@ -96,7 +96,7 @@ export function HomeProductShowcase() {
     <section
       id="products"
       aria-label="BrainLab Learning Ecosystem Products and Interactive Showcase"
-      className="scroll-mt-20 py-12 sm:py-20 lg:py-28 bg-[#F8FAFC] text-slate-900 dark:bg-[#03091E] dark:text-white relative overflow-hidden border-y border-slate-200/80 dark:border-white/10"
+      className="scroll-mt-20 pt-12 sm:pt-20 lg:pt-28 pb-0 bg-[#0B1536] text-white relative overflow-hidden border-none"
     >
       {/* Harmonious Dual-Tone Ambient Lighting Mesh */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(19,86,232,0.08),transparent_70%)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(19,86,232,0.25),transparent_70%)]" aria-hidden="true" />
@@ -120,22 +120,22 @@ export function HomeProductShowcase() {
           </div>
 
           {/* High-Impact Dual-Color Heading */}
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-950 dark:text-white leading-[1.15]">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.15]">
             Everything You Need to Master <br className="hidden sm:inline" />
-            <span className="text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-blue-400 dark:via-cyan-300 dark:to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400">
               Your Core Examination &amp; STEM Subjects.
             </span>
           </h2>
 
           {/* Rich High-Contrast Subtitle */}
-          <p className="text-sm sm:text-base text-slate-600 dark:text-blue-100/90 leading-relaxed max-w-2xl mx-auto font-normal">
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto font-normal">
             Bite-sized, purposeful tools designed to replace passive textbook cramming with active recall, tactile problem-solving, and diagnostic clarity.
           </p>
 
           {/* Core Capability Guarantee Tags */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-1">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs dark:bg-white/5 dark:border-white/10 dark:text-slate-200">
-              <svg className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-slate-200 shadow-2xs">
+              <svg className="h-3.5 w-3.5 text-cyan-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
                 <circle cx="9" cy="13" r="1" />
                 <circle cx="15" cy="13" r="1" />
@@ -143,16 +143,16 @@ export function HomeProductShowcase() {
               <span>Socratic Step-by-Step AI</span>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs dark:bg-white/5 dark:border-white/10 dark:text-slate-200">
-              <svg className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-slate-200 shadow-2xs">
+              <svg className="h-3.5 w-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="2" y="4" width="20" height="16" rx="2" />
                 <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10" />
               </svg>
               <span>Authentic 8-Keypad Engine</span>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs dark:bg-white/5 dark:border-white/10 dark:text-slate-200">
-              <svg className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-semibold text-slate-200 shadow-2xs">
+              <svg className="h-3.5 w-3.5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
               <span>Tactile STEM Laboratories</span>
@@ -804,6 +804,20 @@ export function HomeProductShowcase() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Downward Organic Curved Transition into Luminous Light STEM Studio */}
+      <div className="relative w-full overflow-hidden leading-none z-10 -mb-[1px] pointer-events-none mt-16 sm:mt-24" aria-hidden="true">
+        <svg
+          className="relative block w-full h-10 sm:h-16 lg:h-20 text-white"
+          viewBox="0 0 1440 100"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0,0 C480,80 960,80 1440,0 L1440,100 L0,100 Z"
+            fill="currentColor"
+          />
+        </svg>
       </div>
     </section>
   );
