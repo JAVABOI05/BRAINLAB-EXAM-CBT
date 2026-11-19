@@ -77,8 +77,20 @@ export function CBTHeroDemo() {
     const selectAnswer = window.setTimeout(() => setPhase("selected"), 1900);
     const highlightLaunch = window.setTimeout(() => setPhase("cta"), 3000);
     const finish = window.setTimeout(() => setPhase("complete"), 4200);
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const stopForReducedMotion = (event: MediaQueryListEvent) => {
+      if (!event.matches) return;
+      window.clearInterval(timer);
+      window.clearTimeout(selectAnswer);
+      window.clearTimeout(highlightLaunch);
+      window.clearTimeout(finish);
+      setSeconds(11);
+      setPhase("complete");
+    };
+    motionPreference.addEventListener("change", stopForReducedMotion);
 
     return () => {
+      motionPreference.removeEventListener("change", stopForReducedMotion);
       window.clearInterval(timer);
       window.clearTimeout(selectAnswer);
       window.clearTimeout(highlightLaunch);
