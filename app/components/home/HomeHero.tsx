@@ -5,6 +5,7 @@ import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
 import { DynamicLiveStatisticsSlot } from "./DynamicLiveStatisticsSlot";
 import { CBTHeroDemo } from "./CBTHeroDemo";
+import styles from "./HomeHero.module.css";
 
 interface ConceptCard {
   id: string;
@@ -132,35 +133,38 @@ export function HomeHero() {
           {/* LEFT / EDITORIAL COPY & CANDIDATE PATHWAYS */}
           <div className="lg:col-span-6 space-y-6 sm:space-y-7 text-left">
             
-            {/* Category Pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-900/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
-              <span className="flex h-2 w-2 rounded-full bg-cyan-400" />
-              <span>INTELLIGENT CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
+            {/* One-Time Value Statement Reveal */}
+            <div className={styles.valueStatement}>
+              {/* Category Pill */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-900/40 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
+                <span className="flex h-2 w-2 rounded-full bg-cyan-400" />
+                <span>INTELLIGENT CBT SIMULATION &bull; AI DIAGNOSTICS &bull; STEM LABS</span>
+              </div>
+
+              {/* Authoritative Primary Headline with Coral Underline */}
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.08] mt-4">
+                For every student,<br />
+                every classroom.<br />
+                <span className="relative inline-block text-cyan-400">
+                  Real exam results.
+                  {/* Organic coral underline accent */}
+                  <svg
+                    className="absolute -bottom-2 left-0 w-full h-3 text-[#FF5238]"
+                    viewBox="0 0 250 12"
+                    fill="none"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 9C60 3 190 2 247 8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                  </svg>
+                </span>
+              </h1>
+
+              {/* High-Legibility Subheading */}
+              <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-xl font-normal mt-4">
+                {subhead} Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.
+              </p>
             </div>
-
-            {/* Authoritative Primary Headline with Coral Underline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.08]">
-              For every student,<br />
-              every classroom.<br />
-              <span className="relative inline-block text-cyan-400">
-                Real exam results.
-                {/* Organic coral underline accent */}
-                <svg
-                  className="absolute -bottom-2 left-0 w-full h-3 text-[#FF5238]"
-                  viewBox="0 0 250 12"
-                  fill="none"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <path d="M3 9C60 3 190 2 247 8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                </svg>
-              </span>
-            </h1>
-
-            {/* High-Legibility Subheading */}
-            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-xl font-normal">
-              {subhead} Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.
-            </p>
 
             {/* Candidate Pathway Buttons (UTME & Post-UTME Primary) */}
             <div className="space-y-3 pt-1">

@@ -363,6 +363,11 @@
   .launchButton {
     width: 100%;
   }
+
+  .laptopBase {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
