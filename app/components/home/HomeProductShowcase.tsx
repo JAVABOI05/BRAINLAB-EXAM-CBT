@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
 
 interface ShowcaseQuestion {
@@ -69,6 +70,7 @@ export function HomeProductShowcase() {
   const [aiSelectedFactor, setAiSelectedFactor] = useState<string | null>(null);
 
   // Row 2: CBT Question Simulator State (SLOTS S4-01 TO S4-04 / cbt-simulator)
+  const [cbtShowcaseMode, setCbtShowcaseMode] = useState<"mockup" | "interactive">("mockup");
   const [activeQIndex, setActiveQIndex] = useState<number>(0);
   const [cbtAnswers, setCbtAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
   const [isFlagged, setIsFlagged] = useState<boolean>(false);
@@ -325,13 +327,80 @@ export function HomeProductShowcase() {
         <div className="relative rounded-3xl sm:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:border-cyan-500/50">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-0 lg:min-h-[440px]">
-            {/* Left: Dedicated Workbench Canvas Frame hosting 3D CBT Cockpit */}
-            <div className="lg:col-span-6 p-4 sm:p-8 lg:p-10 flex items-center justify-center relative order-2 lg:order-1">
-              {/* Elevated CBT Simulator Card */}
-              <div
-                className="w-full max-w-md rounded-2xl sm:rounded-3xl border-2 border-blue-200/80 bg-slate-50 text-slate-900 p-4 sm:p-6 shadow-md min-h-0 sm:min-h-[380px] lg:min-h-[420px] flex flex-col justify-between relative overflow-hidden dark:border-slate-700/80 dark:bg-gradient-to-b dark:from-slate-900 dark:via-[#0a1329] dark:to-[#060c18] dark:text-white group"
-                data-testid="cbt-simulator"
-              >
+            {/* Left: Dedicated Workbench Canvas Frame hosting 3D CBT Cockpit or Authentic Mockup */}
+            <div className="lg:col-span-6 p-4 sm:p-8 lg:p-10 flex flex-col items-center justify-center relative order-2 lg:order-1">
+              {/* View Switcher Controls */}
+              <div className="flex items-center justify-between mb-3 w-full max-w-md lg:max-w-lg">
+                <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 dark:bg-slate-800/80 dark:border-white/10 text-xs font-bold shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setCbtShowcaseMode("mockup")}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      cbtShowcaseMode === "mockup"
+                        ? "bg-white text-blue-700 shadow-xs dark:bg-blue-600 dark:text-white"
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                    }`}
+                  >
+                    Authentic Exam Hall
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCbtShowcaseMode("interactive")}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      cbtShowcaseMode === "interactive"
+                        ? "bg-white text-blue-700 shadow-xs dark:bg-blue-600 dark:text-white"
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                    }`}
+                  >
+                    Interactive 8-Key Drill
+                  </button>
+                </div>
+                <span className="hidden sm:inline-flex text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Official JAMB Layout
+                </span>
+              </div>
+
+              {cbtShowcaseMode === "mockup" ? (
+                /* Authentic High-Resolution Browser Simulator Mockup View */
+                <div
+                  className="w-full max-w-md lg:max-w-lg rounded-2xl sm:rounded-3xl border-2 border-blue-200/80 bg-slate-900 text-white shadow-xl overflow-hidden relative group transition-all duration-300 hover:border-cyan-400/60"
+                  data-testid="cbt-simulator"
+                >
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-950">
+                    <Image
+                      src="/cbt-exam-simulator-showcase.jpg"
+                      alt="Authentic BrainLab JAMB UTME CBT Examination Hall Simulator with live countdown timer and 8-keypad terminal"
+                      width={1024}
+                      height={640}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 540px"
+                      priority={false}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity pointer-events-none" />
+                  </div>
+                  <div className="p-3 sm:p-4 bg-slate-900/95 border-t border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-200">
+                        180 Mins &bull; 4 Electives &bull; 8-Key Emulation
+                      </span>
+                    </div>
+                    <Link
+                      href="/products/cbt"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+                    >
+                      <span>Try Simulator</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                /* Elevated CBT Simulator Card */
+                <div
+                  className="w-full max-w-md lg:max-w-lg rounded-2xl sm:rounded-3xl border-2 border-blue-200/80 bg-slate-50 text-slate-900 p-4 sm:p-6 shadow-md min-h-0 sm:min-h-[380px] lg:min-h-[420px] flex flex-col justify-between relative overflow-hidden dark:border-slate-700/80 dark:bg-gradient-to-b dark:from-slate-900 dark:via-[#0a1329] dark:to-[#060c18] dark:text-white group"
+                  data-testid="cbt-simulator"
+                >
                 {/* Cockpit Top Bar */}
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3 relative z-10">
                   <div className="flex items-center gap-2">
@@ -454,6 +523,7 @@ export function HomeProductShowcase() {
                   </Link>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Right: Text Column */}
