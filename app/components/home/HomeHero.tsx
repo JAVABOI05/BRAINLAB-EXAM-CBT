@@ -87,11 +87,6 @@ export function HomeHero() {
   const heroConfig = HOMEPAGE_CONTENT_CONFIG.hero;
   const [activeConceptId, setActiveConceptId] = useState<string>("math");
 
-  const headline = resolveClaimValue(
-    heroConfig.headline,
-    "A Better Way to Learn, Practise and Achieve More."
-  );
-
   const subhead = resolveClaimValue(
     heroConfig.subhead,
     "Unified examination preparation for UTME, O Level, and Post-UTME candidates."
@@ -107,6 +102,16 @@ export function HomeHero() {
       aria-label="BrainLab Learning Ecosystem Introduction"
       className="relative overflow-hidden bg-[#0B1536] text-white pt-6 pb-0 sm:pt-12 sm:pb-0 border-b-0"
     >
+      {/* Editorial Ambient Lighting (Electric Blue & Coral Glows) */}
+      <div
+        className="pointer-events-none absolute -top-32 left-1/4 h-[500px] w-[500px] rounded-full bg-[#1356E8]/20 blur-[130px]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute top-1/3 -right-24 h-[420px] w-[420px] rounded-full bg-[#FF5238]/12 blur-[120px]"
+        aria-hidden="true"
+      />
+
       {/* Subtle Dotted Matrix Canvas Texture */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
@@ -234,15 +239,23 @@ export function HomeHero() {
 
           {/* RIGHT / SIGNATURE CBT EXAM DEMONSTRATION */}
           <div className="lg:col-span-6 relative flex items-center justify-center">
-            <CBTHeroDemo />
+            {/* Subtle backlight ring behind CBT demo */}
+            <div className="pointer-events-none absolute -inset-4 rounded-3xl bg-gradient-to-tr from-blue-600/20 via-cyan-500/10 to-transparent blur-2xl" aria-hidden="true" />
+            <div className="relative w-full">
+              <CBTHeroDemo />
+            </div>
           </div>
         </div>
 
-        {/* Floating STEM Concept Cards Carousel (Horizontal Swipable on Mobile) */}
-        <div className="mt-8 sm:mt-16 pt-6 sm:pt-8 border-t border-white/10 animate-bl-fade-in bl-stagger-2">
-          <div className="text-center mb-4 sm:mb-6">
-            <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
-              Interactive First-Principles Learning &bull; Visual Concept Explorers
+        {/* First-Principles STEM & Concept Strip (Supporting Educational Visualiser) */}
+        <div className="mt-8 sm:mt-16 pt-6 sm:pt-8 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
+            <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-widest text-cyan-300 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span>First-Principles Learning &bull; Visual Concept Explorers</span>
+            </span>
+            <span className="text-[11px] text-slate-400 hidden sm:inline">
+              Click any concept card to inspect derivation formula
             </span>
           </div>
 
@@ -254,7 +267,7 @@ export function HomeHero() {
                   key={concept.id}
                   onClick={() => setActiveConceptId(concept.id)}
                   className={`group relative rounded-2xl border ${concept.accentBg} p-3.5 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-w-[240px] sm:min-w-0 min-h-[190px] sm:min-h-[220px] shadow-sm hover:-translate-y-1 shrink-0 sm:shrink ${concept.borderColor} ${concept.glowColor} ${
-                    isSelected ? "ring-2 ring-cyan-400 scale-[1.02]" : "opacity-95 hover:opacity-100"
+                    isSelected ? "ring-2 ring-cyan-400 scale-[1.02] shadow-cyan-500/20 shadow-md" : "opacity-95 hover:opacity-100"
                   }`}
                 >
                   <div>

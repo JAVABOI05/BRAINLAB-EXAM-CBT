@@ -1687,6 +1687,39 @@ button:disabled,
   transform: perspective(1200px) rotateY(3.5deg) rotateX(2deg) translateY(-4px);
 }
 
+/* ==========================================================================
+   STANDARDISED PROGRESSIVE SCROLL-REVEAL SYSTEM
+   Preserves full visibility when JS is off or SSR; enhances with fluid motion
+   when IntersectionObserver is active.
+   ========================================================================== */
+.bl-reveal-init {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 550ms cubic-bezier(0.16, 1, 0.3, 1), transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.bl-reveal-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.bl-reveal-stagger-1 {
+  transition-delay: 75ms;
+}
+
+.bl-reveal-stagger-2 {
+  transition-delay: 130ms;
+}
+
+.bl-reveal-stagger-3 {
+  transition-delay: 185ms;
+}
+
+.bl-reveal-stagger-4 {
+  transition-delay: 240ms;
+}
+
 /* Strict prefers-reduced-motion compliance */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1702,8 +1735,11 @@ button:disabled,
   .animate-bl-float-3d,
   .bl-3d-card-stage,
   .bl-3d-card-right:hover,
-  .bl-3d-card-left:hover {
+  .bl-3d-card-left:hover,
+  .bl-reveal-init {
     transform: none !important;
     animation: none !important;
+    opacity: 1 !important;
+    transition: none !important;
   }
 }

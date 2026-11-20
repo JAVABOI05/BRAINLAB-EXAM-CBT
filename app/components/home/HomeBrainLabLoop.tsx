@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
 import { DiagnosticScoreBarDemo } from "./DiagnosticScoreBarDemo";
+import { useScrollReveal } from "@/app/lib/useScrollReveal";
 
 function LoopStageIcon({ id, className = "h-4 w-4" }: { id: string; className?: string }) {
   switch (id) {
@@ -119,6 +120,7 @@ export function HomeBrainLabLoop(): React.JSX.Element {
   const activeStage =
     loopStages.find((s) => s.id === activeStageId) || loopStages[0];
   const activeRoute = STAGE_ROUTE_MAP[activeStage.id] || STAGE_ROUTE_MAP.learn;
+  const { ref, isRevealed } = useScrollReveal();
 
   return (
     <section
@@ -137,7 +139,10 @@ export function HomeBrainLabLoop(): React.JSX.Element {
         aria-hidden="true"
       />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        ref={ref}
+        className={`relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 bl-reveal-init ${isRevealed ? "bl-reveal-visible" : ""}`}
+      >
         {/* Section Header with Refined Empirical Branding */}
         <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-12">
           <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-black bg-blue-100 text-blue-800 border border-blue-300 mb-2 sm:mb-3 shadow-xs">

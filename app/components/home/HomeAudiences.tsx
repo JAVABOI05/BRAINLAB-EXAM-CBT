@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
+import { useScrollReveal } from "@/app/lib/useScrollReveal";
 
 function AudienceIcon({ type, className = "h-4 w-4" }: { type: string; className?: string }) {
   switch (type) {
@@ -250,6 +251,9 @@ export function HomeAudiences() {
   const olevelContribution = 20.0;
   const compositeAggregate = Number((utmeContribution + postUtmeContribution + olevelContribution).toFixed(2));
 
+  const { ref: pillarsRef, isRevealed: pillarsRevealed } = useScrollReveal();
+  const { ref: pathwaysRef, isRevealed: pathwaysRevealed } = useScrollReveal();
+
   return (
     <section
       id="audiences"
@@ -263,8 +267,128 @@ export function HomeAudiences() {
       />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-12">
+        {/* ── THE BRAINLAB STANDARD: FOUR BRAND PILLARS ── */}
+        <div
+          ref={pillarsRef}
+          className={`mb-12 sm:mb-16 bl-reveal-init ${pillarsRevealed ? "bl-reveal-visible" : ""}`}
+        >
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs mb-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+              <span>THE LEARNING ENGINE ARCHITECTURE</span>
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">
+              Four Pillars of Examination Excellence
+            </h2>
+            <p className="mt-2 text-xs sm:text-base text-slate-600 leading-relaxed font-normal">
+              A continuous learning system built to replace blind cramming with first-principles mastery, authentic hall simulation, and precision diagnostic telemetry.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {/* Pillar 1: PRACTISE */}
+            <div className="group rounded-2xl border border-slate-200/90 bg-slate-50/70 hover:bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-lg hover:border-blue-400/50 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/20 font-black text-xs">
+                    01
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                    SPEED &amp; PARITY
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-950 tracking-tight mb-2">
+                  Practise
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Simulate authentic test-hall pressure with official 8-key keyboard speed parity, timed 4-subject blueprints, and zero-data offline exam modes.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-slate-200/60 mt-4 flex items-center gap-1.5 text-xs font-bold text-blue-600">
+                <span>Authentic 8-Key Engine</span>
+                <span aria-hidden="true">&rarr;</span>
+              </div>
+            </div>
+
+            {/* Pillar 2: UNDERSTAND */}
+            <div className="group rounded-2xl border border-slate-200/90 bg-slate-50/70 hover:bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-lg hover:border-cyan-400/50 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-600 text-white shadow-md shadow-cyan-600/20 font-black text-xs">
+                    02
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-200">
+                    FIRST-PRINCIPLES
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-950 tracking-tight mb-2">
+                  Understand
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Master foundational science through interactive virtual STEM laboratories, logic-gate breadboards, optics ray tracing, and step-by-step Socratic AI derivations.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-slate-200/60 mt-4 flex items-center gap-1.5 text-xs font-bold text-cyan-700">
+                <span>STEM Virtual Labs</span>
+                <span aria-hidden="true">&rarr;</span>
+              </div>
+            </div>
+
+            {/* Pillar 3: CONNECT */}
+            <div className="group rounded-2xl border border-slate-200/90 bg-slate-50/70 hover:bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-lg hover:border-emerald-400/50 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-black text-xs">
+                    03
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    COLLABORATION
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-950 tracking-tight mb-2">
+                  Connect
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Learn synchronously in accredited tutor stages with interactive whiteboards, compete in nationwide 1v1 Arena challenges, and receive daily WhatsApp updates.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-slate-200/60 mt-4 flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                <span>Live Classrooms &amp; Arena</span>
+                <span aria-hidden="true">&rarr;</span>
+              </div>
+            </div>
+
+            {/* Pillar 4: PROGRESS */}
+            <div className="group rounded-2xl border border-slate-200/90 bg-slate-50/70 hover:bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-lg hover:border-purple-400/50 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white shadow-md shadow-purple-600/20 font-black text-xs">
+                    04
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-800 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                    ANALYTICS &amp; RADAR
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-950 tracking-tight mb-2">
+                  Progress
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Track subject mastery margins with topic weakness diagnostic radars, Tier-1 university cut-off benchmarking, and continuous learning telemetry.
+                </p>
+              </div>
+              <div className="pt-4 border-t border-slate-200/60 mt-4 flex items-center gap-1.5 text-xs font-bold text-purple-700">
+                <span>Merit Cut-off Benchmarks</span>
+                <span aria-hidden="true">&rarr;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Candidate Pathways Header */}
+        <div
+          ref={pathwaysRef}
+          className={`text-center max-w-3xl mx-auto mb-6 sm:mb-12 bl-reveal-init ${pathwaysRevealed ? "bl-reveal-visible" : ""}`}
+        >
           <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-2 sm:mb-3 shadow-2xs">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
             <span>EXAMINATION CANDIDATE PATHWAYS</span>

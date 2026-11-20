@@ -4,9 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, getValidatedHomepageConfig, resolveClaimValue } from "@/app/lib/contentConfig";
 import { Accordion } from "@/app/components/ui/Accordion";
+import { useScrollReveal } from "@/app/lib/useScrollReveal";
 
 export function HomeFaqCta() {
   const validatedConfig = getValidatedHomepageConfig(HOMEPAGE_CONTENT_CONFIG);
+
+  const { ref: faqRef, isRevealed: faqRevealed } = useScrollReveal();
+  const { ref: ctaRef, isRevealed: ctaRevealed } = useScrollReveal();
 
   // Map validated FAQs to Accordion items
   const accordionItems = validatedConfig.faqs.map((faq) => {
@@ -17,7 +21,7 @@ export function HomeFaqCta() {
       id: faq.id,
       title: questionText || "Frequently Asked Question",
       content: (
-        <p className="text-sm sm:text-base leading-relaxed text-slate-600">
+        <p className="text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-300">
           {answerText}
         </p>
       ),
@@ -30,11 +34,11 @@ export function HomeFaqCta() {
       <section
         id="faq"
         aria-label="Frequently Asked Questions"
-        className="scroll-mt-20 sm:scroll-mt-24 relative py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] text-slate-900 overflow-hidden"
+        className="scroll-mt-20 sm:scroll-mt-24 relative py-12 sm:py-20 lg:py-24 border-b border-slate-200 dark:border-slate-800 bg-[#F8FAFC] dark:bg-[#060D20] text-slate-900 dark:text-white overflow-hidden"
       >
         {/* Subtle Geometric Grid Matrix */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.035]"
+          className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.05]"
           style={{
             backgroundImage: `radial-gradient(#1e293b 1.2px, transparent 1.2px)`,
             backgroundSize: "24px 24px",
@@ -42,33 +46,38 @@ export function HomeFaqCta() {
           aria-hidden="true"
         />
 
-        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div
+          ref={faqRef}
+          className={`relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 bl-reveal-init ${
+            faqRevealed ? "bl-reveal-visible" : ""
+          }`}
+        >
           <div className="text-center mb-12 sm:mb-16">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200 mb-3 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-3 shadow-2xs">
               FREQUENTLY ASKED QUESTIONS
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 tracking-tight leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
               Common Questions About BrainLab Academy
             </h2>
-            <p className="mt-3.5 text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto">
+            <p className="mt-3.5 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto">
               Clear answers regarding UTME 4-subject blueprints, O Level WAEC/NECO syllabus coverage, Post-UTME screening, and offline synchronization.
             </p>
           </div>
 
-          {/* Accordion Component - Clean Light Presentation */}
+          {/* Accordion Component - Clean Light / Dark Presentation */}
           <Accordion
             items={accordionItems}
             allowMultiple={false}
-            itemClassName="rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-colors"
-            headerClassName="flex w-full items-center justify-between px-6 py-5 text-left text-base font-bold text-slate-900 bl-focus-ring rounded-2xl"
-            panelClassName="px-6 pb-6 pt-1 text-slate-600 leading-relaxed text-sm sm:text-base border-t border-slate-100"
+            itemClassName="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/80 shadow-xs transition-colors"
+            headerClassName="flex w-full items-center justify-between px-6 py-5 text-left text-base font-bold text-slate-900 dark:text-white bl-focus-ring rounded-2xl"
+            panelClassName="px-6 pb-6 pt-1 text-slate-600 dark:text-slate-300 leading-relaxed text-sm sm:text-base border-t border-slate-100 dark:border-slate-800"
           />
 
           {/* Full Directory Link */}
           <div className="mt-10 text-center">
             <Link
               href="/faq"
-              className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1.5"
+              className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1.5"
             >
               <span>Visit the complete Help &amp; FAQ knowledge base</span>
               <span aria-hidden="true">&rarr;</span>
@@ -81,10 +90,15 @@ export function HomeFaqCta() {
       <section
         id="final-cta"
         aria-label="Begin Your Learning Journey"
-        className="relative overflow-hidden py-10 sm:py-20 lg:py-24 bg-white text-slate-900"
+        className="relative overflow-hidden py-12 sm:py-20 lg:py-24 bg-white dark:bg-[#060D20] text-slate-900 dark:text-white"
       >
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#0B1536] text-white p-6 sm:p-14 lg:p-20 shadow-2xl border border-white/10 text-center space-y-6">
+          <div
+            ref={ctaRef}
+            className={`relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-[#0B1536] text-white p-6 sm:p-14 lg:p-20 shadow-2xl border border-white/10 text-center space-y-6 bl-reveal-init ${
+              ctaRevealed ? "bl-reveal-visible" : ""
+            }`}
+          >
             {/* Ambient Coral & Blue Glows inside the panel */}
             <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-600/25 blur-3xl" aria-hidden="true" />
             <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-[#FF5238]/20 blur-3xl" aria-hidden="true" />

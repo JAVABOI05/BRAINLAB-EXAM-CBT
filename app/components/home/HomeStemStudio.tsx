@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useScrollReveal } from "@/app/lib/useScrollReveal";
 
 type ScienceDiscipline = "circuits" | "physics" | "chemistry" | "biology";
 type GateType = "AND" | "OR" | "NOT" | "XOR";
@@ -63,6 +64,7 @@ export function HomeStemStudio() {
   };
 
   const isCircuitLit = computeOutput(gate, inputA, inputB);
+  const { ref, isRevealed } = useScrollReveal();
 
   return (
     <section
@@ -70,7 +72,10 @@ export function HomeStemStudio() {
       aria-label="STEM Studio Virtual Science Laboratories"
       className="scroll-mt-20 sm:scroll-mt-24 py-12 sm:py-16 lg:py-20 border-b border-slate-200/80 dark:border-white/10 overflow-hidden bg-white text-slate-900 dark:bg-[#020617] dark:text-white"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        ref={ref}
+        className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 bl-reveal-init ${isRevealed ? "bl-reveal-visible" : ""}`}
+      >
         <div className="rounded-3xl border-2 border-slate-200 bg-slate-50/80 p-5 sm:p-8 lg:p-10 text-slate-900 shadow-md relative overflow-hidden dark:border-white/10 dark:bg-[#0A1128] dark:text-white">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10">
             {/* Left Column: Catchy Educational Overview */}

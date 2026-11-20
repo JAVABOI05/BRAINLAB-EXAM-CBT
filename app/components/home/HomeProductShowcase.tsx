@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
+import { useScrollReveal } from "@/app/lib/useScrollReveal";
 
 interface ShowcaseQuestion {
   id: number;
@@ -90,6 +91,8 @@ export function HomeProductShowcase() {
       ? switchA || switchB
       : switchA !== switchB;
 
+  const { ref, isRevealed } = useScrollReveal();
+
   function handleSelectCbtAnswer(key: "A" | "B" | "C" | "D") {
     setCbtAnswers((prev) => ({ ...prev, [currentQ.id]: key }));
   }
@@ -106,7 +109,10 @@ export function HomeProductShowcase() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.05),transparent_50%)] dark:bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_50%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:24px_24px] opacity-5 dark:opacity-20" aria-hidden="true" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-12 lg:space-y-16">
+      <div
+        ref={ref}
+        className={`relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-12 lg:space-y-16 bl-reveal-init ${isRevealed ? "bl-reveal-visible" : ""}`}
+      >
         {/* Universal Header with Generous Negative Space, High Contrast & Jewel-Toned Aesthetics */}
         <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-4">
           {/* Luminous Pill Badge */}
