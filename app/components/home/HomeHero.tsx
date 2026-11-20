@@ -165,8 +165,8 @@ export function HomeHero() {
                 </span>
               </h1>
 
-              {/* High-Legibility Subheading (Concise on Mobile) */}
-              <p className="text-xs sm:text-base lg:text-lg text-slate-300 leading-relaxed max-w-xl font-normal mt-3 sm:mt-4">
+              {/* High-Legibility Subheading (Crisp High-Contrast against Deep Navy) */}
+              <p className="text-xs sm:text-base lg:text-lg text-slate-100 sm:text-white/95 leading-relaxed max-w-xl font-medium mt-3 sm:mt-4">
                 <span>{subhead}</span>
                 <span className="hidden sm:inline"> Practice under authentic timed test-hall conditions, master fundamental concepts through step-by-step derivations, and conquer entrance screenings with instant diagnostic scoring.</span>
               </p>
@@ -174,7 +174,7 @@ export function HomeHero() {
 
             {/* Candidate Pathway Buttons (UTME & Post-UTME Primary) */}
             <div className="space-y-2 sm:space-y-3 pt-1">
-              <div className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <div className="text-[11px] sm:text-xs font-black text-cyan-300 uppercase tracking-wider">
                 Select your candidate pathway:
               </div>
               <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3">
@@ -195,15 +195,15 @@ export function HomeHero() {
 
                 <Link
                   href="/learn"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-slate-200 font-bold px-4 py-2.5 sm:px-5 sm:py-3.5 text-xs sm:text-base transition-all duration-200 active:scale-95 min-h-[44px] sm:min-h-[48px] w-full sm:w-auto bl-focus-ring"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-slate-100 font-bold px-4 py-2.5 sm:px-5 sm:py-3.5 text-xs sm:text-base transition-all duration-200 active:scale-95 min-h-[44px] sm:min-h-[48px] w-full sm:w-auto bl-focus-ring"
                 >
                   <span>O Level (WAEC/NECO)</span>
                 </Link>
               </div>
             </div>
 
-            {/* Reassurance Badges (Visible on sm+ to prevent mobile clutter) */}
-            <div className="hidden sm:flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-300 pt-2">
+            {/* Reassurance Badges (Visible on sm+ with bright contrast) */}
+            <div className="hidden sm:flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-100 pt-2">
               <span className="inline-flex items-center gap-1.5">
                 <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
@@ -226,7 +226,7 @@ export function HomeHero() {
 
             {/* Truthful Free Tier Disclosure */}
             {disclosure && (
-              <p className="text-[11px] sm:text-xs text-slate-400 pt-0.5">
+              <p className="text-[11px] sm:text-xs text-slate-200 font-medium pt-0.5">
                 &bull; {disclosure}
               </p>
             )}
@@ -289,7 +289,7 @@ export function HomeHero() {
                     </div>
                   </div>
 
-                  <p className="mt-3 text-xs text-slate-300 leading-relaxed font-normal">
+                  <p className="mt-3 text-xs text-slate-100 leading-relaxed font-normal">
                     {concept.detail}
                   </p>
                 </div>
@@ -299,10 +299,10 @@ export function HomeHero() {
         </div>
       </div>
 
-      {/* Downward Organic Curved SVG Transition to Light Surface */}
+      {/* Downward Organic Curved SVG Transition to Surface */}
       <div className="relative w-full overflow-hidden leading-none z-10 -mb-[1px] pointer-events-none" aria-hidden="true">
         <svg
-          className="relative block w-full h-10 sm:h-16 lg:h-20 text-white"
+          className="relative block w-full h-10 sm:h-16 lg:h-20 text-white dark:text-[#060D20] transition-colors duration-200"
           viewBox="0 0 1440 100"
           preserveAspectRatio="none"
         >

@@ -1690,18 +1690,28 @@ button:disabled,
 /* ==========================================================================
    STANDARDISED PROGRESSIVE SCROLL-REVEAL SYSTEM
    Preserves full visibility when JS is off or SSR; enhances with fluid motion
-   when IntersectionObserver is active.
+   when IntersectionObserver is active. Text is always visible (never stuck at 0 opacity).
    ========================================================================== */
+@keyframes bl-soft-reveal {
+  0% {
+    opacity: 0.35;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .bl-reveal-init {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 550ms cubic-bezier(0.16, 1, 0.3, 1), transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .bl-reveal-visible {
   opacity: 1 !important;
   transform: translateY(0) !important;
+  animation: bl-soft-reveal 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .bl-reveal-stagger-1 {
