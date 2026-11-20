@@ -110,10 +110,15 @@ export default function TeachingVideoLibraryPage() {
   const handleDeleteRecording = async (id: string, title: string) => {
     if (!window.confirm(`Delete recording "${title}" permanently?`)) return;
     try {
-      const { error } = await supabase.from("class_recordings").delete().eq("id", id);
-      if (error) throw error;
+      const response = await fetch("/api/recordings", {
+        method: "DELETE",
+        headers: authHeaders(),
+        body: JSON.stringify({ recording_id: id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Failed to delete recording.");
       setRecordings((prev) => prev.filter((r) => r.id !== id));
-      toast.success("Recording deleted.");
+      toast.success("Recording and its stored video were deleted.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to delete recording.");
     }
