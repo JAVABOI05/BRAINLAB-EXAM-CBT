@@ -149,7 +149,7 @@ export function HomeStemStudio() {
             </div>
 
             {/* Right Column: Catchy Animated Interactive Visual Lab */}
-            <div className="lg:col-span-7 space-y-4">
+            <div className="lg:col-span-7 space-y-4 animate-bl-fade-up">
               {/* Lab Subject Switcher Tabs */}
               <div
                 role="tablist"
@@ -163,7 +163,7 @@ export function HomeStemStudio() {
                   onClick={() => setActiveTab("circuits")}
                   className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "circuits"
-                      ? "bg-[#0C162E] text-emerald-700 text-emerald-300 shadow-md border-emerald-500/40 font-black"
+                      ? "bg-[#0C162E] text-emerald-300 shadow-md border-emerald-500/40 font-black"
                       : "border-transparent text-slate-400 hover:text-white"
                   }`}
                 >
@@ -180,7 +180,7 @@ export function HomeStemStudio() {
                   onClick={() => setActiveTab("physics")}
                   className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "physics"
-                      ? "bg-[#0C162E] text-cyan-700 text-cyan-300 shadow-md border-cyan-500/40 font-black"
+                      ? "bg-[#0C162E] text-cyan-300 shadow-md border-cyan-500/40 font-black"
                       : "border-transparent text-slate-400 hover:text-white"
                   }`}
                 >
@@ -238,7 +238,7 @@ export function HomeStemStudio() {
                 {activeTab === "circuits" && (
                   <div className="space-y-5 animate-bl-fade-in">
                     {/* Header Controls: Gate Selection Chips */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
                           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
@@ -346,7 +346,7 @@ export function HomeStemStudio() {
                       </svg>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-slate-200">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
                       <span>Curriculum Rule: <strong>{gate}</strong> gate outputs active current when its logic condition is met.</span>
                       <span className="text-blue-600 font-bold">Physics &amp; Computer Studies</span>
                     </div>
@@ -356,7 +356,7 @@ export function HomeStemStudio() {
                 {/* 2. PHYSICS MECHANICS & KINEMATICS */}
                 {activeTab === "physics" && (
                   <div className="space-y-5 animate-bl-fade-in">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
                           <svg className="h-4 w-4 text-blue-600 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -584,7 +584,7 @@ export function HomeStemStudio() {
                 {/* 3. CHEMISTRY ACID-BASE TITRATION */}
                 {activeTab === "chemistry" && (
                   <div className="space-y-5 animate-bl-fade-in">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
                           <svg className="h-4 w-4 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -673,7 +673,7 @@ export function HomeStemStudio() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-slate-200">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
                       <span>WAEC Chemistry Alternative to Practical Syllabus (Volumetric Analysis)</span>
                       <span className="text-emerald-400 font-bold">Standard Lab Model</span>
                     </div>
@@ -683,7 +683,7 @@ export function HomeStemStudio() {
                 {/* 4. CELLULAR ATLAS & METABOLIC PATHWAYS */}
                 {activeTab === "biology" && (
                   <div className="space-y-5 animate-bl-fade-in">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
                           <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -695,7 +695,7 @@ export function HomeStemStudio() {
                         <p className="text-[11px] text-slate-400">Interactive eukaryotic cell explorer and double-helix genetics structure</p>
                       </div>
 
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-200 text-xs font-bold text-emerald-800 text-emerald-300">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-200 text-xs font-bold text-emerald-300">
                         <span>WAEC Biology Core</span>
                       </div>
                     </div>
@@ -722,7 +722,7 @@ export function HomeStemStudio() {
 
                       {/* Biological Explanations */}
                       <div className="space-y-2.5 max-w-xs">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/70 bg-slate-900/60 p-3 space-y-1">
+                        <div className="rounded-xl border border-white/10 bg-[#0B1536] p-3 space-y-1 bl-interactive-hover">
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-emerald-500" />
                             Mitochondria: ATP Energy Synthesis
@@ -732,7 +732,7 @@ export function HomeStemStudio() {
                           </p>
                         </div>
 
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/70 bg-slate-900/60 p-3 space-y-1">
+                        <div className="rounded-xl border border-white/10 bg-[#0B1536] p-3 space-y-1 bl-interactive-hover">
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-sky-500" />
                             Nucleus &amp; Double-Helix Chromatin
@@ -744,7 +744,7 @@ export function HomeStemStudio() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-slate-200">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
                       <span>Senior Secondary Biology Syllabus: Cell Structure &amp; Functions</span>
                       <span className="text-cyan-400 font-bold">Interactive Anatomy</span>
                     </div>
