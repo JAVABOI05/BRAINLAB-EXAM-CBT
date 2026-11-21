@@ -14,6 +14,10 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     // Exposure history is keyed only from a verified Supabase user, never a client-supplied ID.
     const registeredUser = await getUserFromRequest(request);
+    const cleanCode = String(code || "").trim().toUpperCase();
+    const cleanName = String(name || "").trim() || "Candidate";
+    const cleanPhone = String(phone || "").trim() || "08000000000";
+    const sessionCode = cleanCode || "OPEN-CBT";
 
     // Maintenance Mode Guard
     const maintenance = await getMaintenanceModeConfig().catch(() => null);
@@ -27,7 +31,22 @@ export async function POST(request: NextRequest) {
         } catch {}
       }
 
-      if (!bypass) {
+      // Maintenance blocks new attempts, not candidates returning to an
+      // already-issued active paper. The normal recovery path still verifies
+      // the original phone + PIN below.
+      let hasActiveAttempt = false;
+      const { data: activeAttemptForMaintenance, error: activeAttemptCheckError } = await supabase
+        .from("exam_sessions")
+        .select("id")
+        .eq("phone", cleanPhone)
+        .eq("access_code", sessionCode)
+        .eq("status", "started")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!activeAttemptCheckError) hasActiveAttempt = Boolean(activeAttemptForMaintenance);
+
+      if (!bypass && !hasActiveAttempt) {
         return NextResponse.json(
           {
             ok: false,
@@ -40,11 +59,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-
-    const cleanCode = String(code || "").trim().toUpperCase();
-    const cleanName = String(name || "").trim() || "Candidate";
-    const cleanPhone = String(phone || "").trim() || "08000000000";
-    const sessionCode = cleanCode || "OPEN-CBT";
 
     // Recovery takes precedence over access-code consumption. A candidate who
     // re-enters the same phone + PIN must receive the existing active attempt,
