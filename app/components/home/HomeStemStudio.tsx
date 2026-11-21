@@ -45,8 +45,15 @@ export function HomeStemStudio() {
     opticsDevice = "Simple Microscope / Magnifying Glass";
   }
 
-  // Chemistry Titration Interactive State
+  // Chemistry indicator demonstration: pH is adjusted directly, not inferred from titrant volume.
   const [phLevel, setPhLevel] = useState<number>(7.0);
+  const solutionState = phLevel < 7 ? "Acidic solution" : phLevel === 7 ? "Neutral solution" : "Alkaline solution";
+  const indicatorState = phLevel < 8.2 ? "Colourless" : phLevel <= 10 ? "Transitioning to pink" : "Pink";
+  const indicatorLiquidClass = phLevel < 8.2
+    ? "bg-slate-300/80 h-20"
+    : phLevel <= 10
+    ? "bg-pink-300/80 h-20"
+    : "bg-pink-500/80 h-20";
 
   // Compute logic gate output
   const computeOutput = (g: GateType, a: boolean, b: boolean): boolean => {
@@ -598,14 +605,16 @@ export function HomeStemStudio() {
                           </svg>
                           <span>Acid-Base Titration &amp; pH Reactions</span>
                         </div>
-                        <p className="text-[11px] text-slate-400">Volumetric analysis, neutralization color shifts, and indicator reaction curves</p>
+                        <p className="text-[11px] text-slate-400">Explore solution pH and the colour response of a common acid-base indicator</p>
                       </div>
 
                       {/* Titrant Dosing Slider */}
                       <div className="flex items-center gap-2 bg-[#070D1B] px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
-                        <span className="text-[11px] text-slate-400 font-bold">Add Base (NaOH):</span>
+                        <label htmlFor="stem-ph-control" className="text-[11px] text-slate-400 font-bold">Adjust solution pH:</label>
                         <input
                           type="range"
+                          id="stem-ph-control"
+                          aria-label="Adjust illustrative solution pH"
                           min="1"
                           max="14"
                           step="0.5"
@@ -623,23 +632,11 @@ export function HomeStemStudio() {
                       <div className="relative flex flex-col items-center">
                         <div className="w-12 h-14 border-t-2 border-x-2 border-slate-400 rounded-t-sm" />
                         <div
-                          className={`w-32 h-28 border-2 rounded-b-3xl transition-colors duration-500 relative overflow-hidden flex items-end justify-center ${
-                            phLevel < 6.5
-                              ? "border-rose-400/80 bg-rose-50 "
-                              : phLevel <= 8.0
-                              ? "border-emerald-400/80 bg-emerald-50 "
-                              : "border-purple-400/80 bg-purple-50 "
-                          }`}
+                          className="w-32 h-28 border-2 border-slate-400 bg-slate-50 rounded-b-3xl transition-colors duration-500 relative overflow-hidden flex items-end justify-center"
                         >
                           {/* Liquid Level with Rising Bubbles */}
                           <div
-                            className={`w-full transition-all duration-500 ${
-                              phLevel < 6.5
-                                ? "bg-rose-500/50 h-16"
-                                : phLevel <= 8.0
-                                ? "bg-emerald-500/50 h-20"
-                                : "bg-purple-600/50 h-24"
-                            }`}
+                            className={`w-full transition-colors duration-500 ${indicatorLiquidClass}`}
                           >
                             <div className="flex justify-around items-center h-full opacity-60">
                               <span className="animate-bounce h-2 w-2 rounded-full bg-white/70" />
@@ -655,31 +652,32 @@ export function HomeStemStudio() {
                       {/* Reaction State Information Card */}
                       <div className="space-y-2.5 max-w-xs">
                         <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black ${
-                          phLevel < 6.5
-                            ? "bg-rose-100 text-rose-800   border border-rose-300 "
-                            : phLevel <= 8.0
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm"
-                            : "bg-purple-100 text-purple-800   border border-purple-300 "
+                          phLevel < 7
+                            ? "bg-rose-100 text-rose-800 border border-rose-300"
+                            : phLevel === 7
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-purple-100 text-purple-800 border border-purple-300"
                         }`}>
-                          <span>{phLevel < 6.5 ? "Acidic Solution" : phLevel <= 8.0 ? "Neutral Endpoint (Titration Done)" : "Alkaline / Basic Solution"}</span>
+                          <span>{solutionState}</span>
                         </div>
 
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          {phLevel <= 8.0 && phLevel >= 6.5
-                            ? "Equivalence point reached! Volume of acid neutralized exactly matches volume of base (C₁V₁ = C₂V₂)."
-                            : phLevel < 6.5
-                            ? "Excess H⁺ hydronium ions in solution. Add more drops from the burette to reach the equivalence point."
-                            : "Excess OH⁻ hydroxide ions. The solution is over-titrated beyond the phenolphthalein end point."}
+                        <p className="text-xs text-slate-700 leading-relaxed">
+                          {phLevel < 8.2
+                            ? "Phenolphthalein remains colourless below about pH 8.2. Its colour response alone does not identify the titration equivalence point."
+                            : phLevel <= 10
+                            ? "Phenolphthalein is within its approximate transition range (pH 8.2–10.0), changing from colourless through pale pink to pink."
+                            : "Phenolphthalein appears pink above its transition range. The solution is alkaline, but colour alone does not measure the amount of excess base."}
                         </p>
 
                         <div className="text-[11px] font-mono text-slate-400 bg-slate-900/80 p-2 rounded-lg border border-slate-200">
-                          Indicator: <strong>Phenolphthalein</strong> (Colorless &rarr; Pink)
+                          Indicator: <strong>Phenolphthalein</strong> — {indicatorState} (transition range ≈ pH 8.2–10.0)
                         </div>
                       </div>
                     </div>
 
+                    <p className="text-[10px] text-slate-400 text-center">Illustrative pH and indicator model: the slider changes pH directly; it does not calculate titrant volume, concentration, or the equivalence point.</p>
                     <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
-                      <span>WAEC Chemistry Alternative to Practical Syllabus (Volumetric Analysis)</span>
+                      <span>Acid-base indicators &amp; volumetric analysis</span>
                       <span className="text-emerald-400 font-bold">Standard Lab Model</span>
                     </div>
                   </div>
