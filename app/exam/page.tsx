@@ -710,7 +710,8 @@ export default function ExamPage() {
       }
       clearAttemptStorage();
       localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");
-      setQuestions(res.questions); setCurrentIndex(0); setAnswers(recoveredAnswers); setFlagged({});
+      const firstUnanswered = res.questions.findIndex((question) => !recoveredAnswers[String(question.id)]);
+      setQuestions(res.questions); setCurrentIndex(res.resumed && firstUnanswered >= 0 ? firstUnanswered : 0); setAnswers(recoveredAnswers); setFlagged({});
       setSessionId(res.session_id); setSessionToken(res.token); setExamDuration(res.duration_seconds); setTimeLeft(res.time_left_seconds);
       setElectiveSubject(res.elective as ElectiveSubject); tabSwitchCountRef.current = res.tab_switch_count || 0;
       localStorage.setItem("exam_session_id", res.session_id); localStorage.setItem("exam_token", res.token); localStorage.setItem("selectedElective", res.elective);
