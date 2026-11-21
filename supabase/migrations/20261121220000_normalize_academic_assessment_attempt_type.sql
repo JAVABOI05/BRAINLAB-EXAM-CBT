@@ -3,8 +3,6 @@
 -- the attempt engine intentionally stores only self_practice, organisation_quiz,
 -- or competition. Apply after the Learning Assessment foundation/engine migrations.
 
-BEGIN;
-
 CREATE OR REPLACE FUNCTION public.start_organisation_assessment(p_assessment_id uuid, p_access_code text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -291,4 +289,3 @@ END;
 $function$
 
 
-COMMIT;
