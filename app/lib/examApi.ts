@@ -64,6 +64,7 @@ export type AttemptPayload = {
   answers: Record<string, Option>;
   questions: PaperQuestion[];
   subjects?: string[];
+  last_saved_at?: string | null;
 };
 export type ResultItem = {
   id: string;
@@ -215,7 +216,7 @@ export async function startExam(
   phone: string,
   elective: string,
   subjects?: string[]
-): Promise<AttemptPayload | ApiError> {
+): Promise<AttemptPayload | FinishedPayload | ApiError> {
   try {
     const res = await fetch("/api/exam/start", {
       method: "POST",
@@ -230,7 +231,7 @@ export async function startExam(
         message: data.message || "Failed to start exam.",
       };
     }
-    return data as AttemptPayload;
+    return data as AttemptPayload | FinishedPayload;
   } catch {
     return call<AttemptPayload>("start_exam", { p_code: code, p_name: name, p_phone: phone, p_elective: elective });
   }
