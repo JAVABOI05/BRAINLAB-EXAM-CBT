@@ -43,12 +43,24 @@ check(
   resolveRoute.includes("resumed_attempt: resumedAttempt")
 );
 
+const syncBlock = adminAction.split('if (action === "sync_session") {')[1]?.split('// 3. RESTORE')[0] || "";
+const restoreBlock = adminAction.split('if (action === "restore_session" || action === "unlock") {')[1]?.split('// 4. FORCE SUBMIT')[0] || "";
+
 check(
-  "Admin sync verifies server-side state without exposing the attempt token or answer payload",
-  adminAction.includes('action === "sync_session"') &&
-    adminAction.includes('supabase.rpc("resume_exam"') &&
-    adminAction.includes("questionsAnswered") &&
-    !adminAction.includes("status: \"in_progress\"")
+  "Admin sync is read-only and never calls the potentially finalizing resume_exam RPC",
+  syncBlock.includes("questionsAnswered") &&
+    syncBlock.includes("deadlineElapsed") &&
+    !syncBlock.includes('supabase.rpc("resume_exam"') &&
+    !syncBlock.includes("attempt_token")
+);
+
+check(
+  "Admin restore checks the original deadline and paper without mutating the exam session",
+  restoreBlock.includes("recovery_authorized: true") &&
+    restoreBlock.includes("timeLeftSeconds") &&
+    restoreBlock.includes("session.attempt_token") &&
+    !restoreBlock.includes('supabase.rpc("resume_exam"') &&
+    !restoreBlock.includes('status: "in_progress"')
 );
 
 check(
