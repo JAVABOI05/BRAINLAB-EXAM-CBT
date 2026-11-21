@@ -78,45 +78,57 @@ export async function POST(
       });
     }
 
-    // 2. SYNC / INSPECT SERVER-SAVED SESSION STATE. This cannot retrieve data from
-    // a disconnected candidate browser; it verifies the authoritative server copy.
+    // 2. SYNC / INSPECT SERVER-SAVED SESSION STATE.
+    // This endpoint is deliberately read-only: do not call resume_exam here because
+    // that RPC may finalize an attempt whose authoritative deadline has elapsed.
     if (action === "sync_session") {
-      const { data: syncResult, error: syncError } = await supabase.rpc("resume_exam", {
-        p_session: sessionId,
-        p_token: session.attempt_token,
-      });
-      if (syncError || !syncResult || syncResult.ok === false) {
-        return NextResponse.json({ ok: false, error: syncResult?.error || "sync_failed", message: syncResult?.message || syncError?.message || "Could not verify the examination session." }, { status: 409 });
-      }
       const savedAnswers = session.draft_answers && typeof session.draft_answers === "object" ? session.draft_answers : {};
-      const parsedDeadline = session.deadline_at ? new Date(session.deadline_at).getTime() : 0;
-      const verifiedTimeLeft = Number.isFinite(parsedDeadline) ? Math.max(0, Math.ceil((parsedDeadline - Date.now()) / 1000)) : 0;
+      const parsedDeadline = session.deadline_at ? new Date(session.deadline_at).getTime() : Number.NaN;
+      if (session.status === "started" && !Number.isFinite(parsedDeadline)) {
+        return NextResponse.json({ ok: false, error: "invalid_deadline", message: "The active examination has no valid deadline. Contact the examination administrator." }, { status: 409 });
+      }
+      const verifiedTimeLeft = session.status === "started"
+        ? Math.max(0, Math.ceil((parsedDeadline - Date.now()) / 1000))
+        : 0;
+      const deadlineElapsed = session.status === "started" && verifiedTimeLeft <= 0;
+      const finished = session.status === "submitted" || session.status === "expired" || session.status === "cancelled";
       return NextResponse.json({
         ok: true,
-        finished: Boolean(syncResult.finished),
-        status: syncResult.finished ? "submitted" : session.status,
+        finished,
+        status: session.status,
+        deadlineElapsed,
+        recoveryAvailable: session.status === "started" && !deadlineElapsed,
         questionsAnswered: Object.keys(savedAnswers).length,
         totalQuestions: Array.isArray(session.paper_ids) ? session.paper_ids.length : 0,
-        timeLeftSeconds: syncResult.finished ? 0 : verifiedTimeLeft,
+        timeLeftSeconds: verifiedTimeLeft,
         lastSavedAt: session.last_saved_at || null,
-        message: syncResult.finished ? "The server confirms this examination is already finished." : "Server-side progress verified. The candidate must re-enter using the original phone number and access PIN to resume on their device.",
+        message: finished
+          ? "The server confirms this examination is no longer active."
+          : deadlineElapsed
+            ? "The examination deadline has elapsed. Sync did not alter or submit the candidate's paper."
+            : "Server-side progress verified. Sync cannot retrieve unsent answers from a disconnected candidate device.",
       });
     }
 
-    // 3. RESTORE / ALLOW RESUME. Keep `started` as the only active database state.
+    // 3. RESTORE / ALLOW RESUME. This is a verification + audit action, not a
+    // database status change. The candidate still re-enters with the original PIN.
     if (action === "restore_session" || action === "unlock") {
       if (session.status !== "started") {
         return NextResponse.json({ ok: false, error: "session_not_recoverable", message: "This session is " + session.status + " and cannot be restored as an active examination." }, { status: 409 });
       }
-      const { data: restoreResult, error: restoreError } = await supabase.rpc("resume_exam", {
-        p_session: sessionId,
-        p_token: session.attempt_token,
-      });
-      if (restoreError || !restoreResult || restoreResult.ok === false || restoreResult.finished) {
-        return NextResponse.json({ ok: false, error: restoreResult?.error || "session_expired", message: restoreResult?.message || "The examination could not be restored. Check its deadline and submission status." }, { status: 409 });
+      const parsedDeadline = session.deadline_at ? new Date(session.deadline_at).getTime() : Number.NaN;
+      if (!Number.isFinite(parsedDeadline)) {
+        return NextResponse.json({ ok: false, error: "invalid_deadline", message: "The examination deadline is missing or invalid. Contact the examination administrator." }, { status: 409 });
+      }
+      const timeLeftSeconds = Math.max(0, Math.ceil((parsedDeadline - Date.now()) / 1000));
+      if (timeLeftSeconds <= 0) {
+        return NextResponse.json({ ok: false, error: "session_expired", message: "The original examination deadline has elapsed. This session cannot be restored." }, { status: 409 });
+      }
+      if (!session.attempt_token || !Array.isArray(session.paper_ids) || session.paper_ids.length === 0) {
+        return NextResponse.json({ ok: false, error: "recovery_data_missing", message: "The original examination paper or recovery credential is missing. Do not start a new attempt; contact support." }, { status: 409 });
       }
 
-      await supabase.from("configuration_audit_logs").insert({
+      const { error: auditError } = await supabase.from("configuration_audit_logs").insert({
         admin_email: admin.email,
         entity_type: "exam_session",
         entity_id: sessionId,
@@ -124,8 +136,11 @@ export async function POST(
         new_value: { status: "started", recovery_authorized: true },
         change_reason: "Admin authorised candidate session recovery for " + (session.candidate_name || sessionId),
       });
+      if (auditError) {
+        return NextResponse.json({ ok: false, error: "recovery_audit_failed", message: "Recovery was not authorised because the audit record could not be saved. Please retry." }, { status: 500 });
+      }
 
-      return NextResponse.json({ ok: true, resumeReady: true, timeLeftSeconds: restoreResult.time_left_seconds, message: "Session verified. The candidate can re-enter using the original phone number and access PIN; their original paper and deadline are preserved." });
+      return NextResponse.json({ ok: true, resumeReady: true, timeLeftSeconds, message: "Session verified. The candidate can re-enter using the original phone number and access PIN; their original paper and deadline are preserved." });
     }
 
     // 4. FORCE SUBMIT
