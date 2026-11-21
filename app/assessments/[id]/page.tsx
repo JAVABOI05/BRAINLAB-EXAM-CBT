@@ -9,7 +9,7 @@ interface AssessmentInfo {
   id: string;
   title: string;
   description?: string;
-  assessment_type: "organisation_quiz" | "competition";
+  assessment_type: "organisation_quiz" | "competition" | "academic_quiz" | "topic_test" | "subject_assessment" | "general_quiz" | "custom_assessment";
   question_count: number;
   duration_seconds: number | null;
   max_attempts: number;
