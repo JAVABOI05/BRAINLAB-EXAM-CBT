@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
 
       if (cleanCode === masterCode) {
         let resumedAttempt = false;
+        let recoveredCandidateName: string | null = null;
         if (phone) {
           const { data: activeAttempt, error: activeAttemptError } = await supabase
             .from("exam_sessions")
@@ -99,13 +100,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ ok: false, error: "recovery_lookup_failed", message: "We could not verify your previous examination. Please try again." }, { status: 503 });
           }
           resumedAttempt = Boolean(activeAttempt);
+          recoveredCandidateName = activeAttempt?.candidate_name || null;
         }
         return NextResponse.json({
           ok: true,
           type: "utme_mock",
           access_mode: "master",
           resumed_attempt: resumedAttempt,
-          candidate_name: activeAttempt?.candidate_name || null,
+          candidate_name: recoveredCandidateName,
           code: cleanCode,
           title: "JAMB / UTME Mock Simulator",
           description: "Official 4-subject 180-question computerized simulation paper.",
@@ -284,6 +286,7 @@ export async function POST(request: NextRequest) {
       // server-side attempt is active. This is the re-entry gate after logout,
       // browser closure or device restart; it does not authorise a new attempt.
       let hasRecoverableAttempt = false;
+      let recoveredCandidateName: string | null = null;
       if (phone) {
         const { data: activeAttempt, error: activeAttemptError } = await supabase
           .from("exam_sessions")
@@ -298,6 +301,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ ok: false, error: "recovery_lookup_failed", message: "We could not verify your previous examination. Please try again." }, { status: 503 });
         }
         hasRecoverableAttempt = Boolean(activeAttempt);
+        recoveredCandidateName = activeAttempt?.candidate_name || null;
       }
 
       if (codeRecord.is_used && !hasRecoverableAttempt) {
@@ -318,7 +322,7 @@ export async function POST(request: NextRequest) {
         type: "utme_mock",
         access_mode: "voucher",
         resumed_attempt: hasRecoverableAttempt,
-        candidate_name: activeAttempt?.candidate_name || null,
+        candidate_name: recoveredCandidateName,
         code: cleanCode,
         preconfigured_subject: codeRecord.subject || null,
         title: "JAMB / UTME Mock Simulator",
