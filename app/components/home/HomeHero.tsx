@@ -151,7 +151,7 @@ export function HomeHero() {
       {/* Downward Organic Curved SVG Transition to Light Surface */}
       <div className="relative w-full overflow-hidden leading-none z-10 -mb-[1px] pointer-events-none" aria-hidden="true">
         <svg
-          className="relative block w-full h-10 sm:h-16 lg:h-20 text-white"
+          className="relative block w-full h-10 sm:h-16 lg:h-20 text-white dark:text-[#060D20]"
           viewBox="0 0 1440 100"
           preserveAspectRatio="none"
         >
