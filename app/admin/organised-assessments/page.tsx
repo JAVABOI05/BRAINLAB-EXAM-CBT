@@ -13,6 +13,7 @@ type Organisation = { id: string; name: string; status: string };
 type Subject = { name: string; question_count: number; categories: string[] };
 type Assessment = {
   id: string;
+  slug: string;
   assessment_type: string;
   title: string;
   organisation_id: string | null;
@@ -63,7 +64,7 @@ export default function OrganisedAssessmentsAdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [newlyCreatedCode, setNewlyCreatedCode] = useState<{ title: string; code: string; id: string } | null>(null);
+  const [newlyCreatedCode, setNewlyCreatedCode] = useState<{ title: string; code: string; id: string; slug: string } | null>(null);
 
   // Modal for managing code on an existing assessment
   const [modalAssessment, setModalAssessment] = useState<Assessment | null>(null);
@@ -78,7 +79,7 @@ export default function OrganisedAssessmentsAdminPage() {
       supabase.from("learning_organisations").select("id,name,status").order("name"),
       supabase
         .from("learning_assessments")
-        .select("id,assessment_type,title,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release,is_published")
+        .select("id,slug,assessment_type,title,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release,is_published")
         .order("created_at", { ascending: false }),
       supabase.rpc("get_self_practice_catalog"),
       supabase
@@ -206,6 +207,7 @@ export default function OrganisedAssessmentsAdminPage() {
           title: created.title,
           code: data.access_code,
           id: created.id,
+          slug: created.slug || created.id,
         });
       }
 
@@ -264,6 +266,7 @@ export default function OrganisedAssessmentsAdminPage() {
         title: a.title,
         code: data.code,
         id: a.id,
+        slug: a.slug || a.id,
       });
       setMessage(`New examination code generated: ${data.code}`);
       setModalAssessment(null);
@@ -371,7 +374,7 @@ export default function OrganisedAssessmentsAdminPage() {
                   type="button"
                   onClick={() => {
                     const host = typeof window !== "undefined" ? window.location.origin : "https://www.brainlabacademy.com.ng";
-                    copyToClipboard(`${host}/assessments/${newlyCreatedCode.id}?code=${encodeURIComponent(newlyCreatedCode.code)}`, "Direct Examination Link");
+                    copyToClipboard(`${host}/assessments/${newlyCreatedCode.slug || newlyCreatedCode.id}?code=${encodeURIComponent(newlyCreatedCode.code)}`, "Direct Examination Link");
                   }}
                   className="px-4 py-2 rounded-xl border border-blue-300 bg-white dark:bg-slate-900 hover:bg-blue-100 dark:hover:bg-slate-800 text-xs font-bold text-blue-900 dark:text-cyan-300 transition text-center cursor-pointer"
                 >
@@ -592,7 +595,7 @@ export default function OrganisedAssessmentsAdminPage() {
                           type="button"
                           onClick={() => {
                             const host = typeof window !== "undefined" ? window.location.origin : "https://www.brainlabacademy.com.ng";
-                            copyToClipboard(`${host}/assessments/${a.id}`, "Assessment Link");
+                            copyToClipboard(`${host}/assessments/${a.slug || a.id}`, "Assessment Link");
                           }}
                           className="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
                         >
