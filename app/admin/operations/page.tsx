@@ -192,11 +192,25 @@ export default function InstitutionalOperationsPage() {
     return () => clearInterval(interval);
   }, [autoPolling, fetchLiveSessions]);
 
-  // Session Proctoring Real API Actions
+  // Session Proctoring & Candidate Recovery Actions
   const handleForceSync = useCallback(async (sessionId: string) => {
-    await fetchLiveSessions();
-    setMessage(`Live telemetry re-synchronized for candidate session ${sessionId}.`);
-  }, [fetchLiveSessions]);
+    try {
+      const res = await authFetch(`/api/admin/sessions/${sessionId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_session" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setMessage(`Session sync failed: ${data.message || data.error || "Unable to verify session"}`);
+        return;
+      }
+      setMessage(data.message || `Server verified ${data.questionsAnswered || 0} saved answers for session ${sessionId}.`);
+      await fetchLiveSessions();
+    } catch {
+      setMessage("Network error synchronising candidate session.");
+    }
+  }, [authFetch, fetchLiveSessions]);
 
   const handleExtendTime = useCallback(async (sessionId: string, seconds = 900) => {
     try {
@@ -222,11 +236,11 @@ export default function InstitutionalOperationsPage() {
       const res = await authFetch(`/api/admin/sessions/${sessionId}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "unlock" }),
+        body: JSON.stringify({ action: "restore_session" }),
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        setMessage(data.message || `Session ${sessionId} refreshed and unlocked.`);
+        setMessage(data.message || `Session ${sessionId} is ready for candidate recovery.`);
         await fetchLiveSessions();
       }
     } catch {
@@ -705,9 +719,9 @@ onClick={() => setAutoPolling((prev) => !prev)}
                             type="button"
                             onClick={() => handleForceSync(session.id)}
                             className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition"
-                            title="Force Telemetry Sync"
+                            title="Verify server-saved answers, status and remaining time"
                           >
-                            🔄 Sync
+                            🔄 Sync Session
                           </button>
                           {session.status !== "completed" && session.status !== "submitted" && (
                             <>
@@ -723,7 +737,7 @@ onClick={() => setAutoPolling((prev) => !prev)}
                                 type="button"
                                 onClick={() => handlePauseSession(session.id)}
                                 className="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition"
-                                title="Unlock / Resume Stalled Session"
+                                title="Authorise the candidate to re-enter this active examination"
                               >
                                 🔓
                               </button>
