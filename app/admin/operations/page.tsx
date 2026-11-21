@@ -231,7 +231,7 @@ export default function InstitutionalOperationsPage() {
     }
   }, [authFetch, fetchLiveSessions]);
 
-  const handlePauseSession = useCallback(async (sessionId: string) => {
+  const handleRestoreSession = useCallback(async (sessionId: string) => {
     try {
       const res = await authFetch(`/api/admin/sessions/${sessionId}/action`, {
         method: "POST",
@@ -375,7 +375,7 @@ export default function InstitutionalOperationsPage() {
         s.candidate_name.toLowerCase().includes(q) ||
         s.hub_location.toLowerCase().includes(q) ||
         s.subject_combination.toLowerCase().includes(q) ||
-        s.id.toLowerCase().includes(q)
+        s.id.toLowerCase().includes(q) || (s.phone || "").toLowerCase().includes(q)
     );
   }, [sessions, sessionSearch]);
 
@@ -723,7 +723,7 @@ onClick={() => setAutoPolling((prev) => !prev)}
                           >
                             🔄 Sync Session
                           </button>
-                          {session.status !== "completed" && session.status !== "submitted" && (
+                          {session.status === "started" && (
                             <>
                               <button
                                 type="button"
@@ -735,7 +735,7 @@ onClick={() => setAutoPolling((prev) => !prev)}
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handlePauseSession(session.id)}
+                                onClick={() => handleRestoreSession(session.id)}
                                 className="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition"
                                 title="Authorise the candidate to re-enter this active examination"
                               >
