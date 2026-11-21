@@ -41,6 +41,13 @@ export function CBTHeroDemo() {
       return;
     }
 
+    if (!("IntersectionObserver" in window)) {
+      setLidOpen(true);
+      setSeconds(11);
+      setPhase("complete");
+      return;
+    }
+
     let openingTimer: number | undefined;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -54,7 +61,7 @@ export function CBTHeroDemo() {
         }, 1180);
         observer.disconnect();
       },
-      { threshold: 0.35 }
+      { threshold: 0.12 }
     );
 
     observer.observe(node);
