@@ -84,10 +84,27 @@ export async function POST(request: NextRequest) {
       const masterCode = String(masterRow?.config_value || "STAGING-MASTER-TEST-001").trim().toUpperCase();
 
       if (cleanCode === masterCode) {
+        let resumedAttempt = false;
+        if (phone) {
+          const { data: activeAttempt, error: activeAttemptError } = await supabase
+            .from("exam_sessions")
+            .select("id")
+            .eq("phone", phone)
+            .eq("access_code", cleanCode)
+            .eq("status", "started")
+            .order("started_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (activeAttemptError) {
+            return NextResponse.json({ ok: false, error: "recovery_lookup_failed", message: "We could not verify your previous examination. Please try again." }, { status: 503 });
+          }
+          resumedAttempt = Boolean(activeAttempt);
+        }
         return NextResponse.json({
           ok: true,
           type: "utme_mock",
           access_mode: "master",
+          resumed_attempt: resumedAttempt,
           code: cleanCode,
           title: "JAMB / UTME Mock Simulator",
           description: "Official 4-subject 180-question computerized simulation paper.",
