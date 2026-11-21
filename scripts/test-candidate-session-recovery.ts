@@ -7,7 +7,6 @@ const startRoute = read("app/api/exam/start/route.ts");
 const resolveRoute = read("app/api/exam/resolve-code/route.ts");
 const adminAction = read("app/api/admin/sessions/[id]/action/route.ts");
 const examPage = read("app/exam/page.tsx");
-const adminPage = read("app/admin/operations/page.tsx");
 const migration = read("supabase/migrations/20261121120000_candidate_session_recovery.sql");
 const authClient = read("app/lib/supabase.ts");
 
@@ -75,7 +74,8 @@ check(
   "Candidate recovery handles already-finished attempts and restores newer queued offline answers",
   examPage.includes("if (res.finished)") &&
     examPage.includes("getQueuedProgress()") &&
-    examPage.includes("queuedProgress.timestamp > serverSavedAt")
+    examPage.includes("queuedProgress.timestamp > serverSavedAt") &&
+    examPage.includes("firstUnanswered >= 0 ? firstUnanswered : 0")
 );
 
 check(
