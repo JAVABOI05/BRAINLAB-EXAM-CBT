@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         if (phone) {
           const { data: activeAttempt, error: activeAttemptError } = await supabase
             .from("exam_sessions")
-            .select("id")
+            .select("id, candidate_name")
             .eq("phone", phone)
             .eq("access_code", cleanCode)
             .eq("status", "started")
@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
           type: "utme_mock",
           access_mode: "master",
           resumed_attempt: resumedAttempt,
+          candidate_name: activeAttempt?.candidate_name || null,
           code: cleanCode,
           title: "JAMB / UTME Mock Simulator",
           description: "Official 4-subject 180-question computerized simulation paper.",
@@ -286,7 +287,7 @@ export async function POST(request: NextRequest) {
       if (phone) {
         const { data: activeAttempt, error: activeAttemptError } = await supabase
           .from("exam_sessions")
-          .select("id")
+          .select("id, candidate_name")
           .eq("phone", phone)
           .eq("access_code", cleanCode)
           .eq("status", "started")
@@ -317,6 +318,7 @@ export async function POST(request: NextRequest) {
         type: "utme_mock",
         access_mode: "voucher",
         resumed_attempt: hasRecoverableAttempt,
+        candidate_name: activeAttempt?.candidate_name || null,
         code: cleanCode,
         preconfigured_subject: codeRecord.subject || null,
         title: "JAMB / UTME Mock Simulator",
