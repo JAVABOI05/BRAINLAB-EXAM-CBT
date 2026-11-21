@@ -59,6 +59,10 @@ jobs:
           fi
       - name: TypeScript
         run: npx tsc --noEmit
+      - name: Candidate session recovery regression tests
+        run: npm run test:session-recovery
+      - name: Offline exam sync and local recovery regression tests
+        run: npm run test:offline-sync
       - name: Cloze passage rotation regression tests
         run: npx tsx scripts/test-cloze-selection.ts
       - name: Production build
