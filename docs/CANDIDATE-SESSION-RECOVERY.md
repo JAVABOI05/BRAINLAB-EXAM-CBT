@@ -2,7 +2,7 @@
 
 ## Scope
 
-This change is prepared on `feat/candidate-session-recovery` for staging review. It does not apply the SQL migration, deploy an application, merge to `main`, or modify production data.
+This change is prepared on `feat/candidate-session-recovery`. The additive database migration has been applied to the staging Supabase project and verified. No application deployment, merge to `main`, or production database modification has been performed.
 
 ## Recovery flow
 
@@ -16,7 +16,7 @@ This change is prepared on `feat/candidate-session-recovery` for staging review.
 ## Administrative controls
 
 - **Sync Session** verifies the authoritative server-side session state and reports saved-answer count, time remaining and last save time. It cannot retrieve unsent answers from a disconnected browser.
-- **Restore** verifies that the session remains active and records the administrator's recovery authorisation. It does not create a new attempt or change the database status.
+- **Restore** verifies that the session remains active, has a valid future deadline and retains its original paper/token, then records the administrator's recovery action in the audit log. It does not create a new attempt or change the database status. Candidate re-entry is still validated by the original phone number and PIN.
 - **+15m** updates both `deadline_at` and `time_left_seconds`; the server deadline remains authoritative.
 - **Force Submit** uses the `submit_exam` RPC so result creation and session status remain consistent with the database lifecycle.
 
@@ -41,7 +41,7 @@ Use dedicated test candidates and test PINs only.
 ## Release gates
 
 - Run `npm run test:session-recovery`, `npm run typecheck`, the existing offline-sync test and the full project verification/build.
-- Apply `supabase/migrations/20261121205732_candidate_session_recovery.sql` to **staging only** after reviewing the migration.
+- Staging migration `20261121205732_candidate_session_recovery` is applied and its `resume_exam` / `_session_payload` definitions and active-status constraint have been re-checked.
 - Test the staging application against the staging Supabase project with dedicated test records.
 - Inspect the resulting diff and staging test evidence.
 - Obtain explicit approval before merging, applying any production migration, or deploying.
