@@ -381,7 +381,7 @@ export default function OrganisedAssessmentsAdminPage() {
                   🔗 Copy Direct Exam Link
                 </button>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Hello, here is your examination link and code for ${newlyCreatedCode.title}:\n\nCode: ${newlyCreatedCode.code}\nLink: https://www.brainlabacademy.com.ng/cbt`)}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(`Hello, here is your examination link and code for ${newlyCreatedCode.title}:\n\nCode: ${newlyCreatedCode.code}\nLink: ${typeof window !== "undefined" ? window.location.origin : "https://www.brainlabacademy.com.ng"}/assessments/${newlyCreatedCode.slug || newlyCreatedCode.id}?code=${encodeURIComponent(newlyCreatedCode.code)}`)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition text-center cursor-pointer"
