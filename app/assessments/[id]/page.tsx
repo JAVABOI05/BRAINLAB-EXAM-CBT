@@ -65,13 +65,15 @@ export default function AssessmentRunnerPage() {
         return;
       }
 
-      const { data, error: err } = await supabase
+      const assessmentLookup = supabase
         .from("learning_assessments")
         .select("id, slug, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
-        .eq("is_published", true)
-        .eq("is_published", true)
-        [UUID_PATTERN]
-        .single();
+        .eq("is_published", true);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assessmentId);
+      const { data, error: err } = await (isUuid
+        ? assessmentLookup.eq("id", assessmentId)
+        : assessmentLookup.eq("slug", assessmentId)
+      ).single();
 
       if (!active) return;
 
