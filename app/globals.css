@@ -1687,6 +1687,21 @@ button:disabled,
   transform: perspective(1200px) rotateY(3.5deg) rotateX(2deg) translateY(-4px);
 }
 
+/* Homepage dark-mode surfaces: cover translucent slate panels and custom light-grey cards
+   that are not matched by Tailwind's exact background utility selectors above. */
+:is(html[data-theme="dark"], html.dark) .public-surface :is(
+  [class*="bg-slate-50/"],
+  [class*="bg-slate-100/"],
+  [class*="bg-slate-200"],
+  [class*="bg-[#F8FAFC]"]
+) {
+  background-color: #132137 !important;
+}
+
+:is(html[data-theme="dark"], html.dark) .public-surface [class*="bg-slate-200"] {
+  border-color: #344760 !important;
+}
+
 /* Strict prefers-reduced-motion compliance */
 @media (prefers-reduced-motion: reduce) {
   *,
