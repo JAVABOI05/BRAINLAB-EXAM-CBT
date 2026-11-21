@@ -230,7 +230,7 @@ export function HomeStemStudio() {
 
               {/* Main Interactive Animated Stage */}
               <div
-                className="rounded-2xl border-2 border-white/10 bg-[#030612] p-5 sm:p-6 shadow-inner min-h-[360px] flex flex-col justify-between relative overflow-hidden"
+                className="rounded-2xl border-2 border-white/10 bg-[#030612] p-5 sm:p-6 shadow-inner min-h-[360px] flex flex-col justify-between relative overflow-hidden animate-bl-float-3d"
                 role="region"
                 aria-label="Interactive Logic Gate Bench and Virtual Science Stage"
               >
@@ -359,7 +359,7 @@ export function HomeStemStudio() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <svg className="h-4 w-4 text-blue-600 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <svg className="h-4 w-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
                             <line x1="14.5" y1="5.5" x2="18.5" y2="9.5" />
                           </svg>
@@ -429,7 +429,7 @@ export function HomeStemStudio() {
                               onChange={(e) => setObjectDist(Number(e.target.value))}
                               className="w-20 accent-blue-600 cursor-pointer"
                             />
-                            <span className="text-xs font-mono font-bold text-cyan-600 text-cyan-300">{objectDist}cm</span>
+                            <span className="text-xs font-mono font-bold text-cyan-300">{objectDist}cm</span>
                           </div>
                         )}
                       </div>
@@ -559,7 +559,7 @@ export function HomeStemStudio() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Image Distance (dᵢ)</div>
-                            <div className="text-sm font-black text-cyan-600 text-cyan-300">
+                            <div className="text-sm font-black text-cyan-300">
                               {isAtFocus ? "Infinity (∞)" : `${imageDist.toFixed(1)} cm`}
                             </div>
                           </div>
@@ -653,7 +653,7 @@ export function HomeStemStudio() {
                           phLevel < 6.5
                             ? "bg-rose-100 text-rose-800   border border-rose-300 "
                             : phLevel <= 8.0
-                            ? "bg-emerald-100 text-emerald-800  text-emerald-300 border border-emerald-300  shadow-sm"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm"
                             : "bg-purple-100 text-purple-800   border border-purple-300 "
                         }`}>
                           <span>{phLevel < 6.5 ? "Acidic Solution" : phLevel <= 8.0 ? "Neutral Endpoint (Titration Done)" : "Alkaline / Basic Solution"}</span>
