@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   HomeHero,
   HomeUniversityTargetSocialProof,
@@ -14,6 +14,67 @@ import {
   HomeFounderNote,
   HomeFaqCta,
 } from "./components/home";
+
+/**
+ * Progressive, one-time section reveal. Content remains visible when JavaScript,
+ * IntersectionObserver, or motion support is unavailable.
+ */
+function ScrollReveal({ children }: { children: React.ReactNode }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [armed, setArmed] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node || !("IntersectionObserver" in window)) return;
+
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionPreference.matches) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        setArmed(true);
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -6% 0px" }
+    );
+
+    observer.observe(node);
+
+    const handleMotionPreference = (event: MediaQueryListEvent) => {
+      if (!event.matches) return;
+      setVisible(true);
+      setArmed(false);
+      observer.disconnect();
+    };
+
+    motionPreference.addEventListener("change", handleMotionPreference);
+    return () => {
+      observer.disconnect();
+      motionPreference.removeEventListener("change", handleMotionPreference);
+    };
+  }, []);
+
+  const waiting = armed && !visible;
+
+  return (
+    <div
+      ref={rootRef}
+      data-scroll-reveal
+      style={{
+        opacity: waiting ? 0 : 1,
+        transform: waiting ? "translateY(14px)" : "translateY(0)",
+        transition: "opacity 560ms cubic-bezier(0.16, 1, 0.3, 1), transform 560ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 /**
  * Ecosystem pathways mapping to preserve architecture assertions
@@ -54,34 +115,34 @@ export default function HomePageClient() {
         <HomeHero />
 
         {/* Compact, High-Impact Broadcast Channel Ribbon */}
-        <HomeJoinChannel />
+        <ScrollReveal><HomeJoinChannel /></ScrollReveal>
 
         {/* 2. Audience Entry Points */}
-        <HomeAudiences />
+        <ScrollReveal><HomeAudiences /></ScrollReveal>
 
         {/* 3. The BrainLab Loop */}
-        <HomeBrainLabLoop />
+        <ScrollReveal><HomeBrainLabLoop /></ScrollReveal>
 
         {/* 4. Product Showcase */}
-        <HomeProductShowcase />
+        <ScrollReveal><HomeProductShowcase /></ScrollReveal>
 
         {/* 5. STEM Studio Spotlight */}
-        <HomeStemStudio />
+        <ScrollReveal><HomeStemStudio /></ScrollReveal>
 
         {/* 6. Trust and Outcomes (Conditional) */}
-        <HomeTrustOutcomes />
+        <ScrollReveal><HomeTrustOutcomes /></ScrollReveal>
 
         {/* University Target Benchmarks & Social Proof (Lower Page Positioning) */}
-        <HomeUniversityTargetSocialProof />
+        <ScrollReveal><HomeUniversityTargetSocialProof /></ScrollReveal>
 
         {/* 7. Pricing Teaser (Real Data) */}
-        <HomePricingTeaser />
+        <ScrollReveal><HomePricingTeaser /></ScrollReveal>
 
         {/* 8. Founder Note (Conditional) */}
-        <HomeFounderNote />
+        <ScrollReveal><HomeFounderNote /></ScrollReveal>
 
         {/* 9. FAQ and Final Call to Action */}
-        <HomeFaqCta />
+        <ScrollReveal><HomeFaqCta /></ScrollReveal>
       </div>
     </div>
   );
