@@ -262,7 +262,27 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!codeErr && codeRecord) {
-      if (codeRecord.is_used) {
+      // A consumed PIN remains valid for the same candidate while its original
+      // server-side attempt is active. This is the re-entry gate after logout,
+      // browser closure or device restart; it does not authorise a new attempt.
+      let hasRecoverableAttempt = false;
+      if (phone) {
+        const { data: activeAttempt, error: activeAttemptError } = await supabase
+          .from("exam_sessions")
+          .select("id")
+          .eq("phone", phone)
+          .eq("access_code", cleanCode)
+          .eq("status", "started")
+          .order("started_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (activeAttemptError) {
+          return NextResponse.json({ ok: false, error: "recovery_lookup_failed", message: "We could not verify your previous examination. Please try again." }, { status: 503 });
+        }
+        hasRecoverableAttempt = Boolean(activeAttempt);
+      }
+
+      if (codeRecord.is_used && !hasRecoverableAttempt) {
         return NextResponse.json(
           {
             ok: false,
@@ -279,6 +299,7 @@ export async function POST(request: NextRequest) {
         ok: true,
         type: "utme_mock",
         access_mode: "voucher",
+        resumed_attempt: hasRecoverableAttempt,
         code: cleanCode,
         preconfigured_subject: codeRecord.subject || null,
         title: "JAMB / UTME Mock Simulator",
