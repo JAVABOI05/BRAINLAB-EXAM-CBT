@@ -24,17 +24,13 @@ export function getAuthRedirectUrl(path: string = "/auth/callback"): string {
       return `${window.location.origin}${normalizedPath}`;
     }
 
-    // Preserve BrainLab's Vercel preview hostnames. Strictly limit to
-    // deployments owned by BrainLab CBT to prevent open redirects.
-    const isBrainLabVercelPreview =
-      hostname.endsWith(".vercel.app") &&
-      (hostname === "brainlabexam-cbt.vercel.app" ||
-       hostname.startsWith("brainlabexam-") ||
-       hostname.startsWith("brainlab-") ||
-       hostname.includes("brainlabtutorials"));
-
-    if (isBrainLabVercelPreview) {
-      return `${window.location.origin}${normalizedPath}`;
+    // Vercel creates several hostname shapes for preview deployments:
+    // project aliases, Git-branch aliases and deployment-specific URLs. Do
+    // not fall back to NEXT_PUBLIC_SITE_URL (which is commonly the production
+    // domain) when the learner is already using a Vercel preview. The URL is
+    // derived only from the current browser origin, never from user input.
+    if (hostname.endsWith(".vercel.app")) {
+      return new URL(normalizedPath, window.location.origin).toString();
     }
   }
 
