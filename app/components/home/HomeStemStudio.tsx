@@ -273,6 +273,7 @@ export function HomeStemStudio() {
                             key={g}
                             type="button"
                             onClick={() => setGate(g)}
+                            aria-pressed={gate === g}
                             className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                               gate === g
                                 ? "bg-blue-600 text-white shadow-xs"
@@ -291,6 +292,7 @@ export function HomeStemStudio() {
                       <div className="flex sm:flex-col gap-3 z-10">
                         <button
                           type="button"
+                          aria-pressed={inputA}
                           onClick={() => setInputA(!inputA)}
                           className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 border-b-4 font-bold text-xs transition-all cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                             inputA
@@ -305,6 +307,7 @@ export function HomeStemStudio() {
                         {gate !== "NOT" ? (
                           <button
                             type="button"
+                            aria-pressed={inputB}
                             onClick={() => setInputB(!inputB)}
                             className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 border-b-4 font-bold text-xs transition-all cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                               inputB
@@ -329,7 +332,7 @@ export function HomeStemStudio() {
                             ? "border-cyan-500 bg-cyan-950/60 shadow-md text-blue-950 "
                             : "border-slate-200  bg-slate-800/60 text-slate-500"
                         }`}>
-                          <span className="text-[10px] font-mono tracking-widest text-blue-600 font-bold uppercase">LOGIC CHIP</span>
+                          <span className="text-[10px] font-mono tracking-widest text-cyan-300 font-bold uppercase">LOGIC CHIP</span>
                           <span className="text-xl font-black text-white">{gate}</span>
                           <span className="text-[10px] text-slate-400 font-mono mt-0.5 font-bold">
                             {gate === "NOT" ? "Q = ¬A" : `Q = A ${gate} B`}
@@ -351,8 +354,8 @@ export function HomeStemStudio() {
                           </svg>
                         </div>
                         <div className="mt-2 text-center">
-                          <span className={`text-xs font-black uppercase tracking-wider ${isCircuitLit ? "text-amber-600 " : "text-slate-500"}`}>
-                            {isCircuitLit ? "Current Active" : "Circuit Open"}
+                          <span className={`text-xs font-black uppercase tracking-wider ${isCircuitLit ? "text-amber-300 " : "text-slate-300"}`}>
+                            {isCircuitLit ? "Output HIGH (1)" : "Output LOW (0)"}
                           </span>
                         </div>
                       </div>
@@ -366,7 +369,7 @@ export function HomeStemStudio() {
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
-                      <span>Curriculum Rule: <strong>{gate}</strong> gate outputs active current when its logic condition is met.</span>
+                      <span>Boolean output: <strong>{gate}</strong> returns {isCircuitLit ? "HIGH (1)" : "LOW (0)"} for the selected inputs.</span>
                       <span className="text-blue-600 font-bold">Physics &amp; Computer Studies</span>
                     </div>
                   </div>
@@ -488,7 +491,7 @@ export function HomeStemStudio() {
                         <div className="grid grid-cols-3 gap-2 text-center">
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Apex Height</div>
-                            <div className="text-sm font-black text-blue-600">{apexHeight.toFixed(1)} m</div>
+                            <div className="text-sm font-black text-cyan-300">{apexHeight.toFixed(1)} m</div>
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Flight Range</div>
@@ -496,7 +499,7 @@ export function HomeStemStudio() {
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Equation</div>
-                            <div className="text-xs font-mono font-bold text-amber-600">H = v₀²sin²θ / 2g</div>
+                            <div className="text-xs font-mono font-bold text-amber-300">H = v₀²sin²θ / 2g</div>
                           </div>
                         </div>
                         <p className="text-[10px] text-slate-400 text-center">Assumes an ideal projectile launched and landing at the same height; air resistance is ignored. Initial speed: 30 m/s.</p>
@@ -583,7 +586,7 @@ export function HomeStemStudio() {
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Real Application</div>
-                            <div className="text-xs font-mono font-bold text-amber-600 truncate">
+                            <div className="text-xs font-mono font-bold text-amber-300 truncate">
                               {opticsDevice}
                             </div>
                           </div>
@@ -608,7 +611,7 @@ export function HomeStemStudio() {
                         <p className="text-[11px] text-slate-400">Explore solution pH and the colour response of a common acid-base indicator</p>
                       </div>
 
-                      {/* Titrant Dosing Slider */}
+                      {/* Direct pH control for the illustrative indicator model */}
                       <div className="flex items-center gap-2 bg-[#070D1B] px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
                         <label htmlFor="stem-ph-control" className="text-[11px] text-slate-400 font-bold">Adjust solution pH:</label>
                         <input
@@ -689,13 +692,13 @@ export function HomeStemStudio() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <svg className="h-4 w-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M12 2a10 10 0 0 0-4 18M12 2a10 10 0 0 1 4 18" />
                           </svg>
                           <span>Cellular Atlas &amp; Metabolic Pathways</span>
                         </div>
-                        <p className="text-[11px] text-slate-400">Interactive eukaryotic cell explorer and double-helix genetics structure</p>
+                        <p className="text-[11px] text-slate-400">A simplified animal-cell diagram introducing key organelles and their functions</p>
                       </div>
 
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-200 text-xs font-bold text-emerald-300">
@@ -728,20 +731,20 @@ export function HomeStemStudio() {
                         <div className="rounded-xl border border-white/10 bg-[#0B1536] p-3 space-y-1 bl-interactive-hover">
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            Mitochondria: ATP Energy Synthesis
+                            Mitochondria: Aerobic Respiration
                           </div>
                           <p className="text-[11px] text-slate-400 leading-snug">
-                            Generates cellular energy via aerobic cellular respiration and Krebs cycle enzyme pathways.
+                            The Krebs cycle occurs in the mitochondrial matrix; the electron transport chain and most ATP production occur at the inner mitochondrial membrane. Glycolysis takes place in the cytoplasm.
                           </p>
                         </div>
 
                         <div className="rounded-xl border border-white/10 bg-[#0B1536] p-3 space-y-1 bl-interactive-hover">
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-sky-500" />
-                            Nucleus &amp; Double-Helix Chromatin
+                            Nucleus: DNA &amp; Chromatin
                           </div>
                           <p className="text-[11px] text-slate-400 leading-snug">
-                            Stores genetic code $(A-T, G-C)$ and orchestrates RNA transcription for protein synthesis.
+                            Contains most of the cell’s genetic material as DNA organised with proteins into chromatin. Genes are transcribed into RNA, which helps direct protein synthesis.
                           </p>
                         </div>
                       </div>
