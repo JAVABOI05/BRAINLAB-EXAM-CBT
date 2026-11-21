@@ -75,20 +75,8 @@ export function HomeProductShowcase() {
   const [cbtAnswers, setCbtAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
   const [isFlagged, setIsFlagged] = useState<boolean>(false);
 
-  // Row 3: STEM Logic Gate Interactive State
-  const [stemGate, setStemGate] = useState<"AND" | "OR" | "XOR">("AND");
-  const [switchA, setSwitchA] = useState<boolean>(true);
-  const [switchB, setSwitchB] = useState<boolean>(false);
-
   const currentQ = SHOWCASE_QUESTIONS[activeQIndex];
   const userChoice = cbtAnswers[currentQ.id];
-
-  const isStemLit =
-    stemGate === "AND"
-      ? switchA && switchB
-      : stemGate === "OR"
-      ? switchA || switchB
-      : switchA !== switchB;
 
   function handleSelectCbtAnswer(key: "A" | "B" | "C" | "D") {
     setCbtAnswers((prev) => ({ ...prev, [currentQ.id]: key }));
@@ -125,7 +113,7 @@ export function HomeProductShowcase() {
           <h2 className="text-xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
             Everything You Need to Master <br className="hidden sm:inline" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400">
-              Your Core Examination &amp; STEM Subjects.
+              Your Core Learning &amp; Examination Tools.
             </span>
           </h2>
 
@@ -153,12 +141,6 @@ export function HomeProductShowcase() {
               <span>8-Key Simulator</span>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-0.5 sm:px-3.5 sm:py-1 text-[11px] sm:text-xs font-semibold text-slate-200 shadow-2xs">
-              <svg className="h-3.5 w-3.5 text-purple-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-              <span>STEM Virtual Labs</span>
-            </div>
           </div>
         </div>
 
@@ -167,7 +149,7 @@ export function HomeProductShowcase() {
             Story: Concept Breakdown & Socratic Step-by-Step Factoring
             Style: Crisp Elevated White Card on Desktop & Mobile
         ------------------------------------------------------------- */}
-        <div className="relative rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:border-blue-500/50">
+        <div className="relative rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-500/50">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 dark:via-cyan-400/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-0 lg:min-h-[440px]">
             {/* Left: Text Column */}
@@ -576,176 +558,11 @@ export function HomeProductShowcase() {
         </div>
 
         {/* -------------------------------------------------------------
-            ROW 3: STEM VIRTUAL LABS
-            Story: Tactile Physical Experimentation & Interactive Logic Gates
-            Style: Crisp Elevated White Card on Desktop & Mobile
-        ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:border-purple-500/50">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-purple-500/40 to-transparent pointer-events-none" aria-hidden="true" />
-          <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-0 lg:min-h-[440px]">
-            {/* Left: Text Column */}
-            <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 text-slate-900 dark:text-white flex flex-col justify-center space-y-4 sm:space-y-5 text-left relative z-10">
-              <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-purple-800 dark:border-purple-400/30 dark:bg-purple-500/15 dark:text-purple-300 self-start">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-purple-600 dark:bg-purple-400 animate-pulse" />
-                <span>03 &bull; STEM STUDIO VIRTUAL LABS</span>
-              </div>
-
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
-                Touch the science. Not just dry formulas.
-              </h3>
-
-              <p className="text-sm sm:text-base text-slate-600 dark:text-blue-100/90 leading-relaxed max-w-lg font-normal">
-                Bridge classroom theory with interactive laboratories. From thin-lens optics ray tracing to digital logic gate circuits and volumetric acid-base titrations, watch real physical reactions happen in real time.
-              </p>
-
-              <ul className="space-y-2.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-blue-100/90 max-w-md text-left">
-                <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 border border-purple-300 text-purple-700 dark:bg-purple-500/20 dark:border-purple-400/40 dark:text-purple-300 text-xs font-black">
-                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  </span>
-                  <span>Thin lens ray tracing with real-time focal point and image nature metrics</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 border border-purple-300 text-purple-700 dark:bg-purple-500/20 dark:border-purple-400/40 dark:text-purple-300 text-xs font-black">
-                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  </span>
-                  <span>Interactive digital logic gate circuit toggles (AND, OR, NOT, XOR)</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 border border-purple-300 text-purple-700 dark:bg-purple-500/20 dark:border-purple-400/40 dark:text-purple-300 text-xs font-black">
-                    <svg className="h-3 w-3 stroke-current stroke-[2.5] fill-none" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  </span>
-                  <span>60 FPS lightweight vector graphics with zero heavy 3D engine bloat</span>
-                </li>
-              </ul>
-
-              <div className="pt-2">
-                <Link
-                  href="/products/stem-studio"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-xs transition-all group min-h-[44px]"
-                >
-                  <span>Explore Virtual Laboratories</span>
-                  <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Right: Dedicated Workbench Canvas Frame hosting 3D Circuit Workbench */}
-            <div className="lg:col-span-6 p-4 sm:p-8 lg:p-10 flex items-center justify-center relative">
-              {/* Elevated Circuit Card in High-Contrast Theme */}
-              <div
-                className="w-full max-w-md rounded-2xl sm:rounded-3xl border-2 border-purple-200/80 bg-slate-50 text-slate-900 p-4 sm:p-6 shadow-md min-h-0 sm:min-h-[380px] lg:min-h-[420px] flex flex-col justify-between relative overflow-hidden dark:border-slate-700/80 dark:bg-gradient-to-b dark:from-[#0F1B3B] dark:via-[#09132C] dark:to-[#060D1E] dark:text-white group"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3 relative z-10">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 border border-purple-200 text-purple-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-400 shadow-2xs">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                      </svg>
-                    </span>
-                    <div>
-                      <span className="text-xs font-black text-slate-950 dark:text-white block">Digital Circuit Workbench</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Physics &amp; Practical Sciences</span>
-                    </div>
-                  </div>
-
-                  {/* Tactile Gate Selector */}
-                  <div className="flex items-center gap-1 bg-white dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-2xs">
-                    {(["AND", "OR", "XOR"] as const).map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => setStemGate(g)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer shadow-xs active:translate-y-0.5 ${
-                          stemGate === g
-                            ? "bg-purple-600 text-white shadow-xs"
-                            : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Interactive Circuit Board */}
-                <div className="my-3 rounded-2xl bg-white border border-slate-200 p-4 sm:p-5 flex items-center justify-around gap-2 sm:gap-3 relative shadow-inner z-10 dark:bg-[#081024]/80 dark:border-slate-800">
-                  {/* Rocker Switches */}
-                  <div className="space-y-2.5 z-10">
-                    <button
-                      type="button"
-                      onClick={() => setSwitchA(!switchA)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-xs active:translate-y-0.5 ${
-                        switchA
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 dark:bg-emerald-950/60 dark:border-emerald-400 dark:text-emerald-200"
-                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400 dark:bg-slate-900/80 dark:border-slate-700 dark:text-slate-400"
-                      }`}
-                    >
-                      <span className={`h-2.5 w-2.5 rounded-full ${switchA ? "bg-emerald-500 shadow-xs" : "bg-slate-400"}`} />
-                      <span>Input A: {switchA ? "1 (ON)" : "0 (OFF)"}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSwitchB(!switchB)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 font-bold text-xs transition-all cursor-pointer shadow-xs active:translate-y-0.5 ${
-                        switchB
-                          ? "bg-emerald-50 border-emerald-500 text-emerald-900 dark:bg-emerald-950/60 dark:border-emerald-400 dark:text-emerald-200"
-                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400 dark:bg-slate-900/80 dark:border-slate-700 dark:text-slate-400"
-                      }`}
-                    >
-                      <span className={`h-2.5 w-2.5 rounded-full ${switchB ? "bg-emerald-500 shadow-xs" : "bg-slate-400"}`} />
-                      <span>Input B: {switchB ? "1 (ON)" : "0 (OFF)"}</span>
-                    </button>
-                  </div>
-
-                  {/* Gate Chip */}
-                  <div className={`z-10 px-3.5 py-2.5 rounded-2xl border-2 text-center transition-all shadow-xs ${
-                    isStemLit
-                      ? "border-purple-500 bg-purple-50 text-purple-900 dark:border-purple-400 dark:bg-purple-950/70 dark:text-purple-200 scale-105"
-                      : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-400"
-                  }`}>
-                    <span className="text-[9px] font-mono uppercase tracking-wider block font-bold text-purple-600 dark:text-purple-400">CHIP</span>
-                    <span className="text-base sm:text-lg font-black text-slate-950 dark:text-white">{stemGate}</span>
-                    <span className="text-[9px] font-mono block mt-0.5 text-slate-500 dark:text-slate-400">Q = A {stemGate} B</span>
-                  </div>
-
-                  {/* Glowing Output Bulb */}
-                  <div className="z-10 flex flex-col items-center">
-                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                      isStemLit
-                        ? "border-amber-400 bg-amber-100 text-amber-600 shadow-md shadow-amber-500/30 scale-110 dark:border-amber-400 dark:bg-amber-950/40 dark:text-amber-400"
-                        : "border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-500"
-                    }`}>
-                      <svg className={`h-6 w-6 sm:h-7 sm:w-7 transition-all duration-300 ${isStemLit ? "text-amber-500" : "opacity-30 text-slate-400"}`} viewBox="0 0 24 24" fill={isStemLit ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                        <path d="M9 18h6" />
-                        <path d="M10 22h4" />
-                        <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
-                      </svg>
-                    </div>
-                    <span className={`text-[10px] font-mono font-bold mt-1.5 uppercase ${isStemLit ? "text-amber-600 dark:text-amber-400 font-black" : "text-slate-400"}`}>
-                      {isStemLit ? "Output = 1" : "Output = 0"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bottom Rule */}
-                <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 relative z-10">
-                  <span>Rule: <strong className="text-slate-900 dark:text-white">{stemGate}</strong> outputs high (1) when satisfied</span>
-                  <span className="text-purple-600 dark:text-purple-400 font-bold">Standard Benchmarks</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* -------------------------------------------------------------
             ROW 4: LEARNING DNA & DIAGNOSTICS
             Story: Topic-by-Topic Diagnostic Telemetry & Score Prediction
             Style: Crisp Elevated White Card on Desktop & Mobile
         ------------------------------------------------------------- */}
-        <div className="relative rounded-3xl sm:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:border-sky-500/50">
+        <div className="relative rounded-3xl sm:rounded-[2.5rem] border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-gradient-to-br dark:from-[#060D24] dark:via-[#09153A] dark:to-[#050C1F] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-sky-500/50">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-500/40 to-transparent pointer-events-none" aria-hidden="true" />
           <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-0 lg:min-h-[440px]">
             {/* Left: Dedicated Workbench Canvas Frame hosting Learning DNA Radar */}
