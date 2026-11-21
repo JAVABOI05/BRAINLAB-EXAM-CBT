@@ -44,7 +44,8 @@ export async function POST(
       }
       const requestedSeconds = Number.parseInt(String(body.seconds ?? "300"), 10);
       const additionalSeconds = Math.min(7200, Math.max(60, Number.isFinite(requestedSeconds) ? requestedSeconds : 300));
-      const currentDeadline = session.deadline_at ? new Date(session.deadline_at).getTime() : Date.now();
+      const parsedDeadline = session.deadline_at ? new Date(session.deadline_at).getTime() : Number.NaN;
+      const currentDeadline = Number.isFinite(parsedDeadline) ? parsedDeadline : Date.now();
       const newDeadlineMs = Math.max(currentDeadline, Date.now()) + additionalSeconds * 1000;
       const newDeadlineAt = new Date(newDeadlineMs).toISOString();
       const newSeconds = Math.ceil((newDeadlineMs - Date.now()) / 1000);
@@ -88,13 +89,15 @@ export async function POST(
         return NextResponse.json({ ok: false, error: syncResult?.error || "sync_failed", message: syncResult?.message || syncError?.message || "Could not verify the examination session." }, { status: 409 });
       }
       const savedAnswers = session.draft_answers && typeof session.draft_answers === "object" ? session.draft_answers : {};
+      const parsedDeadline = session.deadline_at ? new Date(session.deadline_at).getTime() : 0;
+      const verifiedTimeLeft = Number.isFinite(parsedDeadline) ? Math.max(0, Math.ceil((parsedDeadline - Date.now()) / 1000)) : 0;
       return NextResponse.json({
         ok: true,
         finished: Boolean(syncResult.finished),
         status: syncResult.finished ? "submitted" : session.status,
         questionsAnswered: Object.keys(savedAnswers).length,
         totalQuestions: Array.isArray(session.paper_ids) ? session.paper_ids.length : 0,
-        timeLeftSeconds: syncResult.finished ? 0 : Math.max(0, Math.ceil((new Date(session.deadline_at).getTime() - Date.now()) / 1000)),
+        timeLeftSeconds: syncResult.finished ? 0 : verifiedTimeLeft,
         lastSavedAt: session.last_saved_at || null,
         message: syncResult.finished ? "The server confirms this examination is already finished." : "Server-side progress verified. The candidate must re-enter using the original phone number and access PIN to resume on their device.",
       });
