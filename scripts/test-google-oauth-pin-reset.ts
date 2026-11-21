@@ -171,11 +171,6 @@ console.log("  ✓ Open redirect attacks neutralized");
 console.log("  ✓ Students cannot be redirected into /admin routes through OAuth callback");
 console.log("  ✓ Valid admin routes and query strings preserved for administrators");
 
-console.log("\n=========================================================================");
-console.log("  GOOGLE OAUTH PIN RESET FUNCTIONAL SUITE: ALL CHECKS PASSED!");
-console.log("=========================================================================\n");
-
-
 // 8. Environment-preserving callback URL resolution
 console.log("\nTEST 8: Environment-Preserving OAuth Callback URL");
 const originalWindow = (globalThis as any).window;
@@ -209,3 +204,9 @@ try {
   if (originalSiteUrl === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
   else process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
 }
+
+console.log("\n=========================================================================");
+console.log("  GOOGLE OAUTH PIN RESET FUNCTIONAL SUITE: ALL CHECKS PASSED!");
+console.log("=========================================================================\n");
+
+
