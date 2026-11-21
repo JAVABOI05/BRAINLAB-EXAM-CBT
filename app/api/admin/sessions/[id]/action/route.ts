@@ -49,13 +49,15 @@ export async function POST(
       const newDeadlineAt = new Date(newDeadlineMs).toISOString();
       const newSeconds = Math.ceil((newDeadlineMs - Date.now()) / 1000);
 
-      const { error: timeUpdateError } = await supabase
+      const { data: updatedSession, error: timeUpdateError } = await supabase
         .from("exam_sessions")
         .update({ deadline_at: newDeadlineAt, time_left_seconds: newSeconds })
         .eq("id", sessionId)
-        .eq("status", "started");
-      if (timeUpdateError) {
-        return NextResponse.json({ ok: false, error: "time_extension_failed", message: timeUpdateError.message }, { status: 500 });
+        .eq("status", "started")
+        .select("id")
+        .maybeSingle();
+      if (timeUpdateError || !updatedSession) {
+        return NextResponse.json({ ok: false, error: "time_extension_failed", message: timeUpdateError?.message || "The session is no longer active." }, { status: timeUpdateError ? 500 : 409 });
       }
 
       await supabase.from("configuration_audit_logs").insert({
