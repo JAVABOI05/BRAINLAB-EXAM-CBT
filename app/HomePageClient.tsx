@@ -65,6 +65,7 @@ function ScrollReveal({ children }: { children: React.ReactNode }) {
     <div
       ref={rootRef}
       data-scroll-reveal
+      data-reveal-visible={visible ? "true" : "false"}
       style={{
         opacity: waiting ? 0 : 1,
         transform: waiting ? "translateY(14px)" : "translateY(0)",
@@ -110,6 +111,40 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
 export default function HomePageClient() {
   return (
     <main id="main" className="public-surface relative w-full bg-white text-slate-900 dark:bg-[#060D20] dark:text-white overflow-hidden selection:bg-blue-600 selection:text-white transition-colors duration-200">
+
+      <style>{`
+        @keyframes bl-home-content-enter {
+          from { opacity: 0; transform: translate3d(0, 18px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes bl-home-heading-enter {
+          from { opacity: 0; transform: translate3d(0, 10px, 0); filter: blur(3px); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+        }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > * {
+          animation: bl-home-content-enter 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > :nth-child(2) { animation-delay: 90ms; }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > :nth-child(3) { animation-delay: 160ms; }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > :nth-child(4) { animation-delay: 220ms; }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section h2 {
+          animation: bl-home-heading-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 70ms;
+        }
+        .public-surface .animate-ping,
+        .public-surface .animate-pulse { animation: none !important; }
+        @media (prefers-reduced-motion: reduce) {
+          .public-surface [data-scroll-reveal],
+          .public-surface [data-scroll-reveal] *,
+          .public-surface [data-scroll-reveal]::before,
+          .public-surface [data-scroll-reveal]::after {
+            animation: none !important;
+            transition-duration: 0.01ms !important;
+            transform: none !important;
+            filter: none !important;
+          }
+        }
+      `}</style>
       <div className="relative z-10">
         {/* 1. Hero Section */}
         <HomeHero />
