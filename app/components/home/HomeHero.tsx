@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
 import { DynamicLiveStatisticsSlot } from "./DynamicLiveStatisticsSlot";
 import { CBTHeroDemo } from "./CBTHeroDemo";
