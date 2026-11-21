@@ -84,11 +84,6 @@ export default function AccessPage() {
       return;
     }
 
-    if (maintenanceNotice?.active) {
-      setErrorText(`CBT Engine Under Maintenance: ${maintenanceNotice.message}`);
-      return;
-    }
-
     if (!mockEnabled) {
       setErrorText("The exam is currently unavailable.");
       return;
@@ -127,6 +122,12 @@ export default function AccessPage() {
         } else {
           setErrorText(result.message || "Invalid examination code.");
         }
+        setLoading(false);
+        return;
+      }
+
+      if (maintenanceNotice?.active && !result.resumed_attempt) {
+        setErrorText(`CBT Engine Under Maintenance: ${maintenanceNotice.message}`);
         setLoading(false);
         return;
       }
