@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
-import { DynamicLiveStatisticsSlot } from "./DynamicLiveStatisticsSlot";
 import { CBTHeroDemo } from "./CBTHeroDemo";
 import styles from "./HomeHero.module.css";
 
@@ -105,39 +104,12 @@ export function HomeHero() {
               </div>
             </div>
 
-            {/* Reassurance Badges (Visible on sm+ to prevent mobile clutter) */}
-            <div className="hidden sm:flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-300 pt-2">
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Official 8-Key CBT Simulator</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Step-by-Step Socratic Insights</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Verified NERDC Syllabus Aligned</span>
-              </span>
-            </div>
-
-            {/* Truthful Free Tier Disclosure */}
+            {/* One concise access reassurance; detailed proof belongs lower on the page. */}
             {disclosure && (
-              <p className="text-[11px] sm:text-xs text-slate-400 pt-0.5">
-                &bull; {disclosure}
+              <p className="max-w-xl text-[11px] sm:text-xs leading-relaxed text-slate-400 pt-1">
+                {disclosure}
               </p>
             )}
-
-            {/* Dynamic Live Statistics Slot (Rule S7 compliant, verified live aggregate data only) */}
-            <div className="pt-1">
-              <DynamicLiveStatisticsSlot />
-            </div>
           </div>
 
           {/* RIGHT / SIGNATURE CBT EXAM DEMONSTRATION */}
