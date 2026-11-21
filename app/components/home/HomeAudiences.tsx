@@ -143,8 +143,8 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
     id: "utme",
     tag: "UTME Candidates",
     badge: "JAMB 2027 Blueprint Standard",
-    headline: "Target 300+ with Official 4-Subject Combinations & 8-Key Speed Parity",
-    body: "Simulate the authentic JAMB CBT terminal experience. Master 180 questions across your chosen 4-subject combination with 120-minute countdowns, official A, B, C, D, P, N, S, R keyboard controls, negative marking analysis, and Tier-1 university cut-off benchmarking.",
+    headline: "Build a 300+ Preparation Goal with 4-Subject Practice & 8-Key Speed",
+    body: "Practise the JAMB-style CBT experience with your chosen 4-subject combination, timed sessions, A, B, C, D, P, N, S, R keyboard controls, and clear performance reviews that help you set realistic personal score goals.",
     cta: { label: "Launch UTME Exam Simulator", href: "/cbt" },
     icon: "utme",
     themeColor: "text-cyan-400",
@@ -158,8 +158,8 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
       },
       {
         icon: "target",
-        title: "Tier-1 University Target Radar",
-        desc: "Benchmark scores against official merit cut-offs for UNILAG, UI, OAU, UNN, and ABU.",
+        title: "Personal Preparation Goal Tracker",
+        desc: "Set a personal UTME score goal, review your practice performance, and confirm current admission requirements directly with each institution.",
       },
       {
         icon: "offline",
@@ -202,7 +202,7 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
     tag: "Post-UTME Candidates",
     badge: "University Screening Accelerator",
     headline: "Crush University Screening CBTs with Institutional Time Formats",
-    body: "University screening formats differ drastically from UTME. Train under institution-specific constraints for UNILAG (30-min 40-question sprints), UI, OAU, UNIBEN, UNN, and ABU with our composite aggregate admission calculator.",
+    body: "Prepare for university screening with focused timed drills and subject practice. Screening formats, subject requirements, and scoring methods vary by institution and admission year.",
     cta: { label: "Start Post-UTME Screening Drills", href: "/programmes/post-utme" },
     icon: "post_utme",
     themeColor: "text-amber-400",
@@ -216,8 +216,8 @@ const CANDIDATE_TRACKS: CandidateTrack[] = [
       },
       {
         icon: "diagnostic",
-        title: "Composite Admission Merit Calculator",
-        desc: "Dynamically calculate weighted aggregate scores across 50% UTME, 30% Post-UTME, and 20% O-Level points.",
+        title: "Illustrative Aggregate Planner",
+        desc: "Explore a sample weighted-score model. Actual screening formulas differ by institution and admission year—confirm the current formula before relying on any estimate.",
       },
       {
         icon: "arena",
@@ -332,7 +332,7 @@ export function HomeAudiences() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* LEFT COLUMN: Editorial Value & Feature Highlights */}
-            <div className="lg:col-span-7 space-y-6">
+            <div key={activeTrack.id} className="lg:col-span-7 space-y-6 animate-bl-fade-up">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black border ${activeTrack.accentBg}`}>
                   <AudienceIcon type={activeTrack.icon} className="h-3.5 w-3.5" />
@@ -407,7 +407,7 @@ export function HomeAudiences() {
 
                 {/* 1. UTME CANDIDATES: Target Score & University Dial */}
                 {activeTrack.id === "utme" && (
-                  <div className="space-y-4 animate-fade-in">
+                  <div className="space-y-4 animate-bl-fade-in">
                     <div>
                       <div className="text-xs font-bold text-slate-800 mb-1.5 flex justify-between">
                         <span>Select Target UTME Score:</span>
@@ -434,38 +434,38 @@ export function HomeAudiences() {
                     {/* Dynamic Radial Admission Gauge Preview */}
                     <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-b from-cyan-50 to-white p-4 text-center">
                       <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        Admission Merit Probability
+                        Preparation Goal Preview
                       </div>
                       <div className="text-3xl font-black text-slate-950 mt-1">
                         {targetScore >= 310
-                          ? "96% High Merit"
+                          ? "Stretch Goal"
                           : targetScore >= 285
-                          ? "88% Competitive"
-                          : "74% Qualified"}
+                          ? "Core Goal"
+                          : "Build-up Goal"}
                       </div>
                       <p className="text-[11px] text-cyan-800 mt-1 font-medium">
-                        {targetScore >= 290
-                          ? "Direct merit qualification for UNILAG, UI, and OAU Tier-1 programs."
-                          : "Strong standing for Federal institution admission with targeted CBT practice."}
+                        "Use this as a personal practice goal, not an admission prediction. Admission depends on your course, institution, subject combination, O’Level results, and current screening rules."
                       </p>
                     </div>
 
                     {/* Target Institutions Status */}
                     <div className="space-y-2">
                       <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                        Top Benchmark Alignments
+                        Admission planning reminder
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-lg bg-white /80 border border-slate-200 p-2.5">
-                          <span className="text-slate-500 block text-[10px]">UNILAG Akoka</span>
-                          <span className="font-bold text-slate-900">290+ Cut-Off Target</span>
+                        <div className="rounded-lg bg-white/80 border border-slate-200 p-2.5">
+                          <span className="text-slate-500 block text-[10px]">Score goals</span>
+                          <span className="font-bold text-slate-900">Personal, not official</span>
                         </div>
-                        <div className="rounded-lg bg-white /80 border border-slate-200 p-2.5">
-                          <span className="text-slate-500 block text-[10px]">UI Ibadan</span>
-                          <span className="font-bold text-slate-900">285+ Cut-Off Target</span>
+                        <div className="rounded-lg bg-white/80 border border-slate-200 p-2.5">
+                          <span className="text-slate-500 block text-[10px]">Admission guidance</span>
+                          <span className="font-bold text-slate-900">Check current requirements</span>
                         </div>
                       </div>
                     </div>
+
+                    <p className="text-[10px] leading-relaxed text-slate-600">This is an example calculation only. Do not treat it as an institution’s official aggregate formula or an admission prediction.</p>
 
                     <div className="pt-1">
                       <div className="text-[10px] text-slate-600 font-mono flex items-center justify-between">
@@ -478,7 +478,7 @@ export function HomeAudiences() {
 
                 {/* 2. O LEVEL CANDIDATES: Stream Selector & Syllabus Telemetry */}
                 {activeTrack.id === "olevel" && (
-                  <div className="space-y-4 animate-fade-in">
+                  <div className="space-y-4 animate-bl-fade-in">
                     <div>
                       <div className="text-xs font-bold text-slate-800 mb-1.5">
                         Select Academic Stream:
@@ -552,7 +552,7 @@ export function HomeAudiences() {
 
                 {/* 3. POST-UTME CANDIDATES: Composite Aggregate Admission Calculator */}
                 {activeTrack.id === "post_utme" && (
-                  <div className="space-y-4 animate-fade-in">
+                  <div className="space-y-4 animate-bl-fade-in">
                     <div>
                       <div className="text-xs font-bold text-slate-800 mb-1.5">
                         Target Screening University:
@@ -602,7 +602,7 @@ export function HomeAudiences() {
                     <div className="rounded-xl border border-amber-500/30 bg-gradient-to-b from-amber-50/70 to-white p-4 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                          Composite Admission Aggregate
+                          Illustrative Aggregate Estimate
                         </span>
                         <span className="text-xs font-black text-amber-600">
                           {targetUni.toUpperCase()} Model
@@ -614,7 +614,7 @@ export function HomeAudiences() {
                           {compositeAggregate}%
                         </span>
                         <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          {compositeAggregate >= 80 ? "Direct Merit Threshold" : "Competitive Range"}
+                          {compositeAggregate >= 80 ? "Illustrative model" : "Practice estimate"}
                         </span>
                       </div>
 
