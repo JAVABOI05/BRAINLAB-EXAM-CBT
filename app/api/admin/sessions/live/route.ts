@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           .limit(100);
 
         if (filter === "in_progress" || filter === "active") {
-          q = q.in("status", ["in_progress", "started"]);
+          q = q.eq("status", "started");
         } else if (filter === "completed") {
           q = q.in("status", ["completed", "submitted", "expired"]);
         } else if (filter === "flagged") {
@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Global statistics calculation across all database rows
     const allSessions = allStatsResult.data || [];
-    const globalActive = allSessions.filter((s) => s.status === "in_progress" || s.status === "started").length;
+    const globalActive = allSessions.filter((s) => s.status === "started").length;
     const globalFlagged = allSessions.filter((s) => (s.tab_switch_count || 0) > 0).length;
     const globalCompleted = allSessions.filter((s) => s.status === "completed" || s.status === "submitted" || s.status === "expired").length;
 
