@@ -242,9 +242,11 @@ export default function InstitutionalOperationsPage() {
       if (res.ok && data.ok) {
         setMessage(data.message || `Session ${sessionId} is ready for candidate recovery.`);
         await fetchLiveSessions();
+      } else {
+        setMessage(`Session recovery failed: ${data.message || data.error || "Unable to restore session"}`);
       }
     } catch {
-      setMessage("Network error updating session.");
+      setMessage("Network error restoring candidate session.");
     }
   }, [authFetch, fetchLiveSessions]);
 
@@ -526,7 +528,10 @@ onClick={() => setAutoPolling((prev) => !prev)}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className={`w-3 h-3 rounded-full ${refreshingFeeds ? "bg-amber-500 animate-spin" : "bg-emerald-500 animate-pulse"}`} />
-              <h2 className="text-lg font-bold text-slate-900">Live Invigilation & Candidate Telemetry</h2>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Live Invigilation & Candidate Session Recovery</h2>
+                <p className="mt-1 text-[11px] text-slate-500">Sync verifies the server copy. Restore authorises re-entry with the candidate’s original phone and PIN.</p>
+              </div>
               <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-black">
                 {sessions.length} Candidates Tracked
               </span>
@@ -739,7 +744,7 @@ onClick={() => setAutoPolling((prev) => !prev)}
                                 className="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition"
                                 title="Authorise the candidate to re-enter this active examination"
                               >
-                                🔓
+                                ↩ Restore
                               </button>
                               <button
                                 type="button"
