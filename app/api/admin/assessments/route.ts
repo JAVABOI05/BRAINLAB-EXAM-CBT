@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // 1. Fetch assessments
     const { data: assessments, error: assessErr } = await supabase
       .from("learning_assessments")
-      .select("id, title, description, assessment_type, question_source, subjects, categories, question_count, duration_seconds, max_attempts, pass_percentage, shuffle_questions, starts_at, ends_at, access_code_required, result_release, is_published, status, custom_questions, created_at")
+      .select("id, slug, title, description, assessment_type, question_source, subjects, categories, question_count, duration_seconds, max_attempts, pass_percentage, shuffle_questions, starts_at, ends_at, access_code_required, result_release, is_published, status, custom_questions, created_at")
       .order("created_at", { ascending: false });
 
     if (assessErr) {
