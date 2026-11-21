@@ -7,7 +7,7 @@ const startRoute = read("app/api/exam/start/route.ts");
 const resolveRoute = read("app/api/exam/resolve-code/route.ts");
 const adminAction = read("app/api/admin/sessions/[id]/action/route.ts");
 const examPage = read("app/exam/page.tsx");
-const migration = read("supabase/migrations/20261121120000_candidate_session_recovery.sql");
+const migration = read("supabase/migrations/20261121205732_candidate_session_recovery.sql");
 const authClient = read("app/lib/supabase.ts");
 
 function check(name: string, condition: boolean) {
