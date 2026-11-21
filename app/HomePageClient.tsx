@@ -109,7 +109,7 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
  */
 export default function HomePageClient() {
   return (
-    <div className="relative w-full bg-white text-slate-900 dark:bg-[#060D20] dark:text-white overflow-hidden selection:bg-blue-600 selection:text-white transition-colors duration-200">
+    <main id="main" className="public-surface relative w-full bg-white text-slate-900 dark:bg-[#060D20] dark:text-white overflow-hidden selection:bg-blue-600 selection:text-white transition-colors duration-200">
       <div className="relative z-10">
         {/* 1. Hero Section */}
         <HomeHero />
@@ -141,9 +141,9 @@ export default function HomePageClient() {
         {/* 8. Founder Note (Conditional) */}
         <ScrollReveal><HomeFounderNote /></ScrollReveal>
 
-        {/* 9. FAQ and Final Call to Action */}
+        {/* 9. FAQ and Final CTA */}
         <ScrollReveal><HomeFaqCta /></ScrollReveal>
       </div>
-    </div>
+    </main>
   );
 }
