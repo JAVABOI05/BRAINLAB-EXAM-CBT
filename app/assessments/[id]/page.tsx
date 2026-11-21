@@ -126,7 +126,7 @@ export default function AssessmentRunnerPage() {
 
     try {
       const { data, error: rpcErr } = await supabase.rpc("start_organisation_assessment", {
-        p_assessment_id: assessmentId,
+        p_assessment_id: assessment.id,
         p_access_code: accessCode.trim() || null,
       });
 
