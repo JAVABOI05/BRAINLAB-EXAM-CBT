@@ -366,13 +366,18 @@ export default function ExamPage() {
           let recoveredAnswers = attempt.answers || {};
           const queuedProgress = getQueuedProgress();
           const serverSavedAt = attempt.last_saved_at ? Date.parse(attempt.last_saved_at) : 0;
-          if (queuedProgress?.sessionId === attempt.session_id && queuedProgress.timestamp > serverSavedAt) {
-            // A queued offline snapshot is newer than the server checkpoint. Keep it
-            // visible immediately, then reconcile it with the server when possible.
-            recoveredAnswers = queuedProgress.answers || recoveredAnswers;
-            if (typeof navigator === "undefined" || navigator.onLine) {
-              const synced = await saveProgress(attempt.session_id, attempt.token, recoveredAnswers);
-              if (!isError(synced)) clearQueuedProgress();
+          if (queuedProgress?.sessionId === attempt.session_id) {
+            if (queuedProgress.timestamp > serverSavedAt) {
+              // A queued offline snapshot is newer than the server checkpoint. Keep it
+              // visible immediately, then reconcile it with the server when possible.
+              recoveredAnswers = queuedProgress.answers || recoveredAnswers;
+              if (typeof navigator === "undefined" || navigator.onLine) {
+                const synced = await saveProgress(attempt.session_id, attempt.token, recoveredAnswers);
+                if (!isError(synced)) clearQueuedProgress();
+              }
+            } else {
+              // The server has a newer checkpoint; discard the stale offline copy.
+              clearQueuedProgress();
             }
           }
           setAnswers(recoveredAnswers);
@@ -692,11 +697,15 @@ export default function ExamPage() {
       let recoveredAnswers = res.answers || {};
       const queuedProgress = getQueuedProgress();
       const serverSavedAt = res.last_saved_at ? Date.parse(res.last_saved_at) : 0;
-      if (queuedProgress?.sessionId === res.session_id && queuedProgress.timestamp > serverSavedAt) {
-        recoveredAnswers = queuedProgress.answers || recoveredAnswers;
-        if (typeof navigator === "undefined" || navigator.onLine) {
-          const synced = await saveProgress(res.session_id, res.token, recoveredAnswers);
-          if (!isError(synced)) clearQueuedProgress();
+      if (queuedProgress?.sessionId === res.session_id) {
+        if (queuedProgress.timestamp > serverSavedAt) {
+          recoveredAnswers = queuedProgress.answers || recoveredAnswers;
+          if (typeof navigator === "undefined" || navigator.onLine) {
+            const synced = await saveProgress(res.session_id, res.token, recoveredAnswers);
+            if (!isError(synced)) clearQueuedProgress();
+          }
+        } else {
+          clearQueuedProgress();
         }
       }
       clearAttemptStorage();
