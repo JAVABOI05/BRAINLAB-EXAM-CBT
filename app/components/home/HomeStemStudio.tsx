@@ -45,8 +45,15 @@ export function HomeStemStudio() {
     opticsDevice = "Simple Microscope / Magnifying Glass";
   }
 
-  // Chemistry Titration Interactive State
+  // Chemistry indicator demonstration: pH is adjusted directly, not inferred from titrant volume.
   const [phLevel, setPhLevel] = useState<number>(7.0);
+  const solutionState = phLevel < 7 ? "Acidic solution" : phLevel === 7 ? "Neutral solution" : "Alkaline solution";
+  const indicatorState = phLevel < 8.2 ? "Colourless" : phLevel <= 10 ? "Transitioning to pink" : "Pink";
+  const indicatorLiquidClass = phLevel < 8.2
+    ? "bg-slate-300/80 h-20"
+    : phLevel <= 10
+    ? "bg-pink-300/80 h-20"
+    : "bg-pink-500/80 h-20";
 
   // Compute logic gate output
   const computeOutput = (g: GateType, a: boolean, b: boolean): boolean => {
@@ -63,6 +70,18 @@ export function HomeStemStudio() {
   };
 
   const isCircuitLit = computeOutput(gate, inputA, inputB);
+
+  // Ideal projectile model: level launch and landing, with air resistance ignored.
+  const initialSpeed = 30; // m/s
+  const gravity = 9.8; // m/s²
+  const angleRadians = (launchAngle * Math.PI) / 180;
+  const flightRange = (initialSpeed ** 2 * Math.sin(2 * angleRadians)) / gravity;
+  const apexHeight = (initialSpeed ** 2 * Math.sin(angleRadians) ** 2) / (2 * gravity);
+  const maxFlightRange = initialSpeed ** 2 / gravity;
+  const maxApexHeight = initialSpeed ** 2 / (2 * gravity);
+  const targetX = 50 + (flightRange / maxFlightRange) * 380;
+  const apexX = (50 + targetX) / 2;
+  const apexY = 150 - (apexHeight / maxApexHeight) * 120;
 
   return (
     <section
@@ -101,8 +120,8 @@ export function HomeStemStudio() {
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                   </svg>
                   <div>
-                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">60 FPS Motion</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Zero lag physics</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Interactive Motion</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Adjust variables and observe</div>
                   </div>
                 </div>
 
@@ -123,8 +142,8 @@ export function HomeStemStudio() {
                     <line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
                   <div>
-                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Instant Load</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Low data overhead</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Guided Preview</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Explore before launching</div>
                   </div>
                 </div>
               </div>
@@ -149,7 +168,7 @@ export function HomeStemStudio() {
             </div>
 
             {/* Right Column: Catchy Animated Interactive Visual Lab */}
-            <div className="lg:col-span-7 space-y-4">
+            <div className="lg:col-span-7 space-y-4 animate-bl-fade-up">
               {/* Lab Subject Switcher Tabs */}
               <div
                 role="tablist"
@@ -163,7 +182,7 @@ export function HomeStemStudio() {
                   onClick={() => setActiveTab("circuits")}
                   className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "circuits"
-                      ? "bg-[#0C162E] text-emerald-700 text-emerald-300 shadow-md border-emerald-500/40 font-black"
+                      ? "bg-[#0C162E] text-emerald-300 shadow-md border-emerald-500/40 font-black"
                       : "border-transparent text-slate-400 hover:text-white"
                   }`}
                 >
@@ -180,7 +199,7 @@ export function HomeStemStudio() {
                   onClick={() => setActiveTab("physics")}
                   className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                     activeTab === "physics"
-                      ? "bg-[#0C162E] text-cyan-700 text-cyan-300 shadow-md border-cyan-500/40 font-black"
+                      ? "bg-[#0C162E] text-cyan-300 shadow-md border-cyan-500/40 font-black"
                       : "border-transparent text-slate-400 hover:text-white"
                   }`}
                 >
@@ -230,7 +249,7 @@ export function HomeStemStudio() {
 
               {/* Main Interactive Animated Stage */}
               <div
-                className="rounded-2xl border-2 border-white/10 bg-[#030612] p-5 sm:p-6 shadow-inner min-h-[360px] flex flex-col justify-between relative overflow-hidden"
+                className="rounded-2xl border-2 border-white/10 bg-[#030612] p-5 sm:p-6 shadow-inner min-h-[360px] flex flex-col justify-between relative overflow-hidden animate-bl-float-3d"
                 role="region"
                 aria-label="Interactive Logic Gate Bench and Virtual Science Stage"
               >
@@ -238,7 +257,7 @@ export function HomeStemStudio() {
                 {activeTab === "circuits" && (
                   <div className="space-y-5 animate-bl-fade-in">
                     {/* Header Controls: Gate Selection Chips */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
                           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
@@ -254,6 +273,7 @@ export function HomeStemStudio() {
                             key={g}
                             type="button"
                             onClick={() => setGate(g)}
+                            aria-pressed={gate === g}
                             className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                               gate === g
                                 ? "bg-blue-600 text-white shadow-xs"
@@ -272,6 +292,7 @@ export function HomeStemStudio() {
                       <div className="flex sm:flex-col gap-3 z-10">
                         <button
                           type="button"
+                          aria-pressed={inputA}
                           onClick={() => setInputA(!inputA)}
                           className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 border-b-4 font-bold text-xs transition-all cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                             inputA
@@ -286,6 +307,7 @@ export function HomeStemStudio() {
                         {gate !== "NOT" ? (
                           <button
                             type="button"
+                            aria-pressed={inputB}
                             onClick={() => setInputB(!inputB)}
                             className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 border-b-4 font-bold text-xs transition-all cursor-pointer active:border-b-2 active:translate-y-0.5 ${
                               inputB
@@ -310,7 +332,7 @@ export function HomeStemStudio() {
                             ? "border-cyan-500 bg-cyan-950/60 shadow-md text-blue-950 "
                             : "border-slate-200  bg-slate-800/60 text-slate-500"
                         }`}>
-                          <span className="text-[10px] font-mono tracking-widest text-blue-600 font-bold uppercase">LOGIC CHIP</span>
+                          <span className="text-[10px] font-mono tracking-widest text-cyan-300 font-bold uppercase">LOGIC CHIP</span>
                           <span className="text-xl font-black text-white">{gate}</span>
                           <span className="text-[10px] text-slate-400 font-mono mt-0.5 font-bold">
                             {gate === "NOT" ? "Q = ¬A" : `Q = A ${gate} B`}
@@ -332,8 +354,8 @@ export function HomeStemStudio() {
                           </svg>
                         </div>
                         <div className="mt-2 text-center">
-                          <span className={`text-xs font-black uppercase tracking-wider ${isCircuitLit ? "text-amber-600 " : "text-slate-500"}`}>
-                            {isCircuitLit ? "Current Active" : "Circuit Open"}
+                          <span className={`text-xs font-black uppercase tracking-wider ${isCircuitLit ? "text-amber-300 " : "text-slate-300"}`}>
+                            {isCircuitLit ? "Output HIGH (1)" : "Output LOW (0)"}
                           </span>
                         </div>
                       </div>
@@ -346,8 +368,8 @@ export function HomeStemStudio() {
                       </svg>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-slate-200">
-                      <span>Curriculum Rule: <strong>{gate}</strong> gate outputs active current when its logic condition is met.</span>
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
+                      <span>Boolean output: <strong>{gate}</strong> returns {isCircuitLit ? "HIGH (1)" : "LOW (0)"} for the selected inputs.</span>
                       <span className="text-blue-600 font-bold">Physics &amp; Computer Studies</span>
                     </div>
                   </div>
@@ -356,10 +378,10 @@ export function HomeStemStudio() {
                 {/* 2. PHYSICS MECHANICS & KINEMATICS */}
                 {activeTab === "physics" && (
                   <div className="space-y-5 animate-bl-fade-in">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <svg className="h-4 w-4 text-blue-600 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <svg className="h-4 w-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
                             <line x1="14.5" y1="5.5" x2="18.5" y2="9.5" />
                           </svg>
@@ -367,7 +389,7 @@ export function HomeStemStudio() {
                         </div>
                         <p className="text-[11px] text-slate-400">
                           {physicsSubMode === "kinematics"
-                            ? "Simulate parabolic projectile motion and gravitational trajectory in real-time"
+                            ? "Explore how launch angle changes a projectile’s ideal trajectory"
                             : "Interactive thin lens ray-tracing, focal planes, and optical magnification"}
                         </p>
                       </div>
@@ -429,7 +451,7 @@ export function HomeStemStudio() {
                               onChange={(e) => setObjectDist(Number(e.target.value))}
                               className="w-20 accent-blue-600 cursor-pointer"
                             />
-                            <span className="text-xs font-mono font-bold text-cyan-600 text-cyan-300">{objectDist}cm</span>
+                            <span className="text-xs font-mono font-bold text-cyan-300">{objectDist}cm</span>
                           </div>
                         )}
                       </div>
@@ -446,13 +468,7 @@ export function HomeStemStudio() {
                             
                             {/* Trajectory Parabola */}
                             <path
-                              d={
-                                launchAngle === 30
-                                  ? "M 50 150 Q 240 70 430 150"
-                                  : launchAngle === 45
-                                  ? "M 50 150 Q 240 25 430 150"
-                                  : "M 50 150 Q 200 10 350 150"
-                              }
+                              d={`M 50 150 Q ${apexX} ${2 * apexY - 150} ${targetX} 150`}
                               stroke="#0284c7"
                               strokeWidth="3"
                               strokeDasharray="6,4"
@@ -463,13 +479,11 @@ export function HomeStemStudio() {
                             <circle cx="50" cy="150" r="10" fill="#2563eb" />
                             
                             {/* Moving Projectile Particle */}
-                            <circle cx={launchAngle === 60 ? "200" : "240"} cy={launchAngle === 45 ? "35" : launchAngle === 60 ? "20" : "75"} r="7" fill="#f59e0b">
-                              <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite" />
-                            </circle>
+                            <circle cx={apexX} cy={apexY} r="7" fill="#f59e0b" className="animate-pulse" />
 
                             {/* Target Flag */}
-                            <circle cx={launchAngle === 60 ? "350" : "430"} cy="150" r="6" fill="#10b981" />
-                            <text x={launchAngle === 60 ? "335" : "415"} y="170" fill="#10b981" fontSize="11" fontWeight="bold">Target</text>
+                            <circle cx={targetX} cy="150" r="6" fill="#10b981" />
+                            <text x={Math.min(targetX - 15, 440)} y="170" fill="#10b981" fontSize="11" fontWeight="bold">Target</text>
                             <text x="50" y="170" fill="#64748b" fontSize="10">Origin (0m)</text>
                           </svg>
                         </div>
@@ -477,17 +491,18 @@ export function HomeStemStudio() {
                         <div className="grid grid-cols-3 gap-2 text-center">
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Apex Height</div>
-                            <div className="text-sm font-black text-blue-600">{launchAngle === 45 ? "22.5 m" : launchAngle === 60 ? "31.2 m" : "14.8 m"}</div>
+                            <div className="text-sm font-black text-cyan-300">{apexHeight.toFixed(1)} m</div>
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Flight Range</div>
-                            <div className="text-sm font-black text-emerald-400">{launchAngle === 45 ? "92.0 m (Max)" : launchAngle === 60 ? "76.4 m" : "80.1 m"}</div>
+                            <div className="text-sm font-black text-emerald-400">{flightRange.toFixed(1)} m</div>
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Equation</div>
-                            <div className="text-xs font-mono font-bold text-amber-600">y = v₀t - ½gt²</div>
+                            <div className="text-xs font-mono font-bold text-amber-300">H = v₀²sin²θ / 2g</div>
                           </div>
                         </div>
+                        <p className="text-[10px] text-slate-400 text-center">Assumes an ideal projectile launched and landing at the same height; air resistance is ignored. Initial speed: 30 m/s.</p>
                       </>
                     ) : (
                       /* Simulation 2: Brilliant Optics & Convex Lens Ray Tracing */
@@ -559,7 +574,7 @@ export function HomeStemStudio() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Image Distance (dᵢ)</div>
-                            <div className="text-sm font-black text-cyan-600 text-cyan-300">
+                            <div className="text-sm font-black text-cyan-300">
                               {isAtFocus ? "Infinity (∞)" : `${imageDist.toFixed(1)} cm`}
                             </div>
                           </div>
@@ -571,7 +586,7 @@ export function HomeStemStudio() {
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Real Application</div>
-                            <div className="text-xs font-mono font-bold text-amber-600 truncate">
+                            <div className="text-xs font-mono font-bold text-amber-300 truncate">
                               {opticsDevice}
                             </div>
                           </div>
@@ -584,7 +599,7 @@ export function HomeStemStudio() {
                 {/* 3. CHEMISTRY ACID-BASE TITRATION */}
                 {activeTab === "chemistry" && (
                   <div className="space-y-5 animate-bl-fade-in">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
                           <svg className="h-4 w-4 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -593,14 +608,16 @@ export function HomeStemStudio() {
                           </svg>
                           <span>Acid-Base Titration &amp; pH Reactions</span>
                         </div>
-                        <p className="text-[11px] text-slate-400">Volumetric analysis, neutralization color shifts, and indicator reaction curves</p>
+                        <p className="text-[11px] text-slate-400">Explore solution pH and the colour response of a common acid-base indicator</p>
                       </div>
 
-                      {/* Titrant Dosing Slider */}
+                      {/* Direct pH control for the illustrative indicator model */}
                       <div className="flex items-center gap-2 bg-[#070D1B] px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
-                        <span className="text-[11px] text-slate-400 font-bold">Add Base (NaOH):</span>
+                        <label htmlFor="stem-ph-control" className="text-[11px] text-slate-400 font-bold">Adjust solution pH:</label>
                         <input
                           type="range"
+                          id="stem-ph-control"
+                          aria-label="Adjust illustrative solution pH"
                           min="1"
                           max="14"
                           step="0.5"
@@ -618,23 +635,11 @@ export function HomeStemStudio() {
                       <div className="relative flex flex-col items-center">
                         <div className="w-12 h-14 border-t-2 border-x-2 border-slate-400 rounded-t-sm" />
                         <div
-                          className={`w-32 h-28 border-2 rounded-b-3xl transition-colors duration-500 relative overflow-hidden flex items-end justify-center ${
-                            phLevel < 6.5
-                              ? "border-rose-400/80 bg-rose-50 "
-                              : phLevel <= 8.0
-                              ? "border-emerald-400/80 bg-emerald-50 "
-                              : "border-purple-400/80 bg-purple-50 "
-                          }`}
+                          className="w-32 h-28 border-2 border-slate-400 bg-slate-50 rounded-b-3xl transition-colors duration-500 relative overflow-hidden flex items-end justify-center"
                         >
                           {/* Liquid Level with Rising Bubbles */}
                           <div
-                            className={`w-full transition-all duration-500 ${
-                              phLevel < 6.5
-                                ? "bg-rose-500/50 h-16"
-                                : phLevel <= 8.0
-                                ? "bg-emerald-500/50 h-20"
-                                : "bg-purple-600/50 h-24"
-                            }`}
+                            className={`w-full transition-colors duration-500 ${indicatorLiquidClass}`}
                           >
                             <div className="flex justify-around items-center h-full opacity-60">
                               <span className="animate-bounce h-2 w-2 rounded-full bg-white/70" />
@@ -650,31 +655,32 @@ export function HomeStemStudio() {
                       {/* Reaction State Information Card */}
                       <div className="space-y-2.5 max-w-xs">
                         <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black ${
-                          phLevel < 6.5
-                            ? "bg-rose-100 text-rose-800   border border-rose-300 "
-                            : phLevel <= 8.0
-                            ? "bg-emerald-100 text-emerald-800  text-emerald-300 border border-emerald-300  shadow-sm"
-                            : "bg-purple-100 text-purple-800   border border-purple-300 "
+                          phLevel < 7
+                            ? "bg-rose-100 text-rose-800 border border-rose-300"
+                            : phLevel === 7
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-purple-100 text-purple-800 border border-purple-300"
                         }`}>
-                          <span>{phLevel < 6.5 ? "Acidic Solution" : phLevel <= 8.0 ? "Neutral Endpoint (Titration Done)" : "Alkaline / Basic Solution"}</span>
+                          <span>{solutionState}</span>
                         </div>
 
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          {phLevel <= 8.0 && phLevel >= 6.5
-                            ? "Equivalence point reached! Volume of acid neutralized exactly matches volume of base (C₁V₁ = C₂V₂)."
-                            : phLevel < 6.5
-                            ? "Excess H⁺ hydronium ions in solution. Add more drops from the burette to reach the equivalence point."
-                            : "Excess OH⁻ hydroxide ions. The solution is over-titrated beyond the phenolphthalein end point."}
+                        <p className="text-xs text-slate-700 leading-relaxed">
+                          {phLevel < 8.2
+                            ? "Phenolphthalein remains colourless below about pH 8.2. Its colour response alone does not identify the titration equivalence point."
+                            : phLevel <= 10
+                            ? "Phenolphthalein is within its approximate transition range (pH 8.2–10.0), changing from colourless through pale pink to pink."
+                            : "Phenolphthalein appears pink above its transition range. The solution is alkaline, but colour alone does not measure the amount of excess base."}
                         </p>
 
                         <div className="text-[11px] font-mono text-slate-400 bg-slate-900/80 p-2 rounded-lg border border-slate-200">
-                          Indicator: <strong>Phenolphthalein</strong> (Colorless &rarr; Pink)
+                          Indicator: <strong>Phenolphthalein</strong> — {indicatorState} (transition range ≈ pH 8.2–10.0)
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-slate-200">
-                      <span>WAEC Chemistry Alternative to Practical Syllabus (Volumetric Analysis)</span>
+                    <p className="text-[10px] text-slate-400 text-center">Illustrative pH and indicator model: the slider changes pH directly; it does not calculate titrant volume, concentration, or the equivalence point.</p>
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
+                      <span>Acid-base indicators &amp; volumetric analysis</span>
                       <span className="text-emerald-400 font-bold">Standard Lab Model</span>
                     </div>
                   </div>
@@ -683,19 +689,19 @@ export function HomeStemStudio() {
                 {/* 4. CELLULAR ATLAS & METABOLIC PATHWAYS */}
                 {activeTab === "biology" && (
                   <div className="space-y-5 animate-bl-fade-in">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                          <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <svg className="h-4 w-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M12 2a10 10 0 0 0-4 18M12 2a10 10 0 0 1 4 18" />
                           </svg>
                           <span>Cellular Atlas &amp; Metabolic Pathways</span>
                         </div>
-                        <p className="text-[11px] text-slate-400">Interactive eukaryotic cell explorer and double-helix genetics structure</p>
+                        <p className="text-[11px] text-slate-400">A simplified animal-cell diagram introducing key organelles and their functions</p>
                       </div>
 
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-200 text-xs font-bold text-emerald-800 text-emerald-300">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-200 text-xs font-bold text-emerald-300">
                         <span>WAEC Biology Core</span>
                       </div>
                     </div>
@@ -722,29 +728,29 @@ export function HomeStemStudio() {
 
                       {/* Biological Explanations */}
                       <div className="space-y-2.5 max-w-xs">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/70 bg-slate-900/60 p-3 space-y-1">
+                        <div className="rounded-xl border border-white/10 bg-[#0B1536] p-3 space-y-1 bl-interactive-hover">
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            Mitochondria: ATP Energy Synthesis
+                            Mitochondria: Aerobic Respiration
                           </div>
                           <p className="text-[11px] text-slate-400 leading-snug">
-                            Generates cellular energy via aerobic cellular respiration and Krebs cycle enzyme pathways.
+                            The Krebs cycle occurs in the mitochondrial matrix; the electron transport chain and most ATP production occur at the inner mitochondrial membrane. Glycolysis takes place in the cytoplasm.
                           </p>
                         </div>
 
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/70 bg-slate-900/60 p-3 space-y-1">
+                        <div className="rounded-xl border border-white/10 bg-[#0B1536] p-3 space-y-1 bl-interactive-hover">
                           <div className="text-xs font-bold text-white flex items-center gap-1.5">
                             <span className="h-2 w-2 rounded-full bg-sky-500" />
-                            Nucleus &amp; Double-Helix Chromatin
+                            Nucleus: DNA &amp; Chromatin
                           </div>
                           <p className="text-[11px] text-slate-400 leading-snug">
-                            Stores genetic code $(A-T, G-C)$ and orchestrates RNA transcription for protein synthesis.
+                            Contains most of the cell’s genetic material as DNA organised with proteins into chromatin. Genes are transcribed into RNA, which helps direct protein synthesis.
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-slate-200">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 bg-[#070D1B]/60 rounded-xl px-4 py-2 border border-white/10">
                       <span>Senior Secondary Biology Syllabus: Cell Structure &amp; Functions</span>
                       <span className="text-cyan-400 font-bold">Interactive Anatomy</span>
                     </div>

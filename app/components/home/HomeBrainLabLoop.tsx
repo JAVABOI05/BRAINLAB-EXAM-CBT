@@ -119,6 +119,8 @@ export function HomeBrainLabLoop(): React.JSX.Element {
   const activeStage =
     loopStages.find((s) => s.id === activeStageId) || loopStages[0];
   const activeRoute = STAGE_ROUTE_MAP[activeStage.id] || STAGE_ROUTE_MAP.learn;
+  const activeStageIndex = Math.max(0, loopStages.findIndex((stage) => stage.id === activeStage.id));
+  const progressPercent = loopStages.length > 1 ? ((activeStageIndex + 0.5) / loopStages.length) * 100 : 0;
 
   return (
     <section
@@ -158,8 +160,16 @@ export function HomeBrainLabLoop(): React.JSX.Element {
           aria-label="Loop Stages"
           className="relative mb-6 sm:mb-10"
         >
-          {/* Subtle Horizontal Connector Rail on Desktop */}
-          <div className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-slate-200 -translate-y-1/2 pointer-events-none" />
+          {/* Desktop progress rail follows the selected learning stage */}
+          <div
+            className="hidden lg:block absolute top-1/2 left-8 right-8 h-0.5 bg-slate-200 -translate-y-1/2 pointer-events-none overflow-hidden rounded-full"
+            aria-hidden="true"
+          >
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 transition-[width] duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 relative z-10">
             {loopStages.map((stage) => {
@@ -314,7 +324,8 @@ export function HomeBrainLabLoop(): React.JSX.Element {
             {/* RIGHT COLUMN: Authentic High-Voltage Interactive Telemetry Stage (Static locked height) */}
             <div className="lg:col-span-6 flex flex-col justify-center">
               <div
-                className="rounded-2xl border-2 border-slate-200 bg-slate-50  p-5 sm:p-6 shadow-inner relative overflow-hidden h-[450px] flex flex-col justify-between"
+                key={activeStage.id}
+                className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-5 sm:p-6 shadow-inner relative overflow-hidden h-[450px] flex flex-col justify-between animate-bl-fade-in"
                 role="region"
                 aria-label={`Preview of ${activeStage.title} Stage Output`}
                 data-slot="Diagnostic Cognitive Radar (Slot S3-02)"

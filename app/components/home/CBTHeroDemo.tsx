@@ -25,6 +25,7 @@ export function CBTHeroDemo() {
   const rootRef = useRef<HTMLDivElement>(null);
   const hasPlayedRef = useRef(false);
   const [phase, setPhase] = useState<DemoPhase>("idle");
+  const [lidOpen, setLidOpen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [seconds, setSeconds] = useState(15);
 
@@ -34,27 +35,41 @@ export function CBTHeroDemo() {
 
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (motionPreference.matches) {
+      setLidOpen(true);
       setSeconds(11);
       setPhase("complete");
       return;
     }
 
+    if (!("IntersectionObserver" in window)) {
+      setLidOpen(true);
+      setSeconds(11);
+      setPhase("complete");
+      return;
+    }
+
+    let openingTimer: number | undefined;
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
         if (!entry?.isIntersecting || hasPlayedRef.current) return;
         hasPlayedRef.current = true;
-        setPhase("question");
-        setHasStarted(true);
+        setLidOpen(true);
+        openingTimer = window.setTimeout(() => {
+          setPhase("question");
+          setHasStarted(true);
+        }, 1180);
         observer.disconnect();
       },
-      { threshold: 0.35 }
+      { threshold: 0.12 }
     );
 
     observer.observe(node);
 
     const handleMotionPreference = (event: MediaQueryListEvent) => {
       if (event.matches) {
+        if (openingTimer !== undefined) window.clearTimeout(openingTimer);
+        setLidOpen(true);
         setSeconds(11);
         setPhase("complete");
         observer.disconnect();
@@ -64,6 +79,7 @@ export function CBTHeroDemo() {
     motionPreference.addEventListener("change", handleMotionPreference);
     return () => {
       observer.disconnect();
+      if (openingTimer !== undefined) window.clearTimeout(openingTimer);
       motionPreference.removeEventListener("change", handleMotionPreference);
     };
   }, []);
@@ -112,8 +128,12 @@ export function CBTHeroDemo() {
       role="group"
       aria-label="Illustrative BrainLab CBT demonstration"
     >
-      <div className={styles.device}>
-        <div className={styles.camera} aria-hidden="true" />
+      <div className={lidOpen ? `${styles.device} ${styles.deviceOpen}` : styles.device}>
+        <div className={styles.lidCover} aria-hidden="true">
+        <span className={styles.lidBrandMark}>B</span>
+        <span className={styles.lidBrandName}>BRAINLAB</span>
+      </div>
+      <div className={styles.camera} aria-hidden="true" />
         <div className={styles.screen}>
           <header className={styles.topbar}>
             <div className={styles.brand}>

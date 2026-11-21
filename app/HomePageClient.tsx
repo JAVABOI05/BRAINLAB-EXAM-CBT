@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   HomeHero,
   HomeUniversityTargetSocialProof,
@@ -14,6 +14,68 @@ import {
   HomeFounderNote,
   HomeFaqCta,
 } from "./components/home";
+
+/**
+ * Progressive, one-time section reveal. Content remains visible when JavaScript,
+ * IntersectionObserver, or motion support is unavailable.
+ */
+function ScrollReveal({ children }: { children: React.ReactNode }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [armed, setArmed] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node || !("IntersectionObserver" in window)) return;
+
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionPreference.matches) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        setArmed(true);
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -6% 0px" }
+    );
+
+    observer.observe(node);
+
+    const handleMotionPreference = (event: MediaQueryListEvent) => {
+      if (!event.matches) return;
+      setVisible(true);
+      setArmed(false);
+      observer.disconnect();
+    };
+
+    motionPreference.addEventListener("change", handleMotionPreference);
+    return () => {
+      observer.disconnect();
+      motionPreference.removeEventListener("change", handleMotionPreference);
+    };
+  }, []);
+
+  const waiting = armed && !visible;
+
+  return (
+    <div
+      ref={rootRef}
+      data-scroll-reveal
+      data-reveal-visible={visible ? "true" : "false"}
+      style={{
+        opacity: waiting ? 0 : 1,
+        transform: waiting ? "translateY(14px)" : "translateY(0)",
+        transition: "opacity 560ms cubic-bezier(0.16, 1, 0.3, 1), transform 560ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 /**
  * Ecosystem pathways mapping to preserve architecture assertions
@@ -48,59 +110,75 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
  */
 export default function HomePageClient() {
   return (
-    <div className="relative w-full bg-white text-slate-900 dark:bg-[#060D20] dark:text-white overflow-hidden selection:bg-blue-600 selection:text-white transition-colors duration-200">
-      {/* Brilliant Subtle Dot Matrix Texture */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.05]"
-        style={{
-          backgroundImage: `radial-gradient(currentColor 1.2px, transparent 1.2px)`,
-          backgroundSize: "24px 24px",
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-blue-500/10 dark:bg-blue-600/15 blur-[140px]"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute top-1/2 -left-32 h-[450px] w-[450px] rounded-full bg-emerald-500/10 blur-[130px]"
-        aria-hidden="true"
-      />
+    <main id="main" className="public-surface relative w-full bg-white text-slate-900 dark:bg-[#060D20] dark:text-white overflow-hidden selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
+      <style>{`
+        @keyframes bl-home-content-enter {
+          from { opacity: 0; transform: translate3d(0, 18px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes bl-home-heading-enter {
+          from { opacity: 0; transform: translate3d(0, 10px, 0); filter: blur(3px); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+        }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > * {
+          animation: bl-home-content-enter 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > :nth-child(2) { animation-delay: 90ms; }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > :nth-child(3) { animation-delay: 160ms; }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section > div[class*="max-w"] > :nth-child(4) { animation-delay: 220ms; }
+        .public-surface [data-scroll-reveal][data-reveal-visible="true"] section h2 {
+          animation: bl-home-heading-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 70ms;
+        }
+        .public-surface .animate-ping,
+        .public-surface .animate-pulse { animation: none !important; }
+        @media (prefers-reduced-motion: reduce) {
+          .public-surface [data-scroll-reveal],
+          .public-surface [data-scroll-reveal] *,
+          .public-surface [data-scroll-reveal]::before,
+          .public-surface [data-scroll-reveal]::after {
+            animation: none !important;
+            transition-duration: 0.01ms !important;
+            transform: none !important;
+            filter: none !important;
+          }
+        }
+      `}</style>
       <div className="relative z-10">
         {/* 1. Hero Section */}
         <HomeHero />
 
         {/* Compact, High-Impact Broadcast Channel Ribbon */}
-        <HomeJoinChannel />
+        <ScrollReveal><HomeJoinChannel /></ScrollReveal>
 
         {/* 2. Audience Entry Points */}
-        <HomeAudiences />
+        <ScrollReveal><HomeAudiences /></ScrollReveal>
 
         {/* 3. The BrainLab Loop */}
-        <HomeBrainLabLoop />
+        <ScrollReveal><HomeBrainLabLoop /></ScrollReveal>
 
         {/* 4. Product Showcase */}
-        <HomeProductShowcase />
+        <ScrollReveal><HomeProductShowcase /></ScrollReveal>
 
         {/* 5. STEM Studio Spotlight */}
-        <HomeStemStudio />
+        <ScrollReveal><HomeStemStudio /></ScrollReveal>
 
         {/* 6. Trust and Outcomes (Conditional) */}
-        <HomeTrustOutcomes />
+        <ScrollReveal><HomeTrustOutcomes /></ScrollReveal>
 
         {/* University Target Benchmarks & Social Proof (Lower Page Positioning) */}
-        <HomeUniversityTargetSocialProof />
+        <ScrollReveal><HomeUniversityTargetSocialProof /></ScrollReveal>
 
         {/* 7. Pricing Teaser (Real Data) */}
-        <HomePricingTeaser />
+        <ScrollReveal><HomePricingTeaser /></ScrollReveal>
 
         {/* 8. Founder Note (Conditional) */}
-        <HomeFounderNote />
+        <ScrollReveal><HomeFounderNote /></ScrollReveal>
 
-        {/* 9. FAQ and Final Call to Action */}
-        <HomeFaqCta />
+        {/* 9. FAQ and Final CTA */}
+        <ScrollReveal><HomeFaqCta /></ScrollReveal>
       </div>
-    </div>
+    </main>
   );
 }

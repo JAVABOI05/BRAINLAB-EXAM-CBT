@@ -1,92 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
 import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, resolveClaimValue } from "@/app/lib/contentConfig";
-import { DynamicLiveStatisticsSlot } from "./DynamicLiveStatisticsSlot";
 import { CBTHeroDemo } from "./CBTHeroDemo";
 import styles from "./HomeHero.module.css";
 
-interface ConceptCard {
-  id: string;
-  subject: string;
-  title: string;
-  tag: string;
-  badgeColor: string;
-  borderColor: string;
-  glowColor: string;
-  formulaOrSnippet: string;
-  detail: string;
-  accentBg: string;
-}
-
-const BRILLIANT_HERO_CONCEPTS: ConceptCard[] = [
-  {
-    id: "math",
-    subject: "Mathematics",
-    title: "Quadratic Functions",
-    tag: "Algebra & Graphs",
-    badgeColor: "bg-blue-500/20 text-cyan-300 border-blue-400/40",
-    borderColor: "border-blue-500/30 hover:border-blue-400/80",
-    glowColor: "hover:shadow-md hover:shadow-blue-500/20",
-    formulaOrSnippet: "2x² + 5x + 3 = 0  ⟹  x = -1, -3/2",
-    detail: "Factorise by splitting terms: (2x + 3)(x + 1) = 0.",
-    accentBg: "bg-[#071328]/90",
-  },
-  {
-    id: "physics",
-    subject: "Physics",
-    title: "Circuit Potential",
-    tag: "Current Electricity",
-    badgeColor: "bg-cyan-500/20 text-cyan-300 border-cyan-400/40",
-    borderColor: "border-cyan-500/30 hover:border-cyan-400/80",
-    glowColor: "hover:shadow-md hover:shadow-cyan-500/20",
-    formulaOrSnippet: "V = E - Ir  ⟹  2.0 - (0.4 × 1) = 1.6 V",
-    detail: "Terminal p.d. accounts for internal lost volts.",
-    accentBg: "bg-[#071328]/90",
-  },
-  {
-    id: "chemistry",
-    subject: "Chemistry",
-    title: "Redox States",
-    tag: "Oxidation Numbers",
-    badgeColor: "bg-purple-500/20 text-purple-300 border-purple-400/40",
-    borderColor: "border-purple-500/30 hover:border-purple-400/80",
-    glowColor: "hover:shadow-md hover:shadow-purple-500/20",
-    formulaOrSnippet: "KMnO₄  ⟹  (+1) + Mn + 4(-2) = 0",
-    detail: "Mn = +7 oxidation state in neutral permanganate.",
-    accentBg: "bg-[#071328]/90",
-  },
-  {
-    id: "english",
-    subject: "Use of English",
-    title: "Proximity Concord",
-    tag: "Lexis & Concord",
-    badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
-    borderColor: "border-emerald-500/30 hover:border-emerald-400/80",
-    glowColor: "hover:shadow-md hover:shadow-emerald-500/20",
-    formulaOrSnippet: "Neither A nor B  ⟹  Verb matches B",
-    detail: "'Neither the principal nor the teachers were present.'",
-    accentBg: "bg-[#071328]/90",
-  },
-  {
-    id: "biology",
-    subject: "Biology",
-    title: "Mendelian Genetics",
-    tag: "Heredity & Alleles",
-    badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/40",
-    borderColor: "border-amber-500/30 hover:border-amber-400/80",
-    glowColor: "hover:shadow-md hover:shadow-amber-500/20",
-    formulaOrSnippet: "Bb × Bb  ⟹  1 BB : 2 Bb : 1 bb",
-    detail: "Classic 3:1 dominant to recessive phenotype ratio.",
-    accentBg: "bg-[#071328]/90",
-  },
-];
-
 export function HomeHero() {
   const heroConfig = HOMEPAGE_CONTENT_CONFIG.hero;
-  const [activeConceptId, setActiveConceptId] = useState<string>("math");
-
   const headline = resolveClaimValue(
     heroConfig.headline,
     "A Better Way to Learn, Practise and Achieve More."
@@ -134,7 +54,7 @@ export function HomeHero() {
           <div className="lg:col-span-6 space-y-4 sm:space-y-6 text-left">
             
             {/* One-Time Value Statement Reveal */}
-            <div className={styles.valueStatement}>
+            <div className={styles.valueStatementReveal}>
               {/* Category Pill */}
               <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-blue-400/30 bg-blue-900/40 px-3 py-1 sm:px-3.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300 shadow-2xs">
                 <span className="flex h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -142,23 +62,10 @@ export function HomeHero() {
               </div>
 
               {/* Authoritative Primary Headline with Coral Underline */}
-              <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12] sm:leading-[1.08] mt-3 sm:mt-4">
-                For every student,<br />
-                every classroom.<br />
-                <span className="relative inline-block text-cyan-400">
-                  Real exam results.
-                  {/* Organic coral underline accent */}
-                  <svg
-                    className="absolute -bottom-2 left-0 w-full h-3 text-[#FF5238]"
-                    viewBox="0 0 250 12"
-                    fill="none"
-                    preserveAspectRatio="none"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 9C60 3 190 2 247 8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                  </svg>
-                </span>
+              <h1 className="mt-3 max-w-2xl text-3xl font-black leading-[1.08] tracking-tight text-white sm:mt-4 sm:text-5xl lg:text-6xl">
+                {headline}
               </h1>
+              <span className="mt-4 block h-1 w-16 rounded-full bg-[#FF5238]" aria-hidden="true" />
 
               {/* High-Legibility Subheading (Concise on Mobile) */}
               <p className="text-xs sm:text-base lg:text-lg text-slate-300 leading-relaxed max-w-xl font-normal mt-3 sm:mt-4">
@@ -197,39 +104,12 @@ export function HomeHero() {
               </div>
             </div>
 
-            {/* Reassurance Badges (Visible on sm+ to prevent mobile clutter) */}
-            <div className="hidden sm:flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-300 pt-2">
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Official 8-Key CBT Simulator</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Step-by-Step Socratic Insights</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="h-4 w-4 text-emerald-400 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Verified NERDC Syllabus Aligned</span>
-              </span>
-            </div>
-
-            {/* Truthful Free Tier Disclosure */}
+            {/* One concise access reassurance; detailed proof belongs lower on the page. */}
             {disclosure && (
-              <p className="text-[11px] sm:text-xs text-slate-400 pt-0.5">
-                &bull; {disclosure}
+              <p className="max-w-xl text-[11px] sm:text-xs leading-relaxed text-slate-400 pt-1">
+                {disclosure}
               </p>
             )}
-
-            {/* Dynamic Live Statistics Slot (Rule S7 compliant, verified live aggregate data only) */}
-            <div className="pt-1">
-              <DynamicLiveStatisticsSlot />
-            </div>
           </div>
 
           {/* RIGHT / SIGNATURE CBT EXAM DEMONSTRATION */}
@@ -238,58 +118,12 @@ export function HomeHero() {
           </div>
         </div>
 
-        {/* Floating STEM Concept Cards Carousel (Horizontal Swipable on Mobile) */}
-        <div className="mt-8 sm:mt-16 pt-6 sm:pt-8 border-t border-white/10 animate-bl-fade-in bl-stagger-2">
-          <div className="text-center mb-4 sm:mb-6">
-            <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-widest text-slate-400">
-              Interactive First-Principles Learning &bull; Visual Concept Explorers
-            </span>
-          </div>
-
-          <div className="flex sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 text-left overflow-x-auto sm:overflow-visible scrollbar-none pb-2 sm:pb-0">
-            {BRILLIANT_HERO_CONCEPTS.map((concept) => {
-              const isSelected = activeConceptId === concept.id;
-              return (
-                <div
-                  key={concept.id}
-                  onClick={() => setActiveConceptId(concept.id)}
-                  className={`group relative rounded-2xl border ${concept.accentBg} p-3.5 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between min-w-[240px] sm:min-w-0 min-h-[190px] sm:min-h-[220px] shadow-sm hover:-translate-y-1 shrink-0 sm:shrink ${concept.borderColor} ${concept.glowColor} ${
-                    isSelected ? "ring-2 ring-cyan-400 scale-[1.02]" : "opacity-95 hover:opacity-100"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${concept.badgeColor}`}>
-                        {concept.subject}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {concept.tag}
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-black text-white tracking-tight">
-                      {concept.title}
-                    </h3>
-
-                    <div className="mt-3 rounded-xl bg-[#030814] border border-white/10 p-2.5 font-mono text-xs text-cyan-300 font-bold shadow-inner">
-                      {concept.formulaOrSnippet}
-                    </div>
-                  </div>
-
-                  <p className="mt-3 text-xs text-slate-300 leading-relaxed font-normal">
-                    {concept.detail}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* Downward Organic Curved SVG Transition to Light Surface */}
       <div className="relative w-full overflow-hidden leading-none z-10 -mb-[1px] pointer-events-none" aria-hidden="true">
         <svg
-          className="relative block w-full h-10 sm:h-16 lg:h-20 text-white"
+          className="relative block w-full h-10 sm:h-16 lg:h-20 text-white dark:text-[#060D20]"
           viewBox="0 0 1440 100"
           preserveAspectRatio="none"
         >
