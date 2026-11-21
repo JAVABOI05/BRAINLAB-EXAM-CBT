@@ -7,6 +7,7 @@ on:
       - phase0-hardening
       - fix/learning-hub-assessment-atomicity
       - arena/full-implementation
+      - feat/candidate-session-recovery
 
 permissions:
   contents: read
