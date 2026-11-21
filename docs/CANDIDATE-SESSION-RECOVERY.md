@@ -41,7 +41,7 @@ Use dedicated test candidates and test PINs only.
 ## Release gates
 
 - Run `npm run test:session-recovery`, `npm run typecheck`, the existing offline-sync test and the full project verification/build.
-- Apply `supabase/migrations/20261121120000_candidate_session_recovery.sql` to **staging only** after reviewing the migration.
+- Apply `supabase/migrations/20261121205732_candidate_session_recovery.sql` to **staging only** after reviewing the migration.
 - Test the staging application against the staging Supabase project with dedicated test records.
 - Inspect the resulting diff and staging test evidence.
 - Obtain explicit approval before merging, applying any production migration, or deploying.
