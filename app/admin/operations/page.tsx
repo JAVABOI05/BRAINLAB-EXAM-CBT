@@ -205,7 +205,21 @@ export default function InstitutionalOperationsPage() {
         setMessage(`Session sync failed: ${data.message || data.error || "Unable to verify session"}`);
         return;
       }
-      setMessage(data.message || `Server verified ${data.questionsAnswered || 0} saved answers for session ${sessionId}.`);
+      const answered = Number.isFinite(Number(data.questionsAnswered)) ? Number(data.questionsAnswered) : 0;
+      const total = Number.isFinite(Number(data.totalQuestions)) ? Number(data.totalQuestions) : 0;
+      const seconds = Number.isFinite(Number(data.timeLeftSeconds)) ? Math.max(0, Number(data.timeLeftSeconds)) : 0;
+      const remaining = `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+      const savedAt = data.lastSavedAt && Number.isFinite(Date.parse(data.lastSavedAt))
+        ? new Date(data.lastSavedAt).toLocaleString()
+        : "No server checkpoint timestamp";
+      const state = data.finished
+        ? `Session status: ${data.status || "finished"}`
+        : data.deadlineElapsed
+          ? "Deadline elapsed — recovery unavailable"
+          : data.recoveryAvailable
+            ? "Candidate can re-enter with the original phone number and PIN"
+            : `Session status: ${data.status || "unknown"}`;
+      setMessage(`Sync verified: ${answered}/${total} answers saved • ${remaining} remaining • Last save: ${savedAt}. ${state}. ${data.message || ""}`);
       await fetchLiveSessions();
     } catch {
       setMessage("Network error synchronising candidate session.");
