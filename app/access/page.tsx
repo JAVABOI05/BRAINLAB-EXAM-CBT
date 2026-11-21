@@ -222,7 +222,7 @@ export default function AccessPage() {
         "candidate",
         JSON.stringify({
           ...candidateData,
-          name: candidateData.name || result.candidate_name || "",
+          name: candidateData.name || "",
           phone: trimmedPhone,
           subject: candidateData.subject || existingSubjects[1] || "Mathematics",
           subjects: existingSubjects,
