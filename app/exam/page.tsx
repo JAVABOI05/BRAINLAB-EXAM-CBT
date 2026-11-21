@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getPublicSettings, isError, recordTabSwitch, resumeExam, saveProgress, startExam, submitExam, type AttemptPayload, type FinishedPayload, type Option, type PaperQuestion } from "../lib/examApi";
-import { queueExamSubmission, queueProgress } from "../lib/offlineSync";
+import { clearQueuedProgress, getQueuedProgress, queueExamSubmission, queueProgress } from "../lib/offlineSync";
 import FloatingCalculator from "../components/FloatingCalculator";
 import { useLearnerTheme } from "../components/LearnerThemeProvider";
 import { cleanQuestionText } from "../lib/cleanText";
@@ -363,17 +363,19 @@ export default function ExamPage() {
         } else {
           const attempt: AttemptPayload = resumed as AttemptPayload;
           setQuestions(attempt.questions);
-          let mergedAnswers = attempt.answers || {};
-          try {
-            const localAns = localStorage.getItem("exam_answers");
-            if (localAns) {
-              const parsed = JSON.parse(localAns);
-              if (parsed && typeof parsed === "object") {
-                mergedAnswers = { ...mergedAnswers, ...parsed };
-              }
+          let recoveredAnswers = attempt.answers || {};
+          const queuedProgress = getQueuedProgress();
+          const serverSavedAt = attempt.last_saved_at ? Date.parse(attempt.last_saved_at) : 0;
+          if (queuedProgress?.sessionId === attempt.session_id && queuedProgress.timestamp > serverSavedAt) {
+            // A queued offline snapshot is newer than the server checkpoint. Keep it
+            // visible immediately, then reconcile it with the server when possible.
+            recoveredAnswers = queuedProgress.answers || recoveredAnswers;
+            if (typeof navigator === "undefined" || navigator.onLine) {
+              const synced = await saveProgress(attempt.session_id, attempt.token, recoveredAnswers);
+              if (!isError(synced)) clearQueuedProgress();
             }
-          } catch {}
-          setAnswers(mergedAnswers);
+          }
+          setAnswers(recoveredAnswers);
 
           let restoredIndex = 0;
           try {
@@ -682,13 +684,29 @@ export default function ExamPage() {
       const code = activeCand.code || localStorage.getItem("access_code") || "";
       const res = await startExam(code, activeCand.name || "", activeCand.phone || "", finalElective, subjects);
       if (isError(res)) { setError(res.message); return; }
+      if (res.finished) {
+        storeFinished(res);
+        router.push("/result");
+        return;
+      }
+      let recoveredAnswers = res.answers || {};
+      const queuedProgress = getQueuedProgress();
+      const serverSavedAt = res.last_saved_at ? Date.parse(res.last_saved_at) : 0;
+      if (queuedProgress?.sessionId === res.session_id && queuedProgress.timestamp > serverSavedAt) {
+        recoveredAnswers = queuedProgress.answers || recoveredAnswers;
+        if (typeof navigator === "undefined" || navigator.onLine) {
+          const synced = await saveProgress(res.session_id, res.token, recoveredAnswers);
+          if (!isError(synced)) clearQueuedProgress();
+        }
+      }
       clearAttemptStorage();
       localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");
-      setQuestions(res.questions); setCurrentIndex(0); setAnswers(res.answers || {}); setFlagged({});
+      setQuestions(res.questions); setCurrentIndex(0); setAnswers(recoveredAnswers); setFlagged({});
       setSessionId(res.session_id); setSessionToken(res.token); setExamDuration(res.duration_seconds); setTimeLeft(res.time_left_seconds);
       setElectiveSubject(res.elective as ElectiveSubject); tabSwitchCountRef.current = res.tab_switch_count || 0;
       localStorage.setItem("exam_session_id", res.session_id); localStorage.setItem("exam_token", res.token); localStorage.setItem("selectedElective", res.elective);
       setStarted(true);
+      setResumedNotice(res.resumed ? "Your previous examination has been restored. Your saved answers and original timer have been recovered." : null);
     } catch (err) { setError(err instanceof Error ? err.message : "Failed to start the exam."); }
     finally { setLoading(false); }
   };
