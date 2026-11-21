@@ -431,7 +431,7 @@ export function HomeAudiences() {
                       </div>
                     </div>
 
-                    {/* Dynamic Radial Admission Gauge Preview */}
+                    {/* Personal preparation goal preview */}
                     <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-b from-cyan-50 to-white p-4 text-center">
                       <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         Preparation Goal Preview
@@ -444,11 +444,11 @@ export function HomeAudiences() {
                           : "Build-up Goal"}
                       </div>
                       <p className="text-[11px] text-cyan-800 mt-1 font-medium">
-                        "Use this as a personal practice goal, not an admission prediction. Admission depends on your course, institution, subject combination, O’Level results, and current screening rules."
+                        Use this as a personal practice goal, not an admission prediction. Admission depends on your course, institution, subject combination, O’Level results, and current screening rules.
                       </p>
                     </div>
 
-                    {/* Target Institutions Status */}
+                    {/* Admission planning reminder */}
                     <div className="space-y-2">
                       <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                         Admission planning reminder
@@ -465,12 +465,10 @@ export function HomeAudiences() {
                       </div>
                     </div>
 
-                    <p className="text-[10px] leading-relaxed text-slate-600">This is an example calculation only. Do not treat it as an institution’s official aggregate formula or an admission prediction.</p>
-
                     <div className="pt-1">
                       <div className="text-[10px] text-slate-600 font-mono flex items-center justify-between">
                         <span>Standard 4-Subject Blueprints</span>
-                        <span className="text-emerald-600 font-bold">● 100% 8-Key Ready</span>
+                        <span className="text-emerald-600 font-bold">● 8-Key Controls</span>
                       </div>
                     </div>
                   </div>
@@ -605,7 +603,7 @@ export function HomeAudiences() {
                           Illustrative Aggregate Estimate
                         </span>
                         <span className="text-xs font-black text-amber-600">
-                          {targetUni.toUpperCase()} Model
+                          {targetUni.toUpperCase()} · Sample
                         </span>
                       </div>
 
@@ -635,9 +633,11 @@ export function HomeAudiences() {
                       </div>
                     </div>
 
+                    <p className="text-[10px] leading-relaxed text-slate-600">Illustrative calculation only: this is not the selected university’s official aggregate formula or an admission prediction. Confirm the current screening format and scoring rules with the institution.</p>
+
                     <div className="rounded-lg bg-amber-100/70 border border-amber-300 p-2.5 text-[11px] text-amber-900 flex items-center justify-between">
-                      <span>Timed Sprint Mode:</span>
-                      <span className="font-mono font-bold">30 Mins &bull; 40 Questions</span>
+                      <span>Practice guidance:</span>
+                      <span className="font-mono font-bold">Check current screening format</span>
                     </div>
                   </div>
                 )}
