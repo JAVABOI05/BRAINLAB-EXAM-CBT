@@ -71,6 +71,12 @@ check(
 );
 
 check(
+  "Active papers are not discarded because their question count differs from 180",
+  !examPage.includes("questions.length < 180") &&
+    examPage.includes("Never discard an active attempt because its question count differs")
+);
+
+check(
   "Candidate recovery handles already-finished attempts and restores newer queued offline answers",
   examPage.includes("if (res.finished)") &&
     examPage.includes("getQueuedProgress()") &&
