@@ -7,6 +7,7 @@ import { supabase } from "../../lib/supabase";
 
 interface AssessmentInfo {
   id: string;
+  slug: string;
   title: string;
   description?: string;
   assessment_type: "organisation_quiz" | "competition" | "academic_quiz" | "topic_test" | "subject_assessment" | "general_quiz" | "custom_assessment";
@@ -66,9 +67,10 @@ export default function AssessmentRunnerPage() {
 
       const { data, error: err } = await supabase
         .from("learning_assessments")
-        .select("id, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
-        .eq("id", assessmentId)
+        .select("id, slug, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
         .eq("is_published", true)
+        .eq("is_published", true)
+        [UUID_PATTERN]
         .single();
 
       if (!active) return;
