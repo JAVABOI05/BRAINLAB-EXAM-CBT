@@ -64,6 +64,18 @@ export function HomeStemStudio() {
 
   const isCircuitLit = computeOutput(gate, inputA, inputB);
 
+  // Ideal projectile model: level launch and landing, with air resistance ignored.
+  const initialSpeed = 30; // m/s
+  const gravity = 9.8; // m/s²
+  const angleRadians = (launchAngle * Math.PI) / 180;
+  const flightRange = (initialSpeed ** 2 * Math.sin(2 * angleRadians)) / gravity;
+  const apexHeight = (initialSpeed ** 2 * Math.sin(angleRadians) ** 2) / (2 * gravity);
+  const maxFlightRange = initialSpeed ** 2 / gravity;
+  const maxApexHeight = initialSpeed ** 2 / (2 * gravity);
+  const targetX = 50 + (flightRange / maxFlightRange) * 380;
+  const apexX = (50 + targetX) / 2;
+  const apexY = 150 - (apexHeight / maxApexHeight) * 120;
+
   return (
     <section
       id="stem-studio"
@@ -101,8 +113,8 @@ export function HomeStemStudio() {
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                   </svg>
                   <div>
-                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">60 FPS Motion</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Zero lag physics</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Interactive Motion</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Adjust variables and observe</div>
                   </div>
                 </div>
 
@@ -123,8 +135,8 @@ export function HomeStemStudio() {
                     <line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
                   <div>
-                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Instant Load</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Low data overhead</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">Guided Preview</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Explore before launching</div>
                   </div>
                 </div>
               </div>
@@ -367,7 +379,7 @@ export function HomeStemStudio() {
                         </div>
                         <p className="text-[11px] text-slate-400">
                           {physicsSubMode === "kinematics"
-                            ? "Simulate parabolic projectile motion and gravitational trajectory in real-time"
+                            ? "Explore how launch angle changes a projectile’s ideal trajectory"
                             : "Interactive thin lens ray-tracing, focal planes, and optical magnification"}
                         </p>
                       </div>
@@ -446,13 +458,7 @@ export function HomeStemStudio() {
                             
                             {/* Trajectory Parabola */}
                             <path
-                              d={
-                                launchAngle === 30
-                                  ? "M 50 150 Q 240 70 430 150"
-                                  : launchAngle === 45
-                                  ? "M 50 150 Q 240 25 430 150"
-                                  : "M 50 150 Q 200 10 350 150"
-                              }
+                              d={`M 50 150 Q ${apexX} ${2 * apexY - 150} ${targetX} 150`}
                               stroke="#0284c7"
                               strokeWidth="3"
                               strokeDasharray="6,4"
@@ -463,13 +469,11 @@ export function HomeStemStudio() {
                             <circle cx="50" cy="150" r="10" fill="#2563eb" />
                             
                             {/* Moving Projectile Particle */}
-                            <circle cx={launchAngle === 60 ? "200" : "240"} cy={launchAngle === 45 ? "35" : launchAngle === 60 ? "20" : "75"} r="7" fill="#f59e0b">
-                              <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite" />
-                            </circle>
+                            <circle cx={apexX} cy={apexY} r="7" fill="#f59e0b" className="animate-pulse" />
 
                             {/* Target Flag */}
-                            <circle cx={launchAngle === 60 ? "350" : "430"} cy="150" r="6" fill="#10b981" />
-                            <text x={launchAngle === 60 ? "335" : "415"} y="170" fill="#10b981" fontSize="11" fontWeight="bold">Target</text>
+                            <circle cx={targetX} cy="150" r="6" fill="#10b981" />
+                            <text x={Math.min(targetX - 15, 440)} y="170" fill="#10b981" fontSize="11" fontWeight="bold">Target</text>
                             <text x="50" y="170" fill="#64748b" fontSize="10">Origin (0m)</text>
                           </svg>
                         </div>
@@ -477,17 +481,18 @@ export function HomeStemStudio() {
                         <div className="grid grid-cols-3 gap-2 text-center">
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Apex Height</div>
-                            <div className="text-sm font-black text-blue-600">{launchAngle === 45 ? "22.5 m" : launchAngle === 60 ? "31.2 m" : "14.8 m"}</div>
+                            <div className="text-sm font-black text-blue-600">{apexHeight.toFixed(1)} m</div>
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Flight Range</div>
-                            <div className="text-sm font-black text-emerald-400">{launchAngle === 45 ? "92.0 m (Max)" : launchAngle === 60 ? "76.4 m" : "80.1 m"}</div>
+                            <div className="text-sm font-black text-emerald-400">{flightRange.toFixed(1)} m</div>
                           </div>
                           <div className="bg-[#070D1B]/60 border border-slate-200 rounded-xl p-2.5 shadow-xs">
                             <div className="text-[10px] text-slate-400 uppercase font-bold">Equation</div>
-                            <div className="text-xs font-mono font-bold text-amber-600">y = v₀t - ½gt²</div>
+                            <div className="text-xs font-mono font-bold text-amber-600">H = v₀²sin²θ / 2g</div>
                           </div>
                         </div>
+                        <p className="text-[10px] text-slate-400 text-center">Assumes an ideal projectile launched and landing at the same height; air resistance is ignored. Initial speed: 30 m/s.</p>
                       </>
                     ) : (
                       /* Simulation 2: Brilliant Optics & Convex Lens Ray Tracing */
