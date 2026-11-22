@@ -68,6 +68,7 @@ export default function CBTExamPortalPage() {
     allow_admin_bypass?: boolean;
   } | null>(null);
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
+  const [premiumMockOnly, setPremiumMockOnly] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [whatsappConfigLoaded, setWhatsappConfigLoaded] = useState(false);
 
@@ -138,13 +139,18 @@ export default function CBTExamPortalPage() {
         if (active) {
           if (user) {
             setCurrentUser(user);
-            getStudentSubscriptionAndEntitlements(user.id)
-              .then((ent) => {
-                if (active && (ent.isSubscribed || ent.entitlements.cbt_access)) {
-                  setHasServerCbtAccess(true);
-                }
-              })
-              .catch(() => {});
+            try {
+              const ent = await getStudentSubscriptionAndEntitlements(user.id);
+              if (
+                active &&
+                ent.isSubscribed &&
+                ["premium", "plus", "pro", "apex", "admin_vip"].includes(String(ent.planId || "").toLowerCase())
+              ) {
+                setHasServerCbtAccess(true);
+              }
+            } catch {
+              // The server remains authoritative; a failed lookup must not grant premium access.
+            }
             const userFullName =
               user.user_metadata?.full_name ||
               user.user_metadata?.name ||
@@ -236,20 +242,29 @@ export default function CBTExamPortalPage() {
           }
         }
 
-        // 3. Check public exam settings
-        const { data: settingsData } = await supabase.rpc("get_public_settings");
+        // 3. Load the current access policy without relying on stale browser settings.
+        const policyResponse = await fetch("/api/exam/access-policy", { cache: "no-store" });
+        const policy = await policyResponse.json().catch(() => null);
+        if (active && policyResponse.ok && policy?.ok) {
+          setAccessCodeRequired(policy.access_code_required === true);
+          setPremiumMockOnly(policy.premium_mock_only === true);
+        } else {
+          // Compatibility fallback for access-code settings. The exam-start API
+          // independently enforces premium-only eligibility and fails closed.
+          const { data: settingsData } = await supabase.rpc("get_public_settings");
+          const settings = settingsData as { access_code_required?: unknown } | null;
+          if (active) {
+            setAccessCodeRequired(
+              settings ? settings.access_code_required === true || settings.access_code_required === "true" : true
+            );
+          }
+        }
         try {
           const annRes = await fetch("/api/announcements/active").then((r) => r.json());
           if (active && annRes?.maintenance?.active) {
             setMaintenanceNotice(annRes.maintenance);
           }
         } catch {}
-        const settings = settingsData as { access_code_required?: unknown } | null;
-        if (active) {
-          setAccessCodeRequired(
-            settings ? settings.access_code_required === true || settings.access_code_required === "true" : true
-          );
-        }
       } catch (err) {
         console.warn("Could not check session or settings:", err);
       } finally {
@@ -376,7 +391,15 @@ export default function CBTExamPortalPage() {
       return;
     }
 
-    let codeToUse = examCodeInput.trim().toUpperCase() || localStorage.getItem("access_code") || (hasServerCbtAccess ? "SUBSCRIPTION-ACTIVE" : "");
+    if (premiumMockOnly && !hasServerCbtAccess) {
+      toast.error("This mock is reserved for students with an active Premium, Plus, Pro or Apex subscription.");
+      setStarting(false);
+      return;
+    }
+
+    let codeToUse = accessCodeRequired && !hasServerCbtAccess
+      ? (examCodeInput.trim().toUpperCase() || localStorage.getItem("access_code") || "")
+      : "";
 
     // 2. If student typed a code that hasn't been verified yet, resolve it on-the-fly
     if (examCodeInput.trim() && (!resolvedExam || resolvedExam.code !== examCodeInput.trim().toUpperCase())) {
@@ -440,7 +463,7 @@ export default function CBTExamPortalPage() {
     setStarting(false);
 
     trackEvent("free_practice_started", {
-      mode: accessCodeRequired ? "code_practice" : "open_mock",
+      mode: accessCodeRequired && !hasServerCbtAccess ? "code_practice" : "open_mock",
       subjects_count: selectedSubjects.length,
     });
 
@@ -578,7 +601,7 @@ export default function CBTExamPortalPage() {
                     ⚡
                   </span>
                   <div>
-                    <h4 className="text-sm font-black">Pro / Plus Subscription Active — Unlimited CBT Practice</h4>
+                    <h4 className="text-sm font-black">Premium Subscription Active — Unlimited CBT Practice</h4>
                     <p className="text-xs text-emerald-800 dark:text-emerald-300">
                       Your account has verified CBT entitlements. You can practice without entering a single-use voucher code.
                     </p>
@@ -595,7 +618,15 @@ export default function CBTExamPortalPage() {
                   Configure 4 Subjects &amp; Start &darr;
                 </button>
               </div>
-            ) : (
+            ) : premiumMockOnly ? (
+              <div className="rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 p-5">
+                <h4 className="text-sm font-black text-rose-900 dark:text-rose-200">Premium subscription required</h4>
+                <p className="mt-1 text-xs leading-relaxed text-rose-800 dark:text-rose-300">
+                  This mock is currently restricted to students with an active Premium, Plus, Pro or Apex plan. Public/Free accounts and access vouchers alone cannot unlock it.
+                </p>
+                <a href="/subscription" className="mt-3 inline-flex rounded-xl bg-rose-700 px-4 py-2 text-xs font-bold text-white hover:bg-rose-800">View subscription plans</a>
+              </div>
+            ) : accessCodeRequired ? (
               <div className="flex flex-col md:flex-row items-stretch gap-3">
                 <div className="relative flex-1">
                   <input
@@ -608,7 +639,7 @@ export default function CBTExamPortalPage() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") void handleValidateExamCode();
                     }}
-                    placeholder="Enter CBT Access Voucher (e.g. BLT-XXXX-XXXX)"
+                    placeholder="Enter CBT Access Voucher (e.g. BL-2027-XXXXXX)"
                     className="w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950 px-4 py-3.5 text-sm font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white placeholder-slate-400 outline-none transition focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900"
                   />
                   {examCodeInput && (
@@ -631,18 +662,27 @@ export default function CBTExamPortalPage() {
                   <span>&rarr;</span>
                 </button>
               </div>
+            ) : (
+              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 p-5">
+                <h4 className="text-sm font-black text-emerald-900 dark:text-emerald-200">Open mock access</h4>
+                <p className="mt-1 text-xs leading-relaxed text-emerald-800 dark:text-emerald-300">
+                  The administrator has disabled access-code requirements. Complete your candidate details and proceed without a voucher.
+                </p>
+              </div>
             )}
 
             <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
               <span>Standard 180-Question 4-Subject Computerized Paper • 2 Hours</span>
-              <a
-                href={accessLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-blue-700 dark:text-cyan-400 hover:underline"
-              >
-                Need an access voucher? Contact Helpdesk &rarr;
-              </a>
+              {accessCodeRequired && !hasServerCbtAccess && !premiumMockOnly && (
+                <a
+                  href={accessLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-blue-700 dark:text-cyan-400 hover:underline"
+                >
+                  Need an access voucher? Contact Helpdesk &rarr;
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -938,8 +978,12 @@ export default function CBTExamPortalPage() {
             {/* Examination Access Pass Indicator */}
             <div className="mt-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between text-xs">
               <span className="text-slate-500 font-bold">Access Pass:</span>
-              {hasServerCbtAccess ? (
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">⚡ Pro/Plus Active — Instant Access</span>
+              {premiumMockOnly && !hasServerCbtAccess ? (
+                <span className="font-bold text-rose-700 dark:text-rose-400">Premium subscription required</span>
+              ) : hasServerCbtAccess ? (
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">⚡ Premium Plan Active — Instant Access</span>
+              ) : !accessCodeRequired ? (
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">Open mock access enabled</span>
               ) : examCodeInput ? (
                 <span className="font-mono font-bold text-blue-700 dark:text-cyan-400">Code: {examCodeInput} Attached</span>
               ) : (
@@ -950,7 +994,7 @@ export default function CBTExamPortalPage() {
             {/* Launch Action Button */}
             <button
               onClick={handleStartExam}
-              disabled={starting || Boolean(maintenanceNotice?.active) || (!currentUser && (!name.trim() || !phone.trim()))}
+              disabled={starting || Boolean(maintenanceNotice?.active) || (premiumMockOnly && !hasServerCbtAccess) || (!currentUser && (!name.trim() || !phone.trim()))}
               className="mt-4 w-full rounded-xl bg-[#012153] hover:bg-blue-900 py-3.5 text-center text-sm font-extrabold text-white shadow-lg transition active-press disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <span>{maintenanceNotice?.active ? "CBT Testing Engine Under Maintenance (Locked)" : (starting ? "Verifying…" : "Proceed to Examination Instructions")}</span><span aria-hidden="true">→</span>

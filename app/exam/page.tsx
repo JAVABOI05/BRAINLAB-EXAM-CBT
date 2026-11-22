@@ -302,7 +302,7 @@ export default function ExamPage() {
       catch { router.push("/"); return; }
       setCandidate(parsedCandidate);
       if (parsedCandidate.subject === "Biology" || parsedCandidate.subject === "Mathematics") setElectiveSubject(parsedCandidate.subject);
-      const settings = await getPublicSettings();
+      const settings = await getPublicSettings(true);
       if (!settings) { setError("Could not load exam settings. Check your connection and refresh the page."); return; }
       const duration = settings.exam_duration > 0 ? settings.exam_duration : DEFAULT_EXAM_DURATION;
       setExamDuration(duration); setTimeLeft(duration);
