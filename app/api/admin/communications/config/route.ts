@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         .select("id", { count: "exact", head: true })
         .eq("unsubscribed_all", true),
       supabase
-        .from("profiles")
+        .from("mail_contacts")
         .select("id", { count: "exact", head: true }),
     ]);
 

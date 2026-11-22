@@ -28,8 +28,15 @@ export interface SendEmailPayload {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
   replyTo?: string;
+  attachments?: Array<{
+    filename: string;
+    content?: string;
+    path?: string;
+  }>;
   tags?: { name: string; value: string }[];
+  allowSimulation?: boolean;
 }
 
 export interface SendEmailResult {
@@ -37,6 +44,20 @@ export interface SendEmailResult {
   messageId?: string;
   error?: string;
   simulated?: boolean;
+}
+
+/**
+ * Replace placeholders like {{first_name}}, {{subscription_plan}}, {{unsubscribe_url}}
+ */
+export function substituteTokens(template: string, tokens: Record<string, string | number | undefined | null>): string {
+  if (!template) return "";
+  let result = template;
+  for (const [key, val] of Object.entries(tokens)) {
+    const safeVal = val !== undefined && val !== null ? String(val) : "";
+    const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+    result = result.replace(regex, safeVal);
+  }
+  return result;
 }
 
 export interface WelcomeEmailParams {
@@ -74,7 +95,7 @@ const RESEND_API_ENDPOINT = "https://api.resend.com/emails";
 const DEFAULT_SENDER =
   process.env.RESEND_FROM_EMAIL ||
   (process.env.NODE_ENV === "production"
-    ? "BrainLab Academy <support@brainlabacademy.com.ng>"
+    ? "BrainLab Academy <noreply@mail.brainlabacademy.com.ng>"
     : "BrainLab Academy <onboarding@resend.dev>");
 const DEFAULT_REPLY_TO = "support@brainlabacademy.com.ng";
 
@@ -84,18 +105,30 @@ const DEFAULT_REPLY_TO = "support@brainlabacademy.com.ng";
  */
 export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailResult> {
   let apiKey = process.env.RESEND_API_KEY;
-  let sender = DEFAULT_SENDER;
-  let replyTo = DEFAULT_REPLY_TO;
+  let sender = payload.from || DEFAULT_SENDER;
+  let replyTo = payload.replyTo || DEFAULT_REPLY_TO;
 
   try {
     const config = await getCommunicationServicesConfig();
     if (config?.resend?.api_key) apiKey = config.resend.api_key;
-    if (config?.resend?.from_email) sender = config.resend.from_email;
-    if (config?.resend?.reply_to) replyTo = config.resend.reply_to;
+    if (!payload.from && config?.resend?.from_email) sender = config.resend.from_email;
+    if (!payload.replyTo && config?.resend?.reply_to) replyTo = config.resend.reply_to;
   } catch {}
 
-  // Graceful simulation fallback when no API key is configured
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // Strict check: Never simulate success in production when API key is missing
   if (!apiKey || apiKey.trim() === "") {
+    if (isProduction && !payload.allowSimulation) {
+      const err = "Configuration Error: RESEND_API_KEY is missing. Configure Resend API credentials in BrainLab Mail Centre settings.";
+      console.error(`[EmailService Error] ${err}`);
+      return {
+        success: false,
+        error: err,
+        simulated: false,
+      };
+    }
+
     console.warn(
       `[EmailService: Simulated Mode] RESEND_API_KEY is not set.\n` +
       `  Recipient : ${Array.isArray(payload.to) ? payload.to.join(", ") : payload.to}\n` +
@@ -111,21 +144,27 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
 
   try {
     const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
+    const bodyPayload: Record<string, unknown> = {
+      from: sender,
+      to: recipients,
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text,
+      reply_to: replyTo,
+      tags: payload.tags,
+    };
+
+    if (payload.attachments && payload.attachments.length > 0) {
+      bodyPayload.attachments = payload.attachments;
+    }
+
     const response = await fetch(RESEND_API_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: sender,
-        to: recipients,
-        subject: payload.subject,
-        html: payload.html,
-        text: payload.text,
-        reply_to: payload.replyTo || replyTo,
-        tags: payload.tags,
-      }),
+      body: JSON.stringify(bodyPayload),
     });
 
     const data = await response.json().catch(() => null);
