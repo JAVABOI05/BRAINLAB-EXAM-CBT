@@ -139,17 +139,18 @@ export default function CBTExamPortalPage() {
         if (active) {
           if (user) {
             setCurrentUser(user);
-            getStudentSubscriptionAndEntitlements(user.id)
-              .then((ent) => {
-                if (
-                  active &&
-                  ent.isSubscribed &&
-                  ["premium", "plus", "pro", "apex", "admin_vip"].includes(String(ent.planId || "").toLowerCase())
-                ) {
-                  setHasServerCbtAccess(true);
-                }
-              })
-              .catch(() => {});
+            try {
+              const ent = await getStudentSubscriptionAndEntitlements(user.id);
+              if (
+                active &&
+                ent.isSubscribed &&
+                ["premium", "plus", "pro", "apex", "admin_vip"].includes(String(ent.planId || "").toLowerCase())
+              ) {
+                setHasServerCbtAccess(true);
+              }
+            } catch {
+              // The server remains authoritative; a failed lookup must not grant premium access.
+            }
             const userFullName =
               user.user_metadata?.full_name ||
               user.user_metadata?.name ||
@@ -598,7 +599,7 @@ export default function CBTExamPortalPage() {
                     ⚡
                   </span>
                   <div>
-                    <h4 className="text-sm font-black">Pro / Plus Subscription Active — Unlimited CBT Practice</h4>
+                    <h4 className="text-sm font-black">Premium Subscription Active — Unlimited CBT Practice</h4>
                     <p className="text-xs text-emerald-800 dark:text-emerald-300">
                       Your account has verified CBT entitlements. You can practice without entering a single-use voucher code.
                     </p>
@@ -670,14 +671,16 @@ export default function CBTExamPortalPage() {
 
             <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
               <span>Standard 180-Question 4-Subject Computerized Paper • 2 Hours</span>
-              <a
-                href={accessLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-blue-700 dark:text-cyan-400 hover:underline"
-              >
-                Need an access voucher? Contact Helpdesk &rarr;
-              </a>
+              {accessCodeRequired && !hasServerCbtAccess && !premiumMockOnly && (
+                <a
+                  href={accessLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-blue-700 dark:text-cyan-400 hover:underline"
+                >
+                  Need an access voucher? Contact Helpdesk &rarr;
+                </a>
+              )}
             </div>
           </div>
         )}
