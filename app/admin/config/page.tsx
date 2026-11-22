@@ -433,7 +433,7 @@ export default function AdminConfigPage() {
                 <span>Restrict the full UTME mock to active paid subscribers</span>
               </label>
               <p className="admin-help">
-                When enabled, only accounts with an active Premium, Plus, Pro or Apex plan (and administrators) can start the mock. Public/Free accounts are blocked even if they have an access voucher. This does not change anyone's subscription.
+                When enabled, only accounts with an active Premium, Plus, Pro or Apex plan (and administrators) can start the mock. Public/Free accounts are blocked even if they have an access voucher. This does not change anyone&apos;s subscription.
               </p>
             </div>
 
