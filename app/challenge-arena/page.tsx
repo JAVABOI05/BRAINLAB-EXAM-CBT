@@ -179,6 +179,7 @@ export default function ChallengeArenaPage() {
 
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<"tournaments" | "challenges" | "teams" | "leaderboard" | "spectate">("tournaments");
+  const [showArenaNavMenu, setShowArenaNavMenu] = useState(false);
 
   // User state
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string } | null>(null);
@@ -703,51 +704,255 @@ export default function ChallengeArenaPage() {
   return (
     <div className={`min-h-screen font-sans transition-colors duration-200 ${isDark ? "bg-[#060B18] text-slate-100" : "bg-slate-50 text-slate-900"}`}>
       {/* ARENA TOP BAR */}
-      <header className={`sticky top-0 z-40 border-b backdrop-blur-md px-6 py-3.5 flex items-center justify-between ${isDark ? "bg-[#0B1536]/85 border-slate-800" : "bg-white/85 border-slate-200"}`}>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="p-2 rounded-lg hover:bg-slate-700/20 text-slate-400 hover:text-white transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          </Link>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black tracking-widest text-[#FF5238] uppercase">BRAINLAB</span>
-                <span className="text-xs px-2 py-0.5 rounded-full font-black bg-blue-500/20 text-blue-400 border border-blue-500/30">COMPETITION ARENA</span>
+      <header
+        className={`sticky top-0 z-40 border-b backdrop-blur-md px-4 sm:px-6 py-2.5 sm:py-3 transition-colors ${
+          isDark ? "bg-[#0B1536]/90 border-slate-800" : "bg-white/90 border-slate-200"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          {/* Left Brand & Back */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Link
+              href="/dashboard"
+              className={`p-2 rounded-xl border border-transparent transition ${
+                isDark
+                  ? "hover:border-slate-800 hover:bg-slate-800/60 text-slate-400 hover:text-white"
+                  : "hover:border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-900"
+              }`}
+              title="Back to Dashboard"
+              aria-label="Back to Dashboard"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20 shrink-0">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
               </div>
-              <p className="text-[11px] text-slate-400">Competitive Examination & Esports Learning Hub</p>
+              <div>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="text-[11px] sm:text-xs font-black tracking-widest text-[#FF5238] uppercase">
+                    BRAINLAB
+                  </span>
+                  <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-black bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                    COMPETITION ARENA
+                  </span>
+                </div>
+                <p className="hidden md:block text-[11px] text-slate-500 dark:text-slate-400 leading-none mt-0.5">
+                  Competitive Examination &amp; Esports Learning Hub
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          {currentUser ? (
-            <div className={`hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-2xl border text-xs font-bold ${isDark ? "bg-[#0D172E] border-slate-800" : "bg-slate-100 border-slate-200"}`}>
-              <span className={`px-2 py-0.5 rounded-md border font-black uppercase text-[10px] ${getTierColor(myRating?.tier || "Bronze")}`}>
-                {myRating?.tier || "Bronze"}
-              </span>
-              <span className="text-blue-500 font-mono font-black">{myRating?.elo_rating || 1200} ELO</span>
-              <span className="text-orange-500 font-mono flex items-center gap-1">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-                <span>{myRating?.win_streak || 0} Streak</span>
-              </span>
+          {/* Right Controls & Quick Nav */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {currentUser ? (
+              <div
+                className={`flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold ${
+                  isDark
+                    ? "bg-[#0D172E] border-slate-800 text-slate-200"
+                    : "bg-slate-100/90 border-slate-200 text-slate-800"
+                }`}
+              >
+                <span
+                  className={`px-2 py-0.5 rounded-md border font-black uppercase text-[10px] ${getTierColor(
+                    myRating?.tier || "Bronze"
+                  )}`}
+                >
+                  {myRating?.tier || "Bronze"}
+                </span>
+                <span className="text-blue-600 dark:text-blue-400 font-mono font-black">
+                  {myRating?.elo_rating || 1200} ELO
+                </span>
+                <span className="hidden sm:flex text-orange-500 font-mono items-center gap-1">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                  </svg>
+                  <span>{myRating?.win_streak || 0} Streak</span>
+                </span>
+              </div>
+            ) : (
+              <Link
+                href="/auth/signin?redirect=/challenge-arena"
+                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-xs"
+              >
+                Sign In to Compete
+              </Link>
+            )}
+
+            {/* Desktop Full Navigation Pill */}
+            <nav className="hidden xl:flex items-center gap-0.5 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/60 text-xs font-bold">
+              <Link
+                href="/challenge-arena/appeals"
+                className="px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-800 transition"
+              >
+                Appeals Centre
+              </Link>
+              <Link
+                href="/challenge-arena/team-requests"
+                className="px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-800 transition"
+              >
+                Team Requests
+              </Link>
+              <Link
+                href="/challenge-arena/rating-history"
+                className="px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-800 transition"
+              >
+                Rating History
+              </Link>
+              {currentUser && (
+                <Link
+                  href="/challenge-arena/profile"
+                  className="px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-800 transition"
+                >
+                  My Profile
+                </Link>
+              )}
+              {currentUser && (
+                <Link
+                  href="/challenge-arena/connections"
+                  className="px-2.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-800 transition"
+                >
+                  Connections
+                </Link>
+              )}
+            </nav>
+
+            {/* Responsive Dropdown Menu for non-xl screens */}
+            <div className="relative xl:hidden">
+              <button
+                type="button"
+                onClick={() => setShowArenaNavMenu((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl border text-xs font-bold transition bl-focus-ring cursor-pointer ${
+                  isDark
+                    ? "border-slate-800 bg-[#0D172E] text-slate-300 hover:bg-slate-800"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                }`}
+                aria-label="Arena quick navigation menu"
+                aria-expanded={showArenaNavMenu}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="19" cy="12" r="1" />
+                  <circle cx="5" cy="12" r="1" />
+                </svg>
+                <span className="hidden sm:inline">Hub</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className={`transition-transform duration-150 ${showArenaNavMenu ? "rotate-180" : ""}`}
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+
+              {showArenaNavMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowArenaNavMenu(false)}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className={`absolute right-0 mt-2 w-52 rounded-2xl border p-2 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100 ${
+                      isDark
+                        ? "bg-[#0D172E] border-slate-800 text-slate-200 shadow-black/50"
+                        : "bg-white border-slate-200 text-slate-800 shadow-slate-300/40"
+                    }`}
+                  >
+                    <div className="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200/50 dark:border-slate-800/80 mb-1">
+                      Arena Navigation
+                    </div>
+                    <Link
+                      href="/challenge-arena/appeals"
+                      onClick={() => setShowArenaNavMenu(false)}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-bold hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                      <span>Appeals Centre</span>
+                    </Link>
+                    <Link
+                      href="/challenge-arena/team-requests"
+                      onClick={() => setShowArenaNavMenu(false)}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-bold hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      <span>Team Requests</span>
+                    </Link>
+                    <Link
+                      href="/challenge-arena/rating-history"
+                      onClick={() => setShowArenaNavMenu(false)}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-bold hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      <span>Rating History</span>
+                    </Link>
+                    {currentUser && (
+                      <Link
+                        href="/challenge-arena/profile"
+                        onClick={() => setShowArenaNavMenu(false)}
+                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-bold hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>My Profile</span>
+                      </Link>
+                    )}
+                    {currentUser && (
+                      <Link
+                        href="/challenge-arena/connections"
+                        onClick={() => setShowArenaNavMenu(false)}
+                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-bold hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        <span>Connections</span>
+                      </Link>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
-            <Link href="/auth/signin?redirect=/challenge-arena" className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition">
-              Sign In to Compete
-            </Link>
-          )}
 
-          <Link href="/challenge-arena/appeals" className="hidden sm:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-300 transition">
-            Appeals Centre
-          </Link>
-          <Link href="/challenge-arena/team-requests" className="hidden md:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">Team Requests</Link>
-          <Link href="/challenge-arena/rating-history" className="hidden md:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">Rating History</Link>
-          {currentUser && <Link href="/challenge-arena/profile" className="hidden md:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">My Profile</Link>}
-          {currentUser && <Link href="/challenge-arena/connections" className="hidden lg:inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 transition">Connections</Link>}
-          <ArenaThemeToggle />
+            {/* Single Compact Box Theme Toggle */}
+            <ArenaThemeToggle compact={true} />
+          </div>
         </div>
       </header>
 
