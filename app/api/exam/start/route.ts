@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
+import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "../../../lib/supabaseServer";
+import { getStudentSubscriptionAndEntitlements } from "../../../lib/subscriptionEntitlements";
 import crypto from "crypto";
 import { generateExamPaper, freezeAttemptSnapshot, resolveUtme4Subjects, isAcademicSubject } from "../../../lib/examEngine";
 import { getMaintenanceModeConfig } from "../../../lib/platformConfig";
@@ -45,7 +46,69 @@ export async function POST(request: NextRequest) {
     const cleanName = String(name || "").trim() || "Candidate";
     const cleanPhone = String(phone || "").trim() || "08000000000";
 
-    // 1. Check access code if required
+    // Resolve the access policy from the same exam_config rows the admin panel edits.
+    // Do not trust the browser's local state or a cached public-settings response.
+    const { data: policyRows, error: policyError } = await supabase
+      .from("exam_config")
+      .select("config_key, config_value")
+      .in("config_key", ["access_code_required", "premium_mock_only"]);
+
+    if (policyError) {
+      console.error("[exam/start] Access policy lookup failed:", policyError.message);
+      return NextResponse.json(
+        { ok: false, error: "access_policy_unavailable", message: "Exam access settings are temporarily unavailable. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
+    const policyValues = new Map((policyRows || []).map((row) => [row.config_key, row.config_value]));
+    const readPolicyBoolean = (value: unknown, fallback: boolean) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") return value.trim().toLowerCase() === "true";
+      return fallback;
+    };
+    const accessCodeRequired = readPolicyBoolean(policyValues.get("access_code_required"), true);
+    const premiumMockOnly = readPolicyBoolean(policyValues.get("premium_mock_only"), false);
+
+    // A premium entitlement is verified on the server against the authenticated user.
+    // Free/public CBT entitlements are deliberately not treated as a paid mock plan.
+    let hasPremiumMockAccess = false;
+    if (registeredUser) {
+      try {
+        const adminRole = await resolveAdminRole(registeredUser.id);
+        if (adminRole) {
+          hasPremiumMockAccess = true;
+        } else {
+          const entitlement = await getStudentSubscriptionAndEntitlements(registeredUser.id);
+          hasPremiumMockAccess =
+            entitlement.isSubscribed &&
+            ["premium", "plus", "pro", "apex", "admin_vip"].includes(String(entitlement.planId || "").toLowerCase());
+        }
+      } catch (entitlementError) {
+        console.error("[exam/start] Could not verify premium mock eligibility:", entitlementError);
+      }
+    }
+
+    if (premiumMockOnly && !hasPremiumMockAccess) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "premium_plan_required",
+          message: "This mock is reserved for students with an active Premium, Plus, Pro or Apex subscription.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (accessCodeRequired && !cleanCode && !hasPremiumMockAccess) {
+      return NextResponse.json(
+        { ok: false, error: "access_code_required", message: "A valid examination access code is required before starting this mock." },
+        { status: 403 }
+      );
+    }
+
+    // 1. Validate a supplied access code. When codes are disabled, an empty
+    // code is a valid launch; a supplied code is still validated and consumed.
     let isMasterCode = false;
     let preconfiguredSubject: string | null = null;
     let codeRecordId: string | null = null;
