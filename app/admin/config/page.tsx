@@ -206,31 +206,35 @@ export default function AdminConfigPage() {
   }
 
   async function saveConfigRow(configKey: string, configValue: unknown) {
-    const payload = {
-      config_key: configKey,
-      config_value: configValue,
-      updated_at: new Date().toISOString(),
-    };
+    if (configKey === "access_code_required" || configKey === "premium_mock_only") {
+      const { data: authData } = await supabase.auth.getSession();
+      const accessToken = authData.session?.access_token;
+      if (!accessToken) throw new Error(`${configKey}: your administrator session has expired. Please sign in again.`);
 
-    if (configKey === "premium_mock_only") {
-      // This policy is a new config key on older environments; upsert creates it
-      // once and then updates it on subsequent saves (config_key is unique).
-      const { error } = await supabase
-        .from("exam_config")
-        .upsert(payload, { onConflict: "config_key" });
-      if (error) throw new Error(`${configKey}: ${error.message}`);
+      const response = await fetch("/api/admin/exam-access-policy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ key: configKey, value: configValue }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.ok) {
+        throw new Error(`${configKey}: ${result?.message || "The setting could not be saved."}`);
+      }
       return;
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("exam_config")
-      .update({ config_value: configValue, updated_at: payload.updated_at })
-      .eq("config_key", configKey)
-      .select("config_key")
-      .maybeSingle();
+      .update({
+        config_value: configValue,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("config_key", configKey);
 
     if (error) throw new Error(`${configKey}: ${error.message}`);
-    if (!data) throw new Error(`${configKey}: no configuration row was updated. Check admin permissions and refresh the page.`);
   }
 
   async function handleSave() {
