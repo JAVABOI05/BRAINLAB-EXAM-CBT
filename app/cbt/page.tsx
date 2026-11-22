@@ -397,7 +397,9 @@ export default function CBTExamPortalPage() {
       return;
     }
 
-    let codeToUse = examCodeInput.trim().toUpperCase() || (hasServerCbtAccess ? "" : (localStorage.getItem("access_code") || ""));
+    let codeToUse = accessCodeRequired && !hasServerCbtAccess
+      ? (examCodeInput.trim().toUpperCase() || localStorage.getItem("access_code") || "")
+      : "";
 
     // 2. If student typed a code that hasn't been verified yet, resolve it on-the-fly
     if (examCodeInput.trim() && (!resolvedExam || resolvedExam.code !== examCodeInput.trim().toUpperCase())) {
