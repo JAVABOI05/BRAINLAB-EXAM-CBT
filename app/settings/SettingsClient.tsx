@@ -7,6 +7,8 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getAuthRedirectUrl } from "../lib/authRedirect";
 import { useLearnerTheme, type AppearancePreference } from "../components/LearnerThemeProvider";
+import PasswordStrengthMeter from "@/app/components/ui/PasswordStrengthMeter";
+import { evaluatePasswordStrength } from "@/app/lib/passwordStrength";
 import {
   isNotificationSupported,
   getDeviceNotificationPermission,
@@ -127,6 +129,26 @@ export default function LearnerSettingsClient() {
   const [resetMessage, setResetMessage] = useState("");
   const [resetError, setResetError] = useState("");
 
+  // Direct Password Change State
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordChangeBusy, setPasswordChangeBusy] = useState(false);
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState("");
+  const [passwordChangeError, setPasswordChangeError] = useState("");
+
+  // Email Change State
+  const [newEmailAddress, setNewEmailAddress] = useState("");
+  const [emailChangeBusy, setEmailChangeBusy] = useState(false);
+  const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
+  const [emailChangeError, setEmailChangeError] = useState("");
+
+  // Session Security & Devices State
+  const [sessionActionBusy, setSessionActionBusy] = useState(false);
+  const [sessionActionMessage, setSessionActionMessage] = useState("");
+  const [sessionActionError, setSessionActionError] = useState("");
+
   // Privacy & Profile Customization State
   const [customName, setCustomName] = useState("");
   const [hideEmail, setHideEmail] = useState(true);
@@ -236,6 +258,106 @@ export default function LearnerSettingsClient() {
       setResetError("We could not contact the account service. Check your connection and try again.");
     } finally {
       setResetBusy(false);
+    }
+  }
+
+  async function handleDirectPasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordChangeError("");
+    setPasswordChangeSuccess("");
+
+    if (!newPassword) {
+      setPasswordChangeError("Please enter a new password.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordChangeError("Passwords do not match. Please ensure both fields are identical.");
+      return;
+    }
+
+    const strength = evaluatePasswordStrength(newPassword, "student");
+    if (!strength.isValid) {
+      setPasswordChangeError(strength.feedback || "Password must be at least 8 characters long.");
+      return;
+    }
+
+    setPasswordChangeBusy(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        setPasswordChangeError(error.message);
+        return;
+      }
+
+      setPasswordChangeSuccess("Your password has been changed successfully! Keep it safe.");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      setPasswordChangeError("Could not update password. Please check your connection and try again.");
+    } finally {
+      setPasswordChangeBusy(false);
+    }
+  }
+
+  async function handleEmailChange(e: React.FormEvent) {
+    e.preventDefault();
+    setEmailChangeError("");
+    setEmailChangeSuccess("");
+
+    const clean = newEmailAddress.trim().toLowerCase();
+    if (!clean || !clean.includes("@")) {
+      setEmailChangeError("Please enter a valid new email address (e.g. name@gmail.com).");
+      return;
+    }
+
+    if (clean === user?.email?.toLowerCase()) {
+      setEmailChangeError("The new email address cannot be the same as your current email.");
+      return;
+    }
+
+    setEmailChangeBusy(true);
+    try {
+      const { error } = await supabase.auth.updateUser(
+        { email: clean },
+        { emailRedirectTo: getAuthRedirectUrl("/auth/callback") }
+      );
+
+      if (error) {
+        setEmailChangeError(error.message);
+        return;
+      }
+
+      setEmailChangeSuccess(
+        `Confirmation emails sent to both ${user?.email} and ${clean}. Please click the verification link in both inboxes to complete the change.`
+      );
+      setNewEmailAddress("");
+    } catch {
+      setEmailChangeError("Could not submit email change request. Please try again later.");
+    } finally {
+      setEmailChangeBusy(false);
+    }
+  }
+
+  async function handleSignOutAllOtherDevices() {
+    setSessionActionBusy(true);
+    setSessionActionError("");
+    setSessionActionMessage("");
+
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "others" });
+      if (error) {
+        setSessionActionError(error.message);
+        return;
+      }
+      setSessionActionMessage("Successfully signed out of all other active sessions and devices!");
+    } catch {
+      setSessionActionError("Could not sign out of other devices. Please try again.");
+    } finally {
+      setSessionActionBusy(false);
     }
   }
 
@@ -412,7 +534,7 @@ export default function LearnerSettingsClient() {
     }
   }
 
-  async function signOut() {
+  async function signOut(scope: "local" | "global" = "local") {
     setSigningOut(true);
     try {
       localStorage.removeItem("candidate");
@@ -430,7 +552,7 @@ export default function LearnerSettingsClient() {
     } catch {
       // Continue with account sign-out if the optional operator cookie cannot be cleared.
     }
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope });
     router.replace("/account");
     router.refresh();
   }
@@ -1036,17 +1158,232 @@ export default function LearnerSettingsClient() {
         </section>
 
         {/* 4. Password & Security */}
-        <section aria-labelledby="security-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex items-start gap-4"><span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800"><SettingsIcon name="lock" className="h-6 w-6" /></span><div><h2 id="security-heading" className="text-xl font-extrabold">Password and security</h2><p className="mt-1 text-sm leading-6 text-slate-600">Send a password recovery link to the email address on this account. BrainLab will not display or ask you to share your current password here.</p></div></div>
-          <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" disabled={resetBusy || !user?.email} onClick={() => void sendPasswordReset()} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0b2a5b] px-4 py-2 text-sm font-extrabold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60">{resetBusy ? "Sending recovery link…" : "Email me a password reset link"}</button><Link href="/account" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Account sign-in</Link></div>
-          {resetError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{resetError}</p>}
-          {resetMessage && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{resetMessage}</p>}
+        <section aria-labelledby="security-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 space-y-6">
+          <div className="flex items-start gap-4">
+            <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+              <SettingsIcon name="lock" className="h-6 w-6" />
+            </span>
+            <div>
+              <h2 id="security-heading" className="text-xl font-extrabold text-slate-900">Password and security</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Update your account password, manage your registered email address, or send an account recovery link.
+              </p>
+            </div>
+          </div>
+
+          {/* Sub-item A: Direct In-App Password Change */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6 space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Change Account Password</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Set a strong password containing at least 8 characters.
+              </p>
+            </div>
+
+            {passwordChangeError && (
+              <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                {passwordChangeError}
+              </p>
+            )}
+            {passwordChangeSuccess && (
+              <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                {passwordChangeSuccess}
+              </p>
+            )}
+
+            <form onSubmit={handleDirectPasswordChange} className="space-y-4 max-w-lg">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 8 characters"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 pr-10 min-h-[42px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
+                <PasswordStrengthMeter password={newPassword} role="student" />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700">Confirm New Password</label>
+                  {newPassword && confirmPassword && (
+                    <span className={`text-[11px] font-bold ${newPassword === confirmPassword ? "text-emerald-600" : "text-amber-600"}`}>
+                      {newPassword === confirmPassword ? "✓ Passwords match" : "✕ Do not match"}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 pr-10 min-h-[42px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={passwordChangeBusy || !newPassword || newPassword !== confirmPassword}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#0b2a5b] px-5 py-2 text-xs font-bold text-white hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {passwordChangeBusy ? "Updating Password…" : "Update Password"}
+              </button>
+            </form>
+          </div>
+
+          {/* Sub-item B: Change Registered Email Address */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6 space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Registered Email Address</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Current email: <strong className="text-slate-800">{user?.email || "Unavailable"}</strong>
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  Verified ✓
+                </span>
+              </p>
+            </div>
+
+            {emailChangeError && (
+              <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                {emailChangeError}
+              </p>
+            )}
+            {emailChangeSuccess && (
+              <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 leading-relaxed">
+                {emailChangeSuccess}
+              </p>
+            )}
+
+            <form onSubmit={handleEmailChange} className="space-y-3 max-w-lg">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">New Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={newEmailAddress}
+                  onChange={(e) => setNewEmailAddress(e.target.value)}
+                  placeholder="new-address@example.com"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 min-h-[42px]"
+                />
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Security note: Both your current address and the new address will receive verification links that must be clicked to complete the transfer.
+              </p>
+              <button
+                type="submit"
+                disabled={emailChangeBusy || !newEmailAddress}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {emailChangeBusy ? "Sending Verification…" : "Send Email Change Verification"}
+              </button>
+            </form>
+          </div>
+
+          {/* Sub-item C: Forgotten Password Recovery Email */}
+          <div className="pt-2 border-t border-slate-100">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Alternative Recovery Option</h3>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={resetBusy || !user?.email}
+                onClick={() => void sendPasswordReset()}
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {resetBusy ? "Sending recovery link…" : "Email me a password reset link instead"}
+              </button>
+              <Link href="/account" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                Account sign-in
+              </Link>
+            </div>
+            {resetError && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-800">{resetError}</p>}
+            {resetMessage && <p role="status" className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-900">{resetMessage}</p>}
+          </div>
         </section>
 
-        {/* 5. Sign Out */}
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-rose-200 bg-rose-50 p-6 sm:p-8">
-          <div><h2 className="text-lg font-extrabold text-rose-950">Sign out of BrainLab</h2><p className="mt-1 text-sm leading-6 text-rose-900">End this account session on this device.</p></div>
-          <button type="button" disabled={signingOut} onClick={() => void signOut()} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-extrabold text-rose-900 hover:bg-rose-100 disabled:opacity-60">{signingOut ? "Signing out…" : "Sign out"}</button>
+        {/* 5. Sessions & Sign Out */}
+        <section aria-labelledby="sessions-heading" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 space-y-6">
+          <div className="flex items-start gap-4">
+            <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-800">
+              <SettingsIcon name="lock" className="h-6 w-6" />
+            </span>
+            <div>
+              <h2 id="sessions-heading" className="text-xl font-extrabold text-slate-900">Active sessions &amp; sign out</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Manage your active logins. If you practised on a public CBT center terminal, cybercafe, or borrowed computer, you can sign out of all other sessions remotely.
+              </p>
+            </div>
+          </div>
+
+          {sessionActionError && (
+            <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+              {sessionActionError}
+            </p>
+          )}
+          {sessionActionMessage && (
+            <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+              {sessionActionMessage}
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Action 1: Sign out on this device */}
+            <div className="rounded-2xl border border-slate-200 p-4 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">This Device</h3>
+                <p className="text-xs text-slate-500 mt-1">End your session on this current browser window.</p>
+              </div>
+              <button
+                type="button"
+                disabled={signingOut}
+                onClick={() => void signOut('local')}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-60 transition"
+              >
+                {signingOut ? "Signing out…" : "Sign out on this device"}
+              </button>
+            </div>
+
+            {/* Action 2: Sign out from all other devices */}
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 flex flex-col justify-between space-y-3">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm font-bold text-amber-950">Other Devices &amp; Public Terminals</h3>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-200 text-amber-900">Cybercafe Mode</span>
+                </div>
+                <p className="text-xs text-amber-800/90 mt-1">Revoke access on all other phones, cybercafes, and public lab terminals while keeping this session open.</p>
+              </div>
+              <button
+                type="button"
+                disabled={sessionActionBusy}
+                onClick={() => void handleSignOutAllOtherDevices()}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-60 transition shadow-xs cursor-pointer"
+              >
+                {sessionActionBusy ? "Revoking Other Sessions…" : "Sign out of all other devices"}
+              </button>
+            </div>
+          </div>
         </section>
       </div>
     </main>
