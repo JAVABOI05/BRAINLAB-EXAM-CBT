@@ -5,6 +5,7 @@ import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG, getValidatedHomepageConfig, resolveClaimValue } from "@/app/lib/contentConfig";
 import { Accordion } from "@/app/components/ui/Accordion";
 import { useScrollReveal } from "@/app/lib/useScrollReveal";
+import "./home-motion.css";
 
 export function HomeFaqCta() {
   const validatedConfig = getValidatedHomepageConfig(HOMEPAGE_CONTENT_CONFIG);
@@ -130,9 +131,9 @@ export function HomeFaqCta() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <Link
                   href="/cbt"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400 hover:from-blue-500 hover:to-teal-300 text-slate-950 px-8 py-4 text-base font-black shadow-lg shadow-cyan-500/25 active:translate-y-0.5 transition-all bl-focus-ring min-h-[50px]"
+                  className="w-full sm:w-auto bl-home-cta-orange bl-focus-ring inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-black shadow-lg shadow-orange-500/25 active:translate-y-0.5 transition-all min-h-[50px]"
                 >
-                  <span>Start Candidate Preparation</span>
+                  <span>Start Free UTME Practice</span>
                   <span aria-hidden="true">&rarr;</span>
                 </Link>
 

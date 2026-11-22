@@ -26,7 +26,7 @@ async function main() {
       localStorage.setItem("brainlab-cookie-consent", "all");
     });
 
-    await page.goto("http://localhost:3000", { waitUntil: "networkidle" });
+    await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
 
     // Scroll smoothly down the page to trigger all scroll-reveal animations

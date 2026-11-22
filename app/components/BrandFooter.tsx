@@ -232,7 +232,7 @@ export default function BrandFooter() {
                   BrainLab Academy
                 </span>
                 <span className="text-[10px] font-bold tracking-wider text-slate-400 mt-1 uppercase">
-                  Excellence in CBT &amp; Learning
+                  Practise with purpose. Understand deeply. Progress with confidence.
                 </span>
               </div>
             </Link>
@@ -385,7 +385,7 @@ export default function BrandFooter() {
             <ul className="space-y-2.5 text-xs text-slate-400">
               <li>
                 <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/cbt">
-                  JAMB UTME CBT Simulator
+                  CBT Practice Simulator
                 </Link>
               </li>
               <li>
@@ -394,8 +394,8 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/ai-learning">
-                  AI Study Studio &amp; Diagnostics
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/challenge-arena">
+                  1v1 Challenge Arena
                 </Link>
               </li>
               <li>
@@ -404,13 +404,13 @@ export default function BrandFooter() {
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/live-classroom">
-                  Live Classroom Stage
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/ai-learning">
+                  AI Study Studio &amp; Diagnostics
                 </Link>
               </li>
               <li>
-                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/challenge-arena">
-                  1v1 Challenge Arena
+                <Link className="hover:text-white hover:translate-x-0.5 inline-block transition-all duration-150" href="/products/live-classroom">
+                  Live Classroom Stage
                 </Link>
               </li>
               <li>

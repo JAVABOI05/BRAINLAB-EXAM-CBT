@@ -95,6 +95,15 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     tierNote: "Core Curriculum Included",
   },
   {
+    id: "challenge-arena",
+    title: "Challenge Arena",
+    description: "Head-to-head live 1v1 academic sprint battles, daily quest streaks, and nationwide school rankings.",
+    targetId: "products",
+    badge: "Live 1v1",
+    badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
+    tierNote: "Free Daily Sprints",
+  },
+  {
     id: "stem-studio",
     title: "Virtual STEM Studio",
     description: "Interactive 3D molecular biology explorer, physics mechanics lab, and chemical dynamics simulations.",
@@ -120,15 +129,6 @@ export const EXPLORE_CARDS: ExploreCardItem[] = [
     badge: "Smart Board",
     badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60",
     tierNote: "Live Masterclasses",
-  },
-  {
-    id: "challenge-arena",
-    title: "Challenge Arena",
-    description: "Head-to-head live 1v1 academic sprint battles, daily quest streaks, and nationwide school rankings.",
-    targetId: "products",
-    badge: "Live 1v1",
-    badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800/60",
-    tierNote: "Free Daily Sprints",
   },
 ];
 

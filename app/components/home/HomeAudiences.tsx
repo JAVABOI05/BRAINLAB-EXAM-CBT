@@ -281,7 +281,7 @@ export function HomeAudiences() {
               Four Pillars of Examination Excellence
             </h2>
             <p className="mt-2 text-xs sm:text-base text-slate-600 leading-relaxed font-normal">
-              A continuous learning system built to replace blind cramming with first-principles mastery, authentic hall simulation, and precision diagnostic telemetry.
+              <span className="font-semibold text-slate-900">Practise with purpose. Understand deeply. Progress with confidence.</span> A continuous learning system built to replace blind cramming with first-principles mastery, authentic hall simulation, and precision diagnostic telemetry.
             </p>
           </div>
 

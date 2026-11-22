@@ -5,6 +5,7 @@ import Link from "next/link";
 import { HOMEPAGE_CONTENT_CONFIG } from "@/app/lib/contentConfig";
 import { DiagnosticScoreBarDemo } from "./DiagnosticScoreBarDemo";
 import { useScrollReveal } from "@/app/lib/useScrollReveal";
+import "./home-loop.css";
 
 function LoopStageIcon({ id, className = "h-4 w-4" }: { id: string; className?: string }) {
   switch (id) {
@@ -181,7 +182,7 @@ export function HomeBrainLabLoop(): React.JSX.Element {
                   onClick={() => setActiveStageId(stage.id)}
                   className={`group relative flex flex-col items-start p-2.5 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-all duration-200 bl-focus-ring cursor-pointer border-2 border-b-4 active:border-b-2 active:translate-y-0.5 shadow-sm ${
                     isSelected
-                      ? `bg-white text-slate-900 ${route.accentBorder}`
+                      ? `bg-white text-slate-900 ${route.accentBorder} bl-loop-node-active`
                       : "border-slate-200 bg-slate-50/70 hover:border-slate-300 text-slate-700"
                   }`}
                 >
@@ -223,10 +224,11 @@ export function HomeBrainLabLoop(): React.JSX.Element {
 
         {/* 2. THE EXPANSIVE EMPIRICAL LAB STAGE (CINEMATIC 2-COLUMN VIEW - ROCK-SOLID STATIC BOX) */}
         <div
+          key={activeStage.id}
           id={`panel-${activeStage.id}`}
           role="tabpanel"
           aria-labelledby={`tab-${activeStage.id}`}
-          className="relative rounded-3xl border-2 border-slate-200 bg-white p-5 sm:p-8 lg:p-10 shadow-sm transition-all overflow-hidden min-h-0 lg:min-h-[580px] flex flex-col justify-center dark:border-slate-800 dark:bg-slate-900/90"
+          className="bl-loop-grow relative rounded-3xl border-2 border-slate-200 bg-white p-5 sm:p-8 lg:p-10 shadow-sm transition-all overflow-hidden min-h-0 lg:min-h-[580px] flex flex-col justify-center dark:border-slate-800 dark:bg-slate-900/90"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch h-full">
             {/* LEFT COLUMN: Stage Identity, Narrative & Capabilities (Static height chassis) */}
@@ -589,7 +591,10 @@ export function HomeBrainLabLoop(): React.JSX.Element {
                         </div>
                         <div className="rounded-lg bg-slate-50  p-2 border border-slate-200">
                           <span className="text-slate-500 block">Sprint Duels</span>
-                          <span className="font-bold text-amber-600  text-xs">Synchronous 1v1</span>
+                          <span className="font-bold text-amber-600  text-xs inline-flex items-center gap-1">
+                            <span className="bl-loop-vs inline-block">⚔️</span>
+                            <span>Synchronous 1v1</span>
+                          </span>
                         </div>
                       </div>
                     </div>

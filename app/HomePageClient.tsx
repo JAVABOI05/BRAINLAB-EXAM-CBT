@@ -21,10 +21,10 @@ import {
 export const HOMEPAGE_PRODUCT_LINKS = [
   { href: "/products/cbt", label: "CBT Practice Simulator" },
   { href: "/products/learning-hub", label: "Curriculum Learning Hub" },
+  { href: "/products/challenge-arena", label: "Challenge Arena & Duels" },
   { href: "/products/stem-studio", label: "STEM Studio Virtual Labs" },
   { href: "/products/ai-learning", label: "AI Study Studio & Diagnostics" },
   { href: "/products/live-classroom", label: "Live Interactive Classroom" },
-  { href: "/products/challenge-arena", label: "Challenge Arena & Duels" },
 ];
 
 export const HOMEPAGE_AUDIENCE_LINKS = [
