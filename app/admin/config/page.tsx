@@ -93,6 +93,7 @@ export default function AdminConfigPage() {
   });
 
   const [accessCodeRequired, setAccessCodeRequired] = useState(true);
+  const [premiumMockOnly, setPremiumMockOnly] = useState(false);
   const [electiveEnabled, setElectiveEnabled] = useState(true);
   const [examSettings, setExamSettings] = useState<ExamSettings>({
     exam_duration_seconds: 7200,
@@ -183,7 +184,11 @@ export default function AdminConfigPage() {
       }
 
       if (row.config_key === "access_code_required") {
-        setAccessCodeRequired(Boolean(row.config_value));
+        setAccessCodeRequired(row.config_value === true || String(row.config_value).toLowerCase() === "true");
+      }
+
+      if (row.config_key === "premium_mock_only") {
+        setPremiumMockOnly(row.config_value === true || String(row.config_value).toLowerCase() === "true");
       }
 
       if (row.config_key === "elective_enabled") {
@@ -201,17 +206,31 @@ export default function AdminConfigPage() {
   }
 
   async function saveConfigRow(configKey: string, configValue: unknown) {
-    const { error } = await supabase
-      .from("exam_config")
-      .update({
-        config_value: configValue,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("config_key", configKey);
+    const payload = {
+      config_key: configKey,
+      config_value: configValue,
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) {
-      throw new Error(`${configKey}: ${error.message}`);
+    if (configKey === "premium_mock_only") {
+      // This policy is a new config key on older environments; upsert creates it
+      // once and then updates it on subsequent saves (config_key is unique).
+      const { error } = await supabase
+        .from("exam_config")
+        .upsert(payload, { onConflict: "config_key" });
+      if (error) throw new Error(`${configKey}: ${error.message}`);
+      return;
     }
+
+    const { data, error } = await supabase
+      .from("exam_config")
+      .update({ config_value: configValue, updated_at: payload.updated_at })
+      .eq("config_key", configKey)
+      .select("config_key")
+      .maybeSingle();
+
+    if (error) throw new Error(`${configKey}: ${error.message}`);
+    if (!data) throw new Error(`${configKey}: no configuration row was updated. Check admin permissions and refresh the page.`);
   }
 
   async function handleSave() {
@@ -224,6 +243,7 @@ export default function AdminConfigPage() {
         saveConfigRow("question_counts", questionCounts),
         saveConfigRow("exam_arrangement", examArrangement),
         saveConfigRow("access_code_required", accessCodeRequired),
+        saveConfigRow("premium_mock_only", premiumMockOnly),
         saveConfigRow("elective_enabled", electiveEnabled),
         saveConfigRow("show_results", examSettings.show_results_immediately).catch(() => null),
         saveConfigRow("allow_corrections", examSettings.allow_corrections !== false).catch(() => null),
@@ -399,6 +419,21 @@ export default function AdminConfigPage() {
               <p className="admin-help">
                 Turn this off if candidates should go straight from login to the
                 exam flow.
+              </p>
+            </div>
+
+            <div className="admin-setting-box">
+              <p className="admin-label">Premium-Only Mock Access</p>
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={premiumMockOnly}
+                  onChange={(e) => setPremiumMockOnly(e.target.checked)}
+                />
+                <span>Restrict the full UTME mock to active paid subscribers</span>
+              </label>
+              <p className="admin-help">
+                When enabled, only accounts with an active Premium, Plus, Pro or Apex plan (and administrators) can start the mock. Public/Free accounts are blocked even if they have an access voucher. This does not change anyone's subscription.
               </p>
             </div>
 
