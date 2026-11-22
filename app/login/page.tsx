@@ -20,7 +20,6 @@ function CentralLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<AuthMode>("signup");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -159,17 +158,19 @@ function CentralLoginForm() {
     setMessage("");
 
     try {
-      if (!email.trim() || !password) {
-        setError("Please enter your email and password.");
+      const cleanIdentifier = email.trim();
+      if (!cleanIdentifier || !password) {
+        setError("Please enter your email or username and password.");
         return;
       }
 
-      if (mode === "signup") {
-        if (!name.trim()) {
-          setError("Please enter your full name.");
-          return;
-        }
+      const isEmail = cleanIdentifier.includes("@");
+      const authEmail = isEmail
+        ? cleanIdentifier.toLowerCase()
+        : `${cleanIdentifier.toLowerCase().replace(/\s+/g, "")}@student.brainlab.ng`;
+      const displayName = isEmail ? cleanIdentifier.split("@")[0] : cleanIdentifier;
 
+      if (mode === "signup") {
         const strength = evaluatePasswordStrength(password, "student");
         if (!strength.isValid) {
           setError(strength.feedback || "Please choose a stronger password with at least 8 characters.");
@@ -177,10 +178,13 @@ function CentralLoginForm() {
         }
 
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: authEmail,
           password,
           options: {
-            data: { full_name: name.trim() },
+            data: {
+              full_name: displayName,
+              username: cleanIdentifier,
+            },
             emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
           },
         });
@@ -190,17 +194,21 @@ function CentralLoginForm() {
           return;
         }
 
-        trackEvent("signup_completed", { auth_provider: "email", role: "student" });
+        trackEvent("signup_completed", { auth_provider: "credentials", role: "student" });
 
         if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-          setError("An account with this email already exists. Please sign in or reset your password.");
+          setError("An account with this email or username already exists. Please sign in or reset your password.");
           return;
         }
 
         if (data.session) {
           await routeAuthenticatedSession(data.session);
         } else {
-          setMessage("Account created successfully! Please check your email to confirm your address before logging in.");
+          setMessage(
+            isEmail
+              ? "Account created successfully! Please check your email to confirm your address before logging in."
+              : "Account created successfully! You can now sign in with your username."
+          );
           setMode("signin");
           setPassword("");
         }
@@ -209,7 +217,7 @@ function CentralLoginForm() {
 
       // Mode === "signin"
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: authEmail,
         password,
       });
 
@@ -260,12 +268,17 @@ function CentralLoginForm() {
     setResetMessage("");
 
     try {
-      if (!resetEmail.trim()) {
-        setResetError("Please enter your registered email address.");
+      const cleanReset = resetEmail.trim();
+      if (!cleanReset) {
+        setResetError("Please enter your registered email address or username.");
         return;
       }
 
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      const resetTargetEmail = cleanReset.includes("@")
+        ? cleanReset.toLowerCase()
+        : `${cleanReset.toLowerCase().replace(/\s+/g, "")}@student.brainlab.ng`;
+
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetTargetEmail, {
         redirectTo: getAuthRedirectUrl("/auth/callback?next=/account/reset-password"),
       });
 
@@ -632,41 +645,24 @@ function CentralLoginForm() {
                 <div className="relative flex items-center justify-center">
                   <div className="border-t border-slate-800 w-full" />
                   <span className="bg-slate-900 px-3 text-[10px] uppercase font-black tracking-widest text-slate-400">
-                    Or continue with email
+                    Or continue with email / username
                   </span>
                 </div>
 
                 {/* Standard Credentials Form */}
                 <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-                  {mode === "signup" && (
-                    <div>
-                      <label htmlFor="fullname" className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Full Name
-                      </label>
-                      <input
-                        id="fullname"
-                        type="text"
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g. Samuel Adekunle"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition min-h-[44px]"
-                      />
-                    </div>
-                  )}
-
                   <div>
                     <label htmlFor="auth-email" className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Email Address
+                      Email or Username
                     </label>
                     <input
                       id="auth-email"
-                      type="email"
-                      autoComplete="email"
+                      type="text"
+                      autoComplete="username email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
+                      placeholder="name@example.com or username"
                       className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition min-h-[44px]"
                     />
                   </div>
@@ -795,7 +791,7 @@ function CentralLoginForm() {
               </button>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Enter your account email. We will send you a secure link to reset your BrainLab password.
+              Enter your account email or username. We will send you a secure link to reset your BrainLab password.
             </p>
 
             {resetError && (
@@ -811,11 +807,11 @@ function CentralLoginForm() {
 
             <form onSubmit={handlePasswordReset} className="space-y-3">
               <input
-                type="email"
+                type="text"
                 required
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder="Enter your email or username"
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none min-h-[44px]"
               />
               <div className="flex gap-2">

@@ -91,6 +91,7 @@ export default function AuthCallbackPage() {
         if (!exchangeError && exchangeData?.session) {
           activeSession = exchangeData.session;
         } else {
+          console.error("[AUTH_CALLBACK_EXCHANGE_ERROR]", exchangeError);
           // Check if session is already active in local storage / cookies
           const { data: existing } = await supabase.auth.getSession();
           if (existing?.session) {
@@ -98,7 +99,8 @@ export default function AuthCallbackPage() {
           } else {
             clearInterval(progressTimer);
             clearOperatorGateNonBlocking();
-            setErrorDetails("This sign-in link could not be verified or has expired. Please sign in again.");
+            const reason = exchangeError?.message ? ` (${exchangeError.message})` : "";
+            setErrorDetails(`This sign-in link could not be verified or has expired${reason}. Please sign in again.`);
             return;
           }
         }
