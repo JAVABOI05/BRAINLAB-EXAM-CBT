@@ -43,6 +43,11 @@ function CentralLoginForm() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendEmail, setResendEmail] = useState("");
   const [resendBusy, setResendBusy] = useState(false);
+  const [resendModalOpen, setResendModalOpen] = useState(false);
+  const [resendModalEmail, setResendModalEmail] = useState("");
+  const [resendModalBusy, setResendModalBusy] = useState(false);
+  const [resendModalMessage, setResendModalMessage] = useState("");
+  const [resendModalError, setResendModalError] = useState("");
 
   // Handle PKCE code callbacks or initial mode
   useEffect(() => {
@@ -300,13 +305,19 @@ function CentralLoginForm() {
   }
 
   async function handleResendConfirmation(targetEmail?: string) {
-    const raw = targetEmail || resendEmail || email;
+    const raw = targetEmail || resendModalEmail || resendEmail || email;
     const clean = raw.trim().toLowerCase();
     if (!clean || !clean.includes("@")) {
-      setError("Please enter a valid email address to resend confirmation.");
+      const msg = "Please enter a valid email address (e.g. name@gmail.com) to resend the confirmation link.";
+      setError(msg);
+      setResendModalError(msg);
       return;
     }
     setResendBusy(true);
+    setResendModalBusy(true);
+    setResendModalError("");
+    setResendModalMessage("");
+    setError("");
     try {
       const { error: resendErr } = await supabase.auth.resend({
         type: "signup",
@@ -317,14 +328,21 @@ function CentralLoginForm() {
       });
       if (resendErr) {
         setError(resendErr.message);
+        setResendModalError(resendErr.message);
         return;
       }
       setResendCooldown(60);
-      setMessage(`Activation link resent to ${clean}! Check your inbox and spam folder.`);
+      setResendEmail(clean);
+      const okMsg = `Activation link resent to ${clean}! Please check your inbox and spam folder.`;
+      setMessage(okMsg);
+      setResendModalMessage(okMsg);
     } catch {
-      setError("Unable to resend confirmation email. Please try again later.");
+      const failMsg = "Unable to resend confirmation email. Please try again later or contact support.";
+      setError(failMsg);
+      setResendModalError(failMsg);
     } finally {
       setResendBusy(false);
+      setResendModalBusy(false);
     }
   }
 
@@ -339,10 +357,12 @@ function CentralLoginForm() {
     }
     setBusy(true);
     try {
+      const redirectTarget = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
+      const safeRedirect = sanitizeRedirectUrl(redirectTarget, "/dashboard");
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: clean,
         options: {
-          emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
+          emailRedirectTo: getAuthRedirectUrl(`/auth/callback?redirect=${encodeURIComponent(safeRedirect)}`),
         },
       });
       if (otpError) {
@@ -659,7 +679,7 @@ function CentralLoginForm() {
                 )}
 
                 {/* Resend Confirmation Email Banner */}
-                {resendEmail && (
+                {(resendEmail || error.toLowerCase().includes("confirm") || error.toLowerCase().includes("verify")) && (
                   <div className="rounded-2xl border border-sky-500/40 bg-sky-950/40 p-3.5 text-xs text-sky-200 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in">
                     <div className="flex items-center gap-2">
                       <span className="text-base shrink-0">📧</span>
@@ -668,7 +688,7 @@ function CentralLoginForm() {
                     <button
                       type="button"
                       disabled={resendBusy || resendCooldown > 0}
-                      onClick={() => handleResendConfirmation(resendEmail)}
+                      onClick={() => handleResendConfirmation(resendEmail || email)}
                       className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
                     >
                       {resendBusy
@@ -717,6 +737,51 @@ function CentralLoginForm() {
                         Or continue with email / username
                       </span>
                     </div>
+
+                    {/* Method Switcher for Sign-In Mode */}
+                    {mode === "signin" && (
+                      <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOtpMode(false);
+                            setError("");
+                            setMessage("");
+                          }}
+                          className={`py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            !isOtpMode
+                              ? "bg-slate-800 text-white shadow-xs"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                          <span>Password</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOtpMode(true);
+                            setOtpEmail(email);
+                            setError("");
+                            setMessage("");
+                          }}
+                          className={`py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            isOtpMode
+                              ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          <svg className="h-3.5 w-3.5 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m22 2-7 20-4-9-9-4Z" />
+                            <path d="M22 2 11 13" />
+                          </svg>
+                          <span>6-Digit Code / Magic Link</span>
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -858,16 +923,30 @@ function CentralLoginForm() {
                           Password
                         </label>
                         {mode === "signin" && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setResetEmail(email);
-                              setResetModalOpen(true);
-                            }}
-                            className="text-[11px] font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer"
-                          >
-                            Forgot password?
-                          </button>
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setResendModalEmail(email);
+                                setResendModalOpen(true);
+                              }}
+                              className="font-medium text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                              title="Resend account confirmation email"
+                            >
+                              Resend activation?
+                            </button>
+                            <span className="text-slate-700">&bull;</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setResetEmail(email);
+                                setResetModalOpen(true);
+                              }}
+                              className="font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer"
+                            >
+                              Forgot password?
+                            </button>
+                          </div>
                         )}
                       </div>
                       <div className="relative">
@@ -1031,6 +1110,76 @@ function CentralLoginForm() {
                   className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition disabled:opacity-50 min-h-[44px]"
                 >
                   {resetBusy ? "Sending..." : "Send Link"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Resend Confirmation Link Modal */}
+      {resendModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-black text-white">Resend Confirmation Link</h2>
+              <button
+                type="button"
+                onClick={() => setResendModalOpen(false)}
+                className="text-slate-400 hover:text-white transition text-sm p-1"
+                aria-label="Close resend confirmation modal"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Didn&apos;t receive your account activation email? Enter your email address below and we will send you a fresh confirmation link.
+            </p>
+
+            {resendModalError && (
+              <p className="text-xs text-rose-200 bg-rose-950/40 p-2.5 rounded-xl border border-rose-500/40">
+                {resendModalError}
+              </p>
+            )}
+            {resendModalMessage && (
+              <p className="text-xs text-emerald-200 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/40">
+                {resendModalMessage}
+              </p>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleResendConfirmation(resendModalEmail);
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="email"
+                required
+                value={resendModalEmail || email}
+                onChange={(e) => setResendModalEmail(e.target.value)}
+                placeholder="Enter your registered email"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none min-h-[44px]"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResendModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:text-white transition min-h-[44px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resendModalBusy || resendCooldown > 0}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition disabled:opacity-50 min-h-[44px]"
+                >
+                  {resendModalBusy
+                    ? "Sending..."
+                    : resendCooldown > 0
+                    ? `Wait ${resendCooldown}s`
+                    : "Resend Link"}
                 </button>
               </div>
             </form>
