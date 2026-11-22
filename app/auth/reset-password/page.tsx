@@ -20,25 +20,55 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+    let isMounted = true;
+
+    // Listen for auth state events (e.g. PASSWORD_RECOVERY or session hydration from hash)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      if (event === "PASSWORD_RECOVERY" || session) {
+        setReady(true);
+        setError("");
+      }
+    });
+
     async function prepare() {
       const code = new URLSearchParams(window.location.search).get("code");
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
-          setError(exchangeError.message);
+          if (isMounted) setError(exchangeError.message);
           return;
         }
       }
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session) {
-        setError("Your reset session has expired or is invalid. Please request a new link.");
+      if (session) {
+        if (isMounted) {
+          setReady(true);
+          setError("");
+        }
         return;
       }
-      setReady(true);
+
+      // If session is not immediately available, give a brief grace period for hash fragment hydration
+      setTimeout(async () => {
+        if (!isMounted) return;
+        const { data: recheck } = await supabase.auth.getSession();
+        if (recheck?.session) {
+          setReady(true);
+          setError("");
+        } else {
+          setError("Your reset session has expired or is invalid. Please request a new link.");
+        }
+      }, 1000);
     }
     void prepare();
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
   async function handleReset(e: React.FormEvent) {

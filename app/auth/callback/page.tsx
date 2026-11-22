@@ -82,6 +82,18 @@ export default function AuthCallbackPage() {
       }
 
       let activeSession: Session | null = null;
+      let isRecoveryFlow =
+        params.get("type") === "recovery" ||
+        window.location.hash.includes("type=recovery") ||
+        nextParam === "/auth/reset-password" ||
+        nextParam === "/account/reset-password";
+
+      // Listen for PASSWORD_RECOVERY auth event during exchange
+      const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+        if (event === "PASSWORD_RECOVERY") {
+          isRecoveryFlow = true;
+        }
+      });
 
       // 1. Fast Code Exchange
       if (code) {
@@ -97,6 +109,7 @@ export default function AuthCallbackPage() {
           if (existing?.session) {
             activeSession = existing.session;
           } else {
+            authListener?.subscription?.unsubscribe();
             clearInterval(progressTimer);
             clearOperatorGateNonBlocking();
             const reason = exchangeError?.message ? ` (${exchangeError.message})` : "";
@@ -109,10 +122,21 @@ export default function AuthCallbackPage() {
         activeSession = existing?.session ?? null;
       }
 
+      authListener?.subscription?.unsubscribe();
+
       if (!activeSession) {
         clearInterval(progressTimer);
         clearOperatorGateNonBlocking();
         setErrorDetails("No active sign-in session was found. Please return to the sign in page.");
+        return;
+      }
+
+      // Check if this was a password recovery request
+      if (isRecoveryFlow) {
+        clearOperatorGateNonBlocking();
+        setStatusText("Password reset session verified. Opening form…");
+        setProgress(100);
+        router.replace("/auth/reset-password");
         return;
       }
 

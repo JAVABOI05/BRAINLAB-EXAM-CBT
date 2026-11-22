@@ -278,7 +278,7 @@ function CentralLoginForm() {
         : `${cleanReset.toLowerCase().replace(/\s+/g, "")}@student.brainlab.ng`;
 
       const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetTargetEmail, {
-        redirectTo: getAuthRedirectUrl("/auth/callback?next=/auth/reset-password"),
+        redirectTo: getAuthRedirectUrl("/auth/reset-password"),
       });
 
       if (resetErr) {

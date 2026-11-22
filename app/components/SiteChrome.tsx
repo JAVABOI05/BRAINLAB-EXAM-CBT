@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "../lib/supabase";
 import AuthGate from "./AuthGate";
 import BrandFooter from "./BrandFooter";
 import BrandHeader from "./BrandHeader";
@@ -48,6 +49,7 @@ const STUDENT_PORTAL_PREFIXES = [
 ];
 
 function SiteChromeLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname() ?? "/";
 
   // 1. Admin / Operator Portal (Admin layout provides its own shell)
@@ -87,17 +89,54 @@ function SiteChromeLayout({ children }: { children: React.ReactNode }) {
       (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
     );
 
-  // Intercept any Supabase PKCE authentication code or error landing on an arbitrary route
-  // and automatically route it to the dedicated callback handler.
+  // Intercept any Supabase PKCE authentication code, recovery token, or error landing on an arbitrary route
+  // and automatically route it to the dedicated handler.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
     const error = searchParams.get("error");
-    if ((code || error) && !window.location.pathname.startsWith("/auth/callback")) {
+    const type = searchParams.get("type");
+    const isRecoveryHash = window.location.hash.includes("type=recovery");
+
+    // If explicit recovery parameters land on an arbitrary page, route straight to reset password
+    if (
+      (type === "recovery" || isRecoveryHash) &&
+      !window.location.pathname.startsWith("/auth/reset-password") &&
+      !window.location.pathname.startsWith("/account/reset-password")
+    ) {
+      window.location.replace(`/auth/reset-password${window.location.search}${window.location.hash}`);
+      return;
+    }
+
+    if (
+      (code || error) &&
+      !window.location.pathname.startsWith("/auth/callback") &&
+      !window.location.pathname.startsWith("/auth/reset-password") &&
+      !window.location.pathname.startsWith("/account/reset-password")
+    ) {
       window.location.replace(`/auth/callback${window.location.search}${window.location.hash}`);
     }
   }, []);
+
+  // Global safety net: listen for Supabase PASSWORD_RECOVERY event and ensure the user reaches the reset screen
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/auth/reset-password") &&
+          !window.location.pathname.startsWith("/account/reset-password")
+        ) {
+          router.push("/auth/reset-password");
+        }
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [router]);
 
   // Dedicated Shell: Admin Area
   if (isAdminArea) {
