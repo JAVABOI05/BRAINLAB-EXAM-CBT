@@ -26,7 +26,6 @@ function CentralLoginForm() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [selectedTrack, setSelectedTrack] = useState<"medicine" | "engineering" | "law" | "accounting">("medicine");
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetBusy, setResetBusy] = useState(false);
@@ -373,102 +372,6 @@ function CentralLoginForm() {
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-lg mx-auto lg:mx-0 font-normal">
                 Create a free student account to practise with official JAMB 8-key simulation, explore interactive STEM labs, and master tough concepts with Socratic AI explanations.
               </p>
-
-              {/* Interactive Target Discipline Selector Tabs */}
-              <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 backdrop-blur-md shadow-xl text-left space-y-3.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-300 uppercase tracking-wider font-mono text-[11px]">Select Your Ambition:</span>
-                  <span className="text-cyan-400 font-bold font-mono text-[11px]">Target Score Matrix</span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  {(
-                    [
-                      { id: "medicine", label: "Medicine", score: "325+" },
-                      { id: "engineering", label: "Engineering", score: "298+" },
-                      { id: "law", label: "Law", score: "305+" },
-                      { id: "accounting", label: "Management", score: "280+" },
-                    ] as const
-                  ).map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setSelectedTrack(t.id)}
-                      className={`px-2.5 py-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer border ${
-                        selectedTrack === t.id
-                          ? "bg-blue-600/30 border-cyan-400 text-white shadow-xs"
-                          : "bg-slate-950/60 border-white/5 text-slate-400 hover:text-slate-200 hover:border-white/15"
-                      }`}
-                    >
-                      <div className="leading-tight">{t.label}</div>
-                      <div className="text-[10px] text-cyan-300 font-mono mt-0.5">{t.score}</div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Dynamic Subject Breakdown Pill Rail */}
-                <div className="pt-1">
-                  {selectedTrack === "medicine" && (
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Subject Plan (UNILAG · UI · OAU):</span>
-                        <span className="text-emerald-400 font-mono font-bold">Aggregate: 325 / 400</span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-white">78</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">BIO</span><strong className="text-emerald-400">84</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">CHM</span><strong className="text-emerald-400">82</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">PHY</span><strong className="text-cyan-400">81</strong></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedTrack === "engineering" && (
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Subject Plan (FUTA · UNILAG · OAU):</span>
-                        <span className="text-cyan-400 font-mono font-bold">Aggregate: 298 / 400</span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-white">74</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">MTH</span><strong className="text-cyan-400">78</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">PHY</span><strong className="text-cyan-400">76</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">CHM</span><strong className="text-white">70</strong></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedTrack === "law" && (
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Subject Plan (UI · UNILAG · UNN):</span>
-                        <span className="text-purple-400 font-mono font-bold">Aggregate: 305 / 400</span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-purple-300">84</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">LIT</span><strong className="text-purple-300">78</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">GOV</span><strong className="text-white">74</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">CRS</span><strong className="text-white">69</strong></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedTrack === "accounting" && (
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>Subject Plan (UNILAG · UNIBEN · ABU):</span>
-                        <span className="text-amber-400 font-mono font-bold">Aggregate: 280 / 400</span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px]">
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ENG</span><strong className="text-white">72</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">MTH</span><strong className="text-white">70</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ECN</span><strong className="text-amber-300">72</strong></div>
-                        <div className="p-1.5 rounded-lg bg-slate-950/70 border border-white/5"><span className="text-slate-400 block">ACC</span><strong className="text-white">66</strong></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* 4 Feature Badges with Custom SVG Glyphs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-left">
