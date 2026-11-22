@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // A premium entitlement is verified on the server against the authenticated user.
     // Free/public CBT entitlements are deliberately not treated as a paid mock plan.
     let hasPremiumMockAccess = false;
-    if (registeredUser) {
+    if (registeredUser && (premiumMockOnly || (accessCodeRequired && !cleanCode))) {
       try {
         const adminRole = await resolveAdminRole(registeredUser.id);
         if (adminRole) {
