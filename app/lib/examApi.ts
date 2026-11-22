@@ -217,9 +217,17 @@ export async function startExam(
   subjects?: string[]
 ): Promise<AttemptPayload | ApiError> {
   try {
+    // Supabase's browser client persists the session in localStorage, which is
+    // not automatically sent to Route Handlers. Forward the verified access
+    // token so the server can resolve paid-plan eligibility and learner history.
+    const { data: authData } = await supabase.auth.getSession();
+    const accessToken = authData.session?.access_token;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
     const res = await fetch("/api/exam/start", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ code, name, phone, elective, subjects }),
     });
     const data = await res.json();
