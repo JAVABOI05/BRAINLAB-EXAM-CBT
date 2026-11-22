@@ -239,8 +239,16 @@ export async function startExam(
       };
     }
     return data as AttemptPayload;
-  } catch {
-    return call<AttemptPayload>("start_exam", { p_code: code, p_name: name, p_phone: phone, p_elective: elective });
+  } catch (error) {
+    // Never fall back to the legacy start_exam RPC: it does not receive the
+    // premium-only policy check added to /api/exam/start. A network/auth error
+    // must fail closed rather than create an attempt through an older path.
+    console.error("[examApi] Authoritative exam-start request failed:", error);
+    return {
+      ok: false as const,
+      error: "start_unavailable",
+      message: "We could not securely verify your exam access. Please check your connection and try again.",
+    };
   }
 }
 
