@@ -7,7 +7,7 @@
  *
  * SENDER CONFIGURATION:
  * - Production: Set RESEND_API_KEY and RESEND_FROM_EMAIL in your environment.
- *   Default production sender: "BrainLab Academy <support@brainlab.edu.ng>"
+ *   Default production sender: "BrainLab Academy <support@brainlabacademy.com.ng>"
  * - Development/Test fallback: "BrainLab Academy <onboarding@resend.dev>"
  *
  * SIMULATION MODE:
@@ -74,9 +74,9 @@ const RESEND_API_ENDPOINT = "https://api.resend.com/emails";
 const DEFAULT_SENDER =
   process.env.RESEND_FROM_EMAIL ||
   (process.env.NODE_ENV === "production"
-    ? "BrainLab Academy <support@brainlab.edu.ng>"
+    ? "BrainLab Academy <support@brainlabacademy.com.ng>"
     : "BrainLab Academy <onboarding@resend.dev>");
-const DEFAULT_REPLY_TO = "support@brainlab.edu.ng";
+const DEFAULT_REPLY_TO = "support@brainlabacademy.com.ng";
 
 /**
  * Low-level email dispatcher using the Resend REST API via native fetch.
@@ -199,7 +199,7 @@ function wrapEmailTemplate(title: string, bodyContent: string): string {
             <td style="background-color:#f8fafc;padding:24px 36px;border-top:1px solid #e2e8f0;text-align:center;">
               <p style="margin:0 0 8px 0;font-size:12px;color:#64748b;line-height:1.6;">
                 Official correspondence from <strong>BrainLab Academy</strong>.<br>
-                For learner support, reach us at <a href="mailto:support@brainlab.edu.ng" style="color:#0284c7;text-decoration:none;font-weight:600;">support@brainlab.edu.ng</a> or via WhatsApp.
+                For learner support, reach us at <a href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support" style="color:#0284c7;text-decoration:none;font-weight:600;">support@brainlabacademy.com.ng</a> or via WhatsApp.
               </p>
               <p style="margin:8px 0 8px 0;font-size:11px;color:#94a3b8;line-height:1.6;">
                 You are receiving this communication regarding your candidate account.<br>
@@ -251,7 +251,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<Send
     </div>
 
     <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;">
-      If you have questions at any step, simply reply to this email or contact our learner helpdesk at <a href="mailto:support@brainlab.edu.ng" style="color:#0284c7;">support@brainlab.edu.ng</a>.
+      If you have questions at any step, simply reply to this email or contact our learner helpdesk at <a href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support" style="color:#0284c7;">support@brainlabacademy.com.ng</a>.
     </p>
     `
   );
@@ -614,7 +614,7 @@ export async function sendMigratedStudentNotificationEmail(
     </div>
 
     <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">
-      All your past progress, mock scores, and test history have been fully preserved. If you have any questions, our support team is always available at <a href="mailto:support@brainlab.edu.ng" style="color:#0284c7;">support@brainlab.edu.ng</a>.
+      All your past progress, mock scores, and test history have been fully preserved. If you have any questions, our support team is always available at <a href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support" style="color:#0284c7;">support@brainlabacademy.com.ng</a>.
     </p>
     `
   );

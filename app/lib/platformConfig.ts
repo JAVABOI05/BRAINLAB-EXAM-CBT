@@ -1536,9 +1536,9 @@ export const DEFAULT_COMMUNICATION_SERVICES_CONFIG: CommunicationServicesConfig 
   resend: {
     enabled: true,
     api_key: process.env.RESEND_API_KEY || "",
-    from_email: process.env.RESEND_FROM_EMAIL || "BrainLab Academy <support@brainlab.edu.ng>",
+    from_email: process.env.RESEND_FROM_EMAIL || "BrainLab Academy <support@brainlabacademy.com.ng>",
     system_from_email: process.env.SYSTEM_FROM_EMAIL || "BrainLab Academy <results@brainlabacademy.com.ng>",
-    reply_to: "support@brainlab.edu.ng",
+    reply_to: "support@brainlabacademy.com.ng",
   },
   zoho: {
     enabled: false,
@@ -1546,7 +1546,7 @@ export const DEFAULT_COMMUNICATION_SERVICES_CONFIG: CommunicationServicesConfig 
     smtp_port: 465,
     smtp_user: "",
     smtp_pass: "",
-    from_email: "support@brainlab.edu.ng",
+    from_email: "support@brainlabacademy.com.ng",
     use_tls: true,
   },
   cloudflare: {

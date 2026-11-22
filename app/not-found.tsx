@@ -45,10 +45,10 @@ export default function NotFound() {
         <p className="mt-10 text-xs text-slate-600 dark:text-slate-400">
           Need academic or technical support? Email{" "}
           <a
-            href="mailto:support@brainlab.edu.ng"
+            href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support"
             className="font-bold text-blue-800 dark:text-cyan-400 underline underline-offset-2"
           >
-            support@brainlab.edu.ng
+            support@brainlabacademy.com.ng
           </a>
         </p>
       </div>

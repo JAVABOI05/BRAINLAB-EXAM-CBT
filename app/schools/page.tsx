@@ -1053,7 +1053,7 @@ export default function SchoolsPage() {
                             <span>Chat Directly on WhatsApp</span>
                           </a>
                           <a
-                            href="mailto:support@brainlab.edu.ng?subject=Institutional%20Inquiry%20Direct%20Submission"
+                            href="mailto:support@brainlabacademy.com.ng?subject=Institutional%20Inquiry%20Direct%20Submission"
                             className="inline-flex items-center gap-1.5 rounded-lg border border-rose-400/60 bg-white/80 px-3 py-1.5 text-[11px] font-bold text-rose-900 transition-colors hover:bg-white dark:border-rose-700 dark:bg-rose-900/50 dark:text-rose-100"
                           >
                             <svg className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
