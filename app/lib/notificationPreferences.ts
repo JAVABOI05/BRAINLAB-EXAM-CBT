@@ -32,7 +32,14 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, "em
   timezone: "Africa/Lagos",
 };
 
-const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXTAUTH_SECRET || "brainlab-notif-secret-2026";
+function getUnsubscribeSecret(): string {
+  const secret =
+    process.env.EMAIL_UNSUBSCRIBE_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error("EMAIL_UNSUBSCRIBE_SECRET must be configured.");
+  return secret;
+}
 
 /**
  * Generates an HMAC-signed one-click unsubscribe token for a given email.
@@ -40,7 +47,7 @@ const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXTAUTH_SEC
 export function generateUnsubscribeToken(email: string): string {
   const normalized = email.trim().toLowerCase();
   const signature = crypto
-    .createHmac("sha256", SECRET)
+    .createHmac("sha256", getUnsubscribeSecret())
     .update(normalized)
     .digest("hex")
     .slice(0, 24);
@@ -61,7 +68,9 @@ export function verifyUnsubscribeToken(token: string): string | null {
       .update(email.trim().toLowerCase())
       .digest("hex")
       .slice(0, 24);
-    if (signature === expectedSig) {
+    const suppliedBytes = Buffer.from(signature);
+    const expectedBytes = Buffer.from(expectedSig);
+    if (suppliedBytes.length === expectedBytes.length && crypto.timingSafeEqual(suppliedBytes, expectedBytes)) {
       return email.trim().toLowerCase();
     }
     return null;
