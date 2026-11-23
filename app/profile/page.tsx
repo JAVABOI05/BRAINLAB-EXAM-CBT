@@ -392,6 +392,11 @@ export default function LearnerProfilePage() {
                         <ProfileIcon name="star" className="h-3 w-3 text-amber-300" /> Level {gamification.current_level} · {gamification.level_name}
                       </span>
                     )}
+                    {gamification && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-purple-300/30 bg-purple-500/20 px-3 py-0.5 text-[10px] font-extrabold text-purple-200">
+                        <ProfileIcon name="sparkle" className="h-3 w-3 text-purple-300" /> {gamification.lifetime_xp.toLocaleString()} XP
+                      </span>
+                    )}
                     {gamification && gamification.current_streak_days > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/30 bg-rose-500/20 px-3 py-0.5 text-[10px] font-extrabold text-rose-200">
                         <ProfileIcon name="flame" className="h-3 w-3 text-rose-400" /> {gamification.current_streak_days} Day Streak
