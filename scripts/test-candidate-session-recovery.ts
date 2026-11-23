@@ -85,7 +85,7 @@ check(
 check(
   "Active papers are not discarded because their question count differs from 180",
   !examPage.includes("questions.length < 180") &&
-    examPage.includes("Never discard an active attempt because its question count differs")
+    examPage.includes("if (started && questions.length > 0)")
 );
 
 check(
