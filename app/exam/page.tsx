@@ -302,7 +302,7 @@ export default function ExamPage() {
       catch { router.push("/"); return; }
       setCandidate(parsedCandidate);
       if (parsedCandidate.subject === "Biology" || parsedCandidate.subject === "Mathematics") setElectiveSubject(parsedCandidate.subject);
-      const settings = await getPublicSettings();
+      const settings = await getPublicSettings(true);
       if (!settings) { setError("Could not load exam settings. Check your connection and refresh the page."); return; }
       const duration = settings.exam_duration > 0 ? settings.exam_duration : DEFAULT_EXAM_DURATION;
       setExamDuration(duration); setTimeLeft(duration);
@@ -357,8 +357,6 @@ export default function ExamPage() {
           // Stale session that has already timed out in the past: clear it so student starts fresh
           clearAttemptStorage();
         } else {
-          // Preserve the exact paper snapshot originally issued to this candidate.
-          // Never discard an active attempt because its question count differs from a target blueprint.
           const attempt: AttemptPayload = resumed as AttemptPayload;
           setQuestions(attempt.questions);
           let recoveredAnswers = attempt.answers || {};
@@ -366,17 +364,12 @@ export default function ExamPage() {
           const serverSavedAt = attempt.last_saved_at ? Date.parse(attempt.last_saved_at) : 0;
           if (queuedProgress?.sessionId === attempt.session_id) {
             if (queuedProgress.timestamp > serverSavedAt) {
-              // A queued offline snapshot is newer than the server checkpoint. Keep it
-              // visible immediately, then reconcile it with the server when possible.
               recoveredAnswers = queuedProgress.answers || recoveredAnswers;
               if (typeof navigator === "undefined" || navigator.onLine) {
                 const synced = await saveProgress(attempt.session_id, attempt.token, recoveredAnswers);
                 if (!isError(synced)) clearQueuedProgress();
               }
-            } else {
-              // The server has a newer checkpoint; discard the stale offline copy.
-              clearQueuedProgress();
-            }
+            } else clearQueuedProgress();
           }
           setAnswers(recoveredAnswers);
 
@@ -687,11 +680,7 @@ export default function ExamPage() {
       const code = activeCand.code || localStorage.getItem("access_code") || "";
       const res = await startExam(code, activeCand.name || "", activeCand.phone || "", finalElective, subjects);
       if (isError(res)) { setError(res.message); return; }
-      if (res.finished) {
-        storeFinished(res);
-        router.push("/result");
-        return;
-      }
+      if (res.finished) { storeFinished(res); router.push("/result"); return; }
       let recoveredAnswers = res.answers || {};
       const queuedProgress = getQueuedProgress();
       const serverSavedAt = res.last_saved_at ? Date.parse(res.last_saved_at) : 0;
@@ -702,9 +691,7 @@ export default function ExamPage() {
             const synced = await saveProgress(res.session_id, res.token, recoveredAnswers);
             if (!isError(synced)) clearQueuedProgress();
           }
-        } else {
-          clearQueuedProgress();
-        }
+        } else clearQueuedProgress();
       }
       clearAttemptStorage();
       localStorage.removeItem("exam_result"); localStorage.removeItem("exam_summary"); localStorage.removeItem("latest_result_id");

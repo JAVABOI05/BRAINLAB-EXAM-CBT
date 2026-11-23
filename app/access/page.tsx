@@ -50,7 +50,7 @@ export default function AccessPage() {
         // Ignore stale or malformed browser data; the candidate can enter details manually.
       }
 
-      const settings = await getPublicSettings();
+      const settings = await getPublicSettings(true);
 
       if (!settings) {
         setErrorText("Could not load exam settings. Please refresh the page.");

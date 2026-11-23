@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
+import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "../../../lib/supabaseServer";
+import { getStudentSubscriptionAndEntitlements } from "../../../lib/subscriptionEntitlements";
 import crypto from "crypto";
 import { generateExamPaper, freezeAttemptSnapshot, resolveUtme4Subjects, isAcademicSubject } from "../../../lib/examEngine";
 import { getMaintenanceModeConfig } from "../../../lib/platformConfig";
@@ -31,9 +32,6 @@ export async function POST(request: NextRequest) {
         } catch {}
       }
 
-      // Maintenance blocks new attempts, not candidates returning to an
-      // already-issued active paper. The normal recovery path still verifies
-      // the original phone + PIN below.
       let hasActiveAttempt = false;
       const { data: activeAttemptForMaintenance, error: activeAttemptCheckError } = await supabase
         .from("exam_sessions")
@@ -60,9 +58,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Recovery takes precedence over access-code consumption. A candidate who
-    // re-enters the same phone + PIN must receive the existing active attempt,
-    // never a newly generated paper or a reset timer.
+    // Recover an existing active attempt before checking new-attempt eligibility or consuming its PIN.
     const { data: existingSession, error: existingSessionError } = await supabase
       .from("exam_sessions")
       .select("id, attempt_token, status, deadline_at, last_saved_at, phone, access_code")
@@ -86,7 +82,6 @@ export async function POST(request: NextRequest) {
         p_session: existingSession.id,
         p_token: existingSession.attempt_token,
       });
-
       if (recoveryError || !recovered || recovered.ok === false) {
         console.error("[exam/start] Existing attempt recovery failed:", recoveryError?.message || recovered?.message);
         return NextResponse.json(
@@ -94,11 +89,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-
-      if (recovered.finished) {
-        return NextResponse.json({ ...recovered, resumed: true, last_saved_at: existingSession.last_saved_at });
-      }
-
+      if (recovered.finished) return NextResponse.json({ ...recovered, resumed: true, last_saved_at: existingSession.last_saved_at });
       const recoveredQuestions = Array.isArray(recovered.questions) ? recovered.questions : [];
       if (recoveredQuestions.length === 0) {
         return NextResponse.json(
@@ -106,7 +97,6 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
-
       return NextResponse.json({
         ...recovered,
         resumed: true,
@@ -115,7 +105,69 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 1. Check access code if required
+    // Resolve the access policy from the same exam_config rows the admin panel edits.
+    // Do not trust the browser's local state or a cached public-settings response.
+    const { data: policyRows, error: policyError } = await supabase
+      .from("exam_config")
+      .select("config_key, config_value")
+      .in("config_key", ["access_code_required", "premium_mock_only"]);
+
+    if (policyError) {
+      console.error("[exam/start] Access policy lookup failed:", policyError.message);
+      return NextResponse.json(
+        { ok: false, error: "access_policy_unavailable", message: "Exam access settings are temporarily unavailable. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
+    const policyValues = new Map((policyRows || []).map((row) => [row.config_key, row.config_value]));
+    const readPolicyBoolean = (value: unknown, fallback: boolean) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") return value.trim().toLowerCase() === "true";
+      return fallback;
+    };
+    const accessCodeRequired = readPolicyBoolean(policyValues.get("access_code_required"), true);
+    const premiumMockOnly = readPolicyBoolean(policyValues.get("premium_mock_only"), false);
+
+    // A premium entitlement is verified on the server against the authenticated user.
+    // Free/public CBT entitlements are deliberately not treated as a paid mock plan.
+    let hasPremiumMockAccess = false;
+    if (registeredUser && (premiumMockOnly || (accessCodeRequired && !cleanCode))) {
+      try {
+        const adminRole = await resolveAdminRole(registeredUser.id);
+        if (adminRole) {
+          hasPremiumMockAccess = true;
+        } else {
+          const entitlement = await getStudentSubscriptionAndEntitlements(registeredUser.id);
+          hasPremiumMockAccess =
+            entitlement.isSubscribed &&
+            ["premium", "plus", "pro", "apex", "admin_vip"].includes(String(entitlement.planId || "").toLowerCase());
+        }
+      } catch (entitlementError) {
+        console.error("[exam/start] Could not verify premium mock eligibility:", entitlementError);
+      }
+    }
+
+    if (premiumMockOnly && !hasPremiumMockAccess) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "premium_plan_required",
+          message: "This mock is reserved for students with an active Premium, Plus, Pro or Apex subscription.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (accessCodeRequired && !cleanCode && !hasPremiumMockAccess) {
+      return NextResponse.json(
+        { ok: false, error: "access_code_required", message: "A valid examination access code is required before starting this mock." },
+        { status: 403 }
+      );
+    }
+
+    // 1. Validate a supplied access code. When codes are disabled, an empty
+    // code is a valid launch; a supplied code is still validated and consumed.
     let isMasterCode = false;
     let preconfiguredSubject: string | null = null;
     let codeRecordId: string | null = null;
