@@ -227,6 +227,28 @@ export async function savePreferences(
     if (error) {
       console.warn("[notificationPreferences] DB upsert fallback:", error.message);
     } else if (data) {
+      const marketingConsent = Boolean(data.marketing_announcements) && !Boolean(data.unsubscribed_all);
+      if (updates.marketing_announcements !== undefined || updates.unsubscribed_all === true) {
+        const action = marketingConsent ? "opt_in" : "opt_out";
+        const { data: contact } = await supabase
+          .from("mail_contacts")
+          .update({ marketing_consent: marketingConsent, updated_at: now })
+          .eq("email", normalizedEmail)
+          .select("id")
+          .maybeSingle();
+
+        const { error: consentError } = await supabase.from("mail_consent_events").insert({
+          contact_id: contact?.id || null,
+          email: normalizedEmail,
+          action,
+          source: "preferences_center",
+          evidence: { updated_at: now, preference_updated: true },
+        });
+        if (consentError) {
+          console.warn("[notificationPreferences] Consent evidence write failed:", consentError.message);
+        }
+      }
+
       return {
         email: data.email,
         user_id: data.user_id,
