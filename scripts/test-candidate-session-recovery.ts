@@ -41,9 +41,9 @@ check(
 );
 
 check(
-  "Master-code re-entry also checks for the same candidate's active attempt",
-  resolveRoute.includes("resumed_attempt: resumedAttempt") &&
-    resolveRoute.includes("The master code is shared") &&
+  "Shared master code cannot authorise recovery by phone number alone",
+  resolveRoute.includes("The master code is shared") &&
+    resolveRoute.includes("const resumedAttempt = false") &&
     !resolveRoute.includes(".eq(\"access_code\", cleanCode)")
 );
 
