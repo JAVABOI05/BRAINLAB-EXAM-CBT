@@ -108,19 +108,10 @@ export async function POST(
             failedCount++;
             continue;
           }
-          if (["sent", "delivered", "queued"].includes(existingRecipient.status)) {
-            duplicateCount++;
-            continue;
-          }
-          recipientId = existingRecipient.id;
-          const { error: resetError } = await supabase
-            .from("mail_campaign_recipients")
-            .update({ status: "queued", error_message: null, resend_id: null, sent_at: null })
-            .eq("id", recipientId);
-          if (resetError) {
-            failedCount++;
-            continue;
-          }
+          // Existing recipient rows are never reset implicitly. A dedicated retry
+          // action must explicitly requeue failed/dead-letter messages.
+          duplicateCount++;
+          continue;
         }
 
         const unsubscribeToken = generateUnsubscribeToken(email);
