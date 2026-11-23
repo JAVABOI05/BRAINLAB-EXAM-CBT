@@ -57,6 +57,15 @@ CREATE TABLE IF NOT EXISTS public.mail_consent_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- The legacy preference column defaulted to true, so old rows do not prove opt-in.
+ALTER TABLE public.notification_preferences
+  ALTER COLUMN marketing_announcements SET DEFAULT false;
+
+UPDATE public.notification_preferences
+SET marketing_announcements = false,
+    updated_at = now()
+WHERE marketing_announcements = true;
+
 -- Legacy contacts without a saved preference or opt-in evidence are not marketing subscribers.
 UPDATE public.mail_contacts AS contact
 SET marketing_consent = COALESCE(
