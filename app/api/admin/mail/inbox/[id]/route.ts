@@ -10,12 +10,12 @@ export async function GET(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.inbox.view");
+    const hasPerm = await adminHasPermission("mail.inbox.view", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin", "community_moderator"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -62,12 +62,12 @@ export async function POST(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.inbox.reply");
+    const hasPerm = await adminHasPermission("mail.inbox.reply", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin", "community_moderator"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden: You cannot reply to inbox threads." }, { status: 403 });
     }
@@ -182,12 +182,12 @@ export async function PATCH(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.inbox.manage");
+    const hasPerm = await adminHasPermission("mail.inbox.manage", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin", "community_moderator"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

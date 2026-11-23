@@ -5,12 +5,12 @@ import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.view");
+    const hasPerm = await adminHasPermission("mail.view", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin", "community_moderator"].includes(admin.role)) {
       return NextResponse.json({ error: "Insufficient privileges" }, { status: 403 });
     }
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
 // Sync contacts from auth.users and notification_preferences
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.contacts.manage");
+    const hasPerm = await adminHasPermission("mail.contacts.manage", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -184,12 +184,12 @@ export async function POST(request: NextRequest) {
 // Update contact consent or suppression
 export async function PATCH(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.contacts.manage");
+    const hasPerm = await adminHasPermission("mail.contacts.manage", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

@@ -10,12 +10,12 @@ export async function POST(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.campaign.dispatch");
+    const hasPerm = await adminHasPermission("mail.campaign.dispatch", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden: You do not have permission to dispatch campaigns." }, { status: 403 });
     }

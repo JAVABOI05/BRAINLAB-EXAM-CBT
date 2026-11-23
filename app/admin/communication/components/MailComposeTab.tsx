@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface Template {
   id: string;
@@ -35,7 +36,7 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
   useEffect(() => {
     async function loadTemplates() {
       try {
-        const res = await fetch("/api/admin/mail/templates");
+        const res = await authFetch("/api/admin/mail/templates");
         const data = await res.json();
         if (data.success) {
           setTemplates(data.templates || []);
@@ -94,7 +95,7 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
     setFeedback(null);
 
     try {
-      const res = await fetch("/api/admin/communications/test", {
+      const res = await authFetch("/api/admin/communications/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -134,7 +135,7 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
           return;
         }
 
-        const res = await fetch("/api/admin/mail/inbox", {
+        const res = await authFetch("/api/admin/mail/inbox", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -153,7 +154,7 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
         }
       } else {
         // Broadcast campaign submission (requires approval per BrainLab governance)
-        const res = await fetch("/api/admin/mail/campaigns", {
+        const res = await authFetch("/api/admin/mail/campaigns", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface OverviewMetrics {
   totalContacts: number;
@@ -57,7 +58,7 @@ export function MailOverviewTab({ onNavigateTab }: MailOverviewTabProps) {
   useEffect(() => {
     async function loadOverview() {
       try {
-        const res = await fetch("/api/admin/mail/overview");
+        const res = await authFetch("/api/admin/mail/overview");
         const data = await res.json();
         if (data.success) {
           setMetrics(data.metrics);

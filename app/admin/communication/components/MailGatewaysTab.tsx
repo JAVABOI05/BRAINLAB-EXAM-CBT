@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { CommunicationServicesConfig } from "@/app/lib/platformConfig";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface MailGatewaysTabProps {
   servicesConfig: CommunicationServicesConfig;
@@ -28,7 +29,7 @@ export function MailGatewaysTab({
     setTestResult(null);
 
     try {
-      const res = await fetch("/api/admin/communications/test", {
+      const res = await authFetch("/api/admin/communications/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

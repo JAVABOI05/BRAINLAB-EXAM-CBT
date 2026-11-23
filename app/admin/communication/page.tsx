@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getAdminSession } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
+import { authFetch } from "../../lib/authFetch";
 import {
   getCommunicationConfig,
   saveCommunicationConfig,
@@ -97,7 +98,7 @@ export default function AdminMailCentrePage() {
         const [comm, audio, commApiRes] = await Promise.all([
           getCommunicationConfig(),
           getAudioPolicyConfig(),
-          fetch("/api/admin/communications/config").then((r) => r.json()).catch(() => null),
+          authFetch("/api/admin/communications/config").then((r) => r.json()).catch(() => null),
         ]);
 
         if (active) {
@@ -126,7 +127,7 @@ export default function AdminMailCentrePage() {
     setFeedback(null);
 
     try {
-      const res = await fetch("/api/admin/communications/config", {
+      const res = await authFetch("/api/admin/communications/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(servicesConfig),

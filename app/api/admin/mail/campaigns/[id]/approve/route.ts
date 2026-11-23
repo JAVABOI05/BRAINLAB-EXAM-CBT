@@ -9,13 +9,13 @@ export async function POST(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 1. Enforce permission to approve campaigns
-    const hasPerm = await adminHasPermission("mail.campaign.approve");
+    const hasPerm = await adminHasPermission("mail.campaign.approve", admin.role);
     const isSuperAdmin = admin.role === "super_admin";
     if (!hasPerm && !isSuperAdmin) {
       return NextResponse.json(

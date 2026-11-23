@@ -10,7 +10,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -96,12 +96,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("cbt.config.manage");
+    const hasPerm = await adminHasPermission("cbt.config.manage", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin"].includes(admin.role)) {
       return NextResponse.json(
         { error: "Insufficient privileges to modify communication provider credentials." },

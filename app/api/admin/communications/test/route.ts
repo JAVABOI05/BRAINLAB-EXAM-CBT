@@ -6,7 +6,7 @@ import { getCommunicationServicesConfig } from "@/app/lib/platformConfig";
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

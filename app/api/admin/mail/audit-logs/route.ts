@@ -5,12 +5,12 @@ import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.view");
+    const hasPerm = await adminHasPermission("mail.view", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin"].includes(admin.role)) {
       return NextResponse.json({ error: "Insufficient privileges" }, { status: 403 });
     }

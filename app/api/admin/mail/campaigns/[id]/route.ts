@@ -9,12 +9,12 @@ export async function GET(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.view");
+    const hasPerm = await adminHasPermission("mail.view", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin", "community_moderator"].includes(admin.role)) {
       return NextResponse.json({ error: "Insufficient privileges" }, { status: 403 });
     }
@@ -50,12 +50,12 @@ export async function PATCH(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.campaign.create");
+    const hasPerm = await adminHasPermission("mail.campaign.create", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -140,7 +140,7 @@ export async function DELETE(
 ) {
   try {
     const params = await props.params;
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

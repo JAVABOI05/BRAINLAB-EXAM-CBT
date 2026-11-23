@@ -6,12 +6,12 @@ import { sendEmail } from "@/app/lib/emailService";
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.inbox.view");
+    const hasPerm = await adminHasPermission("mail.inbox.view", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin", "community_moderator"].includes(admin.role)) {
       return NextResponse.json({ error: "Insufficient privileges" }, { status: 403 });
     }
@@ -52,12 +52,12 @@ export async function GET(request: NextRequest) {
 // Start a new customer support thread / direct outreach
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const hasPerm = await adminHasPermission("mail.compose");
+    const hasPerm = await adminHasPermission("mail.compose", admin.role);
     if (!hasPerm && !["super_admin", "platform_admin", "community_moderator"].includes(admin.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

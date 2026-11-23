@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     }
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const canManage =
       admin.role === "super_admin" ||
       admin.role === "platform_admin" ||
-      (await adminHasPermission("finance.billing.manage"));
+      (await adminHasPermission("finance.billing.manage", admin.role));
 
     if (!canManage) {
       return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
