@@ -192,11 +192,39 @@ export default function InstitutionalOperationsPage() {
     return () => clearInterval(interval);
   }, [autoPolling, fetchLiveSessions]);
 
-  // Session Proctoring Real API Actions
+  // Session Proctoring & Candidate Recovery Actions
   const handleForceSync = useCallback(async (sessionId: string) => {
-    await fetchLiveSessions();
-    setMessage(`Live telemetry re-synchronized for candidate session ${sessionId}.`);
-  }, [fetchLiveSessions]);
+    try {
+      const res = await authFetch(`/api/admin/sessions/${sessionId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_session" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setMessage(`Session sync failed: ${data.message || data.error || "Unable to verify session"}`);
+        return;
+      }
+      const answered = Number.isFinite(Number(data.questionsAnswered)) ? Number(data.questionsAnswered) : 0;
+      const total = Number.isFinite(Number(data.totalQuestions)) ? Number(data.totalQuestions) : 0;
+      const seconds = Number.isFinite(Number(data.timeLeftSeconds)) ? Math.max(0, Number(data.timeLeftSeconds)) : 0;
+      const remaining = `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+      const savedAt = data.lastSavedAt && Number.isFinite(Date.parse(data.lastSavedAt))
+        ? new Date(data.lastSavedAt).toLocaleString()
+        : "No server checkpoint timestamp";
+      const state = data.finished
+        ? `Session status: ${data.status || "finished"}`
+        : data.deadlineElapsed
+          ? "Deadline elapsed — recovery unavailable"
+          : data.recoveryAvailable
+            ? "Candidate can re-enter with the original phone number and PIN"
+            : `Session status: ${data.status || "unknown"}`;
+      setMessage(`Sync verified: ${answered}/${total} answers saved • ${remaining} remaining • Last save: ${savedAt}. ${state}. ${data.message || ""}`);
+      await fetchLiveSessions();
+    } catch {
+      setMessage("Network error synchronising candidate session.");
+    }
+  }, [authFetch, fetchLiveSessions]);
 
   const handleExtendTime = useCallback(async (sessionId: string, seconds = 900) => {
     try {
@@ -217,20 +245,22 @@ export default function InstitutionalOperationsPage() {
     }
   }, [authFetch, fetchLiveSessions]);
 
-  const handlePauseSession = useCallback(async (sessionId: string) => {
+  const handleRestoreSession = useCallback(async (sessionId: string) => {
     try {
       const res = await authFetch(`/api/admin/sessions/${sessionId}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "unlock" }),
+        body: JSON.stringify({ action: "restore_session" }),
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        setMessage(data.message || `Session ${sessionId} refreshed and unlocked.`);
+        setMessage(data.message || `Session ${sessionId} is ready for candidate recovery.`);
         await fetchLiveSessions();
+      } else {
+        setMessage(`Session recovery failed: ${data.message || data.error || "Unable to restore session"}`);
       }
     } catch {
-      setMessage("Network error updating session.");
+      setMessage("Network error restoring candidate session.");
     }
   }, [authFetch, fetchLiveSessions]);
 
@@ -361,7 +391,7 @@ export default function InstitutionalOperationsPage() {
         s.candidate_name.toLowerCase().includes(q) ||
         s.hub_location.toLowerCase().includes(q) ||
         s.subject_combination.toLowerCase().includes(q) ||
-        s.id.toLowerCase().includes(q)
+        s.id.toLowerCase().includes(q) || (s.phone || "").toLowerCase().includes(q)
     );
   }, [sessions, sessionSearch]);
 
@@ -512,7 +542,10 @@ onClick={() => setAutoPolling((prev) => !prev)}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className={`w-3 h-3 rounded-full ${refreshingFeeds ? "bg-amber-500 animate-spin" : "bg-emerald-500 animate-pulse"}`} />
-              <h2 className="text-lg font-bold text-slate-900">Live Invigilation & Candidate Telemetry</h2>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Live Invigilation & Candidate Session Recovery</h2>
+                <p className="mt-1 text-[11px] text-slate-500">Sync verifies server-saved progress without changing the attempt. Approve Resume checks eligibility and records the admin action; the candidate re-enters with the original phone and PIN.</p>
+              </div>
               <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-black">
                 {sessions.length} Candidates Tracked
               </span>
@@ -705,11 +738,11 @@ onClick={() => setAutoPolling((prev) => !prev)}
                             type="button"
                             onClick={() => handleForceSync(session.id)}
                             className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition"
-                            title="Force Telemetry Sync"
+                            title="Verify server-saved answers, status and remaining time"
                           >
-                            🔄 Sync
+                            🔄 Sync Session
                           </button>
-                          {session.status !== "completed" && session.status !== "submitted" && (
+                          {session.status === "started" && (
                             <>
                               <button
                                 type="button"
@@ -721,11 +754,11 @@ onClick={() => setAutoPolling((prev) => !prev)}
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handlePauseSession(session.id)}
+                                onClick={() => handleRestoreSession(session.id)}
                                 className="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition"
-                                title="Unlock / Resume Stalled Session"
+                                title="Verify the active attempt and record administrator recovery approval; candidate re-enters with the original PIN"
                               >
-                                🔓
+                                ↩ Approve Resume
                               </button>
                               <button
                                 type="button"
