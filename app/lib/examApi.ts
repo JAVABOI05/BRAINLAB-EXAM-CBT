@@ -64,6 +64,7 @@ export type AttemptPayload = {
   answers: Record<string, Option>;
   questions: PaperQuestion[];
   subjects?: string[];
+  last_saved_at?: string | null;
 };
 export type ResultItem = {
   id: string;
@@ -215,7 +216,7 @@ export async function startExam(
   phone: string,
   elective: string,
   subjects?: string[]
-): Promise<AttemptPayload | ApiError> {
+): Promise<AttemptPayload | FinishedPayload | ApiError> {
   try {
     // Supabase's browser client persists the session in localStorage, which is
     // not automatically sent to Route Handlers. Forward the verified access
@@ -238,7 +239,7 @@ export async function startExam(
         message: data.message || "Failed to start exam.",
       };
     }
-    return data as AttemptPayload;
+    return data as AttemptPayload | FinishedPayload;
   } catch (error) {
     // Never fall back to the legacy start_exam RPC: it does not receive the
     // premium-only policy check added to /api/exam/start. A network/auth error

@@ -15,6 +15,10 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     // Exposure history is keyed only from a verified Supabase user, never a client-supplied ID.
     const registeredUser = await getUserFromRequest(request);
+    const cleanCode = String(code || "").trim().toUpperCase();
+    const cleanName = String(name || "").trim() || "Candidate";
+    const cleanPhone = String(phone || "").trim() || "08000000000";
+    const sessionCode = cleanCode || "OPEN-CBT";
 
     // Maintenance Mode Guard
     const maintenance = await getMaintenanceModeConfig().catch(() => null);
@@ -28,7 +32,19 @@ export async function POST(request: NextRequest) {
         } catch {}
       }
 
-      if (!bypass) {
+      let hasActiveAttempt = false;
+      const { data: activeAttemptForMaintenance, error: activeAttemptCheckError } = await supabase
+        .from("exam_sessions")
+        .select("id")
+        .eq("phone", cleanPhone)
+        .eq("access_code", sessionCode)
+        .eq("status", "started")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!activeAttemptCheckError) hasActiveAttempt = Boolean(activeAttemptForMaintenance);
+
+      if (!bypass && !hasActiveAttempt) {
         return NextResponse.json(
           {
             ok: false,
@@ -42,9 +58,60 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const cleanCode = String(code || "").trim().toUpperCase();
-    const cleanName = String(name || "").trim() || "Candidate";
-    const cleanPhone = String(phone || "").trim() || "08000000000";
+    // Recover an existing active attempt before checking new-attempt eligibility or consuming its PIN.
+    const { data: existingSession, error: existingSessionError } = await supabase
+      .from("exam_sessions")
+      .select("id, attempt_token, status, deadline_at, last_saved_at, phone, access_code, is_master_code")
+      .eq("phone", cleanPhone)
+      .eq("access_code", sessionCode)
+      .eq("status", "started")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingSessionError) {
+      console.error("[exam/start] Could not inspect an existing candidate attempt:", existingSessionError.message);
+      return NextResponse.json(
+        { ok: false, error: "recovery_lookup_failed", message: "We could not verify your previous examination. Please try again." },
+        { status: 503 }
+      );
+    }
+
+    if (existingSession) {
+      // A shared master code or OPEN-CBT has no candidate-specific secret. Do not
+      // treat a phone number alone as proof of identity for recovering that attempt.
+      if (existingSession.is_master_code || sessionCode === "OPEN-CBT") {
+        return NextResponse.json(
+          { ok: false, error: "recovery_identity_required", message: "This attempt used shared/open access and cannot be safely recovered using a phone number alone. Contact the invigilator for identity verification." },
+          { status: 403 }
+        );
+      }
+      const { data: recovered, error: recoveryError } = await supabase.rpc("resume_exam", {
+        p_session: existingSession.id,
+        p_token: existingSession.attempt_token,
+      });
+      if (recoveryError || !recovered || recovered.ok === false) {
+        console.error("[exam/start] Existing attempt recovery failed:", recoveryError?.message || recovered?.message);
+        return NextResponse.json(
+          { ok: false, error: recovered?.error || "recovery_failed", message: recovered?.message || "Your previous examination could not be restored. Please contact the invigilator." },
+          { status: 409 }
+        );
+      }
+      if (recovered.finished) return NextResponse.json({ ...recovered, resumed: true, last_saved_at: existingSession.last_saved_at });
+      const recoveredQuestions = Array.isArray(recovered.questions) ? recovered.questions : [];
+      if (recoveredQuestions.length === 0) {
+        return NextResponse.json(
+          { ok: false, error: "recovery_paper_unavailable", message: "Your saved examination was found, but its question paper could not be loaded. Please contact the invigilator; do not start a new attempt." },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json({
+        ...recovered,
+        resumed: true,
+        last_saved_at: existingSession.last_saved_at,
+        subjects: [...new Set(recoveredQuestions.map((question: { subject?: string }) => question.subject).filter(Boolean))],
+      });
+    }
 
     // Resolve the access policy from the same exam_config rows the admin panel edits.
     // Do not trust the browser's local state or a cached public-settings response.
