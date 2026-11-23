@@ -28,7 +28,9 @@ check(
   "Candidate start route calls resume_exam and returns the original attempt instead of generating a new paper",
   startRoute.includes('supabase.rpc("resume_exam"') &&
     startRoute.includes("last_saved_at: existingSession.last_saved_at") &&
-    startRoute.includes("recovered.questions")
+    startRoute.includes("recovered.questions") &&
+    startRoute.includes("existingSession.is_master_code") &&
+    startRoute.includes('sessionCode === "OPEN-CBT"')
 );
 
 check(
@@ -40,7 +42,9 @@ check(
 
 check(
   "Master-code re-entry also checks for the same candidate's active attempt",
-  resolveRoute.includes("resumed_attempt: resumedAttempt")
+  resolveRoute.includes("resumed_attempt: resumedAttempt") &&
+    resolveRoute.includes("The master code is shared") &&
+    !resolveRoute.includes(".eq(\"access_code\", cleanCode)")
 );
 
 const syncBlock = adminAction.split('if (action === "sync_session") {')[1]?.split('// 3. RESTORE')[0] || "";
