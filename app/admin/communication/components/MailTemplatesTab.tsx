@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface Template {
   id: string;
@@ -35,7 +36,7 @@ export function MailTemplatesTab() {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/mail/templates");
+      const res = await authFetch("/api/admin/mail/templates");
       const data = await res.json();
       if (data.success) {
         setTemplates(data.templates || []);
@@ -89,7 +90,7 @@ export function MailTemplatesTab() {
       };
       if (editId) payload.id = editId;
 
-      const res = await fetch("/api/admin/mail/templates", {
+      const res = await authFetch("/api/admin/mail/templates", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface Automation {
   id: string;
@@ -22,7 +23,7 @@ export function MailAutomationsTab() {
   const fetchAutomations = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/mail/automations");
+      const res = await authFetch("/api/admin/mail/automations");
       const data = await res.json();
       if (data.success) {
         setAutomations(data.automations || []);
@@ -41,7 +42,7 @@ export function MailAutomationsTab() {
   const handleToggleActive = async (auto: Automation) => {
     const newActive = !auto.is_active;
     try {
-      const res = await fetch("/api/admin/mail/automations", {
+      const res = await authFetch("/api/admin/mail/automations", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: auto.id, is_active: newActive }),

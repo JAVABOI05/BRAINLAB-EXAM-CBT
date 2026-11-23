@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch subscriber statistics
     const supabase = getSupabaseServerClient();
-    const [subscribersRes, unsubscribedRes, totalUsersRes] = await Promise.all([
+    const [subscribersRes, unsubscribedRes, totalContactsRes, gamificationProfilesRes] = await Promise.all([
       supabase
         .from("notification_preferences")
         .select("id", { count: "exact", head: true })
@@ -31,11 +31,19 @@ export async function GET(request: NextRequest) {
       supabase
         .from("mail_contacts")
         .select("id", { count: "exact", head: true }),
+      supabase
+        .from("user_gamification_profiles")
+        .select("id", { count: "exact", head: true }),
     ]);
 
-    const activeSubscribersCount = subscribersRes.count || 0;
+    const contactsCount = totalContactsRes.count || 0;
     const unsubscribedCount = unsubscribedRes.count || 0;
-    const totalCandidatesCount = totalUsersRes.count || (activeSubscribersCount + unsubscribedCount);
+    const totalCandidatesCount = Math.max(
+      contactsCount,
+      gamificationProfilesRes.count || 0,
+      (subscribersRes.count || 0) + unsubscribedCount
+    );
+    const activeSubscribersCount = subscribersRes.count || Math.max(0, totalCandidatesCount - unsubscribedCount);
 
     // Sanitize secrets for non-super_admins
     const isSuper = admin.role === "super_admin" || admin.role === "platform_admin";

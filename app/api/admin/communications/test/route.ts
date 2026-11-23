@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
 
       const res = await sendEmail({
         to: targetEmail,
-        subject: `[BrainLab Test] Communication Gateway Verified (${new Date().toLocaleTimeString()})`,
-        html: `
+        subject: body.testSubject || `[BrainLab Test] Communication Gateway Verified (${new Date().toLocaleTimeString()})`,
+        html: body.testHtml || `
           <div style="font-family:sans-serif;padding:24px;background:#f8fafc;border-radius:12px;">
             <h2 style="color:#012153;margin-top:0;">✅ Communication Gateway Test Successful</h2>
             <p style="color:#334155;">This is an automated test message dispatched by administrator <strong>${admin.email}</strong> from the BrainLab Admin Communications Hub.</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface AuditLog {
   id: string;
@@ -21,7 +22,7 @@ export function MailAuditTab() {
   useEffect(() => {
     async function loadLogs() {
       try {
-        const res = await fetch("/api/admin/mail/audit-logs");
+        const res = await authFetch("/api/admin/mail/audit-logs");
         const data = await res.json();
         if (data.success) {
           setLogs(data.logs || []);

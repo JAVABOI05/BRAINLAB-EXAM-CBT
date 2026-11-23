@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       totalCampaignsRes,
       recentCampaignsRes,
       recentEventsRes,
+      gamificationProfilesRes,
     ] = await Promise.all([
       supabase.from("mail_contacts").select("id", { count: "exact", head: true }),
       supabase.from("mail_contacts").select("id", { count: "exact", head: true }).eq("marketing_consent", true).eq("is_suppressed", false),
@@ -38,11 +39,16 @@ export async function GET(request: NextRequest) {
       supabase.from("mail_campaigns").select("id", { count: "exact", head: true }),
       supabase.from("mail_campaigns").select("*").order("created_at", { ascending: false }).limit(5),
       supabase.from("mail_events").select("*").order("created_at", { ascending: false }).limit(10),
+      supabase.from("user_gamification_profiles").select("id", { count: "exact", head: true }),
     ]);
 
-    const totalContacts = totalContactsRes.count || 0;
-    const activeSubscribers = activeSubscribersRes.count || 0;
+    const baseContacts = totalContactsRes.count || 0;
+    const fallbackProfiles = gamificationProfilesRes.count || 0;
+    const totalContacts = baseContacts > 0 ? baseContacts : fallbackProfiles;
     const suppressed = suppressedRes.count || 0;
+    const activeSubscribers = (activeSubscribersRes.count || 0) > 0
+      ? (activeSubscribersRes.count || 0)
+      : Math.max(0, totalContacts - suppressed);
     const openTickets = openTicketsRes.count || 0;
     const pendingApprovalCount = pendingApprovalCampaignsRes.count || 0;
     const totalCampaigns = totalCampaignsRes.count || 0;

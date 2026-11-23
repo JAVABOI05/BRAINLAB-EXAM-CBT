@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface Contact {
   id: string;
@@ -35,7 +36,7 @@ export function MailContactsTab() {
       params.append("page", String(page));
       params.append("limit", "25");
 
-      const res = await fetch(`/api/admin/mail/contacts?${params.toString()}`);
+      const res = await authFetch(`/api/admin/mail/contacts?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setContacts(data.contacts || []);
@@ -58,7 +59,7 @@ export function MailContactsTab() {
     setSyncing(true);
     setFeedback(null);
     try {
-      const res = await fetch("/api/admin/mail/contacts", { method: "POST" });
+      const res = await authFetch("/api/admin/mail/contacts", { method: "POST" });
       const data = await res.json();
       if (res.ok && data.success) {
         setFeedback({ text: `✓ ${data.message}`, type: "success" });
@@ -77,7 +78,7 @@ export function MailContactsTab() {
   const handleToggleSuppression = async (contact: Contact) => {
     const newSuppressed = !contact.is_suppressed;
     try {
-      const res = await fetch("/api/admin/mail/contacts", {
+      const res = await authFetch("/api/admin/mail/contacts", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

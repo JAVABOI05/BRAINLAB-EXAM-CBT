@@ -9,6 +9,7 @@ interface MailGatewaysTabProps {
   setServicesConfig: React.Dispatch<React.SetStateAction<CommunicationServicesConfig>>;
   onSaveGateways: (e: React.FormEvent) => Promise<void>;
   saving: boolean;
+  adminEmail?: string;
 }
 
 export function MailGatewaysTab({
@@ -16,10 +17,11 @@ export function MailGatewaysTab({
   setServicesConfig,
   onSaveGateways,
   saving,
+  adminEmail,
 }: MailGatewaysTabProps) {
   // Connection tester state
   const [testType, setTestType] = useState<"email" | "sms" | "cloudflare">("email");
-  const [testEmail, setTestEmail] = useState("");
+  const [testEmail, setTestEmail] = useState(adminEmail || "");
   const [testPhone, setTestPhone] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -345,7 +347,7 @@ export function MailGatewaysTab({
               type="email"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
-              placeholder="Destination email"
+              placeholder={adminEmail ? `Destination email (e.g. ${adminEmail})` : "Destination email"}
               className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 w-64"
             />
           )}

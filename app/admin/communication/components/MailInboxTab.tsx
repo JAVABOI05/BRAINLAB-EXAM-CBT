@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface Conversation {
   id: string;
@@ -67,7 +68,7 @@ export function MailInboxTab() {
       if (statusFilter !== "all") params.append("status", statusFilter);
       if (search) params.append("search", search);
 
-      const res = await fetch(`/api/admin/mail/inbox?${params.toString()}`);
+      const res = await authFetch(`/api/admin/mail/inbox?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setConversations(data.conversations || []);
@@ -97,7 +98,7 @@ export function MailInboxTab() {
     async function loadThread() {
       setLoadingMessages(true);
       try {
-        const res = await fetch(`/api/admin/mail/inbox/${selectedConvId}`);
+        const res = await authFetch(`/api/admin/mail/inbox/${selectedConvId}`);
         const data = await res.json();
         if (data.success) {
           setActiveConv(data.conversation);
@@ -122,7 +123,7 @@ export function MailInboxTab() {
     setFeedback(null);
 
     try {
-      const res = await fetch(`/api/admin/mail/inbox/${selectedConvId}`, {
+      const res = await authFetch(`/api/admin/mail/inbox/${selectedConvId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -153,7 +154,7 @@ export function MailInboxTab() {
   const handleUpdateStatus = async (newStatus: "open" | "pending" | "resolved" | "archived") => {
     if (!selectedConvId) return;
     try {
-      const res = await fetch(`/api/admin/mail/inbox/${selectedConvId}`, {
+      const res = await authFetch(`/api/admin/mail/inbox/${selectedConvId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -180,7 +181,7 @@ export function MailInboxTab() {
     setFeedback(null);
 
     try {
-      const res = await fetch("/api/admin/mail/inbox", {
+      const res = await authFetch("/api/admin/mail/inbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

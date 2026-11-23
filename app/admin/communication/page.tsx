@@ -300,6 +300,7 @@ export default function AdminMailCentrePage() {
                 setServicesConfig={setServicesConfig}
                 onSaveGateways={handleSaveGateways}
                 saving={saving}
+                adminEmail={adminUser?.email}
               />
             )}
 
