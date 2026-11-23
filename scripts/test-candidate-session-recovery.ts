@@ -40,11 +40,12 @@ check(
     resolveRoute.includes('codeRecord.is_used && !hasRecoverableAttempt')
 );
 
+const masterCodeBlock = resolveRoute.split("// 2. CHECK INSTRUCTOR / ORG ASSESSMENT CODES")[0] || "";
 check(
   "Shared master code cannot authorise recovery by phone number alone",
-  resolveRoute.includes("The master code is shared") &&
-    resolveRoute.includes("const resumedAttempt = false") &&
-    !resolveRoute.includes(".eq(\"access_code\", cleanCode)")
+  masterCodeBlock.includes("The master code is shared") &&
+    masterCodeBlock.includes("const resumedAttempt = false") &&
+    !masterCodeBlock.includes(".eq(\"access_code\", cleanCode)")
 );
 
 const syncBlock = adminAction.split('if (action === "sync_session") {')[1]?.split('// 3. RESTORE')[0] || "";
