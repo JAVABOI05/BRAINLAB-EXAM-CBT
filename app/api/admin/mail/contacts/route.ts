@@ -118,9 +118,9 @@ async function performContactsSync(supabase: SupabaseClient, admin: AdminContext
         last_name: lastName,
         full_name: fullName,
         phone,
-        marketing_consent: pref
-          ? pref.marketing && !pref.unsubscribed
-          : consentMap.get(email) === true,
+        marketing_consent: consentMap.has(email)
+          ? consentMap.get(email) === true
+          : Boolean(pref?.marketing && !pref.unsubscribed),
         // Preference opt-outs do not globally suppress critical transactional mail.
         // Preserve only delivery/admin suppressions already recorded on the contact.
         is_suppressed: existingMap.get(email)?.isSuppressed || false,
