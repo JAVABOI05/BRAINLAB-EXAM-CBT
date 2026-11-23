@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/app/lib/adminAuth";
 import { adminHasPermission } from "@/app/lib/adminRoles";
 import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { sendEmail } from "@/app/lib/emailService";
+import { sendEmail, substituteTokens } from "@/app/lib/emailService";
 
 export async function GET(request: NextRequest) {
   try {
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (!body.to_email || !body.subject || !body.message) {
+    if (!body.to_email || !body.subject || (!body.message && !body.html_content && !body.html)) {
       return NextResponse.json({ error: "Recipient email, subject, and message are required." }, { status: 400 });
     }
 
@@ -150,9 +150,45 @@ export async function POST(request: NextRequest) {
       to_email,
       customer_name,
       subject,
-      message,
+      message = "",
       priority = "normal",
     } = body;
+
+    // Fetch recipient candidate details if available to personalize tokens
+    const { data: contact } = await supabase
+      .from("mail_contacts")
+      .select("first_name, full_name, subscription_tier")
+      .eq("email", to_email.toLowerCase())
+      .maybeSingle();
+
+    const candidateTokens: Record<string, string> = {
+      first_name: contact?.first_name || customer_name?.split(" ")[0] || to_email.split("@")[0] || "Learner",
+      full_name: contact?.full_name || customer_name || to_email.split("@")[0] || "BrainLab Candidate",
+      email: to_email,
+      subscription_plan: (contact?.subscription_tier || "free").toUpperCase() + " PLAN",
+      unsubscribe_url: `https://brainlabacademy.com.ng/unsubscribe?email=${encodeURIComponent(to_email)}`,
+      current_year: new Date().getFullYear().toString(),
+    };
+
+    let rawHtml = body.html_content || body.html || "";
+    let cleanText = message || (rawHtml ? rawHtml.replace(/<[^>]*>/g, "").trim() : "");
+
+    const personalizedSubject = substituteTokens(subject, candidateTokens);
+    let personalizedHtml: string;
+
+    if (rawHtml) {
+      personalizedHtml = substituteTokens(rawHtml, candidateTokens);
+    } else {
+      personalizedHtml = `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0F172A;">
+          <h2 style="color:#0F172A;margin-top:0;font-size:22px;font-weight:800;line-height:1.3;">${personalizedSubject}</h2>
+          <div style="font-size:15px;line-height:1.7;color:#334155;white-space:pre-wrap;margin:16px 0;">${cleanText}</div>
+          <div style="margin-top:28px;padding-top:16px;border-top:1px solid #E2E8F0;font-size:12px;color:#94A3B8;">
+            BrainLab Support Desk &bull; Reply to this email directly to continue.
+          </div>
+        </div>
+      `;
+    }
 
     // 1. Create conversation
     const { data: conv, error: convErr } = await supabase
@@ -160,8 +196,8 @@ export async function POST(request: NextRequest) {
       .insert({
         recipient_inbox: from_inbox,
         customer_email: to_email.toLowerCase(),
-        customer_name: customer_name || to_email.split("@")[0],
-        subject,
+        customer_name: customer_name || candidateTokens.full_name,
+        subject: personalizedSubject,
         status: "open",
         priority,
         assigned_to: admin.id,
@@ -177,24 +213,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Dispatch email via Resend
-    const htmlBody = `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;color:#0B1536;padding:24px;">
-        <h2 style="color:#0B1536;margin-top:0;font-size:20px;font-weight:800;">${subject}</h2>
-        <div style="font-size:15px;line-height:1.7;color:#334155;white-space:pre-wrap;">${message}</div>
-        <hr style="border:none;border-top:1px solid #E2E8F0;margin:28px 0;" />
-        <p style="font-size:12px;color:#94A3B8;">
-          BrainLab Academy Support Desk &bull; Reply to this email directly to continue the conversation.
-        </p>
-      </div>
-    `;
-
     const sendRes = await sendEmail({
       from: `BrainLab Support <${from_inbox}>`,
       to: to_email,
       replyTo: from_inbox,
-      subject,
-      html: htmlBody,
-      text: message,
+      subject: personalizedSubject,
+      html: personalizedHtml,
+      text: cleanText,
     });
 
     if (!sendRes.success) {
@@ -216,9 +241,9 @@ export async function POST(request: NextRequest) {
       from_email: from_inbox,
       from_name: admin.email,
       to_email,
-      subject,
-      body_html: htmlBody,
-      body_text: message,
+      subject: personalizedSubject,
+      body_html: personalizedHtml,
+      body_text: cleanText,
       resend_id: sendRes.messageId,
       sender_admin_id: admin.id,
     });

@@ -150,6 +150,7 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
             from_inbox: replyTo,
             to_email: singleRecipientEmail,
             subject,
+            html_content: htmlContent,
             message: htmlContent.replace(/<[^>]*>/g, ""),
           }),
         });

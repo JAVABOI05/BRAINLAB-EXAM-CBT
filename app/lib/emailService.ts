@@ -48,6 +48,7 @@ export interface SendEmailResult {
 
 /**
  * Replace placeholders like {{first_name}}, {{subscription_plan}}, {{unsubscribe_url}}
+ * and ensures safe fallbacks so raw mustache tags are never visible to students.
  */
 export function substituteTokens(template: string, tokens: Record<string, string | number | undefined | null>): string {
   if (!template) return "";
@@ -57,6 +58,14 @@ export function substituteTokens(template: string, tokens: Record<string, string
     const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
     result = result.replace(regex, safeVal);
   }
+  // Safe fallbacks for common student tokens if still unreplaced
+  result = result.replace(/{{\s*first_name\s*}}/g, "Learner");
+  result = result.replace(/{{\s*full_name\s*}}/g, "BrainLab Candidate");
+  result = result.replace(/{{\s*subscription_plan\s*}}/g, "Free Access");
+  result = result.replace(/{{\s*unsubscribe_url\s*}}/g, "https://brainlabacademy.com.ng/unsubscribe");
+  result = result.replace(/{{\s*current_year\s*}}/g, new Date().getFullYear().toString());
+  result = result.replace(/{{\s*exam_title\s*}}/g, "JAMB UTME CBT Mock Examination");
+  result = result.replace(/{{\s*access_code\s*}}/g, "BL-MOCK-2026");
   return result;
 }
 
@@ -169,12 +178,21 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
 
   try {
     const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
+
+    // Auto-substitute any unreplaced tokens with clean, sensible student fallbacks
+    let cleanHtml = substituteTokens(payload.html || payload.text || "", {});
+
+    // Automatically wrap bare content inside the executive BrainLab branded EdTech layout
+    if (!cleanHtml.includes("<!DOCTYPE") && !cleanHtml.includes("<html")) {
+      cleanHtml = wrapEmailTemplate(payload.subject, cleanHtml);
+    }
+
     const bodyPayload: Record<string, unknown> = {
       from: sender,
       to: recipients,
       subject: payload.subject,
-      html: payload.html,
-      text: payload.text,
+      html: cleanHtml,
+      text: payload.text || cleanHtml.replace(/<[^>]*>/g, ""),
       reply_to: replyTo,
       tags: payload.tags,
     };
@@ -221,30 +239,58 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
 /**
  * Base email layout wrapper with professional 2026 EdTech responsive HTML styling.
  */
-function wrapEmailTemplate(title: string, bodyContent: string): string {
+export function wrapEmailTemplate(
+  title: string,
+  bodyContent: string,
+  options?: { preheader?: string; categoryBadge?: string }
+): string {
   const year = new Date().getFullYear();
+  const preheader = options?.preheader || "Official Examination & Learning Communication from BrainLab Academy";
+  const badge = options?.categoryBadge || "JAMB • WAEC • NECO";
+
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${title}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td { font-family: Arial, Helvetica, sans-serif !important; }
+  </style>
+  <![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f1f5f9;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#0b1329;background:linear-gradient(180deg, #0b1329 0%, #1e293b 100%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#0f172a;">
+  <!-- Hidden Preheader Preview Text -->
+  <div style="display:none;font-size:1px;color:#0b1329;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+    ${preheader} &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0b1329;background:linear-gradient(180deg, #0b1329 0%, #1e293b 100%);padding:40px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);border:1px solid #e2e8f0;" cellspacing="0" cellpadding="0">
+        <!-- Main Card 600px -->
+        <table role="presentation" width="100%" style="max-width:600px;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.2);border:1px solid #334155;" cellspacing="0" cellpadding="0">
           
-          <!-- Header Bar -->
+          <!-- Branded Executive Header Bar -->
           <tr>
-            <td style="background-color:#00112b;padding:28px 36px;text-align:left;">
+            <td style="background-color:#00112b;background:linear-gradient(135deg, #00112b 0%, #071f4a 100%);padding:28px 36px;border-top:4px solid #1356e8;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td>
-                    <span style="color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">BrainLab<span style="color:#38bdf8;">.</span></span>
-                    <div style="color:#94a3b8;font-size:12px;margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600;">Excellence in Examination Preparation</div>
+                  <td align="left" style="vertical-align:middle;">
+                    <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;line-height:1;">
+                      BrainLab<span style="color:#38bdf8;">.</span>
+                    </div>
+                    <div style="color:#94a3b8;font-size:11px;margin-top:6px;letter-spacing:1px;text-transform:uppercase;font-weight:700;">
+                      Excellence in Examination Preparation &bull; Official Dispatch
+                    </div>
+                  </td>
+                  <td align="right" style="vertical-align:middle;">
+                    <span style="display:inline-block;padding:5px 12px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);border-radius:20px;color:#38bdf8;font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;">
+                      ${badge}
+                    </span>
                   </td>
                 </tr>
               </table>
@@ -253,25 +299,31 @@ function wrapEmailTemplate(title: string, bodyContent: string): string {
 
           <!-- Main Content Body -->
           <tr>
-            <td style="padding:36px;background-color:#ffffff;">
+            <td style="padding:40px 36px;background-color:#ffffff;line-height:1.7;color:#334155;font-size:15px;">
               ${bodyContent}
             </td>
           </tr>
 
-          <!-- Official Footer -->
+          <!-- Official EdTech Footer -->
           <tr>
-            <td style="background-color:#f8fafc;padding:24px 36px;border-top:1px solid #e2e8f0;text-align:center;">
-              <p style="margin:0 0 8px 0;font-size:12px;color:#64748b;line-height:1.6;">
-                Official correspondence from <strong>BrainLab Academy</strong>.<br>
-                For learner support, reach us at <a href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support" style="color:#0284c7;text-decoration:none;font-weight:600;">support@brainlabacademy.com.ng</a> or via WhatsApp.
+            <td style="background-color:#f8fafc;padding:28px 36px;border-top:1px solid #e2e8f0;text-align:center;">
+              <p style="margin:0 0 10px 0;font-size:12px;color:#64748b;line-height:1.6;">
+                Official correspondence from the <strong>BrainLab Academy Directorate</strong>.<br>
+                For candidate support, email <a href="mailto:support@brainlabacademy.com.ng" style="color:#1356e8;text-decoration:none;font-weight:700;">support@brainlabacademy.com.ng</a> or chat with our desk on <a href="https://wa.me/2348089267399" style="color:#10b981;text-decoration:none;font-weight:700;">WhatsApp</a>.
               </p>
-              <p style="margin:8px 0 8px 0;font-size:11px;color:#94a3b8;line-height:1.6;">
+              
+              <div style="margin:16px 0;padding:12px 16px;background:#f1f5f9;border-radius:8px;font-size:11px;color:#64748b;line-height:1.5;">
+                🔒 <strong>Candidate Security Note:</strong> BrainLab will never ask for your account password or confidential exam PIN. Never disclose your PIN to third parties.
+              </div>
+
+              <p style="margin:8px 0 0 0;font-size:11px;color:#94a3b8;line-height:1.6;">
                 You are receiving this communication regarding your candidate account.<br>
-                <a href="https://brainlabacademy.com.ng/unsubscribe" style="color:#64748b;text-decoration:underline;">Unsubscribe from notifications</a> &bull; 
-                <a href="https://brainlabacademy.com.ng/settings" style="color:#64748b;text-decoration:underline;">Notification Preferences</a>
+                <a href="https://brainlabacademy.com.ng/unsubscribe" style="color:#64748b;text-decoration:underline;">Unsubscribe</a> &bull; 
+                <a href="https://brainlabacademy.com.ng/terms" style="color:#64748b;text-decoration:underline;">Terms of Service</a> &bull;
+                <a href="https://brainlabacademy.com.ng/privacy" style="color:#64748b;text-decoration:underline;">Privacy Policy</a>
               </p>
-              <p style="margin:0;font-size:11px;color:#94a3b8;">
-                &copy; ${year} BrainLab Academy. All rights reserved. Lagos, Nigeria.
+              <p style="margin:10px 0 0 0;font-size:11px;color:#94a3b8;">
+                &copy; ${year} BrainLab Academy CBT. All rights reserved. Lagos, Nigeria.
               </p>
             </td>
           </tr>
