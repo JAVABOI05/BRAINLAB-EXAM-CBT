@@ -82,6 +82,10 @@ WHERE preference.marketing_announcements = true
     WHERE lower(event.email) = lower(contact.email)
   );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mail_consent_events_resend_event
+  ON public.mail_consent_events ((evidence->>'event_id'))
+  WHERE source = 'resend_webhook' AND evidence ? 'event_id';
+
 CREATE INDEX IF NOT EXISTS idx_mail_consent_events_email
   ON public.mail_consent_events (lower(email), created_at DESC);
 
