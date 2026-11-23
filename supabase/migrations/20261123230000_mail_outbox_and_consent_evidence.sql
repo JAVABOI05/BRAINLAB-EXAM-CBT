@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.mail_outbox (
   message_kind TEXT NOT NULL CHECK (message_kind IN ('transactional', 'marketing', 'service_notification')),
   recipient_email TEXT NOT NULL,
   payload JSONB NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   idempotency_key TEXT NOT NULL UNIQUE,
   status TEXT NOT NULL DEFAULT 'queued'
     CHECK (status IN ('queued', 'processing', 'sent', 'failed', 'dead_letter')),
