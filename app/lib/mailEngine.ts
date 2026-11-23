@@ -99,7 +99,11 @@ export async function processMailOutboxBatch(batchSize = 20): Promise<MailWorker
 
   for (const job of jobs || []) {
     const payload = job.payload as SendEmailPayload;
-    const sendResult = await sendEmail({ ...payload, allowSimulation: false });
+    const sendResult = await sendEmail({
+      ...payload,
+      idempotencyKey: job.idempotency_key,
+      allowSimulation: false,
+    });
 
     if (sendResult.success && !sendResult.simulated && sendResult.messageId) {
       const { error: updateError } = await supabase
