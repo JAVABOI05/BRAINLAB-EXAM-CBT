@@ -86,10 +86,10 @@ export async function GET(request: NextRequest) {
       totalComplained += s.complained || 0;
     });
 
-    const deliveryRate = totalSent > 0 ? ((totalDelivered / totalSent) * 100).toFixed(1) : "99.4";
-    const openRate = totalDelivered > 0 ? ((totalOpened / totalDelivered) * 100).toFixed(1) : "48.2";
-    const clickRate = totalDelivered > 0 ? ((totalClicked / totalDelivered) * 100).toFixed(1) : "24.1";
-    const bounceRate = totalSent > 0 ? ((totalBounced / totalSent) * 100).toFixed(2) : "0.25";
+    const deliveryRate = totalSent > 0 ? ((totalDelivered / totalSent) * 100).toFixed(1) : "0.0";
+    const openRate = totalDelivered > 0 ? ((totalOpened / totalDelivered) * 100).toFixed(1) : "0.0";
+    const clickRate = totalDelivered > 0 ? ((totalClicked / totalDelivered) * 100).toFixed(1) : "0.0";
+    const bounceRate = totalSent > 0 ? ((totalBounced / totalSent) * 100).toFixed(2) : "0.00";
 
     return NextResponse.json({
       success: true,
@@ -112,11 +112,12 @@ export async function GET(request: NextRequest) {
         resendConfigured: !!(config?.resend?.api_key || process.env.RESEND_API_KEY),
         resendSender: config?.resend?.from_email || "BrainLab Academy <support@mail.brainlabacademy.com.ng>",
         sendingDomain: "mail.brainlabacademy.com.ng",
-        cloudflareInboundReady: true,
-        dkimVerified: true,
-        spfAligned: true,
-        dmarcEnforced: true,
-        mxConfigured: true,
+        // DNS verification is not queried live by this endpoint. Never claim a record is verified here.
+        cloudflareInboundReady: null,
+        dkimVerified: null,
+        spfAligned: null,
+        dmarcEnforced: null,
+        mxConfigured: null,
       },
       recentInbound: recentInboundRes.data || [],
       recentCampaigns: recentCampaignsRes.data || [],
