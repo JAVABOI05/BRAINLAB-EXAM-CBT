@@ -2,11 +2,41 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { getAdminSession, type AdminUser } from "../../lib/adminAuth";
 import { adminHasPermission } from "../../lib/adminRoles";
+import { authFetch } from "../../lib/authFetch";
+import { normalizeWhatsAppNumber } from "../../lib/whatsapp";
 import type { AnalyticsEventName } from "../../lib/analytics";
 import "../admin.css";
+
+type RecentUserSignup = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  createdAt: string;
+  emailConfirmed: boolean;
+};
+
+type UserAnalyticsData = {
+  totalRegisteredUsers: number;
+  newUsersToday: number;
+  newUsersThisWeek: number;
+  newUsersThisMonth: number;
+  usersWithPhone: number;
+  phoneCoverageRate: string;
+  emailConfirmedCount: number;
+  emailConfirmedRate: string;
+  activeSubscribers: number;
+  newSubscribersThisWeek: number;
+  optOutCount: number;
+  optOutRate: string;
+  paidSubscribers: number;
+  dailyTrend: Array<{ date: string; label: string; count: number }>;
+  recentSignups: RecentUserSignup[];
+};
 
 type ResultSummary = {
   id: string;
@@ -49,7 +79,7 @@ const FUNNEL_EVENTS: { name: AnalyticsEventName; label: string; stage: string; d
 export default function AdminAnalyticsPage() {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<"exams" | "funnel">("funnel");
+  const [activeTab, setActiveTab] = useState<"users" | "funnel" | "exams">("users");
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,6 +90,8 @@ export default function AdminAnalyticsPage() {
   const [totalAttendance, setTotalAttendance] = useState(0);
   const [totalAudioAssets, setTotalAudioAssets] = useState(0);
   const [selectedSubject, setSelectedSubject] = useState("all");
+  const [userAnalytics, setUserAnalytics] = useState<UserAnalyticsData | null>(null);
+  const [copiedPhoneId, setCopiedPhoneId] = useState<string | null>(null);
 
   // Funnel & Telemetry State
   const [telemetryCounts, setTelemetryCounts] = useState<Record<string, number>>({});
@@ -144,6 +176,17 @@ export default function AdminAnalyticsPage() {
 
       setTelemetryCounts(countsMap);
       setRecentTelemetry(eventsList);
+
+      // Load Registered Users & Subscribers Growth Telemetry
+      try {
+        const mailRes = await authFetch("/api/admin/mail/overview");
+        const mailJson = await mailRes.json();
+        if (mailJson?.success && mailJson?.analytics) {
+          setUserAnalytics(mailJson.analytics);
+        }
+      } catch (err) {
+        console.warn("[analytics] User analytics fetch error:", err);
+      }
     } catch {
       setError("An unexpected error occurred while fetching platform metrics.");
     } finally {
@@ -421,7 +464,15 @@ export default function AdminAnalyticsPage() {
             >
               Refresh
             </button>
-            {activeTab === "funnel" ? (
+            {activeTab === "users" ? (
+              <a
+                href="/api/admin/mail/contacts?export=csv"
+                download
+                className="admin-btn-primary inline-flex items-center gap-1.5"
+              >
+                <span>📥</span> Export Contacts CSV
+              </a>
+            ) : activeTab === "funnel" ? (
               <button
                 type="button"
                 onClick={exportFunnelCSV}
@@ -443,28 +494,39 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mt-6 flex border-b border-slate-200 dark:border-slate-800 gap-4">
+        <div className="mt-6 flex border-b border-slate-200 dark:border-slate-800 gap-4 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab("users")}
+            className={`pb-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${
+              activeTab === "users"
+                ? "border-blue-600 text-blue-600 dark:border-cyan-400 dark:text-cyan-400"
+                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            }`}
+          >
+            👥 Candidate Sign-ups &amp; Subscribers
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab("funnel")}
-            className={`pb-3 text-sm font-bold border-b-2 transition ${
+            className={`pb-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${
               activeTab === "funnel"
                 ? "border-blue-600 text-blue-600 dark:border-cyan-400 dark:text-cyan-400"
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
-            🧭 Learner Journey & Conversion Funnel (12 Events)
+            🧭 Learner Journey &amp; Conversion Funnel
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("exams")}
-            className={`pb-3 text-sm font-bold border-b-2 transition ${
+            className={`pb-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${
               activeTab === "exams"
                 ? "border-blue-600 text-blue-600 dark:border-cyan-400 dark:text-cyan-400"
                 : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
-            📊 Examination Results & CBT Mastery
+            📊 Examination Results &amp; CBT Mastery
           </button>
         </div>
       </section>
@@ -472,6 +534,338 @@ export default function AdminAnalyticsPage() {
       {error && (
         <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           {error}
+        </div>
+      )}
+
+      {/* VIEW 0: REGISTERED USERS, SUBSCRIBERS & AUDIENCE TELEMETRY */}
+      {activeTab === "users" && (
+        <div className="space-y-6 mt-6">
+          {/* Top Vital KPI Cards */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Registered Users</p>
+              <p className="mt-1 text-2xl font-black text-slate-950 dark:text-white">
+                {userAnalytics?.totalRegisteredUsers ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] text-blue-600 font-semibold">
+                +{userAnalytics?.newUsersThisWeek ?? 0} new this week
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Sign-ups Today</p>
+              <p className="mt-1 text-2xl font-black text-emerald-950 dark:text-emerald-400">
+                {userAnalytics?.newUsersToday ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] text-emerald-600 font-semibold">
+                {userAnalytics?.newUsersThisMonth ?? 0} in last 30 days
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">📱 Mobile Reach (SMS)</p>
+              <p className="mt-1 text-2xl font-black text-indigo-950 dark:text-indigo-400">
+                {userAnalytics?.usersWithPhone ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] text-indigo-600 font-semibold">
+                {userAnalytics?.phoneCoverageRate || "0%"} with phone number
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Subscribers</p>
+              <p className="mt-1 text-2xl font-black text-blue-900 dark:text-cyan-400">
+                {userAnalytics?.activeSubscribers ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] text-slate-500">Consented for newsletters</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Email Verification</p>
+              <p className="mt-1 text-2xl font-black text-emerald-900 dark:text-emerald-300">
+                {userAnalytics?.emailConfirmedRate || "100%"}
+              </p>
+              <p className="mt-0.5 text-[10px] text-slate-400">Verified inboxes</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs col-span-2 sm:col-span-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">⭐ Paid Pro Candidates</p>
+              <p className="mt-1 text-2xl font-black text-purple-900 dark:text-purple-400">
+                {userAnalytics?.paidSubscribers ?? 0}
+              </p>
+              <p className="mt-0.5 text-[10px] text-purple-600 font-semibold">Pro subscriptions</p>
+            </div>
+          </div>
+
+          {/* Registration Velocity Bar Chart & Channel Reach */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Bar Chart */}
+            <div className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-100 dark:border-slate-800 gap-2">
+                <div>
+                  <h3 className="text-sm font-black text-slate-950 dark:text-white">
+                    📈 14-Day Candidate Sign-up Velocity
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Daily new learner onboarding velocity across Nigeria.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold">
+                  <span className="flex items-center gap-1.5 text-blue-900 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <span className="h-2 w-2 rounded-full bg-blue-600" />
+                    7 Days: <strong>+{userAnalytics?.newUsersThisWeek ?? 0}</strong>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                    30 Days: <strong>+{userAnalytics?.newUsersThisMonth ?? 0}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="flex items-end justify-between gap-1.5 sm:gap-2 h-36 pt-4 px-1">
+                  {userAnalytics?.dailyTrend && userAnalytics.dailyTrend.length > 0 ? (
+                    (() => {
+                      const maxVal = Math.max(...userAnalytics.dailyTrend.map((t) => t.count), 4);
+                      return userAnalytics.dailyTrend.map((t, idx) => {
+                        const barHeight = Math.max(8, Math.round((t.count / maxVal) * 100));
+                        const isLatest = idx === userAnalytics.dailyTrend.length - 1;
+                        return (
+                          <div key={t.date} className="flex-1 flex flex-col items-center gap-1 group relative">
+                            <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow whitespace-nowrap pointer-events-none z-10">
+                              {t.label}: {t.count} signup{t.count === 1 ? "" : "s"}
+                            </div>
+                            <div className="w-full max-w-[28px] flex items-end justify-center h-full">
+                              <div
+                                style={{ height: `${barHeight}%` }}
+                                className={`w-full rounded-t-md transition-all duration-300 ${
+                                  isLatest
+                                    ? "bg-blue-600 shadow-xs"
+                                    : t.count > 0
+                                    ? "bg-blue-400/80 hover:bg-blue-600 dark:bg-blue-500"
+                                    : "bg-slate-200/80 dark:bg-slate-800"
+                                }`}
+                              />
+                            </div>
+                            <span className="text-[9px] text-slate-500 font-bold truncate">
+                              {t.label.split(" ")[1] || t.label}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-slate-400 text-xs">
+                      Loading sign-up telemetry...
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-400 text-center mt-3">
+                  Authoritative registration volume from Supabase Auth &bull; 14-day rolling window
+                </p>
+              </div>
+            </div>
+
+            {/* Reachability & Communication Channels */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-black text-slate-950 dark:text-white">📡 Channel Reachability</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Direct student communication reach across email and SMS telecom networks.
+                </p>
+
+                <div className="mt-5 space-y-4 text-xs">
+                  <div>
+                    <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      <span>✉️ Email Delivery Reach</span>
+                      <span className="font-extrabold text-slate-900 dark:text-white">{userAnalytics?.emailConfirmedRate || "100%"}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: userAnalytics?.emailConfirmedRate || "100%" }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      {userAnalytics?.totalRegisteredUsers ?? 0} candidate inboxes reachable via Resend
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      <span>📱 Mobile Phone &amp; SMS (Termii)</span>
+                      <span className="font-extrabold text-slate-900 dark:text-white">{userAnalytics?.phoneCoverageRate || "0%"}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: userAnalytics?.phoneCoverageRate || "0%" }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      {userAnalytics?.usersWithPhone ?? 0} candidate phone numbers registered
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      <span>📢 Newsletter &amp; Alerts Opt-In</span>
+                      <span className="font-extrabold text-slate-900 dark:text-white">
+                        {userAnalytics?.totalRegisteredUsers && userAnalytics.totalRegisteredUsers > 0
+                          ? `${(((userAnalytics.activeSubscribers || 1) / userAnalytics.totalRegisteredUsers) * 100).toFixed(0)}%`
+                          : "100%"}
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-purple-600 h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: userAnalytics?.totalRegisteredUsers
+                            ? `${Math.min(100, Math.round(((userAnalytics.activeSubscribers || 1) / userAnalytics.totalRegisteredUsers) * 100))}%`
+                            : "100%",
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      Opt-out rate: {userAnalytics?.optOutRate || "0.0%"} ({userAnalytics?.optOutCount ?? 0} suppressed)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                href="/admin/communication"
+                className="mt-6 block w-full rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold text-xs py-2.5 transition text-center shadow-xs"
+              >
+                Open Mail Centre &amp; Broadcast Hub &rarr;
+              </Link>
+            </div>
+          </div>
+
+          {/* Real-time Candidate Sign-ups Stream */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-950 dark:text-white">
+                  ⚡ Recent Registered Candidate Stream &amp; Phone Contact
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Newest student sign-ups with phone numbers, verification, and WhatsApp access.
+                </p>
+              </div>
+
+              <Link
+                href="/admin/communication"
+                className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-blue-700 dark:text-cyan-400 hover:bg-slate-50 transition shrink-0"
+              >
+                View Full Contacts Directory &rarr;
+              </Link>
+            </div>
+
+            {userAnalytics?.recentSignups && userAnalytics.recentSignups.length > 0 ? (
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold uppercase text-[10px]">
+                    <tr>
+                      <th className="py-2.5 px-3">Student Name &amp; Email</th>
+                      <th className="py-2.5 px-3">Phone &amp; WhatsApp</th>
+                      <th className="py-2.5 px-3">Signed Up</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Quick Contact</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {userAnalytics.recentSignups.map((user) => {
+                      const hasPhone = Boolean(user.phone && user.phone.replace(/\D/g, "").length >= 9);
+                      const cleanPhone = user.phone ? user.phone.trim() : null;
+                      const waNumber = hasPhone ? normalizeWhatsAppNumber(cleanPhone) : null;
+                      const waUrl = waNumber
+                        ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hello ${user.fullName}, this is BrainLab Academy support regarding your candidate account.`)}`
+                        : null;
+
+                      return (
+                        <tr key={user.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-2.5 px-3">
+                            <p className="font-extrabold text-slate-900 dark:text-white">{user.fullName}</p>
+                            <p className="text-[11px] font-mono text-slate-500">{user.email}</p>
+                          </td>
+
+                          <td className="py-2.5 px-3">
+                            {hasPhone && cleanPhone ? (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-mono font-bold text-slate-900 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[11px]">
+                                  {cleanPhone}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(cleanPhone);
+                                    setCopiedPhoneId(user.id);
+                                    setTimeout(() => setCopiedPhoneId(null), 2000);
+                                  }}
+                                  className="rounded px-1.5 py-0.5 text-[10px] font-bold border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
+                                >
+                                  {copiedPhoneId === user.id ? "✓" : "Copy"}
+                                </button>
+                                {waUrl && (
+                                  <a
+                                    href={waUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200"
+                                  >
+                                    <span>💬</span> WA
+                                  </a>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">— No phone</span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px] whitespace-nowrap">
+                            {user.createdAt
+                              ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "Recently"}
+                          </td>
+
+                          <td className="py-2.5 px-3">
+                            {user.emailConfirmed ? (
+                              <span className="rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 text-[10px] font-bold">
+                                ✓ Verified
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 text-[10px] font-bold">
+                                Active
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-right">
+                            <Link
+                              href="/admin/communication"
+                              className="rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                              Message &rarr;
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400">
+                Awaiting student registration entries.
+              </div>
+            )}
+          </div>
         </div>
       )}
 

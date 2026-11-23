@@ -451,7 +451,23 @@ export async function awardStudentXp(params: AwardXpParams): Promise<AwardXpResu
   }
 
   if (resolvedUserId && resolvedUserId !== "candidate-guest") {
-    // Try record_learning_activity RPC first
+    // Reliably persist to server via /api/gamification/award endpoint (runs with service_role, immune to browser RLS blocks)
+    void Promise.resolve(
+      fetch("/api/gamification/award", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          activityType,
+          referenceId,
+          amount,
+          description,
+          scorePercent,
+          userId: resolvedUserId,
+        }),
+      })
+    ).catch(() => {});
+
+    // Try record_learning_activity RPC as complementary backup
     void Promise.resolve(
       supabase.rpc("record_learning_activity", {
         p_user_id: resolvedUserId,

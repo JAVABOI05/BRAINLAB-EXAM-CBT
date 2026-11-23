@@ -2,6 +2,131 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/app/lib/adminAuth";
 import { adminHasPermission } from "@/app/lib/adminRoles";
 import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+interface AdminContext {
+  id: string;
+  email: string;
+}
+
+// Helper to synchronize registered Supabase Auth users, phone numbers, and subscription tiers into mail_contacts
+async function performContactsSync(supabase: SupabaseClient, admin: AdminContext) {
+  const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+
+  if (authErr) {
+    throw new Error(`Auth sync error: ${authErr.message}`);
+  }
+
+  const users = authData?.users || [];
+  if (users.length === 0) {
+    return { totalEvaluated: 0, upsertedCount: 0 };
+  }
+
+  // 1. Fetch notification preferences for consent and suppression
+  const { data: prefs } = await supabase
+    .from("notification_preferences")
+    .select("email, marketing_announcements, unsubscribed_all");
+
+  const prefMap = new Map<string, { marketing: boolean; unsubscribed: boolean }>();
+  (prefs || []).forEach((p) => {
+    if (p.email) {
+      prefMap.set(p.email.toLowerCase(), {
+        marketing: p.marketing_announcements !== false && !p.unsubscribed_all,
+        unsubscribed: !!p.unsubscribed_all,
+      });
+    }
+  });
+
+  // 2. Fetch active subscriptions
+  const { data: subs } = await supabase
+    .from("user_subscriptions")
+    .select("user_id, status, plan:plan_id(slug, name)");
+
+  const subMap = new Map<string, string>();
+  (subs || []).forEach((s) => {
+    if (s.user_id && (s.status === "active" || s.status === "trialing")) {
+      const planSlug = (s.plan as { slug?: string })?.slug || "pro";
+      subMap.set(s.user_id, planSlug);
+    }
+  });
+
+  // 3. Map candidates
+  const records = users
+    .filter((u) => u.email && u.email.includes("@"))
+    .map((u) => {
+      const email = u.email!.toLowerCase();
+      const pref = prefMap.get(email);
+      const meta = u.user_metadata || {};
+
+      const fullName =
+        meta.full_name ||
+        meta.name ||
+        [meta.first_name, meta.last_name].filter(Boolean).join(" ") ||
+        email.split("@")[0] ||
+        "Learner";
+
+      const firstName = meta.first_name || fullName.split(" ")[0] || "Learner";
+      const lastName = meta.last_name || (fullName.split(" ").slice(1).join(" ") || null);
+
+      // Extract phone number from auth user or metadata
+      const rawPhone =
+        u.phone ||
+        meta.phone ||
+        meta.phone_number ||
+        meta.telephone ||
+        meta.mobile ||
+        meta.whatsapp ||
+        null;
+
+      const phone = rawPhone ? String(rawPhone).trim() : null;
+      const tier = subMap.get(u.id) || "free";
+
+      return {
+        user_id: u.id,
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        full_name: fullName,
+        phone,
+        marketing_consent: pref ? pref.marketing : true,
+        is_suppressed: pref ? pref.unsubscribed : false,
+        suppression_reason: pref?.unsubscribed ? "User opted out of all notifications" : null,
+        subscription_tier: tier,
+        created_at: u.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
+
+  // 4. Batch upsert in chunks of 100
+  let upsertedCount = 0;
+  for (let i = 0; i < records.length; i += 100) {
+    const chunk = records.slice(i, i + 100);
+    const { error: upsertErr } = await supabase.from("mail_contacts").upsert(chunk, {
+      onConflict: "email",
+    });
+    if (!upsertErr) {
+      upsertedCount += chunk.length;
+    }
+  }
+
+  // 5. Audit log
+  try {
+    await supabase.from("mail_audit_logs").insert({
+      admin_id: admin.id,
+      admin_name: admin.email,
+      action: "contacts.sync",
+      resource_type: "mail_contacts",
+      details: { totalEvaluated: users.length, upsertedCount },
+    });
+  } catch {
+    // Non-blocking audit log
+  }
+
+  return { totalEvaluated: users.length, upsertedCount };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,28 +141,105 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const exportMode = searchParams.get("export");
     const search = searchParams.get("search")?.trim().toLowerCase() || "";
-    const filter = searchParams.get("filter") || "all"; // 'all', 'consented', 'suppressed', 'paid'
+    const filter = searchParams.get("filter") || "all";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(100, Math.max(10, parseInt(searchParams.get("limit") || "30", 10)));
+    const limit = Math.min(200, Math.max(10, parseInt(searchParams.get("limit") || "30", 10)));
     const offset = (page - 1) * limit;
 
     const supabase = getSupabaseServerClient();
 
-    let query = supabase
-      .from("mail_contacts")
-      .select("*", { count: "exact" });
-
-    if (search) {
-      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`);
+    // 1. Initial count check — if empty on first page, auto-sync from registered accounts
+    const initialCountRes = await supabase.from("mail_contacts").select("id", { count: "exact", head: true });
+    if ((initialCountRes.count || 0) === 0 && !search && filter === "all" && page === 1) {
+      try {
+        await performContactsSync(supabase, admin);
+      } catch (err) {
+        console.warn("[mail_contacts] Auto-sync attempt error:", err);
+      }
     }
 
-    if (filter === "consented") {
+    // 2. Compute directory summary counts in parallel
+    const now = Date.now();
+    const sevenDaysAgo = new Date(now - 7 * 86400 * 1000).toISOString();
+
+    const [totalRes, phoneRes, consentedRes, paidRes, newThisWeekRes] = await Promise.all([
+      supabase.from("mail_contacts").select("id", { count: "exact", head: true }),
+      supabase.from("mail_contacts").select("id", { count: "exact", head: true }).not("phone", "is", null).neq("phone", ""),
+      supabase.from("mail_contacts").select("id", { count: "exact", head: true }).eq("marketing_consent", true).eq("is_suppressed", false),
+      supabase.from("mail_contacts").select("id", { count: "exact", head: true }).neq("subscription_tier", "free"),
+      supabase.from("mail_contacts").select("id", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
+    ]);
+
+    const summary = {
+      total: totalRes.count || 0,
+      withPhone: phoneRes.count || 0,
+      consented: consentedRes.count || 0,
+      paid: paidRes.count || 0,
+      newThisWeek: newThisWeekRes.count || 0,
+    };
+
+    // 3. Handle CSV Export
+    if (exportMode === "csv") {
+      let exportQuery = supabase.from("mail_contacts").select("*").order("created_at", { ascending: false });
+      if (filter === "phone") {
+        exportQuery = exportQuery.not("phone", "is", null).neq("phone", "");
+      } else if (filter === "consented") {
+        exportQuery = exportQuery.eq("marketing_consent", true).eq("is_suppressed", false);
+      } else if (filter === "suppressed") {
+        exportQuery = exportQuery.eq("is_suppressed", true);
+      } else if (filter === "paid") {
+        exportQuery = exportQuery.neq("subscription_tier", "free");
+      }
+
+      const { data: exportData } = await exportQuery.limit(5000);
+      const rows = exportData || [];
+
+      const escapeCsv = (val: unknown) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+      const csvHeader = ["ID", "Full Name", "Email Address", "Phone Number", "Subscription Plan", "Marketing Consent", "Suppressed", "Joined Date"].join(",");
+      const csvRows = rows.map((r) =>
+        [
+          escapeCsv(r.id),
+          escapeCsv(r.full_name || ""),
+          escapeCsv(r.email),
+          escapeCsv(r.phone || ""),
+          escapeCsv(r.subscription_tier || "free"),
+          escapeCsv(r.marketing_consent ? "Yes" : "No"),
+          escapeCsv(r.is_suppressed ? "Yes" : "No"),
+          escapeCsv(r.created_at || ""),
+        ].join(",")
+      );
+
+      const csvContent = [csvHeader, ...csvRows].join("\n");
+      return new NextResponse(csvContent, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="brainlab-candidates-directory-${new Date().toISOString().slice(0, 10)}.csv"`,
+        },
+      });
+    }
+
+    // 4. Filtered Query
+    let query = supabase.from("mail_contacts").select("*", { count: "exact" });
+
+    if (search) {
+      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%,phone.ilike.%${search}%`);
+    }
+
+    if (filter === "phone") {
+      query = query.not("phone", "is", null).neq("phone", "");
+    } else if (filter === "consented") {
       query = query.eq("marketing_consent", true).eq("is_suppressed", false);
     } else if (filter === "suppressed") {
       query = query.eq("is_suppressed", true);
     } else if (filter === "paid") {
       query = query.neq("subscription_tier", "free");
+    } else if (filter === "new_7d") {
+      query = query.gte("created_at", sevenDaysAgo);
+    } else if (filter === "new_30d") {
+      const thirtyDaysAgo = new Date(now - 30 * 86400 * 1000).toISOString();
+      query = query.gte("created_at", thirtyDaysAgo);
     }
 
     const { data: contacts, count, error } = await query
@@ -51,6 +253,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       contacts: contacts || [],
+      summary,
       pagination: {
         page,
         limit,
@@ -78,102 +281,13 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseServerClient();
-
-    // 1. Fetch users from Supabase Auth admin API (up to 1000 per sync batch)
-    const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    });
-
-    if (authErr) {
-      return NextResponse.json({ error: `Auth sync error: ${authErr.message}` }, { status: 500 });
-    }
-
-    const users = authData?.users || [];
-    if (users.length === 0) {
-      return NextResponse.json({ success: true, message: "No registered users to sync", syncedCount: 0 });
-    }
-
-    // 2. Fetch existing notification preferences for marketing consent
-    const userEmails = users.map((u) => u.email?.toLowerCase()).filter(Boolean) as string[];
-    const { data: prefs } = await supabase
-      .from("notification_preferences")
-      .select("email, marketing_announcements, unsubscribed_all");
-
-    const prefMap = new Map<string, { marketing: boolean; unsubscribed: boolean }>();
-    (prefs || []).forEach((p) => {
-      prefMap.set(p.email.toLowerCase(), {
-        marketing: p.marketing_announcements !== false && !p.unsubscribed_all,
-        unsubscribed: !!p.unsubscribed_all,
-      });
-    });
-
-    // 3. Fetch user subscriptions if any
-    const { data: subs } = await supabase
-      .from("user_subscriptions")
-      .select("user_id, status, plan:plan_id(slug, name)");
-
-    const subMap = new Map<string, string>();
-    (subs || []).forEach((s) => {
-      if (s.user_id && (s.status === "active" || s.status === "trialing")) {
-        const planSlug = (s.plan as { slug?: string })?.slug || "pro";
-        subMap.set(s.user_id, planSlug);
-      }
-    });
-
-    // 4. Upsert into mail_contacts
-    let upsertedCount = 0;
-    const records = users
-      .filter((u) => u.email && u.email.includes("@"))
-      .map((u) => {
-        const email = u.email!.toLowerCase();
-        const pref = prefMap.get(email);
-        const fullName =
-          u.user_metadata?.full_name ||
-          u.user_metadata?.name ||
-          [u.user_metadata?.first_name, u.user_metadata?.last_name].filter(Boolean).join(" ") ||
-          email.split("@")[0];
-        const firstName = u.user_metadata?.first_name || fullName.split(" ")[0] || "Learner";
-        const tier = subMap.get(u.id) || "free";
-
-        return {
-          user_id: u.id,
-          email,
-          first_name: firstName,
-          full_name: fullName,
-          phone: u.phone || u.user_metadata?.phone || null,
-          marketing_consent: pref ? pref.marketing : true,
-          is_suppressed: pref ? pref.unsubscribed : false,
-          suppression_reason: pref?.unsubscribed ? "User opted out of all notifications" : null,
-          subscription_tier: tier,
-          updated_at: new Date().toISOString(),
-        };
-      });
-
-    // Batch upsert in chunks of 100
-    for (let i = 0; i < records.length; i += 100) {
-      const chunk = records.slice(i, i + 100);
-      const { error: upsertErr } = await supabase.from("mail_contacts").upsert(chunk, {
-        onConflict: "email",
-      });
-      if (!upsertErr) {
-        upsertedCount += chunk.length;
-      }
-    }
-
-    // Log to mail_audit_logs
-    await supabase.from("mail_audit_logs").insert({
-      admin_id: admin.id,
-      admin_name: admin.email,
-      action: "contacts.sync",
-      resource_type: "mail_contacts",
-      details: { totalEvaluated: users.length, upsertedCount },
-    });
+    const result = await performContactsSync(supabase, admin);
 
     return NextResponse.json({
       success: true,
-      message: `Successfully synchronized ${upsertedCount} contact records from registered accounts.`,
-      syncedCount: upsertedCount,
+      message: `Successfully synchronized ${result.upsertedCount} candidate accounts and phone numbers.`,
+      syncedCount: result.upsertedCount,
+      totalEvaluated: result.totalEvaluated,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Sync failed";
@@ -219,6 +333,14 @@ export async function PATCH(request: NextRequest) {
       updatePayload.subscription_tier = body.subscription_tier;
     }
 
+    if (body.phone !== undefined) {
+      updatePayload.phone = body.phone ? String(body.phone).trim() : null;
+    }
+
+    if (body.full_name) {
+      updatePayload.full_name = String(body.full_name).trim();
+    }
+
     const { data: updated, error } = await supabase
       .from("mail_contacts")
       .update(updatePayload)
@@ -230,14 +352,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    await supabase.from("mail_audit_logs").insert({
-      admin_id: admin.id,
-      admin_name: admin.email,
-      action: "contact.update",
-      resource_type: "mail_contacts",
-      resource_id: body.id,
-      details: updatePayload,
-    });
+    try {
+      await supabase.from("mail_audit_logs").insert({
+        admin_id: admin.id,
+        admin_name: admin.email,
+        action: "contact.update",
+        resource_type: "mail_contacts",
+        resource_id: body.id,
+        details: updatePayload,
+      });
+    } catch {
+      // Non-blocking audit log
+    }
 
     return NextResponse.json({ success: true, contact: updated });
   } catch (err: unknown) {

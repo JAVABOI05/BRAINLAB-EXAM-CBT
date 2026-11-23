@@ -28,6 +28,83 @@ async function ensureAccessCodeMarkedUsed(sessionId: string) {
   }
 }
 
+async function recordExamSubmissionGamification(sessionId: string, score: number, total: number) {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { data: session } = await supabase
+      .from("exam_sessions")
+      .select("candidate_name, phone")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    if (!session) return;
+
+    const { data: users } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const name = String(session.candidate_name || "").trim().toLowerCase();
+    const phone = String(session.phone || "").trim().replace(/\s+/g, "");
+
+    const matchedUser = (users?.users || []).find((u) => {
+      const meta = u.user_metadata || {};
+      const uName = String(meta.full_name || meta.name || "").trim().toLowerCase();
+      const uPhone = String(meta.phone || u.phone || "").trim().replace(/\s+/g, "");
+      return (name && uName === name) || (phone && uPhone && uPhone === phone);
+    });
+
+    if (matchedUser) {
+      const pct = Math.min(100, Math.max(0, Math.round((score / (total || 400)) * 100)));
+      const earnedXp = Math.round(50 + pct * 0.75);
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      const { data: currentProfile } = await supabase
+        .from("user_gamification_profiles")
+        .select("*")
+        .eq("user_id", matchedUser.id)
+        .maybeSingle();
+
+      const newLifetimeXp = (currentProfile?.lifetime_xp || 0) + earnedXp;
+      
+      let level = 1;
+      let levelName = "Beginner";
+      if (newLifetimeXp >= 5000) { level = 10; levelName = "Grandmaster"; }
+      else if (newLifetimeXp >= 3500) { level = 9; levelName = "Scholar Supreme"; }
+      else if (newLifetimeXp >= 2500) { level = 8; levelName = "Master"; }
+      else if (newLifetimeXp >= 1750) { level = 7; levelName = "Expert"; }
+      else if (newLifetimeXp >= 1200) { level = 6; levelName = "Adept"; }
+      else if (newLifetimeXp >= 800) { level = 5; levelName = "Senior Scholar"; }
+      else if (newLifetimeXp >= 500) { level = 4; levelName = "Intermediate"; }
+      else if (newLifetimeXp >= 300) { level = 3; levelName = "Junior Scholar"; }
+      else if (newLifetimeXp >= 150) { level = 2; levelName = "Apprentice"; }
+
+      let currentStreak = currentProfile?.current_streak_days || 1;
+      if (currentProfile?.last_activity_date && currentProfile.last_activity_date !== todayStr) {
+        const lastDate = new Date(currentProfile.last_activity_date);
+        const today = new Date(todayStr);
+        const diffDays = Math.round((today.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+        if (diffDays === 1) currentStreak += 1;
+        else if (diffDays > 1) currentStreak = 1;
+      }
+
+      await supabase.from("user_gamification_profiles").upsert(
+        {
+          user_id: matchedUser.id,
+          lifetime_xp: newLifetimeXp,
+          current_level: level,
+          level_name: levelName,
+          current_streak_days: currentStreak,
+          longest_streak_days: Math.max(currentProfile?.longest_streak_days || 1, currentStreak),
+          last_activity_date: todayStr,
+          quizzes_completed_count: (currentProfile?.quizzes_completed_count || 0) + 1,
+          perfect_scores_count: pct >= 100 ? (currentProfile?.perfect_scores_count || 0) + 1 : (currentProfile?.perfect_scores_count || 0),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+    }
+  } catch (err) {
+    console.warn("[exam/submit] Gamification update warning:", err);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -57,6 +134,9 @@ export async function POST(request: NextRequest) {
 
     if (!rpcError && rpcData && typeof rpcData === "object" && (rpcData as { ok?: boolean }).ok !== false) {
       void ensureAccessCodeMarkedUsed(sessionId);
+      const resScore = Number((rpcData as Record<string, unknown>).score) || 0;
+      const resTotal = Number((rpcData as Record<string, unknown>).total) || 400;
+      void recordExamSubmissionGamification(sessionId, resScore, resTotal);
       return NextResponse.json(rpcData);
     }
 
@@ -70,6 +150,7 @@ export async function POST(request: NextRequest) {
 
     if (existingResult) {
       void ensureAccessCodeMarkedUsed(sessionId);
+      void recordExamSubmissionGamification(sessionId, Number(existingResult.score) || 0, Number(existingResult.total) || 400);
       return NextResponse.json({
         ok: true,
         finished: true,
@@ -91,6 +172,7 @@ export async function POST(request: NextRequest) {
 
     if (sessionRow && (sessionRow.status === "submitted" || sessionRow.status === "expired")) {
       void ensureAccessCodeMarkedUsed(sessionId);
+      void recordExamSubmissionGamification(sessionId, Number(sessionRow.score) || 0, Number(sessionRow.total) || 400);
       return NextResponse.json({
         ok: true,
         finished: true,
