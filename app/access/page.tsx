@@ -84,11 +84,6 @@ export default function AccessPage() {
       return;
     }
 
-    if (maintenanceNotice?.active) {
-      setErrorText(`CBT Engine Under Maintenance: ${maintenanceNotice.message}`);
-      return;
-    }
-
     if (!mockEnabled) {
       setErrorText("The exam is currently unavailable.");
       return;
@@ -131,6 +126,12 @@ export default function AccessPage() {
         return;
       }
 
+      if (maintenanceNotice?.active && !result.resumed_attempt) {
+        setErrorText(`CBT Engine Under Maintenance: ${maintenanceNotice.message}`);
+        setLoading(false);
+        return;
+      }
+
       setFailedCount(0);
       setLockoutRemaining(0);
       localStorage.setItem("access_code", normalizedCode);
@@ -159,7 +160,7 @@ export default function AccessPage() {
         "candidate",
         JSON.stringify({
           ...candidateData,
-          name: candidateData.name || "",
+          name: candidateData.name || result.candidate_name || "",
           phone: trimmedPhone,
           subject: result.preconfigured_subject || candidateData.subject || existingSubjects[1] || "Mathematics",
           subjects: existingSubjects,
@@ -287,6 +288,9 @@ export default function AccessPage() {
 
         <p className="mt-2 text-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
           Provide your candidate phone number and the access code issued for this session.
+        </p>
+        <p className="mt-2 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/30 px-3 py-2 text-center text-[11px] leading-5 text-blue-800 dark:text-blue-200">
+          Returning after an accidental logout? Use the same phone number and original PIN. If your examination is still active, BrainLab will restore your existing paper and remaining time.
         </p>
 
         {maintenanceNotice?.active && (
