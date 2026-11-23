@@ -8,7 +8,7 @@ This change is prepared on `feat/candidate-session-recovery`. The additive datab
 
 1. The candidate returns to the CBT access page and enters the original phone number and PIN.
 2. PIN validation checks for an active `exam_sessions` row matching that phone, access code and canonical `started` status.
-3. A used PIN is accepted only when that same phone has the matching active attempt.
+3. A used, individually issued voucher PIN is accepted only when that same phone has the matching active attempt. Shared master-code and OPEN-CBT attempts are not recoverable through phone-only verification; an invigilator must verify identity.
 4. The exam-start API calls `resume_exam` and returns the original paper, attempt token, server-saved answers, original deadline-derived time remaining and server checkpoint timestamp.
 5. A newer offline answer queue for that same session is reconciled with the server. A stale queue is discarded in favour of the newer server checkpoint.
 6. The candidate resumes at the first unanswered question. If the original deadline has elapsed, the existing server finalisation flow returns the completed result instead of creating a new paper.
@@ -43,5 +43,6 @@ Use dedicated test candidates and test PINs only.
 - Run `npm run test:session-recovery`, `npm run typecheck`, the existing offline-sync test and the full project verification/build.
 - Staging migration `20261121205732_candidate_session_recovery` is applied and its `resume_exam` / `_session_payload` definitions and active-status constraint have been re-checked.
 - Test the staging application against the staging Supabase project with dedicated test records.
+- Verify shared master-code and OPEN-CBT attempts fail closed for phone-only recovery.
 - Inspect the resulting diff and staging test evidence.
 - Obtain explicit approval before merging, applying any production migration, or deploying.
