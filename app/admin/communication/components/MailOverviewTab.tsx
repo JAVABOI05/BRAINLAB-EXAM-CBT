@@ -35,11 +35,11 @@ interface ProviderTelemetry {
   resendConfigured: boolean;
   resendSender: string;
   sendingDomain: string;
-  cloudflareInboundReady: boolean;
-  dkimVerified: boolean;
-  spfAligned: boolean;
-  dmarcEnforced: boolean;
-  mxConfigured: boolean;
+  cloudflareInboundReady: boolean | null;
+  dkimVerified: boolean | null;
+  spfAligned: boolean | null;
+  dmarcEnforced: boolean | null;
+  mxConfigured: boolean | null;
 }
 
 interface CampaignSummary {
