@@ -3,38 +3,29 @@ import {
   getPreferences,
   savePreferences,
   verifyUnsubscribeToken,
-  generateUnsubscribeToken,
 } from "@/app/lib/notificationPreferences";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl;
-    const token = searchParams.get("token");
-    const rawEmail = searchParams.get("email");
-
-    let email: string | null = null;
-    if (token) {
-      email = verifyUnsubscribeToken(token);
-    } else if (rawEmail) {
-      email = rawEmail.trim().toLowerCase();
+    const token = request.nextUrl.searchParams.get("token");
+    if (!token) {
+      // Do not reveal another person's notification settings based on an email address alone.
+      return NextResponse.json({
+        success: true,
+        requiresVerification: true,
+        message: "Open the secure preferences link in a BrainLab email to view or change settings.",
+      });
     }
 
+    const email = verifyUnsubscribeToken(token);
     if (!email) {
-      return NextResponse.json(
-        { error: "Invalid or expired unsubscribe link." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid unsubscribe link. Request a fresh link from BrainLab support." }, { status: 400 });
     }
 
     const preferences = await getPreferences({ email });
-    return NextResponse.json({
-      success: true,
-      email,
-      preferences,
-      validToken: Boolean(token && email),
-    });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to verify unsubscribe link";
+    return NextResponse.json({ success: true, email, preferences, validToken: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to verify preference link";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -42,25 +33,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
-    if (!body) {
-      return NextResponse.json({ error: "Missing body" }, { status: 400 });
+    if (!body || typeof body.token !== "string") {
+      return NextResponse.json({ error: "A secure, signed preference token is required." }, { status: 401 });
     }
 
-    let email: string | null = null;
-    if (body.token) {
-      email = verifyUnsubscribeToken(body.token);
-    } else if (body.email && typeof body.email === "string" && body.email.includes("@")) {
-      email = body.email.trim().toLowerCase();
-    }
-
+    const email = verifyUnsubscribeToken(body.token);
     if (!email) {
-      return NextResponse.json(
-        { error: "A valid email or signed unsubscribe token is required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid unsubscribe link." }, { status: 401 });
     }
 
-    // Resubscribe action
     if (body.resubscribe === true) {
       const updated = await savePreferences(email, {
         unsubscribed_all: false,
@@ -79,21 +60,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Unsubscribe from all action
     if (body.unsubscribeAll !== false) {
-      const updated = await savePreferences(email, {
-        unsubscribed_all: true,
-      });
+      const updated = await savePreferences(email, { unsubscribed_all: true });
       return NextResponse.json({
         success: true,
         action: "unsubscribed_all",
-        message: "You have been unsubscribed from all BrainLab notification dispatches.",
+        message: "You have been unsubscribed from non-critical BrainLab notifications.",
         preferences: updated,
       });
     }
 
-    // Granular channel updates
-    const channelUpdates: Record<string, boolean> = {};
     const validChannels = [
       "exam_results",
       "classroom_alerts",
@@ -101,12 +77,10 @@ export async function POST(request: NextRequest) {
       "assignments",
       "marketing_announcements",
       "sms_alerts",
-    ];
-
-    for (const ch of validChannels) {
-      if (typeof body[ch] === "boolean") {
-        channelUpdates[ch] = body[ch];
-      }
+    ] as const;
+    const channelUpdates: Record<string, boolean> = {};
+    for (const channel of validChannels) {
+      if (typeof body[channel] === "boolean") channelUpdates[channel] = body[channel];
     }
 
     const updated = await savePreferences(email, channelUpdates);
@@ -116,8 +90,8 @@ export async function POST(request: NextRequest) {
       message: "Notification preferences updated successfully.",
       preferences: updated,
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to process unsubscribe request";
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to process preference update";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -2,223 +2,202 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/app/lib/adminAuth";
 import { adminHasPermission } from "@/app/lib/adminRoles";
 import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
-import { sendEmail, substituteTokens } from "@/app/lib/emailService";
+import { enqueueMail } from "@/app/lib/mailEngine";
+import { substituteTokens } from "@/app/lib/emailService";
+import { generateUnsubscribeToken } from "@/app/lib/notificationPreferences";
 
 export async function POST(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await props.params;
+    const { id: campaignId } = await props.params;
     const admin = await getAdminSession(request);
-    if (!admin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const hasPerm = await adminHasPermission("mail.campaign.dispatch", admin.role);
-    if (!hasPerm && !["super_admin", "platform_admin"].includes(admin.role)) {
-      return NextResponse.json({ error: "Forbidden: You do not have permission to dispatch campaigns." }, { status: 403 });
+    const hasPermission = await adminHasPermission("mail.campaign.dispatch", admin.role);
+    if (!hasPermission && !["super_admin", "platform_admin"].includes(admin.role)) {
+      return NextResponse.json({ error: "Forbidden: campaign dispatch permission is required." }, { status: 403 });
     }
 
     const supabase = getSupabaseServerClient();
-
-    // 1. Fetch campaign
-    const { data: campaign, error: fetchErr } = await supabase
+    const { data: campaign, error: campaignError } = await supabase
       .from("mail_campaigns")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", campaignId)
       .single();
 
-    if (fetchErr || !campaign) {
+    if (campaignError || !campaign) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
-
-    // 2. Strict status check: Campaign must be 'approved'
     if (campaign.status !== "approved") {
-      return NextResponse.json(
-        {
-          error: `Campaign dispatch blocked: Campaign is in '${campaign.status}' state. Bulk broadcasts must be submitted and approved by an administrator before dispatch.`,
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        error: `Dispatch blocked: campaign status is '${campaign.status}'. Only approved campaigns can be queued.`,
+      }, { status: 400 });
     }
 
-    // 3. Mark campaign as 'sending'
-    await supabase
-      .from("mail_campaigns")
-      .update({
-        status: "sending",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", params.id);
-
-    // 4. Fetch target recipients with streaming/pagination (no hard 500 limit!)
-    let contactsQuery = supabase
-      .from("mail_contacts")
-      .select("id, email, first_name, full_name, subscription_tier, marketing_consent, is_suppressed");
-
-    // Suppressed contacts are always excluded
-    contactsQuery = contactsQuery.eq("is_suppressed", false);
-
-    // Marketing campaigns require consent
-    if (campaign.category === "marketing" || campaign.target_audience === "active_subscribers") {
-      contactsQuery = contactsQuery.eq("marketing_consent", true);
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Mail outbox is not configured on this environment." }, { status: 503 });
     }
 
-    if (campaign.target_audience === "paid_tiers") {
-      contactsQuery = contactsQuery.neq("subscription_tier", "free");
-    }
-
-    const { data: recipients, error: recipientsErr } = await contactsQuery.limit(2000);
-
-    if (recipientsErr) {
-      await supabase.from("mail_campaigns").update({ status: "failed" }).eq("id", params.id);
-      return NextResponse.json({ error: `Failed to load recipients: ${recipientsErr.message}` }, { status: 500 });
-    }
-
-    const validRecipients = (recipients || []).filter((r) => r.email && r.email.includes("@"));
-
-    let sentCount = 0;
+    let queuedCount = 0;
+    let duplicateCount = 0;
     let failedCount = 0;
-    let skippedCount = 0;
-    let simulatedCount = 0;
+    let evaluatedCount = 0;
+    const pageSize = 500;
 
-    const currentYear = new Date().getFullYear().toString();
+    for (let offset = 0; ; offset += pageSize) {
+      let query = supabase
+        .from("mail_contacts")
+        .select("id,email,first_name,full_name,subscription_tier,marketing_consent,is_suppressed")
+        .eq("is_suppressed", false);
 
-    // 5. Dispatch batch in parallel chunks of 10 to balance rate-limits and throughput
-    const chunkSize = 10;
-    for (let i = 0; i < validRecipients.length; i += chunkSize) {
-      const chunk = validRecipients.slice(i, i + chunkSize);
+      if (campaign.category === "marketing" || campaign.target_audience === "active_subscribers") {
+        query = query.eq("marketing_consent", true);
+      }
+      if (campaign.target_audience === "paid_tiers") {
+        query = query.neq("subscription_tier", "free");
+      }
 
-      await Promise.all(
-        chunk.map(async (recipient) => {
-          const unsubscribeUrl = `https://brainlabacademy.com.ng/unsubscribe?email=${encodeURIComponent(recipient.email)}`;
-          const tokens = {
-            first_name: recipient.first_name || "Learner",
-            full_name: recipient.full_name || recipient.first_name || "Learner",
-            email: recipient.email,
-            subscription_plan: recipient.subscription_tier.toUpperCase(),
-            unsubscribe_url: unsubscribeUrl,
-            current_year: currentYear,
-          };
+      const { data: contacts, error: contactsError } = await query
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
 
-          const personalizedSubject = substituteTokens(campaign.subject, tokens);
-          const personalizedHtml = substituteTokens(campaign.body_html, tokens);
-          const personalizedText = campaign.body_text
-            ? substituteTokens(campaign.body_text, tokens)
-            : undefined;
+      if (contactsError) {
+        throw new Error(`Unable to load campaign contacts: ${contactsError.message}`);
+      }
+      if (!contacts?.length) break;
 
-          try {
-            const sendRes = await sendEmail({
-              to: recipient.email,
+      for (const contact of contacts) {
+        evaluatedCount++;
+        const email = String(contact.email || "").trim().toLowerCase();
+        if (!email.includes("@")) {
+          failedCount++;
+          continue;
+        }
+
+        const { data: insertedRecipient, error: recipientInsertError } = await supabase
+          .from("mail_campaign_recipients")
+          .upsert({
+            campaign_id: campaign.id,
+            contact_id: contact.id,
+            email,
+            name: contact.full_name || contact.first_name || "Learner",
+            status: "queued",
+          }, {
+            onConflict: "campaign_id,email",
+            ignoreDuplicates: true,
+          })
+          .select("id")
+          .maybeSingle();
+
+        if (recipientInsertError) {
+          failedCount++;
+          continue;
+        }
+
+        let recipientId = insertedRecipient?.id as string | undefined;
+        if (!recipientId) {
+          const { data: existingRecipient, error: existingRecipientError } = await supabase
+            .from("mail_campaign_recipients")
+            .select("id,status")
+            .eq("campaign_id", campaign.id)
+            .eq("email", email)
+            .maybeSingle();
+          if (existingRecipientError || !existingRecipient) {
+            failedCount++;
+            continue;
+          }
+          // Existing recipient rows are never reset implicitly. A dedicated retry
+          // action must explicitly requeue failed/dead-letter messages.
+          duplicateCount++;
+          continue;
+        }
+
+        const unsubscribeToken = generateUnsubscribeToken(email);
+        const unsubscribeUrl =
+          `https://www.brainlabacademy.com.ng/unsubscribe?email=${encodeURIComponent(email)}&token=${encodeURIComponent(unsubscribeToken)}`;
+        const tokens = {
+          first_name: contact.first_name || "Learner",
+          full_name: contact.full_name || contact.first_name || "Learner",
+          email,
+          subscription_plan: String(contact.subscription_tier || "free").toUpperCase(),
+          unsubscribe_url: unsubscribeUrl,
+          current_year: new Date().getFullYear().toString(),
+        };
+
+        try {
+          const queued = await enqueueMail({
+            messageKind: campaign.category === "marketing" ? "marketing" : "service_notification",
+            idempotencyKey: `campaign:${campaign.id}:recipient:${recipientId}`,
+            metadata: { campaignId: campaign.id, campaignRecipientId: recipientId },
+            payload: {
+              to: email,
               from: campaign.from_sender,
               replyTo: campaign.reply_to,
-              subject: personalizedSubject,
-              html: personalizedHtml,
-              text: personalizedText,
+              subject: substituteTokens(campaign.subject, tokens),
+              html: substituteTokens(campaign.body_html, tokens),
+              text: campaign.body_text ? substituteTokens(campaign.body_text, tokens) : undefined,
               tags: [
                 { name: "campaign_id", value: campaign.id },
                 { name: "category", value: campaign.category },
               ],
-            });
+            },
+          });
+          if (queued.duplicate) duplicateCount++;
+          else queuedCount++;
+        } catch (queueError) {
+          failedCount++;
+          const message = queueError instanceof Error ? queueError.message : "Queue insertion failed";
+          await supabase
+            .from("mail_campaign_recipients")
+            .update({ status: "failed", error_message: message.slice(0, 2000) })
+            .eq("id", recipientId);
+        }
+      }
 
-            if (sendRes.simulated) {
-              simulatedCount++;
-            }
-
-            if (sendRes.success) {
-              sentCount++;
-              await supabase.from("mail_campaign_recipients").insert({
-                campaign_id: campaign.id,
-                contact_id: recipient.id,
-                email: recipient.email,
-                name: recipient.full_name,
-                status: sendRes.simulated ? "simulated" : "sent",
-                resend_id: sendRes.messageId,
-                sent_at: new Date().toISOString(),
-              });
-            } else {
-              failedCount++;
-              await supabase.from("mail_campaign_recipients").insert({
-                campaign_id: campaign.id,
-                contact_id: recipient.id,
-                email: recipient.email,
-                name: recipient.full_name,
-                status: "failed",
-                error_message: sendRes.error,
-              });
-            }
-          } catch (sendErr) {
-            failedCount++;
-            await supabase.from("mail_campaign_recipients").insert({
-              campaign_id: campaign.id,
-              contact_id: recipient.id,
-              email: recipient.email,
-              name: recipient.full_name,
-              status: "failed",
-              error_message: sendErr instanceof Error ? sendErr.message : "Unknown send error",
-            });
-          }
-        })
-      );
+      if (contacts.length < pageSize) break;
     }
 
-    // 6. Finalize campaign state
-    const nowIso = new Date().toISOString();
-    const finalStats = {
-      sent: sentCount,
-      delivered: sentCount, // initial count, updated by webhook
-      opened: 0,
-      clicked: 0,
-      bounced: 0,
-      complained: 0,
-      failed: failedCount,
-      skipped: skippedCount,
-    };
-
-    await supabase
+    const nextStatus = queuedCount > 0 || duplicateCount > 0 ? "queued" : "failed";
+    const { error: updateCampaignError } = await supabase
       .from("mail_campaigns")
       .update({
-        status: "sent",
-        sent_at: nowIso,
-        recipient_count: validRecipients.length,
-        stats: finalStats,
-        updated_at: nowIso,
+        status: nextStatus,
+        recipient_count: evaluatedCount,
+        stats: {
+          sent: 0,
+          delivered: 0,
+          opened: 0,
+          clicked: 0,
+          bounced: 0,
+          complained: 0,
+          failed: failedCount,
+        },
+        updated_at: new Date().toISOString(),
       })
-      .eq("id", params.id);
+      .eq("id", campaign.id);
 
-    // 7. Audit log
-    await supabase.from("mail_audit_logs").insert({
+    if (updateCampaignError) throw new Error(`Campaign status update failed: ${updateCampaignError.message}`);
+
+    const { error: auditError } = await supabase.from("mail_audit_logs").insert({
       admin_id: admin.id,
       admin_name: admin.email,
-      action: "campaign.dispatch",
+      action: "campaign.queue",
       resource_type: "mail_campaigns",
-      resource_id: params.id,
-      details: {
-        totalEvaluated: validRecipients.length,
-        sent: sentCount,
-        failed: failedCount,
-        skipped: skippedCount,
-      },
+      resource_id: campaign.id,
+      details: { evaluated: evaluatedCount, queued: queuedCount, duplicates: duplicateCount, failed: failedCount },
     });
+    if (auditError) console.error("[Mail Campaign Audit]", auditError.message);
 
     return NextResponse.json({
       success: true,
-      simulated: simulatedCount > 0,
-      message:
-        simulatedCount > 0
-          ? `⚠️ Campaign dispatch processed in SIMULATION MODE (${simulatedCount} simulated). No live emails were delivered because no Resend API key is configured.`
-          : `Campaign dispatch completed: ${sentCount} sent, ${failedCount} failed.`,
-      summary: {
-        totalEvaluated: validRecipients.length,
-        sent: sentCount,
-        failed: failedCount,
-        skipped: skippedCount,
-        simulated: simulatedCount,
-      },
+      queued: true,
+      message: `Campaign queued: ${queuedCount} new messages, ${duplicateCount} already queued or processed, ${failedCount} failed.`,
+      summary: { evaluated: evaluatedCount, queued: queuedCount, duplicates: duplicateCount, failed: failedCount },
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Dispatch failed";
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Campaign queueing failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

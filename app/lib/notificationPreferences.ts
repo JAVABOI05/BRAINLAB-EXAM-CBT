@@ -23,7 +23,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, "em
   classroom_alerts: true,
   streak_reminders: true,
   assignments: true,
-  marketing_announcements: true,
+  marketing_announcements: false,
   sms_alerts: true,
   unsubscribed_all: false,
   unsubscribed_at: null,
@@ -32,7 +32,14 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, "em
   timezone: "Africa/Lagos",
 };
 
-const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXTAUTH_SECRET || "brainlab-notif-secret-2026";
+function getUnsubscribeSecret(): string {
+  const secret =
+    process.env.EMAIL_UNSUBSCRIBE_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error("EMAIL_UNSUBSCRIBE_SECRET must be configured.");
+  return secret;
+}
 
 /**
  * Generates an HMAC-signed one-click unsubscribe token for a given email.
@@ -40,7 +47,7 @@ const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXTAUTH_SEC
 export function generateUnsubscribeToken(email: string): string {
   const normalized = email.trim().toLowerCase();
   const signature = crypto
-    .createHmac("sha256", SECRET)
+    .createHmac("sha256", getUnsubscribeSecret())
     .update(normalized)
     .digest("hex")
     .slice(0, 24);
@@ -61,7 +68,9 @@ export function verifyUnsubscribeToken(token: string): string | null {
       .update(email.trim().toLowerCase())
       .digest("hex")
       .slice(0, 24);
-    if (signature === expectedSig) {
+    const suppliedBytes = Buffer.from(signature);
+    const expectedBytes = Buffer.from(expectedSig);
+    if (suppliedBytes.length === expectedBytes.length && crypto.timingSafeEqual(suppliedBytes, expectedBytes)) {
       return email.trim().toLowerCase();
     }
     return null;
@@ -218,6 +227,28 @@ export async function savePreferences(
     if (error) {
       console.warn("[notificationPreferences] DB upsert fallback:", error.message);
     } else if (data) {
+      const marketingConsent = Boolean(data.marketing_announcements) && !Boolean(data.unsubscribed_all);
+      if (updates.marketing_announcements !== undefined || updates.unsubscribed_all === true) {
+        const action = marketingConsent ? "opt_in" : "opt_out";
+        const { data: contact } = await supabase
+          .from("mail_contacts")
+          .update({ marketing_consent: marketingConsent, updated_at: now })
+          .eq("email", normalizedEmail)
+          .select("id")
+          .maybeSingle();
+
+        const { error: consentError } = await supabase.from("mail_consent_events").insert({
+          contact_id: contact?.id || null,
+          email: normalizedEmail,
+          action,
+          source: "preferences_center",
+          evidence: { updated_at: now, preference_updated: true },
+        });
+        if (consentError) {
+          console.warn("[notificationPreferences] Consent evidence write failed:", consentError.message);
+        }
+      }
+
       return {
         email: data.email,
         user_id: data.user_id,

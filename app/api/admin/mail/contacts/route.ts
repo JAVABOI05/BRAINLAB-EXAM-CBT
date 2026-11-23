@@ -11,24 +11,51 @@ interface AdminContext {
 
 // Helper to synchronize registered Supabase Auth users, phone numbers, and subscription tiers into mail_contacts
 async function performContactsSync(supabase: SupabaseClient, admin: AdminContext) {
-  const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
-
-  if (authErr) {
-    throw new Error(`Auth sync error: ${authErr.message}`);
+  const users: Array<{
+    id: string;
+    email?: string;
+    phone?: string;
+    created_at?: string;
+    user_metadata?: Record<string, any>;
+  }> = [];
+  const perPage = 1000;
+  for (let page = 1; ; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(`Auth sync error: ${error.message}`);
+    const pageUsers = data?.users || [];
+    users.push(...pageUsers);
+    if (pageUsers.length < perPage) break;
   }
-
-  const users = authData?.users || [];
   if (users.length === 0) {
     return { totalEvaluated: 0, upsertedCount: 0 };
   }
 
   // 1. Fetch notification preferences for consent and suppression
-  const { data: prefs } = await supabase
+  const { data: prefs, error: prefsError } = await supabase
     .from("notification_preferences")
     .select("email, marketing_announcements, unsubscribed_all");
+  if (prefsError) throw new Error(`Preference sync error: ${prefsError.message}`);
+
+  const { data: consentEvents, error: consentError } = await supabase
+    .from("mail_consent_events")
+    .select("email, action, created_at")
+    .order("created_at", { ascending: false });
+  if (consentError) throw new Error(`Consent evidence sync error: ${consentError.message}`);
+
+  const consentMap = new Map<string, boolean>();
+  (consentEvents || []).forEach((event) => {
+    const key = String(event.email || "").toLowerCase();
+    if (key && !consentMap.has(key)) consentMap.set(key, event.action === "opt_in");
+  });
+
+  const { data: existingContacts, error: existingError } = await supabase
+    .from("mail_contacts")
+    .select("email, is_suppressed, suppression_reason");
+  if (existingError) throw new Error(`Existing contact lookup error: ${existingError.message}`);
+  const existingMap = new Map((existingContacts || []).map((contact) => [
+    String(contact.email).toLowerCase(),
+    { isSuppressed: Boolean(contact.is_suppressed), reason: contact.suppression_reason || null },
+  ]));
 
   const prefMap = new Map<string, { marketing: boolean; unsubscribed: boolean }>();
   (prefs || []).forEach((p) => {
@@ -91,9 +118,13 @@ async function performContactsSync(supabase: SupabaseClient, admin: AdminContext
         last_name: lastName,
         full_name: fullName,
         phone,
-        marketing_consent: pref ? pref.marketing : true,
-        is_suppressed: pref ? pref.unsubscribed : false,
-        suppression_reason: pref?.unsubscribed ? "User opted out of all notifications" : null,
+        marketing_consent: consentMap.has(email)
+          ? consentMap.get(email) === true
+          : Boolean(pref?.marketing && !pref.unsubscribed),
+        // Preference opt-outs do not globally suppress critical transactional mail.
+        // Preserve only delivery/admin suppressions already recorded on the contact.
+        is_suppressed: existingMap.get(email)?.isSuppressed || false,
+        suppression_reason: existingMap.get(email)?.reason || null,
         subscription_tier: tier,
         created_at: u.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -150,17 +181,9 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // 1. Initial count check — if empty on first page, auto-sync from registered accounts
-    const initialCountRes = await supabase.from("mail_contacts").select("id", { count: "exact", head: true });
-    if ((initialCountRes.count || 0) === 0 && !search && filter === "all" && page === 1) {
-      try {
-        await performContactsSync(supabase, admin);
-      } catch (err) {
-        console.warn("[mail_contacts] Auto-sync attempt error:", err);
-      }
-    }
+    // Contact synchronisation is an explicit admin action, never a side effect of viewing this directory.
 
-    // 2. Compute directory summary counts in parallel
+    // Compute directory summary counts in parallel
     const now = Date.now();
     const sevenDaysAgo = new Date(now - 7 * 86400 * 1000).toISOString();
 

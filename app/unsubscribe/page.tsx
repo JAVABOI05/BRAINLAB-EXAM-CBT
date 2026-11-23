@@ -23,7 +23,7 @@ function UnsubscribeContent() {
     classroom_alerts: true,
     streak_reminders: true,
     assignments: true,
-    marketing_announcements: true,
+    marketing_announcements: false,
     sms_alerts: true,
     unsubscribed_all: false,
   });
@@ -41,6 +41,12 @@ function UnsubscribeContent() {
 
         const res = await fetch(`/api/notifications/unsubscribe?${query.toString()}`);
         const data = await res.json();
+
+        if (active && res.ok && data.requiresVerification) {
+          setActiveEmail("");
+          setMessage({ text: data.message || "Open the secure preferences link in a BrainLab email.", type: "info" });
+          return;
+        }
 
         if (active && res.ok && data.success) {
           setActiveEmail(data.email);
@@ -82,14 +88,17 @@ function UnsubscribeContent() {
     try {
       const res = await fetch(`/api/notifications/unsubscribe?email=${encodeURIComponent(clean)}`);
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && data.requiresVerification) {
+        setActiveEmail("");
+        setToken("");
+        setMessage({ text: "For privacy, BrainLab only displays or changes preferences through a secure link sent to the address. Open the preference link in a BrainLab email.", type: "info" });
+      } else if (res.ok && data.success) {
         setActiveEmail(data.email);
         setPrefs(data.preferences);
-        setToken("");
         if (data.preferences.unsubscribed_all) {
           setMessage({ text: "This email is currently unsubscribed.", type: "info" });
         } else {
-          setMessage({ text: "Found your subscription record. Choose your preferences below.", type: "info" });
+          setMessage({ text: "Choose your preferences below.", type: "info" });
         }
       } else {
         setMessage({ text: data.error || "Unable to find subscription record.", type: "error" });
@@ -279,7 +288,7 @@ function UnsubscribeContent() {
           </div>
 
           {/* Subscription Status & 1-Click Master Control */}
-          {activeEmail && (
+          {activeEmail && token && (
             <div className="space-y-6">
               {/* Master Action Banner */}
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8 backdrop-blur-md">

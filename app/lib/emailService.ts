@@ -36,6 +36,7 @@ export interface SendEmailPayload {
     path?: string;
   }>;
   tags?: { name: string; value: string }[];
+  idempotencyKey?: string;
   allowSimulation?: boolean;
 }
 
@@ -206,6 +207,7 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        ...(payload.idempotencyKey ? { "Idempotency-Key": payload.idempotencyKey.slice(0, 256) } : {}),
       },
       body: JSON.stringify(bodyPayload),
     });
