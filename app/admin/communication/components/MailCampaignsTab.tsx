@@ -154,7 +154,11 @@ export function MailCampaignsTab({ currentAdminId, isSuperAdmin }: MailCampaigns
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setFeedback({ text: `✓ Dispatch completed: ${data.message}`, type: "success" });
+        if (data.simulated) {
+          setFeedback({ text: data.message || "⚠️ Broadcast simulated locally. Configure RESEND_API_KEY in Gateways to deliver live emails.", type: "error" });
+        } else {
+          setFeedback({ text: `✓ Dispatch completed: ${data.message}`, type: "success" });
+        }
         setReviewCampaign(null);
         void fetchCampaigns();
       } else {

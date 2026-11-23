@@ -57,6 +57,8 @@ export function MailInboxTab() {
   const [newSubject, setNewSubject] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [startingThread, setStartingThread] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [simulatingInbound, setSimulatingInbound] = useState(false);
 
   const [feedback, setFeedback] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
@@ -137,7 +139,14 @@ export function MailInboxTab() {
       if (res.ok && data.success) {
         setMessages((prev) => [...prev, data.message]);
         setReplyText("");
-        setFeedback({ text: replyMode === "outbound" ? "✓ Reply sent to customer via Resend." : "✓ Internal note added.", type: "success" });
+        if (data.simulated) {
+          setFeedback({
+            text: "⚠️ Reply recorded, but email dispatch was SIMULATED. Configure live Resend API key in Gateways to deliver to recipient's email.",
+            type: "error",
+          });
+        } else {
+          setFeedback({ text: replyMode === "outbound" ? "✓ Reply delivered to customer via Resend." : "✓ Internal note added.", type: "success" });
+        }
         // Refresh conversation list to update last message time
         void fetchConversations();
       } else {
@@ -147,6 +156,45 @@ export function MailInboxTab() {
       setFeedback({ text: err instanceof Error ? err.message : "Network error", type: "error" });
     } finally {
       setSendingReply(false);
+    }
+  };
+
+  // One-click Refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setFeedback(null);
+    try {
+      await fetchConversations();
+      setFeedback({ text: "✓ Unified Inbox refreshed.", type: "success" });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // One-click Portal Inbound Test Message
+  const handleSimulateInbound = async () => {
+    setSimulatingInbound(true);
+    setFeedback(null);
+    try {
+      const res = await authFetch("/api/admin/mail/inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "simulate_inbound" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedback({ text: "✓ Test portal candidate inquiry created and loaded into your inbox!", type: "success" });
+        await fetchConversations();
+        if (data.conversation?.id) {
+          setSelectedConvId(data.conversation.id);
+        }
+      } else {
+        setFeedback({ text: data.error || "Failed to simulate inquiry", type: "error" });
+      }
+    } catch (err) {
+      setFeedback({ text: err instanceof Error ? err.message : "Failed to simulate inquiry", type: "error" });
+    } finally {
+      setSimulatingInbound(false);
     }
   };
 
@@ -200,7 +248,14 @@ export function MailInboxTab() {
         setNewCustomerName("");
         setNewSubject("");
         setNewMessage("");
-        setFeedback({ text: "✓ Outbound message dispatched and thread initialized.", type: "success" });
+        if (data.simulated) {
+          setFeedback({
+            text: "⚠️ Thread initialized, but email dispatch was SIMULATED. Enter live Resend API key in Gateways to deliver real emails to inboxes.",
+            type: "error",
+          });
+        } else {
+          setFeedback({ text: "✓ Outbound message delivered and thread initialized.", type: "success" });
+        }
         await fetchConversations();
         setSelectedConvId(data.conversation.id);
       } else {
@@ -242,12 +297,32 @@ export function MailInboxTab() {
           ))}
         </div>
 
-        <button
-          onClick={() => setShowNewModal(true)}
-          className="rounded-xl bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800 transition shadow-sm shrink-0 flex items-center justify-center gap-1.5"
-        >
-          <span>+</span> New Outbound Thread
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            title="Refresh inbox conversations"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <span className={refreshing ? "animate-spin" : ""}>🔄</span> Refresh
+          </button>
+
+          <button
+            onClick={handleSimulateInbound}
+            disabled={simulatingInbound}
+            title="Simulate a candidate submitting a support ticket from the website"
+            className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-900 hover:bg-indigo-100 transition shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <span>🧪</span> {simulatingInbound ? "Simulating..." : "Test Inbound Portal Message"}
+          </button>
+
+          <button
+            onClick={() => setShowNewModal(true)}
+            className="rounded-xl bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800 transition shadow-sm flex items-center justify-center gap-1.5"
+          >
+            <span>+</span> New Outbound Thread
+          </button>
+        </div>
       </div>
 
       {feedback && (

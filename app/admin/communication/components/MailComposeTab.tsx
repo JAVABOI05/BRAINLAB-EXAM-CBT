@@ -108,7 +108,14 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setFeedback({ text: `✓ Test email dispatched to ${adminEmail} via Resend. Check your inbox!`, type: "success" });
+        if (data.simulated) {
+          setFeedback({
+            text: `⚠️ SIMULATION NOTICE: Test email was simulated locally for ${adminEmail}. No email was delivered to the inbox because no live RESEND_API_KEY is configured in the Gateways tab.`,
+            type: "error",
+          });
+        } else {
+          setFeedback({ text: `✓ Test email dispatched to ${adminEmail} via Resend. Check your inbox!`, type: "success" });
+        }
       } else {
         setFeedback({ text: data.error || "Test dispatch failed", type: "error" });
       }
@@ -147,7 +154,14 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          setFeedback({ text: `✓ Direct email dispatched to ${singleRecipientEmail}.`, type: "success" });
+          if (data.simulated) {
+            setFeedback({
+              text: `⚠️ SIMULATION NOTICE: Thread created, but email was SIMULATED. No email reached ${singleRecipientEmail} because no live RESEND_API_KEY is configured in the Gateways tab.`,
+              type: "error",
+            });
+          } else {
+            setFeedback({ text: `✓ Direct email successfully delivered to ${singleRecipientEmail} via Resend.`, type: "success" });
+          }
           setSingleRecipientEmail("");
         } else {
           setFeedback({ text: data.error || "Failed to dispatch email", type: "error" });

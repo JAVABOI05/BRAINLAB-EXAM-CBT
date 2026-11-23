@@ -111,15 +111,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    // 2. Identify target inbox: fallback to support@brainlabacademy.com.ng
-    const knownInboxes = [
-      "hello@brainlabacademy.com.ng",
-      "support@brainlabacademy.com.ng",
-      "admin@brainlabacademy.com.ng",
-      "info@brainlabacademy.com.ng",
-    ];
-
-    const matchedInbox = knownInboxes.find((ib) => toEmail.includes(ib)) || "support@brainlabacademy.com.ng";
+    // 2. Identify target inbox: accept any domain inbox or fallback to support@brainlabacademy.com.ng
+    let matchedInbox = "support@brainlabacademy.com.ng";
+    if (toEmail.includes("@brainlabacademy.com.ng") || toEmail.includes("@mail.brainlabacademy.com.ng")) {
+      const emailMatch = toEmail.match(/[a-zA-Z0-9._%+-]+@(mail\.)?brainlabacademy\.com\.ng/);
+      if (emailMatch) {
+        matchedInbox = emailMatch[0].toLowerCase();
+      }
+    }
 
     // 3. Find active conversation with this customer or thread subject / inReplyTo
     let existingConv: { id: string; message_count: number } | null = null;

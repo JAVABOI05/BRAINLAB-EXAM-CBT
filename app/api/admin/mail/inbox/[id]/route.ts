@@ -98,6 +98,7 @@ export async function POST(
     }
 
     let resendId: string | undefined;
+    let isSimulated = false;
 
     // 2. If outbound, send real email via Resend
     if (type === "outbound") {
@@ -120,7 +121,18 @@ export async function POST(
         text: body_text,
       });
 
+      if (!sendRes.success) {
+        return NextResponse.json(
+          {
+            error: `Email delivery failed: ${sendRes.error}`,
+            simulated: false,
+          },
+          { status: 400 }
+        );
+      }
+
       resendId = sendRes.messageId;
+      isSimulated = Boolean(sendRes.simulated);
     }
 
     // 3. Record message
@@ -168,7 +180,14 @@ export async function POST(
       details: { direction: type, to: conversation.customer_email },
     });
 
-    return NextResponse.json({ success: true, message });
+    return NextResponse.json({
+      success: true,
+      simulated: isSimulated,
+      message,
+      note: isSimulated
+        ? "⚠️ Note: Outbound reply was SIMULATED. Enter live Resend API key in Gateways to deliver real emails to inboxes."
+        : "✓ Reply delivered via Resend.",
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to post message";
     return NextResponse.json({ error: message }, { status: 500 });

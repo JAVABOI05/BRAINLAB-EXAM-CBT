@@ -42,7 +42,11 @@ export function MailGatewaysTab({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setTestResult(data.message || "✓ Test passed successfully.");
+        if (data.simulated) {
+          setTestResult(`⚠️ SIMULATED: ${data.message || "Email simulated (no actual email was delivered to inbox). Enter a valid API key and save credentials to deliver real emails."}`);
+        } else {
+          setTestResult(data.message || "✓ Test passed successfully.");
+        }
       } else {
         setTestResult(`❌ Error: ${data.error || "Test failed"}`);
       }
@@ -134,6 +138,17 @@ export function MailGatewaysTab({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
+            {!servicesConfig.resend.api_key && (
+              <div className="sm:col-span-2 rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
+                <span className="text-base shrink-0">⚠️</span>
+                <div className="space-y-1">
+                  <p className="font-extrabold text-amber-950">Live Email Delivery is currently in Simulated Mode</p>
+                  <p className="text-amber-800 leading-relaxed">
+                    Outbound test emails and broadcast campaigns are simulated locally and <strong>will not hit student inboxes</strong> until you enter your live Resend API key (<code className="font-mono bg-amber-100 px-1 py-0.5 rounded">re_...</code>) below and click <strong>Save All Gateway Credentials</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 Resend API Key (re_...)

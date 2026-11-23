@@ -81,6 +81,7 @@ export async function POST(
     let sentCount = 0;
     let failedCount = 0;
     let skippedCount = 0;
+    let simulatedCount = 0;
 
     const currentYear = new Date().getFullYear().toString();
 
@@ -121,6 +122,10 @@ export async function POST(
               ],
             });
 
+            if (sendRes.simulated) {
+              simulatedCount++;
+            }
+
             if (sendRes.success) {
               sentCount++;
               await supabase.from("mail_campaign_recipients").insert({
@@ -128,7 +133,7 @@ export async function POST(
                 contact_id: recipient.id,
                 email: recipient.email,
                 name: recipient.full_name,
-                status: "sent",
+                status: sendRes.simulated ? "simulated" : "sent",
                 resend_id: sendRes.messageId,
                 sent_at: new Date().toISOString(),
               });
@@ -199,12 +204,17 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `Campaign dispatch completed: ${sentCount} sent, ${failedCount} failed.`,
+      simulated: simulatedCount > 0,
+      message:
+        simulatedCount > 0
+          ? `⚠️ Campaign dispatch processed in SIMULATION MODE (${simulatedCount} simulated). No live emails were delivered because no Resend API key is configured.`
+          : `Campaign dispatch completed: ${sentCount} sent, ${failedCount} failed.`,
       summary: {
         totalEvaluated: validRecipients.length,
         sent: sentCount,
         failed: failedCount,
         skipped: skippedCount,
+        simulated: simulatedCount,
       },
     });
   } catch (err: unknown) {
