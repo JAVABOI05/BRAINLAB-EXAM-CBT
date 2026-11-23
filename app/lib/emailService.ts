@@ -100,6 +100,28 @@ const DEFAULT_SENDER =
 const DEFAULT_REPLY_TO = "support@brainlabacademy.com.ng";
 
 /**
+ * Normalizes sender to match Resend's verified sending subdomain (mail.brainlabacademy.com.ng)
+ * and repairs unclosed display name brackets.
+ */
+export function normalizeSenderAddress(rawSender: string): string {
+  let s = (rawSender || "").trim();
+  if (!s) return "BrainLab Academy <noreply@mail.brainlabacademy.com.ng>";
+
+  // Fix unclosed bracket e.g. "BrainLab Academy <noreply@mail.brainlabacademy.com.ng"
+  if (s.includes("<") && !s.includes(">")) {
+    s = `${s}>`;
+  }
+
+  // Resend domain alignment: Resend API key is verified on mail.brainlabacademy.com.ng
+  // If attempting to send directly from root @brainlabacademy.com.ng, transform sender to @mail.brainlabacademy.com.ng
+  if (s.includes("@brainlabacademy.com.ng") && !s.includes("@mail.brainlabacademy.com.ng")) {
+    s = s.replace(/@brainlabacademy\.com\.ng/gi, "@mail.brainlabacademy.com.ng");
+  }
+
+  return s;
+}
+
+/**
  * Low-level email dispatcher using the Resend REST API via native fetch.
  * Zero external npm package dependencies, 100% Next.js 16 & React 19 compatible.
  */
@@ -114,6 +136,9 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
     if (!payload.from && config?.resend?.from_email) sender = config.resend.from_email;
     if (!payload.replyTo && config?.resend?.reply_to) replyTo = config.resend.reply_to;
   } catch {}
+
+  // Auto-normalize sender to match verified Resend subdomain
+  sender = normalizeSenderAddress(sender);
 
   const isProduction = process.env.NODE_ENV === "production";
 

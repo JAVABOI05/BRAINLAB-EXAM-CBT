@@ -21,9 +21,10 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
-  const [fromInbox, setFromInbox] = useState("BrainLab Academy <support@mail.brainlabacademy.com.ng>");
+  const [fromInbox, setFromInbox] = useState("BrainLab Support <support@mail.brainlabacademy.com.ng>");
   const [replyTo, setReplyTo] = useState("support@brainlabacademy.com.ng");
   const [recipientMode, setRecipientMode] = useState<"individual" | "broadcast">("individual");
+  const [targetAudience, setTargetAudience] = useState<string>("active_subscribers");
   const [singleRecipientEmail, setSingleRecipientEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
@@ -177,7 +178,7 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
             from_sender: fromInbox,
             reply_to: replyTo,
             body_html: htmlContent,
-            target_audience: "active_subscribers",
+            target_audience: targetAudience,
             category: "marketing",
             submit_for_approval: true,
           }),
@@ -292,7 +293,33 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
         {/* Row 2: Sender Details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">From Sender</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-slate-700">From Sender Address</label>
+              <select
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "support") {
+                    setFromInbox("BrainLab Support <support@mail.brainlabacademy.com.ng>");
+                    setReplyTo("support@brainlabacademy.com.ng");
+                  } else if (val === "admissions") {
+                    setFromInbox("BrainLab Admissions <admissions@mail.brainlabacademy.com.ng>");
+                    setReplyTo("admissions@brainlabacademy.com.ng");
+                  } else if (val === "billing") {
+                    setFromInbox("BrainLab Billing <billing@mail.brainlabacademy.com.ng>");
+                    setReplyTo("billing@brainlabacademy.com.ng");
+                  } else if (val === "office") {
+                    setFromInbox("BrainLab Academic Office <office@mail.brainlabacademy.com.ng>");
+                    setReplyTo("office@brainlabacademy.com.ng");
+                  }
+                }}
+                className="text-[11px] font-semibold text-blue-700 bg-transparent cursor-pointer focus:outline-none"
+              >
+                <option value="support">Preset: Support</option>
+                <option value="admissions">Preset: Admissions</option>
+                <option value="billing">Preset: Billing & Accounts</option>
+                <option value="office">Preset: Academic Office</option>
+              </select>
+            </div>
             <input
               type="text"
               value={fromInbox}
@@ -315,10 +342,18 @@ export function MailComposeTab({ adminEmail, onCampaignCreated }: MailComposeTab
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Target Audience</label>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">
-                Active Marketing Subscribers (Consent Verified &bull; Suppressed Automatically Excluded)
-              </div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Target Audience Segment</label>
+              <select
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
+              >
+                <option value="active_subscribers">All Active Subscribers (Opted-in)</option>
+                <option value="jamb_utme">JAMB UTME Candidates Only</option>
+                <option value="pro_subscribers">Paid Subscribers (Pro & Premium)</option>
+                <option value="free_tier">Free Tier Learners (Upgrade Incentive)</option>
+                <option value="at_risk">At-Risk Learners (Re-engagement Nudge)</option>
+              </select>
             </div>
           )}
         </div>
