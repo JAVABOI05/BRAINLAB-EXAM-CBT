@@ -54,11 +54,31 @@ export async function GET(
 
     // 5. Fetch recent CBT exam sessions & results
     const candidateName = meta.full_name || meta.name || "";
+    const candidatePhone = meta.phone || u.phone || "";
+
+    const { data: resultsRows } = await supabase
+      .from("results")
+      .select("score, total, created_at")
+      .or(`name.ilike.%${candidateName}%,phone.eq.${candidatePhone || "---"}`)
+      .order("score", { ascending: false })
+      .limit(1);
+
+    let highestScore: { score: number; total: number; percentage: number } | null = null;
+    if (resultsRows && resultsRows.length > 0) {
+      const top = resultsRows[0];
+      const sc = Number(top.score) || 0;
+      const tot = Number(top.total) || 400;
+      highestScore = {
+        score: sc,
+        total: tot,
+        percentage: Math.min(100, Math.max(0, Math.round((sc / tot) * 100))),
+      };
+    }
 
     const { data: sessions } = await supabase
       .from("exam_sessions")
       .select("*")
-      .or(`candidate_name.ilike.%${candidateName}%,phone.eq.${meta.phone || "---"}`)
+      .or(`candidate_name.ilike.%${candidateName}%,phone.eq.${candidatePhone || "---"}`)
       .order("created_at", { ascending: false })
       .limit(15);
 
@@ -91,6 +111,7 @@ export async function GET(
         dreamSchool: meta.dream_school || meta.institution || meta.university || null,
         selectedSubjects: meta.selected_subjects || null,
         stateOfOrigin: meta.state || meta.state_of_origin || "N/A",
+        highestScore,
         createdAt: u.created_at,
         lastSignInAt: u.last_sign_in_at || null,
         lastActivityDate: gamification?.last_activity_date || null,

@@ -169,6 +169,7 @@ export default function LearnerDashboardPage() {
   const [readiness, setReadiness] = useState<ExamReadiness | null>(null);
   const [dueSpacedCount, setDueSpacedCount] = useState<number>(0);
   const [gamification, setGamification] = useState<UserGamificationProfile | null>(null);
+  const [peakScore, setPeakScore] = useState<{ score: number; total: number; percentage: number } | null>(null);
   const [userCohorts, setUserCohorts] = useState<any[]>([]);
   const [showGoalWizard, setShowGoalWizard] = useState(false);
   const [showSearchPalette, setShowSearchPalette] = useState(false);
@@ -271,6 +272,38 @@ export default function LearnerDashboardPage() {
           };
           setRecentExam(latestExam);
         }
+
+        // Fetch user's all-time highest CBT score from official results
+        try {
+          const uName = getLearnerDisplayName(currentUser);
+          const uPhone = currentUser.user_metadata?.phone || currentUser.phone || "";
+          const { data: resultsList } = await supabase
+            .from("results")
+            .select("id, score, total, created_at")
+            .or(`name.ilike.%${uName}%,phone.eq.${uPhone || "---"}`)
+            .order("score", { ascending: false });
+
+          if (resultsList && resultsList.length > 0 && active) {
+            const top = resultsList[0];
+            const sc = Number(top.score) || 0;
+            const tot = Number(top.total) || 400;
+            setPeakScore({
+              score: sc,
+              total: tot,
+              percentage: Math.min(100, Math.max(0, Math.round((sc / tot) * 100))),
+            });
+
+            if (!latestExam) {
+              latestExam = {
+                result_id: top.id,
+                score: sc,
+                total: tot,
+                status: "submitted",
+              };
+              setRecentExam(latestExam);
+            }
+          }
+        } catch {}
 
         let latestReadiness: ExamReadiness | null = null;
         if (masteryRes.status === "fulfilled" && masteryRes.value.length) {
@@ -586,6 +619,15 @@ export default function LearnerDashboardPage() {
                   lastActiveDate={gamification?.last_activity_date || null}
                   compact={true}
                 />
+                {peakScore && (
+                  <div className="flex items-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-500/20 px-2.5 py-1 sm:px-3 sm:py-1.5 backdrop-blur-md" title="All-time personal best CBT score">
+                    <span className="text-xs">🏆</span>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase text-emerald-200 leading-none">Peak CBT</p>
+                      <p className="text-[11px] font-black text-white leading-none mt-0.5">{peakScore.score}/{peakScore.total} <span className="text-[9px] font-normal text-emerald-200">({peakScore.percentage}%)</span></p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

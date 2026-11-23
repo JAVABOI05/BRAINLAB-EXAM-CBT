@@ -33,6 +33,11 @@ interface CandidateSummary {
     expiresAt: string | null;
     provider: string;
   };
+  highestScore?: {
+    score: number;
+    total: number;
+    percentage: number;
+  } | null;
   gamification: {
     xp: number;
     streakDays: number;
@@ -180,6 +185,8 @@ export default function CandidatesAdminPage() {
       "Phone",
       "Target Exam",
       "Target Score",
+      "Peak Score",
+      "Peak Score Pct",
       "Target Course",
       "Dream School",
       "Plan Tier",
@@ -209,6 +216,8 @@ export default function CandidatesAdminPage() {
         `"${c.phone || "N/A"}"`,
         `"${c.targetExam}"`,
         c.targetScore,
+        c.highestScore ? `"${c.highestScore.score}/${c.highestScore.total}"` : '"N/A"',
+        c.highestScore ? `"${c.highestScore.percentage}%"` : '"N/A"',
         `"${(c.targetCourse || "").replace(/"/g, '""')}"`,
         `"${(c.dreamSchool || "").replace(/"/g, '""')}"`,
         `"${c.subscription.planId}"`,
@@ -643,6 +652,17 @@ export default function CandidatesAdminPage() {
                           {cand.targetExam}
                         </span>
                         <p className="text-[10px] text-slate-400 mt-0.5">Target: {cand.targetScore} pts</p>
+                        {cand.highestScore ? (
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200" title="All-time highest recorded CBT score">
+                              <span>🏆</span>
+                              <span>Best: {cand.highestScore.score}/{cand.highestScore.total}</span>
+                              <span className="text-emerald-600 font-medium">({cand.highestScore.percentage}%)</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-[9px] text-slate-400 italic mt-0.5">No mock score yet</p>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -947,6 +967,28 @@ export default function CandidatesAdminPage() {
                             <span>{candidateDetail.gamification.streakDays}d</span>
                           </p>
                         </div>
+                      </div>
+                    )}
+
+                    {/* All-Time Peak CBT Score */}
+                    {candidateDetail.highestScore && (
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 flex items-center justify-between shadow-xs">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-lg shadow-xs">
+                            🏆
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider">All-Time Peak CBT Score</p>
+                            <p className="text-base font-extrabold text-emerald-950">
+                              {candidateDetail.highestScore.score} / {candidateDetail.highestScore.total} pts ({candidateDetail.highestScore.percentage}%)
+                            </p>
+                          </div>
+                        </div>
+                        <span className="rounded-full bg-emerald-200/80 px-3 py-1 text-[11px] font-extrabold text-emerald-900">
+                          {candidateDetail.highestScore.score >= candidateDetail.targetScore
+                            ? "🎯 Target Achieved"
+                            : `${candidateDetail.targetScore - candidateDetail.highestScore.score} pts to Target`}
+                        </span>
                       </div>
                     )}
 

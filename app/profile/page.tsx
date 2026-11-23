@@ -113,6 +113,7 @@ export default function LearnerProfilePage() {
   const { resolvedTheme } = useLearnerTheme();
   const [user, setUser] = useState<User | null>(null);
   const [gamification, setGamification] = useState<UserGamificationProfile | null>(null);
+  const [peakScore, setPeakScore] = useState<{ score: number; total: number; percentage: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -167,6 +168,28 @@ export default function LearnerProfilePage() {
       if (active && gProfile) {
         setGamification(gProfile);
       }
+
+      // Fetch user's all-time highest CBT score
+      try {
+        const candidateName = prof.displayName;
+        const candidatePhone = currentUser.user_metadata?.phone || currentUser.phone || "";
+        const { data: peakRes } = await supabase
+          .from("results")
+          .select("score, total")
+          .or(`name.ilike.%${candidateName}%,phone.eq.${candidatePhone || "---"}`)
+          .order("score", { ascending: false })
+          .limit(1);
+
+        if (peakRes && peakRes.length > 0 && active) {
+          const sc = Number(peakRes[0].score) || 0;
+          const tot = Number(peakRes[0].total) || 400;
+          setPeakScore({
+            score: sc,
+            total: tot,
+            percentage: Math.min(100, Math.max(0, Math.round((sc / tot) * 100))),
+          });
+        }
+      } catch {}
 
       setLoading(false);
     }
@@ -400,6 +423,11 @@ export default function LearnerProfilePage() {
                     {gamification && gamification.current_streak_days > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/30 bg-rose-500/20 px-3 py-0.5 text-[10px] font-extrabold text-rose-200">
                         <ProfileIcon name="flame" className="h-3 w-3 text-rose-400" /> {gamification.current_streak_days} Day Streak
+                      </span>
+                    )}
+                    {peakScore && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-500/20 px-3 py-0.5 text-[10px] font-extrabold text-emerald-200" title="All-time personal best CBT score">
+                        🏆 Peak: {peakScore.score}/{peakScore.total} ({peakScore.percentage}%)
                       </span>
                     )}
                   </div>

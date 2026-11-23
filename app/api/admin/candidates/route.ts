@@ -72,6 +72,39 @@ export async function GET(request: NextRequest) {
       if (g.user_id) gamificationMap.set(g.user_id, g);
     });
 
+    // Fetch historical exam results to compute all-time highest score / personal best
+    const { data: resultsRows } = await supabase
+      .from("results")
+      .select("name, phone, score, total, created_at");
+
+    type HighestScoreInfo = { score: number; total: number; percentage: number };
+    const highestScoreByName = new Map<string, HighestScoreInfo>();
+    const highestScoreByPhone = new Map<string, HighestScoreInfo>();
+
+    (resultsRows || []).forEach((r) => {
+      const score = Number(r.score) || 0;
+      const total = Number(r.total) || 400;
+      const percentage = Math.min(100, Math.max(0, Math.round((score / total) * 100)));
+      const info: HighestScoreInfo = { score, total, percentage };
+
+      const nameKey = String(r.name || "").trim().toLowerCase();
+      if (nameKey) {
+        const existing = highestScoreByName.get(nameKey);
+        if (!existing || score > existing.score) {
+          highestScoreByName.set(nameKey, info);
+        }
+      }
+
+      const rawPhone = String(r.phone || "").replace(/\D/g, "");
+      const phoneKey = rawPhone.length >= 10 ? rawPhone.slice(-10) : "";
+      if (phoneKey) {
+        const existing = highestScoreByPhone.get(phoneKey);
+        if (!existing || score > existing.score) {
+          highestScoreByPhone.set(phoneKey, info);
+        }
+      }
+    });
+
     // Filter and map candidate records
     const nonStaffUsers = users.filter((u) => !adminMap.has(u.id));
 
@@ -166,17 +199,29 @@ export async function GET(request: NextRequest) {
         const effectiveXp = gamification?.lifetime_xp ?? gamification?.xp ?? 0;
         const effectiveStreak = gamification?.current_streak_days ?? gamification?.streak_days ?? 0;
 
+        const candidateFullName = (meta.full_name as string) || (meta.name as string) || "Candidate";
+        const candidatePhone = (meta.phone as string) || u.phone || "N/A";
+
+        const nameKey = candidateFullName.trim().toLowerCase();
+        const rawPhone = candidatePhone.replace(/\D/g, "");
+        const phoneKey = rawPhone.length >= 10 ? rawPhone.slice(-10) : "";
+        const highestScore =
+          (phoneKey && highestScoreByPhone.get(phoneKey)) ||
+          (nameKey && highestScoreByName.get(nameKey)) ||
+          null;
+
         return {
           id: u.id,
           email: u.email,
-          fullName: (meta.full_name as string) || (meta.name as string) || "Candidate",
-          phone: (meta.phone as string) || u.phone || "N/A",
+          fullName: candidateFullName,
+          phone: candidatePhone,
           targetExam: (meta.target_exam as string) || (meta.exam_type as string) || "JAMB UTME",
           targetScore: Number(meta.target_score) || 280,
           targetCourse: (meta.target_course as string) || (meta.course as string) || null,
           dreamSchool: (meta.dream_school as string) || (meta.institution as string) || (meta.university as string) || null,
           selectedSubjects: meta.selected_subjects || null,
           stateOfOrigin: (meta.state as string) || (meta.state_of_origin as string) || "N/A",
+          highestScore,
           createdAt: u.created_at,
           lastSignInAt: u.last_sign_in_at || null,
           lastActivityDate: gamification?.last_activity_date || null,
