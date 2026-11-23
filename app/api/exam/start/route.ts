@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Recover an existing active attempt before checking new-attempt eligibility or consuming its PIN.
     const { data: existingSession, error: existingSessionError } = await supabase
       .from("exam_sessions")
-      .select("id, attempt_token, status, deadline_at, last_saved_at, phone, access_code")
+      .select("id, attempt_token, status, deadline_at, last_saved_at, phone, access_code, is_master_code")
       .eq("phone", cleanPhone)
       .eq("access_code", sessionCode)
       .eq("status", "started")
@@ -78,6 +78,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingSession) {
+      // A shared master code or OPEN-CBT has no candidate-specific secret. Do not
+      // treat a phone number alone as proof of identity for recovering that attempt.
+      if (existingSession.is_master_code || sessionCode === "OPEN-CBT") {
+        return NextResponse.json(
+          { ok: false, error: "recovery_identity_required", message: "This attempt used shared/open access and cannot be safely recovered using a phone number alone. Contact the invigilator for identity verification." },
+          { status: 403 }
+        );
+      }
       const { data: recovered, error: recoveryError } = await supabase.rpc("resume_exam", {
         p_session: existingSession.id,
         p_token: existingSession.attempt_token,
