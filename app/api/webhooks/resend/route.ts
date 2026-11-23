@@ -70,6 +70,10 @@ export async function POST(request: NextRequest) {
     const eventId = request.headers.get("svix-id")!;
     const recipients = Array.isArray(data.to) ? data.to as string[] : [];
     const primaryRecipient = String(recipients[0] || "").trim().toLowerCase();
+    const tags = data.tags as Record<string, string> | Array<{ name: string; value: string }> | undefined;
+    const campaignId = Array.isArray(tags)
+      ? tags.find((tag) => tag.name === "campaign_id")?.value || null
+      : (tags && typeof tags.campaign_id === "string" ? tags.campaign_id : null);
 
     if (!emailId || !primaryRecipient || eventType === "unknown") {
       return NextResponse.json({ error: "Incomplete Resend event payload" }, { status: 400 });
@@ -81,13 +85,11 @@ export async function POST(request: NextRequest) {
       resend_email_id: emailId,
       event_type: eventType,
       recipient: primaryRecipient,
+      campaign_id: campaignId,
       payload,
     });
 
-    if (eventError?.code === "23505") {
-      return NextResponse.json({ received: true, idempotent_skip: true });
-    }
-    if (eventError) {
+    if (eventError && eventError.code !== "23505") {
       throw new Error(`Could not persist webhook event: ${eventError.message}`);
     }
 
@@ -151,7 +153,9 @@ export async function POST(request: NextRequest) {
         source: "resend_webhook",
         evidence: { event_id: eventId, event_type: eventType },
       });
-      if (consentError) throw new Error(`Could not record complaint opt-out: ${consentError.message}`);
+      if (consentError && consentError.code !== "23505") {
+        throw new Error(`Could not record complaint opt-out: ${consentError.message}`);
+      }
     }
 
     return NextResponse.json({ success: true, event_type: eventType });
