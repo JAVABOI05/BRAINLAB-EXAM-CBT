@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS public.mail_outbox (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mail_campaign_recipients_campaign_email
+  ON public.mail_campaign_recipients (campaign_id, email);
+
 CREATE INDEX IF NOT EXISTS idx_mail_outbox_ready
   ON public.mail_outbox (available_at, created_at)
   WHERE status = 'queued';
