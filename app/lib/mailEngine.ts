@@ -79,6 +79,54 @@ export interface MailWorkerResult {
   deadLettered: number;
 }
 
+async function finalizeCampaignIfComplete(
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+  campaignId: string
+): Promise<void> {
+  const { count: pendingCount, error: pendingError } = await supabase
+    .from("mail_outbox")
+    .select("id", { count: "exact", head: true })
+    .filter("metadata->>campaignId", "eq", campaignId)
+    .in("status", ["queued", "processing"]);
+  if (pendingError) throw new Error(`Campaign queue status lookup failed: ${pendingError.message}`);
+  if ((pendingCount || 0) > 0) return;
+
+  const { data: recipients, error: recipientError } = await supabase
+    .from("mail_campaign_recipients")
+    .select("status")
+    .eq("campaign_id", campaignId);
+  if (recipientError) throw new Error(`Campaign recipient summary failed: ${recipientError.message}`);
+
+  const { data: events, error: eventError } = await supabase
+    .from("mail_events")
+    .select("event_type")
+    .eq("campaign_id", campaignId);
+  if (eventError) throw new Error(`Campaign event summary failed: ${eventError.message}`);
+
+  const rows = recipients || [];
+  const eventRows = events || [];
+  const stats = {
+    sent: rows.filter((row) => ["sent", "delivered", "bounced", "complained"].includes(row.status)).length,
+    delivered: rows.filter((row) => row.status === "delivered").length,
+    opened: eventRows.filter((event) => event.event_type === "email.opened").length,
+    clicked: eventRows.filter((event) => event.event_type === "email.clicked").length,
+    bounced: rows.filter((row) => row.status === "bounced").length,
+    complained: rows.filter((row) => row.status === "complained").length,
+    failed: rows.filter((row) => row.status === "failed").length,
+  };
+
+  const { error: campaignError } = await supabase
+    .from("mail_campaigns")
+    .update({
+      status: stats.sent > 0 ? "sent" : "failed",
+      sent_at: new Date().toISOString(),
+      stats,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", campaignId);
+  if (campaignError) throw new Error(`Campaign finalization failed: ${campaignError.message}`);
+}
+
 export async function processMailOutboxBatch(batchSize = 20): Promise<MailWorkerResult> {
   const supabase = getPrivilegedMailClient();
   const workerId = `brainlab-mail-${randomUUID()}`;
@@ -134,6 +182,9 @@ export async function processMailOutboxBatch(batchSize = 20): Promise<MailWorker
         if (recipientError) throw new Error(`Could not update campaign recipient: ${recipientError.message}`);
       }
 
+      const campaignId = (job.metadata as Record<string, unknown> | null)?.campaignId;
+      if (typeof campaignId === "string") await finalizeCampaignIfComplete(supabase, campaignId);
+
       result.sent++;
       continue;
     }
@@ -165,6 +216,9 @@ export async function processMailOutboxBatch(batchSize = 20): Promise<MailWorker
         .update({ status: "failed", error_message: errorMessage.slice(0, 4000) })
         .eq("id", campaignRecipientId);
     }
+
+    const campaignId = (job.metadata as Record<string, unknown> | null)?.campaignId;
+    if (typeof campaignId === "string" && exhausted) await finalizeCampaignIfComplete(supabase, campaignId);
 
     if (exhausted) result.deadLettered++;
     else result.retried++;
