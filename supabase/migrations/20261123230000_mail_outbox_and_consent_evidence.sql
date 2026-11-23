@@ -57,6 +57,31 @@ CREATE TABLE IF NOT EXISTS public.mail_consent_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Legacy contacts without a saved preference or opt-in evidence are not marketing subscribers.
+UPDATE public.mail_contacts AS contact
+SET marketing_consent = COALESCE(
+  (
+    SELECT preference.marketing_announcements AND NOT preference.unsubscribed_all
+    FROM public.notification_preferences AS preference
+    WHERE lower(preference.email) = lower(contact.email)
+  ),
+  false
+),
+updated_at = now();
+
+INSERT INTO public.mail_consent_events (contact_id, email, action, source, evidence)
+SELECT contact.id, contact.email, 'opt_in', 'legacy_migration',
+       jsonb_build_object('migrated_from', 'notification_preferences', 'preference_updated_at', preference.updated_at)
+FROM public.mail_contacts AS contact
+JOIN public.notification_preferences AS preference
+  ON lower(preference.email) = lower(contact.email)
+WHERE preference.marketing_announcements = true
+  AND preference.unsubscribed_all = false
+  AND NOT EXISTS (
+    SELECT 1 FROM public.mail_consent_events AS event
+    WHERE lower(event.email) = lower(contact.email)
+  );
+
 CREATE INDEX IF NOT EXISTS idx_mail_consent_events_email
   ON public.mail_consent_events (lower(email), created_at DESC);
 
