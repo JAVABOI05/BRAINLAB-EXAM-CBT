@@ -121,18 +121,41 @@ export async function POST(request: NextRequest) {
 
     const matchedInbox = knownInboxes.find((ib) => toEmail.includes(ib)) || "support@brainlabacademy.com.ng";
 
-    // 3. Find active conversation with this customer or thread subject
-    const cleanSubject = subject.replace(/^(re|fwd):\s*/i, "").trim();
+    // 3. Find active conversation with this customer or thread subject / inReplyTo
+    let existingConv: { id: string; message_count: number } | null = null;
 
-    const { data: existingConv } = await supabase
-      .from("mail_conversations")
-      .select("*")
-      .eq("customer_email", fromEmail)
-      .eq("recipient_inbox", matchedInbox)
-      .ilike("subject", `%${cleanSubject}%`)
-      .order("last_message_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (body.inReplyTo) {
+      const cleanInReplyTo = String(body.inReplyTo).replace(/[<>]/g, "").trim();
+      const { data: parentMsg } = await supabase
+        .from("mail_messages")
+        .select("conversation_id")
+        .or(`resend_id.eq.${cleanInReplyTo},raw_headers->>messageId.eq.${cleanInReplyTo}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (parentMsg?.conversation_id) {
+        const { data: matched } = await supabase
+          .from("mail_conversations")
+          .select("id, message_count")
+          .eq("id", parentMsg.conversation_id)
+          .maybeSingle();
+        if (matched) existingConv = matched;
+      }
+    }
+
+    if (!existingConv) {
+      const cleanSubject = subject.replace(/^(re|fwd):\s*/i, "").trim();
+      const { data: matched } = await supabase
+        .from("mail_conversations")
+        .select("id, message_count")
+        .eq("customer_email", fromEmail)
+        .eq("recipient_inbox", matchedInbox)
+        .ilike("subject", `%${cleanSubject}%`)
+        .order("last_message_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (matched) existingConv = matched;
+    }
 
     let conversationId: string;
     const nowIso = new Date().toISOString();
@@ -185,7 +208,14 @@ export async function POST(request: NextRequest) {
         body_html: bodyHtml,
         body_text: bodyText,
         attachments,
-        raw_headers: body.headers || {},
+        raw_headers: {
+          messageId: body.messageId || null,
+          inReplyTo: body.inReplyTo || null,
+          references: body.references || null,
+          headers: body.headers || {},
+          size: body.size || null,
+          receivedAt: body.receivedAt || nowIso,
+        },
       })
       .select()
       .single();
