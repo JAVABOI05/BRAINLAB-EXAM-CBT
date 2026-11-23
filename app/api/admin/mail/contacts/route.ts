@@ -16,7 +16,7 @@ async function performContactsSync(supabase: SupabaseClient, admin: AdminContext
     email?: string;
     phone?: string;
     created_at?: string;
-    user_metadata?: Record<string, unknown>;
+    user_metadata?: Record<string, any>;
   }> = [];
   const perPage = 1000;
   for (let page = 1; ; page++) {
