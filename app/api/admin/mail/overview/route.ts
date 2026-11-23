@@ -40,7 +40,13 @@ export async function GET(request: NextRequest) {
       recentInboundRes,
       inboundMessagesCountRes,
       recentEventsRes,
-      allCampaignsRes,
+      sentRecipientsRes,
+      deliveredRecipientsRes,
+      openedEventsRes,
+      clickedEventsRes,
+      bouncedRecipientsRes,
+      complainedRecipientsRes,
+      failedRecipientsRes,
     ] = await Promise.all([
       supabase.from("mail_contacts").select("id", { count: "exact", head: true }),
       supabase.from("mail_contacts").select("id", { count: "exact", head: true }).eq("marketing_consent", true).eq("is_suppressed", false),
@@ -56,7 +62,13 @@ export async function GET(request: NextRequest) {
         .limit(6),
       supabase.from("mail_messages").select("id", { count: "exact", head: true }).eq("direction", "inbound"),
       supabase.from("mail_events").select("*").order("created_at", { ascending: false }).limit(10),
-      supabase.from("mail_campaigns").select("stats").in("status", ["sent", "sending"]),
+      supabase.from("mail_campaign_recipients").select("id", { count: "exact", head: true }).in("status", ["sent", "delivered", "bounced", "complained"]),
+      supabase.from("mail_campaign_recipients").select("id", { count: "exact", head: true }).eq("status", "delivered"),
+      supabase.from("mail_events").select("id", { count: "exact", head: true }).eq("event_type", "email.opened"),
+      supabase.from("mail_events").select("id", { count: "exact", head: true }).eq("event_type", "email.clicked"),
+      supabase.from("mail_campaign_recipients").select("id", { count: "exact", head: true }).eq("status", "bounced"),
+      supabase.from("mail_campaign_recipients").select("id", { count: "exact", head: true }).eq("status", "complained"),
+      supabase.from("mail_campaign_recipients").select("id", { count: "exact", head: true }).eq("status", "failed"),
     ]);
 
     const totalContacts = totalContactsRes.count || 0;
@@ -67,24 +79,14 @@ export async function GET(request: NextRequest) {
     const totalCampaigns = totalCampaignsRes.count || 0;
     const inboundTotal = inboundMessagesCountRes.count || 0;
 
-    // 2. Aggregate delivery telemetry across campaigns
-    const allCampaigns = allCampaignsRes.data || [];
-    let totalSent = 0;
-    let totalDelivered = 0;
-    let totalOpened = 0;
-    let totalClicked = 0;
-    let totalBounced = 0;
-    let totalComplained = 0;
-
-    allCampaigns.forEach((c) => {
-      const s = (c.stats || {}) as Record<string, number>;
-      totalSent += s.sent || 0;
-      totalDelivered += s.delivered || 0;
-      totalOpened += s.opened || 0;
-      totalClicked += s.clicked || 0;
-      totalBounced += s.bounced || 0;
-      totalComplained += s.complained || 0;
-    });
+    // Delivery metrics are derived from recipient and webhook event records, not placeholder campaign defaults.
+    const totalSent = sentRecipientsRes.count || 0;
+    const totalDelivered = deliveredRecipientsRes.count || 0;
+    const totalOpened = openedEventsRes.count || 0;
+    const totalClicked = clickedEventsRes.count || 0;
+    const totalBounced = bouncedRecipientsRes.count || 0;
+    const totalComplained = complainedRecipientsRes.count || 0;
+    const totalFailed = failedRecipientsRes.count || 0;
 
     const deliveryRate = totalSent > 0 ? ((totalDelivered / totalSent) * 100).toFixed(1) : "0.0";
     const openRate = totalDelivered > 0 ? ((totalOpened / totalDelivered) * 100).toFixed(1) : "0.0";
@@ -102,6 +104,7 @@ export async function GET(request: NextRequest) {
         totalCampaigns,
         totalSent,
         totalDelivered,
+        totalFailed,
         deliveryRate: `${deliveryRate}%`,
         openRate: `${openRate}%`,
         clickRate: `${clickRate}%`,
