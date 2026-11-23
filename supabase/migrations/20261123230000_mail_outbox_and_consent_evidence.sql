@@ -99,13 +99,16 @@ CREATE INDEX IF NOT EXISTS idx_mail_consent_events_email
   ON public.mail_consent_events (lower(email), created_at DESC);
 
 ALTER TABLE public.mail_consent_events ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.mail_consent_events FROM anon, authenticated;
-GRANT ALL ON public.mail_consent_events TO service_role;
+REVOKE ALL ON public.mail_consent_events FROM anon, authenticated, service_role;
+GRANT SELECT, INSERT ON public.mail_consent_events TO service_role;
 
-DROP POLICY IF EXISTS "Service role full access on mail_consent_events" ON public.mail_consent_events;
-CREATE POLICY "Service role full access on mail_consent_events"
-  ON public.mail_consent_events FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Service role can read mail_consent_events" ON public.mail_consent_events;
+CREATE POLICY "Service role can read mail_consent_events"
+  ON public.mail_consent_events FOR SELECT TO service_role USING (true);
+
+DROP POLICY IF EXISTS "Service role can append mail_consent_events" ON public.mail_consent_events;
+CREATE POLICY "Service role can append mail_consent_events"
+  ON public.mail_consent_events FOR INSERT TO service_role WITH CHECK (true);
 
 -- Atomically claim queued jobs. Expired processing leases are recoverable.
 CREATE OR REPLACE FUNCTION public.claim_mail_outbox_jobs(
