@@ -23,7 +23,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, "em
   classroom_alerts: true,
   streak_reminders: true,
   assignments: true,
-  marketing_announcements: true,
+  marketing_announcements: false,
   sms_alerts: true,
   unsubscribed_all: false,
   unsubscribed_at: null,
