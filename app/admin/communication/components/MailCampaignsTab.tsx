@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { authFetch } from "@/app/lib/authFetch";
 
 interface Campaign {
   id: string;
@@ -65,7 +66,7 @@ export function MailCampaignsTab({ currentAdminId, isSuperAdmin }: MailCampaigns
     setLoading(true);
     try {
       const url = statusFilter === "all" ? "/api/admin/mail/campaigns" : `/api/admin/mail/campaigns?status=${statusFilter}`;
-      const res = await fetch(url);
+      const res = await authFetch(url);
       const data = await res.json();
       if (data.success) {
         setCampaigns(data.campaigns || []);
@@ -88,7 +89,7 @@ export function MailCampaignsTab({ currentAdminId, isSuperAdmin }: MailCampaigns
     setFeedback(null);
 
     try {
-      const res = await fetch(`/api/admin/mail/campaigns/${reviewCampaign.id}/approve`, {
+      const res = await authFetch(`/api/admin/mail/campaigns/${reviewCampaign.id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ super_admin_self_override: isSuperAdmin }),
@@ -115,7 +116,7 @@ export function MailCampaignsTab({ currentAdminId, isSuperAdmin }: MailCampaigns
     setFeedback(null);
 
     try {
-      const res = await fetch(`/api/admin/mail/campaigns/${reviewCampaign.id}/reject`, {
+      const res = await authFetch(`/api/admin/mail/campaigns/${reviewCampaign.id}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: rejectReason }),
@@ -148,7 +149,7 @@ export function MailCampaignsTab({ currentAdminId, isSuperAdmin }: MailCampaigns
     setFeedback(null);
 
     try {
-      const res = await fetch(`/api/admin/mail/campaigns/${campaignId}/dispatch`, {
+      const res = await authFetch(`/api/admin/mail/campaigns/${campaignId}/dispatch`, {
         method: "POST",
       });
       const data = await res.json();
@@ -175,7 +176,7 @@ export function MailCampaignsTab({ currentAdminId, isSuperAdmin }: MailCampaigns
     setFeedback(null);
 
     try {
-      const res = await fetch("/api/admin/mail/campaigns", {
+      const res = await authFetch("/api/admin/mail/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
