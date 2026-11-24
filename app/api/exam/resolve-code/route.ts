@@ -274,12 +274,14 @@ export async function POST(request: NextRequest) {
       let hasRecoverableAttempt = false;
       let recoveredCandidateName: string | null = null;
       if (phone) {
+        const nowIso = new Date().toISOString();
         const { data: activeAttempt, error: activeAttemptError } = await supabase
           .from("exam_sessions")
           .select("id, candidate_name")
           .eq("phone", phone)
           .eq("access_code", cleanCode)
           .eq("status", "started")
+          .gt("deadline_at", nowIso)
           .order("started_at", { ascending: false })
           .limit(1)
           .maybeSingle();

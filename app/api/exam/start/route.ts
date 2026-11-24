@@ -58,13 +58,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Recovery takes precedence over access-code consumption
     // Recover an existing active attempt before checking new-attempt eligibility or consuming its PIN.
+    const nowIso = new Date().toISOString();
+
+    // Mark any stale elapsed sessions as 'expired' lazily so they do not linger in 'started' state
+    void supabase
+      .from("exam_sessions")
+      .update({ status: "expired" })
+      .eq("phone", cleanPhone)
+      .eq("access_code", sessionCode)
+      .eq("status", "started")
+      .lte("deadline_at", nowIso);
+
     const { data: existingSession, error: existingSessionError } = await supabase
       .from("exam_sessions")
       .select("id, attempt_token, status, deadline_at, last_saved_at, phone, access_code, is_master_code")
       .eq("phone", cleanPhone)
       .eq("access_code", sessionCode)
       .eq("status", "started")
+      .gt("deadline_at", nowIso)
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle();
